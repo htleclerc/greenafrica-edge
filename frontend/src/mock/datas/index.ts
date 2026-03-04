@@ -1,6 +1,8 @@
 import { ShipType } from '@/domain/simulation/simulationEngine';
 
-// ===== Landing Page Mocks =====
+// ===== Carbon Tax Module =====
+export * from './carbonTaxMock';
+
 
 export const emissionTrendsData = [
     { month: 'Jan', value: 30 },

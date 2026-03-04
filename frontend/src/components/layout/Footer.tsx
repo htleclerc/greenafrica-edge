@@ -41,7 +41,7 @@ export function Footer() {
                     <div>
                         <h4 className="text-white font-semibold mb-5 text-sm">{t('platform')}</h4>
                         <ul className="space-y-3 text-sm">
-                            {['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports', 'settings'].map((key) => (
+                            {['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports'].map((key) => (
                                 <li key={key}>
                                     <a href="#" className="hover:text-emerald-400 transition-colors text-slate-500">
                                         {t(key)}

@@ -112,3 +112,34 @@ html {
     background-color: rgba(16, 185, 129, 0.3);
     color: white;
 }
+
+/* Print Styles for Compliance Notice PDF */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    /* Hide Navigation, Footer, and other interactive UI elements */
+    nav, footer, .no-print {
+        display: none !important;
+    }
+
+    /* Ensure the print modal takes full width and resets margins */
+    .print-only {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: white !important;
+    }
+
+    /* Adjust page margins to fit A4 */
+    @page {
+        margin: 0.5cm;
+        size: A4 portrait;
+    }
+}
