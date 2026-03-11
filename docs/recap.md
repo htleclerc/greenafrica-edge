@@ -16,3 +16,10 @@
   - ThemeProvider for unified styling
   - Enums/Constants for statuses and actions
   - No hardcoded data in views
+
+## [2026-03-04 19:02] AI-Driven Multi-Country Protocol Analysis
+- **Objective**: Analyze the feasibility of a pan-African protocol utilizing AI and AIS data.
+- **Key Features**:
+  1. AI to track and analyze vessel movements in databases.
+  2. Cartography of tax collection estimates by coastal country.
+  3. Protocol for identifying vessels and enforcing tax payments to respective countries.

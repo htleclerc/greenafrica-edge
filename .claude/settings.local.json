@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(ls /c/Users/lecle/Workspace/africgreen/frontend/src/app/\\\\\\(auth\\\\\\)/)",
+      "Bash(ls /c/Users/lecle/Workspace/africgreen/frontend/src/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(npm install @supabase/ssr --save)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run build)",
+      "Bash(grep -rn \"from ''@/components/ui/OsBadge''\" /c/Users/lecle/Workspace/africgreen/frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(npm run dev -- -p 3300)",
+      "Bash(npx next build)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(find '/c/Users/lecle/Workspace/africgreen/frontend/src/app/\\(dashboard\\)' -type f -name \"*.tsx\")",
+      "Bash(while IFS= read -r f)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend -name *.json -path *message*)"
+    ]
+  }
+}

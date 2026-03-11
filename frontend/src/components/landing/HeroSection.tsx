@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { ArrowRight, Shield } from 'lucide-react';
 
 export function HeroSection() {
@@ -48,14 +49,14 @@ export function HeroSection() {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                    <button className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group">
+                    <Link href="/login" className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group">
                         {c('sign_in_portal')}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/5 border border-slate-700 hover:border-slate-500 text-slate-300 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                    </Link>
+                    <Link href="/signup" className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/5 border border-slate-700 hover:border-slate-500 text-slate-300 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
                         <Shield className="w-4 h-4 text-emerald-500" />
                         {c('request_access')}
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Trusted By */}

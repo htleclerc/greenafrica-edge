@@ -13,9 +13,9 @@ export default function RootLayout({
             <body className="antialiased font-sans">
                 <NextIntlClientProvider locale="en" messages={messages}>
                     <ThemeProvider
-                        attribute="class"
-                        defaultTheme="light"
-                        enableSystem
+                        attribute="data-theme"
+                        defaultTheme="dark"
+                        enableSystem={false}
                         disableTransitionOnChange
                     >
                         {children}

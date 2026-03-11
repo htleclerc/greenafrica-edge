@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { Ship, Anchor, TrendingUp, TreePine, Home, ArrowRight, AlertCircle, Landmark, Building2 } from 'lucide-react';
 import {
     calculateSimulation,
@@ -359,13 +360,13 @@ export function SimulationSection() {
                         )}
 
                         {/* CTA Button */}
-                        <button className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group ${mode === 'STATE'
+                        <Link href="/login" className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group ${mode === 'STATE'
                                 ? 'bg-yellow-500 hover:bg-yellow-400 text-yellow-950 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]'
                                 : 'bg-amber-600 hover:bg-amber-500 text-white hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]'
                             }`}>
                             {mode === 'STATE' ? t('sim_cta') : t('sim_company_cta')}
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        </Link>
                     </div>
                 </div>
 

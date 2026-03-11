@@ -1,0 +1,217 @@
+'use client';
+
+import * as React from 'react';
+import {
+    AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
+import { Download, TrendingUp } from 'lucide-react';
+import { OsButton } from '@/components/ui/OsButton';
+import { mockRevenueWeekly, mockRevenueByCategoryData, mockKpis } from '@/mock/datas/secureMock';
+
+const CATEGORY_COLORS = ['#00D97E', '#38BDF8', '#F59E0B', '#A78BFA', '#F97316'];
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="os-card p-3 text-xs min-w-[120px]">
+            <p className="text-[var(--os-text-muted)] mb-1 font-semibold">{label}</p>
+            {payload.map((p) => (
+                <div key={p.name} className="flex justify-between gap-4">
+                    <span className="text-[var(--os-text-secondary)]">{p.name}</span>
+                    <span className="font-bold text-[var(--os-text-primary)]">
+                        {typeof p.value === 'number' && p.value > 1000
+                            ? `$${(p.value / 1000).toFixed(0)}K`
+                            : p.value}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export function RevenueDashboard() {
+    const totalRevenue = mockRevenueByCategoryData.reduce((s, d) => s + d.revenue, 0);
+
+    return (
+        <div className="p-5 flex flex-col gap-5">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">Revenue Dashboard</h1>
+                    <p className="text-xs text-[var(--os-text-muted)] mt-0.5">
+                        Maritime carbon tax revenue analytics — Gulf of Aden EEZ · Somaliland
+                    </p>
+                </div>
+                <OsButton variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
+                    Export Report
+                </OsButton>
+            </div>
+
+            {/* KPI summary row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: 'Total Revenue YTD',    value: `$${(totalRevenue / 1_000_000).toFixed(2)}M`, delta: 12.4, color: '#00D97E' },
+                    { label: 'Carbon Offsets YTD',   value: `$${(mockKpis.estCo2TrackingTons * 20 / 1_000).toFixed(1)}K`, delta: 8.1, color: '#38BDF8' },
+                    { label: 'Avg Price / Vessel',   value: `$${(totalRevenue / mockKpis.vesselsProcessed).toFixed(0)}`, delta: 4.2, color: '#A78BFA' },
+                    { label: 'Compliance Rate',      value: '94.2%', delta: 2.0, color: '#22C55E' },
+                ].map(({ label, value, delta, color }) => (
+                    <div key={label} className="os-card p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: color }} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">{label}</p>
+                        <p className="text-2xl font-bold tabular-nums mb-1" style={{ color }}>{value}</p>
+                        <div className="flex items-center gap-1 text-[10px] font-semibold text-[#22C55E]">
+                            <TrendingUp className="w-3 h-3" />
+                            +{delta}% vs last quarter
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Charts row 1: Area + Bar */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* Weekly revenue trend */}
+                <div className="os-card p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Revenue Trends</h3>
+                            <p className="text-[10px] text-[var(--os-text-muted)]">Comparative revenue vs Carbon Credits — Weekly</p>
+                        </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <AreaChart data={mockRevenueWeekly} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                            <defs>
+                                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%"  stopColor="#00D97E" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#00D97E" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="co2Grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%"  stopColor="#38BDF8" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                            <XAxis dataKey="week" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#00D97E" strokeWidth={2} fill="url(#revGrad)" />
+                            <Area type="monotone" dataKey="co2"     name="CO₂ Credits" stroke="#38BDF8" strokeWidth={2} fill="url(#co2Grad)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Revenue by category bar */}
+                <div className="os-card p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Top Contributing Vessel Categories</h3>
+                            <p className="text-[10px] text-[var(--os-text-muted)]">Breakdown by vessel type and total contribution</p>
+                        </div>
+                        <a href="/admin/tax-settings" className="text-[10px] text-[#38BDF8] hover:underline">View Full Report →</a>
+                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={mockRevenueByCategoryData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} barSize={20}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                            <XAxis dataKey="category" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="revenue" name="Revenue" radius={[4, 4, 0, 0]}>
+                                {mockRevenueByCategoryData.map((_, i) => (
+                                    <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} fillOpacity={0.85} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+
+                    {/* Breakdown list */}
+                    <div className="mt-3 flex flex-col gap-1">
+                        {mockRevenueByCategoryData.map(({ category, revenue }, i) => (
+                            <div key={category} className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[i] }} />
+                                    <span className="text-[var(--os-text-secondary)]">{category}</span>
+                                </div>
+                                <span className="font-bold tabular-nums text-[var(--os-text-primary)]">
+                                    ${(revenue / 1000).toFixed(1)}K
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts row 2: Donut + Month comparison */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                {/* Donut */}
+                <div className="os-card p-5">
+                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">CO₂ Impact Overview</h3>
+                    <p className="text-[10px] text-[var(--os-text-muted)] mb-4">Tracked vs offset vs residual</p>
+                    <div className="flex items-center justify-center">
+                        <div className="relative">
+                            <ResponsiveContainer width={160} height={160}>
+                                <PieChart>
+                                    <Pie
+                                        data={[
+                                            { name: 'Tracked', value: mockKpis.estCo2TrackingTons },
+                                            { name: 'Offset',  value: mockKpis.creditsRetiredTons },
+                                        ]}
+                                        cx={75} cy={75}
+                                        innerRadius={50} outerRadius={70}
+                                        startAngle={90} endAngle={-270}
+                                        dataKey="value"
+                                        strokeWidth={0}
+                                    >
+                                        <Cell fill="#00D97E" fillOpacity={0.9} />
+                                        <Cell fill="#0B1628" fillOpacity={1} />
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <p className="text-2xl font-bold text-[var(--os-text-primary)]">75%</p>
+                                <p className="text-[9px] text-[var(--os-text-muted)]">Compliance</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                        <div className="text-center">
+                            <p className="text-[10px] text-[var(--os-text-muted)]">Estimated</p>
+                            <p className="font-bold text-[#00D97E]">{(mockKpis.estCo2TrackingTons / 1000).toFixed(1)}kt</p>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-[10px] text-[var(--os-text-muted)]">Offset / Retired</p>
+                            <p className="font-bold text-[var(--os-text-muted)]">{(mockKpis.creditsRetiredTons / 1000).toFixed(1)}kt</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Month vs month comparison */}
+                <div className="xl:col-span-2 os-card p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Month N vs N-1 Comparison</h3>
+                        <span className="text-[10px] text-[#22C55E] font-bold">+{mockKpis.monthlyRevenueDelta}% growth</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={180}>
+                        <BarChart
+                            data={[
+                                { month: 'Jan', current: 855_000,   prev: 720_000 },
+                                { month: 'Feb', current: 1_015_000, prev: 855_000 },
+                                { month: 'Mar', current: 1_240_500, prev: 1_015_000 },
+                            ]}
+                            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                            barGap={4}
+                            barSize={24}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                            <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend wrapperStyle={{ fontSize: 10, color: '#64748B' }} />
+                            <Bar dataKey="current" name="This Year"  fill="#00D97E" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="prev"    name="Last Year"  fill="#1E3A2F"  radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </div>
+    );
+}
