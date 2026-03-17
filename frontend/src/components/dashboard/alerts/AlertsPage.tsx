@@ -197,7 +197,7 @@ export function AlertsPage() {
     const infoCount    = alerts.filter((a) => a.severity === 'info').length;
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
@@ -247,7 +247,7 @@ export function AlertsPage() {
             </div>
 
             {/* Category filter tabs */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap overflow-x-auto pb-2 md:pb-0">
                 {(['ALL', 'Compliance', 'Payment', 'System', 'Security'] as const).map((cat) => {
                     const color = cat === 'ALL' ? '#64748B' : CAT_COLOR[cat];
                     const count = cat === 'ALL' ? alerts.filter((a) => !a.acknowledged || showAcknowledged).length
@@ -275,7 +275,7 @@ export function AlertsPage() {
             </div>
 
             {/* Main layout */}
-            <div className={`grid gap-5 ${selected ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-4 sm:gap-5 ${selected ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
                 {/* Alert list */}
                 <div className="os-card overflow-hidden">
                     <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">

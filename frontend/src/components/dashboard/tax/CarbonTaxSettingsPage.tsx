@@ -77,7 +77,7 @@ export function CarbonTaxSettingsPage() {
     const vesselsTaxed = Math.round((transactions.filter(tx => tx.status === TransactionStatus.PAID).length / transactions.length) * 100);
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
@@ -91,7 +91,7 @@ export function CarbonTaxSettingsPage() {
                         {t('subtitle')}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
                     <OsButton variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
                         {t('export_report')}
                     </OsButton>
@@ -110,7 +110,7 @@ export function CarbonTaxSettingsPage() {
             </div>
 
             {/* Body: Tax Config + Right panel */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Tax Rate Configuration table */}
                 <div className="xl:col-span-2 flex flex-col gap-5">
                     <div className="os-card overflow-hidden">

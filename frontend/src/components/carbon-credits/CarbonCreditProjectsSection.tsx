@@ -25,7 +25,7 @@ export function CarbonCreditProjectsSection() {
     const t = useTranslations('CarbonCredit');
 
     return (
-        <section className="py-16 px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="py-12 sm:py-16 px-3 sm:px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-10">
@@ -37,7 +37,7 @@ export function CarbonCreditProjectsSection() {
                 </div>
 
                 {/* Projects Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
                     {carbonProjects.map((project) => {
                         const typeColor = ProjectTypeColor[project.type];
                         const stdColor = CreditStandardColor[project.standard];

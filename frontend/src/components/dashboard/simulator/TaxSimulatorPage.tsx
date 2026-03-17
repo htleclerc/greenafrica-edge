@@ -251,7 +251,7 @@ export function TaxSimulatorPage() {
     const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
     return (
-        <div className="px-6 py-6 flex flex-col gap-6">
+        <div className="px-3 sm:px-6 py-3 sm:py-6 flex flex-col gap-6">
 
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -284,7 +284,7 @@ export function TaxSimulatorPage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_360px_280px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_360px_280px] gap-3 sm:gap-4 lg:gap-6">
 
                 {/* ── Left: Inputs ── */}
                 <div className="flex flex-col gap-4">
@@ -314,7 +314,7 @@ export function TaxSimulatorPage() {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             {/* Category */}
                             <div>
                                 <Label>{t('simulator_vessel_type')}</Label>
@@ -366,7 +366,7 @@ export function TaxSimulatorPage() {
 
                     {/* Voyage */}
                     <SectionCard title={t('simulator_voyage_params')} icon={<Navigation className="w-3.5 h-3.5" />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div>
                                 <Label>{t('simulator_eez_distance')}</Label>
                                 <NumberInput value={inputs.eezDistanceNm} onChange={(v) => set('eezDistanceNm', v)} min={0} max={2000} step={10} unit="NM" />

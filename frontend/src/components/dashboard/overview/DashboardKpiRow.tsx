@@ -30,7 +30,7 @@ interface KpiCardProps {
 function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag, tagColor }: KpiCardProps) {
     const isPositive = delta !== undefined && delta >= 0;
     return (
-        <div className="os-card p-5 flex flex-col gap-3 relative overflow-hidden">
+        <div className="os-card p-2.5 sm:p-3 md:p-5 flex flex-col gap-2 sm:gap-3 relative overflow-hidden">
             {/* Accent bar top */}
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: accentColor }} />
 
@@ -55,7 +55,7 @@ function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag,
             </div>
 
             <div>
-                <p className="text-3xl font-bold tabular-nums" style={{ color: accentColor }}>{value}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold tabular-nums" style={{ color: accentColor }}>{value}</p>
                 <p className="text-xs text-[var(--os-text-muted)] mt-0.5">{sub}</p>
             </div>
 
@@ -73,7 +73,7 @@ export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
     const t = useTranslations('Overview');
 
     return (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             <KpiCard
                 label={t('kpi_active_vessels')}
                 value={formatNum(kpis.activeVesselsInEez)}

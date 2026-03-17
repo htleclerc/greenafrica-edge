@@ -118,7 +118,7 @@ export function ResetPasswordPage() {
 
                     {/* Card */}
                     <div
-                        className="w-full rounded-2xl p-6 border"
+                        className="w-full rounded-2xl p-4 sm:p-6 border"
                         style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}
                     >
                         {success ? (
@@ -145,7 +145,7 @@ export function ResetPasswordPage() {
                             </div>
                         ) : (
                             /* ── Form state ────────────────────────────────── */
-                            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
                                 {/* New password */}
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>

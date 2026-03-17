@@ -221,7 +221,7 @@ function RegistrationRow({ req, onAction }: RowProps) {
             {/* Expanded detail */}
             {expanded && (
                 <div className="border-t px-5 pb-5" style={{ borderColor: 'var(--os-border)' }}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-4 mt-4">
                         {/* Contact */}
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--os-text-muted)' }}>{t('detail_contact')}</p>
@@ -494,7 +494,7 @@ export function AgentValidationsPage() {
     ];
 
     return (
-        <div className="flex-1 flex flex-col gap-6 p-6">
+        <div className="flex-1 flex flex-col gap-3 sm:gap-4 md:gap-6 px-3 sm:px-6 py-3 sm:py-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>

@@ -171,7 +171,7 @@ export function GovReportsPage() {
         : REPORT_CATALOG.filter((r) => r.type === typeFilter);
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
@@ -206,7 +206,7 @@ export function GovReportsPage() {
             </div>
 
             {/* Charts row */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                 {/* Revenue by category bar */}
                 <div className="xl:col-span-2 os-card p-5">
                     <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">{t('chart_revenue_by_category')}</h3>
@@ -264,7 +264,7 @@ export function GovReportsPage() {
                         <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{t('report_catalogue_desc')}</p>
                     </div>
                     {/* Type filter tabs */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap">
                         {(['ALL', 'Revenue', 'Compliance', 'Environmental', 'Audit'] as const).map((t) => (
                             <button
                                 key={t}

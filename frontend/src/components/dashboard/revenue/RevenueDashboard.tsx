@@ -58,7 +58,7 @@ export function RevenueDashboard() {
     const totalRevenue = REVENUE_BY_CATEGORY.reduce((s, d) => s + d.revenue, 0);
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
@@ -93,7 +93,7 @@ export function RevenueDashboard() {
             </div>
 
             {/* Charts row 1: Area + Bar */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-5">
                 {/* Weekly revenue trend */}
                 <div className="os-card p-5">
                     <div className="flex items-center justify-between mb-4">
@@ -165,7 +165,7 @@ export function RevenueDashboard() {
             </div>
 
             {/* Charts row 2: Donut + Month comparison */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                 {/* Donut */}
                 <div className="os-card p-5">
                     <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">{t('chart_co2_impact')}</h3>

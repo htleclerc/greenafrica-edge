@@ -9,10 +9,10 @@ export function HeroSection() {
     const c = useTranslations('Common');
 
     return (
-        <section className="relative pt-28 pb-32 px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="relative pt-20 sm:pt-28 pb-20 sm:pb-32 px-4 sm:px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background decorative gradients */}
-            <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-900/15 rounded-full blur-[150px]" />
-            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-yellow-900/10 rounded-full blur-[120px]" />
+            <div className="absolute top-0 left-1/4 w-[300px] sm:w-[500px] lg:w-[600px] h-[300px] sm:h-[500px] lg:h-[600px] bg-emerald-900/15 rounded-full blur-[150px]" />
+            <div className="absolute bottom-0 right-1/4 w-[200px] sm:w-[300px] lg:w-[400px] h-[200px] sm:h-[300px] lg:h-[400px] bg-yellow-900/10 rounded-full blur-[120px]" />
 
             {/* Grid pattern overlay */}
             <div
@@ -34,7 +34,7 @@ export function HeroSection() {
                 </div>
 
                 {/* Main Title */}
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
                     <span style={{ color: 'var(--ais-page-text)' }}>{t('hero_title_line1')}</span>
                     <br />
                     <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-yellow-400 bg-clip-text text-transparent">
@@ -43,7 +43,7 @@ export function HeroSection() {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="text-base md:text-lg mb-10 leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
+                <p className="text-sm sm:text-base md:text-lg mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
                     {t('hero_subtitle')}
                 </p>
 
@@ -64,10 +64,10 @@ export function HeroSection() {
                     <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('trusted_by')}
                     </p>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
                         {/* Partner logo placeholders */}
                         {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="h-8 w-16 rounded-md" style={{ backgroundColor: 'var(--ais-page-surface)', border: '1px solid var(--ais-page-border)' }} />
+                            <div key={i} className="h-6 w-12 sm:h-8 sm:w-16 rounded-md" style={{ backgroundColor: 'var(--ais-page-surface)', border: '1px solid var(--ais-page-border)' }} />
                         ))}
                     </div>
                 </div>

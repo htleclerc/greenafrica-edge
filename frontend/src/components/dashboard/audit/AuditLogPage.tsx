@@ -136,7 +136,7 @@ export function AuditLogPage() {
     }
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
@@ -179,9 +179,9 @@ export function AuditLogPage() {
             </div>
 
             {/* Filter bar */}
-            <div className="os-card p-4 flex flex-wrap items-center gap-3">
+            <div className="os-card p-3 sm:p-4 flex flex-col sm:flex-row flex-wrap items-center gap-3">
                 {/* Search */}
-                <div className="relative flex-1 min-w-[200px]">
+                <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--os-text-muted)]" />
                     <input
                         type="text"

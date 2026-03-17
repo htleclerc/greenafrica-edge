@@ -259,13 +259,13 @@ export function SignupPage() {
     if (step === 0) {
         return (
             <AuthShell>
-                <div className="w-full max-w-lg flex flex-col items-center">
+                <div className="w-full max-w-sm sm:max-w-lg flex flex-col items-center">
                     <LogoBlock />
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00D97E]/60 mb-8">
                         New Account Registration
                     </p>
 
-                    <div className="w-full rounded-2xl p-6 border" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
+                    <div className="w-full rounded-2xl p-4 sm:p-6 border" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
                         <h2 className="text-base font-bold text-[var(--os-text-primary)] mb-1">Who are you registering as?</h2>
                         <p className="text-xs text-[var(--os-text-muted)] mb-5">
                             Select the entity type that best describes your organization. Your access scope and available features will be configured accordingly.
@@ -346,7 +346,7 @@ export function SignupPage() {
 
     return (
         <AuthShell>
-            <div className="w-full max-w-lg flex flex-col items-center">
+            <div className="w-full max-w-sm sm:max-w-lg flex flex-col items-center">
                 {/* Logo */}
                 <LogoBlock />
                 <div className="flex items-center gap-2 mb-6">
@@ -366,7 +366,7 @@ export function SignupPage() {
                     </button>
                 </div>
 
-                <div className="w-full rounded-2xl p-6 border" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
+                <div className="w-full rounded-2xl p-4 sm:p-6 border" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
                     <StepIndicator current={step} total={3} />
 
                     <h2 className="text-base font-bold text-[var(--os-text-primary)] mb-0.5">{STEP_TITLES[step]}</h2>

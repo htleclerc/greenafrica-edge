@@ -10,21 +10,21 @@ export function FinancialSection() {
     const c = useTranslations('Common');
 
     return (
-        <section className="py-24 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="pt-20 pb-16 sm:py-24 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
 
                 {/* Left Text Content */}
                 <div>
                     <h2 className="inline-flex px-3 py-1 rounded bg-amber-50 text-amber-600 text-xs font-bold tracking-widest uppercase mb-6">
                         {t('financial_badge')}
                     </h2>
-                    <h3 className="text-4xl md:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
+                    <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
                         {t('financial_title')}
                     </h3>
-                    <p className="text-lg mb-6 leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
+                    <p className="text-sm sm:text-base md:text-lg mb-4 sm:mb-6 leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('financial_desc1')}
                     </p>
-                    <p className="text-lg mb-10 leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
+                    <p className="text-sm sm:text-base md:text-lg mb-6 sm:mb-10 leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('financial_desc2')}
                     </p>
 
@@ -34,13 +34,13 @@ export function FinancialSection() {
                 </div>
 
                 {/* Right Interactive Chart Mockup */}
-                <div className="rounded-2xl p-8 shadow-2xl relative" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                <div className="rounded-2xl p-5 sm:p-8 shadow-2xl relative" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
 
                     <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]" />
 
                     <h4 className="text-xl font-medium mb-8 relative z-10" style={{ color: 'var(--ais-page-text)' }}>Live Asset Valuation</h4>
 
-                    <div className="h-64 w-full relative z-10 mb-6">
+                    <div className="h-48 sm:h-64 w-full relative z-10 mb-4 sm:mb-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={assetValuationData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <XAxis dataKey="quarter" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
@@ -58,8 +58,8 @@ export function FinancialSection() {
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 relative z-10">
-                        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 relative z-10">
+                        <div className="p-3 sm:p-4 rounded-xl" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)' }}>
                             <p className="text-xs font-medium mb-1" style={{ color: 'var(--ais-page-text-muted)' }}>Total Valuation</p>
                             <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>$4.2B</p>
                         </div>

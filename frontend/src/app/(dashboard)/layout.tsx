@@ -53,18 +53,17 @@ function DemoBanner() {
 
     return (
         <div
-            className="fixed top-0 right-0 z-[60] flex items-center justify-between px-4 py-2 text-xs font-semibold"
+            className="fixed top-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-semibold left-0 md:left-[var(--os-sidebar-w)]"
             style={{
-                left: 'var(--os-sidebar-w)',
                 backgroundColor: '#EAB308',
                 color: '#000',
                 transition: 'left 220ms cubic-bezier(0.4,0,0.2,1)',
             }}
         >
-            <div className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5" />
-                <span>MODE DÉMO — {profile.label}</span>
-                <span className="opacity-60 font-normal">· Les données sont fictives</span>
+            <div className="flex items-center gap-2 min-w-0">
+                <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">MODE DÉMO — {profile.label}</span>
+                <span className="opacity-60 font-normal hidden sm:inline">· Les données sont fictives</span>
             </div>
             <div className="flex items-center gap-3">
                 <button onClick={exitDemo} className="underline font-bold hover:opacity-70 transition-opacity">
@@ -96,11 +95,17 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
     // Persist sidebar state across navigations
     const [expanded, setExpanded] = React.useState(false);
+    const [mobileOpen, setMobileOpen] = React.useState(false);
 
     React.useEffect(() => {
         const saved = localStorage.getItem('sidebar_expanded');
         if (saved === 'true') setExpanded(true);
     }, []);
+
+    // Close mobile sidebar on route change
+    React.useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
 
     function toggleSidebar() {
         setExpanded((prev) => {
@@ -122,12 +127,28 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             } as React.CSSProperties}
         >
             <DemoBanner />
-            <DashboardSidebar activePage={key} expanded={expanded} onToggle={toggleSidebar} pendingRegistrations={pendingRegistrations} />
-            <DashboardTopBar user={user} kpis={kpis} breadcrumb={label} notifications={notifications} unreadCount={unreadCount} onMarkRead={markRead} onMarkAllRead={markAllRead} />
+            <DashboardSidebar
+                activePage={key}
+                expanded={expanded}
+                onToggle={toggleSidebar}
+                pendingRegistrations={pendingRegistrations}
+                mobileOpen={mobileOpen}
+                onMobileClose={() => setMobileOpen(false)}
+            />
+            <DashboardTopBar
+                user={user}
+                kpis={kpis}
+                breadcrumb={label}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkRead={markRead}
+                onMarkAllRead={markAllRead}
+                onMobileMenuToggle={() => setMobileOpen((v) => !v)}
+            />
 
             <main
+                className="md:ml-[var(--os-sidebar-w)]"
                 style={{
-                    marginLeft: sidebarW,
                     paddingTop: '3.5rem',
                     paddingBottom: '2rem',
                     minHeight: '100vh',

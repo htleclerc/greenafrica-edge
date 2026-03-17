@@ -76,9 +76,9 @@ export function LiveMapPanel() {
     }
 
     return (
-        <div className="os-card overflow-hidden flex flex-col" style={{ minHeight: 480 }}>
+        <div className="os-card overflow-hidden flex flex-col" style={{ minHeight: 'clamp(320px, 60vh, 480px)' }}>
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--os-border)]">
+            <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-[var(--os-border)]">
                 <div>
                     <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('map_title')}</h3>
                     <p className="text-[10px] text-[var(--os-text-muted)]">{t('map_subtitle')}</p>
@@ -137,7 +137,7 @@ export function LiveMapPanel() {
                 </div>
             </div>
 
-            <div className="flex flex-1 overflow-hidden" style={{ minHeight: 400 }}>
+            <div className="flex flex-col sm:flex-row flex-1 overflow-hidden" style={{ minHeight: 'clamp(260px, 50vh, 400px)' }}>
                 {/* Leaflet Map */}
                 <LeafletMap
                     vessels={filteredVessels}
@@ -174,7 +174,7 @@ function VesselDetailPanel({
     t: (key: string) => string;
 }) {
     return (
-        <div className="w-72 border-l border-[var(--os-border)] flex flex-col p-4 gap-4 bg-[var(--os-surface)] overflow-y-auto">
+        <div className="w-full sm:w-72 max-h-[50vh] sm:max-h-none border-t sm:border-t-0 sm:border-l border-[var(--os-border)] flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 bg-[var(--os-surface)] overflow-y-auto">
             <div className="flex items-start justify-between">
                 <div>
                     <p className="text-sm font-bold text-[var(--os-text-primary)]">{vessel.name}</p>

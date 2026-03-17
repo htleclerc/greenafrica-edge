@@ -34,7 +34,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                 borderBottom: '1px solid var(--ais-nav-border)',
             }}
         >
-            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -79,13 +79,13 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                 </div>
 
                 {/* Right: Toggle + Portal + Sign In + hamburger */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                     <LocaleSwitcher variant="navbar" />
                     <ThemeToggleButton />
 
                     <Link
                         href="/login"
-                        className="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                        className="text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-3 sm:px-5 py-2 rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap"
                     >
                         {c('sign_in')}
                     </Link>
@@ -104,7 +104,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
             {/* Mobile dropdown */}
             {mobileOpen && (
                 <div
-                    className="lg:hidden backdrop-blur-xl px-6 py-4 flex flex-col gap-1"
+                    className="lg:hidden backdrop-blur-xl px-4 sm:px-6 py-4 flex flex-col gap-1"
                     style={{
                         backgroundColor: 'var(--ais-nav-bg)',
                         borderTop: '1px solid var(--ais-nav-border)',

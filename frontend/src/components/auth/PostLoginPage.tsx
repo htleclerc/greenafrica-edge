@@ -152,10 +152,10 @@ export function PostLoginPage() {
 
                     {/* Impersonation card */}
                     <div
-                        className="rounded-2xl p-6 border"
+                        className="rounded-2xl p-4 sm:p-6 border"
                         style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* Left: Role picker */}
                             <div className="lg:col-span-2 flex flex-col gap-6">
                                 <div>

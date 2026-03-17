@@ -176,7 +176,7 @@ function ProfileTab() {
 
             {/* Identity */}
             <Section title={t('settings_identity')} description={t('settings_identity_desc')}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_full_name')}>
                         <Input value={fullName} onChange={setFullName} />
                     </Field>
@@ -204,7 +204,7 @@ function ProfileTab() {
 
             {/* Role (read-only) */}
             <Section title={t('settings_role_assignment')} description={t('settings_role_assignment_desc')}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_role')}>
                         <div
                             className="flex items-center gap-2 h-10 px-3 rounded-xl text-sm"
@@ -431,7 +431,7 @@ function PreferencesTab() {
     return (
         <div className="flex flex-col gap-8">
             <Section title={t('settings_lang_region')}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_interface_language')}>
                         <Select value={lang} onChange={setLang} options={[
                             { value: 'fr', label: 'Français' },
@@ -600,7 +600,7 @@ export function SettingsPage() {
         <div className="flex flex-col gap-0 min-h-full">
             {/* Page header */}
             <div
-                className="px-6 py-5 border-b"
+                className="px-3 sm:px-6 py-3 sm:py-5 border-b"
                 style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}
             >
                 <h1 className="text-xl font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('settings_title')}</h1>
@@ -609,15 +609,15 @@ export function SettingsPage() {
                 </p>
             </div>
 
-            <div className="flex flex-1">
+            <div className="flex flex-col sm:flex-row flex-1">
                 {/* Vertical tab sidebar */}
                 <nav
-                    className="flex flex-col gap-1 p-3 flex-shrink-0 border-r"
+                    className="flex sm:flex-col gap-1 p-3 flex-shrink-0 border-b sm:border-b-0 sm:border-r overflow-x-auto sm:overflow-x-visible"
                     style={{
-                        width: 200,
+                        width: undefined,
                         backgroundColor: 'var(--os-surface)',
                         borderColor: 'var(--os-border)',
-                        minHeight: 'calc(100vh - 8rem)',
+                        minHeight: undefined,
                     }}
                 >
                     {TABS.map(({ key, icon: Icon }) => (
@@ -638,7 +638,7 @@ export function SettingsPage() {
                 </nav>
 
                 {/* Content */}
-                <div className="flex-1 p-6 max-w-2xl">
+                <div className="flex-1 p-4 sm:p-6 max-w-2xl">
                     {CONTENT[activeTab]}
                 </div>
             </div>

@@ -60,7 +60,7 @@ export function VesselsPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Topbar KPIs */}
-            <div className="border-b border-[var(--os-border)] bg-[var(--os-surface)] px-5 py-2 flex items-center gap-6">
+            <div className="border-b border-[var(--os-border)] bg-[var(--os-surface)] px-3 sm:px-5 py-2 flex items-center gap-3 sm:gap-6 overflow-x-auto">
                 <KpiPill label={t('kpi_daily_inflow')} value={`+$42,500`} color="#00D97E" />
                 <KpiPill label={t('kpi_pending_review')} value={String(kpis.pendingReviewCount)} color="#F59E0B" />
                 <KpiPill label={t('kpi_non_compliant')} value={String(kpis.nonCompliantCount)} color="#EF4444" />
@@ -68,9 +68,9 @@ export function VesselsPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="px-5 py-3 border-b border-[var(--os-border)] flex items-center gap-3 flex-wrap">
+            <div className="px-3 sm:px-5 py-3 border-b border-[var(--os-border)] flex items-center gap-3 flex-wrap">
                 {/* Search */}
-                <div className="relative flex-1 min-w-48">
+                <div className="relative flex-1 min-w-0 sm:min-w-48">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--os-text-muted)]" />
                     <input
                         value={search}
@@ -97,7 +97,7 @@ export function VesselsPage() {
                     ))}
                 </div>
 
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="hidden sm:flex items-center gap-2 ml-auto">
                     <span className="text-xs text-[var(--os-text-muted)]">
                         {t('last_updated')}: <span className="text-[var(--os-text-secondary)]">{t('just_now')}</span>
                     </span>
@@ -112,8 +112,8 @@ export function VesselsPage() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="flex-1 overflow-auto">
+            {/* Table (desktop) */}
+            <div className="flex-1 overflow-auto hidden md:block">
                 <table className="w-full text-sm">
                     <thead className="sticky top-0 z-10">
                         <tr className="border-b border-[var(--os-border)]" style={{ backgroundColor: 'var(--os-surface-2)' }}>
@@ -148,8 +148,26 @@ export function VesselsPage() {
                 </table>
             </div>
 
+            {/* Card list (mobile) */}
+            <div className="flex-1 overflow-auto md:hidden px-3 py-2 space-y-2">
+                {filtered.length === 0 ? (
+                    <div className="px-4 py-12 text-center text-[var(--os-text-muted)] text-xs">
+                        {t('no_vessels_match')}
+                    </div>
+                ) : filtered.map((v) => (
+                    <VesselCard
+                        key={v.id}
+                        vessel={v}
+                        isSelected={selected === v.id}
+                        onSelect={() => setSelected(selected === v.id ? null : v.id)}
+                        complianceLabel={COMPLIANCE_LABEL}
+                        categoryLabel={CATEGORY_LABEL}
+                    />
+                ))}
+            </div>
+
             {/* Footer pagination */}
-            <div className="px-5 py-2.5 border-t border-[var(--os-border)] flex items-center justify-between text-xs text-[var(--os-text-muted)]">
+            <div className="px-3 sm:px-5 py-2.5 border-t border-[var(--os-border)] flex items-center justify-between text-xs text-[var(--os-text-muted)]">
                 <span>{t('showing_vessels', { from: 1, to: filtered.length, total: vessels.length })}</span>
                 <div className="flex items-center gap-1">
                     {[1, 2, 3].map((p) => (
@@ -207,10 +225,10 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
                 isSelected ? 'bg-[var(--os-surface-2)]' : 'hover:bg-[rgba(255,255,255,0.02)]'
             } ${isAlert ? 'border-l-2 border-l-[#EF4444]' : ''}`}
         >
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <input type="checkbox" checked={isSelected} onChange={onSelect} onClick={(e) => e.stopPropagation()} className="w-3.5 h-3.5 rounded accent-[#00D97E]" />
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--os-surface-3)] border border-[var(--os-border)] flex items-center justify-center flex-shrink-0">
                         <Ship className="w-4 h-4 text-[var(--os-text-muted)]" />
@@ -221,23 +239,23 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <span className="text-sm font-semibold text-[var(--os-text-secondary)]">{v.flagCode}</span>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <p className="text-xs text-[var(--os-text-primary)]">{categoryLabel[v.category]}</p>
                 <p className="text-[10px] text-[var(--os-text-muted)]">{v.grossTonnageDwt.toLocaleString()} DWT</p>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <p className="text-xs font-medium text-[var(--os-text-primary)]">{lastSeenLabel}</p>
                 <p className={`text-[10px] ${isAlert ? 'text-[#EF4444]' : 'text-[var(--os-text-muted)]'}`}>{lastSeenSub}</p>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <span className="text-xs px-2 py-0.5 rounded-lg bg-[var(--os-surface-3)] border border-[var(--os-border)] text-[var(--os-text-secondary)] font-medium">
                     {v.portCall}
                 </span>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <OsBadge variant={COMPLIANCE_VARIANT[v.complianceStatus]} label={complianceLabel[v.complianceStatus]} />
                 {!v.proFormaGenerated && v.complianceStatus !== VesselComplianceStatus.COMPLIANT && (
                     <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{t('no_proforma_generated')}</p>
@@ -246,7 +264,7 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
                     <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{t('offset_credits_applied')}</p>
                 )}
             </td>
-            <td className="px-4 py-4">
+            <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <a
                     href={`/dashboard/invoices?vessel=${v.id}`}
                     onClick={(e) => e.stopPropagation()}
@@ -259,10 +277,43 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
     );
 }
 
+function VesselCard({ vessel: v, isSelected, onSelect, complianceLabel, categoryLabel }: {
+    vessel: SecureVessel;
+    isSelected: boolean;
+    onSelect: () => void;
+    complianceLabel: Record<VesselComplianceStatus, string>;
+    categoryLabel: Record<VesselCategory, string>;
+}) {
+    const isAlert = v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE || v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT;
+    return (
+        <button
+            onClick={onSelect}
+            className={`w-full text-left p-3 rounded-xl border transition-colors ${
+                isSelected ? 'bg-[var(--os-surface-2)] border-[var(--os-border-strong)]' : 'border-[var(--os-border)] hover:bg-[rgba(255,255,255,0.02)]'
+            } ${isAlert ? 'border-l-2 border-l-[#EF4444]' : ''}`}
+        >
+            <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-[var(--os-surface-3)] border border-[var(--os-border)] flex items-center justify-center flex-shrink-0">
+                    <Ship className="w-4 h-4 text-[var(--os-text-muted)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[var(--os-text-primary)] truncate">{v.name}</p>
+                    <p className="text-[10px] text-[var(--os-text-muted)]">IMO: {v.imoNumber} · {v.flagCode}</p>
+                </div>
+                <OsBadge variant={COMPLIANCE_VARIANT[v.complianceStatus]} label={complianceLabel[v.complianceStatus]} />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-[var(--os-text-muted)]">
+                <span>{categoryLabel[v.category]} · {v.grossTonnageDwt.toLocaleString()} DWT</span>
+                <span className="font-medium">{v.portCall}</span>
+            </div>
+        </button>
+    );
+}
+
 function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onClose: () => void }) {
     const t = useTranslations('VesselsPage');
     return (
-        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-6 animate-in slide-in-from-bottom-2 duration-200">
+        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-200">
             <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_identity')}</p>
                 <p className="text-sm font-bold text-[var(--os-text-primary)]">{v.name}</p>

@@ -19,7 +19,7 @@ export function PendingActionsPanel() {
     return (
         <div className="flex flex-col gap-4">
             {/* Pending Actions card */}
-            <div className="os-card p-5">
+            <div className="os-card p-3 sm:p-5">
                 <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-4">{t('pending_actions_title')}</h3>
                 <div className="flex flex-col gap-2">
                     <ActionItem
@@ -50,7 +50,7 @@ export function PendingActionsPanel() {
             </div>
 
             {/* Project Certification mini */}
-            <div className="os-card p-5">
+            <div className="os-card p-3 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('project_certification_title')}</h3>
                     <span className="text-[10px] font-bold text-[#22C55E] bg-[rgba(34,197,94,0.08)] px-2 py-0.5 rounded-full border border-[#22C55E]/20">

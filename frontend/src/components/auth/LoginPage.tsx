@@ -109,7 +109,7 @@ export function LoginPage() {
                     </div>
                     <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 sm:gap-3">
                     {(['FR', 'EN', 'SO'] as const).map((lang) => (
                         <button
                             key={lang}
@@ -141,7 +141,7 @@ export function LoginPage() {
 
                     {/* Login card */}
                     <div
-                        className="w-full rounded-2xl p-6 border"
+                        className="w-full rounded-2xl p-4 sm:p-6 border"
                         style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}
                     >
                         {/* Warning */}
@@ -299,7 +299,7 @@ export function LoginPage() {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
+                    <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
                         <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>
                         <span>·</span>
                         <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_terms')}</a>

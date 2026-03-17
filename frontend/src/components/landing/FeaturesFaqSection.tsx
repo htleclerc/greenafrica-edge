@@ -15,10 +15,10 @@ export function FeaturesSection() {
     ];
 
     return (
-        <section className="py-24 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
+        <section className="pt-20 pb-16 sm:py-24 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-6" style={{ color: 'var(--ais-page-text)' }}>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6" style={{ color: 'var(--ais-page-text)' }}>
                         {t('design_title')}
                     </h2>
                     <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-dim)' }}>
@@ -26,9 +26,9 @@ export function FeaturesSection() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {features.map((feat, i) => (
-                        <div key={i} className="rounded-2xl p-8 shadow-sm hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                        <div key={i} className="rounded-2xl p-5 sm:p-8 shadow-sm hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <div className={`w-12 h-12 rounded-xl ${feat.bg} flex items-center justify-center mb-6`}>
                                 <feat.icon className={`w-5 h-5 ${feat.color}`} />
                             </div>
@@ -46,9 +46,9 @@ export function FaqSection() {
     const t = useTranslations('Landing');
 
     return (
-        <section className="py-24 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
+        <section className="pt-20 pb-16 sm:py-24 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-3xl mx-auto text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ais-page-text)' }}>{t('faq_title')}</h2>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ais-page-text)' }}>{t('faq_title')}</h2>
                 <p style={{ color: 'var(--ais-page-text-dim)' }}>{t('faq_subtitle')}</p>
 
                 {/* Mock Search Bar */}
@@ -58,9 +58,9 @@ export function FaqSection() {
                 </div>
             </div>
 
-            <div className="max-w-3xl mx-auto space-y-4">
+            <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
                 {faqItems.map((item, i) => (
-                    <div key={i} className="rounded-2xl p-6 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                    <div key={i} className="rounded-2xl p-4 sm:p-6 shadow-sm flex items-center justify-between gap-3 cursor-pointer hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <h4 className="font-semibold group-hover:text-emerald-700 transition-colors" style={{ color: 'var(--ais-page-text)' }}>{item.question}</h4>
                         <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
                             <Plus className="w-4 h-4" />

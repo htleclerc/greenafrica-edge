@@ -32,7 +32,7 @@ export function CarbonTaxVesselsSection() {
     };
 
     return (
-        <section className="py-16 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="py-12 sm:py-16 px-3 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">

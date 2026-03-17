@@ -8,19 +8,19 @@ export function SovereignSection() {
     const t = useTranslations('Landing');
 
     return (
-        <section className="py-20 px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
+        <section className="pt-20 pb-16 sm:py-20 px-4 sm:px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             {/* Decorative gradient */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-900/20 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
+            <div className="absolute top-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-emerald-900/20 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
 
             <div className="max-w-7xl mx-auto relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center">
 
                     {/* Left: Text Content */}
                     <div>
-                        <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
                             {t('sovereign_title')}
                         </h2>
-                        <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--ais-page-text-muted)' }}>
+                        <p className="text-sm sm:text-base leading-relaxed mb-6 sm:mb-8" style={{ color: 'var(--ais-page-text-muted)' }}>
                             {t('sovereign_desc')}
                         </p>
 
@@ -34,8 +34,8 @@ export function SovereignSection() {
                         </div>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sovereign_carbon_revenue')}</p>
                                 <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>{sovereignStats.carbonRevenue}</p>
                                 <p className="text-[10px] text-emerald-500 mt-1">{sovereignStats.carbonRevenueSubtitle}</p>
@@ -50,7 +50,7 @@ export function SovereignSection() {
 
                     {/* Right: AIS Tracking Preview */}
                     <div className="relative">
-                        <div className="rounded-2xl p-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                        <div className="rounded-2xl p-4 sm:p-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             {/* Map mockup header */}
                             <div className="flex items-center justify-between mb-4">
                                 <div>
@@ -68,7 +68,7 @@ export function SovereignSection() {
 
                             {/* Map mockup - dark ocean with grid */}
                             <div
-                                className="relative h-64 rounded-xl overflow-hidden"
+                                className="relative h-48 sm:h-56 md:h-64 rounded-xl overflow-hidden"
                                 style={{
                                     backgroundColor: 'var(--ais-page-bg)',
                                     backgroundImage: 'radial-gradient(circle at 60% 40%, rgba(16,185,129,0.08) 0%, transparent 60%), linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',

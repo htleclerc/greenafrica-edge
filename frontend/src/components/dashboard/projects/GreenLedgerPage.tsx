@@ -336,7 +336,7 @@ export function GreenLedgerPage() {
     }
 
     return (
-        <div className="px-6 py-6 flex flex-col gap-6">
+        <div className="px-3 sm:px-6 py-3 sm:py-6 flex flex-col gap-6">
 
             {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -363,12 +363,12 @@ export function GreenLedgerPage() {
 
             {/* Filters */}
             <div
-                className="flex flex-wrap gap-3 p-4 rounded-2xl"
+                className="flex flex-wrap gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl"
                 style={{ backgroundColor: 'var(--os-surface)', border: '1px solid var(--os-border)' }}
             >
                 {/* Search */}
                 <div
-                    className="flex items-center gap-2 flex-1 min-w-[220px] h-9 px-3 rounded-xl"
+                    className="flex items-center gap-2 w-full sm:flex-1 sm:min-w-[220px] h-9 px-3 rounded-xl"
                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
                 >
                     <Search className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--os-text-muted)' }} />
@@ -382,7 +382,7 @@ export function GreenLedgerPage() {
                 </div>
 
                 {/* Status tabs */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                     {STATUS_FILTERS.map((f) => (
                         <button
                             key={f.key}

@@ -41,11 +41,11 @@ export function PendingApprovalPage() {
 
                     {/* Status card */}
                     <div
-                        className="w-full rounded-2xl p-6 border"
+                        className="w-full rounded-2xl p-4 sm:p-6 border"
                         style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}
                     >
                         {/* Steps */}
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 sm:gap-3">
                             {/* Step 1 — completed */}
                             <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">

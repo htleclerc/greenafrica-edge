@@ -75,7 +75,7 @@ export function ForgotPasswordPage() {
 
                     {/* Card */}
                     <div
-                        className="w-full rounded-2xl p-6 border"
+                        className="w-full rounded-xl sm:rounded-2xl p-4 sm:p-6 border"
                         style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}
                     >
                         {sent ? (

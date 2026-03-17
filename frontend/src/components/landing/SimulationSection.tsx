@@ -55,7 +55,7 @@ export function SimulationSection() {
     );
 
     return (
-        <section className="py-20 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="pt-20 pb-16 sm:py-20 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background decorative element */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-900/10 rounded-full blur-[150px]" />
 
@@ -78,7 +78,7 @@ export function SimulationSection() {
                     <div className="inline-flex rounded-xl p-1" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <button
                             onClick={() => setMode('STATE')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'STATE'
+                            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${mode === 'STATE'
                                     ? 'bg-emerald-500 shadow-lg'
                                     : ''
                                 }`}
@@ -89,7 +89,7 @@ export function SimulationSection() {
                         </button>
                         <button
                             onClick={() => setMode('COMPANY')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'COMPANY'
+                            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${mode === 'COMPANY'
                                     ? 'bg-amber-500 text-amber-950 shadow-lg'
                                     : ''
                                 }`}
@@ -102,9 +102,9 @@ export function SimulationSection() {
                 </div>
 
                 {/* Simulation Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Left: Parameters Panel */}
-                    <div className="rounded-2xl p-8" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                    <div className="rounded-2xl p-5 sm:p-8" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <div className="flex items-center gap-3 mb-8">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'STATE' ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
                                 <Ship className={`w-4 h-4 ${mode === 'STATE' ? 'text-emerald-400' : 'text-amber-400'}`} />
@@ -236,10 +236,10 @@ export function SimulationSection() {
                         {/* Ship Type Toggle */}
                         <div>
                             <label className="text-sm font-medium block mb-3" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_ship_type_label')}</label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                 <button
                                     onClick={() => setShipType(ShipType.CARGO)}
-                                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${shipType === ShipType.CARGO
+                                    className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${shipType === ShipType.CARGO
                                             ? mode === 'STATE'
                                                 ? 'bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400'
                                                 : 'bg-amber-500/15 border-2 border-amber-500/40 text-amber-500'
@@ -252,7 +252,7 @@ export function SimulationSection() {
                                 </button>
                                 <button
                                     onClick={() => setShipType(ShipType.TANKER)}
-                                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${shipType === ShipType.TANKER
+                                    className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${shipType === ShipType.TANKER
                                             ? mode === 'STATE'
                                                 ? 'bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400'
                                                 : 'bg-amber-500/15 border-2 border-amber-500/40 text-amber-500'
@@ -268,7 +268,7 @@ export function SimulationSection() {
                     </div>
 
                     {/* Right: Results Panel */}
-                    <div className={`rounded-2xl p-8 border ${mode === 'STATE'
+                    <div className={`rounded-2xl p-5 sm:p-8 border ${mode === 'STATE'
                             ? 'bg-gradient-to-br from-yellow-500/10 via-emerald-500/5 to-transparent border-yellow-500/20'
                             : 'bg-gradient-to-br from-amber-500/10 via-red-500/5 to-transparent border-amber-500/20'
                         }`}>
@@ -280,7 +280,7 @@ export function SimulationSection() {
                                     {mode === 'STATE' ? t('sim_result_title') : t('sim_tax_liability_title')}
                                 </h3>
                             </div>
-                            <div className="text-5xl md:text-6xl font-bold mb-3 tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
+                            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
                                 {mode === 'STATE'
                                     ? formatCurrency(result.monthlyRevenue)
                                     : formatCurrency(companyResult.totalTaxLiability)
@@ -296,8 +296,8 @@ export function SimulationSection() {
                         </div>
 
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="rounded-xl p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 60%, transparent)', border: '1px solid var(--ais-page-border)' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                            <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 60%, transparent)', border: '1px solid var(--ais-page-border)' }}>
                                 <p className="text-[10px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                     {mode === 'STATE' ? t('sim_monthly_emissions') : t('sim_fleet_emissions')}
                                 </p>
@@ -364,7 +364,7 @@ export function SimulationSection() {
                         )}
 
                         {/* CTA Button */}
-                        <Link href="/login" className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group ${mode === 'STATE'
+                        <Link href="/login" className={`w-full py-3 sm:py-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 group ${mode === 'STATE'
                                 ? 'bg-yellow-500 hover:bg-yellow-400 text-yellow-950 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]'
                                 : 'bg-amber-600 hover:bg-amber-500 hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]'
                             }`}>

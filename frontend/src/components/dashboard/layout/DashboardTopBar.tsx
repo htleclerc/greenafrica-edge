@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Bell, ChevronDown, AlertCircle, LogOut, Settings, User,
     Shield, Ship, AlertTriangle, CreditCard, CheckCircle, Clock,
-    MapPin,
+    MapPin, Menu,
 } from 'lucide-react';
 import { DashboardKpis, SecureUser, UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
@@ -89,9 +89,10 @@ interface DashboardTopBarProps {
     unreadCount?: number;
     onMarkRead?: (id: string) => void;
     onMarkAllRead?: () => void;
+    onMobileMenuToggle?: () => void;
 }
 
-export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead }: DashboardTopBarProps) {
+export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead, onMobileMenuToggle }: DashboardTopBarProps) {
     const t = useTranslations('Dashboard');
     const isOnline   = kpis.systemStatus === 'ONLINE';
     const isDegraded = kpis.systemStatus === 'DEGRADED';
@@ -135,14 +136,21 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
 
     return (
         <header
-            className="fixed top-0 right-0 z-30 flex items-center h-14 px-4 gap-4"
+            className="fixed top-0 right-0 z-30 flex items-center h-14 px-2 sm:px-4 gap-1 sm:gap-2 md:gap-4 left-0 md:left-[var(--os-sidebar-w)] overflow-x-auto"
             style={{
-                left: 'var(--os-sidebar-w)',
                 backgroundColor: 'var(--os-surface)',
                 borderBottom: '1px solid var(--os-border)',
                 transition: 'left 220ms cubic-bezier(0.4,0,0.2,1)',
             }}
         >
+            {/* Mobile hamburger */}
+            <button
+                onClick={onMobileMenuToggle}
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] transition-colors md:hidden flex-shrink-0"
+            >
+                <Menu className="w-5 h-5" />
+            </button>
+
             {/* Brand + breadcrumb */}
             <div className="flex items-center gap-2 mr-2 min-w-0">
                 <span className="text-sm font-bold text-[var(--os-text-primary)] whitespace-nowrap">
@@ -150,14 +158,14 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                 </span>
                 {breadcrumb && (
                     <>
-                        <span className="text-[var(--os-text-muted)] text-sm">/</span>
-                        <span className="text-sm text-[var(--os-text-secondary)] truncate">{breadcrumb}</span>
+                        <span className="text-[var(--os-text-muted)] text-sm hidden sm:inline">/</span>
+                        <span className="text-sm text-[var(--os-text-secondary)] truncate hidden sm:inline">{breadcrumb}</span>
                     </>
                 )}
             </div>
 
-            {/* KPI Pills — center */}
-            <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto">
+            {/* KPI Pills — center (hidden on mobile) */}
+            <div className="hidden lg:flex flex-1 items-center justify-center gap-1 overflow-x-auto">
                 <KpiPill label={t('kpi_monthly_revenue')} value={formatUsd(kpis.monthlyRevenueUsd)} accent />
                 <KpiPill label={t('kpi_vessels_processed')} value={String(kpis.vesselsProcessed)} />
                 <KpiPill label={t('kpi_est_co2')} value={formatTons(kpis.estCo2TrackingTons)} />
@@ -200,7 +208,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                     {/* Notification dropdown */}
                     {notifOpen && (
                         <div
-                            className="absolute right-0 top-full mt-2 w-[360px] rounded-xl overflow-hidden shadow-2xl"
+                            className="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-[360px] max-w-[360px] rounded-xl overflow-hidden shadow-2xl"
                             style={{
                                 backgroundColor: 'var(--os-surface)',
                                 border: '1px solid var(--os-border)',
@@ -291,12 +299,14 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                     )}
                 </div>
 
-                {/* Locale + Skin (includes light/dark toggle) */}
-                <LocaleSwitcher variant="dashboard" />
-                <SkinSwitcher variant="topbar" />
+                {/* Locale + Skin (includes light/dark toggle) — hidden on small screens */}
+                <div className="hidden sm:contents">
+                    <LocaleSwitcher variant="dashboard" />
+                    <SkinSwitcher variant="topbar" />
+                </div>
 
                 {/* Separator */}
-                <div className="w-px h-6" style={{ backgroundColor: 'var(--os-border)' }} />
+                <div className="w-px h-6 hidden sm:block" style={{ backgroundColor: 'var(--os-border)' }} />
 
                 {/* ── Profile button + dropdown ── */}
                 <div className="relative" ref={profileRef}>

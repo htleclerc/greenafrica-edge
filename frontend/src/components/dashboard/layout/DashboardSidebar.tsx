@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
-    ChevronLeft, ChevronRight, Calculator, LogOut,
+    ChevronLeft, ChevronRight, Calculator, LogOut, X,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -42,9 +42,11 @@ interface DashboardSidebarProps {
     expanded: boolean;
     onToggle: () => void;
     pendingRegistrations?: number;
+    mobileOpen?: boolean;
+    onMobileClose?: () => void;
 }
 
-export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0 }: DashboardSidebarProps) {
+export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0, mobileOpen = false, onMobileClose }: DashboardSidebarProps) {
     const t = useTranslations('Dashboard');
     const { role } = useRole();
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
@@ -56,19 +58,40 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
 
     return (
         <>
+            {/* ── Mobile overlay backdrop ── */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/60 md:hidden"
+                    onClick={onMobileClose}
+                />
+            )}
+
             {/* ── Sidebar panel ── */}
             <aside
-                className="fixed left-0 top-0 bottom-0 z-40 flex flex-col py-3 overflow-hidden"
+                className={`fixed left-0 top-0 bottom-0 z-50 flex flex-col py-3 overflow-hidden transition-transform duration-300 ease-in-out md:translate-x-0 md:z-40 ${
+                    mobileOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
                 style={{
-                    width: expanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED,
+                    width: mobileOpen ? SIDEBAR_EXPANDED : (expanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED),
                     backgroundColor: 'var(--os-surface)',
                     borderRight: '1px solid var(--os-border)',
-                    transition: 'width 220ms cubic-bezier(0.4,0,0.2,1)',
+                    transition: 'width 220ms cubic-bezier(0.4,0,0.2,1), transform 300ms cubic-bezier(0.4,0,0.2,1)',
                 }}
             >
+                {/* Mobile close button */}
+                {mobileOpen && (
+                    <button
+                        onClick={onMobileClose}
+                        className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors md:hidden"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                )}
+
                 {/* Logo + app name */}
                 <Link
                     href="/dashboard"
+                    onClick={onMobileClose}
                     className="flex items-center gap-2.5 flex-shrink-0 mb-4 px-3 h-10"
                     title="Africgreen"
                 >
@@ -103,25 +126,25 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
 
                 {/* Nav */}
                 <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
-                    {expanded && (
+                    {(expanded || mobileOpen) && (
                         <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
                             {t('section_operations')}
                         </p>
                     )}
                     {opsItems.map((item) => (
-                        <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} t={t} />
+                        <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
                     ))}
 
                     {adminItems.length > 0 && (
                         <>
                             <div className="h-px my-2 mx-1 flex-shrink-0" style={{ backgroundColor: 'var(--os-border)' }} />
-                            {expanded && (
+                            {(expanded || mobileOpen) && (
                                 <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
                                     {t('section_administration')}
                                 </p>
                             )}
                             {adminItems.map((item) => (
-                                <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} t={t} />
+                                <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
                             ))}
                         </>
                     )}
@@ -132,8 +155,9 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                     <NavButton
                         item={{ key: 'settings', icon: <Settings className="w-5 h-5" />, href: '/dashboard/settings', labelKey: 'nav_settings' }}
                         isActive={activePage === 'settings'}
-                        expanded={expanded}
+                        expanded={expanded || mobileOpen}
                         t={t}
+                        onNavigate={onMobileClose}
                     />
 
                     {/* Logout */}
@@ -147,7 +171,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                             await supabase.auth.signOut();
                             window.location.href = '/login';
                         }}
-                        title={expanded ? undefined : t('sidebar_logout')}
+                        title={(expanded || mobileOpen) ? undefined : t('sidebar_logout')}
                         className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group hover:bg-[rgba(239,68,68,0.08)]"
                         style={{ color: 'var(--os-text-muted)', minHeight: 40 }}
                     >
@@ -157,14 +181,14 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                         <span
                             className="text-xs font-medium whitespace-nowrap overflow-hidden text-[#EF4444]"
                             style={{
-                                maxWidth: expanded ? 140 : 0,
-                                opacity: expanded ? 1 : 0,
+                                maxWidth: (expanded || mobileOpen) ? 140 : 0,
+                                opacity: (expanded || mobileOpen) ? 1 : 0,
                                 transition: 'max-width 220ms cubic-bezier(0.4,0,0.2,1), opacity 150ms ease',
                             }}
                         >
                             {t('sidebar_logout')}
                         </span>
-                        {!expanded && (
+                        {!(expanded || mobileOpen) && (
                             <span
                                 className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg whitespace-nowrap text-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50"
                                 style={{
@@ -186,7 +210,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                             className="text-[10px] font-medium whitespace-nowrap"
                             style={{
                                 color: 'var(--os-text-muted)',
-                                opacity: expanded ? 1 : 0,
+                                opacity: (expanded || mobileOpen) ? 1 : 0,
                                 transition: 'opacity 150ms ease',
                             }}
                         >
@@ -196,11 +220,11 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                 </div>
             </aside>
 
-            {/* ── Toggle tab — floats on the right edge of the sidebar ── */}
+            {/* ── Toggle tab — floats on the right edge of the sidebar (desktop only) ── */}
             <button
                 onClick={onToggle}
                 title={expanded ? t('sidebar_collapse') : t('sidebar_expand')}
-                className="fixed z-50 flex items-center justify-center rounded-r-lg transition-all"
+                className="fixed z-50 hidden md:flex items-center justify-center rounded-r-lg transition-all"
                 style={{
                     left: expanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED,
                     top: '50%',
@@ -233,13 +257,15 @@ interface NavButtonProps {
     isActive: boolean;
     expanded: boolean;
     t: (key: string) => string;
+    onNavigate?: () => void;
 }
 
-function NavButton({ item, isActive, expanded, t }: NavButtonProps) {
+function NavButton({ item, isActive, expanded, t, onNavigate }: NavButtonProps) {
     const label = t(item.labelKey);
     return (
         <Link
             href={item.href}
+            onClick={onNavigate}
             title={expanded ? undefined : label}
             className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group"
             style={{
