@@ -15,7 +15,17 @@
       "Bash(while IFS= read -r f)",
       "Bash(do sed:*)",
       "Bash(done)",
-      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend -name *.json -path *message*)"
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend -name *.json -path *message*)",
+      "Bash(grep -n \"bg-\\\\[#\\\\|text-white\\\\|bg-white\\\\|#0A1110\\\\|#111C18\\\\|#0D1512\\\\|#070D0B\\\\|#050908\\\\|text-slate\\\\|bg-slate\\\\|border-white\" frontend/src/app/projects/[id]/page.tsx)",
+      "Bash(node -e \":*)",
+      "Bash(curl -s http://localhost:3300)",
+      "Bash(curl -s -b NEXT_LOCALE=fr http://localhost:3300)",
+      "Bash(curl -s -b NEXT_LOCALE=pt http://localhost:3300)",
+      "Bash(curl -s -b NEXT_LOCALE=sw http://localhost:3300)",
+      "Bash(node -e \"const j=require\\(''./messages/en.json''\\); console.log\\(Object.keys\\(j\\).join\\(''\\\\n''\\)\\)\")",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/domain -type f -name *.ts)",
+      "Bash(node -e \"const p = require\\(''./node_modules/@supabase/supabase-js/package.json''\\); console.log\\(''supabase-js:'', p.version\\); const s = require\\(''./node_modules/@supabase/ssr/package.json''\\); console.log\\(''ssr:'', s.version\\)\")"
     ]
   }
 }

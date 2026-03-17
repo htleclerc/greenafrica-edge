@@ -27,10 +27,10 @@ export function RadarDashboard() {
     };
 
     return (
-        <section className="pt-24 pb-12 px-6 h-screen flex flex-col bg-[#050908]">
+        <section className="pt-24 pb-12 px-6 h-screen flex flex-col" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">{t('title')}</h1>
-                <p className="text-slate-400 text-sm max-w-2xl">{t('subtitle')}</p>
+                <h1 className="text-3xl font-bold mb-2 tracking-tight" style={{ color: 'var(--ais-page-text)' }}>{t('title')}</h1>
+                <p className="text-sm max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('subtitle')}</p>
             </div>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0 relative">
@@ -38,47 +38,48 @@ export function RadarDashboard() {
                 <div className="lg:col-span-1 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
                     {/* Global Stats */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-[#0A1110] border border-white/5 rounded-2xl p-4">
+                        <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <Ship className="w-5 h-5 text-emerald-500 mb-3" />
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">{t('stats_total_vessels')}</p>
-                            <p className="text-2xl font-bold text-white">{radarStats.totalVessels}</p>
+                            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('stats_total_vessels')}</p>
+                            <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>{radarStats.totalVessels}</p>
                         </div>
-                        <div className="bg-[#0A1110] border border-white/5 rounded-2xl p-4">
+                        <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <AlertTriangle className="w-5 h-5 text-red-500 mb-3" />
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">{t('stats_active_alerts')}</p>
+                            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('stats_active_alerts')}</p>
                             <p className="text-2xl font-bold text-red-400">{radarStats.activeAlerts}</p>
                         </div>
-                        <div className="col-span-2 bg-[#0A1110] border border-white/5 rounded-2xl p-4 relative overflow-hidden group">
+                        <div className="col-span-2 rounded-2xl p-4 relative overflow-hidden group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full blur-[30px] transition-transform group-hover:scale-110" />
                             <div className="absolute right-6 top-6">
                                 <DollarSign className="w-6 h-6 text-emerald-500/50" />
                             </div>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">{t('stats_revenue_risk')}</p>
+                            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('stats_revenue_risk')}</p>
                             <p className="text-3xl font-bold text-emerald-400">${radarStats.revenueAtRiskUsd.toLocaleString()}</p>
                         </div>
-                        <div className="col-span-2 bg-[#0A1110] border border-white/5 rounded-2xl p-4">
+                        <div className="col-span-2 rounded-2xl p-4" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <Activity className="w-5 h-5 text-blue-500 mb-3" />
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">{t('stats_co2_tracked')}</p>
+                            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('stats_co2_tracked')}</p>
                             <p className="text-xl font-bold text-blue-400">{radarStats.co2Tracked.toLocaleString()} tCO₂</p>
                         </div>
                     </div>
 
                     {/* Selected Vessel Inspector */}
                     {selectedVessel ? (
-                        <div className="bg-[#0A1110] border border-emerald-500/20 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_30px_rgba(16,185,129,0.05)] animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="p-5 border-b border-white/5 bg-white/[0.02] flex justify-between items-start">
+                        <div className="rounded-2xl overflow-hidden flex flex-col shadow-[0_0_30px_rgba(16,185,129,0.05)] animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                            <div className="p-5 flex justify-between items-start" style={{ borderBottom: '1px solid var(--ais-page-border)', backgroundColor: 'var(--ais-page-surface)' }}>
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${selectedVessel.flagCode === 'SO' ? 'bg-blue-500 text-white' : 'bg-white/10 text-slate-300'}`}>
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${selectedVessel.flagCode === 'SO' ? 'bg-blue-500 text-white' : 'text-white'}`} style={selectedVessel.flagCode !== 'SO' ? { backgroundColor: 'var(--ais-page-surface)', color: 'var(--ais-page-text-secondary)' } : undefined}>
                                             {selectedVessel.flagCode}
                                         </span>
-                                        <h3 className="text-lg font-bold text-white">{selectedVessel.name}</h3>
+                                        <h3 className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{selectedVessel.name}</h3>
                                     </div>
-                                    <p className="text-xs text-slate-400">IMO: {selectedVessel.imo}</p>
+                                    <p className="text-xs" style={{ color: 'var(--ais-page-text-muted)' }}>IMO: {selectedVessel.imo}</p>
                                 </div>
                                 <button
                                     onClick={() => setSelectedVessel(null)}
-                                    className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 transition-colors"
+                                    className="p-1.5 rounded-lg transition-colors"
+                                    style={{ color: 'var(--ais-page-text-muted)' }}
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -94,7 +95,7 @@ export function RadarDashboard() {
                                                 <StatusIcon className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-1">Status</p>
+                                                <p className="text-[10px] uppercase font-bold tracking-widest mb-1" style={{ color: 'var(--ais-page-text-muted)' }}>Status</p>
                                                 <p className={`font-bold ${style.text}`}>
                                                     {t(`vessel_status_${selectedVessel.status.toLowerCase()}`)}
                                                 </p>
@@ -105,19 +106,19 @@ export function RadarDashboard() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{t('vessel_type_cargo')}</p>
-                                        <p className="text-sm font-medium text-white">{selectedVessel.type}</p>
+                                        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('vessel_type_cargo')}</p>
+                                        <p className="text-sm font-medium" style={{ color: 'var(--ais-page-text)' }}>{selectedVessel.type}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{t('tooltip_speed')}</p>
-                                        <p className="text-sm font-medium text-white">{selectedVessel.speedKnot} kn</p>
+                                        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('tooltip_speed')}</p>
+                                        <p className="text-sm font-medium" style={{ color: 'var(--ais-page-text)' }}>{selectedVessel.speedKnot} kn</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{t('tooltip_co2')}</p>
-                                        <p className="text-sm font-medium text-white">{selectedVessel.estimatedCo2} t</p>
+                                        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('tooltip_co2')}</p>
+                                        <p className="text-sm font-medium" style={{ color: 'var(--ais-page-text)' }}>{selectedVessel.estimatedCo2} t</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{t('tooltip_due')}</p>
+                                        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('tooltip_due')}</p>
                                         <p className="text-sm font-bold text-emerald-400">${selectedVessel.dueAmountUsd.toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -133,11 +134,11 @@ export function RadarDashboard() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 bg-[#0A1110] border border-white/5 rounded-2xl flex flex-col items-center justify-center p-8 text-center border-dashed">
-                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                <Ship className="w-5 h-5 text-slate-500" />
+                        <div className="flex-1 rounded-2xl flex flex-col items-center justify-center p-8 text-center border-dashed" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px dashed var(--ais-page-border)' }}>
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--ais-page-surface)' }}>
+                                <Ship className="w-5 h-5" style={{ color: 'var(--ais-page-text-dim)' }} />
                             </div>
-                            <p className="text-sm text-slate-400 font-medium">Select a vessel on the map to view detailed compliance data.</p>
+                            <p className="text-sm font-medium" style={{ color: 'var(--ais-page-text-muted)' }}>Select a vessel on the map to view detailed compliance data.</p>
                         </div>
                     )}
                 </div>

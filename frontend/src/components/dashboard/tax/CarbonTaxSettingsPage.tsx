@@ -1,12 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Download, Plus, Save, AlertTriangle, CheckCircle, Edit2 } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
-import {
-    mockTaxConfigs, mockTransactions, mockExemptions, mockKpis,
-} from '@/mock/datas/secureMock';
+import { useTaxConfigs } from '@/hooks/useTaxConfigs';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useExemptions } from '@/hooks/useExemptions';
+import { useKpis } from '@/hooks/useKpis';
 import {
     TaxConfiguration, VesselCategory, JurisdictionZone,
     TransactionType, TransactionStatus,
@@ -42,7 +44,13 @@ const TX_STATUS_LABEL: Record<TransactionStatus, string> = {
 };
 
 export function CarbonTaxSettingsPage() {
-    const [configs, setConfigs] = React.useState<TaxConfiguration[]>(mockTaxConfigs);
+    const t = useTranslations('TaxSettingsPage');
+    const { data: taxConfigs } = useTaxConfigs();
+    const { data: transactions } = useTransactions();
+    const { data: exemptions } = useExemptions();
+    const { data: kpis } = useKpis();
+    const [configs, setConfigs] = React.useState<TaxConfiguration[]>(taxConfigs);
+    React.useEffect(() => { setConfigs(taxConfigs); }, [taxConfigs]);
     const [editId, setEditId]   = React.useState<string | null>(null);
     const [saved, setSaved]     = React.useState(false);
 
@@ -60,13 +68,13 @@ export function CarbonTaxSettingsPage() {
         setTimeout(() => setSaved(false), 3000);
     }
 
-    const totalRevenueMtd = mockTransactions
-        .filter((t) => t.status === TransactionStatus.PAID)
-        .reduce((s, t) => s + t.taxAmountUsd, 0);
-    const totalPending = mockTransactions
-        .filter((t) => t.status === TransactionStatus.PENDING || t.status === TransactionStatus.OVERDUE)
-        .reduce((s, t) => s + t.taxAmountUsd, 0);
-    const vesselsTaxed = Math.round((mockTransactions.filter(t => t.status === TransactionStatus.PAID).length / mockTransactions.length) * 100);
+    const totalRevenueMtd = transactions
+        .filter((tx) => tx.status === TransactionStatus.PAID)
+        .reduce((s, tx) => s + tx.taxAmountUsd, 0);
+    const totalPending = transactions
+        .filter((tx) => tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE)
+        .reduce((s, tx) => s + tx.taxAmountUsd, 0);
+    const vesselsTaxed = Math.round((transactions.filter(tx => tx.status === TransactionStatus.PAID).length / transactions.length) * 100);
 
     return (
         <div className="p-5 flex flex-col gap-5">
@@ -74,31 +82,31 @@ export function CarbonTaxSettingsPage() {
             <div className="flex items-start justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <h1 className="text-xl font-bold text-[var(--os-text-primary)]">Carbon Tax Management</h1>
+                        <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('title')}</h1>
                         <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[rgba(0,217,126,0.1)] text-[#00D97E] border border-[#00D97E]/20">
                             LIVE
                         </span>
                     </div>
                     <p className="text-xs text-[var(--os-text-muted)]">
-                        Configure rates, monitor collection, and manage maritime exemptions.
+                        {t('subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <OsButton variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
-                        Export Report
+                        {t('export_report')}
                     </OsButton>
                     <OsButton variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />}>
-                        New Regulation
+                        {t('new_regulation')}
                     </OsButton>
                 </div>
             </div>
 
             {/* KPI row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard label="Total Revenue (MTD)" value={`$${(totalRevenueMtd / 1000).toFixed(1)}K`} sub="Collection Status" color="#00D97E" tag="Active" />
-                <KpiCard label="% Vessels Taxed"     value={`${vesselsTaxed}%`}            sub="On Target"           color="#38BDF8" tag="On Track" />
-                <KpiCard label="Active Exemptions"   value={String(mockExemptions.length)} sub="This Quarter"         color="#F59E0B" tag={`${mockKpis.pendingReviewCount} Pending`} />
-                <KpiCard label="Unpaid Obligations"  value={`$${(totalPending / 1000).toFixed(1)}K`} sub="Overdue + Pending" color="#EF4444" tag="Urgent" />
+                <KpiCard label={t('kpi_total_revenue_mtd')} value={`$${(totalRevenueMtd / 1000).toFixed(1)}K`} sub={t('kpi_collection_status')} color="#00D97E" tag={t('kpi_active')} />
+                <KpiCard label={t('kpi_vessels_taxed')}     value={`${vesselsTaxed}%`}            sub={t('kpi_on_target')}           color="#38BDF8" tag={t('kpi_on_track')} />
+                <KpiCard label={t('kpi_active_exemptions')}   value={String(exemptions.length)} sub={t('kpi_this_quarter')}         color="#F59E0B" tag={t('kpi_pending', { count: kpis.pendingReviewCount })} />
+                <KpiCard label={t('kpi_unpaid_obligations')}  value={`$${(totalPending / 1000).toFixed(1)}K`} sub={t('kpi_overdue_pending')} color="#EF4444" tag={t('kpi_urgent')} />
             </div>
 
             {/* Body: Tax Config + Right panel */}
@@ -108,19 +116,19 @@ export function CarbonTaxSettingsPage() {
                     <div className="os-card overflow-hidden">
                         <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">
                             <div>
-                                <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Tax Rate Configuration</h3>
+                                <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('tax_rate_config')}</h3>
                                 <p className="text-[10px] text-[var(--os-text-muted)]">
-                                    FY 2024 Current — Rates per tCO₂ segmented by vessel category
+                                    {t('tax_rate_config_desc')}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 {saved && (
                                     <span className="flex items-center gap-1 text-xs text-[#00D97E]">
-                                        <CheckCircle className="w-3.5 h-3.5" /> Saved
+                                        <CheckCircle className="w-3.5 h-3.5" /> {t('saved')}
                                     </span>
                                 )}
                                 <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave}>
-                                    Save & Publish
+                                    {t('save_publish')}
                                 </OsButton>
                             </div>
                         </div>
@@ -128,7 +136,7 @@ export function CarbonTaxSettingsPage() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-[var(--os-border)] bg-[var(--os-surface-2)]">
-                                        {['Vessel Category', 'Jurisdiction Zone', 'Base Rate ($/tCO₂)', 'Multiplier', 'Effective Rate', 'Status', ''].map((h) => (
+                                        {[t('col_vessel_category'), t('col_jurisdiction_zone'), t('col_base_rate'), t('col_multiplier'), t('col_effective_rate'), t('col_status'), ''].map((h) => (
                                             <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] whitespace-nowrap">{h}</th>
                                         ))}
                                     </tr>
@@ -200,28 +208,28 @@ export function CarbonTaxSettingsPage() {
                     {/* Transaction Log */}
                     <div className="os-card overflow-hidden">
                         <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Transaction Log</h3>
+                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('transaction_log')}</h3>
                             <div className="flex items-center gap-2">
                                 <select className="h-8 px-2 rounded-lg bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] focus:outline-none">
-                                    <option>All Statuses</option>
-                                    <option>Paid</option>
-                                    <option>Pending</option>
-                                    <option>Overdue</option>
+                                    <option>{t('filter_all_statuses')}</option>
+                                    <option>{t('filter_paid')}</option>
+                                    <option>{t('filter_pending')}</option>
+                                    <option>{t('filter_overdue')}</option>
                                 </select>
-                                <OsButton variant="secondary" size="sm" icon={<Download className="w-3 h-3" />}>Export CSV</OsButton>
+                                <OsButton variant="secondary" size="sm" icon={<Download className="w-3 h-3" />}>{t('export_csv')}</OsButton>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-[var(--os-border)] bg-[var(--os-surface-2)]">
-                                        {['Transaction ID', 'Vessel Name', 'Type', 'Emissions (t)', 'Tax Amount', 'Status', 'Date'].map((h) => (
+                                        {[t('col_transaction_id'), t('col_vessel_name'), t('col_type'), t('col_emissions'), t('col_tax_amount'), t('col_status'), t('col_date')].map((h) => (
                                             <th key={h} className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] whitespace-nowrap">{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {mockTransactions.map((tx) => {
+                                    {transactions.map((tx) => {
                                         const date = new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                                         return (
                                             <tr key={tx.id} className="border-b border-[var(--os-border)] last:border-0 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
@@ -245,7 +253,7 @@ export function CarbonTaxSettingsPage() {
                                 </tbody>
                             </table>
                             <div className="px-5 py-2.5 border-t border-[var(--os-border)] text-[10px] text-[var(--os-text-muted)]">
-                                Showing 1–{mockTransactions.length} of {mockTransactions.length} transactions
+                                {t('showing_transactions', { from: 1, to: transactions.length, total: transactions.length })}
                             </div>
                         </div>
                     </div>
@@ -255,29 +263,29 @@ export function CarbonTaxSettingsPage() {
                 <div className="flex flex-col gap-4">
                     {/* Critical alerts */}
                     <div className="os-card p-5">
-                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-3">Critical Alerts</h3>
+                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-3">{t('critical_alerts')}</h3>
                         <div className="flex flex-col gap-2">
-                            {mockTransactions
-                                .filter((t) => t.status === TransactionStatus.OVERDUE)
-                                .map((t) => (
-                                    <div key={t.id} className="p-3 rounded-xl bg-[rgba(239,68,68,0.06)] border border-[#EF4444]/20">
+                            {transactions
+                                .filter((tx) => tx.status === TransactionStatus.OVERDUE)
+                                .map((tx) => (
+                                    <div key={tx.id} className="p-3 rounded-xl bg-[rgba(239,68,68,0.06)] border border-[#EF4444]/20">
                                         <div className="flex items-center gap-2 mb-1">
                                             <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
-                                            <span className="text-[10px] font-bold text-[#EF4444] uppercase tracking-wide">Unpaid Tax Obligation</span>
+                                            <span className="text-[10px] font-bold text-[#EF4444] uppercase tracking-wide">{t('unpaid_tax_obligation')}</span>
                                         </div>
-                                        <p className="text-[11px] text-[var(--os-text-muted)]">{t.vesselName}</p>
-                                        <p className="text-xs font-bold text-[#EF4444] mt-0.5">${t.taxAmountUsd.toLocaleString()} overdue</p>
-                                        <a href={`/dashboard/invoices?tx=${t.id}`} className="text-[10px] text-[#EF4444] hover:underline font-semibold mt-1 inline-block">
-                                            Generate Invoice →
+                                        <p className="text-[11px] text-[var(--os-text-muted)]">{tx.vesselName}</p>
+                                        <p className="text-xs font-bold text-[#EF4444] mt-0.5">{t('amount_overdue', { amount: `$${tx.taxAmountUsd.toLocaleString()}` })}</p>
+                                        <a href={`/dashboard/invoices?tx=${tx.id}`} className="text-[10px] text-[#EF4444] hover:underline font-semibold mt-1 inline-block">
+                                            {t('generate_invoice')}
                                         </a>
                                     </div>
                                 ))}
                             <div className="p-3 rounded-xl bg-[rgba(245,158,11,0.06)] border border-[#F59E0B]/20">
                                 <div className="flex items-center gap-2 mb-1">
                                     <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B]" />
-                                    <span className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wide">Exemption Anomaly</span>
+                                    <span className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wide">{t('exemption_anomaly')}</span>
                                 </div>
-                                <p className="text-[11px] text-[var(--os-text-muted)]">2 exemptions expire within 30 days — renewal required.</p>
+                                <p className="text-[11px] text-[var(--os-text-muted)]">{t('exemption_anomaly_desc')}</p>
                             </div>
                         </div>
                     </div>
@@ -285,22 +293,22 @@ export function CarbonTaxSettingsPage() {
                     {/* Exemptions */}
                     <div className="os-card p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Exemptions</h3>
-                            <span className="text-[10px] font-bold text-[var(--os-text-muted)]">{mockExemptions.length} Active</span>
+                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('exemptions')}</h3>
+                            <span className="text-[10px] font-bold text-[var(--os-text-muted)]">{t('exemptions_active', { count: exemptions.length })}</span>
                         </div>
                         <div className="flex flex-col gap-2">
-                            {mockExemptions.map((ex) => (
+                            {exemptions.map((ex) => (
                                 <div key={ex.id} className="flex items-start justify-between p-3 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] transition-colors">
                                     <div>
                                         <p className="text-xs font-semibold text-[var(--os-text-primary)]">{ex.vesselName}</p>
                                         <p className="text-[10px] text-[var(--os-text-muted)]">{ex.reason.replace('_', ' ')}</p>
                                         <p className="text-[10px] text-[var(--os-text-muted)]">Until: {ex.validUntil}</p>
                                     </div>
-                                    <button className="text-[10px] font-semibold text-[#38BDF8] hover:underline mt-0.5">Review</button>
+                                    <button className="text-[10px] font-semibold text-[#38BDF8] hover:underline mt-0.5">{t('review')}</button>
                                 </div>
                             ))}
                             <OsButton variant="outline" size="sm" icon={<Plus className="w-3 h-3" />} className="w-full">
-                                Request Exemption
+                                {t('request_exemption')}
                             </OsButton>
                         </div>
                     </div>
@@ -308,8 +316,8 @@ export function CarbonTaxSettingsPage() {
                     {/* Revenue trend mini */}
                     <div className="os-card p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Revenue Trend</h3>
-                            <a href="/admin/revenue" className="text-[10px] text-[#38BDF8] hover:underline">Full Report →</a>
+                            <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('revenue_trend')}</h3>
+                            <a href="/admin/revenue" className="text-[10px] text-[#38BDF8] hover:underline">{t('full_report')}</a>
                         </div>
                         <div className="flex flex-col gap-1.5">
                             {[

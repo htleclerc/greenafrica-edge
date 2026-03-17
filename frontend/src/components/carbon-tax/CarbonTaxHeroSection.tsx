@@ -11,7 +11,7 @@ export function CarbonTaxHeroSection() {
     const t = useTranslations('CarbonTax');
 
     return (
-        <section className="relative pt-28 pb-16 px-6 bg-[#0A1110] overflow-hidden">
+        <section className="relative pt-28 pb-16 px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background gradients */}
             <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-emerald-900/15 rounded-full blur-[150px]" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-yellow-900/10 rounded-full blur-[120px]" />
@@ -35,13 +35,13 @@ export function CarbonTaxHeroSection() {
                         </span>
                         {t('hero_badge')}
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
                         {t('hero_title_line1')}{' '}
                         <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-yellow-400 bg-clip-text text-transparent">
                             {t('hero_title_line2')}
                         </span>
                     </h1>
-                    <p className="text-slate-400 text-base max-w-2xl leading-relaxed">
+                    <p className="text-base max-w-2xl leading-relaxed" style={{ color: 'var(--ais-page-text-muted)' }}>
                         {t('hero_subtitle')}
                     </p>
                 </div>
@@ -54,7 +54,8 @@ export function CarbonTaxHeroSection() {
                         return (
                             <div
                                 key={kpi.key}
-                                className="bg-[#111C18] rounded-2xl p-6 border border-white/5 hover:border-emerald-500/20 transition-all duration-300 group"
+                                className="rounded-2xl p-6 hover:border-emerald-500/20 transition-all duration-300 group"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 <div className="flex items-center justify-between mb-4">
                                     <div
@@ -71,9 +72,9 @@ export function CarbonTaxHeroSection() {
                                         {kpi.positive ? '▲' : '▼'} {kpi.change.split(' ')[0]}
                                     </span>
                                 </div>
-                                <p className="text-2xl font-bold text-white mb-1">{kpi.value}</p>
-                                <p className="text-xs text-slate-500 font-medium">{t(kpi.key)}</p>
-                                <p className="text-[10px] text-slate-600 mt-1">{kpi.change}</p>
+                                <p className="text-2xl font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>{kpi.value}</p>
+                                <p className="text-xs font-medium" style={{ color: 'var(--ais-page-text-dim)' }}>{t(kpi.key)}</p>
+                                <p className="text-[10px] mt-1" style={{ color: 'var(--ais-page-text-dim)' }}>{kpi.change}</p>
                             </div>
                         );
                     })}

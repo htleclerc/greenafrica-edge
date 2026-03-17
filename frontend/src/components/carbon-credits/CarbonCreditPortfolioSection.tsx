@@ -24,7 +24,7 @@ export function CarbonCreditPortfolioSection() {
     const maxIssued = Math.max(...portfolioTimeSeries.map((d) => d.issued));
 
     return (
-        <section className="py-16 px-6 bg-[#0D1512] relative overflow-hidden">
+        <section className="py-16 px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-teal-900/10 rounded-full blur-[150px] translate-x-1/3" />
 
             <div className="max-w-7xl mx-auto relative z-10">
@@ -35,35 +35,35 @@ export function CarbonCreditPortfolioSection() {
                             <TrendingUp className="w-3 h-3" />
                             {t('portfolio_badge')}
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('portfolio_title')}</h2>
-                        <p className="text-slate-400 text-sm">{t('portfolio_subtitle')}</p>
+                        <h2 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--ais-page-text)' }}>{t('portfolio_title')}</h2>
+                        <p className="text-sm" style={{ color: 'var(--ais-page-text-muted)' }}>{t('portfolio_subtitle')}</p>
                     </div>
 
                     {/* Summary cards */}
                     <div className="flex gap-3 shrink-0 flex-wrap">
-                        <div className="bg-[#111C18] rounded-xl p-4 border border-white/5 text-center min-w-[110px]">
-                            <p className="text-[10px] text-slate-500 mb-1">{t('portfolio_total_issued')}</p>
-                            <p className="text-xl font-bold text-white">{formatK(last.issued)}</p>
+                        <div className="rounded-xl p-4 text-center min-w-[110px]" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                            <p className="text-[10px] mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('portfolio_total_issued')}</p>
+                            <p className="text-xl font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatK(last.issued)}</p>
                         </div>
-                        <div className="bg-[#111C18] rounded-xl p-4 border border-white/5 text-center min-w-[110px]">
-                            <p className="text-[10px] text-slate-500 mb-1">{t('portfolio_growth')}</p>
+                        <div className="rounded-xl p-4 text-center min-w-[110px]" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                            <p className="text-[10px] mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('portfolio_growth')}</p>
                             <p className="text-xl font-bold text-teal-400">+{issuedGrowth}%</p>
                         </div>
-                        <div className="bg-[#111C18] rounded-xl p-4 border border-white/5 text-center min-w-[110px]">
-                            <p className="text-[10px] text-slate-500 mb-1">{t('portfolio_retirement_rate')}</p>
+                        <div className="rounded-xl p-4 text-center min-w-[110px]" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                            <p className="text-[10px] mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('portfolio_retirement_rate')}</p>
                             <p className="text-xl font-bold text-indigo-400">{retirementRate}%</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Chart area */}
-                <div className="bg-[#111C18] rounded-2xl p-6 border border-white/5">
+                <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                     {/* Legend */}
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                         {Object.entries(SERIES_COLORS).map(([key, { bar, label }]) => (
                             <div key={key} className="flex items-center gap-1.5">
                                 <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: bar }} />
-                                <span className="text-[11px] text-slate-400">{label}</span>
+                                <span className="text-[11px]" style={{ color: 'var(--ais-page-text-muted)' }}>{label}</span>
                             </div>
                         ))}
                     </div>
@@ -81,7 +81,7 @@ export function CarbonCreditPortfolioSection() {
                                         <div key={d.month} className="flex-1 flex flex-col items-center gap-0 group relative">
                                             {/* Tooltip */}
                                             <div className="hidden group-hover:flex flex-col items-center mb-1 z-10 absolute bottom-full">
-                                                <div className="bg-[#0A1110] border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] text-white whitespace-nowrap shadow-xl text-left">
+                                                <div className="rounded-lg px-2.5 py-1.5 text-[9px] whitespace-nowrap shadow-xl text-left" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text)' }}>
                                                     <p className="font-bold mb-0.5">{d.month}</p>
                                                     <p style={{ color: SERIES_COLORS.issued.bar }}>Issued: {formatK(d.issued)}</p>
                                                     <p style={{ color: SERIES_COLORS.retired.bar }}>Retired: {formatK(d.retired)}</p>
@@ -123,7 +123,7 @@ export function CarbonCreditPortfolioSection() {
                             {/* Month labels */}
                             <div className="flex items-center gap-2 mt-2">
                                 {portfolioTimeSeries.map((d) => (
-                                    <div key={d.month} className="flex-1 text-center text-[9px] text-slate-600 font-medium">
+                                    <div key={d.month} className="flex-1 text-center text-[9px] font-medium" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         {d.month}
                                     </div>
                                 ))}

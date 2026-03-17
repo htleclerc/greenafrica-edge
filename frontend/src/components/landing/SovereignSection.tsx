@@ -8,7 +8,7 @@ export function SovereignSection() {
     const t = useTranslations('Landing');
 
     return (
-        <section className="py-20 px-6 bg-[#0D1512] relative overflow-hidden">
+        <section className="py-20 px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             {/* Decorative gradient */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-900/20 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
 
@@ -17,10 +17,10 @@ export function SovereignSection() {
 
                     {/* Left: Text Content */}
                     <div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
                             {t('sovereign_title')}
                         </h2>
-                        <p className="text-slate-400 text-base leading-relaxed mb-8">
+                        <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--ais-page-text-muted)' }}>
                             {t('sovereign_desc')}
                         </p>
 
@@ -28,34 +28,34 @@ export function SovereignSection() {
                             {['sovereign_feat1', 'sovereign_feat2', 'sovereign_feat3'].map((key) => (
                                 <div key={key} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                                    <span className="text-sm text-slate-300 font-medium">{t(key)}</span>
+                                    <span className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t(key)}</span>
                                 </div>
                             ))}
                         </div>
 
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-[#111C18] rounded-xl p-5 border border-white/5">
-                                <p className="text-xs text-slate-500 font-medium mb-1">{t('sovereign_carbon_revenue')}</p>
-                                <p className="text-2xl font-bold text-white">{sovereignStats.carbonRevenue}</p>
+                            <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sovereign_carbon_revenue')}</p>
+                                <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>{sovereignStats.carbonRevenue}</p>
                                 <p className="text-[10px] text-emerald-500 mt-1">{sovereignStats.carbonRevenueSubtitle}</p>
                             </div>
-                            <div className="bg-[#111C18] rounded-xl p-5 border border-white/5">
-                                <p className="text-xs text-slate-500 font-medium mb-1">{t('sovereign_active_vessels')}</p>
-                                <p className="text-2xl font-bold text-white">{sovereignStats.activeVessels}</p>
-                                <p className="text-[10px] text-slate-400 mt-1">{sovereignStats.activeVesselsSubtitle}</p>
+                            <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sovereign_active_vessels')}</p>
+                                <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>{sovereignStats.activeVessels}</p>
+                                <p className="text-[10px] mt-1" style={{ color: 'var(--ais-page-text-muted)' }}>{sovereignStats.activeVesselsSubtitle}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Right: AIS Tracking Preview */}
                     <div className="relative">
-                        <div className="bg-[#111C18] rounded-2xl p-6 border border-white/5 overflow-hidden">
+                        <div className="rounded-2xl p-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             {/* Map mockup header */}
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h4 className="text-sm font-bold text-white">{t('sovereign_tracking_title')}</h4>
-                                    <p className="text-[10px] text-slate-500 mt-0.5">Berbera Maritime Zone</p>
+                                    <h4 className="text-sm font-bold" style={{ color: 'var(--ais-page-text)' }}>{t('sovereign_tracking_title')}</h4>
+                                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>Berbera Maritime Zone</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="relative flex h-2 w-2">
@@ -68,8 +68,9 @@ export function SovereignSection() {
 
                             {/* Map mockup - dark ocean with grid */}
                             <div
-                                className="relative h-64 rounded-xl bg-[#0A1A18] overflow-hidden"
+                                className="relative h-64 rounded-xl overflow-hidden"
                                 style={{
+                                    backgroundColor: 'var(--ais-page-bg)',
                                     backgroundImage: 'radial-gradient(circle at 60% 40%, rgba(16,185,129,0.08) 0%, transparent 60%), linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
                                     backgroundSize: '100% 100%, 30px 30px, 30px 30px',
                                 }}
@@ -97,7 +98,7 @@ export function SovereignSection() {
                                 </svg>
 
                                 {/* Legend */}
-                                <div className="absolute bottom-3 left-3 flex items-center gap-4 text-[9px] text-slate-500">
+                                <div className="absolute bottom-3 left-3 flex items-center gap-4 text-[9px]" style={{ color: 'var(--ais-page-text-dim)' }}>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
                                         <span>Paid</span>

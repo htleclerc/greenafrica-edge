@@ -15,25 +15,25 @@ export function FeaturesSection() {
     ];
 
     return (
-        <section className="py-24 px-6 bg-slate-50 relative">
+        <section className="py-24 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+                    <h2 className="text-4xl md:text-5xl font-bold mb-6" style={{ color: 'var(--ais-page-text)' }}>
                         {t('design_title')}
                     </h2>
-                    <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                    <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('design_subtitle')}
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {features.map((feat, i) => (
-                        <div key={i} className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:border-emerald-200 transition-colors group">
+                        <div key={i} className="rounded-2xl p-8 shadow-sm hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                             <div className={`w-12 h-12 rounded-xl ${feat.bg} flex items-center justify-center mb-6`}>
                                 <feat.icon className={`w-5 h-5 ${feat.color}`} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">{feat.title}</h3>
-                            <p className="text-slate-600 leading-relaxed text-sm">{feat.desc}</p>
+                            <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{feat.title}</h3>
+                            <p className="leading-relaxed text-sm" style={{ color: 'var(--ais-page-text-dim)' }}>{feat.desc}</p>
                         </div>
                     ))}
                 </div>
@@ -46,22 +46,22 @@ export function FaqSection() {
     const t = useTranslations('Landing');
 
     return (
-        <section className="py-24 px-6 bg-emerald-50/50 relative">
+        <section className="py-24 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-3xl mx-auto text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('faq_title')}</h2>
-                <p className="text-slate-600">{t('faq_subtitle')}</p>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ais-page-text)' }}>{t('faq_title')}</h2>
+                <p style={{ color: 'var(--ais-page-text-dim)' }}>{t('faq_subtitle')}</p>
 
                 {/* Mock Search Bar */}
                 <div className="mt-8 relative max-w-md mx-auto">
-                    <input type="text" placeholder="Search for answers..." className="w-full pl-10 pr-4 py-3 rounded-full border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                    <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type="text" placeholder="Search for answers..." className="w-full pl-10 pr-4 py-3 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text)' }} />
+                    <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--ais-page-text-muted)' }} />
                 </div>
             </div>
 
             <div className="max-w-3xl mx-auto space-y-4">
                 {faqItems.map((item, i) => (
-                    <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:border-emerald-200 transition-colors group">
-                        <h4 className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">{item.question}</h4>
+                    <div key={i} className="rounded-2xl p-6 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-200 transition-colors group" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                        <h4 className="font-semibold group-hover:text-emerald-700 transition-colors" style={{ color: 'var(--ais-page-text)' }}>{item.question}</h4>
                         <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
                             <Plus className="w-4 h-4" />
                         </div>
@@ -73,7 +73,7 @@ export function FaqSection() {
 }
 
 // Sub-component for search icon to avoid extra lucide imports
-function SearchIcon(props: any) {
+function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"></circle>

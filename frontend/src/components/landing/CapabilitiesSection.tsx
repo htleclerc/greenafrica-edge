@@ -34,13 +34,14 @@ export function CapabilitiesSection() {
     ];
 
     return (
-        <section className="py-20 px-6 bg-[#0A1110] relative">
+        <section className="py-20 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {capabilities.map((cap, i) => (
                         <div
                             key={i}
-                            className="relative bg-[#111C18] rounded-2xl p-8 border border-white/5 hover:border-emerald-500/20 transition-all duration-300 group overflow-hidden"
+                            className="relative rounded-2xl p-8 hover:border-emerald-500/20 transition-all duration-300 group overflow-hidden"
+                            style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
                             {/* Gradient hover effect */}
                             <div className={`absolute inset-0 bg-gradient-to-br ${cap.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -50,8 +51,8 @@ export function CapabilitiesSection() {
                                     <cap.icon className={`w-6 h-6 ${cap.iconColor}`} />
                                 </div>
 
-                                <h3 className="text-lg font-bold text-white mb-3">{cap.title}</h3>
-                                <p className="text-sm text-slate-400 leading-relaxed">{cap.desc}</p>
+                                <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{cap.title}</h3>
+                                <p className="text-sm leading-relaxed" style={{ color: 'var(--ais-page-text-muted)' }}>{cap.desc}</p>
                             </div>
                         </div>
                     ))}

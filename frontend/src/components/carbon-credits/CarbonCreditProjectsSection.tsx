@@ -25,15 +25,15 @@ export function CarbonCreditProjectsSection() {
     const t = useTranslations('CarbonCredit');
 
     return (
-        <section className="py-16 px-6 bg-[#0A1110]">
+        <section className="py-16 px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-10">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
                         {t('projects_badge')}
                     </div>
-                    <h2 className="text-3xl font-bold text-white mb-3">{t('projects_title')}</h2>
-                    <p className="text-slate-400 text-sm max-w-2xl">{t('projects_subtitle')}</p>
+                    <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('projects_title')}</h2>
+                    <p className="text-sm max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('projects_subtitle')}</p>
                 </div>
 
                 {/* Projects Grid */}
@@ -47,7 +47,8 @@ export function CarbonCreditProjectsSection() {
                         return (
                             <div
                                 key={project.id}
-                                className="bg-[#111C18] rounded-2xl border border-white/5 hover:border-emerald-500/20 transition-all duration-300 overflow-hidden flex flex-col"
+                                className="rounded-2xl hover:border-emerald-500/20 transition-all duration-300 overflow-hidden flex flex-col"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 {/* Card header */}
                                 <div className="p-5 flex flex-col gap-3">
@@ -64,11 +65,11 @@ export function CarbonCreditProjectsSection() {
                                         </span>
                                     </div>
 
-                                    <h3 className="text-sm font-bold text-white leading-snug">
+                                    <h3 className="text-sm font-bold leading-snug" style={{ color: 'var(--ais-page-text)' }}>
                                         {project.name}
                                     </h3>
 
-                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                    <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         <MapPin className="w-3 h-3 shrink-0" />
                                         <span>{project.location}</span>
                                     </div>
@@ -83,28 +84,28 @@ export function CarbonCreditProjectsSection() {
                                         </span>
                                     </div>
 
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         {project.description}
                                     </p>
                                 </div>
 
                                 {/* Stats Row */}
-                                <div className="grid grid-cols-3 border-t border-white/5">
-                                    <div className="p-3 text-center border-r border-white/5">
-                                        <p className="text-sm font-bold text-white">
+                                <div className="grid grid-cols-3" style={{ borderTop: '1px solid var(--ais-page-border)' }}>
+                                    <div className="p-3 text-center" style={{ borderRight: '1px solid var(--ais-page-border)' }}>
+                                        <p className="text-sm font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                             {project.areaHa > 0
                                                 ? `${(project.areaHa / 1000).toFixed(0)}k ha`
                                                 : '—'}
                                         </p>
-                                        <p className="text-[9px] text-slate-600 uppercase tracking-wide mt-0.5">
+                                        <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                             {t('project_area')}
                                         </p>
                                     </div>
-                                    <div className="p-3 text-center border-r border-white/5">
-                                        <p className="text-sm font-bold text-white">
+                                    <div className="p-3 text-center" style={{ borderRight: '1px solid var(--ais-page-border)' }}>
+                                        <p className="text-sm font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                             {(project.creditsGenerated / 1000).toFixed(0)}k
                                         </p>
-                                        <p className="text-[9px] text-slate-600 uppercase tracking-wide mt-0.5">
+                                        <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                             {t('project_credits_yr')}
                                         </p>
                                     </div>
@@ -112,7 +113,7 @@ export function CarbonCreditProjectsSection() {
                                         <p className="text-sm font-bold text-teal-400">
                                             ${project.pricePerTon.toFixed(1)}
                                         </p>
-                                        <p className="text-[9px] text-slate-600 uppercase tracking-wide mt-0.5">
+                                        <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                             {t('project_price')}
                                         </p>
                                     </div>
@@ -121,8 +122,8 @@ export function CarbonCreditProjectsSection() {
                                 {/* Progress Bar */}
                                 <div className="px-5 pb-5 pt-3">
                                     <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-[10px] text-slate-500">{t('project_progress')}</span>
-                                        <span className="text-[10px] font-bold text-white">{project.progressPct}%</span>
+                                        <span className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>{t('project_progress')}</span>
+                                        <span className="text-[10px] font-bold" style={{ color: 'var(--ais-page-text)' }}>{project.progressPct}%</span>
                                     </div>
                                     <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                         <div
@@ -132,7 +133,7 @@ export function CarbonCreditProjectsSection() {
                                     </div>
                                     {/* SDG Goals */}
                                     <div className="flex items-center gap-1.5 mt-3">
-                                        <span className="text-[10px] text-slate-600">SDG:</span>
+                                        <span className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>SDG:</span>
                                         {project.sdgGoals.map((sdg) => (
                                             <span
                                                 key={sdg}

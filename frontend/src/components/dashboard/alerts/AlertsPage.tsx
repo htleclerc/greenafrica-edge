@@ -1,13 +1,15 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     AlertTriangle, Shield, Bell, BellOff, CheckCheck,
     X, Clock, Ship, DollarSign, Zap, Info,
     ChevronRight, ArrowRight,
 } from 'lucide-react';
-import { mockSecureVessels, mockTransactions } from '@/mock/datas/secureMock';
-import { VesselComplianceStatus, TransactionStatus } from '@/types/secure';
+import { useVessels } from '@/hooks/useVessels';
+import { useTransactions } from '@/hooks/useTransactions';
+import { VesselComplianceStatus, TransactionStatus, SecureVessel, Transaction } from '@/types/secure';
 
 // ── Alert data model ──────────────────────────────────────────────────────────
 
@@ -27,11 +29,11 @@ interface Alert {
 
 // ── Static + derived alerts ───────────────────────────────────────────────────
 
-function buildAlerts(): Alert[] {
+function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
     const alerts: Alert[] = [];
 
     // Non-compliant vessels
-    mockSecureVessels
+    vessels
         .filter((v) => v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT)
         .forEach((v) => {
             alerts.push({
@@ -47,7 +49,7 @@ function buildAlerts(): Alert[] {
         });
 
     // Payment due vessels
-    mockSecureVessels
+    vessels
         .filter((v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE)
         .forEach((v) => {
             alerts.push({
@@ -63,7 +65,7 @@ function buildAlerts(): Alert[] {
         });
 
     // Overdue transactions
-    mockTransactions
+    txns
         .filter((t) => t.status === TransactionStatus.OVERDUE)
         .forEach((t) => {
             alerts.push({
@@ -162,10 +164,13 @@ function relativeTime(iso: string): string {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const ALL_ALERTS = buildAlerts();
-
 export function AlertsPage() {
-    const [alerts, setAlerts] = React.useState(ALL_ALERTS);
+    const t = useTranslations('DashboardPages');
+    const { data: vessels } = useVessels();
+    const { data: transactions } = useTransactions();
+    const initialAlerts = React.useMemo(() => buildAlerts(vessels, transactions), [vessels, transactions]);
+    const [alerts, setAlerts] = React.useState<Alert[]>([]);
+    React.useEffect(() => { setAlerts(initialAlerts); }, [initialAlerts]);
     const [activeCategory, setActiveCategory] = React.useState<string>('ALL');
     const [showAcknowledged, setShowAcknowledged] = React.useState(false);
     const [selected, setSelected] = React.useState<Alert | null>(null);
@@ -196,9 +201,9 @@ export function AlertsPage() {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">Alerts & Exceptions</h1>
+                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('alerts_title')}</h1>
                     <p className="text-xs text-[var(--os-text-muted)] mt-0.5">
-                        Real-time monitoring — compliance violations, payment exceptions, and system events.
+                        {t('alerts_subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -211,7 +216,7 @@ export function AlertsPage() {
                         }`}
                     >
                         {showAcknowledged ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
-                        {showAcknowledged ? 'Hide Acknowledged' : 'Show All'}
+                        {showAcknowledged ? t('alerts_hide_acknowledged') : t('alerts_show_all')}
                     </button>
                     {unackCount > 0 && (
                         <button
@@ -219,7 +224,7 @@ export function AlertsPage() {
                             className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
                         >
                             <CheckCheck className="w-3.5 h-3.5" />
-                            Acknowledge All
+                            {t('alerts_acknowledge_all')}
                         </button>
                     )}
                 </div>
@@ -228,10 +233,10 @@ export function AlertsPage() {
             {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Critical',    value: criticalCount, color: '#EF4444' },
-                    { label: 'Warnings',    value: warningCount,  color: '#F59E0B' },
-                    { label: 'Info',        value: infoCount,     color: '#38BDF8' },
-                    { label: 'Unacknowledged', value: unackCount, color: unackCount > 0 ? '#EF4444' : '#22C55E' },
+                    { label: t('alerts_critical'),    value: criticalCount, color: '#EF4444' },
+                    { label: t('alerts_warnings'),    value: warningCount,  color: '#F59E0B' },
+                    { label: t('alerts_info'),        value: infoCount,     color: '#38BDF8' },
+                    { label: t('alerts_unacknowledged'), value: unackCount, color: unackCount > 0 ? '#EF4444' : '#22C55E' },
                 ].map(({ label, value, color }) => (
                     <div key={label} className="os-card p-4 relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: color }} />
@@ -280,7 +285,7 @@ export function AlertsPage() {
                         </h3>
                         <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-pulse" />
-                            <span className="text-[10px] font-semibold text-[#EF4444]">MONITORING</span>
+                            <span className="text-[10px] font-semibold text-[#EF4444]">{t('alerts_monitoring')}</span>
                         </div>
                     </div>
 
@@ -288,8 +293,8 @@ export function AlertsPage() {
                         {displayed.length === 0 ? (
                             <div className="px-5 py-12 text-center">
                                 <CheckCheck className="w-8 h-8 text-[#22C55E] mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-[var(--os-text-primary)]">All clear</p>
-                                <p className="text-xs text-[var(--os-text-muted)] mt-1">No alerts in this category</p>
+                                <p className="text-sm font-semibold text-[var(--os-text-primary)]">{t('alerts_all_clear')}</p>
+                                <p className="text-xs text-[var(--os-text-muted)] mt-1">{t('alerts_no_alerts_category')}</p>
                             </div>
                         ) : displayed.map((alert) => {
                             const sev = SEV_CONFIG[alert.severity];
@@ -317,7 +322,7 @@ export function AlertsPage() {
                                                 </span>
                                                 {alert.acknowledged && (
                                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest bg-[var(--os-surface-2)] text-[var(--os-text-muted)]">
-                                                        ACK
+                                                        {t('alerts_ack')}
                                                     </span>
                                                 )}
                                             </div>
@@ -367,6 +372,7 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
     onClose: () => void;
     onAcknowledge: () => void;
 }) {
+    const t = useTranslations('DashboardPages');
     const sev = SEV_CONFIG[alert.severity];
 
     return (
@@ -378,8 +384,8 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
                         {sev.icon}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-[var(--os-text-primary)]">Alert Details</p>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">ID: {alert.id}</p>
+                        <p className="text-sm font-bold text-[var(--os-text-primary)]">{t('alerts_detail_title')}</p>
+                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('alerts_detail_id')} {alert.id}</p>
                     </div>
                 </div>
                 <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]">
@@ -403,23 +409,23 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
 
                 {/* Description */}
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">Description</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('alerts_description')}</p>
                     <p className="text-xs text-[var(--os-text-secondary)] leading-relaxed">{alert.message}</p>
                 </div>
 
                 {/* Meta */}
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">Triggered</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">{t('alerts_triggered')}</p>
                         <p className="text-xs font-mono text-[var(--os-text-primary)]">{alert.timestamp.replace('T', ' ').slice(0, 19)}Z</p>
                     </div>
                     <div>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">Relative</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">{t('alerts_relative')}</p>
                         <p className="text-xs text-[var(--os-text-primary)]">{relativeTime(alert.timestamp)}</p>
                     </div>
                     {alert.entityRef && (
                         <div className="col-span-2">
-                            <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">Entity Reference</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">{t('alerts_entity_reference')}</p>
                             <p className="text-xs font-mono text-[#38BDF8]">{alert.entityRef}</p>
                         </div>
                     )}
@@ -433,12 +439,12 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
                             className="w-full h-9 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors flex items-center justify-center gap-2"
                         >
                             <CheckCheck className="w-3.5 h-3.5" />
-                            Acknowledge Alert
+                            {t('alerts_acknowledge')}
                         </button>
                     ) : (
                         <div className="w-full h-9 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs font-semibold text-[#22C55E] flex items-center justify-center gap-2">
                             <CheckCheck className="w-3.5 h-3.5" />
-                            Acknowledged
+                            {t('alerts_acknowledged')}
                         </div>
                     )}
                     {alert.category === 'Compliance' && (
@@ -446,7 +452,7 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
                             href="/dashboard/vessels"
                             className="w-full h-9 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] flex items-center justify-center gap-2 transition-colors"
                         >
-                            View Vessel <ArrowRight className="w-3 h-3" />
+                            {t('alerts_view_vessel')} <ArrowRight className="w-3 h-3" />
                         </a>
                     )}
                     {alert.category === 'Payment' && (
@@ -454,7 +460,7 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
                             href="/dashboard/invoices"
                             className="w-full h-9 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] flex items-center justify-center gap-2 transition-colors"
                         >
-                            View Invoice <ArrowRight className="w-3 h-3" />
+                            {t('alerts_view_invoice')} <ArrowRight className="w-3 h-3" />
                         </a>
                     )}
                 </div>

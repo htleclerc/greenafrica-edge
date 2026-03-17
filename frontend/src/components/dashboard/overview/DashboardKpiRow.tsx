@@ -1,5 +1,8 @@
+'use client';
+
 import * as React from 'react';
 import { Ship, DollarSign, Wind, Leaf, TrendingUp, TrendingDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { DashboardKpis } from '@/types/secure';
 
 function formatUsd(n: number): string {
@@ -17,13 +20,14 @@ interface KpiCardProps {
     value: string;
     sub: string;
     delta?: number;
+    deltaLabel?: string;
     icon: React.ReactNode;
     accentColor: string;
     tag?: string;
     tagColor?: string;
 }
 
-function KpiCard({ label, value, sub, delta, icon, accentColor, tag, tagColor }: KpiCardProps) {
+function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag, tagColor }: KpiCardProps) {
     const isPositive = delta !== undefined && delta >= 0;
     return (
         <div className="os-card p-5 flex flex-col gap-3 relative overflow-hidden">
@@ -58,7 +62,7 @@ function KpiCard({ label, value, sub, delta, icon, accentColor, tag, tagColor }:
             {delta !== undefined && (
                 <div className={`flex items-center gap-1 text-xs font-semibold ${isPositive ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
                     {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                    {isPositive ? '+' : ''}{delta}% vs last month
+                    {isPositive ? '+' : ''}{delta}% {deltaLabel}
                 </div>
             )}
         </div>
@@ -66,43 +70,47 @@ function KpiCard({ label, value, sub, delta, icon, accentColor, tag, tagColor }:
 }
 
 export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
+    const t = useTranslations('Overview');
+
     return (
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
-                label="Active Vessels in EEZ"
+                label={t('kpi_active_vessels')}
                 value={formatNum(kpis.activeVesselsInEez)}
-                sub="High Density"
+                sub={t('kpi_high_density')}
                 icon={<Ship className="w-5 h-5" />}
                 accentColor="#38BDF8"
-                tag="Live"
+                tag={t('kpi_tag_live')}
                 tagColor="#38BDF8"
             />
             <KpiCard
-                label="Tax Revenue (MTD)"
+                label={t('kpi_tax_revenue')}
                 value={formatUsd(kpis.monthlyRevenueUsd)}
-                sub="On Target — Due Threshold"
+                sub={t('kpi_on_target')}
                 delta={kpis.monthlyRevenueDelta}
+                deltaLabel={t('kpi_vs_last_month')}
                 icon={<DollarSign className="w-5 h-5" />}
                 accentColor="#00D97E"
-                tag="Collection Day"
+                tag={t('kpi_tag_collection_day')}
                 tagColor="#00D97E"
             />
             <KpiCard
-                label="Est. Emissions (tCO₂)"
+                label={t('kpi_est_emissions')}
                 value={formatNum(kpis.estCo2TrackingTons)}
-                sub="MTD tracking"
+                sub={t('kpi_mtd_tracking')}
+                deltaLabel={t('kpi_vs_last_month')}
                 icon={<Wind className="w-5 h-5" />}
                 accentColor="#F59E0B"
-                tag="Our Threshold"
+                tag={t('kpi_tag_threshold')}
                 tagColor="#F59E0B"
             />
             <KpiCard
-                label="Carbon Credits"
+                label={t('kpi_carbon_credits')}
                 value={formatNum(kpis.creditsRetiredTons)}
-                sub="Avg Price"
+                sub={t('kpi_avg_price')}
                 icon={<Leaf className="w-5 h-5" />}
                 accentColor="#A78BFA"
-                tag="$12 USD / Unit"
+                tag={t('kpi_tag_price_unit')}
                 tagColor="#A78BFA"
             />
         </div>

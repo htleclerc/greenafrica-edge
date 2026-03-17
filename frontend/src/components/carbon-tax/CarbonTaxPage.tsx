@@ -10,7 +10,7 @@ import { CarbonTaxComplianceSection } from '@/components/carbon-tax/CarbonTaxCom
 
 export function CarbonTaxPage() {
     return (
-        <main className="min-h-screen bg-[#0A1110]">
+        <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <Navbar activePage="carbon_tax" />
             <CarbonTaxHeroSection />
             <CarbonTaxRatesSection />

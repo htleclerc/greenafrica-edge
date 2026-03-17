@@ -4,8 +4,11 @@ import { updateSession } from '@/lib/supabase/middleware';
 // Routes that require authentication
 const PROTECTED_PREFIXES = ['/dashboard', '/admin'];
 
-// Routes that authenticated users shouldn't visit
+// Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
 const AUTH_ROUTES = ['/login', '/post-login'];
+
+// Public auth routes — accessible whether logged in or not
+const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-approval', '/auth/callback'];
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -17,6 +20,12 @@ export async function middleware(request: NextRequest) {
 
     const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
     const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
+    const isPublicAuth = PUBLIC_AUTH_ROUTES.some((p) => pathname.startsWith(p));
+
+    // Public auth routes — always pass through
+    if (isPublicAuth) {
+        return supabaseResponse;
+    }
 
     // Not logged in AND not in demo → redirect to /login
     if (isProtected && !user && !isDemo) {

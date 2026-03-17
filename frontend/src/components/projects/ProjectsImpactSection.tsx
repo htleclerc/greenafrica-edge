@@ -62,15 +62,15 @@ export function ProjectsImpactSection() {
     const t = useTranslations('Projects');
 
     return (
-        <section className="py-16 px-6 bg-[#0B1512]">
+        <section className="py-16 px-6" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-10">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
                         {t('impact_badge')}
                     </div>
-                    <h2 className="text-3xl font-bold text-white mb-3">{t('impact_title')}</h2>
-                    <p className="text-slate-400 text-sm max-w-2xl">{t('impact_subtitle')}</p>
+                    <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('impact_title')}</h2>
+                    <p className="text-sm max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('impact_subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -80,20 +80,21 @@ export function ProjectsImpactSection() {
                             {IMPACT_STATS.map(({ key, value, icon: Icon, color, bg }) => (
                                 <div
                                     key={key}
-                                    className="bg-[#111C18] rounded-2xl border border-white/5 p-5 hover:border-emerald-500/15 transition-all duration-300"
+                                    className="rounded-2xl p-5 hover:border-emerald-500/15 transition-all duration-300"
+                                    style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                                 >
                                     <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3`}>
                                         <Icon className={`w-5 h-5 ${color}`} />
                                     </div>
                                     <p className={`text-2xl font-bold ${color} mb-1`}>{value}</p>
-                                    <p className="text-xs text-slate-500">{t(key)}</p>
+                                    <p className="text-xs" style={{ color: 'var(--ais-page-text-dim)' }}>{t(key)}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* SDG Goals covered */}
-                        <div className="bg-[#111C18] rounded-2xl border border-white/5 p-5">
-                            <p className="text-xs text-slate-500 font-medium mb-3 uppercase tracking-wider">UN SDGs Covered</p>
+                        <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                            <p className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--ais-page-text-dim)' }}>UN SDGs Covered</p>
                             <div className="flex flex-wrap gap-2">
                                 {allSdgs.map((sdg) => (
                                     <span
@@ -104,15 +105,15 @@ export function ProjectsImpactSection() {
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-[11px] text-slate-600 mt-3">
+                            <p className="text-[11px] mt-3" style={{ color: 'var(--ais-page-text-dim)' }}>
                                 {allSdgs.length} Sustainable Development Goals addressed across the sovereign project portfolio.
                             </p>
                         </div>
                     </div>
 
                     {/* Right: CO₂ by category bar chart */}
-                    <div className="bg-[#111C18] rounded-2xl border border-white/5 p-6">
-                        <p className="text-sm font-bold text-white mb-6">{t('by_category_title')}</p>
+                    <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                        <p className="text-sm font-bold mb-6" style={{ color: 'var(--ais-page-text)' }}>{t('by_category_title')}</p>
                         <div className="flex flex-col gap-5">
                             {CO2_BY_CATEGORY.map(({ category, tons }) => {
                                 const catColor = ProjectCategoryColor[category];
@@ -126,7 +127,7 @@ export function ProjectsImpactSection() {
                                         <div className="flex items-center justify-between mb-1.5">
                                             <div className="flex items-center gap-2">
                                                 <span className={`w-2 h-2 rounded-full ${catColor.bg} border ${catColor.border}`} />
-                                                <span className="text-xs text-slate-400">{ProjectCategoryLabel[category]}</span>
+                                                <span className="text-xs" style={{ color: 'var(--ais-page-text-muted)' }}>{ProjectCategoryLabel[category]}</span>
                                             </div>
                                             <span className={`text-xs font-bold ${catColor.text}`}>{label}</span>
                                         </div>
@@ -148,15 +149,15 @@ export function ProjectsImpactSection() {
                             })}
                         </div>
 
-                        <div className="mt-6 pt-5 border-t border-white/5">
+                        <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--ais-page-border)' }}>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs text-slate-500">Total Portfolio CO₂ Impact</span>
+                                <span className="text-xs" style={{ color: 'var(--ais-page-text-dim)' }}>Total Portfolio CO₂ Impact</span>
                                 <span className="text-sm font-bold text-emerald-400">
                                     {(totalCo2 / 1_000_000).toFixed(2)}M tCO₂e
                                 </span>
                             </div>
                             <div className="flex items-center justify-between mt-1">
-                                <span className="text-xs text-slate-500">Jobs (direct & indirect)</span>
+                                <span className="text-xs" style={{ color: 'var(--ais-page-text-dim)' }}>Jobs (direct & indirect)</span>
                                 <span className="text-sm font-bold text-teal-400">{totalJobs.toLocaleString()}</span>
                             </div>
                         </div>

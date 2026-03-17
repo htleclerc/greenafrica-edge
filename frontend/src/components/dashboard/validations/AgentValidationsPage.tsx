@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     CheckCircle2, XCircle, Clock, Search,
     FileText, User, Building2, Mail, Phone, MapPin,
@@ -8,24 +9,25 @@ import {
     Flag, Loader2,
 } from 'lucide-react';
 import {
-    RegistrationRequest, RegistrationStatus, RegistrationEntityType,
+    RegistrationRequest, RegistrationStatus, RegistrationEntityType, UserRole,
 } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
+import { useRole } from '@/lib/RoleContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<RegistrationStatus, { label: string; bg: string; color: string; icon: React.ElementType }> = {
-    [RegistrationStatus.PENDING]:   { label: 'En attente',      bg: 'rgba(234,179,8,0.1)',   color: '#EAB308',  icon: Clock },
-    [RegistrationStatus.APPROVED]:  { label: 'Approuvé',        bg: 'rgba(16,185,129,0.1)',  color: '#10B981',  icon: CheckCircle2 },
-    [RegistrationStatus.REJECTED]:  { label: 'Refusé',          bg: 'rgba(239,68,68,0.1)',   color: '#EF4444',  icon: XCircle },
-    [RegistrationStatus.MORE_INFO]: { label: 'Infos requises',  bg: 'rgba(59,130,246,0.1)',  color: '#3B82F6',  icon: MessageSquare },
+const STATUS_CONFIG: Record<RegistrationStatus, { labelKey: string; bg: string; color: string; icon: React.ElementType }> = {
+    [RegistrationStatus.PENDING]:   { labelKey: 'status_pending',    bg: 'rgba(234,179,8,0.1)',   color: '#EAB308',  icon: Clock },
+    [RegistrationStatus.APPROVED]:  { labelKey: 'status_approved',   bg: 'rgba(16,185,129,0.1)',  color: '#10B981',  icon: CheckCircle2 },
+    [RegistrationStatus.REJECTED]:  { labelKey: 'status_rejected',   bg: 'rgba(239,68,68,0.1)',   color: '#EF4444',  icon: XCircle },
+    [RegistrationStatus.MORE_INFO]: { labelKey: 'status_more_info',  bg: 'rgba(59,130,246,0.1)',  color: '#3B82F6',  icon: MessageSquare },
 };
 
-const ENTITY_LABELS: Record<RegistrationEntityType, string> = {
-    [RegistrationEntityType.PORT_AUTHORITY]: 'Autorité portuaire',
-    [RegistrationEntityType.SHIPPING_AGENT]: 'Armateur / Agent',
-    [RegistrationEntityType.FINANCE_ADMIN]:  'Administration financière',
-    [RegistrationEntityType.INSTITUTION]:    'Institution publique',
+const ENTITY_LABEL_KEYS: Record<RegistrationEntityType, string> = {
+    [RegistrationEntityType.PORT_AUTHORITY]: 'entity_port_authority',
+    [RegistrationEntityType.SHIPPING_AGENT]: 'entity_shipping_agent',
+    [RegistrationEntityType.FINANCE_ADMIN]:  'entity_finance_admin',
+    [RegistrationEntityType.INSTITUTION]:    'entity_institution',
 };
 
 function fmtDate(iso: string) {
@@ -66,12 +68,13 @@ interface ReviewModalProps {
 }
 
 function ReviewModal({ request, action, loading, onConfirm, onClose }: ReviewModalProps) {
+    const t = useTranslations('ValidationsPage');
     const [note, setNote] = React.useState('');
 
     const config = {
-        approve:   { title: 'Approuver la demande',        color: '#10B981', btn: 'Approuver', placeholder: 'Remarque optionnelle pour l\'agent…' },
-        reject:    { title: 'Refuser la demande',           color: '#EF4444', btn: 'Refuser',   placeholder: 'Motif de refus (obligatoire)…' },
-        more_info: { title: 'Demander des informations',    color: '#3B82F6', btn: 'Envoyer',   placeholder: 'Précisez les documents ou infos manquants…' },
+        approve:   { title: t('modal_approve_title'),    color: '#10B981', btn: t('modal_approve_btn'),    placeholder: t('modal_approve_placeholder') },
+        reject:    { title: t('modal_reject_title'),     color: '#EF4444', btn: t('modal_reject_btn'),     placeholder: t('modal_reject_placeholder') },
+        more_info: { title: t('modal_more_info_title'),  color: '#3B82F6', btn: t('modal_more_info_btn'),  placeholder: t('modal_more_info_placeholder') },
     }[action];
 
     const canSubmit = action !== 'reject' || note.trim().length > 0;
@@ -94,7 +97,7 @@ function ReviewModal({ request, action, loading, onConfirm, onClose }: ReviewMod
                 />
 
                 {action === 'reject' && !note.trim() && (
-                    <p className="text-[11px] text-red-400 mt-1">Le motif de refus est obligatoire.</p>
+                    <p className="text-[11px] text-red-400 mt-1">{t('modal_reject_required')}</p>
                 )}
 
                 <div className="flex gap-3 mt-4">
@@ -104,7 +107,7 @@ function ReviewModal({ request, action, loading, onConfirm, onClose }: ReviewMod
                         className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                         style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
                     >
-                        Annuler
+                        {t('modal_cancel')}
                     </button>
                     <button
                         onClick={() => canSubmit && onConfirm(note)}
@@ -129,6 +132,7 @@ interface RowProps {
 }
 
 function RegistrationRow({ req, onAction }: RowProps) {
+    const t = useTranslations('ValidationsPage');
     const [expanded, setExpanded] = React.useState(false);
     const s = STATUS_CONFIG[req.status];
     const SIcon = s.icon;
@@ -158,7 +162,7 @@ function RegistrationRow({ req, onAction }: RowProps) {
                         <p className="font-bold text-sm" style={{ color: 'var(--os-text-primary)' }}>{req.orgName}</p>
                         {req.flagged && (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">
-                                SIGNALÉ
+                                {t('flagged')}
                             </span>
                         )}
                         <span
@@ -166,13 +170,13 @@ function RegistrationRow({ req, onAction }: RowProps) {
                             style={{ backgroundColor: s.bg, color: s.color }}
                         >
                             <SIcon className="w-3 h-3" />
-                            {s.label}
+                            {t(s.labelKey)}
                         </span>
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 text-xs flex-wrap" style={{ color: 'var(--os-text-muted)' }}>
                         <span className="flex items-center gap-1"><User className="w-3 h-3" />{req.contactName}</span>
                         <span>·</span>
-                        <span>{ENTITY_LABELS[req.entityType] ?? req.entityType}</span>
+                        <span>{t(ENTITY_LABEL_KEYS[req.entityType])}</span>
                         <span>·</span>
                         <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{req.jurisdiction}</span>
                         <span>·</span>
@@ -189,21 +193,21 @@ function RegistrationRow({ req, onAction }: RowProps) {
                                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-85"
                                 style={{ backgroundColor: '#10B981' }}
                             >
-                                Approuver
+                                {t('btn_approve')}
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onAction(req.id, 'more_info'); }}
                                 className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
                                 style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.25)' }}
                             >
-                                Infos
+                                {t('btn_more_info')}
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onAction(req.id, 'reject'); }}
                                 className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
                                 style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
                             >
-                                Refuser
+                                {t('btn_reject')}
                             </button>
                         </>
                     )}
@@ -220,7 +224,7 @@ function RegistrationRow({ req, onAction }: RowProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
                         {/* Contact */}
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--os-text-muted)' }}>Contact</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--os-text-muted)' }}>{t('detail_contact')}</p>
                             <div className="flex flex-col gap-1.5">
                                 <p className="text-xs flex items-center gap-2" style={{ color: 'var(--os-text-secondary)' }}>
                                     <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--os-text-muted)' }} />
@@ -248,10 +252,10 @@ function RegistrationRow({ req, onAction }: RowProps) {
                         {/* Documents */}
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--os-text-muted)' }}>
-                                Pièces jointes ({req.documents.length})
+                                {t('detail_attachments', { count: req.documents.length })}
                             </p>
                             {req.documents.length === 0 ? (
-                                <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>Aucun document joint</p>
+                                <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>{t('no_documents')}</p>
                             ) : (
                                 <div className="flex flex-col gap-1.5">
                                     {req.documents.map((doc, i) => (
@@ -275,7 +279,7 @@ function RegistrationRow({ req, onAction }: RowProps) {
                         {req.reviewNote && (
                             <div className="sm:col-span-2">
                                 <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--os-text-muted)' }}>
-                                    Note de révision — {req.reviewedBy} · {req.reviewedAt && fmtDate(req.reviewedAt)}
+                                    {t('detail_review_note')} — {req.reviewedBy} · {req.reviewedAt && fmtDate(req.reviewedAt)}
                                 </p>
                                 <div className="px-4 py-3 rounded-xl text-xs leading-relaxed" style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-secondary)', border: '1px solid var(--os-border)' }}>
                                     {req.reviewNote}
@@ -289,9 +293,92 @@ function RegistrationRow({ req, onAction }: RowProps) {
     );
 }
 
+// ── Demo mock requests ───────────────────────────────────────────────────────
+
+const DEMO_REQUESTS: RegistrationRequest[] = [
+    {
+        id: 'demo-reg-1',
+        submittedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+        entityType: RegistrationEntityType.SHIPPING_AGENT,
+        orgName: 'Berbera Maritime Services',
+        orgRegistryId: 'SL-BMS-2024-0891',
+        contactName: 'Ahmed Hassan',
+        contactEmail: 'ahmed@berberamaritime.so',
+        contactPhone: '+252 63 412 7890',
+        jurisdiction: 'Berbera',
+        requestedRole: UserRole.SHIPPING_AGENT,
+        status: RegistrationStatus.PENDING,
+        documents: [
+            { name: 'Trade_License_2025.pdf', type: 'LICENSE', url: '#', sizeKb: 245 },
+            { name: 'ID_Ahmed_Hassan.pdf', type: 'ID', url: '#', sizeKb: 128 },
+        ],
+        ipAddress: '196.200.45.12',
+        flagged: false,
+    },
+    {
+        id: 'demo-reg-2',
+        submittedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+        entityType: RegistrationEntityType.SHIPPING_AGENT,
+        orgName: 'Red Sea Logistics Ltd',
+        orgRegistryId: 'SL-RSL-2024-0723',
+        contactName: 'Farah Omar',
+        contactEmail: 'farah.omar@redsealogistics.com',
+        contactPhone: '+252 63 555 3210',
+        jurisdiction: 'Berbera',
+        requestedRole: UserRole.SHIPPING_AGENT,
+        status: RegistrationStatus.PENDING,
+        documents: [
+            { name: 'Company_Registration.pdf', type: 'LICENSE', url: '#', sizeKb: 310 },
+        ],
+        ipAddress: '196.200.78.33',
+        flagged: true,
+    },
+    {
+        id: 'demo-reg-3',
+        submittedAt: new Date(Date.now() - 14 * 86_400_000).toISOString(),
+        entityType: RegistrationEntityType.PORT_AUTHORITY,
+        orgName: 'Somaliland Port Authority',
+        orgRegistryId: 'SL-SPA-2024-0001',
+        contactName: 'Muse Abdi',
+        contactEmail: 'muse.abdi@slports.gov.sl',
+        jurisdiction: 'Hargeisa',
+        requestedRole: UserRole.PORT_OFFICER,
+        status: RegistrationStatus.APPROVED,
+        reviewedBy: 'SuperAdmin',
+        reviewedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
+        reviewNote: 'Verified with Ministry of Transport',
+        documents: [
+            { name: 'Appointment_Letter.pdf', type: 'MANDATE', url: '#', sizeKb: 195 },
+            { name: 'National_ID.pdf', type: 'ID', url: '#', sizeKb: 156 },
+        ],
+        ipAddress: '196.200.12.55',
+        flagged: false,
+    },
+    {
+        id: 'demo-reg-4',
+        submittedAt: new Date(Date.now() - 20 * 86_400_000).toISOString(),
+        entityType: RegistrationEntityType.INSTITUTION,
+        orgName: 'Horn of Africa Institute',
+        orgRegistryId: 'SL-HAI-2024-0045',
+        contactName: 'Dr. Sahra Warsame',
+        contactEmail: 'sahra@hornafrica-institute.org',
+        jurisdiction: 'Hargeisa',
+        requestedRole: UserRole.PORT_OFFICER,
+        status: RegistrationStatus.REJECTED,
+        reviewedBy: 'SuperAdmin',
+        reviewedAt: new Date(Date.now() - 18 * 86_400_000).toISOString(),
+        reviewNote: 'Institution type not yet supported. Please reapply when institutional access is enabled.',
+        documents: [],
+        ipAddress: '196.200.90.11',
+        flagged: false,
+    },
+];
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function AgentValidationsPage() {
+    const t = useTranslations('ValidationsPage');
+    const { isDemo, ready } = useRole();
     const [requests, setRequests] = React.useState<RegistrationRequest[]>([]);
     const [search, setSearch]     = React.useState('');
     const [tabFilter, setTabFilter] = React.useState<'all' | RegistrationStatus>('all');
@@ -302,9 +389,15 @@ export function AgentValidationsPage() {
 
     const activeReq = modal ? requests.find((r) => r.id === modal.id) : null;
 
-    // ── Load requests from Supabase ──────────────────────────────────────────
+    // ── Load requests (demo or Supabase) ─────────────────────────────────────
 
     const fetchRequests = React.useCallback(async () => {
+        if (isDemo) {
+            setRequests(DEMO_REQUESTS);
+            setLoadingPage(false);
+            return;
+        }
+
         const supabase = createClient();
         const { data, error } = await supabase
             .from('registration_requests')
@@ -315,9 +408,9 @@ export function AgentValidationsPage() {
             setRequests(data.map((row) => mapRow(row as Record<string, unknown>)));
         }
         setLoadingPage(false);
-    }, []);
+    }, [isDemo]);
 
-    React.useEffect(() => { fetchRequests(); }, [fetchRequests]);
+    React.useEffect(() => { if (ready) fetchRequests(); }, [fetchRequests, ready]);
 
     // ── Actions ──────────────────────────────────────────────────────────────
 
@@ -334,22 +427,15 @@ export function AgentValidationsPage() {
         const supabase = createClient();
 
         if (modal.action === 'approve') {
-            // Call Edge Function to create the user account
-            const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/approve-registration`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session?.access_token}`,
-                    },
-                    body: JSON.stringify({ requestId: modal.id, reviewNote: note }),
-                }
-            );
+            // Call local API route to approve the registration
+            const res = await fetch('/api/auth/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId: modal.id, reviewNote: note }),
+            });
             const result = await res.json();
             if (!res.ok) {
-                setActionError(result.error || 'Erreur lors de l\'approbation.');
+                setActionError(result.error || t('error_approval'));
                 setActionLoading(false);
                 return;
             }
@@ -366,7 +452,7 @@ export function AgentValidationsPage() {
                 .eq('id', modal.id);
 
             if (error) {
-                setActionError(error.message || 'Erreur lors de la mise à jour.');
+                setActionError(error.message || t('error_update'));
                 setActionLoading(false);
                 return;
             }
@@ -400,11 +486,11 @@ export function AgentValidationsPage() {
     });
 
     const TABS: { key: 'all' | RegistrationStatus; label: string; count: number; color?: string }[] = [
-        { key: 'all',                              label: 'Toutes',         count: counts.all },
-        { key: RegistrationStatus.PENDING,         label: 'En attente',     count: counts.pending,   color: '#EAB308' },
-        { key: RegistrationStatus.MORE_INFO,       label: 'Infos requises', count: counts.more_info, color: '#3B82F6' },
-        { key: RegistrationStatus.APPROVED,        label: 'Approuvées',     count: counts.approved,  color: '#10B981' },
-        { key: RegistrationStatus.REJECTED,        label: 'Refusées',       count: counts.rejected,  color: '#EF4444' },
+        { key: 'all',                              label: t('tab_all'),         count: counts.all },
+        { key: RegistrationStatus.PENDING,         label: t('tab_pending'),     count: counts.pending,   color: '#EAB308' },
+        { key: RegistrationStatus.MORE_INFO,       label: t('tab_more_info'),   count: counts.more_info, color: '#3B82F6' },
+        { key: RegistrationStatus.APPROVED,        label: t('tab_approved'),    count: counts.approved,  color: '#10B981' },
+        { key: RegistrationStatus.REJECTED,        label: t('tab_rejected'),    count: counts.rejected,  color: '#EF4444' },
     ];
 
     return (
@@ -413,21 +499,21 @@ export function AgentValidationsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-bold" style={{ color: 'var(--os-text-primary)' }}>
-                        Validation des agents
+                        {t('title')}
                     </h1>
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
-                        Demandes d&apos;accès en attente de vérification manuelle
+                        {t('subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     {counts.pending > 0 && (
                         <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(234,179,8,0.12)', color: '#EAB308', border: '1px solid rgba(234,179,8,0.25)' }}>
-                            {counts.pending} en attente
+                            {t('pending_count', { count: counts.pending })}
                         </span>
                     )}
                     {requests.filter((r) => r.flagged).length > 0 && (
                         <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)' }}>
-                            {requests.filter((r) => r.flagged).length} signalé(s)
+                            {t('flagged_count', { count: requests.filter((r) => r.flagged).length })}
                         </span>
                     )}
                 </div>
@@ -458,7 +544,7 @@ export function AgentValidationsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--os-text-muted)' }} />
                     <input
                         type="text"
-                        placeholder="Rechercher…"
+                        placeholder={t('search_placeholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full h-9 pl-8 pr-3 rounded-xl text-xs outline-none"
@@ -472,12 +558,12 @@ export function AgentValidationsPage() {
                 {loadingPage ? (
                     <div className="flex items-center justify-center py-16 gap-3" style={{ color: 'var(--os-text-muted)' }}>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-sm">Chargement des demandes…</span>
+                        <span className="text-sm">{t('loading')}</span>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16" style={{ color: 'var(--os-text-muted)' }}>
                         <User className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm">Aucune demande dans cette catégorie.</p>
+                        <p className="text-sm">{t('no_requests')}</p>
                     </div>
                 ) : (
                     filtered.map((req) => (

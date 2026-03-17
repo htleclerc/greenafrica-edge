@@ -27,7 +27,7 @@ export function LegalPageShell({
             {/* Top nav */}
             <header className="sticky top-0 z-10 border-b flex items-center justify-between px-6 py-3" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
                 <a href="/login" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                    <div className="w-8 h-8 rounded-xl bg-[#0B2818] border border-[#00D97E]/25 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl border border-[#00D97E]/25 flex items-center justify-center" style={{ backgroundColor: 'var(--ais-page-card)' }}>
                         <Anchor className="w-4 h-4 text-[#00D97E]" />
                     </div>
                     <span className="text-sm font-bold text-[var(--os-text-primary)]">

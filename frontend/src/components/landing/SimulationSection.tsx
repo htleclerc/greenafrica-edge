@@ -55,7 +55,7 @@ export function SimulationSection() {
     );
 
     return (
-        <section className="py-20 px-6 bg-[#0A1110] relative">
+        <section className="py-20 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background decorative element */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-900/10 rounded-full blur-[150px]" />
 
@@ -65,23 +65,24 @@ export function SimulationSection() {
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-bold tracking-[0.15em] uppercase mb-6">
                         {t('simulation_badge')}
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ais-page-text)' }}>
                         {t('simulation_title')}
                     </h2>
-                    <p className="text-slate-400 text-base max-w-2xl mx-auto">
+                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
                         {t('simulation_subtitle')}
                     </p>
                 </div>
 
                 {/* Mode Toggle */}
                 <div className="flex justify-center mb-10">
-                    <div className="inline-flex bg-[#111C18] rounded-xl p-1 border border-white/5">
+                    <div className="inline-flex rounded-xl p-1" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <button
                             onClick={() => setMode('STATE')}
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'STATE'
-                                    ? 'bg-emerald-500 text-white shadow-lg'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-emerald-500 shadow-lg'
+                                    : ''
                                 }`}
+                            style={mode !== 'STATE' ? { color: 'var(--ais-page-text-muted)' } : undefined}
                         >
                             <Landmark className="w-4 h-4" />
                             {t('sim_tab_state')}
@@ -90,8 +91,9 @@ export function SimulationSection() {
                             onClick={() => setMode('COMPANY')}
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'COMPANY'
                                     ? 'bg-amber-500 text-amber-950 shadow-lg'
-                                    : 'text-slate-400 hover:text-white'
+                                    : ''
                                 }`}
+                            style={mode !== 'COMPANY' ? { color: 'var(--ais-page-text-muted)' } : undefined}
                         >
                             <Building2 className="w-4 h-4" />
                             {t('sim_tab_company')}
@@ -102,12 +104,12 @@ export function SimulationSection() {
                 {/* Simulation Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left: Parameters Panel */}
-                    <div className="bg-[#111C18] rounded-2xl p-8 border border-white/5">
+                    <div className="rounded-2xl p-8" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <div className="flex items-center gap-3 mb-8">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'STATE' ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
                                 <Ship className={`w-4 h-4 ${mode === 'STATE' ? 'text-emerald-400' : 'text-amber-400'}`} />
                             </div>
-                            <h3 className="text-lg font-bold text-white">{t('sim_params_title')}</h3>
+                            <h3 className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{t('sim_params_title')}</h3>
                         </div>
 
                         {mode === 'STATE' ? (
@@ -115,7 +117,7 @@ export function SimulationSection() {
                                 {/* Slider: Ships per Month */}
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
-                                        <label className="text-sm font-medium text-slate-300">{t('sim_ships_label')}</label>
+                                        <label className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_ships_label')}</label>
                                         <span className="text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2.5 py-0.5 rounded-md">
                                             {shipsPerMonth}
                                         </span>
@@ -129,7 +131,7 @@ export function SimulationSection() {
                                         onChange={(e) => setShipsPerMonth(Number(e.target.value))}
                                         className="w-full"
                                     />
-                                    <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+                                    <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         <span>{simulationSliderRanges.shipsPerMonth.min}</span>
                                         <span>{simulationSliderRanges.shipsPerMonth.max}</span>
                                     </div>
@@ -138,7 +140,7 @@ export function SimulationSection() {
                                 {/* Slider: Avg Emissions */}
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
-                                        <label className="text-sm font-medium text-slate-300">{t('sim_emissions_label')}</label>
+                                        <label className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_emissions_label')}</label>
                                         <span className="text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2.5 py-0.5 rounded-md">
                                             {avgEmissions}
                                         </span>
@@ -152,7 +154,7 @@ export function SimulationSection() {
                                         onChange={(e) => setAvgEmissions(Number(e.target.value))}
                                         className="w-full"
                                     />
-                                    <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+                                    <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         <span>{simulationSliderRanges.avgEmissionsPerShip.min}</span>
                                         <span>{simulationSliderRanges.avgEmissionsPerShip.max}</span>
                                     </div>
@@ -163,7 +165,7 @@ export function SimulationSection() {
                                 {/* Slider: Fleet Size */}
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
-                                        <label className="text-sm font-medium text-slate-300">{t('sim_fleet_size')}</label>
+                                        <label className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_fleet_size')}</label>
                                         <span className="text-sm font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md">
                                             {fleetSize}
                                         </span>
@@ -177,7 +179,7 @@ export function SimulationSection() {
                                         onChange={(e) => setFleetSize(Number(e.target.value))}
                                         className="w-full accent-amber-500"
                                     />
-                                    <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+                                    <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         <span>{simulationSliderRanges.fleetSize.min}</span>
                                         <span>{simulationSliderRanges.fleetSize.max}</span>
                                     </div>
@@ -186,7 +188,7 @@ export function SimulationSection() {
                                 {/* Slider: Days in ZEE */}
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-3">
-                                        <label className="text-sm font-medium text-slate-300">{t('sim_days_in_zee')}</label>
+                                        <label className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_days_in_zee')}</label>
                                         <span className="text-sm font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md">
                                             {daysInZee}
                                         </span>
@@ -200,7 +202,7 @@ export function SimulationSection() {
                                         onChange={(e) => setDaysInZee(Number(e.target.value))}
                                         className="w-full accent-amber-500"
                                     />
-                                    <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+                                    <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         <span>{simulationSliderRanges.daysInZeePerShip.min}</span>
                                         <span>{simulationSliderRanges.daysInZeePerShip.max}</span>
                                     </div>
@@ -211,7 +213,7 @@ export function SimulationSection() {
                         {/* Slider: Tax Rate (Shared) */}
                         <div className="mb-8">
                             <div className="flex justify-between items-center mb-3">
-                                <label className="text-sm font-medium text-slate-300">{t('sim_tax_label')}</label>
+                                <label className="text-sm font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_tax_label')}</label>
                                 <span className={`text-sm font-bold px-2.5 py-0.5 rounded-md ${mode === 'STATE' ? 'text-yellow-400 bg-yellow-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
                                     ${taxRate}
                                 </span>
@@ -225,7 +227,7 @@ export function SimulationSection() {
                                 onChange={(e) => setTaxRate(Number(e.target.value))}
                                 className="w-full"
                             />
-                            <div className="flex justify-between text-[10px] text-slate-600 mt-1.5">
+                            <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                 <span>${simulationSliderRanges.taxRatePerTon.min}</span>
                                 <span>${simulationSliderRanges.taxRatePerTon.max}</span>
                             </div>
@@ -233,7 +235,7 @@ export function SimulationSection() {
 
                         {/* Ship Type Toggle */}
                         <div>
-                            <label className="text-sm font-medium text-slate-300 block mb-3">{t('sim_ship_type_label')}</label>
+                            <label className="text-sm font-medium block mb-3" style={{ color: 'var(--ais-page-text-secondary)' }}>{t('sim_ship_type_label')}</label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShipType(ShipType.CARGO)}
@@ -241,8 +243,9 @@ export function SimulationSection() {
                                             ? mode === 'STATE'
                                                 ? 'bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400'
                                                 : 'bg-amber-500/15 border-2 border-amber-500/40 text-amber-500'
-                                            : 'bg-slate-800/30 border border-white/5 text-slate-400 hover:border-white/10'
+                                            : ''
                                         }`}
+                                    style={shipType !== ShipType.CARGO ? { backgroundColor: 'var(--ais-page-surface)', border: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text-muted)' } : undefined}
                                 >
                                     <Ship className="w-4 h-4" />
                                     {t('sim_ship_cargo')}
@@ -253,8 +256,9 @@ export function SimulationSection() {
                                             ? mode === 'STATE'
                                                 ? 'bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400'
                                                 : 'bg-amber-500/15 border-2 border-amber-500/40 text-amber-500'
-                                            : 'bg-slate-800/30 border border-white/5 text-slate-400 hover:border-white/10'
+                                            : ''
                                         }`}
+                                    style={shipType !== ShipType.TANKER ? { backgroundColor: 'var(--ais-page-surface)', border: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text-muted)' } : undefined}
                                 >
                                     <Anchor className="w-4 h-4" />
                                     {t('sim_ship_tanker')}
@@ -276,7 +280,7 @@ export function SimulationSection() {
                                     {mode === 'STATE' ? t('sim_result_title') : t('sim_tax_liability_title')}
                                 </h3>
                             </div>
-                            <div className="text-5xl md:text-6xl font-bold text-white mb-3 tracking-tight">
+                            <div className="text-5xl md:text-6xl font-bold mb-3 tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
                                 {mode === 'STATE'
                                     ? formatCurrency(result.monthlyRevenue)
                                     : formatCurrency(companyResult.totalTaxLiability)
@@ -284,7 +288,7 @@ export function SimulationSection() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-sm font-medium ${mode === 'STATE' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {mode === 'STATE' ? '⬆' : '⬇'} {t('sim_annual_projection')}: {mode === 'STATE'
+                                    {mode === 'STATE' ? '\u2B06' : '\u2B07'} {t('sim_annual_projection')}: {mode === 'STATE'
                                         ? formatCurrency(result.annualProjection)
                                         : formatCurrency(companyResult.annualTaxProjection)}
                                 </span>
@@ -293,36 +297,36 @@ export function SimulationSection() {
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="bg-[#0A1110]/60 rounded-xl p-4 border border-white/5">
-                                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-1.5">
+                            <div className="rounded-xl p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 60%, transparent)', border: '1px solid var(--ais-page-border)' }}>
+                                <p className="text-[10px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                     {mode === 'STATE' ? t('sim_monthly_emissions') : t('sim_fleet_emissions')}
                                 </p>
-                                <p className="text-2xl font-bold text-white">
+                                <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                     {mode === 'STATE'
                                         ? formatNumber(result.monthlyEmissions)
                                         : formatNumber(companyResult.totalFleetEmissions)
                                     }
-                                    <span className="text-xs text-slate-400 font-normal ml-1">t</span>
+                                    <span className="text-xs font-normal ml-1" style={{ color: 'var(--ais-page-text-muted)' }}>t</span>
                                 </p>
-                                <p className="text-[10px] text-slate-500 mt-1">{mode === 'STATE' ? t('sim_co2_per_month') : ''}</p>
+                                <p className="text-[10px] mt-1" style={{ color: 'var(--ais-page-text-dim)' }}>{mode === 'STATE' ? t('sim_co2_per_month') : ''}</p>
                             </div>
-                            <div className="bg-[#0A1110]/60 rounded-xl p-4 border border-white/5">
-                                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-1.5">
+                            <div className="rounded-xl p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 60%, transparent)', border: '1px solid var(--ais-page-border)' }}>
+                                <p className="text-[10px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--ais-page-text-dim)' }}>
                                     {t('sim_price_vessel')}
                                 </p>
-                                <p className="text-2xl font-bold text-white">
+                                <p className="text-2xl font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                     ${mode === 'STATE'
                                         ? formatNumber(result.pricePerVessel)
                                         : formatNumber(companyResult.taxPerVessel)
                                     }
                                 </p>
-                                <p className="text-[10px] text-slate-500 mt-1">{t('sim_per_vessel')}</p>
+                                <p className="text-[10px] mt-1" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sim_per_vessel')}</p>
                             </div>
                         </div>
 
                         {/* Environmental Impact or Offset */}
                         {mode === 'STATE' ? (
-                            <div className="bg-[#0A1110]/40 rounded-xl p-5 border border-white/5 mb-6">
+                            <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 40%, transparent)', border: '1px solid var(--ais-page-border)' }}>
                                 <h4 className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-2">
                                     <TreePine className="w-3.5 h-3.5" />
                                     {t('sim_impact_title')}
@@ -331,29 +335,29 @@ export function SimulationSection() {
                                     <div className="flex items-center gap-3">
                                         <TreePine className="w-5 h-5 text-emerald-500 shrink-0" />
                                         <div>
-                                            <p className="text-lg font-bold text-white">{formatNumber(result.treesEquivalent)}</p>
-                                            <p className="text-[10px] text-slate-500">{t('sim_trees_label')}</p>
+                                            <p className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatNumber(result.treesEquivalent)}</p>
+                                            <p className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sim_trees_label')}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <Home className="w-5 h-5 text-yellow-500 shrink-0" />
                                         <div>
-                                            <p className="text-lg font-bold text-white">{formatNumber(result.householdsEquivalent)}</p>
-                                            <p className="text-[10px] text-slate-500">{t('sim_households_label')}</p>
+                                            <p className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatNumber(result.householdsEquivalent)}</p>
+                                            <p className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>{t('sim_households_label')}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-[#0A1110]/40 rounded-xl p-5 border border-white/5 mb-6">
+                            <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 40%, transparent)', border: '1px solid var(--ais-page-border)' }}>
                                 <h4 className="text-xs font-bold text-amber-500 mb-3 flex items-center gap-2">
                                     <AlertCircle className="w-3.5 h-3.5" />
                                     {t('sim_compliance_cost')}
                                 </h4>
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <p className="text-lg font-bold text-white">{formatCurrency(companyResult.offsetCostEstimate)}</p>
-                                        <p className="text-[10px] text-slate-500">{formatNumber(companyResult.offsetRequiredTons)} tCO2 {t('sim_offset_req')}</p>
+                                        <p className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatCurrency(companyResult.offsetCostEstimate)}</p>
+                                        <p className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>{formatNumber(companyResult.offsetRequiredTons)} tCO2 {t('sim_offset_req')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -362,7 +366,7 @@ export function SimulationSection() {
                         {/* CTA Button */}
                         <Link href="/login" className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group ${mode === 'STATE'
                                 ? 'bg-yellow-500 hover:bg-yellow-400 text-yellow-950 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]'
-                                : 'bg-amber-600 hover:bg-amber-500 text-white hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]'
+                                : 'bg-amber-600 hover:bg-amber-500 hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]'
                             }`}>
                             {mode === 'STATE' ? t('sim_cta') : t('sim_company_cta')}
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -371,12 +375,11 @@ export function SimulationSection() {
                 </div>
 
                 {/* Disclaimer */}
-                <div className="mt-6 flex items-start gap-3 text-[11px] text-slate-600 max-w-4xl mx-auto">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-slate-700" />
+                <div className="mt-6 flex items-start gap-3 text-[11px] max-w-4xl mx-auto" style={{ color: 'var(--ais-page-text-dim)' }}>
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }} />
                     <p className="leading-relaxed">{t('sim_disclaimer')}</p>
                 </div>
             </div>
         </section>
     );
 }
-

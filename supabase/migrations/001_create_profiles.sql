@@ -59,17 +59,25 @@ CREATE TRIGGER profiles_updated_at
 
 -- ── Auto-create profile on signup ────────────────────────────────────────────
 -- Quand un user s'inscrit via Supabase Auth, on crée automatiquement un profil
+-- is_active = false par défaut → le SUPERADMIN doit approuver
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, full_name, role)
+    INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (
         NEW.id,
         NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
-        COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'PORT_OFFICER')
-    );
+        COALESCE(NULLIF(NEW.raw_user_meta_data->>'full_name', ''), split_part(NEW.email, '@', 1)),
+        CASE
+            WHEN NEW.raw_user_meta_data->>'role' IS NOT NULL
+                 AND NEW.raw_user_meta_data->>'role' != ''
+            THEN (NEW.raw_user_meta_data->>'role')::public.user_role
+            ELSE 'PORT_OFFICER'::public.user_role
+        END,
+        COALESCE((NEW.raw_user_meta_data->>'is_active')::boolean, false)
+    )
+    ON CONFLICT (id) DO NOTHING;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

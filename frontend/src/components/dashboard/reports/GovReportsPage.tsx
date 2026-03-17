@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     Download, FileText, BarChart2, Leaf, Shield,
     CheckCircle, Clock, AlertTriangle, TrendingUp,
@@ -11,7 +12,17 @@ import {
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { OsButton } from '@/components/ui/OsButton';
-import { mockKpis, mockRevenueByCategoryData, mockSecureVessels } from '@/mock/datas/secureMock';
+import { useKpis } from '@/hooks/useKpis';
+
+// Static chart data — will be replaced by /api/revenue/analytics in V2
+const REVENUE_BY_CATEGORY = [
+    { category: 'Container',    revenue: 540_200, vessels: 312 },
+    { category: 'Cargo',        revenue: 329_800, vessels: 218 },
+    { category: 'Tanker',       revenue: 214_500, vessels: 97  },
+    { category: 'Bulk Carrier', revenue: 142_000, vessels: 180 },
+    { category: 'Other',        revenue: 14_000,  vessels: 35  },
+];
+import { useVessels } from '@/hooks/useVessels';
 import { VesselComplianceStatus } from '@/types/secure';
 
 // ── Static report catalogue ───────────────────────────────────────────────────
@@ -122,14 +133,7 @@ const STATUS_CONFIG = {
     },
 };
 
-// ── Derived compliance data ───────────────────────────────────────────────────
-
-const complianceBreakdown = [
-    { name: 'Compliant',    value: mockSecureVessels.filter((v) => v.complianceStatus === VesselComplianceStatus.COMPLIANT).length,    color: '#22C55E' },
-    { name: 'Payment Due',  value: mockSecureVessels.filter((v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE).length,  color: '#F59E0B' },
-    { name: 'Processing',   value: mockSecureVessels.filter((v) => v.complianceStatus === VesselComplianceStatus.PROCESSING).length,   color: '#38BDF8' },
-    { name: 'Non-Compliant',value: mockSecureVessels.filter((v) => v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT).length,color: '#EF4444' },
-];
+// ── Derived compliance data (computed inside component via hooks) ─────────────
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
@@ -151,6 +155,15 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function GovReportsPage() {
+    const t = useTranslations('GovReportsPage');
+    const { data: kpis } = useKpis();
+    const { data: vessels } = useVessels();
+    const complianceBreakdown = React.useMemo(() => [
+        { name: 'Compliant',    value: vessels.filter((v) => v.complianceStatus === VesselComplianceStatus.COMPLIANT).length,    color: '#22C55E' },
+        { name: 'Payment Due',  value: vessels.filter((v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE).length,  color: '#F59E0B' },
+        { name: 'Processing',   value: vessels.filter((v) => v.complianceStatus === VesselComplianceStatus.PROCESSING).length,   color: '#38BDF8' },
+        { name: 'Non-Compliant',value: vessels.filter((v) => v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT).length,color: '#EF4444' },
+    ], [vessels]);
     const [typeFilter, setTypeFilter] = React.useState<string>('ALL');
 
     const filteredReports = typeFilter === 'ALL'
@@ -162,23 +175,23 @@ export function GovReportsPage() {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">Government Reports & Analytics</h1>
+                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('title')}</h1>
                     <p className="text-xs text-[var(--os-text-muted)] mt-0.5">
-                        Official reporting portal — Ministry of Finance · Somaliland Maritime Authority
+                        {t('subtitle')}
                     </p>
                 </div>
                 <OsButton variant="secondary" size="sm" icon={<Printer className="w-3.5 h-3.5" />}>
-                    Print Summary
+                    {t('print_summary')}
                 </OsButton>
             </div>
 
             {/* KPI row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Revenue YTD',       value: `$${(mockKpis.monthlyRevenueUsd * 3 / 1_000_000).toFixed(2)}M`, delta: `+${mockKpis.monthlyRevenueDelta}%`, color: '#00D97E' },
-                    { label: 'Vessels Processed', value: mockKpis.vesselsProcessed.toLocaleString(),                      delta: '+8.2%',                              color: '#38BDF8' },
-                    { label: 'CO₂ Tracked',       value: `${(mockKpis.estCo2TrackingTons / 1000).toFixed(1)}kt`,         delta: '+15.1%',                             color: '#F59E0B' },
-                    { label: 'Reports Generated', value: REPORT_CATALOG.filter((r) => r.status === 'ready').length.toString(), delta: 'this month',                   color: '#A78BFA' },
+                    { label: t('kpi_revenue_ytd'),       value: `$${(kpis.monthlyRevenueUsd * 3 / 1_000_000).toFixed(2)}M`, delta: `+${kpis.monthlyRevenueDelta}%`, color: '#00D97E' },
+                    { label: t('kpi_vessels_processed'), value: kpis.vesselsProcessed.toLocaleString(),                      delta: '+8.2%',                              color: '#38BDF8' },
+                    { label: t('kpi_co2_tracked'),       value: `${(kpis.estCo2TrackingTons / 1000).toFixed(1)}kt`,         delta: '+15.1%',                             color: '#F59E0B' },
+                    { label: t('kpi_reports_generated'), value: REPORT_CATALOG.filter((r) => r.status === 'ready').length.toString(), delta: t('this_month'),                   color: '#A78BFA' },
                 ].map(({ label, value, delta, color }) => (
                     <div key={label} className="os-card p-4 relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: color }} />
@@ -196,10 +209,10 @@ export function GovReportsPage() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
                 {/* Revenue by category bar */}
                 <div className="xl:col-span-2 os-card p-5">
-                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">Revenue by Vessel Category</h3>
-                    <p className="text-[10px] text-[var(--os-text-muted)] mb-4">YTD contribution by vessel type — Gulf of Aden EEZ</p>
+                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">{t('chart_revenue_by_category')}</h3>
+                    <p className="text-[10px] text-[var(--os-text-muted)] mb-4">{t('chart_revenue_by_category_desc')}</p>
                     <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={mockRevenueByCategoryData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} barSize={28}>
+                        <BarChart data={REVENUE_BY_CATEGORY} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} barSize={28}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                             <XAxis dataKey="category" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
@@ -211,8 +224,8 @@ export function GovReportsPage() {
 
                 {/* Compliance donut */}
                 <div className="os-card p-5 flex flex-col">
-                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">Compliance Overview</h3>
-                    <p className="text-[10px] text-[var(--os-text-muted)] mb-3">Current vessel compliance breakdown</p>
+                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">{t('chart_compliance_overview')}</h3>
+                    <p className="text-[10px] text-[var(--os-text-muted)] mb-3">{t('chart_compliance_overview_desc')}</p>
                     <div className="flex-1 flex flex-col items-center justify-center">
                         <ResponsiveContainer width={140} height={140}>
                             <PieChart>
@@ -247,8 +260,8 @@ export function GovReportsPage() {
             <div className="os-card overflow-hidden">
                 <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Report Catalogue</h3>
-                        <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">Official documents available for download or further analysis</p>
+                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('report_catalogue')}</h3>
+                        <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{t('report_catalogue_desc')}</p>
                     </div>
                     {/* Type filter tabs */}
                     <div className="flex items-center gap-1">
@@ -325,9 +338,9 @@ export function GovReportsPage() {
                                             </button>
                                         </>
                                     ) : report.status === 'processing' ? (
-                                        <span className="text-[10px] text-[var(--os-text-muted)] italic">Generating…</span>
+                                        <span className="text-[10px] text-[var(--os-text-muted)] italic">{t('status_generating')}</span>
                                     ) : (
-                                        <span className="text-[10px] text-[var(--os-text-muted)] italic">Auto-generated</span>
+                                        <span className="text-[10px] text-[var(--os-text-muted)] italic">{t('status_auto_generated')}</span>
                                     )}
                                     <ChevronRight className="w-3.5 h-3.5 text-[var(--os-text-muted)]" />
                                 </div>
@@ -340,8 +353,7 @@ export function GovReportsPage() {
                 <div className="px-5 py-3 border-t border-[var(--os-border)] flex items-center gap-3">
                     <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] flex-shrink-0" />
                     <p className="text-[10px] text-[var(--os-text-muted)]">
-                        All reports are certified by the <span className="text-[var(--os-text-secondary)] font-semibold">Ministry of Finance of Somaliland</span>.
-                        Exports are digitally signed and auditable. Unauthorized distribution is prohibited under the <span className="text-[var(--os-text-secondary)]">Maritime Carbon Act 2024</span>.
+                        {t('certification_notice')}
                     </p>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Shield, Clock, Eye, EyeOff, ArrowRight, AlertCircle, Zap, ChevronRight } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
@@ -27,6 +28,7 @@ function enterDemo(role: UserRole) {
 }
 
 export function LoginPage() {
+    const t = useTranslations('Auth');
     const [email, setEmail]       = React.useState('');
     const [password, setPassword] = React.useState('');
     const [showPwd, setShowPwd]   = React.useState(false);
@@ -38,7 +40,7 @@ export function LoginPage() {
         e.preventDefault();
         setError('');
         if (!email || !password) {
-            setError('Veuillez renseigner vos identifiants.');
+            setError(t('error_empty_credentials'));
             return;
         }
 
@@ -55,11 +57,16 @@ export function LoginPage() {
         });
 
         if (authError || !data.user) {
-            setError(
-                authError?.message === 'Invalid login credentials'
-                    ? 'Identifiants incorrects. Vérifiez votre email et mot de passe.'
-                    : authError?.message ?? 'Erreur de connexion. Réessayez.'
-            );
+            const msg = authError?.message ?? '';
+            let displayError: string;
+            if (msg === 'Invalid login credentials') {
+                displayError = t('error_invalid_credentials');
+            } else if (msg.includes('Database error') || msg.includes('unexpected_failure')) {
+                displayError = t('error_database') ?? 'Service temporarily unavailable. Please try again in a few minutes.';
+            } else {
+                displayError = msg || t('error_connection');
+            }
+            setError(displayError);
             setLoading(false);
             return;
         }
@@ -73,8 +80,7 @@ export function LoginPage() {
 
         if (profile && !profile.is_active) {
             await supabase.auth.signOut();
-            setError('Ce compte est désactivé. Contactez votre administrateur.');
-            setLoading(false);
+            window.location.href = '/pending-approval';
             return;
         }
 
@@ -101,7 +107,7 @@ export function LoginPage() {
                             <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
                         </svg>
                     </div>
-                    <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>AIS Portal</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
                 <div className="flex items-center gap-3">
                     {(['FR', 'EN', 'SO'] as const).map((lang) => (
@@ -128,9 +134,9 @@ export function LoginPage() {
                             <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>AIS Portal</h1>
+                    <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</h1>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500/60 mb-8">
-                        Africgreen Initiative · Somaliland
+                        {t('subtitle_initiative')}
                     </p>
 
                     {/* Login card */}
@@ -146,10 +152,10 @@ export function LoginPage() {
                             <Shield className="w-4 h-4 text-[var(--os-yellow)] flex-shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-wide mb-0.5 text-[var(--os-yellow)]">
-                                    Système officiel du gouvernement
+                                    {t('gov_system_title')}
                                 </p>
                                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--os-text-muted)' }}>
-                                    Accès réservé au personnel autorisé. Toutes les activités sont enregistrées.
+                                    {t('gov_system_warning')}
                                 </p>
                             </div>
                         </div>
@@ -160,14 +166,14 @@ export function LoginPage() {
                             style={{ backgroundColor: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}
                         >
                             <Clock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                            <p className="text-[11px] text-emerald-400">Session expire après 15 minutes d&apos;inactivité.</p>
+                            <p className="text-[11px] text-emerald-400">{t('session_notice')}</p>
                         </div>
 
                         {/* Form — no role selector, role is auto-detected from the account */}
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
-                                    Email / Identifiant gouvernemental
+                                    {t('label_email')}
                                 </label>
                                 <input
                                     type="email"
@@ -182,9 +188,9 @@ export function LoginPage() {
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center justify-between">
                                     <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
-                                        Mot de passe
+                                        {t('label_password')}
                                     </label>
-                                    <a href="#" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">Oublié ?</a>
+                                    <a href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">{t('forgot_password')}</a>
                                 </div>
                                 <div className="relative">
                                     <input
@@ -221,13 +227,13 @@ export function LoginPage() {
                                 iconRight={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
                                 className="w-full mt-1"
                             >
-                                Accéder à la plateforme
+                                {t('btn_access_platform')}
                             </OsButton>
                         </form>
 
                         <p className="text-center text-xs mt-4" style={{ color: 'var(--os-text-muted)' }}>
-                            Pas encore de compte ?{' '}
-                            <a href="/signup" className="text-emerald-400 hover:underline font-semibold">Demander un accès →</a>
+                            {t('no_account')}{' '}
+                            <a href="/signup" className="text-emerald-400 hover:underline font-semibold">{t('request_access')}</a>
                         </p>
                     </div>
 
@@ -244,7 +250,7 @@ export function LoginPage() {
                         >
                             <div className="flex items-center gap-2">
                                 <Zap className="w-4 h-4" />
-                                <span>Mode Démo — explorer sans compte</span>
+                                <span>{t('demo_title')}</span>
                             </div>
                             <ChevronRight
                                 className="w-4 h-4 transition-transform"
@@ -258,7 +264,7 @@ export function LoginPage() {
                                 style={{ backgroundColor: 'var(--os-surface)', border: '1px solid rgba(234,179,8,0.2)' }}
                             >
                                 <p className="text-[11px] mb-3" style={{ color: 'var(--os-text-muted)' }}>
-                                    Choisissez un profil pour explorer la plateforme avec des données de démonstration. Aucun compte requis.
+                                    {t('demo_choose_profile')}
                                 </p>
                                 <div className="flex flex-col gap-2">
                                     {DEMO_PROFILES.map((p) => (
@@ -287,18 +293,18 @@ export function LoginPage() {
                                     ))}
                                 </div>
                                 <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--os-text-muted)' }}>
-                                    Les données démo sont fictives et réinitialisées à chaque session.
+                                    {t('demo_disclaimer')}
                                 </p>
                             </div>
                         )}
                     </div>
 
                     <div className="flex items-center gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
-                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">Confidentialité</a>
+                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>
                         <span>·</span>
-                        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">CGU</a>
+                        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_terms')}</a>
                         <span>·</span>
-                        <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">Sécurité</a>
+                        <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_security')}</a>
                     </div>
                 </div>
             </div>
@@ -307,10 +313,10 @@ export function LoginPage() {
                 className="flex items-center justify-between px-6 py-2 text-[10px] border-t"
                 style={{ borderColor: 'var(--os-border)', color: 'var(--os-text-muted)' }}
             >
-                <span>© 2025 Gouvernement de Somaliland</span>
+                <span>{t('copyright')}</span>
                 <div className="flex items-center gap-4">
-                    <span>🌿 IMO DCS Certifiée</span>
-                    <span>🔒 AES-256</span>
+                    <span>🌿 {t('badge_imo')}</span>
+                    <span>🔒 {t('badge_aes')}</span>
                 </div>
             </div>
         </div>

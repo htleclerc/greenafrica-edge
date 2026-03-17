@@ -1,9 +1,38 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   AFRICGREEN THEME SYSTEM
+   ─────────────────────────────────────────────────────────────────────────────
+   Two independent axes:
+     1. Skin  (data-skin):  emerald | navy | institutional
+     2. Mode  (data-theme): dark | light
+
+   Every skin has both a dark and light variant = 6 combinations.
+   :root holds shared structural vars only.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 :root {
-    /* ── Public Portal — Dark Maritime Green Theme (V1 / default) ── */
+    /* Sidebar */
+    --os-sidebar-w: 56px;
+
+    /* Semantic status colors (shared across all skins) */
+    --os-yellow:  #EAB308;
+    --os-red:     #EF4444;
+    --os-orange:  #F97316;
+    --os-green:   #10B981;
+    --os-blue:    #3B82F6;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SKIN 1: EMERALD (V1)  —  Dark green maritime theme
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Emerald Dark (default) ── */
+[data-skin="emerald"] {
     --background: #0A1110;
     --foreground: #ededed;
+
     --ais-dark: #0A1110;
     --ais-dark-card: #111C18;
     --ais-dark-surface: #13231D;
@@ -15,7 +44,6 @@
     --ais-text-muted: #94A3B8;
     --ais-text-secondary: #64748B;
 
-    /* ── Navbar / Footer semantic aliases (dark defaults) ── */
     --ais-nav-bg:                rgba(10, 17, 16, 0.92);
     --ais-nav-border:            rgba(255, 255, 255, 0.05);
     --ais-nav-text:              #FFFFFF;
@@ -28,7 +56,17 @@
     --ais-footer-border:         rgba(255, 255, 255, 0.05);
     --ais-social-bg:             rgba(255, 255, 255, 0.05);
 
-    /* ── Secure Platform — remapped onto V1 dark green theme ── */
+    --ais-page-bg:               #0A1110;
+    --ais-page-bg-alt:           #070D0B;
+    --ais-page-card:             #111C18;
+    --ais-page-surface:          #13231D;
+    --ais-page-text:             #FFFFFF;
+    --ais-page-text-secondary:   #CBD5E1;
+    --ais-page-text-muted:       #94A3B8;
+    --ais-page-text-dim:         #64748B;
+    --ais-page-border:           rgba(255, 255, 255, 0.06);
+    --ais-page-glow:             rgba(16, 185, 129, 0.15);
+
     --os-bg:           #0A1110;
     --os-surface:      #111C18;
     --os-surface-2:    #13231D;
@@ -36,26 +74,13 @@
     --os-border:       rgba(255, 255, 255, 0.06);
     --os-border-strong:rgba(255, 255, 255, 0.12);
 
-    /* Brand — emerald V1 */
     --os-brand-green:  #10B981;
     --os-brand-cyan:   #34D399;
 
-    /* Semantic */
-    --os-yellow:       #EAB308;
-    --os-red:          #EF4444;
-    --os-orange:       #F97316;
-    --os-green:        #10B981;
-    --os-blue:         #3B82F6;
-
-    /* Typography */
     --os-text-primary: #F1F5F9;
     --os-text-secondary:#94A3B8;
     --os-text-muted:   #475569;
 
-    /* Sidebar */
-    --os-sidebar-w:    56px;
-
-    /* Status badge bg */
     --os-badge-compliant-bg:   rgba(16, 185, 129, 0.12);
     --os-badge-payment-bg:     rgba(239, 68, 68, 0.12);
     --os-badge-processing-bg:  rgba(249, 115, 22, 0.12);
@@ -63,10 +88,11 @@
     --os-badge-info-bg:        rgba(59, 130, 246, 0.12);
 }
 
-/* ── Public Portal — Light Theme (V1 inverted, day mode) ── */
-[data-theme="light"] {
+/* ── Emerald Light ── */
+[data-skin="emerald"][data-theme="light"] {
     --background: #F3F9F5;
     --foreground: #0D1F18;
+
     --ais-dark: #F3F9F5;
     --ais-dark-card: #FFFFFF;
     --ais-dark-surface: #E8F4ED;
@@ -78,7 +104,6 @@
     --ais-text-muted: #3D6B54;
     --ais-text-secondary: #1A3D2B;
 
-    /* Navbar / Footer semantic aliases (light overrides) */
     --ais-nav-bg:                rgba(243, 249, 245, 0.95);
     --ais-nav-border:            rgba(16, 185, 129, 0.12);
     --ais-nav-text:              #0D1F18;
@@ -90,8 +115,309 @@
     --ais-footer-text-bright:    #0D1F18;
     --ais-footer-border:         rgba(16, 185, 129, 0.12);
     --ais-social-bg:             rgba(5, 150, 105, 0.08);
+
+    --ais-page-bg:               #F3F9F5;
+    --ais-page-bg-alt:           #E8F4ED;
+    --ais-page-card:             #FFFFFF;
+    --ais-page-surface:          #F0F7F4;
+    --ais-page-text:             #0D1F18;
+    --ais-page-text-secondary:   #1A3D2B;
+    --ais-page-text-muted:       #3D6B54;
+    --ais-page-text-dim:         #5B8A72;
+    --ais-page-border:           rgba(16, 185, 129, 0.12);
+    --ais-page-glow:             rgba(5, 150, 105, 0.1);
+
+    --os-bg:           #F3F9F5;
+    --os-surface:      #FFFFFF;
+    --os-surface-2:    #F0F7F4;
+    --os-surface-3:    #E8F4ED;
+    --os-border:       rgba(16, 185, 129, 0.12);
+    --os-border-strong:rgba(16, 185, 129, 0.25);
+
+    --os-brand-green:  #059669;
+    --os-brand-cyan:   #10B981;
+
+    --os-text-primary: #0D1F18;
+    --os-text-secondary:#3D6B54;
+    --os-text-muted:   #5B8A72;
+
+    --os-badge-compliant-bg:   rgba(5, 150, 105, 0.12);
+    --os-badge-payment-bg:     rgba(220, 38, 38, 0.10);
+    --os-badge-processing-bg:  rgba(234, 88, 12, 0.10);
+    --os-badge-pending-bg:     rgba(202, 138, 4, 0.10);
+    --os-badge-info-bg:        rgba(37, 99, 235, 0.10);
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SKIN 2: NAVY COMMAND (V2)  —  Deep navy blue, cyan accents
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Navy Dark ── */
+[data-skin="navy"] {
+    --background: #0B1426;
+    --foreground: #E2E8F0;
+
+    --ais-dark: #0B1426;
+    --ais-dark-card: #111D35;
+    --ais-dark-surface: #152240;
+    --ais-border: rgba(56, 189, 248, 0.08);
+    --ais-emerald: #00D97E;
+    --ais-emerald-dark: #00B86B;
+    --ais-yellow: #EAB308;
+    --ais-yellow-light: #FACC15;
+    --ais-text-muted: #7B8FA8;
+    --ais-text-secondary: #94A3B8;
+
+    --ais-nav-bg:                rgba(11, 20, 38, 0.95);
+    --ais-nav-border:            rgba(56, 189, 248, 0.08);
+    --ais-nav-text:              #F1F5F9;
+    --ais-nav-text-muted:        #7B8FA8;
+    --ais-nav-item-active-bg:    rgba(56, 189, 248, 0.08);
+    --ais-nav-item-active-border:rgba(56, 189, 248, 0.15);
+    --ais-footer-bg:             #080F1F;
+    --ais-footer-text:           #64748B;
+    --ais-footer-text-bright:    #F1F5F9;
+    --ais-footer-border:         rgba(56, 189, 248, 0.06);
+    --ais-social-bg:             rgba(56, 189, 248, 0.06);
+
+    --ais-page-bg:               #0B1426;
+    --ais-page-bg-alt:           #080F1F;
+    --ais-page-card:             #111D35;
+    --ais-page-surface:          #152240;
+    --ais-page-text:             #F1F5F9;
+    --ais-page-text-secondary:   #CBD5E1;
+    --ais-page-text-muted:       #7B8FA8;
+    --ais-page-text-dim:         #475569;
+    --ais-page-border:           rgba(56, 189, 248, 0.08);
+    --ais-page-glow:             rgba(0, 217, 126, 0.12);
+
+    --os-bg:           #0B1426;
+    --os-surface:      #111D35;
+    --os-surface-2:    #152240;
+    --os-surface-3:    #1B2D4F;
+    --os-border:       rgba(56, 189, 248, 0.08);
+    --os-border-strong:rgba(56, 189, 248, 0.18);
+
+    --os-brand-green:  #00D97E;
+    --os-brand-cyan:   #38BDF8;
+
+    --os-text-primary: #F1F5F9;
+    --os-text-secondary:#94A3B8;
+    --os-text-muted:   #4B6584;
+
+    --os-badge-compliant-bg:   rgba(0, 217, 126, 0.12);
+    --os-badge-payment-bg:     rgba(239, 68, 68, 0.12);
+    --os-badge-processing-bg:  rgba(249, 115, 22, 0.10);
+    --os-badge-pending-bg:     rgba(234, 179, 8, 0.10);
+    --os-badge-info-bg:        rgba(56, 189, 248, 0.12);
+}
+
+/* ── Navy Light ── */
+[data-skin="navy"][data-theme="light"] {
+    --background: #EFF6FF;
+    --foreground: #0F172A;
+
+    --ais-dark: #EFF6FF;
+    --ais-dark-card: #FFFFFF;
+    --ais-dark-surface: #DBEAFE;
+    --ais-border: rgba(59, 130, 246, 0.12);
+    --ais-emerald: #00B86B;
+    --ais-emerald-dark: #059669;
+    --ais-text-muted: #475569;
+    --ais-text-secondary: #1E293B;
+
+    --ais-nav-bg:                rgba(255, 255, 255, 0.96);
+    --ais-nav-border:            rgba(59, 130, 246, 0.10);
+    --ais-nav-text:              #0F172A;
+    --ais-nav-text-muted:        #475569;
+    --ais-nav-item-active-bg:    rgba(59, 130, 246, 0.06);
+    --ais-nav-item-active-border:rgba(59, 130, 246, 0.2);
+    --ais-footer-bg:             #DBEAFE;
+    --ais-footer-text:           #475569;
+    --ais-footer-text-bright:    #0F172A;
+    --ais-footer-border:         rgba(59, 130, 246, 0.10);
+    --ais-social-bg:             rgba(59, 130, 246, 0.06);
+
+    --ais-page-bg:               #EFF6FF;
+    --ais-page-bg-alt:           #DBEAFE;
+    --ais-page-card:             #FFFFFF;
+    --ais-page-surface:          #F0F6FF;
+    --ais-page-text:             #0F172A;
+    --ais-page-text-secondary:   #1E293B;
+    --ais-page-text-muted:       #475569;
+    --ais-page-text-dim:         #64748B;
+    --ais-page-border:           rgba(59, 130, 246, 0.10);
+    --ais-page-glow:             rgba(0, 184, 107, 0.08);
+
+    --os-bg:           #EFF6FF;
+    --os-surface:      #FFFFFF;
+    --os-surface-2:    #F0F6FF;
+    --os-surface-3:    #DBEAFE;
+    --os-border:       rgba(59, 130, 246, 0.10);
+    --os-border-strong:rgba(59, 130, 246, 0.22);
+
+    --os-brand-green:  #00B86B;
+    --os-brand-cyan:   #2563EB;
+
+    --os-text-primary: #0F172A;
+    --os-text-secondary:#334155;
+    --os-text-muted:   #64748B;
+
+    --os-badge-compliant-bg:   rgba(0, 184, 107, 0.10);
+    --os-badge-payment-bg:     rgba(220, 38, 38, 0.08);
+    --os-badge-processing-bg:  rgba(234, 88, 12, 0.08);
+    --os-badge-pending-bg:     rgba(202, 138, 4, 0.08);
+    --os-badge-info-bg:        rgba(37, 99, 235, 0.10);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SKIN 3: INSTITUTIONAL (V3)  —  Clean governmental, green accents
+   Default state is light (as designed). Dark mode available too.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Institutional Dark ── */
+[data-skin="institutional"] {
+    --background: #0C1A14;
+    --foreground: #E8EDE6;
+
+    --ais-dark: #0C1A14;
+    --ais-dark-card: #14261E;
+    --ais-dark-surface: #1A3028;
+    --ais-border: rgba(5, 150, 105, 0.12);
+    --ais-emerald: #059669;
+    --ais-emerald-dark: #047857;
+    --ais-yellow: #D97706;
+    --ais-yellow-light: #F59E0B;
+    --ais-text-muted: #6B8F7D;
+    --ais-text-secondary: #9AB5A8;
+
+    --ais-nav-bg:                rgba(12, 26, 20, 0.95);
+    --ais-nav-border:            rgba(5, 150, 105, 0.10);
+    --ais-nav-text:              #E8EDE6;
+    --ais-nav-text-muted:        #6B8F7D;
+    --ais-nav-item-active-bg:    rgba(5, 150, 105, 0.08);
+    --ais-nav-item-active-border:rgba(5, 150, 105, 0.2);
+    --ais-footer-bg:             #081210;
+    --ais-footer-text:           #6B8F7D;
+    --ais-footer-text-bright:    #E8EDE6;
+    --ais-footer-border:         rgba(5, 150, 105, 0.08);
+    --ais-social-bg:             rgba(5, 150, 105, 0.06);
+
+    --ais-page-bg:               #0C1A14;
+    --ais-page-bg-alt:           #081210;
+    --ais-page-card:             #14261E;
+    --ais-page-surface:          #1A3028;
+    --ais-page-text:             #E8EDE6;
+    --ais-page-text-secondary:   #9AB5A8;
+    --ais-page-text-muted:       #6B8F7D;
+    --ais-page-text-dim:         #4A6B5C;
+    --ais-page-border:           rgba(5, 150, 105, 0.10);
+    --ais-page-glow:             rgba(5, 150, 105, 0.12);
+
+    --os-bg:           #0C1A14;
+    --os-surface:      #14261E;
+    --os-surface-2:    #1A3028;
+    --os-surface-3:    #22402F;
+    --os-border:       rgba(5, 150, 105, 0.12);
+    --os-border-strong:rgba(5, 150, 105, 0.25);
+
+    --os-brand-green:  #059669;
+    --os-brand-cyan:   #10B981;
+
+    --os-text-primary: #E8EDE6;
+    --os-text-secondary:#9AB5A8;
+    --os-text-muted:   #4A6B5C;
+
+    --os-badge-compliant-bg:   rgba(5, 150, 105, 0.15);
+    --os-badge-payment-bg:     rgba(220, 38, 38, 0.12);
+    --os-badge-processing-bg:  rgba(234, 88, 12, 0.10);
+    --os-badge-pending-bg:     rgba(202, 138, 4, 0.10);
+    --os-badge-info-bg:        rgba(37, 99, 235, 0.10);
+}
+
+/* ── Institutional Light (V3 reference design) ── */
+[data-skin="institutional"][data-theme="light"] {
+    --background: #F0FAF4;
+    --foreground: #1A2E25;
+
+    --ais-dark: #F0FAF4;
+    --ais-dark-card: #FFFFFF;
+    --ais-dark-surface: #E6F4ED;
+    --ais-border: rgba(5, 150, 105, 0.12);
+    --ais-emerald: #059669;
+    --ais-emerald-dark: #047857;
+    --ais-yellow: #D97706;
+    --ais-yellow-light: #F59E0B;
+    --ais-text-muted: #4B6B5C;
+    --ais-text-secondary: #1A3D2B;
+
+    --ais-nav-bg:                rgba(255, 255, 255, 0.96);
+    --ais-nav-border:            rgba(5, 150, 105, 0.12);
+    --ais-nav-text:              #1A2E25;
+    --ais-nav-text-muted:        #4B6B5C;
+    --ais-nav-item-active-bg:    rgba(5, 150, 105, 0.06);
+    --ais-nav-item-active-border:rgba(5, 150, 105, 0.2);
+    --ais-footer-bg:             #E6F4ED;
+    --ais-footer-text:           #4B6B5C;
+    --ais-footer-text-bright:    #1A2E25;
+    --ais-footer-border:         rgba(5, 150, 105, 0.10);
+    --ais-social-bg:             rgba(5, 150, 105, 0.06);
+
+    --ais-page-bg:               #F0FAF4;
+    --ais-page-bg-alt:           #E6F4ED;
+    --ais-page-card:             #FFFFFF;
+    --ais-page-surface:          #F5FBF8;
+    --ais-page-text:             #1A2E25;
+    --ais-page-text-secondary:   #2D4F3E;
+    --ais-page-text-muted:       #4B6B5C;
+    --ais-page-text-dim:         #6B8F7D;
+    --ais-page-border:           rgba(5, 150, 105, 0.10);
+    --ais-page-glow:             rgba(5, 150, 105, 0.08);
+
+    --os-bg:           #F0FAF4;
+    --os-surface:      #FFFFFF;
+    --os-surface-2:    #F5FBF8;
+    --os-surface-3:    #E6F4ED;
+    --os-border:       rgba(5, 150, 105, 0.12);
+    --os-border-strong:rgba(5, 150, 105, 0.25);
+
+    --os-brand-green:  #059669;
+    --os-brand-cyan:   #10B981;
+
+    --os-text-primary: #1A2E25;
+    --os-text-secondary:#2D4F3E;
+    --os-text-muted:   #6B8F7D;
+
+    --os-badge-compliant-bg:   rgba(5, 150, 105, 0.10);
+    --os-badge-payment-bg:     rgba(220, 38, 38, 0.08);
+    --os-badge-processing-bg:  rgba(234, 88, 12, 0.08);
+    --os-badge-pending-bg:     rgba(202, 138, 4, 0.08);
+    --os-badge-info-bg:        rgba(37, 99, 235, 0.08);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SKIN-SPECIFIC EXTRA STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* V3 Institutional: green top accent bar on cards */
+[data-skin="institutional"] .os-card {
+    border-top: 2px solid var(--os-brand-green);
+}
+
+/* V2 Navy: subtle cyan glow on active nav */
+[data-skin="navy"] .os-nav-active {
+    box-shadow: inset 2px 0 0 var(--os-brand-cyan);
+    color: var(--os-brand-cyan);
+    background-color: rgba(56, 189, 248, 0.08);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SHARED THEME ALIASES
+   ───────────────────────────────────────────────────────────────────────────── */
 
 @theme inline {
     --color-background: var(--background);
@@ -108,37 +434,17 @@ body {
 
 /* Float animation for decorative elements */
 @keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-10px); }
 }
-
-.animate-float {
-    animation: float 3s ease-in-out infinite;
-}
+.animate-float { animation: float 3s ease-in-out infinite; }
 
 /* Pulse glow for active indicators */
 @keyframes pulse-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-    }
-
-    50% {
-        box-shadow: 0 0 12px 4px rgba(16, 185, 129, 0.2);
-    }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50%      { box-shadow: 0 0 12px 4px rgba(16, 185, 129, 0.2); }
 }
-
-.animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
 /* Custom range slider styling */
 input[type="range"] {
@@ -147,7 +453,7 @@ input[type="range"] {
     width: 100%;
     height: 6px;
     border-radius: 999px;
-    background: #1E293B;
+    background: var(--os-surface-3, #1E293B);
     outline: none;
     transition: background 0.2s;
 }
@@ -160,7 +466,7 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%;
     background: var(--ais-yellow);
     cursor: pointer;
-    border: 3px solid var(--ais-dark);
+    border: 3px solid var(--background);
     box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
     transition: transform 0.15s;
 }
@@ -175,7 +481,7 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 50%;
     background: var(--ais-yellow);
     cursor: pointer;
-    border: 3px solid var(--ais-dark);
+    border: 3px solid var(--background);
     box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
 }
 
@@ -223,9 +529,7 @@ input[type="range"]::-moz-range-thumb {
 .animate-blink { animation: blink 1.5s ease-in-out infinite; }
 
 /* Scroll smooth */
-html {
-    scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 /* Selection color */
 ::selection {
@@ -240,12 +544,10 @@ html {
         color: black !important;
     }
 
-    /* Hide Navigation, Footer, and other interactive UI elements */
     nav, footer, .no-print {
         display: none !important;
     }
 
-    /* Ensure the print modal takes full width and resets margins */
     .print-only {
         display: block !important;
         position: absolute;
@@ -257,7 +559,6 @@ html {
         background: white !important;
     }
 
-    /* Adjust page margins to fit A4 */
     @page {
         margin: 0.5cm;
         size: A4 portrait;

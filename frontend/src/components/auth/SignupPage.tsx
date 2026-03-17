@@ -6,7 +6,7 @@ import {
     Building2, Ship, Eye, EyeOff, AlertCircle,
     Globe, Bell, LayoutDashboard, UserCheck,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+// Registration is handled server-side via /api/auth/register
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -171,43 +171,45 @@ export function SignupPage() {
         if (err) { setError(err); return; }
         if (step < 3) { setStep(step + 1); return; }
 
-        // Step 3 → Submit registration request to Supabase
+        // Step 3 → Server-side registration via API route
+        // Creates auth user + profile + registration request atomically
         setLoading(true);
         try {
-            const supabase = createClient();
-
-            // Map entity type to DB enum
             const entityType = form.entityType === 'port_authority' ? 'PORT_AUTHORITY' : 'SHIPPING_AGENT';
 
-            const { error: insertErr } = await supabase
-                .from('registration_requests')
-                .insert({
-                    entity_type: entityType,
-                    org_name: form.organizationName.trim(),
-                    org_registry_id: form.registryId.trim(),
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: form.email.trim().toLowerCase(),
+                    password: form.password,
+                    fullName: form.fullName.trim(),
+                    role: form.role,
+                    entityType,
+                    orgName: form.organizationName.trim(),
+                    registryId: form.registryId.trim(),
                     jurisdiction: form.jurisdiction,
-                    requested_role: form.role,
-                    contact_name: form.fullName.trim(),
-                    contact_email: form.email.trim().toLowerCase(),
-                    password_hash: form.password, // Will be hashed by the Edge Function on approval
-                    default_region: form.defaultRegion,
-                    access_scope: form.accessScope,
-                    notify_proforma: form.notifyProForma,
-                    notify_co2: form.notifyCo2,
-                    notify_revenue: form.notifyRevenue,
-                    notify_weekly: form.notifyWeekly,
-                });
+                    defaultRegion: form.defaultRegion,
+                    accessScope: form.accessScope,
+                    notifyProForma: form.notifyProForma,
+                    notifyCo2: form.notifyCo2,
+                    notifyRevenue: form.notifyRevenue,
+                    notifyWeekly: form.notifyWeekly,
+                }),
+            });
 
-            if (insertErr) {
-                setError(insertErr.message || 'Erreur lors de l\'envoi. Réessayez.');
+            const result = await res.json();
+
+            if (!res.ok) {
+                setError(result.error || 'Registration failed.');
                 setLoading(false);
                 return;
             }
 
             setLoading(false);
-            setSubmitted(true);
+            window.location.href = '/pending-approval';
         } catch {
-            setError('Erreur de connexion au serveur. Réessayez.');
+            setError('Server connection error. Please try again.');
             setLoading(false);
         }
     }
@@ -218,7 +220,7 @@ export function SignupPage() {
         return (
             <AuthShell>
                 <div className="w-full max-w-md flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-[#0B2818] border border-[#00D97E]/30 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]">
+                    <div className="w-16 h-16 rounded-2xl border border-[#00D97E]/30 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]" style={{ backgroundColor: 'var(--ais-page-card)' }}>
                         <CheckCircle className="w-8 h-8 text-[#00D97E]" />
                     </div>
                     <h2 className="text-2xl font-bold text-[var(--os-text-primary)] mb-2">Request Submitted</h2>
@@ -727,7 +729,7 @@ function PasswordStrength({ password }: { password: string }) {
 function LogoBlock() {
     return (
         <>
-            <div className="w-16 h-16 rounded-2xl bg-[#0B2818] border border-[#00D97E]/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]">
+            <div className="w-16 h-16 rounded-2xl border border-[#00D97E]/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]" style={{ backgroundColor: 'var(--ais-page-card)' }}>
                 <Anchor className="w-8 h-8 text-[#00D97E]" />
             </div>
             <h1 className="text-2xl font-bold text-[var(--os-text-primary)] mb-1">

@@ -9,7 +9,7 @@ export function HeroSection() {
     const c = useTranslations('Common');
 
     return (
-        <section className="relative pt-28 pb-32 px-6 overflow-hidden bg-[#0A1110]">
+        <section className="relative pt-28 pb-32 px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background decorative gradients */}
             <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-900/15 rounded-full blur-[150px]" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-yellow-900/10 rounded-full blur-[120px]" />
@@ -35,7 +35,7 @@ export function HeroSection() {
 
                 {/* Main Title */}
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
-                    <span className="text-white">{t('hero_title_line1')}</span>
+                    <span style={{ color: 'var(--ais-page-text)' }}>{t('hero_title_line1')}</span>
                     <br />
                     <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-yellow-400 bg-clip-text text-transparent">
                         {t('hero_title_line2')}
@@ -43,17 +43,17 @@ export function HeroSection() {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="text-base md:text-lg text-slate-400 mb-10 leading-relaxed max-w-2xl mx-auto">
+                <p className="text-base md:text-lg mb-10 leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
                     {t('hero_subtitle')}
                 </p>
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                    <Link href="/login" className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group">
+                    <Link href="/login" className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group" style={{ color: '#FFFFFF' }}>
                         {c('sign_in_portal')}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
-                    <Link href="/signup" className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/5 border border-slate-700 hover:border-slate-500 text-slate-300 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                    <Link href="/signup" className="w-full sm:w-auto px-8 py-3.5 bg-transparent rounded-xl font-semibold transition-all flex items-center justify-center gap-2" style={{ color: 'var(--ais-page-text-secondary)', border: '1px solid var(--ais-page-border)' }}>
                         <Shield className="w-4 h-4 text-emerald-500" />
                         {c('request_access')}
                     </Link>
@@ -61,13 +61,13 @@ export function HeroSection() {
 
                 {/* Trusted By */}
                 <div className="flex flex-col items-center gap-4">
-                    <p className="text-[10px] font-bold tracking-[0.2em] text-slate-600 uppercase">
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('trusted_by')}
                     </p>
                     <div className="flex items-center gap-6">
                         {/* Partner logo placeholders */}
                         {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="h-8 w-16 bg-slate-800/50 rounded-md border border-slate-800" />
+                            <div key={i} className="h-8 w-16 rounded-md" style={{ backgroundColor: 'var(--ais-page-surface)', border: '1px solid var(--ais-page-border)' }} />
                         ))}
                     </div>
                 </div>

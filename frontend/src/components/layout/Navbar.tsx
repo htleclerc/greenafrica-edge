@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 
 interface NavbarProps {
     activePage?: string;
@@ -79,6 +80,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
 
                 {/* Right: Toggle + Portal + Sign In + hamburger */}
                 <div className="flex items-center gap-2">
+                    <LocaleSwitcher variant="navbar" />
                     <ThemeToggleButton />
 
                     <Link

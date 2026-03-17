@@ -1,21 +1,15 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
-import { mockTransactions, mockKpis } from '@/mock/datas/secureMock';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useKpis } from '@/hooks/useKpis';
 import { Transaction, TransactionStatus, TransactionType } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
-
-const STATUS_LABEL: Record<TransactionStatus, string> = {
-    [TransactionStatus.PAID]:     'PAID',
-    [TransactionStatus.PENDING]:  'PENDING',
-    [TransactionStatus.OVERDUE]:  'OVERDUE',
-    [TransactionStatus.EXEMPT]:   'EXEMPT',
-    [TransactionStatus.DISPUTED]: 'DISPUTED',
-};
 
 const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
     [TransactionStatus.PAID]:     <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />,
@@ -25,21 +19,32 @@ const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
     [TransactionStatus.DISPUTED]: <AlertTriangle className="w-3.5 h-3.5 text-[#F97316]" />,
 };
 
-const TX_TYPE_LABEL: Record<TransactionType, string> = {
-    [TransactionType.ENTRY_TAX]:   'Entry Tax',
-    [TransactionType.TRANSIT_FEE]: 'Transit Fee',
-    [TransactionType.PORT_STAY]:   'Port Stay',
-};
-
 type TabFilter = 'ALL' | TransactionStatus;
 
 export function InvoicesPage() {
+    const t = useTranslations('InvoicesPage');
+    const { data: transactions } = useTransactions();
+    const { data: kpis } = useKpis();
     const [tab, setTab]             = React.useState<TabFilter>('ALL');
     const [search, setSearch]       = React.useState('');
-    const [selected, setSelected]   = React.useState<Transaction | null>(mockTransactions[0]);
+    const [selected, setSelected]   = React.useState<Transaction | null>(null);
     const [proForma, setProForma]   = React.useState<Transaction | null>(null);
 
-    const filtered = mockTransactions.filter((tx) => {
+    const STATUS_LABEL: Record<TransactionStatus, string> = {
+        [TransactionStatus.PAID]:     t('status_paid'),
+        [TransactionStatus.PENDING]:  t('status_pending'),
+        [TransactionStatus.OVERDUE]:  t('status_overdue'),
+        [TransactionStatus.EXEMPT]:   t('status_exempt'),
+        [TransactionStatus.DISPUTED]: t('status_disputed'),
+    };
+
+    const TX_TYPE_LABEL: Record<TransactionType, string> = {
+        [TransactionType.ENTRY_TAX]:   t('type_entry_tax'),
+        [TransactionType.TRANSIT_FEE]: t('type_transit_fee'),
+        [TransactionType.PORT_STAY]:   t('type_port_stay'),
+    };
+
+    const filtered = transactions.filter((tx) => {
         const matchTab = tab === 'ALL' || tx.status === tab;
         const matchSearch = search === '' ||
             tx.vesselName.toLowerCase().includes(search.toLowerCase()) ||
@@ -48,31 +53,31 @@ export function InvoicesPage() {
         return matchTab && matchSearch;
     });
 
-    const totalRevenue = mockTransactions
-        .filter((t) => t.status === TransactionStatus.PAID)
-        .reduce((s, t) => s + t.taxAmountUsd, 0);
+    const totalRevenue = transactions
+        .filter((tr) => tr.status === TransactionStatus.PAID)
+        .reduce((s, tr) => s + tr.taxAmountUsd, 0);
 
     return (
         <div className="flex flex-col" style={{ height: 'calc(100vh - 3.5rem - 2rem)' }}>
             {/* Top KPI bar */}
             <div className="border-b border-[var(--os-border)] px-5 py-2.5 flex items-center gap-6">
                 <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">Total Revenue</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">{t('kpi_total_revenue')}</p>
                     <p className="text-base font-bold text-[#00D97E] tabular-nums">${(totalRevenue / 1000).toFixed(1)}K</p>
                 </div>
                 <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">Pending Clearance</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">{t('kpi_pending_clearance')}</p>
                     <p className="text-base font-bold text-[#F59E0B] tabular-nums">
-                        {mockTransactions.filter((t) => t.status === TransactionStatus.PENDING).length} Vessels
+                        {t('kpi_vessels_count', { count: transactions.filter((tr) => tr.status === TransactionStatus.PENDING).length })}
                     </p>
                 </div>
                 <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">Carbon Offset</p>
-                    <p className="text-base font-bold text-[var(--os-text-primary)] tabular-nums">{mockKpis.creditsRetiredTons.toLocaleString()} Tonnes</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">{t('kpi_carbon_offset')}</p>
+                    <p className="text-base font-bold text-[var(--os-text-primary)] tabular-nums">{t('kpi_tonnes', { value: kpis.creditsRetiredTons.toLocaleString() })}</p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                    <span className="text-[10px] text-[var(--os-text-muted)]">SYNC QUEUE</span>
-                    <span className="text-[10px] font-bold text-[#00D97E]">0 PENDING</span>
+                    <span className="text-[10px] text-[var(--os-text-muted)]">{t('sync_queue')}</span>
+                    <span className="text-[10px] font-bold text-[#00D97E]">{t('sync_pending', { count: 0 })}</span>
                 </div>
             </div>
 
@@ -81,17 +86,17 @@ export function InvoicesPage() {
                 <div className="w-80 border-r border-[var(--os-border)] flex flex-col flex-shrink-0">
                     {/* Tab filters */}
                     <div className="px-3 pt-3 pb-2 flex gap-1 flex-wrap">
-                        {(['ALL', TransactionStatus.PENDING, TransactionStatus.OVERDUE, TransactionStatus.PAID] as TabFilter[]).map((t) => (
+                        {(['ALL', TransactionStatus.PENDING, TransactionStatus.OVERDUE, TransactionStatus.PAID] as TabFilter[]).map((f) => (
                             <button
-                                key={t}
-                                onClick={() => setTab(t)}
+                                key={f}
+                                onClick={() => setTab(f)}
                                 className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wide transition-all ${
-                                    tab === t
+                                    tab === f
                                         ? 'bg-[var(--os-surface-3)] text-[var(--os-text-primary)] border border-[var(--os-border-strong)]'
                                         : 'text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]'
                                 }`}
                             >
-                                {t === 'ALL' ? 'All' : STATUS_LABEL[t as TransactionStatus]}
+                                {f === 'ALL' ? t('filter_all') : STATUS_LABEL[f as TransactionStatus]}
                             </button>
                         ))}
                     </div>
@@ -103,7 +108,7 @@ export function InvoicesPage() {
                             <input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search vessel, IMO, or agent…"
+                                placeholder={t('search_placeholder')}
                                 className="w-full h-8 pl-8 pr-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:outline-none focus:border-[#00D97E]/50 transition-colors"
                             />
                         </div>
@@ -146,13 +151,13 @@ export function InvoicesPage() {
                             );
                         })}
                         {filtered.length === 0 && (
-                            <div className="px-4 py-8 text-center text-xs text-[var(--os-text-muted)]">No invoices found.</div>
+                            <div className="px-4 py-8 text-center text-xs text-[var(--os-text-muted)]">{t('no_invoices_found')}</div>
                         )}
                     </div>
 
                     {/* Footer */}
                     <div className="px-4 py-2 border-t border-[var(--os-border)] text-[10px] text-[var(--os-text-muted)]">
-                        Showing 1–{filtered.length} of {mockTransactions.length} invoices
+                        {t('showing_invoices', { from: 1, to: filtered.length, total: transactions.length })}
                     </div>
                 </div>
 
@@ -165,7 +170,7 @@ export function InvoicesPage() {
                         />
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-[var(--os-text-muted)] text-sm">
-                            Select an invoice to view details
+                            {t('select_invoice_prompt')}
                         </div>
                     )}
                 </div>
@@ -180,10 +185,19 @@ export function InvoicesPage() {
 // ── Invoice Detail Panel ──────────────────────────────────────────────────────
 
 function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerateProForma: () => void }) {
+    const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
     const invoiceRef = `INV-2025-${tx.id.split('-')[1].toUpperCase()}`;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
+
+    const STATUS_LABEL: Record<TransactionStatus, string> = {
+        [TransactionStatus.PAID]:     t('status_paid'),
+        [TransactionStatus.PENDING]:  t('status_pending'),
+        [TransactionStatus.OVERDUE]:  t('status_overdue'),
+        [TransactionStatus.EXEMPT]:   t('status_exempt'),
+        [TransactionStatus.DISPUTED]: t('status_disputed'),
+    };
 
     // Simple fee breakdown based on total
     const containerFee = Math.round(tx.taxAmountUsd * 0.75);
@@ -200,16 +214,16 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
                         <OsBadge variant={transactionVariant(tx.status)} label={STATUS_LABEL[tx.status]} />
                     </div>
                     <p className="text-xs text-[var(--os-text-muted)]">
-                        Issued to <span className="text-[var(--os-text-secondary)] font-medium">{tx.vesselName}</span>
+                        {t('issued_to', { vessel: tx.vesselName })}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <OsButton variant="secondary" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={onGenerateProForma}>
-                        Generate Statement
+                        {t('generate_statement')}
                     </OsButton>
                     {!isPaid && (
                         <OsButton variant="primary" size="sm" icon={<CheckCircle className="w-3.5 h-3.5" />}>
-                            Record Payment
+                            {t('record_payment')}
                         </OsButton>
                     )}
                 </div>
@@ -220,40 +234,40 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20">
                     <AlertTriangle className="w-4 h-4 text-[#EF4444] flex-shrink-0" />
                     <div>
-                        <p className="text-xs font-bold text-[#EF4444]">Port Gate Locked</p>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">Payment clearance required for departure.</p>
+                        <p className="text-xs font-bold text-[#EF4444]">{t('port_gate_locked')}</p>
+                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('payment_clearance_required')}</p>
                     </div>
                     <button className="ml-auto text-[10px] font-bold text-[#EF4444] border border-[#EF4444]/30 px-2 py-1 rounded-lg hover:bg-[rgba(239,68,68,0.1)] transition-colors">
-                        Override
+                        {t('override')}
                     </button>
                 </div>
             )}
 
             {/* Tabs */}
             <div className="flex items-center gap-0.5 border-b border-[var(--os-border)] pb-0">
-                {(['details', 'payment', 'audit'] as const).map((t) => (
+                {(['details', 'payment', 'audit'] as const).map((tabKey) => (
                     <button
-                        key={t}
-                        onClick={() => setActiveTab(t)}
+                        key={tabKey}
+                        onClick={() => setActiveTab(tabKey)}
                         className={`px-4 py-2 text-xs font-semibold capitalize transition-colors border-b-2 -mb-px ${
-                            activeTab === t
+                            activeTab === tabKey
                                 ? 'border-[#00D97E] text-[#00D97E]'
                                 : 'border-transparent text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]'
                         }`}
                     >
-                        {t === 'audit' ? 'Audit Trail' : t.charAt(0).toUpperCase() + t.slice(1)}
+                        {tabKey === 'details' ? t('tab_details') : tabKey === 'payment' ? t('tab_payment') : t('tab_audit_trail')}
                     </button>
                 ))}
             </div>
 
             {activeTab === 'details' && (
                 <div className="os-card p-5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-4">Invoice Summary</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-4">{t('invoice_summary')}</h4>
                     <div className="flex flex-col gap-2 mb-4">
                         {[
-                            { label: 'Container Fee (190 TEU)', amount: containerFee },
-                            { label: 'Port Call Fixed Fee',      amount: portCallFee },
-                            { label: 'Maritime Security Surcharge', amount: securityFee },
+                            { label: t('fee_container'), amount: containerFee },
+                            { label: t('fee_port_call'), amount: portCallFee },
+                            { label: t('fee_security_surcharge'), amount: securityFee },
                         ].map(({ label, amount }) => (
                             <div key={label} className="flex justify-between text-sm py-1 border-b border-[var(--os-border)] last:border-0">
                                 <span className="text-[var(--os-text-secondary)]">{label}</span>
@@ -262,7 +276,7 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
                         ))}
                     </div>
                     <div className="flex justify-between items-center pt-2">
-                        <span className="text-sm font-bold text-[var(--os-text-primary)]">Total Due</span>
+                        <span className="text-sm font-bold text-[var(--os-text-primary)]">{t('total_due')}</span>
                         <span className="text-xl font-bold text-[#00D97E] tabular-nums">${tx.taxAmountUsd.toLocaleString()}.00</span>
                     </div>
                 </div>
@@ -271,11 +285,11 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
             {activeTab === 'payment' && (
                 <div className="flex flex-col gap-3">
                     <div className="os-card p-4">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">Payment Capture</h4>
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">{t('payment_capture')}</h4>
                         {[
-                            { label: 'Dahabshiil / Premier Bank', sub: 'Direct API settlement', badge: 'LIVE', badgeColor: '#00D97E' },
-                            { label: 'SWIFT Proof Upload',         sub: 'External wire verification', badge: null, badgeColor: '' },
-                            { label: 'Manual Clearance',           sub: 'Dual-Approval Protocol',   badge: 'ADV. PREF+', badgeColor: '#F59E0B' },
+                            { label: t('payment_bank'), sub: t('payment_bank_sub'), badge: 'LIVE', badgeColor: '#00D97E' },
+                            { label: t('payment_swift'), sub: t('payment_swift_sub'), badge: null, badgeColor: '' },
+                            { label: t('payment_manual'), sub: t('payment_manual_sub'), badge: 'ADV. PREF+', badgeColor: '#F59E0B' },
                         ].map(({ label, sub, badge, badgeColor }) => (
                             <button key={label} className="w-full flex items-center justify-between p-3 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] transition-all mb-2 last:mb-0">
                                 <div className="flex items-center gap-3">
@@ -303,12 +317,12 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
 
             {activeTab === 'audit' && (
                 <div className="os-card p-5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-4">Audit Trail</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-4">{t('tab_audit_trail')}</h4>
                     <div className="flex flex-col gap-3">
                         {[
-                            { label: 'Invoice Created',         sub: 'by System Automation',                    time: '10:41 UTC', color: '#00D97E' },
-                            { label: 'Sent to Agent',           sub: `to operations@${tx.vesselName.toLowerCase().replace(' ', '')}.com`, time: '10:48 UTC', color: '#38BDF8' },
-                            { label: 'Viewed by Recipient',     sub: 'IP: 192.168.43.21 (Dubai)',                time: '11:13 UTC', color: '#F59E0B' },
+                            { label: t('audit_invoice_created'), sub: t('audit_by_system'), time: '10:41 UTC', color: '#00D97E' },
+                            { label: t('audit_sent_to_agent'), sub: `to operations@${tx.vesselName.toLowerCase().replace(' ', '')}.com`, time: '10:48 UTC', color: '#38BDF8' },
+                            { label: t('audit_viewed_by_recipient'), sub: 'IP: 192.168.43.21 (Dubai)', time: '11:13 UTC', color: '#F59E0B' },
                         ].map(({ label, sub, time, color }) => (
                             <div key={label} className="flex items-start gap-3">
                                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: `${color}14` }}>
@@ -333,7 +347,7 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
                 onClick={onGenerateProForma}
                 className="w-full"
             >
-                Generate Pro-forma Invoice (PDF)
+                {t('generate_proforma_pdf')}
             </OsButton>
         </div>
     );

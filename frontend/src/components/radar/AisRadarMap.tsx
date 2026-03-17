@@ -32,15 +32,15 @@ export function AisRadarMap({ onSelectVessel }: { onSelectVessel: (v: AisVessel 
         }
     };
 
-    if (!mounted) return <div className="w-full h-full bg-[#0D1614] animate-pulse rounded-2xl"></div>;
+    if (!mounted) return <div className="w-full h-full animate-pulse rounded-2xl" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}></div>;
 
     return (
-        <div className="w-full h-full relative bg-[#0A1110] rounded-2xl overflow-hidden border border-white/10 group">
+        <div className="w-full h-full relative rounded-2xl overflow-hidden group" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)' }}>
             {/* Map Overlay Styles */}
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(10,17,16,0.8)_100%)] z-10" />
 
             <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-xs font-medium text-slate-300">
+                <div className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-md text-xs font-medium" style={{ border: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text-secondary)' }}>
                     Somaliland EEZ (Gulf of Aden)
                 </div>
             </div>
@@ -128,7 +128,7 @@ export function AisRadarMap({ onSelectVessel }: { onSelectVessel: (v: AisVessel 
 
             {/* Disclaimer overlay at bottom */}
             <div className="absolute bottom-4 left-4 right-4 z-20 text-center">
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+                <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--ais-page-text-dim)' }}>
                     {t('map_disclaimer')}
                 </p>
             </div>

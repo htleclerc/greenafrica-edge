@@ -37,7 +37,7 @@ export function CarbonTaxComplianceSection() {
     const t = useTranslations('CarbonTax');
 
     return (
-        <section className="py-16 px-6 bg-[#0A1110] relative">
+        <section className="py-16 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-900/8 rounded-full blur-[150px]" />
 
             <div className="max-w-7xl mx-auto relative z-10">
@@ -47,8 +47,8 @@ export function CarbonTaxComplianceSection() {
                         <ShieldCheck className="w-3 h-3" />
                         {t('compliance_badge')}
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">{t('compliance_title')}</h2>
-                    <p className="text-slate-400 text-base max-w-2xl mx-auto">{t('compliance_subtitle')}</p>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('compliance_title')}</h2>
+                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>{t('compliance_subtitle')}</p>
                 </div>
 
                 {/* Regulation cards */}
@@ -58,7 +58,8 @@ export function CarbonTaxComplianceSection() {
                         return (
                             <div
                                 key={reg.id}
-                                className="bg-[#111C18] rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300"
+                                className="rounded-2xl p-6 transition-all duration-300"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 {/* Card header */}
                                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -70,7 +71,8 @@ export function CarbonTaxComplianceSection() {
                                             href={reg.link}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-slate-600 hover:text-slate-400 transition-colors"
+                                            className="transition-colors"
+                                            style={{ color: 'var(--ais-page-text-dim)' }}
                                         >
                                             <ExternalLink className="w-4 h-4" />
                                         </a>
@@ -78,25 +80,25 @@ export function CarbonTaxComplianceSection() {
                                 </div>
 
                                 <h3 className={`text-base font-bold mb-2 ${style.accent}`}>{reg.name}</h3>
-                                <p className="text-sm text-slate-400 leading-relaxed mb-4">{reg.description}</p>
+                                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ais-page-text-muted)' }}>{reg.description}</p>
 
                                 {/* Key requirement */}
-                                <div className="bg-[#0A1110]/60 rounded-xl p-3 border border-white/5 mb-3">
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                <div className="rounded-xl p-3 mb-3" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)' }}>
+                                    <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         {t('key_requirement')}
                                     </p>
-                                    <p className="text-xs text-slate-300">{reg.keyRequirement}</p>
+                                    <p className="text-xs" style={{ color: 'var(--ais-page-text-secondary)' }}>{reg.keyRequirement}</p>
                                 </div>
 
                                 {/* Penalty note */}
                                 <div className="flex items-start gap-2">
                                     <AlertTriangle className="w-3.5 h-3.5 text-red-500/70 shrink-0 mt-0.5" />
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">{reg.penaltyNote}</p>
+                                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>{reg.penaltyNote}</p>
                                 </div>
 
                                 {/* Effective date */}
                                 <div className="flex justify-end mt-3">
-                                    <span className="text-[10px] text-slate-600">
+                                    <span className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         {t('effective_since')} {reg.effectiveDate}
                                     </span>
                                 </div>
@@ -106,8 +108,8 @@ export function CarbonTaxComplianceSection() {
                 </div>
 
                 {/* Disclaimer */}
-                <div className="flex items-start gap-3 text-[11px] text-slate-600 max-w-4xl mx-auto bg-[#111C18] rounded-xl p-4 border border-white/5">
-                    <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-slate-700" />
+                <div className="flex items-start gap-3 text-[11px] max-w-4xl mx-auto rounded-xl p-4" style={{ color: 'var(--ais-page-text-dim)', backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
+                    <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }} />
                     <p className="leading-relaxed">{t('compliance_disclaimer')}</p>
                 </div>
             </div>

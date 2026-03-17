@@ -8,7 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export function ProjectsPage() {
     return (
-        <main className="min-h-screen bg-[#0A1110]">
+        <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <Navbar activePage="projects" />
             <ProjectsHeroSection />
             <ProjectsGridSection />

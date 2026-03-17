@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard/layout/DashboardSidebar';
 import { DashboardTopBar } from '@/components/dashboard/layout/DashboardTopBar';
 import { DashboardFooter } from '@/components/dashboard/layout/DashboardFooter';
-import { mockKpis } from '@/mock/datas/secureMock';
+import { useKpis } from '@/hooks/useKpis';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { Zap, X } from 'lucide-react';
 import { RoleProvider, useRole } from '@/lib/RoleContext';
+import { SkinProvider } from '@/lib/SkinContext';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const SIDEBAR_COLLAPSED = 56;
 const SIDEBAR_EXPANDED  = 220;
@@ -76,12 +78,21 @@ function DemoBanner() {
     );
 }
 
+// ── Skin bridge — wraps inner layout with SkinProvider using resolved role ────
+
+function SkinBridge({ children }: { children: React.ReactNode }) {
+    const { role } = useRole();
+    return <SkinProvider defaultRole={role}>{children}</SkinProvider>;
+}
+
 // ── Inner layout (uses RoleContext) ───────────────────────────────────────────
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { key, label } = resolveNav(pathname);
     const { user } = useRole();
+    const { data: kpis } = useKpis();
+    const { notifications, pendingRegistrations, unreadCount, markRead, markAllRead } = useNotifications();
 
     // Persist sidebar state across navigations
     const [expanded, setExpanded] = React.useState(false);
@@ -111,8 +122,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             } as React.CSSProperties}
         >
             <DemoBanner />
-            <DashboardSidebar activePage={key} expanded={expanded} onToggle={toggleSidebar} />
-            <DashboardTopBar user={user} kpis={mockKpis} breadcrumb={label} />
+            <DashboardSidebar activePage={key} expanded={expanded} onToggle={toggleSidebar} pendingRegistrations={pendingRegistrations} />
+            <DashboardTopBar user={user} kpis={kpis} breadcrumb={label} notifications={notifications} unreadCount={unreadCount} onMarkRead={markRead} onMarkAllRead={markAllRead} />
 
             <main
                 style={{
@@ -136,7 +147,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <RoleProvider>
-            <DashboardInner>{children}</DashboardInner>
+            <SkinBridge>
+                <DashboardInner>{children}</DashboardInner>
+            </SkinBridge>
         </RoleProvider>
     );
 }

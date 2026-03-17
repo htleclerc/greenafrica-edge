@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RadarPage() {
     return (
-        <main className="min-h-screen bg-[#050908]">
+        <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <Navbar activePage="radar" />
             <RadarDashboard />
         </main>

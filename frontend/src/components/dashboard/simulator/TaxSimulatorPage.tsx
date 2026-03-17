@@ -1,12 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     Calculator, Ship, RefreshCw, FileText, Info, ChevronDown,
     AlertTriangle, CheckCircle2, Anchor, Navigation, HelpCircle,
 } from 'lucide-react';
-import { mockTaxConfigs } from '@/mock/datas/secureMock';
-import { VesselCategory, JurisdictionZone } from '@/types/secure';
+import { useTaxConfigs } from '@/hooks/useTaxConfigs';
+import { VesselCategory, JurisdictionZone, TaxConfiguration } from '@/types/secure';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -30,12 +31,12 @@ const CO2_FACTOR_MDO = 3.206;
 const LOAD_FACTOR_SEA  = 0.75;   // 75% MCR
 const LOAD_FACTOR_PORT = 0.10;   // 10% MCR (aux engines / hotel load)
 
-const CATEGORY_LABELS: Record<string, string> = {
-    [VesselCategory.CONTAINER]:   'Porte-conteneurs',
-    [VesselCategory.CARGO]:       'Cargo général',
-    [VesselCategory.TANKER]:      'Pétrolier / Tanker',
-    [VesselCategory.BULK_CARRIER]:'Vraquier (Bulk)',
-    [VesselCategory.FERRY]:       'Ferry passagers',
+const CATEGORY_I18N_KEY: Record<string, string> = {
+    [VesselCategory.CONTAINER]:   'simulator_cat_container',
+    [VesselCategory.CARGO]:       'simulator_cat_cargo',
+    [VesselCategory.TANKER]:      'simulator_cat_tanker',
+    [VesselCategory.BULK_CARRIER]:'simulator_cat_bulk',
+    [VesselCategory.FERRY]:       'simulator_cat_ferry',
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -78,7 +79,7 @@ interface SimResult {
     effectiveRate: number;        // USD/tCO2 blended
 }
 
-function calculate(inputs: SimInputs): SimResult {
+function calculate(inputs: SimInputs, taxConfigs: TaxConfiguration[]): SimResult {
     const sfoc       = SFOC_BY_CATEGORY[inputs.category] ?? 185;
     const co2Factor  = inputs.fuelType === 'HFO' ? CO2_FACTOR_HFO : CO2_FACTOR_MDO;
 
@@ -87,7 +88,7 @@ function calculate(inputs: SimInputs): SimResult {
     const eezFuel    = (inputs.enginePowerKw * LOAD_FACTOR_SEA * sfoc * eezHours) / 1_000_000; // tons
     const eezCo2    = eezFuel * co2Factor;
 
-    const eezConfig  = mockTaxConfigs.find(
+    const eezConfig  = taxConfigs.find(
         (c) => c.jurisdictionZone === JurisdictionZone.EEZ && c.vesselCategory === inputs.category && c.status === 'ACTIVE'
     );
     const eezRate    = eezConfig?.baseRateUsdPerTco2 ?? 20;
@@ -98,9 +99,9 @@ function calculate(inputs: SimInputs): SimResult {
     const portFuel   = (inputs.enginePowerKw * LOAD_FACTOR_PORT * sfoc * inputs.portStayHours) / 1_000_000;
     const portCo2    = portFuel * co2Factor;
 
-    const portConfig = mockTaxConfigs.find(
+    const portConfig = taxConfigs.find(
         (c) => c.jurisdictionZone === JurisdictionZone.PORT_VICINITY && c.vesselCategory === inputs.category && c.status === 'ACTIVE'
-    ) ?? mockTaxConfigs.find(
+    ) ?? taxConfigs.find(
         (c) => c.jurisdictionZone === JurisdictionZone.PORT_VICINITY && c.status === 'ACTIVE'
     );
     const portRate   = portConfig?.baseRateUsdPerTco2 ?? 15;
@@ -216,6 +217,8 @@ const PRESETS = [
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function TaxSimulatorPage() {
+    const t = useTranslations('DashboardPages');
+    const { data: taxConfigs } = useTaxConfigs();
     const [inputs, setInputs] = React.useState<SimInputs>({
         category:            VesselCategory.CONTAINER,
         enginePowerKw:       12_000,
@@ -227,7 +230,7 @@ export function TaxSimulatorPage() {
         fuelType:            'HFO',
     });
 
-    const result = React.useMemo(() => calculate(inputs), [inputs]);
+    const result = React.useMemo(() => calculate(inputs, taxConfigs), [inputs, taxConfigs]);
 
     function set<K extends keyof SimInputs>(key: K, value: SimInputs[K]) {
         setInputs((prev) => ({ ...prev, [key]: value }));
@@ -245,7 +248,7 @@ export function TaxSimulatorPage() {
 
     const riskLevel = result.totalTaxUsd < 2_000 ? 'low' : result.totalTaxUsd < 8_000 ? 'medium' : 'high';
     const riskColor = { low: '#22C55E', medium: '#F59E0B', high: '#EF4444' }[riskLevel];
-    const riskLabel = { low: 'Faible exposition', medium: 'Exposition modérée', high: 'Forte exposition' }[riskLevel];
+    const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
     return (
         <div className="px-6 py-6 flex flex-col gap-6">
@@ -255,10 +258,10 @@ export function TaxSimulatorPage() {
                 <div>
                     <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--os-text-primary)' }}>
                         <Calculator className="w-5 h-5 text-emerald-500" />
-                        Simulateur de Taxe Carbone
+                        {t('simulator_title')}
                     </h1>
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
-                        Estimez votre charge fiscale avant d'entrer dans la ZEE de Somaliland — basé sur les taux officiels en vigueur.
+                        {t('simulator_subtitle')}
                     </p>
                 </div>
                 <div
@@ -266,7 +269,7 @@ export function TaxSimulatorPage() {
                     style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
                 >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Taux officiels au 01/01/2025 — IMO DCS certifié
+                    {t('simulator_official_rates')}
                 </div>
             </div>
 
@@ -277,8 +280,7 @@ export function TaxSimulatorPage() {
             >
                 <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
                 <p style={{ color: 'var(--os-text-muted)' }}>
-                    Ce simulateur utilise la méthodologie IMO SFOC (Specific Fuel Oil Consumption) pour estimer les émissions CO₂.
-                    Les résultats sont indicatifs. La facture finale est établie sur les données AIS réelles de votre passage.
+                    {t('simulator_notice')}
                 </p>
             </div>
 
@@ -288,7 +290,7 @@ export function TaxSimulatorPage() {
                 <div className="flex flex-col gap-4">
 
                     {/* Presets */}
-                    <SectionCard title="Profil navire — choisir un modèle type" icon={<Ship className="w-3.5 h-3.5" />}>
+                    <SectionCard title={t('simulator_vessel_profile')} icon={<Ship className="w-3.5 h-3.5" />}>
                         <div className="flex flex-wrap gap-2 mb-4">
                             {PRESETS.map((p) => (
                                 <button
@@ -315,67 +317,67 @@ export function TaxSimulatorPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Category */}
                             <div>
-                                <Label>Type de navire</Label>
+                                <Label>{t('simulator_vessel_type')}</Label>
                                 <select
                                     value={inputs.category}
                                     onChange={(e) => set('category', e.target.value as VesselCategory)}
                                     className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
-                                    {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                        <option key={k} value={k}>{v}</option>
+                                    {Object.entries(CATEGORY_I18N_KEY).map(([k, i18nKey]) => (
+                                        <option key={k} value={k}>{t(i18nKey as Parameters<typeof t>[0])}</option>
                                     ))}
                                 </select>
                             </div>
 
                             {/* Fuel type */}
                             <div>
-                                <Label>Type de carburant</Label>
+                                <Label>{t('simulator_fuel_type')}</Label>
                                 <select
                                     value={inputs.fuelType}
                                     onChange={(e) => set('fuelType', e.target.value as 'HFO' | 'MDO')}
                                     className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
-                                    <option value="HFO">HFO — Fioul lourd (facteur CO₂ : 3.206)</option>
-                                    <option value="MDO">MDO / MGO — Gasoil marin (facteur CO₂ : 3.206)</option>
+                                    <option value="HFO">{t('simulator_fuel_hfo')}</option>
+                                    <option value="MDO">{t('simulator_fuel_mdo')}</option>
                                 </select>
                             </div>
 
                             {/* Engine power */}
                             <div>
-                                <Label>Puissance moteur principal (MCR)</Label>
+                                <Label>{t('simulator_engine_power')}</Label>
                                 <NumberInput value={inputs.enginePowerKw} onChange={(v) => set('enginePowerKw', v)} min={500} max={120000} step={100} unit="kW" />
                             </div>
 
                             {/* GT */}
                             <div>
-                                <Label>Jauge brute (GT / DWT)</Label>
+                                <Label>{t('simulator_gross_tonnage')}</Label>
                                 <NumberInput value={inputs.grossTonnage} onChange={(v) => set('grossTonnage', v)} min={500} max={500000} step={500} unit="GT" />
                             </div>
 
                             {/* Speed */}
                             <div>
-                                <Label>Vitesse de croisière</Label>
-                                <NumberInput value={inputs.speedKnots} onChange={(v) => set('speedKnots', v)} min={5} max={30} step={0.5} unit="nœuds" />
+                                <Label>{t('simulator_cruising_speed')}</Label>
+                                <NumberInput value={inputs.speedKnots} onChange={(v) => set('speedKnots', v)} min={5} max={30} step={0.5} unit={t('simulator_unit_knots')} />
                             </div>
                         </div>
                     </SectionCard>
 
                     {/* Voyage */}
-                    <SectionCard title="Paramètres du voyage" icon={<Navigation className="w-3.5 h-3.5" />}>
+                    <SectionCard title={t('simulator_voyage_params')} icon={<Navigation className="w-3.5 h-3.5" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <Label>Distance en ZEE (transit)</Label>
+                                <Label>{t('simulator_eez_distance')}</Label>
                                 <NumberInput value={inputs.eezDistanceNm} onChange={(v) => set('eezDistanceNm', v)} min={0} max={2000} step={10} unit="NM" />
                                 <p className="text-[10px] mt-1" style={{ color: 'var(--os-text-muted)' }}>
-                                    ZEE Somaliland : 200 NM depuis la ligne de base
+                                    {t('simulator_eez_note')}
                                 </p>
                             </div>
 
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <Label>Escale portuaire</Label>
+                                    <Label>{t('simulator_port_stay')}</Label>
                                     <button
                                         onClick={() => set('includePortVicinity', !inputs.includePortVicinity)}
                                         className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all"
@@ -385,36 +387,36 @@ export function TaxSimulatorPage() {
                                             border: `1px solid ${inputs.includePortVicinity ? 'rgba(16,185,129,0.3)' : 'var(--os-border)'}`,
                                         }}
                                     >
-                                        {inputs.includePortVicinity ? '✓ Incluse' : 'Exclue'}
+                                        {inputs.includePortVicinity ? `✓ ${t('simulator_port_included')}` : t('simulator_port_excluded')}
                                     </button>
                                 </div>
-                                <NumberInput value={inputs.portStayHours} onChange={(v) => set('portStayHours', v)} min={0} max={720} step={1} unit="heures" />
+                                <NumberInput value={inputs.portStayHours} onChange={(v) => set('portStayHours', v)} min={0} max={720} step={1} unit={t('simulator_unit_hours')} />
                             </div>
                         </div>
                     </SectionCard>
 
                     {/* Applied rates table */}
-                    <SectionCard title="Taux applicables (officiels)" icon={<Info className="w-3.5 h-3.5" />}>
+                    <SectionCard title={t('simulator_applicable_rates')} icon={<Info className="w-3.5 h-3.5" />}>
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs">
                                 <thead>
                                     <tr style={{ color: 'var(--os-text-muted)' }}>
-                                        <th className="text-left pb-2 font-semibold uppercase tracking-wide text-[10px]">Zone</th>
-                                        <th className="text-left pb-2 font-semibold uppercase tracking-wide text-[10px]">Catégorie</th>
-                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">Taux base</th>
-                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">Multiplicateur</th>
-                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">Taux effectif</th>
+                                        <th className="text-left pb-2 font-semibold uppercase tracking-wide text-[10px]">{t('simulator_col_zone')}</th>
+                                        <th className="text-left pb-2 font-semibold uppercase tracking-wide text-[10px]">{t('simulator_col_category')}</th>
+                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">{t('simulator_col_base_rate')}</th>
+                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">{t('simulator_col_multiplier')}</th>
+                                        <th className="text-right pb-2 font-semibold uppercase tracking-wide text-[10px]">{t('simulator_col_effective_rate')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {[
                                         {
-                                            zone: 'ZEE', cat: CATEGORY_LABELS[inputs.category] ?? inputs.category,
+                                            zone: 'ZEE', cat: CATEGORY_I18N_KEY[inputs.category] ? t(CATEGORY_I18N_KEY[inputs.category] as Parameters<typeof t>[0]) : inputs.category,
                                             base: result.eezRate, mult: result.eezMultiplier,
                                             effective: result.eezRate * result.eezMultiplier,
                                         },
                                         {
-                                            zone: 'Port', cat: CATEGORY_LABELS[inputs.category] ?? inputs.category,
+                                            zone: 'Port', cat: CATEGORY_I18N_KEY[inputs.category] ? t(CATEGORY_I18N_KEY[inputs.category] as Parameters<typeof t>[0]) : inputs.category,
                                             base: result.portRate, mult: result.portMultiplier,
                                             effective: result.portRate * result.portMultiplier,
                                         },
@@ -443,7 +445,7 @@ export function TaxSimulatorPage() {
                     >
                         <div className="flex items-center justify-between mb-1">
                             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
-                                Taxe carbone estimée
+                                {t('simulator_estimated_tax')}
                             </p>
                             <span
                                 className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -456,60 +458,60 @@ export function TaxSimulatorPage() {
                             {fmtUsd(result.totalTaxUsd)}
                         </p>
                         <p className="text-xs mt-1" style={{ color: 'var(--os-text-muted)' }}>
-                            Total estimé — ZEE + Escale
+                            {t('simulator_total_estimated')}
                         </p>
 
                         <div className="mt-4 h-px" style={{ backgroundColor: 'var(--os-border)' }} />
 
                         <div className="mt-4 flex flex-col gap-2 text-xs" style={{ color: 'var(--os-text-muted)' }}>
                             <div className="flex justify-between">
-                                <span>Taxe ZEE (transit)</span>
+                                <span>{t('simulator_eez_tax')}</span>
                                 <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>{fmtUsd(result.eezTaxUsd)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span>Taxe escale portuaire</span>
+                                <span>{t('simulator_port_tax')}</span>
                                 <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>
                                     {inputs.includePortVicinity ? fmtUsd(result.portTaxUsd) : '—'}
                                 </span>
                             </div>
                             <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--os-border)' }}>
-                                <span>Taux effectif blended</span>
+                                <span>{t('simulator_blended_rate')}</span>
                                 <span className="font-bold" style={{ color: '#10B981' }}>${fmt(result.effectiveRate, 2)} / tCO₂</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Emissions breakdown */}
-                    <SectionCard title="Détail des émissions" icon={<Anchor className="w-3.5 h-3.5" />}>
+                    <SectionCard title={t('simulator_emissions_detail')} icon={<Anchor className="w-3.5 h-3.5" />}>
                         <MetricRow
-                            label="Durée transit ZEE"
+                            label={t('simulator_eez_transit_duration')}
                             value={`${fmt(result.eezTransitHours, 1)} h`}
-                            sub={`${fmt(inputs.eezDistanceNm, 0)} NM à ${fmt(inputs.speedKnots, 1)} nœuds`}
+                            sub={`${fmt(inputs.eezDistanceNm, 0)} NM @ ${fmt(inputs.speedKnots, 1)} ${t('simulator_unit_knots')}`}
                         />
                         <MetricRow
-                            label="Consommation ZEE"
+                            label={t('simulator_eez_consumption')}
                             value={`${fmt(result.eezFuelTons, 2)} t`}
-                            sub="SFOC × MCR 75% × heures"
+                            sub={t('simulator_sfoc_formula')}
                         />
                         <MetricRow
-                            label="Émissions ZEE"
+                            label={t('simulator_eez_emissions')}
                             value={`${fmt(result.eezCo2Tons, 2)} tCO₂`}
                         />
                         {inputs.includePortVicinity && (
                             <>
                                 <MetricRow
-                                    label="Consommation escale"
+                                    label={t('simulator_port_consumption')}
                                     value={`${fmt(result.portFuelTons, 3)} t`}
                                     sub={`MCR 10% × ${inputs.portStayHours} h`}
                                 />
                                 <MetricRow
-                                    label="Émissions escale"
+                                    label={t('simulator_port_emissions')}
                                     value={`${fmt(result.portCo2Tons, 3)} tCO₂`}
                                 />
                             </>
                         )}
                         <MetricRow
-                            label="Émissions totales"
+                            label={t('simulator_total_emissions')}
                             value={`${fmt(result.totalCo2Tons, 2)} tCO₂`}
                             highlight
                         />
@@ -522,8 +524,7 @@ export function TaxSimulatorPage() {
                     >
                         <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--os-text-muted)' }} />
                         <p style={{ color: 'var(--os-text-muted)' }}>
-                            SFOC utilisé : <strong style={{ color: 'var(--os-text-primary)' }}>{SFOC_BY_CATEGORY[inputs.category]} g/kWh</strong> —
-                            valeur approximative IMO par catégorie. Pour une estimation précise, fournissez la valeur réelle SFOC de votre navire.
+                            {t('simulator_sfoc_note_used')} <strong style={{ color: 'var(--os-text-primary)' }}>{SFOC_BY_CATEGORY[inputs.category]} g/kWh</strong> {t('simulator_sfoc_note_desc')}
                         </p>
                     </div>
 
@@ -534,7 +535,7 @@ export function TaxSimulatorPage() {
                             style={{ backgroundColor: '#10B981', color: '#fff' }}
                         >
                             <FileText className="w-4 h-4" />
-                            Générer une pré-estimation PDF
+                            {t('simulator_generate_pdf')}
                         </button>
                         <button
                             className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all"
@@ -546,7 +547,7 @@ export function TaxSimulatorPage() {
                             })}
                         >
                             <RefreshCw className="w-4 h-4" />
-                            Réinitialiser
+                            {t('simulator_reset')}
                         </button>
                     </div>
                 </div>
@@ -562,34 +563,17 @@ export function TaxSimulatorPage() {
 
 // ── FAQ ──────────────────────────────────────────────────────────────────────
 
-const FAQ_ITEMS: { q: string; a: string }[] = [
-    {
-        q: 'Comment est calculée la taxe carbone ?',
-        a: 'La taxe est basée sur les émissions CO₂ estimées via la méthodologie IMO SFOC (Specific Fuel Oil Consumption). Les émissions = consommation de carburant × facteur d\'émission CO₂ du carburant. La taxe = émissions × taux officiel × multiplicateur par zone.',
-    },
-    {
-        q: 'Quelle est la différence entre taxe ZEE et taxe portuaire ?',
-        a: 'La taxe ZEE couvre le transit dans la Zone Économique Exclusive (200 NM). La taxe portuaire s\'applique pendant l\'escale au port (moteurs auxiliaires). Les taux et multiplicateurs peuvent différer selon la zone.',
-    },
-    {
-        q: 'Le résultat est-il contractuel ?',
-        a: 'Non. Cette estimation est indicative. La facture finale (pro-forma) est calculée à partir des données AIS réelles enregistrées lors de votre passage dans la ZEE et au port.',
-    },
-    {
-        q: 'Qu\'est-ce que le SFOC ?',
-        a: 'Le Specific Fuel Oil Consumption (g/kWh) mesure la consommation de carburant par unité d\'énergie produite par le moteur. Chaque type de navire a un SFOC moyen. Pour une estimation précise, utilisez le SFOC réel de votre navire.',
-    },
-    {
-        q: 'Comment réduire ma taxe carbone ?',
-        a: 'Réduisez la vitesse (slow steaming), utilisez du carburant à faible facteur CO₂ (LNG, méthanol), optimisez la durée d\'escale, ou obtenez des crédits carbone via les projets Africgreen certifiés.',
-    },
-    {
-        q: 'Existe-t-il des exemptions ?',
-        a: 'Oui. Les navires de recherche scientifique, les bâtiments militaires et certains navires sous accords bilatéraux peuvent bénéficier d\'exemptions partielles ou totales. Contactez l\'autorité portuaire pour plus d\'informations.',
-    },
+const FAQ_I18N_KEYS: { q: string; a: string }[] = [
+    { q: 'simulator_faq_q1', a: 'simulator_faq_a1' },
+    { q: 'simulator_faq_q2', a: 'simulator_faq_a2' },
+    { q: 'simulator_faq_q3', a: 'simulator_faq_a3' },
+    { q: 'simulator_faq_q4', a: 'simulator_faq_a4' },
+    { q: 'simulator_faq_q5', a: 'simulator_faq_a5' },
+    { q: 'simulator_faq_q6', a: 'simulator_faq_a6' },
 ];
 
 function FaqPanel() {
+    const t = useTranslations('DashboardPages');
     const [openIdx, setOpenIdx] = React.useState<number | null>(null);
 
     return (
@@ -600,11 +584,11 @@ function FaqPanel() {
             <div className="flex items-center gap-2 mb-3">
                 <HelpCircle className="w-3.5 h-3.5" style={{ color: '#10B981' }} />
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
-                    Questions fréquentes
+                    {t('simulator_faq_title')}
                 </p>
             </div>
             <div className="flex flex-col">
-                {FAQ_ITEMS.map((item, i) => {
+                {FAQ_I18N_KEYS.map((item, i) => {
                     const isOpen = openIdx === i;
                     return (
                         <div
@@ -627,7 +611,7 @@ function FaqPanel() {
                                     className="text-xs font-semibold"
                                     style={{ color: isOpen ? '#10B981' : 'var(--os-text-primary)' }}
                                 >
-                                    {item.q}
+                                    {t(item.q as Parameters<typeof t>[0])}
                                 </span>
                             </button>
                             {isOpen && (
@@ -635,7 +619,7 @@ function FaqPanel() {
                                     className="text-[11px] leading-relaxed pb-3 pl-5.5 ml-[22px]"
                                     style={{ color: 'var(--os-text-muted)' }}
                                 >
-                                    {item.a}
+                                    {t(item.a as Parameters<typeof t>[0])}
                                 </p>
                             )}
                         </div>

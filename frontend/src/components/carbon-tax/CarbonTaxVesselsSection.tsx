@@ -32,7 +32,7 @@ export function CarbonTaxVesselsSection() {
     };
 
     return (
-        <section className="py-16 px-6 bg-[#0A1110] relative">
+        <section className="py-16 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -41,8 +41,8 @@ export function CarbonTaxVesselsSection() {
                             <Anchor className="w-3 h-3" />
                             {t('vessels_badge')}
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('vessels_title')}</h2>
-                        <p className="text-slate-400 text-sm">{t('vessels_subtitle')}</p>
+                        <h2 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--ais-page-text)' }}>{t('vessels_title')}</h2>
+                        <p className="text-sm" style={{ color: 'var(--ais-page-text-muted)' }}>{t('vessels_subtitle')}</p>
                     </div>
 
                     {/* Status summary pills */}
@@ -64,11 +64,11 @@ export function CarbonTaxVesselsSection() {
                 </div>
 
                 {/* Desktop Table */}
-                <div className="bg-[#111C18] rounded-2xl border border-white/5 overflow-hidden hidden md:block">
+                <div className="rounded-2xl overflow-hidden hidden md:block" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b border-white/5 text-[10px] text-slate-500 uppercase tracking-wider">
+                                <tr className="text-[10px] uppercase tracking-wider" style={{ borderBottom: '1px solid var(--ais-page-border)', color: 'var(--ais-page-text-dim)' }}>
                                     <th className="text-left px-6 py-4 font-semibold">{t('col_vessel')}</th>
                                     <th className="text-left px-4 py-4 font-semibold">{t('col_type')}</th>
                                     <th className="text-right px-4 py-4 font-semibold">{t('col_gt')}</th>
@@ -85,34 +85,34 @@ export function CarbonTaxVesselsSection() {
                                     return (
                                         <tr
                                             key={vessel.id}
-                                            className={`border-b border-white/5 hover:bg-white/2 transition-colors ${i === taxVessels.length - 1 ? 'border-b-0' : ''
-                                                }`}
+                                            className="hover:bg-white/2 transition-colors"
+                                            style={{ borderBottom: i === taxVessels.length - 1 ? 'none' : '1px solid var(--ais-page-border)' }}
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-slate-800/60 flex items-center justify-center shrink-0">
-                                                        <Ship className="w-4 h-4 text-slate-400" />
+                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--ais-page-surface)' }}>
+                                                        <Ship className="w-4 h-4" style={{ color: 'var(--ais-page-text-muted)' }} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-white text-sm leading-snug">
+                                                        <p className="font-semibold text-sm leading-snug" style={{ color: 'var(--ais-page-text)' }}>
                                                             {vessel.name}
                                                         </p>
-                                                        <p className="text-[10px] text-slate-500">
+                                                        <p className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>
                                                             {vessel.flagEmoji} {vessel.flag} · {vessel.imo}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-4 text-slate-400 text-xs">
+                                            <td className="px-4 py-4 text-xs" style={{ color: 'var(--ais-page-text-muted)' }}>
                                                 {VesselTypeLabel[vessel.type]}
                                             </td>
-                                            <td className="px-4 py-4 text-right text-slate-300 text-xs font-mono">
+                                            <td className="px-4 py-4 text-right text-xs font-mono" style={{ color: 'var(--ais-page-text-secondary)' }}>
                                                 {formatNumber(vessel.grossTonnage)}
                                             </td>
-                                            <td className="px-4 py-4 text-right text-slate-300 text-xs font-mono">
+                                            <td className="px-4 py-4 text-right text-xs font-mono" style={{ color: 'var(--ais-page-text-secondary)' }}>
                                                 {formatNumber(vessel.co2Estimated)} t
                                             </td>
-                                            <td className="px-4 py-4 text-right font-bold text-white text-sm">
+                                            <td className="px-4 py-4 text-right font-bold text-sm" style={{ color: 'var(--ais-page-text)' }}>
                                                 {formatCurrency(vessel.taxAmount)}
                                             </td>
                                             <td className="px-4 py-4 text-center">
@@ -143,12 +143,13 @@ export function CarbonTaxVesselsSection() {
                         return (
                             <div
                                 key={vessel.id}
-                                className="bg-[#111C18] rounded-2xl p-4 border border-white/5"
+                                className="rounded-2xl p-4"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 <div className="flex items-start justify-between mb-3">
                                     <div>
-                                        <p className="font-bold text-white text-sm">{vessel.name}</p>
-                                        <p className="text-[10px] text-slate-500">
+                                        <p className="font-bold text-sm" style={{ color: 'var(--ais-page-text)' }}>{vessel.name}</p>
+                                        <p className="text-[10px]" style={{ color: 'var(--ais-page-text-dim)' }}>
                                             {vessel.flagEmoji} {vessel.flag} · {VesselTypeLabel[vessel.type]}
                                         </p>
                                     </div>
@@ -159,16 +160,16 @@ export function CarbonTaxVesselsSection() {
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3 text-center">
-                                    <div className="bg-[#0A1110]/60 rounded-lg p-2">
-                                        <p className="text-[9px] text-slate-500 mb-0.5">{t('col_co2')}</p>
-                                        <p className="text-xs font-bold text-white">{formatNumber(vessel.co2Estimated)} t</p>
+                                    <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+                                        <p className="text-[9px] mb-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>{t('col_co2')}</p>
+                                        <p className="text-xs font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatNumber(vessel.co2Estimated)} t</p>
                                     </div>
-                                    <div className="bg-[#0A1110]/60 rounded-lg p-2">
-                                        <p className="text-[9px] text-slate-500 mb-0.5">{t('col_tax')}</p>
-                                        <p className="text-xs font-bold text-white">{formatCurrency(vessel.taxAmount)}</p>
+                                    <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+                                        <p className="text-[9px] mb-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>{t('col_tax')}</p>
+                                        <p className="text-xs font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatCurrency(vessel.taxAmount)}</p>
                                     </div>
-                                    <div className="bg-[#0A1110]/60 rounded-lg p-2">
-                                        <p className="text-[9px] text-slate-500 mb-0.5">{t('col_cii')}</p>
+                                    <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+                                        <p className="text-[9px] mb-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>{t('col_cii')}</p>
                                         <p className={`text-sm font-black ${ciiColor}`}>{vessel.ciiRating}</p>
                                     </div>
                                 </div>

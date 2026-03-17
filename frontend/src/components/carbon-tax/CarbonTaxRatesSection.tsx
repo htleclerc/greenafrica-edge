@@ -37,7 +37,7 @@ export function CarbonTaxRatesSection() {
     const t = useTranslations('CarbonTax');
 
     return (
-        <section className="py-16 px-6 bg-[#0D1512] relative">
+        <section className="py-16 px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="absolute top-0 left-0 w-[500px] h-[400px] bg-blue-900/10 rounded-full blur-[150px] -translate-x-1/2" />
 
             <div className="max-w-7xl mx-auto relative z-10">
@@ -47,8 +47,8 @@ export function CarbonTaxRatesSection() {
                         <Scale className="w-3 h-3" />
                         {t('rates_badge')}
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">{t('rates_title')}</h2>
-                    <p className="text-slate-400 text-base max-w-2xl">{t('rates_subtitle')}</p>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('rates_title')}</h2>
+                    <p className="text-base max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('rates_subtitle')}</p>
                 </div>
 
                 {/* Rate cards grid */}
@@ -58,13 +58,14 @@ export function CarbonTaxRatesSection() {
                         return (
                             <div
                                 key={rate.id}
-                                className="bg-[#111C18] rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300 flex flex-col gap-4"
+                                className="rounded-2xl p-6 transition-all duration-300 flex flex-col gap-4"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 {/* Header */}
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${colors.dot} shrink-0 mt-0.5`} />
-                                        <h3 className="text-sm font-bold text-white leading-snug">{rate.name}</h3>
+                                        <h3 className="text-sm font-bold leading-snug" style={{ color: 'var(--ais-page-text)' }}>{rate.name}</h3>
                                     </div>
                                     <span
                                         className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${colors.badge} ${colors.badgeText}`}
@@ -74,31 +75,31 @@ export function CarbonTaxRatesSection() {
                                 </div>
 
                                 {/* Rate value */}
-                                <div className="bg-[#0A1110]/60 rounded-xl p-4 border border-white/5">
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--ais-page-bg)', border: '1px solid var(--ais-page-border)' }}>
+                                    <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--ais-page-text-dim)' }}>
                                         {t('rate_per_ton')}
                                     </p>
-                                    <p className="text-3xl font-bold text-white">
+                                    <p className="text-3xl font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                         ${rate.ratePerTon}
-                                        <span className="text-sm text-slate-400 font-normal ml-1">/tCO₂</span>
+                                        <span className="text-sm font-normal ml-1" style={{ color: 'var(--ais-page-text-muted)' }}>/tCO&#x2082;</span>
                                     </p>
                                 </div>
 
                                 {/* Details */}
-                                <div className="space-y-2 text-[11px] text-slate-400 flex-1">
+                                <div className="space-y-2 text-[11px] flex-1" style={{ color: 'var(--ais-page-text-muted)' }}>
                                     <div className="flex items-start gap-2">
-                                        <CheckCircle2 className="w-3 h-3 text-slate-600 shrink-0 mt-0.5" />
+                                        <CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }} />
                                         <span>{rate.applicability}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-slate-600 shrink-0" />
+                                        <Clock className="w-3 h-3 shrink-0" style={{ color: 'var(--ais-page-text-dim)' }} />
                                         <span>{t('effective_since')} {rate.effectiveDate}</span>
                                     </div>
                                 </div>
 
                                 {/* Authority */}
-                                <div className="pt-3 border-t border-white/5">
-                                    <p className="text-[10px] text-slate-600 font-medium">{rate.authority}</p>
+                                <div className="pt-3" style={{ borderTop: '1px solid var(--ais-page-border)' }}>
+                                    <p className="text-[10px] font-medium" style={{ color: 'var(--ais-page-text-dim)' }}>{rate.authority}</p>
                                 </div>
                             </div>
                         );

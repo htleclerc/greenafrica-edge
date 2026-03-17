@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { DashboardKpis, SecureUser, UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { SkinSwitcher } from '@/components/layout/SkinSwitcher';
+import { useTranslations } from 'next-intl';
 
 // ── Country flag emoji from ISO 3166-1 alpha-2 ──────────────────────────────
 
@@ -20,13 +23,13 @@ function countryFlag(code: string): string {
     return String.fromCodePoint(a, b);
 }
 
-// ── Role labels ──────────────────────────────────────────────────────────────
+// ── Role label keys ──────────────────────────────────────────────────────────
 
-const ROLE_LABEL: Record<UserRole, string> = {
-    [UserRole.PORT_OFFICER]:    'Officier de Port',
-    [UserRole.FINANCE_ADMIN]:   'Admin Financier',
-    [UserRole.SHIPPING_AGENT]:  'Armateur / Agent',
-    [UserRole.SUPERADMIN]:      'Super Admin',
+const ROLE_LABEL_KEY: Record<UserRole, string> = {
+    [UserRole.PORT_OFFICER]:    'role_port_officer',
+    [UserRole.FINANCE_ADMIN]:   'role_finance_admin',
+    [UserRole.SHIPPING_AGENT]:  'role_shipping_agent',
+    [UserRole.SUPERADMIN]:      'role_superadmin',
 };
 
 const ROLE_COLOR: Record<UserRole, string> = {
@@ -36,65 +39,19 @@ const ROLE_COLOR: Record<UserRole, string> = {
     [UserRole.SUPERADMIN]:      '#F97316',
 };
 
-// ── Mock notifications ───────────────────────────────────────────────────────
+// ── Relative time formatter ──────────────────────────────────────────────────
 
-interface Notification {
-    id: string;
-    icon: React.ReactNode;
-    iconColor: string;
-    title: string;
-    message: string;
-    time: string;
-    read: boolean;
+function formatRelativeTime(isoDate: string, t: (key: string, params?: Record<string, string | number>) => string): string {
+    const diff = Date.now() - new Date(isoDate).getTime();
+    const minutes = Math.floor(diff / 60_000);
+    if (minutes < 1) return t('time_just_now');
+    if (minutes < 60) return t('time_minutes_ago', { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t('time_hours_ago', { count: hours });
+    const days = Math.floor(hours / 24);
+    if (days < 7) return t('time_days_ago', { count: days });
+    return new Date(isoDate).toLocaleDateString('en', { month: 'short', day: 'numeric' });
 }
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-    {
-        id: 'n1',
-        icon: <AlertTriangle className="w-3.5 h-3.5" />,
-        iconColor: '#EF4444',
-        title: 'Navire non-conforme detecte',
-        message: 'OCEAN VOYAGER (IMO 9554433) — Non-compliance AIS en ZEE',
-        time: 'Il y a 12 min',
-        read: false,
-    },
-    {
-        id: 'n2',
-        icon: <CreditCard className="w-3.5 h-3.5" />,
-        iconColor: '#F59E0B',
-        title: 'Paiement en attente',
-        message: 'CMA CGM AFRICA — Facture Port Stay $1,924 en attente',
-        time: 'Il y a 45 min',
-        read: false,
-    },
-    {
-        id: 'n3',
-        icon: <Ship className="w-3.5 h-3.5" />,
-        iconColor: '#3B82F6',
-        title: 'Nouveau navire en ZEE',
-        message: 'MAERSK SEALAND entre dans la ZEE Somaliland via Berbera',
-        time: 'Il y a 1h',
-        read: false,
-    },
-    {
-        id: 'n4',
-        icon: <CheckCircle className="w-3.5 h-3.5" />,
-        iconColor: '#10B981',
-        title: 'Paiement recu',
-        message: 'HAPAG-LLOYD JEDDAH — Transit Fee $6,022 encaisse',
-        time: 'Il y a 3h',
-        read: true,
-    },
-    {
-        id: 'n5',
-        icon: <Shield className="w-3.5 h-3.5" />,
-        iconColor: '#8B5CF6',
-        title: 'Demande d\'inscription',
-        message: 'Gulf Marine Services FZCO — En attente de validation',
-        time: 'Il y a 5h',
-        read: true,
-    },
-];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -128,15 +85,21 @@ interface DashboardTopBarProps {
     user: SecureUser;
     kpis: DashboardKpis;
     breadcrumb?: string;
+    notifications?: import('@/hooks/useNotifications').AppNotification[];
+    unreadCount?: number;
+    onMarkRead?: (id: string) => void;
+    onMarkAllRead?: () => void;
 }
 
-export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps) {
+export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead }: DashboardTopBarProps) {
+    const t = useTranslations('Dashboard');
     const isOnline   = kpis.systemStatus === 'ONLINE';
     const isDegraded = kpis.systemStatus === 'DEGRADED';
 
     const [notifOpen, setNotifOpen]     = React.useState(false);
     const [profileOpen, setProfileOpen] = React.useState(false);
-    const [notifications, setNotifications] = React.useState(MOCK_NOTIFICATIONS);
+
+    const notifications = externalNotifs ?? [];
 
     const notifRef   = React.useRef<HTMLDivElement>(null);
     const profileRef = React.useRef<HTMLDivElement>(null);
@@ -144,10 +107,10 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
     useClickOutside(notifRef, () => setNotifOpen(false));
     useClickOutside(profileRef, () => setProfileOpen(false));
 
-    const unreadCount = notifications.filter((n) => !n.read).length;
+    const unreadCount = externalUnread ?? notifications.filter((n) => !n.read).length;
 
     function markAllRead() {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        if (onMarkAllRead) onMarkAllRead();
     }
 
     async function handleLogout() {
@@ -162,7 +125,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
 
     const flag      = countryFlag(user.countryCode);
     const roleColor = ROLE_COLOR[user.role];
-    const roleLabel = ROLE_LABEL[user.role];
+    const roleLabel = t(ROLE_LABEL_KEY[user.role]);
     const initials  = user.fullName
         .split(' ')
         .map((w) => w.charAt(0))
@@ -183,7 +146,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
             {/* Brand + breadcrumb */}
             <div className="flex items-center gap-2 mr-2 min-w-0">
                 <span className="text-sm font-bold text-[var(--os-text-primary)] whitespace-nowrap">
-                    Africgreen<span className="text-[#00D97E]">OS</span>
+                    Africgreen
                 </span>
                 {breadcrumb && (
                     <>
@@ -195,10 +158,10 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
 
             {/* KPI Pills — center */}
             <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto">
-                <KpiPill label="MONTHLY REVENUE" value={formatUsd(kpis.monthlyRevenueUsd)} accent />
-                <KpiPill label="VESSELS PROCESSED" value={String(kpis.vesselsProcessed)} />
-                <KpiPill label="EST. CO2" value={formatTons(kpis.estCo2TrackingTons)} />
-                <KpiPill label="CREDITS RETIRED" value={formatTons(kpis.creditsRetiredTons)} />
+                <KpiPill label={t('kpi_monthly_revenue')} value={formatUsd(kpis.monthlyRevenueUsd)} accent />
+                <KpiPill label={t('kpi_vessels_processed')} value={String(kpis.vesselsProcessed)} />
+                <KpiPill label={t('kpi_est_co2')} value={formatTons(kpis.estCo2TrackingTons)} />
+                <KpiPill label={t('kpi_credits_retired')} value={formatTons(kpis.creditsRetiredTons)} />
             </div>
 
             {/* Right: system status + notifications + user */}
@@ -216,7 +179,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                     {isDegraded && <AlertCircle className="w-3.5 h-3.5" />}
                     {!isDegraded && <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'os-dot-online' : 'os-dot-offline'}`} />}
                     <span className="hidden md:inline">
-                        {isDegraded ? 'DEGRADED SYNC' : isOnline ? 'ONLINE' : 'OFFLINE'}
+                        {isDegraded ? t('status_degraded') : isOnline ? t('status_online') : t('status_offline')}
                     </span>
                 </div>
 
@@ -246,10 +209,10 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                             {/* Header */}
                             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--os-border)]">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-xs font-bold text-[var(--os-text-primary)]">Notifications</h3>
+                                    <h3 className="text-xs font-bold text-[var(--os-text-primary)]">{t('notifications_title')}</h3>
                                     {unreadCount > 0 && (
                                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#EF4444]/15 text-[#EF4444]">
-                                            {unreadCount} nouvelles
+                                            {t('notifications_new_count', { count: unreadCount })}
                                         </span>
                                     )}
                                 </div>
@@ -258,40 +221,62 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                                         onClick={markAllRead}
                                         className="text-[10px] font-semibold text-[#10B981] hover:text-[#34D399] transition-colors"
                                     >
-                                        Tout marquer lu
+                                        {t('mark_all_read')}
                                     </button>
                                 )}
                             </div>
 
                             {/* List */}
                             <div className="max-h-80 overflow-y-auto">
-                                {notifications.map((n) => (
+                                {notifications.length === 0 && (
+                                    <div className="px-4 py-8 text-center text-[var(--os-text-muted)] text-xs">
+                                        {t('notifications_empty')}
+                                    </div>
+                                )}
+                                {notifications.map((n) => {
+                                    const typeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
+                                        registration: { icon: <Shield className="w-3.5 h-3.5" />, color: '#8B5CF6' },
+                                        compliance:   { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: '#EF4444' },
+                                        payment:      { icon: <CreditCard className="w-3.5 h-3.5" />, color: '#F59E0B' },
+                                        vessel_alert: { icon: <Ship className="w-3.5 h-3.5" />, color: '#3B82F6' },
+                                        system:       { icon: <CheckCircle className="w-3.5 h-3.5" />, color: '#10B981' },
+                                    };
+                                    const resolved = typeConfig[n.type] ?? typeConfig.system;
+                                    const title = t(n.titleKey);
+                                    const message = n.messageParams ? t(n.messageKey, n.messageParams) : t(n.messageKey);
+                                    const relTime = formatRelativeTime(n.createdAt, t);
+                                    return (
                                     <div
                                         key={n.id}
                                         className="flex items-start gap-3 px-4 py-3 border-b border-[var(--os-border)] last:border-0 transition-colors hover:bg-[var(--os-surface-2)] cursor-pointer"
                                         style={{ backgroundColor: n.read ? 'transparent' : 'rgba(16,185,129,0.03)' }}
+                                        onClick={() => {
+                                            if (onMarkRead) onMarkRead(n.id);
+                                            if (n.href) window.location.href = n.href;
+                                        }}
                                     >
                                         <div
                                             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                                            style={{ backgroundColor: `${n.iconColor}14`, color: n.iconColor }}
+                                            style={{ backgroundColor: `${resolved.color}14`, color: resolved.color }}
                                         >
-                                            {n.icon}
+                                            {resolved.icon}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-2">
-                                                <p className="text-xs font-semibold text-[var(--os-text-primary)] leading-tight">{n.title}</p>
+                                                <p className="text-xs font-semibold text-[var(--os-text-primary)] leading-tight">{title}</p>
                                                 {!n.read && (
                                                     <span className="w-2 h-2 rounded-full bg-[#10B981] flex-shrink-0 mt-1" />
                                                 )}
                                             </div>
-                                            <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed mt-0.5 truncate">{n.message}</p>
+                                            <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed mt-0.5 truncate">{message}</p>
                                             <p className="text-[10px] text-[var(--os-text-muted)] mt-1 flex items-center gap-1 opacity-60">
                                                 <Clock className="w-2.5 h-2.5" />
-                                                {n.time}
+                                                {relTime}
                                             </p>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Footer */}
@@ -300,11 +285,15 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                                 onClick={() => setNotifOpen(false)}
                                 className="flex items-center justify-center py-2.5 text-[10px] font-bold text-[#10B981] hover:bg-[var(--os-surface-2)] transition-colors border-t border-[var(--os-border)]"
                             >
-                                Voir toutes les alertes
+                                {t('view_all_alerts')}
                             </Link>
                         </div>
                     )}
                 </div>
+
+                {/* Locale + Skin (includes light/dark toggle) */}
+                <LocaleSwitcher variant="dashboard" />
+                <SkinSwitcher variant="topbar" />
 
                 {/* Separator */}
                 <div className="w-px h-6" style={{ backgroundColor: 'var(--os-border)' }} />
@@ -382,22 +371,22 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                             <div className="py-1">
                                 <ProfileMenuItem
                                     icon={<User className="w-3.5 h-3.5" />}
-                                    label="Mon profil"
+                                    label={t('profile_my_profile')}
                                     sub={user.email}
                                     href="/dashboard/settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
                                 <ProfileMenuItem
                                     icon={<Settings className="w-3.5 h-3.5" />}
-                                    label="Parametres"
-                                    sub="Langue, timezone, preferences"
+                                    label={t('profile_settings')}
+                                    sub={t('profile_settings_sub')}
                                     href="/dashboard/settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
                                 <ProfileMenuItem
                                     icon={<Shield className="w-3.5 h-3.5" />}
-                                    label="Securite"
-                                    sub="Mot de passe, 2FA, sessions"
+                                    label={t('profile_security')}
+                                    sub={t('profile_security_sub')}
                                     href="/dashboard/settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
@@ -406,7 +395,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                             {/* Session info + logout */}
                             <div className="border-t border-[var(--os-border)] px-4 py-2">
                                 <div className="flex items-center justify-between text-[10px] text-[var(--os-text-muted)] mb-2">
-                                    <span>Derniere connexion</span>
+                                    <span>{t('profile_last_login')}</span>
                                     <span className="font-mono">{new Date(user.lastLogin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-[10px] text-[var(--os-text-muted)] mb-3">
@@ -418,7 +407,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb }: DashboardTopBarProps
                                     className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-[#EF4444] hover:bg-[rgba(239,68,68,0.08)] transition-colors"
                                 >
                                     <LogOut className="w-3.5 h-3.5" />
-                                    Deconnexion
+                                    {t('profile_logout')}
                                 </button>
                             </div>
                         </div>

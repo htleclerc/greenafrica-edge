@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/auth/v1/admin/users?per_page=50' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo')",
+      "Bash(python3 -c \"import sys,json; users=json.load\\(sys.stdin\\).get\\(''''users'''',[]\\); [print\\(f\"\"{u[''''id'''']} | {u[''''email'''']} | confirmed={u.get\\(''''email_confirmed_at'''',''''no''''\\)}\"\"\\) for u in users]\")",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const u=JSON.parse\\(d\\).users||[];u.forEach\\(x=>console.log\\(x.id,''''|'''',x.email,''''|'''',x.email_confirmed_at?''''confirmed'''':''''unconfirmed''''\\)\\)}\\)\")",
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/rest/v1/vessels?select=id&limit=1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo')",
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/rest/v1/profiles?select=*' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo')",
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/auth/v1/token?grant_type=password' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTk0NjksImV4cCI6MjA4ODY3NTQ2OX0.Y6BvbncVlxf36qzlZcR9C1hFUC9VLzIgpC7m8hEpq6g' -H 'Content-Type: application/json' -d '{\"\"email\"\":\"\"superadmin@africgreen.gov.sl\"\",\"\"password\"\":\"\"Demo@2025!\"\"}')",
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/auth/v1/token?grant_type=password' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTk0NjksImV4cCI6MjA4ODY3NTQ2OX0.Y6BvbncVlxf36qzlZcR9C1hFUC9VLzIgpC7m8hEpq6g' -H 'Content-Type: application/json' --data-raw \"{\"\"email\"\":\"\"superadmin@africgreen.gov.sl\"\",\"\"password\"\":\"\"Demo@2025!\"\"}\")",
+      "Bash(node -e \":*)",
+      "Bash(PGPASSWORD='RrV6.$r&-E_Gmi5' psql \"postgresql://postgres.dyjolepwxxsedwngkfox:RrV6.$r&-E_Gmi5@aws-0-eu-west-3.pooler.supabase.com:6543/postgres\" -c \"SELECT 1 AS connected;\")",
+      "Bash(npm list:*)",
+      "Bash(npm install:*)",
+      "Bash(nslookup -type=CNAME db.dyjolepwxxsedwngkfox.supabase.co 8.8.8.8)",
+      "Bash(node scripts/db-connect.mjs)",
+      "Bash(nslookup db.aimzkrywyaxprnyvaoub.supabase.co 8.8.8.8)",
+      "Bash(curl -s 'https://aimzkrywyaxprnyvaoub.supabase.co/rest/v1/' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo')",
+      "Bash(curl -s 'https://dyjolepwxxsedwngkfox.supabase.co/rest/v1/' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5am9sZXB3eHhzZWR3bmdrZm94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA5OTQ2OSwiZXhwIjoyMDg4Njc1NDY5fQ.jlfJjHAY4bA_emf01W6eC_ii8ICSM3yDT2-bjD9QKzo')",
+      "Bash(node scripts/db-exec.mjs)",
+      "Bash(nslookup db.dyjolepwxxsedwngkfox.supabase.co 1.1.1.1)",
+      "Bash(node -e \"const pg = require\\(''pg''\\); console.log\\(''pg available''\\);\")",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/hooks -type f -name *.ts -o -name *.tsx)",
+      "Bash(grep -r \"mockSecureVessels\\\\|mockTransactions\\\\|mockKpis\\\\|mockAuditLog\\\\|mockCarbonProjects\\\\|mockExemptions\" /c/Users/lecle/Workspace/africgreen/frontend/src/components/dashboard --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"from ''@/mock/datas/secureMock''\" /c/Users/lecle/Workspace/africgreen/frontend/src/components --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(head -60 /c/Users/lecle/Workspace/africgreen/frontend/src/app/\\\\\\(dashboard\\\\\\)/layout.tsx)",
+      "Bash(npm ls:*)",
+      "Bash(node -e \"const p=require\\(''./package.json''\\);console.log\\(''react:'',p.dependencies.react\\);console.log\\(''react-leaflet:'',p.dependencies[''react-leaflet'']\\);console.log\\(''leaflet:'',p.dependencies.leaflet\\)\")"
+    ]
+  }
+}

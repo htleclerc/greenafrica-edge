@@ -1,21 +1,33 @@
 import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
-import messages from '../../messages/en.json';
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const locale = await getLocale();
+    const messages = await getMessages();
+
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang={locale} data-theme="dark" suppressHydrationWarning>
+            <head>
+                {/* Blocking script to set theme before paint — avoids flash */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}else{document.documentElement.setAttribute('data-theme','dark')}var s=localStorage.getItem('africgreen_skin');document.documentElement.setAttribute('data-skin',s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald')}catch(e){}})()`,
+                    }}
+                />
+            </head>
             <body className="antialiased font-sans">
-                <NextIntlClientProvider locale="en" messages={messages}>
+                <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider
                         attribute="data-theme"
                         defaultTheme="dark"
                         enableSystem={false}
+                        storageKey="theme"
                         disableTransitionOnChange
                     >
                         {children}

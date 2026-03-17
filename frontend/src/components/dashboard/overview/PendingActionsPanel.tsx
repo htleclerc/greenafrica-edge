@@ -1,10 +1,17 @@
+'use client';
+
 import * as React from 'react';
 import { FileText, Leaf, ArrowRight, AlertTriangle } from 'lucide-react';
-import { mockSecureVessels, mockKpis } from '@/mock/datas/secureMock';
+import { useTranslations } from 'next-intl';
+import { useVessels } from '@/hooks/useVessels';
+import { useKpis } from '@/hooks/useKpis';
 import { VesselComplianceStatus } from '@/types/secure';
 
 export function PendingActionsPanel() {
-    const unpaid = mockSecureVessels.filter(
+    const t = useTranslations('Overview');
+    const { data: vessels } = useVessels();
+    const { data: kpis } = useKpis();
+    const unpaid = vessels.filter(
         (v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE ||
                v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT
     );
@@ -13,19 +20,19 @@ export function PendingActionsPanel() {
         <div className="flex flex-col gap-4">
             {/* Pending Actions card */}
             <div className="os-card p-5">
-                <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-4">Pending Actions</h3>
+                <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-4">{t('pending_actions_title')}</h3>
                 <div className="flex flex-col gap-2">
                     <ActionItem
                         icon={<FileText className="w-4 h-4" />}
-                        title="Sign MoU Protocol"
-                        sub="Maritime Sovereignty Framework"
+                        title={t('action_sign_mou')}
+                        sub={t('action_sign_mou_sub')}
                         href="/dashboard/reports"
                         color="#38BDF8"
                     />
                     <ActionItem
                         icon={<Leaf className="w-4 h-4" />}
-                        title="Adopt Decree CH-8"
-                        sub="Carbon offset policy update required."
+                        title={t('action_adopt_decree')}
+                        sub={t('action_adopt_decree_sub')}
                         href="/dashboard/projects"
                         color="#00D97E"
                     />
@@ -33,8 +40,8 @@ export function PendingActionsPanel() {
                         <ActionItem
                             key={v.id}
                             icon={<AlertTriangle className="w-4 h-4" />}
-                            title={`Generate Pro-forma: ${v.name}`}
-                            sub={`$${v.taxLiabilityUsd.toLocaleString()} due — IMO ${v.imoNumber}`}
+                            title={t('action_generate_proforma', { name: v.name })}
+                            sub={t('action_proforma_sub', { amount: v.taxLiabilityUsd.toLocaleString(), imo: v.imoNumber })}
                             href={`/dashboard/invoices?vessel=${v.id}`}
                             color="#EF4444"
                         />
@@ -45,7 +52,7 @@ export function PendingActionsPanel() {
             {/* Project Certification mini */}
             <div className="os-card p-5">
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Project Certification</h3>
+                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('project_certification_title')}</h3>
                     <span className="text-[10px] font-bold text-[#22C55E] bg-[rgba(34,197,94,0.08)] px-2 py-0.5 rounded-full border border-[#22C55E]/20">
                         74%
                     </span>
@@ -58,23 +65,23 @@ export function PendingActionsPanel() {
 
                 <div className="flex flex-col gap-3">
                     <ProjectMini
-                        name="Mangrove Restoration"
-                        sub="Coastal reforestation — 2,500 ha"
+                        name={t('project_mangrove')}
+                        sub={t('project_mangrove_sub')}
                         progress={74}
-                        status="On Track"
+                        status={t('project_status_on_track')}
                         statusColor="#22C55E"
                     />
                     <ProjectMini
-                        name="Solar Grid Expansion"
-                        sub="Northern region micro-grid — Phase 2"
+                        name={t('project_solar')}
+                        sub={t('project_solar_sub')}
                         progress={38}
-                        status="Active"
+                        status={t('project_status_active')}
                         statusColor="#38BDF8"
                     />
                 </div>
 
                 <a href="/dashboard/projects" className="flex items-center gap-1 mt-4 text-xs font-semibold text-[#38BDF8] hover:underline">
-                    Manage Projects <ArrowRight className="w-3 h-3" />
+                    {t('manage_projects')} <ArrowRight className="w-3 h-3" />
                 </a>
             </div>
 
@@ -83,14 +90,14 @@ export function PendingActionsPanel() {
                 <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
                     <span className="text-xs font-bold text-[#EF4444] uppercase tracking-wide">
-                        {mockKpis.nonCompliantCount} Non-Compliant
+                        {t('alert_non_compliant', { count: kpis.nonCompliantCount })}
                     </span>
                 </div>
                 <p className="text-[11px] text-[var(--os-text-muted)]">
-                    {mockKpis.pendingReviewCount} vessels require review. Pro-forma generation pending.
+                    {t('alert_review_pending', { count: kpis.pendingReviewCount })}
                 </p>
                 <a href="/dashboard/alerts" className="text-xs text-[#EF4444] font-semibold mt-2 inline-block hover:underline">
-                    View Alerts →
+                    {t('alert_view_alerts')}
                 </a>
             </div>
         </div>

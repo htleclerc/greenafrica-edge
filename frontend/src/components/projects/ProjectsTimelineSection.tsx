@@ -24,15 +24,15 @@ export function ProjectsTimelineSection() {
     });
 
     return (
-        <section className="py-16 px-6 bg-[#0A1110]">
+        <section className="py-16 px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-12">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
                         {t('timeline_badge')}
                     </div>
-                    <h2 className="text-3xl font-bold text-white mb-3">{t('timeline_title')}</h2>
-                    <p className="text-slate-400 text-sm max-w-2xl">{t('timeline_subtitle')}</p>
+                    <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('timeline_title')}</h2>
+                    <p className="text-sm max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('timeline_subtitle')}</p>
                 </div>
 
                 {/* Timeline */}
@@ -51,14 +51,15 @@ export function ProjectsTimelineSection() {
                                     {/* Content */}
                                     <div className={`ml-12 md:ml-0 md:w-[45%] ${isLeft ? 'md:pr-10 md:text-right' : 'md:pl-10'}`}>
                                         <div
-                                            className={`inline-block bg-[#111C18] rounded-xl border border-white/5 hover:border-emerald-500/15 transition-all duration-300 p-4 ${isLeft ? 'text-left md:text-right' : 'text-left'
+                                            className={`inline-block rounded-xl hover:border-emerald-500/15 transition-all duration-300 p-4 ${isLeft ? 'text-left md:text-right' : 'text-left'
                                                 }`}
+                                            style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                                         >
                                             <span className="text-[10px] font-bold text-emerald-400 tracking-wider uppercase">
                                                 {milestone.date}
                                             </span>
-                                            <h3 className="text-sm font-bold text-white mt-1 mb-1.5">{milestone.title}</h3>
-                                            <p className="text-[11px] text-slate-500 leading-relaxed">{milestone.description}</p>
+                                            <h3 className="text-sm font-bold mt-1 mb-1.5" style={{ color: 'var(--ais-page-text)' }}>{milestone.title}</h3>
+                                            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>{milestone.description}</p>
                                             {catColor && (
                                                 <div className={`flex gap-1 mt-2 ${isLeft ? 'justify-start md:justify-end' : 'justify-start'}`}>
                                                     <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
@@ -71,7 +72,7 @@ export function ProjectsTimelineSection() {
 
                                     {/* Center dot */}
                                     <div className="absolute left-6 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center">
-                                        <div className={`w-3 h-3 rounded-full ${dotColor} ring-4 ring-[#0A1110] shadow-lg z-10`} />
+                                        <div className={`w-3 h-3 rounded-full ${dotColor} shadow-lg z-10`} style={{ boxShadow: '0 0 0 4px var(--ais-page-bg)' }} />
                                     </div>
 
                                     {/* Spacer for alternating side */}

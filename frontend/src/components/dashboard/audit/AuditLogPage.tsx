@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     Download, RefreshCw, Shield, AlertTriangle, Info,
     Search, ChevronRight, X, User, Clock, Globe, Tag,
     LogIn, LogOut, FileText, DollarSign, CheckCircle, UserPlus, ArrowUpDown,
 } from 'lucide-react';
 import { OsBadge, severityVariant } from '@/components/ui/OsBadge';
-import { mockAuditLog } from '@/mock/datas/secureMock';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { AuditLogEntry, AuditSeverity, AuditAction } from '@/types/secure';
 
 // ── Label maps ────────────────────────────────────────────────────────────────
@@ -82,13 +83,15 @@ function exportCsv(entries: AuditLogEntry[]) {
 
 // ── Unique helpers ─────────────────────────────────────────────────────────────
 
-const UNIQUE_USERS  = [...new Set(mockAuditLog.map((e) => e.userFullName))];
-const UNIQUE_ENTITY = [...new Set(mockAuditLog.map((e) => e.entityType))];
 const ALL_ACTIONS   = Object.values(AuditAction);
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AuditLogPage() {
+    const t = useTranslations('DashboardPages');
+    const { data: auditLog } = useAuditLog();
+    const UNIQUE_USERS  = React.useMemo(() => [...new Set(auditLog.map((e) => e.userFullName))], [auditLog]);
+    const UNIQUE_ENTITY = React.useMemo(() => [...new Set(auditLog.map((e) => e.entityType))], [auditLog]);
     // Filters
     const [search,        setSearch]     = React.useState('');
     const [filterSev,     setFilterSev]  = React.useState<string>('ALL');
@@ -105,7 +108,7 @@ export function AuditLogPage() {
         const now = new Date('2025-03-09T12:00:00Z').getTime();
         const periodMs: Record<string, number> = { '24h': 86_400_000, '7d': 7 * 86_400_000, '30d': 30 * 86_400_000, all: Infinity };
         const ms = periodMs[filterPeriod] ?? Infinity;
-        return mockAuditLog.filter((e) => {
+        return auditLog.filter((e) => {
             if (filterSev    !== 'ALL' && e.severity     !== filterSev)    return false;
             if (filterAction !== 'ALL' && e.action       !== filterAction)  return false;
             if (filterUser   !== 'ALL' && e.userFullName !== filterUser)    return false;
@@ -123,9 +126,9 @@ export function AuditLogPage() {
         }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [search, filterSev, filterAction, filterUser, filterEntity, filterPeriod]);
 
-    const criticalCount = mockAuditLog.filter((e) => e.severity === AuditSeverity.CRITICAL).length;
-    const warningCount  = mockAuditLog.filter((e) => e.severity === AuditSeverity.WARNING).length;
-    const uniqueUsers   = new Set(mockAuditLog.map((e) => e.userId)).size;
+    const criticalCount = auditLog.filter((e) => e.severity === AuditSeverity.CRITICAL).length;
+    const warningCount  = auditLog.filter((e) => e.severity === AuditSeverity.WARNING).length;
+    const uniqueUsers   = new Set(auditLog.map((e) => e.userId)).size;
 
     function handleRefresh() {
         setRefreshing(true);
@@ -137,9 +140,9 @@ export function AuditLogPage() {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">System Events & Audit Trail</h1>
+                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('audit_title')}</h1>
                     <p className="text-xs text-[var(--os-text-muted)] mt-0.5">
-                        Tamper-proof, chronological record of all operator actions, policy changes, and access events.
+                        {t('audit_subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -154,7 +157,7 @@ export function AuditLogPage() {
                         className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors shadow-[0_0_10px_rgba(0,217,126,0.2)]"
                     >
                         <Download className="w-3.5 h-3.5" />
-                        Export CSV
+                        {t('audit_export_csv')}
                     </button>
                 </div>
             </div>
@@ -162,10 +165,10 @@ export function AuditLogPage() {
             {/* KPI summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Critical Alerts', value: criticalCount, color: '#EF4444' },
-                    { label: 'Warnings',         value: warningCount,  color: '#F59E0B' },
-                    { label: 'Total Events',     value: mockAuditLog.length, color: '#38BDF8' },
-                    { label: 'Active Users',     value: uniqueUsers,   color: '#22C55E' },
+                    { label: t('audit_critical_alerts'), value: criticalCount, color: '#EF4444' },
+                    { label: t('audit_warnings'),         value: warningCount,  color: '#F59E0B' },
+                    { label: t('audit_total_events'),     value: auditLog.length, color: '#38BDF8' },
+                    { label: t('audit_active_users'),     value: uniqueUsers,   color: '#22C55E' },
                 ].map(({ label, value, color }) => (
                     <div key={label} className="os-card p-4 relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: color }} />
@@ -182,7 +185,7 @@ export function AuditLogPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--os-text-muted)]" />
                     <input
                         type="text"
-                        placeholder="Search events, users, IPs…"
+                        placeholder={t('audit_search_placeholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full h-9 pl-9 pr-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:outline-none focus:border-[#00D97E]/40 transition-colors"
@@ -196,23 +199,23 @@ export function AuditLogPage() {
 
                 {/* Period */}
                 <FilterSelect value={filterPeriod} onChange={setFilterPer} label="Period">
-                    <option value="24h">Last 24h</option>
-                    <option value="7d">Last 7 days</option>
-                    <option value="30d">Last 30 days</option>
-                    <option value="all">All time</option>
+                    <option value="24h">{t('audit_period_last_24h')}</option>
+                    <option value="7d">{t('audit_period_last_7d')}</option>
+                    <option value="30d">{t('audit_period_last_30d')}</option>
+                    <option value="all">{t('audit_period_all')}</option>
                 </FilterSelect>
 
                 {/* Severity */}
                 <FilterSelect value={filterSev} onChange={setFilterSev} label="Severity">
-                    <option value="ALL">All severities</option>
-                    <option value={AuditSeverity.INFO}>Info</option>
-                    <option value={AuditSeverity.WARNING}>Warning</option>
-                    <option value={AuditSeverity.CRITICAL}>Critical</option>
+                    <option value="ALL">{t('audit_severity_all')}</option>
+                    <option value={AuditSeverity.INFO}>{t('audit_severity_info')}</option>
+                    <option value={AuditSeverity.WARNING}>{t('audit_severity_warning')}</option>
+                    <option value={AuditSeverity.CRITICAL}>{t('audit_severity_critical')}</option>
                 </FilterSelect>
 
                 {/* Action */}
                 <FilterSelect value={filterAction} onChange={setFilterAct} label="Action">
-                    <option value="ALL">All actions</option>
+                    <option value="ALL">{t('audit_actions_all')}</option>
                     {ALL_ACTIONS.map((a) => (
                         <option key={a} value={a}>{ACTION_LABEL[a] ?? a}</option>
                     ))}
@@ -220,19 +223,19 @@ export function AuditLogPage() {
 
                 {/* User */}
                 <FilterSelect value={filterUser} onChange={setFilterUser} label="User">
-                    <option value="ALL">All users</option>
+                    <option value="ALL">{t('audit_users_all')}</option>
                     {UNIQUE_USERS.map((u) => <option key={u} value={u}>{u}</option>)}
                 </FilterSelect>
 
                 {/* Entity */}
                 <FilterSelect value={filterEntity} onChange={setFilterEnt} label="Entity">
-                    <option value="ALL">All entities</option>
+                    <option value="ALL">{t('audit_entities_all')}</option>
                     {UNIQUE_ENTITY.map((e) => <option key={e} value={e}>{e}</option>)}
                 </FilterSelect>
 
                 {/* Results count */}
                 <span className="text-[10px] text-[var(--os-text-muted)] ml-auto whitespace-nowrap">
-                    {filtered.length} / {mockAuditLog.length} events
+                    {filtered.length} / {auditLog.length} {t('audit_events_count')}
                 </span>
             </div>
 
@@ -241,12 +244,12 @@ export function AuditLogPage() {
                 {/* Activity timeline - left column */}
                 <div className="os-card overflow-hidden flex flex-col">
                     <div className="px-5 py-4 border-b border-[var(--os-border)]">
-                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Activity Timeline</h3>
-                        <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">Filtered events — newest first</p>
+                        <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('audit_activity_timeline')}</h3>
+                        <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{t('audit_filtered_events')}</p>
                     </div>
                     <div className="flex-1 overflow-y-auto divide-y divide-[var(--os-border)]">
                         {filtered.length === 0 ? (
-                            <div className="px-5 py-8 text-center text-xs text-[var(--os-text-muted)]">No events match filters</div>
+                            <div className="px-5 py-8 text-center text-xs text-[var(--os-text-muted)]">{t('audit_no_events_match')}</div>
                         ) : filtered.map((entry) => {
                             const { date, time } = formatTs(entry.createdAt);
                             const color = SEVERITY_COLOR[entry.severity];
@@ -292,12 +295,12 @@ export function AuditLogPage() {
                     <div className="os-card overflow-hidden">
                         <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">
                             <div>
-                                <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">Immutable Audit Log</h3>
-                                <p className="text-[10px] text-[var(--os-text-muted)]">Click a row to inspect event details</p>
+                                <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('audit_immutable_log')}</h3>
+                                <p className="text-[10px] text-[var(--os-text-muted)]">{t('audit_click_row')}</p>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-[#00D97E] animate-pulse" />
-                                <span className="text-[10px] font-semibold text-[#00D97E]">LIVE</span>
+                                <span className="text-[10px] font-semibold text-[#00D97E]">{t('audit_live')}</span>
                             </div>
                         </div>
 
@@ -305,7 +308,7 @@ export function AuditLogPage() {
                             <table className="w-full text-xs">
                                 <thead>
                                     <tr className="border-b border-[var(--os-border)] bg-[var(--os-surface-2)]">
-                                        {['Timestamp', 'User', 'Action', 'Entity', 'Severity', 'IP Address', ''].map((h) => (
+                                        {[t('audit_col_timestamp'), t('audit_col_user'), t('audit_col_action'), t('audit_col_entity'), t('audit_col_severity'), t('audit_col_ip'), ''].map((h) => (
                                             <th key={h} className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] whitespace-nowrap">
                                                 {h}
                                             </th>
@@ -364,7 +367,7 @@ export function AuditLogPage() {
                                     {filtered.length === 0 && (
                                         <tr>
                                             <td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--os-text-muted)]">
-                                                No events match the current filters.
+                                                {t('audit_no_events_filters')}
                                             </td>
                                         </tr>
                                     )}
@@ -373,8 +376,8 @@ export function AuditLogPage() {
                         </div>
 
                         <div className="px-5 py-2.5 border-t border-[var(--os-border)] flex items-center justify-between text-[10px] text-[var(--os-text-muted)]">
-                            <span>Showing {filtered.length} of {mockAuditLog.length} events</span>
-                            <span className="font-mono">Hash: <span className="text-[#38BDF8]">SHA256:a3f9c…e12d</span> · Chain intact ✓</span>
+                            <span>{t('audit_showing')} {filtered.length} {t('audit_of')} {auditLog.length} {t('audit_events_count')}</span>
+                            <span className="font-mono">Hash: <span className="text-[#38BDF8]">SHA256:a3f9c…e12d</span> · {t('audit_hash_chain')} ✓</span>
                         </div>
                     </div>
                 </div>
@@ -386,6 +389,7 @@ export function AuditLogPage() {
 // ── Event Detail Panel ────────────────────────────────────────────────────────
 
 function EventDetailPanel({ entry, onClose }: { entry: AuditLogEntry; onClose: () => void }) {
+    const t = useTranslations('DashboardPages');
     const { date, time } = formatTs(entry.createdAt);
     const color = SEVERITY_COLOR[entry.severity];
 
@@ -400,7 +404,7 @@ function EventDetailPanel({ entry, onClose }: { entry: AuditLogEntry; onClose: (
                         <p className="text-sm font-bold text-[var(--os-text-primary)]">
                             {ACTION_LABEL[entry.action] ?? entry.action}
                         </p>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">Event ID: {entry.id}</p>
+                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('audit_event_id')} {entry.id}</p>
                     </div>
                 </div>
                 <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]">
@@ -409,14 +413,14 @@ function EventDetailPanel({ entry, onClose }: { entry: AuditLogEntry; onClose: (
             </div>
 
             <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <DetailField icon={<User className="w-3.5 h-3.5" />}     label="Operator"   value={entry.userFullName} />
-                <DetailField icon={<Clock className="w-3.5 h-3.5" />}    label="Timestamp"  value={`${date} ${time}`} mono />
-                <DetailField icon={<Globe className="w-3.5 h-3.5" />}    label="IP Address" value={entry.ipAddress} mono />
-                <DetailField icon={<Tag className="w-3.5 h-3.5" />}      label="Entity"     value={`${entry.entityType} · ${entry.entityId}`} mono />
+                <DetailField icon={<User className="w-3.5 h-3.5" />}     label={t('audit_operator')}   value={entry.userFullName} />
+                <DetailField icon={<Clock className="w-3.5 h-3.5" />}    label={t('audit_timestamp')}  value={`${date} ${time}`} mono />
+                <DetailField icon={<Globe className="w-3.5 h-3.5" />}    label={t('audit_ip_address')} value={entry.ipAddress} mono />
+                <DetailField icon={<Tag className="w-3.5 h-3.5" />}      label={t('audit_entity')}     value={`${entry.entityType} · ${entry.entityId}`} mono />
             </div>
 
             <div className="px-5 pb-5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">Event Payload</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('audit_event_payload')}</p>
                 <div className="rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] p-4 overflow-x-auto">
                     <pre className="text-[10px] font-mono text-[#38BDF8] whitespace-pre-wrap">
                         {JSON.stringify(entry.detailsJson, null, 2)}

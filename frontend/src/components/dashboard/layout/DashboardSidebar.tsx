@@ -10,6 +10,7 @@ import {
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslations } from 'next-intl';
 
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_EXPANDED  = 220;
@@ -18,34 +19,40 @@ interface NavItem {
     key: string;
     icon: React.ReactNode;
     href: string;
-    label: string;
+    labelKey: string;
     section?: 'ops' | 'admin';
     badge?: number;
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { key: 'map',          icon: <Map className="w-5 h-5" />,           href: '/dashboard',             label: 'The Eye (Map)',         section: 'ops' },
-    { key: 'simulator',    icon: <Calculator className="w-5 h-5" />,    href: '/dashboard/simulator',   label: 'Simulateur de Taxe',    section: 'ops' },
-    { key: 'vessels',      icon: <Ship className="w-5 h-5" />,          href: '/dashboard/vessels',     label: 'Navires & Conformité',  section: 'ops' },
-    { key: 'invoices',     icon: <FileText className="w-5 h-5" />,      href: '/dashboard/invoices',    label: 'Factures & Paiements',  section: 'ops' },
-    { key: 'green-ledger', icon: <Leaf className="w-5 h-5" />,          href: '/dashboard/projects',    label: 'Green Ledger',          section: 'ops' },
-    { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      label: 'Alertes & Exceptions',  section: 'ops' },
-    { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     label: 'Analytics & Rapports',  section: 'ops' },
-    { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', label: 'Validation des agents', section: 'admin', badge: 2 },
-    { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    label: 'Taxe carbone',          section: 'admin' },
-    { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         label: 'Tableau des recettes',  section: 'admin' },
+    { key: 'map',          icon: <Map className="w-5 h-5" />,           href: '/dashboard',             labelKey: 'nav_map',          section: 'ops' },
+    { key: 'simulator',    icon: <Calculator className="w-5 h-5" />,    href: '/dashboard/simulator',   labelKey: 'nav_simulator',    section: 'ops' },
+    { key: 'vessels',      icon: <Ship className="w-5 h-5" />,          href: '/dashboard/vessels',     labelKey: 'nav_vessels',      section: 'ops' },
+    { key: 'invoices',     icon: <FileText className="w-5 h-5" />,      href: '/dashboard/invoices',    labelKey: 'nav_invoices',     section: 'ops' },
+    { key: 'green-ledger', icon: <Leaf className="w-5 h-5" />,          href: '/dashboard/projects',    labelKey: 'nav_green_ledger', section: 'ops' },
+    { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      labelKey: 'nav_alerts',       section: 'ops' },
+    { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },
+    { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', labelKey: 'nav_validations',  section: 'admin' },
+    { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
+    { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         labelKey: 'nav_revenue',      section: 'admin' },
 ];
 
 interface DashboardSidebarProps {
     activePage?: string;
     expanded: boolean;
     onToggle: () => void;
+    pendingRegistrations?: number;
 }
 
-export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSidebarProps) {
+export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0 }: DashboardSidebarProps) {
+    const t = useTranslations('Dashboard');
     const { role } = useRole();
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
-    const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role);
+    const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
+        .map((item) => item.key === 'validations' && pendingRegistrations > 0
+            ? { ...item, badge: pendingRegistrations }
+            : item
+        );
 
     return (
         <>
@@ -86,10 +93,10 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                         }}
                     >
                         <span className="text-sm font-bold leading-tight whitespace-nowrap" style={{ color: 'var(--os-text-primary)' }}>
-                            AIS Portal
+                            {t('sidebar_app_title')}
                         </span>
                         <span className="text-[9px] font-semibold tracking-widest uppercase text-emerald-500/60 leading-tight whitespace-nowrap">
-                            Africgreen
+                            {t('sidebar_app_subtitle')}
                         </span>
                     </div>
                 </Link>
@@ -98,11 +105,11 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                 <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
                     {expanded && (
                         <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
-                            Opérations
+                            {t('section_operations')}
                         </p>
                     )}
                     {opsItems.map((item) => (
-                        <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} />
+                        <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} t={t} />
                     ))}
 
                     {adminItems.length > 0 && (
@@ -110,11 +117,11 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                             <div className="h-px my-2 mx-1 flex-shrink-0" style={{ backgroundColor: 'var(--os-border)' }} />
                             {expanded && (
                                 <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
-                                    Administration
+                                    {t('section_administration')}
                                 </p>
                             )}
                             {adminItems.map((item) => (
-                                <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} />
+                                <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded} t={t} />
                             ))}
                         </>
                     )}
@@ -123,9 +130,10 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                 {/* Bottom: Settings + logout + status */}
                 <div className="flex flex-col gap-1 px-1.5 mt-2 flex-shrink-0">
                     <NavButton
-                        item={{ key: 'settings', icon: <Settings className="w-5 h-5" />, href: '/dashboard/settings', label: 'Paramètres' }}
+                        item={{ key: 'settings', icon: <Settings className="w-5 h-5" />, href: '/dashboard/settings', labelKey: 'nav_settings' }}
                         isActive={activePage === 'settings'}
                         expanded={expanded}
+                        t={t}
                     />
 
                     {/* Logout */}
@@ -139,7 +147,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                             await supabase.auth.signOut();
                             window.location.href = '/login';
                         }}
-                        title={expanded ? undefined : 'Déconnexion'}
+                        title={expanded ? undefined : t('sidebar_logout')}
                         className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group hover:bg-[rgba(239,68,68,0.08)]"
                         style={{ color: 'var(--os-text-muted)', minHeight: 40 }}
                     >
@@ -154,7 +162,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                                 transition: 'max-width 220ms cubic-bezier(0.4,0,0.2,1), opacity 150ms ease',
                             }}
                         >
-                            Déconnexion
+                            {t('sidebar_logout')}
                         </span>
                         {!expanded && (
                             <span
@@ -165,7 +173,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                                     color: '#EF4444',
                                 }}
                             >
-                                Déconnexion
+                                {t('sidebar_logout')}
                             </span>
                         )}
                     </button>
@@ -173,7 +181,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                     <div className="h-px mx-1 flex-shrink-0" style={{ backgroundColor: 'var(--os-border)' }} />
 
                     <div className="flex items-center gap-2 px-2.5 py-1.5">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0 os-dot-online" title="Système en ligne" />
+                        <div className="w-2 h-2 rounded-full flex-shrink-0 os-dot-online" title={t('sidebar_system_online')} />
                         <span
                             className="text-[10px] font-medium whitespace-nowrap"
                             style={{
@@ -182,7 +190,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
                                 transition: 'opacity 150ms ease',
                             }}
                         >
-                            Système en ligne
+                            {t('sidebar_system_online')}
                         </span>
                     </div>
                 </div>
@@ -191,7 +199,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle }: DashboardSi
             {/* ── Toggle tab — floats on the right edge of the sidebar ── */}
             <button
                 onClick={onToggle}
-                title={expanded ? 'Réduire le menu' : 'Agrandir le menu'}
+                title={expanded ? t('sidebar_collapse') : t('sidebar_expand')}
                 className="fixed z-50 flex items-center justify-center rounded-r-lg transition-all"
                 style={{
                     left: expanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED,
@@ -224,13 +232,15 @@ interface NavButtonProps {
     item: NavItem;
     isActive: boolean;
     expanded: boolean;
+    t: (key: string) => string;
 }
 
-function NavButton({ item, isActive, expanded }: NavButtonProps) {
+function NavButton({ item, isActive, expanded, t }: NavButtonProps) {
+    const label = t(item.labelKey);
     return (
         <Link
             href={item.href}
-            title={expanded ? undefined : item.label}
+            title={expanded ? undefined : label}
             className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group"
             style={{
                 color: isActive ? '#10B981' : 'var(--os-text-muted)',
@@ -253,7 +263,7 @@ function NavButton({ item, isActive, expanded }: NavButtonProps) {
                     transition: 'max-width 220ms cubic-bezier(0.4,0,0.2,1), opacity 150ms ease',
                 }}
             >
-                {item.label}
+                {label}
             </span>
 
             {/* Badge */}
@@ -290,7 +300,7 @@ function NavButton({ item, isActive, expanded }: NavButtonProps) {
                         color: 'var(--os-text-primary)',
                     }}
                 >
-                    {item.label}{item.badge ? ` (${item.badge})` : ''}
+                    {label}{item.badge ? ` (${item.badge})` : ''}
                 </span>
             )}
         </Link>

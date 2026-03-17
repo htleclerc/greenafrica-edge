@@ -9,7 +9,7 @@ export function AdminWorkflowSection() {
     const c = useTranslations('Common');
 
     return (
-        <section className="py-24 px-6 bg-emerald-50 relative overflow-hidden">
+        <section className="py-24 px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                 {/* Left Interactive Image Mockup */}
@@ -17,24 +17,24 @@ export function AdminWorkflowSection() {
                     {/* Main Image bg */}
                     <div className="relative h-[400px] w-full rounded-3xl overflow-hidden shadow-2xl">
                         {/* Fallback pattern if image is not ready yet */}
-                        <div className="absolute inset-0 bg-slate-800 flex items-center justify-center pattern-dots pattern-emerald-500 pattern-bg-slate-900 pattern-size-4 pattern-opacity-20">
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--ais-page-surface)' }}>
                             <span className="text-emerald-500 font-bold opacity-50 text-xl">Hands holding plant (Placeholder)</span>
                         </div>
                     </div>
 
                     {/* Floating Alert Card matching mockup */}
-                    <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:left-10 bg-white p-5 rounded-2xl shadow-xl border border-slate-100 w-80">
+                    <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:left-10 p-5 rounded-2xl shadow-xl w-80" style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}>
                         <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-slate-500 uppercase">Deforestation Alert</span>
+                            <span className="text-xs font-bold uppercase" style={{ color: 'var(--ais-page-text-dim)' }}>Deforestation Alert</span>
                             <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Critical</span>
                         </div>
 
                         {/* Progress bar */}
-                        <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
+                        <div className="w-full rounded-full h-2 mb-2" style={{ backgroundColor: 'var(--ais-page-surface)' }}>
                             <div className="bg-red-500 h-2 rounded-full" style={{ width: '85%' }}></div>
                         </div>
 
-                        <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <div className="flex justify-between text-xs font-medium" style={{ color: 'var(--ais-page-text-dim)' }}>
                             <span>Target: 0%</span>
                             <span>Current: 2.4%</span>
                         </div>
@@ -46,10 +46,10 @@ export function AdminWorkflowSection() {
                     <h2 className="text-xs font-bold tracking-widest text-emerald-600 uppercase mb-4">
                         {t('admin_badge')}
                     </h2>
-                    <h3 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-tight">
+                    <h3 className="text-4xl md:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--ais-page-text)' }}>
                         {t('admin_title')}
                     </h3>
-                    <p className="text-lg text-slate-600 mb-10 leading-relaxed">
+                    <p className="text-lg mb-10 leading-relaxed" style={{ color: 'var(--ais-page-text-dim)' }}>
                         {t('admin_desc')}
                     </p>
 
@@ -61,7 +61,7 @@ export function AdminWorkflowSection() {
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-3">
                                 <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
-                                <span className="text-slate-700 font-medium">{item}</span>
+                                <span className="font-medium" style={{ color: 'var(--ais-page-text-secondary)' }}>{item}</span>
                             </div>
                         ))}
                     </div>

@@ -23,15 +23,15 @@ export function ProjectsPartnersSection() {
     const t = useTranslations('Projects');
 
     return (
-        <section className="py-16 px-6 bg-[#0A1110]">
+        <section className="py-16 px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-10">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
                         {t('partners_badge')}
                     </div>
-                    <h2 className="text-3xl font-bold text-white mb-3">{t('partners_title')}</h2>
-                    <p className="text-slate-400 text-sm max-w-2xl">{t('partners_subtitle')}</p>
+                    <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>{t('partners_title')}</h2>
+                    <p className="text-sm max-w-2xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('partners_subtitle')}</p>
                 </div>
 
                 {/* Partners grid */}
@@ -46,7 +46,8 @@ export function ProjectsPartnersSection() {
                         return (
                             <div
                                 key={partner.id}
-                                className="bg-[#111C18] rounded-2xl border border-white/5 hover:border-emerald-500/15 transition-all duration-300 p-5 flex flex-col gap-3"
+                                className="rounded-2xl hover:border-emerald-500/15 transition-all duration-300 p-5 flex flex-col gap-3"
+                                style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
                                 {/* Acronym badge */}
                                 <div className="flex items-start justify-between gap-2">
@@ -59,24 +60,24 @@ export function ProjectsPartnersSection() {
                                 </div>
 
                                 <div>
-                                    <p className="text-sm font-bold text-white">{partner.acronym}</p>
-                                    <p className="text-[11px] text-slate-500 mt-0.5">{partner.name}</p>
+                                    <p className="text-sm font-bold" style={{ color: 'var(--ais-page-text)' }}>{partner.acronym}</p>
+                                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>{partner.name}</p>
                                 </div>
 
-                                <p className="text-[11px] text-slate-500 leading-relaxed flex-1">
+                                <p className="text-[11px] leading-relaxed flex-1" style={{ color: 'var(--ais-page-text-dim)' }}>
                                     {partner.description}
                                 </p>
 
-                                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                                <div className="pt-2 flex items-center justify-between" style={{ borderTop: '1px solid var(--ais-page-border)' }}>
                                     <div>
                                         <p className="text-xs font-bold text-emerald-400">
                                             {formatCommitment(partner.totalCommitmentUsd)}
                                         </p>
-                                        <p className="text-[9px] text-slate-600 uppercase tracking-wide">
+                                        <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--ais-page-text-dim)' }}>
                                             {t('partner_commitment')}
                                         </p>
                                     </div>
-                                    <ExternalLink className="w-3.5 h-3.5 text-slate-600 hover:text-slate-300 cursor-pointer transition-colors" />
+                                    <ExternalLink className="w-3.5 h-3.5 cursor-pointer transition-colors" style={{ color: 'var(--ais-page-text-dim)' }} />
                                 </div>
                             </div>
                         );
@@ -88,8 +89,8 @@ export function ProjectsPartnersSection() {
                     <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
                     <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div>
-                            <h3 className="text-xl font-bold text-white mb-2">{t('partners_cta_title')}</h3>
-                            <p className="text-sm text-slate-400 max-w-xl">{t('partners_cta_subtitle')}</p>
+                            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--ais-page-text)' }}>{t('partners_cta_title')}</h3>
+                            <p className="text-sm max-w-xl" style={{ color: 'var(--ais-page-text-muted)' }}>{t('partners_cta_subtitle')}</p>
                         </div>
                         <button className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all hover:shadow-[0_0_20px_rgba(16,185,129,0.35)]">
                             <Mail className="w-4 h-4" />
