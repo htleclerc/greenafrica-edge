@@ -1,5 +1,8 @@
+'use client';
+
 import * as React from 'react';
 import { Anchor } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Section {
     id: string;
@@ -22,6 +25,8 @@ export function LegalPageShell({
     title, subtitle, version, effectiveDate, lastUpdated,
     badgeLabel, badgeColor, sections, children,
 }: LegalPageShellProps) {
+    const t = useTranslations('Legal');
+
     return (
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--os-bg)' }}>
             {/* Top nav */}
@@ -36,8 +41,8 @@ export function LegalPageShell({
                 </a>
                 <div className="flex items-center gap-4 text-[10px] text-[var(--os-text-muted)]">
                     <span className="font-mono">{version}</span>
-                    <span>Effective {effectiveDate}</span>
-                    <a href="/login" className="text-[#38BDF8] hover:underline font-semibold">← Back to Login</a>
+                    <span>{t('effective_prefix')} {effectiveDate}</span>
+                    <a href="/login" className="text-[#38BDF8] hover:underline font-semibold">{t('back_to_login')}</a>
                 </div>
             </header>
 
@@ -45,7 +50,7 @@ export function LegalPageShell({
                 {/* Sidebar — table of contents */}
                 <aside className="hidden lg:flex flex-col gap-1 w-56 flex-shrink-0">
                     <div className="sticky top-20">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3 px-2">Contents</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3 px-2">{t('contents_label')}</p>
                         {sections.map((s, i) => (
                             <a
                                 key={s.id}
@@ -72,15 +77,15 @@ export function LegalPageShell({
                             >
                                 {badgeLabel}
                             </span>
-                            <span className="text-[10px] text-[var(--os-text-muted)]">OFFICIAL DOCUMENT · GOVERNMENT OF SOMALILAND</span>
+                            <span className="text-[10px] text-[var(--os-text-muted)]">{t('official_document')}</span>
                         </div>
                         <h1 className="text-3xl font-bold text-[var(--os-text-primary)] mb-2">{title}</h1>
                         <p className="text-sm text-[var(--os-text-muted)] max-w-2xl leading-relaxed">{subtitle}</p>
                         <div className="flex items-center gap-6 mt-5 text-[10px] text-[var(--os-text-muted)]">
-                            <div><span className="font-semibold text-[var(--os-text-secondary)]">Version:</span> {version}</div>
-                            <div><span className="font-semibold text-[var(--os-text-secondary)]">Effective date:</span> {effectiveDate}</div>
-                            <div><span className="font-semibold text-[var(--os-text-secondary)]">Last updated:</span> {lastUpdated}</div>
-                            <div><span className="font-semibold text-[var(--os-text-secondary)]">Jurisdiction:</span> Republic of Somaliland</div>
+                            <div><span className="font-semibold text-[var(--os-text-secondary)]">{t('version_label')}</span> {version}</div>
+                            <div><span className="font-semibold text-[var(--os-text-secondary)]">{t('effective_date_label')}</span> {effectiveDate}</div>
+                            <div><span className="font-semibold text-[var(--os-text-secondary)]">{t('last_updated_label')}</span> {lastUpdated}</div>
+                            <div><span className="font-semibold text-[var(--os-text-secondary)]">{t('jurisdiction_label')}</span> {t('jurisdiction_value')}</div>
                         </div>
                     </div>
 
@@ -93,13 +98,13 @@ export function LegalPageShell({
                     <div className="mt-12 pt-6 border-t" style={{ borderColor: 'var(--os-border)' }}>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[10px] text-[var(--os-text-muted)]">
                             <p>
-                                © 2025 Government of Somaliland · Ministry of Finance & Economic Development ·{' '}
-                                <span className="text-[var(--os-text-secondary)]">Africgreen Maritime Carbon Intelligence Platform</span>
+                                {t('footer_copyright')} ·{' '}
+                                <span className="text-[var(--os-text-secondary)]">{t('footer_platform_name')}</span>
                             </p>
                             <div className="flex items-center gap-4">
-                                <a href="/privacy-policy"  className="hover:text-[#38BDF8] transition-colors">Privacy Policy</a>
-                                <a href="/terms-of-service" className="hover:text-[#38BDF8] transition-colors">Terms of Service</a>
-                                <a href="/security-audit"  className="hover:text-[#38BDF8] transition-colors">Security Audit</a>
+                                <a href="/privacy-policy"  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
+                                <a href="/terms-of-service" className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
+                                <a href="/security-audit"  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
                             </div>
                         </div>
                     </div>

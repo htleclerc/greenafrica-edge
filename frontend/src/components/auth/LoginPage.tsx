@@ -36,6 +36,7 @@ export function LoginPage() {
     const [loading, setLoading]   = React.useState(false);
     const [error, setError]       = React.useState('');
     const [showDemo, setShowDemo] = React.useState(false);
+    const [legalModal, setLegalModal] = React.useState<'terms' | 'privacy' | 'security' | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -295,11 +296,11 @@ export function LoginPage() {
                     </div>
 
                     <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
-                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>
+                        <button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</button>
                         <span>·</span>
-                        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_terms')}</a>
+                        <button type="button" onClick={() => setLegalModal('terms')} className="hover:text-emerald-400 transition-colors">{t('link_terms')}</button>
                         <span>·</span>
-                        <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t('link_security')}</a>
+                        <button type="button" onClick={() => setLegalModal('security')} className="hover:text-emerald-400 transition-colors">{t('link_security')}</button>
                     </div>
                 </div>
             </div>
@@ -315,6 +316,31 @@ export function LoginPage() {
                     <span>AES-256</span>
                 </div>
             </div>
+
+            {/* Legal content modal */}
+            {legalModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                    <div className="bg-[var(--os-surface)] rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-[var(--os-border)]">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--os-border)]">
+                            <h3 className="text-sm font-bold text-[var(--os-text-primary)]">
+                                {legalModal === 'terms' ? t('link_terms') : legalModal === 'privacy' ? t('link_privacy') : t('link_security')}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setLegalModal(null)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors"
+                            >
+                                &#x2715;
+                            </button>
+                        </div>
+                        <iframe
+                            src={`/${legalModal === 'terms' ? 'terms-of-service' : legalModal === 'privacy' ? 'privacy-policy' : 'security-audit'}`}
+                            className="flex-1 w-full"
+                            title={legalModal === 'terms' ? t('link_terms') : legalModal === 'privacy' ? t('link_privacy') : t('link_security')}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

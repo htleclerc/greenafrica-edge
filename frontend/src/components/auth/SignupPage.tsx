@@ -126,6 +126,7 @@ export function SignupPage() {
     const [loading, setLoading]       = React.useState(false);
     const [error, setError]           = React.useState('');
     const [submitted, setSubmitted]   = React.useState(false);
+    const [legalModal, setLegalModal] = React.useState<'terms' | 'privacy' | 'security' | null>(null);
 
     const set = (key: keyof FormData, value: FormData[keyof FormData]) =>
         setForm((f) => ({ ...f, [key]: value }));
@@ -611,9 +612,9 @@ export function SignupPage() {
                                 </div>
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
                                     {t('terms_text')}{' '}
-                                    <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
-                                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
-                                    <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
+                                    <button type="button" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => { e.stopPropagation(); setLegalModal('terms'); }}>{t('terms_tos')}</button>,{' '}
+                                    <button type="button" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => { e.stopPropagation(); setLegalModal('privacy'); }}>{t('terms_privacy')}</button>, and the{' '}
+                                    <button type="button" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => { e.stopPropagation(); setLegalModal('security'); }}>{t('terms_maritime')}</button>.
                                 </p>
                             </button>
                         </div>
@@ -657,6 +658,31 @@ export function SignupPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Legal content modal */}
+            {legalModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                    <div className="bg-[var(--os-surface)] rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-[var(--os-border)]">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--os-border)]">
+                            <h3 className="text-sm font-bold text-[var(--os-text-primary)]">
+                                {legalModal === 'terms' ? t('terms_tos') : legalModal === 'privacy' ? t('terms_privacy') : t('terms_maritime')}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setLegalModal(null)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors"
+                            >
+                                &#x2715;
+                            </button>
+                        </div>
+                        <iframe
+                            src={`/${legalModal === 'terms' ? 'terms-of-service' : legalModal === 'privacy' ? 'privacy-policy' : 'security-audit'}`}
+                            className="flex-1 w-full"
+                            title={legalModal === 'terms' ? t('terms_tos') : legalModal === 'privacy' ? t('terms_privacy') : t('terms_maritime')}
+                        />
+                    </div>
+                </div>
+            )}
         </AuthShell>
     );
 }
