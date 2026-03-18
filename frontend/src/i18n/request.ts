@@ -1,17 +1,15 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { locales, type Locale, defaultLocale } from '@/navigation';
 
-const SUPPORTED_LOCALES = ['en', 'fr', 'pt', 'sw'] as const;
-type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-
-function isSupported(locale: string): locale is SupportedLocale {
-    return (SUPPORTED_LOCALES as readonly string[]).includes(locale);
+function isSupported(locale: string): locale is Locale {
+    return (locales as readonly string[]).includes(locale);
 }
 
 export default getRequestConfig(async () => {
     const cookieStore = await cookies();
     const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value;
-    const locale: SupportedLocale = cookieLocale && isSupported(cookieLocale) ? cookieLocale : 'en';
+    const locale: Locale = cookieLocale && isSupported(cookieLocale) ? cookieLocale : defaultLocale;
 
     return {
         locale,
