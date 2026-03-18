@@ -59,18 +59,18 @@ export default function TermsOfServiceContent() {
             {/* 02 */}
             <LegalSection id="definitions" number="02" title={t('section_02_title')}>
                 <LegalTable
-                    headers={[t('section_02_table_h1'), t('section_02_table_h2')]}
+                    headers={[t('section_02_table_header_term'), t('section_02_table_header_definition')]}
                     rows={[
-                        [t('section_02_row_01_c1'), t('section_02_row_01_c2')],
-                        [t('section_02_row_02_c1'), t('section_02_row_02_c2')],
-                        [t('section_02_row_03_c1'), t('section_02_row_03_c2')],
-                        [t('section_02_row_04_c1'), t('section_02_row_04_c2')],
-                        [t('section_02_row_05_c1'), t('section_02_row_05_c2')],
-                        [t('section_02_row_06_c1'), t('section_02_row_06_c2')],
-                        [t('section_02_row_07_c1'), t('section_02_row_07_c2')],
-                        [t('section_02_row_08_c1'), t('section_02_row_08_c2')],
-                        [t('section_02_row_09_c1'), t('section_02_row_09_c2')],
-                        [t('section_02_row_10_c1'), t('section_02_row_10_c2')],
+                        ['Platform', t('section_02_def_platform')],
+                        ['SMCA', t('section_02_def_smca')],
+                        ['EEZ', t('section_02_def_eez')],
+                        ['User', t('section_02_def_user')],
+                        ['Vessel', t('section_02_def_vessel')],
+                        ['Carbon Tax', t('section_02_def_carbon_tax')],
+                        ['Proforma Invoice', t('section_02_def_proforma')],
+                        ['AIS Data', t('section_02_def_ais')],
+                        ['Audit Log', t('section_02_def_audit_log')],
+                        ['Carbon Credits', t('section_02_def_carbon_credits')],
                     ]}
                 />
             </LegalSection>
@@ -105,7 +105,7 @@ export default function TermsOfServiceContent() {
                 </LegalUl>
 
                 <div className="mt-2">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#F59E0B] mb-2">{t('section_04_additional_title')}</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#F59E0B] mb-2">{t('section_04_additional_label')}</p>
                     <LegalUl>
                         <LegalLi>{t('section_04_li7')}</LegalLi>
                         <LegalLi>{t('section_04_li8')}</LegalLi>
@@ -120,12 +120,12 @@ export default function TermsOfServiceContent() {
                     {t.rich('section_05_highlight', richTextComponents)}
                 </LegalHighlight>
                 <LegalTable
-                    headers={[t('section_05_table_h1'), t('section_05_table_h2'), t('section_05_table_h3')]}
+                    headers={[t('section_05_table_header_event'), t('section_05_table_header_trigger'), t('section_05_table_header_window')]}
                     rows={[
-                        [t('section_05_row_01_c1'), t('section_05_row_01_c2'), t('section_05_row_01_c3')],
-                        [t('section_05_row_02_c1'), t('section_05_row_02_c2'), t('section_05_row_02_c3')],
-                        [t('section_05_row_03_c1'), t('section_05_row_03_c2'), t('section_05_row_03_c3')],
-                        [t('section_05_row_04_c1'), t('section_05_row_04_c2'), t('section_05_row_04_c3')],
+                        [t('section_05_row1_event'), t('section_05_row1_trigger'), t('section_05_row1_window')],
+                        [t('section_05_row2_event'), t('section_05_row2_trigger'), t('section_05_row2_window')],
+                        [t('section_05_row3_event'), t('section_05_row3_trigger'), t('section_05_row3_window')],
+                        [t('section_05_row4_event'), t('section_05_row4_trigger'), t('section_05_row4_window')],
                     ]}
                 />
                 <LegalP>
@@ -235,13 +235,13 @@ export default function TermsOfServiceContent() {
             {/* 12 */}
             <LegalSection id="suspension" number="12" title={t('section_12_title')}>
                 <LegalTable
-                    headers={[t('section_12_table_h1'), t('section_12_table_h2'), t('section_12_table_h3')]}
+                    headers={[t('section_12_table_header_trigger'), t('section_12_table_header_action'), t('section_12_table_header_appeal')]}
                     rows={[
-                        [t('section_12_row_01_c1'), t('section_12_row_01_c2'), t('section_12_row_01_c3')],
-                        [t('section_12_row_02_c1'), t('section_12_row_02_c2'), t('section_12_row_02_c3')],
-                        [t('section_12_row_03_c1'), t('section_12_row_03_c2'), t('section_12_row_03_c3')],
-                        [t('section_12_row_04_c1'), t('section_12_row_04_c2'), t('section_12_row_04_c3')],
-                        [t('section_12_row_05_c1'), t('section_12_row_05_c2'), t('section_12_row_05_c3')],
+                        [t('section_12_row1_trigger'), t('section_12_row1_action'), t('section_12_row1_appeal')],
+                        [t('section_12_row2_trigger'), t('section_12_row2_action'), t('section_12_row2_appeal')],
+                        [t('section_12_row3_trigger'), t('section_12_row3_action'), t('section_12_row3_appeal')],
+                        [t('section_12_row4_trigger'), t('section_12_row4_action'), t('section_12_row4_appeal')],
+                        [t('section_12_row5_trigger'), t('section_12_row5_action'), t('section_12_row5_appeal')],
                     ]}
                 />
             </LegalSection>

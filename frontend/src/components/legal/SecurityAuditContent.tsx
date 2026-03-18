@@ -47,16 +47,16 @@ export default function SecurityAuditContent() {
                     {t.rich('section_01_highlight', richTextComponents)}
                 </LegalHighlight>
                 <LegalTable
-                    headers={[t('section_01_table_h1'), t('section_01_table_h2'), t('section_01_table_h3')]}
+                    headers={[t('section_01_table_header_indicator'), t('section_01_table_header_status'), t('section_01_table_header_standard')]}
                     rows={[
-                        [t('section_01_row_01_c1'), t('section_01_row_01_c2'), t('section_01_row_01_c3')],
-                        [t('section_01_row_02_c1'), t('section_01_row_02_c2'), t('section_01_row_02_c3')],
-                        [t('section_01_row_03_c1'), t('section_01_row_03_c2'), t('section_01_row_03_c3')],
-                        [t('section_01_row_04_c1'), t('section_01_row_04_c2'), t('section_01_row_04_c3')],
-                        [t('section_01_row_05_c1'), t('section_01_row_05_c2'), t('section_01_row_05_c3')],
-                        [t('section_01_row_06_c1'), t('section_01_row_06_c2'), t('section_01_row_06_c3')],
-                        [t('section_01_row_07_c1'), t('section_01_row_07_c2'), t('section_01_row_07_c3')],
-                        [t('section_01_row_08_c1'), t('section_01_row_08_c2'), t('section_01_row_08_c3')],
+                        [t('section_01_row1_indicator'), t('section_01_row1_status'), t('section_01_row1_standard')],
+                        [t('section_01_row2_indicator'), t('section_01_row2_status'), t('section_01_row2_standard')],
+                        [t('section_01_row3_indicator'), t('section_01_row3_status'), t('section_01_row3_standard')],
+                        [t('section_01_row4_indicator'), t('section_01_row4_status'), t('section_01_row4_standard')],
+                        [t('section_01_row5_indicator'), t('section_01_row5_status'), t('section_01_row5_standard')],
+                        [t('section_01_row6_indicator'), t('section_01_row6_status'), t('section_01_row6_standard')],
+                        [t('section_01_row7_indicator'), t('section_01_row7_status'), t('section_01_row7_standard')],
+                        [t('section_01_row8_indicator'), t('section_01_row8_status'), t('section_01_row8_standard')],
                     ]}
                 />
             </LegalSection>
@@ -73,15 +73,15 @@ export default function SecurityAuditContent() {
                 </LegalUl>
                 <LegalP>{t('section_02_p2')}</LegalP>
                 <LegalTable
-                    headers={[t('section_02_table_h1'), t('section_02_table_h2'), t('section_02_table_h3')]}
+                    headers={[t('section_02_table_header_component'), t('section_02_table_header_scope'), t('section_02_table_header_methodology')]}
                     rows={[
-                        [t('section_02_row_01_c1'), t('section_02_row_01_c2'), t('section_02_row_01_c3')],
-                        [t('section_02_row_02_c1'), t('section_02_row_02_c2'), t('section_02_row_02_c3')],
-                        [t('section_02_row_03_c1'), t('section_02_row_03_c2'), t('section_02_row_03_c3')],
-                        [t('section_02_row_04_c1'), t('section_02_row_04_c2'), t('section_02_row_04_c3')],
-                        [t('section_02_row_05_c1'), t('section_02_row_05_c2'), t('section_02_row_05_c3')],
-                        [t('section_02_row_06_c1'), t('section_02_row_06_c2'), t('section_02_row_06_c3')],
-                        [t('section_02_row_07_c1'), t('section_02_row_07_c2'), t('section_02_row_07_c3')],
+                        [t('section_02_row1_component'), t('section_02_row1_scope'), t('section_02_row1_methodology')],
+                        [t('section_02_row2_component'), t('section_02_row2_scope'), t('section_02_row2_methodology')],
+                        [t('section_02_row3_component'), t('section_02_row3_scope'), t('section_02_row3_methodology')],
+                        [t('section_02_row4_component'), t('section_02_row4_scope'), t('section_02_row4_methodology')],
+                        [t('section_02_row5_component'), t('section_02_row5_scope'), t('section_02_row5_methodology')],
+                        [t('section_02_row6_component'), t('section_02_row6_scope'), t('section_02_row6_methodology')],
+                        [t('section_02_row7_component'), t('section_02_row7_scope'), t('section_02_row7_methodology')],
                     ]}
                 />
             </LegalSection>
@@ -104,16 +104,16 @@ export default function SecurityAuditContent() {
             {/* 04 */}
             <LegalSection id="access-control" number="04" title={t('section_04_title')}>
                 <LegalTable
-                    headers={[t('section_04_table_h1'), t('section_04_table_h2'), t('section_04_table_h3')]}
+                    headers={[t('section_04_table_header_control'), t('section_04_table_header_implementation'), t('section_04_table_header_status')]}
                     rows={[
-                        [t('section_04_row_01_c1'), t('section_04_row_01_c2'), t('section_04_row_01_c3')],
-                        [t('section_04_row_02_c1'), t('section_04_row_02_c2'), t('section_04_row_02_c3')],
-                        [t('section_04_row_03_c1'), t('section_04_row_03_c2'), t('section_04_row_03_c3')],
-                        [t('section_04_row_04_c1'), t('section_04_row_04_c2'), t('section_04_row_04_c3')],
-                        [t('section_04_row_05_c1'), t('section_04_row_05_c2'), t('section_04_row_05_c3')],
-                        [t('section_04_row_06_c1'), t('section_04_row_06_c2'), t('section_04_row_06_c3')],
-                        [t('section_04_row_07_c1'), t('section_04_row_07_c2'), t('section_04_row_07_c3')],
-                        [t('section_04_row_08_c1'), t('section_04_row_08_c2'), t('section_04_row_08_c3')],
+                        [t('section_04_row1_control'), t('section_04_row1_implementation'), t('section_04_row1_status')],
+                        [t('section_04_row2_control'), t('section_04_row2_implementation'), t('section_04_row2_status')],
+                        [t('section_04_row3_control'), t('section_04_row3_implementation'), t('section_04_row3_status')],
+                        [t('section_04_row4_control'), t('section_04_row4_implementation'), t('section_04_row4_status')],
+                        [t('section_04_row5_control'), t('section_04_row5_implementation'), t('section_04_row5_status')],
+                        [t('section_04_row6_control'), t('section_04_row6_implementation'), t('section_04_row6_status')],
+                        [t('section_04_row7_control'), t('section_04_row7_implementation'), t('section_04_row7_status')],
+                        [t('section_04_row8_control'), t('section_04_row8_implementation'), t('section_04_row8_status')],
                     ]}
                 />
             </LegalSection>
@@ -121,16 +121,16 @@ export default function SecurityAuditContent() {
             {/* 05 */}
             <LegalSection id="encryption" number="05" title={t('section_05_title')}>
                 <LegalTable
-                    headers={[t('section_05_table_h1'), t('section_05_table_h2'), t('section_05_table_h3')]}
+                    headers={[t('section_05_table_header_context'), t('section_05_table_header_algorithm'), t('section_05_table_header_key_mgmt')]}
                     rows={[
-                        [t('section_05_row_01_c1'), t('section_05_row_01_c2'), t('section_05_row_01_c3')],
-                        [t('section_05_row_02_c1'), t('section_05_row_02_c2'), t('section_05_row_02_c3')],
-                        [t('section_05_row_03_c1'), t('section_05_row_03_c2'), t('section_05_row_03_c3')],
-                        [t('section_05_row_04_c1'), t('section_05_row_04_c2'), t('section_05_row_04_c3')],
-                        [t('section_05_row_05_c1'), t('section_05_row_05_c2'), t('section_05_row_05_c3')],
-                        [t('section_05_row_06_c1'), t('section_05_row_06_c2'), t('section_05_row_06_c3')],
-                        [t('section_05_row_07_c1'), t('section_05_row_07_c2'), t('section_05_row_07_c3')],
-                        [t('section_05_row_08_c1'), t('section_05_row_08_c2'), t('section_05_row_08_c3')],
+                        [t('section_05_row1_context'), t('section_05_row1_algorithm'), t('section_05_row1_key_mgmt')],
+                        [t('section_05_row2_context'), t('section_05_row2_algorithm'), t('section_05_row2_key_mgmt')],
+                        [t('section_05_row3_context'), t('section_05_row3_algorithm'), t('section_05_row3_key_mgmt')],
+                        [t('section_05_row4_context'), t('section_05_row4_algorithm'), t('section_05_row4_key_mgmt')],
+                        [t('section_05_row5_context'), t('section_05_row5_algorithm'), t('section_05_row5_key_mgmt')],
+                        [t('section_05_row6_context'), t('section_05_row6_algorithm'), t('section_05_row6_key_mgmt')],
+                        [t('section_05_row7_context'), t('section_05_row7_algorithm'), t('section_05_row7_key_mgmt')],
+                        [t('section_05_row8_context'), t('section_05_row8_algorithm'), t('section_05_row8_key_mgmt')],
                     ]}
                 />
                 <LegalP>
@@ -171,13 +171,13 @@ export default function SecurityAuditContent() {
                     {t.rich('section_08_warning', richTextComponents)}
                 </LegalWarning>
                 <LegalTable
-                    headers={[t('section_08_table_h1'), t('section_08_table_h2'), t('section_08_table_h3'), t('section_08_table_h4'), t('section_08_table_h5')]}
+                    headers={[t('section_08_table_header_id'), t('section_08_table_header_category'), t('section_08_table_header_severity'), t('section_08_table_header_status'), t('section_08_table_header_remediation')]}
                     rows={[
-                        [t('section_08_row_01_c1'), t('section_08_row_01_c2'), t('section_08_row_01_c3'), t('section_08_row_01_c4'), t('section_08_row_01_c5')],
-                        [t('section_08_row_02_c1'), t('section_08_row_02_c2'), t('section_08_row_02_c3'), t('section_08_row_02_c4'), t('section_08_row_02_c5')],
-                        [t('section_08_row_03_c1'), t('section_08_row_03_c2'), t('section_08_row_03_c3'), t('section_08_row_03_c4'), t('section_08_row_03_c5')],
-                        [t('section_08_row_04_c1'), t('section_08_row_04_c2'), t('section_08_row_04_c3'), t('section_08_row_04_c4'), t('section_08_row_04_c5')],
-                        [t('section_08_row_05_c1'), t('section_08_row_05_c2'), t('section_08_row_05_c3'), t('section_08_row_05_c4'), t('section_08_row_05_c5')],
+                        [t('section_08_row1_id'), t('section_08_row1_category'), t('section_08_row1_severity'), t('section_08_row1_status'), t('section_08_row1_remediation')],
+                        [t('section_08_row2_id'), t('section_08_row2_category'), t('section_08_row2_severity'), t('section_08_row2_status'), t('section_08_row2_remediation')],
+                        [t('section_08_row3_id'), t('section_08_row3_category'), t('section_08_row3_severity'), t('section_08_row3_status'), t('section_08_row3_remediation')],
+                        [t('section_08_row4_id'), t('section_08_row4_category'), t('section_08_row4_severity'), t('section_08_row4_status'), t('section_08_row4_remediation')],
+                        [t('section_08_row5_id'), t('section_08_row5_category'), t('section_08_row5_severity'), t('section_08_row5_status'), t('section_08_row5_remediation')],
                     ]}
                 />
                 <LegalHighlight>
@@ -188,18 +188,18 @@ export default function SecurityAuditContent() {
             {/* 09 */}
             <LegalSection id="compliance" number="09" title={t('section_09_title')}>
                 <LegalTable
-                    headers={[t('section_09_table_h1'), t('section_09_table_h2'), t('section_09_table_h3'), t('section_09_table_h4')]}
+                    headers={[t('section_09_table_header_framework'), t('section_09_table_header_scope'), t('section_09_table_header_status'), t('section_09_table_header_review')]}
                     rows={[
-                        [t('section_09_row_01_c1'), t('section_09_row_01_c2'), t('section_09_row_01_c3'), t('section_09_row_01_c4')],
-                        [t('section_09_row_02_c1'), t('section_09_row_02_c2'), t('section_09_row_02_c3'), t('section_09_row_02_c4')],
-                        [t('section_09_row_03_c1'), t('section_09_row_03_c2'), t('section_09_row_03_c3'), t('section_09_row_03_c4')],
-                        [t('section_09_row_04_c1'), t('section_09_row_04_c2'), t('section_09_row_04_c3'), t('section_09_row_04_c4')],
-                        [t('section_09_row_05_c1'), t('section_09_row_05_c2'), t('section_09_row_05_c3'), t('section_09_row_05_c4')],
-                        [t('section_09_row_06_c1'), t('section_09_row_06_c2'), t('section_09_row_06_c3'), t('section_09_row_06_c4')],
-                        [t('section_09_row_07_c1'), t('section_09_row_07_c2'), t('section_09_row_07_c3'), t('section_09_row_07_c4')],
-                        [t('section_09_row_08_c1'), t('section_09_row_08_c2'), t('section_09_row_08_c3'), t('section_09_row_08_c4')],
-                        [t('section_09_row_09_c1'), t('section_09_row_09_c2'), t('section_09_row_09_c3'), t('section_09_row_09_c4')],
-                        [t('section_09_row_10_c1'), t('section_09_row_10_c2'), t('section_09_row_10_c3'), t('section_09_row_10_c4')],
+                        [t('section_09_row01_framework'), t('section_09_row01_scope'), t('section_09_row01_status'), t('section_09_row01_review')],
+                        [t('section_09_row02_framework'), t('section_09_row02_scope'), t('section_09_row02_status'), t('section_09_row02_review')],
+                        [t('section_09_row03_framework'), t('section_09_row03_scope'), t('section_09_row03_status'), t('section_09_row03_review')],
+                        [t('section_09_row04_framework'), t('section_09_row04_scope'), t('section_09_row04_status'), t('section_09_row04_review')],
+                        [t('section_09_row05_framework'), t('section_09_row05_scope'), t('section_09_row05_status'), t('section_09_row05_review')],
+                        [t('section_09_row06_framework'), t('section_09_row06_scope'), t('section_09_row06_status'), t('section_09_row06_review')],
+                        [t('section_09_row07_framework'), t('section_09_row07_scope'), t('section_09_row07_status'), t('section_09_row07_review')],
+                        [t('section_09_row08_framework'), t('section_09_row08_scope'), t('section_09_row08_status'), t('section_09_row08_review')],
+                        [t('section_09_row09_framework'), t('section_09_row09_scope'), t('section_09_row09_status'), t('section_09_row09_review')],
+                        [t('section_09_row10_framework'), t('section_09_row10_scope'), t('section_09_row10_status'), t('section_09_row10_review')],
                     ]}
                 />
             </LegalSection>
@@ -216,12 +216,12 @@ export default function SecurityAuditContent() {
                     <LegalLi>{t.rich('section_10_li4', richTextComponents)}</LegalLi>
                 </LegalUl>
                 <LegalTable
-                    headers={[t('section_10_table_h1'), t('section_10_table_h2'), t('section_10_table_h3'), t('section_10_table_h4')]}
+                    headers={[t('section_10_table_header_cve'), t('section_10_table_header_component'), t('section_10_table_header_severity'), t('section_10_table_header_status')]}
                     rows={[
-                        [t('section_10_row_01_c1'), t('section_10_row_01_c2'), t('section_10_row_01_c3'), t('section_10_row_01_c4')],
-                        [t('section_10_row_02_c1'), t('section_10_row_02_c2'), t('section_10_row_02_c3'), t('section_10_row_02_c4')],
-                        [t('section_10_row_03_c1'), t('section_10_row_03_c2'), t('section_10_row_03_c3'), t('section_10_row_03_c4')],
-                        [t('section_10_row_04_c1'), t('section_10_row_04_c2'), t('section_10_row_04_c3'), t('section_10_row_04_c4')],
+                        [t('section_10_row1_cve'), t('section_10_row1_component'), t('section_10_row1_severity'), t('section_10_row1_status')],
+                        [t('section_10_row2_cve'), t('section_10_row2_component'), t('section_10_row2_severity'), t('section_10_row2_status')],
+                        [t('section_10_row3_cve'), t('section_10_row3_component'), t('section_10_row3_severity'), t('section_10_row3_status')],
+                        [t('section_10_row4_cve'), t('section_10_row4_component'), t('section_10_row4_severity'), t('section_10_row4_status')],
                     ]}
                 />
             </LegalSection>
@@ -232,14 +232,14 @@ export default function SecurityAuditContent() {
                     {t('section_11_p1')}
                 </LegalP>
                 <LegalTable
-                    headers={[t('section_11_table_h1'), t('section_11_table_h2'), t('section_11_table_h3')]}
+                    headers={[t('section_11_table_header_phase'), t('section_11_table_header_procedure'), t('section_11_table_header_sla')]}
                     rows={[
-                        [t('section_11_row_01_c1'), t('section_11_row_01_c2'), t('section_11_row_01_c3')],
-                        [t('section_11_row_02_c1'), t('section_11_row_02_c2'), t('section_11_row_02_c3')],
-                        [t('section_11_row_03_c1'), t('section_11_row_03_c2'), t('section_11_row_03_c3')],
-                        [t('section_11_row_04_c1'), t('section_11_row_04_c2'), t('section_11_row_04_c3')],
-                        [t('section_11_row_05_c1'), t('section_11_row_05_c2'), t('section_11_row_05_c3')],
-                        [t('section_11_row_06_c1'), t('section_11_row_06_c2'), t('section_11_row_06_c3')],
+                        [t('section_11_row1_phase'), t('section_11_row1_procedure'), t('section_11_row1_sla')],
+                        [t('section_11_row2_phase'), t('section_11_row2_procedure'), t('section_11_row2_sla')],
+                        [t('section_11_row3_phase'), t('section_11_row3_procedure'), t('section_11_row3_sla')],
+                        [t('section_11_row4_phase'), t('section_11_row4_procedure'), t('section_11_row4_sla')],
+                        [t('section_11_row5_phase'), t('section_11_row5_procedure'), t('section_11_row5_sla')],
+                        [t('section_11_row6_phase'), t('section_11_row6_procedure'), t('section_11_row6_sla')],
                     ]}
                 />
                 <LegalHighlight>
@@ -250,18 +250,18 @@ export default function SecurityAuditContent() {
             {/* 12 */}
             <LegalSection id="roadmap" number="12" title={t('section_12_title')}>
                 <LegalTable
-                    headers={[t('section_12_table_h1'), t('section_12_table_h2'), t('section_12_table_h3')]}
+                    headers={[t('section_12_table_header_initiative'), t('section_12_table_header_target'), t('section_12_table_header_status')]}
                     rows={[
-                        [t('section_12_row_01_c1'), t('section_12_row_01_c2'), t('section_12_row_01_c3')],
-                        [t('section_12_row_02_c1'), t('section_12_row_02_c2'), t('section_12_row_02_c3')],
-                        [t('section_12_row_03_c1'), t('section_12_row_03_c2'), t('section_12_row_03_c3')],
-                        [t('section_12_row_04_c1'), t('section_12_row_04_c2'), t('section_12_row_04_c3')],
-                        [t('section_12_row_05_c1'), t('section_12_row_05_c2'), t('section_12_row_05_c3')],
-                        [t('section_12_row_06_c1'), t('section_12_row_06_c2'), t('section_12_row_06_c3')],
-                        [t('section_12_row_07_c1'), t('section_12_row_07_c2'), t('section_12_row_07_c3')],
-                        [t('section_12_row_08_c1'), t('section_12_row_08_c2'), t('section_12_row_08_c3')],
-                        [t('section_12_row_09_c1'), t('section_12_row_09_c2'), t('section_12_row_09_c3')],
-                        [t('section_12_row_10_c1'), t('section_12_row_10_c2'), t('section_12_row_10_c3')],
+                        [t('section_12_row01_initiative'), t('section_12_row01_target'), t('section_12_row01_status')],
+                        [t('section_12_row02_initiative'), t('section_12_row02_target'), t('section_12_row02_status')],
+                        [t('section_12_row03_initiative'), t('section_12_row03_target'), t('section_12_row03_status')],
+                        [t('section_12_row04_initiative'), t('section_12_row04_target'), t('section_12_row04_status')],
+                        [t('section_12_row05_initiative'), t('section_12_row05_target'), t('section_12_row05_status')],
+                        [t('section_12_row06_initiative'), t('section_12_row06_target'), t('section_12_row06_status')],
+                        [t('section_12_row07_initiative'), t('section_12_row07_target'), t('section_12_row07_status')],
+                        [t('section_12_row08_initiative'), t('section_12_row08_target'), t('section_12_row08_status')],
+                        [t('section_12_row09_initiative'), t('section_12_row09_target'), t('section_12_row09_status')],
+                        [t('section_12_row10_initiative'), t('section_12_row10_target'), t('section_12_row10_status')],
                     ]}
                 />
                 <LegalP>

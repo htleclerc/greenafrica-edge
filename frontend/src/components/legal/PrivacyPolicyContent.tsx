@@ -57,15 +57,15 @@ export default function PrivacyPolicyContent() {
             {/* 02 */}
             <LegalSection id="controller" number="02" title={t('section_02_title')}>
                 <LegalTable
-                    headers={[t('section_02_table_h1'), t('section_02_table_h2')]}
+                    headers={[t('section_02_table_header_field'), t('section_02_table_header_information')]}
                     rows={[
-                        [t('section_02_row_01_c1'), t('section_02_row_01_c2')],
-                        [t('section_02_row_02_c1'), t('section_02_row_02_c2')],
-                        [t('section_02_row_03_c1'), t('section_02_row_03_c2')],
-                        [t('section_02_row_04_c1'), t('section_02_row_04_c2')],
-                        [t('section_02_row_05_c1'), t('section_02_row_05_c2')],
-                        [t('section_02_row_06_c1'), t('section_02_row_06_c2')],
-                        [t('section_02_row_07_c1'), t('section_02_row_07_c2')],
+                        [t('section_02_row1_field'), t('section_02_row1_info')],
+                        [t('section_02_row2_field'), t('section_02_row2_info')],
+                        [t('section_02_row3_field'), t('section_02_row3_info')],
+                        [t('section_02_row4_field'), t('section_02_row4_info')],
+                        [t('section_02_row5_field'), t('section_02_row5_info')],
+                        [t('section_02_row6_field'), t('section_02_row6_info')],
+                        [t('section_02_row7_field'), t('section_02_row7_info')],
                     ]}
                 />
             </LegalSection>
@@ -76,7 +76,7 @@ export default function PrivacyPolicyContent() {
 
                 <div className="flex flex-col gap-4">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#00D97E] mb-2">{t('section_03_cat_a_title')}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#00D97E] mb-2">{t('section_03_cat_a_label')}</p>
                         <LegalUl>
                             <LegalLi>{t('section_03_cat_a_li1')}</LegalLi>
                             <LegalLi>{t('section_03_cat_a_li2')}</LegalLi>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyContent() {
                         </LegalUl>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#38BDF8] mb-2">{t('section_03_cat_b_title')}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#38BDF8] mb-2">{t('section_03_cat_b_label')}</p>
                         <LegalUl>
                             <LegalLi>{t('section_03_cat_b_li1')}</LegalLi>
                             <LegalLi>{t('section_03_cat_b_li2')}</LegalLi>
@@ -97,7 +97,7 @@ export default function PrivacyPolicyContent() {
                         </LegalUl>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#F59E0B] mb-2">{t('section_03_cat_c_title')}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#F59E0B] mb-2">{t('section_03_cat_c_label')}</p>
                         <LegalUl>
                             <LegalLi>{t('section_03_cat_c_li1')}</LegalLi>
                             <LegalLi>{t('section_03_cat_c_li2')}</LegalLi>
@@ -112,16 +112,16 @@ export default function PrivacyPolicyContent() {
             {/* 04 */}
             <LegalSection id="purpose" number="04" title={t('section_04_title')}>
                 <LegalTable
-                    headers={[t('section_04_table_h1'), t('section_04_table_h2'), t('section_04_table_h3')]}
+                    headers={[t('section_04_table_header_purpose'), t('section_04_table_header_legal_basis'), t('section_04_table_header_data_category')]}
                     rows={[
-                        [t('section_04_row_01_c1'), t('section_04_row_01_c2'), t('section_04_row_01_c3')],
-                        [t('section_04_row_02_c1'), t('section_04_row_02_c2'), t('section_04_row_02_c3')],
-                        [t('section_04_row_03_c1'), t('section_04_row_03_c2'), t('section_04_row_03_c3')],
-                        [t('section_04_row_04_c1'), t('section_04_row_04_c2'), t('section_04_row_04_c3')],
-                        [t('section_04_row_05_c1'), t('section_04_row_05_c2'), t('section_04_row_05_c3')],
-                        [t('section_04_row_06_c1'), t('section_04_row_06_c2'), t('section_04_row_06_c3')],
-                        [t('section_04_row_07_c1'), t('section_04_row_07_c2'), t('section_04_row_07_c3')],
-                        [t('section_04_row_08_c1'), t('section_04_row_08_c2'), t('section_04_row_08_c3')],
+                        [t('section_04_row1_purpose'), t('section_04_row1_basis'), t('section_04_row1_data')],
+                        [t('section_04_row2_purpose'), t('section_04_row2_basis'), t('section_04_row2_data')],
+                        [t('section_04_row3_purpose'), t('section_04_row3_basis'), t('section_04_row3_data')],
+                        [t('section_04_row4_purpose'), t('section_04_row4_basis'), t('section_04_row4_data')],
+                        [t('section_04_row5_purpose'), t('section_04_row5_basis'), t('section_04_row5_data')],
+                        [t('section_04_row6_purpose'), t('section_04_row6_basis'), t('section_04_row6_data')],
+                        [t('section_04_row7_purpose'), t('section_04_row7_basis'), t('section_04_row7_data')],
+                        [t('section_04_row8_purpose'), t('section_04_row8_basis'), t('section_04_row8_data')],
                     ]}
                 />
             </LegalSection>
@@ -145,16 +145,16 @@ export default function PrivacyPolicyContent() {
             {/* 06 */}
             <LegalSection id="retention" number="06" title={t('section_06_title')}>
                 <LegalTable
-                    headers={[t('section_06_table_h1'), t('section_06_table_h2'), t('section_06_table_h3')]}
+                    headers={[t('section_06_table_header_category'), t('section_06_table_header_retention'), t('section_06_table_header_basis')]}
                     rows={[
-                        [t('section_06_row_01_c1'), t('section_06_row_01_c2'), t('section_06_row_01_c3')],
-                        [t('section_06_row_02_c1'), t('section_06_row_02_c2'), t('section_06_row_02_c3')],
-                        [t('section_06_row_03_c1'), t('section_06_row_03_c2'), t('section_06_row_03_c3')],
-                        [t('section_06_row_04_c1'), t('section_06_row_04_c2'), t('section_06_row_04_c3')],
-                        [t('section_06_row_05_c1'), t('section_06_row_05_c2'), t('section_06_row_05_c3')],
-                        [t('section_06_row_06_c1'), t('section_06_row_06_c2'), t('section_06_row_06_c3')],
-                        [t('section_06_row_07_c1'), t('section_06_row_07_c2'), t('section_06_row_07_c3')],
-                        [t('section_06_row_08_c1'), t('section_06_row_08_c2'), t('section_06_row_08_c3')],
+                        [t('section_06_row1_category'), t('section_06_row1_retention'), t('section_06_row1_basis')],
+                        [t('section_06_row2_category'), t('section_06_row2_retention'), t('section_06_row2_basis')],
+                        [t('section_06_row3_category'), t('section_06_row3_retention'), t('section_06_row3_basis')],
+                        [t('section_06_row4_category'), t('section_06_row4_retention'), t('section_06_row4_basis')],
+                        [t('section_06_row5_category'), t('section_06_row5_retention'), t('section_06_row5_basis')],
+                        [t('section_06_row6_category'), t('section_06_row6_retention'), t('section_06_row6_basis')],
+                        [t('section_06_row7_category'), t('section_06_row7_retention'), t('section_06_row7_basis')],
+                        [t('section_06_row8_category'), t('section_06_row8_retention'), t('section_06_row8_basis')],
                     ]}
                 />
                 <LegalP>
@@ -183,15 +183,15 @@ export default function PrivacyPolicyContent() {
                     {t('section_08_p1')}
                 </LegalP>
                 <LegalTable
-                    headers={[t('section_08_table_h1'), t('section_08_table_h2'), t('section_08_table_h3')]}
+                    headers={[t('section_08_table_header_right'), t('section_08_table_header_scope'), t('section_08_table_header_limitation')]}
                     rows={[
-                        [t('section_08_row_01_c1'), t('section_08_row_01_c2'), t('section_08_row_01_c3')],
-                        [t('section_08_row_02_c1'), t('section_08_row_02_c2'), t('section_08_row_02_c3')],
-                        [t('section_08_row_03_c1'), t('section_08_row_03_c2'), t('section_08_row_03_c3')],
-                        [t('section_08_row_04_c1'), t('section_08_row_04_c2'), t('section_08_row_04_c3')],
-                        [t('section_08_row_05_c1'), t('section_08_row_05_c2'), t('section_08_row_05_c3')],
-                        [t('section_08_row_06_c1'), t('section_08_row_06_c2'), t('section_08_row_06_c3')],
-                        [t('section_08_row_07_c1'), t('section_08_row_07_c2'), t('section_08_row_07_c3')],
+                        [t('section_08_row1_right'), t('section_08_row1_scope'), t('section_08_row1_limitation')],
+                        [t('section_08_row2_right'), t('section_08_row2_scope'), t('section_08_row2_limitation')],
+                        [t('section_08_row3_right'), t('section_08_row3_scope'), t('section_08_row3_limitation')],
+                        [t('section_08_row4_right'), t('section_08_row4_scope'), t('section_08_row4_limitation')],
+                        [t('section_08_row5_right'), t('section_08_row5_scope'), t('section_08_row5_limitation')],
+                        [t('section_08_row6_right'), t('section_08_row6_scope'), t('section_08_row6_limitation')],
+                        [t('section_08_row7_right'), t('section_08_row7_scope'), t('section_08_row7_limitation')],
                     ]}
                 />
                 <LegalP>
@@ -233,12 +233,12 @@ export default function PrivacyPolicyContent() {
                     {t('section_11_p1')}
                 </LegalP>
                 <LegalTable
-                    headers={[t('section_11_table_h1'), t('section_11_table_h2'), t('section_11_table_h3'), t('section_11_table_h4')]}
+                    headers={[t('section_11_table_header_cookie'), t('section_11_table_header_purpose'), t('section_11_table_header_duration'), t('section_11_table_header_type')]}
                     rows={[
-                        [t('section_11_row_01_c1'), t('section_11_row_01_c2'), t('section_11_row_01_c3'), t('section_11_row_01_c4')],
-                        [t('section_11_row_02_c1'), t('section_11_row_02_c2'), t('section_11_row_02_c3'), t('section_11_row_02_c4')],
-                        [t('section_11_row_03_c1'), t('section_11_row_03_c2'), t('section_11_row_03_c3'), t('section_11_row_03_c4')],
-                        [t('section_11_row_04_c1'), t('section_11_row_04_c2'), t('section_11_row_04_c3'), t('section_11_row_04_c4')],
+                        [t('section_11_row1_cookie'), t('section_11_row1_purpose'), t('section_11_row1_duration'), t('section_11_row1_type')],
+                        [t('section_11_row2_cookie'), t('section_11_row2_purpose'), t('section_11_row2_duration'), t('section_11_row2_type')],
+                        [t('section_11_row3_cookie'), t('section_11_row3_purpose'), t('section_11_row3_duration'), t('section_11_row3_type')],
+                        [t('section_11_row4_cookie'), t('section_11_row4_purpose'), t('section_11_row4_duration'), t('section_11_row4_type')],
                     ]}
                 />
                 <LegalP>
@@ -249,13 +249,13 @@ export default function PrivacyPolicyContent() {
             {/* 12 */}
             <LegalSection id="contact" number="12" title={t('section_12_title')}>
                 <LegalTable
-                    headers={[t('section_12_table_h1'), t('section_12_table_h2')]}
+                    headers={[t('section_12_table_header_contact'), t('section_12_table_header_details')]}
                     rows={[
-                        [t('section_12_row_01_c1'), t('section_12_row_01_c2')],
-                        [t('section_12_row_02_c1'), t('section_12_row_02_c2')],
-                        [t('section_12_row_03_c1'), t('section_12_row_03_c2')],
-                        [t('section_12_row_04_c1'), t('section_12_row_04_c2')],
-                        [t('section_12_row_05_c1'), t('section_12_row_05_c2')],
+                        [t('section_12_row1_contact'), t('section_12_row1_details')],
+                        [t('section_12_row2_contact'), t('section_12_row2_details')],
+                        [t('section_12_row3_contact'), t('section_12_row3_details')],
+                        [t('section_12_row4_contact'), t('section_12_row4_details')],
+                        [t('section_12_row5_contact'), t('section_12_row5_details')],
                     ]}
                 />
                 <LegalP>
