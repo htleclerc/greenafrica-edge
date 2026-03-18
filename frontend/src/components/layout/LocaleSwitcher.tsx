@@ -8,6 +8,7 @@ const LOCALES = [
     { code: 'fr', label: 'FR' },
     { code: 'pt', label: 'PT' },
     { code: 'sw', label: 'SW' },
+    { code: 'ar', label: 'العربية' },
 ] as const;
 
 type Variant = 'navbar' | 'dashboard';

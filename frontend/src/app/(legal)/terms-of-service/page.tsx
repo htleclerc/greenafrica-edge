@@ -10,18 +10,20 @@ export const metadata: Metadata = {
 };
 
 const SECTIONS = [
-    { id: 'acceptance',    title: 'Acceptance of Terms' },
-    { id: 'definitions',   title: 'Definitions' },
-    { id: 'eligibility',   title: 'Eligibility & Registration' },
-    { id: 'obligations',   title: 'User Obligations' },
-    { id: 'carbon-tax',    title: 'Carbon Tax Obligations' },
-    { id: 'proforma',      title: 'Pro-forma Invoices & Payments' },
-    { id: 'prohibited',    title: 'Prohibited Conduct' },
-    { id: 'ip',            title: 'Intellectual Property' },
-    { id: 'liability',     title: 'Limitation of Liability' },
-    { id: 'suspension',    title: 'Account Suspension & Enforcement' },
-    { id: 'amendments',    title: 'Amendments to Terms' },
-    { id: 'governing-law', title: 'Governing Law & Disputes' },
+    { id: 'acceptance',        title: 'Acceptance of Terms' },
+    { id: 'definitions',       title: 'Definitions' },
+    { id: 'eligibility',       title: 'Eligibility & Registration' },
+    { id: 'obligations',       title: 'User Obligations' },
+    { id: 'carbon-tax',        title: 'Carbon Tax Obligations' },
+    { id: 'proforma',          title: 'Pro-forma Invoices & Payments' },
+    { id: 'prohibited',        title: 'Prohibited Conduct' },
+    { id: 'ip',                title: 'Intellectual Property' },
+    { id: 'data-sovereignty',  title: 'Data Sovereignty' },
+    { id: 'right-to-export',   title: 'Right to Data Export' },
+    { id: 'liability',         title: 'Limitation of Liability' },
+    { id: 'suspension',        title: 'Account Suspension & Enforcement' },
+    { id: 'amendments',        title: 'Amendments to Terms' },
+    { id: 'governing-law',     title: 'Governing Law & Disputes' },
 ];
 
 export default function TermsOfServicePage() {
@@ -172,7 +174,48 @@ export default function TermsOfServicePage() {
             </LegalSection>
 
             {/* 09 */}
-            <LegalSection id="liability" number="09" title="Limitation of Liability">
+            <LegalSection id="data-sovereignty" number="09" title="Data Sovereignty">
+                <LegalHighlight>
+                    The Republic of Somaliland asserts full sovereign control over all data generated, collected, processed, and stored within the Africgreen platform. Data sovereignty is a non-negotiable principle of this platform and is guaranteed under the Maritime Carbon Act 2024 and applicable Somaliland data protection legislation.
+                </LegalHighlight>
+                <LegalP>
+                    The following guarantees apply to all data processed by the Platform:
+                </LegalP>
+                <LegalUl>
+                    <LegalLi><strong>State Ownership:</strong> All data generated through the operation of the Platform — including AIS tracking records, tax calculations, emission estimates, audit logs, and carbon credit registries — remains the sovereign property of the Republic of Somaliland, administered by the SMCA on behalf of the Ministry of Finance.</LegalLi>
+                    <LegalLi><strong>Jurisdictional Hosting:</strong> All primary data storage infrastructure shall be located within the jurisdiction chosen by the subscribing State or, at minimum, within a jurisdiction offering equivalent data protection standards. The SMCA shall provide written certification of data hosting locations upon request.</LegalLi>
+                    <LegalLi><strong>No Third-Party Transfer:</strong> No data shall be transferred to, shared with, or made accessible to any third party — including technology vendors, subcontractors, or foreign governments — without the explicit written consent of the SMCA. This includes anonymized or aggregated data unless specifically authorized.</LegalLi>
+                    <LegalLi><strong>Right to Audit:</strong> The subscribing State retains the right to conduct independent audits of data storage infrastructure, access controls, encryption standards, and backup procedures at any time, with 10 business days written notice. The SMCA shall facilitate such audits at no additional cost.</LegalLi>
+                    <LegalLi><strong>Data Residency Guarantee:</strong> Upon request, the SMCA shall provide a Data Residency Certificate specifying the physical locations of all servers, backup facilities, and disaster recovery sites where Platform data is stored or replicated.</LegalLi>
+                </LegalUl>
+                <LegalWarning>
+                    <strong>Breach of Data Sovereignty:</strong> Any unauthorized transfer, replication, or access to sovereign data constitutes a breach of the Maritime Carbon Act 2024 and may result in criminal prosecution under Somaliland law, contract termination, and claims for damages.
+                </LegalWarning>
+            </LegalSection>
+
+            {/* 10 */}
+            <LegalSection id="right-to-export" number="10" title="Right to Data Export">
+                <LegalHighlight>
+                    All users of the Africgreen platform have an unconditional right to export their own data at any time, in open and documented formats, without vendor lock-in restrictions. This right is guaranteed regardless of account status, contractual disputes, or payment obligations.
+                </LegalHighlight>
+                <LegalP>
+                    The Right to Data Export includes the following guarantees:
+                </LegalP>
+                <LegalUl>
+                    <LegalLi><strong>Full Data Export:</strong> Users may request a complete export of all data associated with their account, including vessel records, transaction history, invoices, emission calculations, audit logs, and dispute records. Export is available in CSV, JSON, and PDF formats.</LegalLi>
+                    <LegalLi><strong>Delivery Timeline:</strong> The SMCA shall deliver requested data exports within a maximum of <strong>72 hours</strong> from the receipt of a valid export request. Automated self-service exports (via the Platform dashboard) shall be available immediately for datasets under 50 MB.</LegalLi>
+                    <LegalLi><strong>Open Formats:</strong> All exported data shall be delivered in open, documented, machine-readable formats (CSV with headers, JSON with schema documentation, PDF/A for invoices). No proprietary or encrypted formats that require SMCA-specific software to read.</LegalLi>
+                    <LegalLi><strong>No Vendor Lock-In:</strong> The data export format shall be sufficiently documented and standardized to allow migration to any alternative platform or system without loss of data integrity. The SMCA shall provide a Data Dictionary document with each export upon request.</LegalLi>
+                    <LegalLi><strong>Post-Termination Retention:</strong> Following contract termination or account deactivation, the SMCA shall retain all user data for a minimum of <strong>90 calendar days</strong>, during which the user may request a final data export. After the retention period, data shall be permanently and irreversibly deleted, with written confirmation provided to the user.</LegalLi>
+                    <LegalLi><strong>No Export Fees:</strong> Standard data exports are provided at no additional cost. The SMCA may charge reasonable fees only for custom export formats, historical data reconstruction, or exports requiring manual intervention, with fees disclosed in advance.</LegalLi>
+                </LegalUl>
+                <LegalP>
+                    Export requests may be submitted via the Platform dashboard (Settings → Export My Data) or by written request to <strong>data-export@smca.gov.sl</strong>.
+                </LegalP>
+            </LegalSection>
+
+            {/* 11 */}
+            <LegalSection id="liability" number="11" title="Limitation of Liability">
                 <LegalP>
                     The Platform is provided as a sovereign government digital service. To the maximum extent permitted by applicable law:
                 </LegalP>
@@ -184,8 +227,8 @@ export default function TermsOfServicePage() {
                 </LegalUl>
             </LegalSection>
 
-            {/* 10 */}
-            <LegalSection id="suspension" number="10" title="Account Suspension & Enforcement">
+            {/* 12 */}
+            <LegalSection id="suspension" number="12" title="Account Suspension & Enforcement">
                 <LegalTable
                     headers={['Trigger', 'Action', 'Appeal Process']}
                     rows={[
@@ -198,8 +241,8 @@ export default function TermsOfServicePage() {
                 />
             </LegalSection>
 
-            {/* 11 */}
-            <LegalSection id="amendments" number="11" title="Amendments to Terms">
+            {/* 13 */}
+            <LegalSection id="amendments" number="13" title="Amendments to Terms">
                 <LegalP>
                     The SMCA may amend these Terms at any time to reflect changes in Somaliland law, IMO regulations, platform functionality, or operational policy. Notice of material changes will be provided via:
                 </LegalP>
@@ -213,8 +256,8 @@ export default function TermsOfServicePage() {
                 </LegalP>
             </LegalSection>
 
-            {/* 12 */}
-            <LegalSection id="governing-law" number="12" title="Governing Law & Disputes">
+            {/* 14 */}
+            <LegalSection id="governing-law" number="14" title="Governing Law & Disputes">
                 <LegalHighlight>
                     These Terms of Service are governed by the laws of the <strong>Republic of Somaliland</strong>, including the Maritime Carbon Act 2024, the Tax Administration Act 2023, and the Somaliland Commercial Code. For matters arising under IMO conventions, the relevant international maritime law framework applies.
                 </LegalHighlight>

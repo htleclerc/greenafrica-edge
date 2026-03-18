@@ -640,6 +640,39 @@ export function SettingsPage() {
                 {/* Content */}
                 <div className="flex-1 p-4 sm:p-6 max-w-2xl">
                     {CONTENT[activeTab]}
+
+                    {/* Data Export section */}
+                    <div
+                        className="mt-8 p-5 rounded-2xl flex flex-col gap-4"
+                        style={{ backgroundColor: 'var(--os-surface)', border: '1px solid var(--os-border)' }}
+                    >
+                        <div>
+                            <h3 className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>
+                                Data Export
+                            </h3>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
+                                Download a complete export of all your data including vessel records, transactions, invoices, and audit logs.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                onClick={() => alert('Export request submitted. You will receive your data within 72 hours.')}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-fit"
+                                style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-secondary)', border: '1px solid var(--os-border)' }}
+                            >
+                                <Download className="w-4 h-4" />
+                                Export My Data (CSV)
+                            </button>
+                            <button
+                                onClick={() => alert('Export request submitted. You will receive your data within 72 hours.')}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-fit"
+                                style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-secondary)', border: '1px solid var(--os-border)' }}
+                            >
+                                <Download className="w-4 h-4" />
+                                Export My Data (JSON)
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

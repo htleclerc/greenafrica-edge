@@ -12,7 +12,7 @@ export default async function RootLayout({
     const messages = await getMessages();
 
     return (
-        <html lang={locale} data-theme="dark" suppressHydrationWarning>
+        <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} data-theme="dark" suppressHydrationWarning>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 {/* Blocking script to set theme before paint — avoids flash */}

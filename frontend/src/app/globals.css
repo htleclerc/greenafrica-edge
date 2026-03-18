@@ -753,3 +753,12 @@ html { scroll-behavior: smooth; }
         size: A4 portrait;
     }
 }
+
+/* ── RTL Support ─────────────────────────────────────────── */
+[dir="rtl"] .rtl\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+}
+[dir="rtl"] .ltr\:ml-auto { margin-left: unset; margin-right: auto; }
+[dir="rtl"] .ltr\:mr-auto { margin-right: unset; margin-left: auto; }
+[dir="rtl"] .ltr\:text-left { text-align: right; }
+[dir="rtl"] .ltr\:text-right { text-align: left; }
