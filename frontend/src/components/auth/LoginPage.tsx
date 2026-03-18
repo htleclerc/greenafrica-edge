@@ -296,11 +296,11 @@ export function LoginPage() {
                     </div>
 
                     <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
-                        <a href="/privacy-policy" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>
+                        <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>
                         <span>·</span>
-                        <a href="/terms-of-service" className="hover:text-emerald-400 transition-colors">{t('link_terms')}</a>
+                        <a href="/terms-of-service?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_terms')}</a>
                         <span>·</span>
-                        <a href="/security-audit" className="hover:text-emerald-400 transition-colors">{t('link_security')}</a>
+                        <a href="/security-audit?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_security')}</a>
                     </div>
                 </div>
             </div>

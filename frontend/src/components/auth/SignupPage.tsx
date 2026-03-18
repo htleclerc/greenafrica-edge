@@ -611,9 +611,9 @@ export function SignupPage() {
                                 </div>
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
                                     {t('terms_text')}{' '}
-                                    <a href="/terms-of-service" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
-                                    <a href="/privacy-policy" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
-                                    <a href="/security-audit" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
+                                    <a href="/terms-of-service?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
+                                    <a href="/privacy-policy?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
+                                    <a href="/security-audit?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
                                 </p>
                             </button>
                         </div>

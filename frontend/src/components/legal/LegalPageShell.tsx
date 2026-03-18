@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Anchor } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Navbar } from '@/components/layout/Navbar';
 
 interface Section {
     id: string;
@@ -26,27 +28,32 @@ export function LegalPageShell({
     badgeLabel, badgeColor, sections, children,
 }: LegalPageShellProps) {
     const t = useTranslations('Legal');
+    const searchParams = useSearchParams();
+    const fromAuth = searchParams.get('from') === 'auth';
 
     return (
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--os-bg)' }}>
-            {/* Top nav */}
-            <header className="sticky top-0 z-10 border-b flex items-center justify-between px-6 py-3" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
-                <a href="/login" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                    <div className="w-8 h-8 rounded-xl border border-[#00D97E]/25 flex items-center justify-center" style={{ backgroundColor: 'var(--ais-page-card)' }}>
-                        <Anchor className="w-4 h-4 text-[#00D97E]" />
+            {fromAuth ? (
+                /* Back-to-login bar when coming from auth pages */
+                <header className="sticky top-0 z-10 border-b flex items-center justify-between px-4 sm:px-6 py-3" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
+                    <a href="/login" className="flex items-center gap-2 text-sm font-semibold text-[#38BDF8] hover:text-[#60CAFF] transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        {t('back_to_login')}
+                    </a>
+                    <div className="flex items-center gap-4 text-[10px] text-[var(--os-text-muted)]">
+                        <span className="font-mono hidden sm:inline">{version}</span>
+                        <span className="hidden sm:inline">{t('effective_prefix')} {effectiveDate}</span>
+                        <span className="text-sm font-bold text-[var(--os-text-primary)]">
+                            Africgreen<span className="text-[#00D97E]">OS</span>
+                        </span>
                     </div>
-                    <span className="text-sm font-bold text-[var(--os-text-primary)]">
-                        Africgreen<span className="text-[#00D97E]">OS</span>
-                    </span>
-                </a>
-                <div className="flex items-center gap-4 text-[10px] text-[var(--os-text-muted)]">
-                    <span className="font-mono">{version}</span>
-                    <span>{t('effective_prefix')} {effectiveDate}</span>
-                    <a href="/login" className="text-[#38BDF8] hover:underline font-semibold">{t('back_to_login')}</a>
-                </div>
-            </header>
+                </header>
+            ) : (
+                /* Public Navbar when coming from the website */
+                <Navbar />
+            )}
 
-            <div className="flex flex-1 max-w-7xl mx-auto w-full px-6 py-10 gap-10">
+            <div className={`flex flex-1 max-w-7xl mx-auto w-full px-6 py-10 gap-10 ${!fromAuth ? 'pt-24' : ''}`}>
                 {/* Sidebar — table of contents */}
                 <aside className="hidden lg:flex flex-col gap-1 w-56 flex-shrink-0">
                     <div className="sticky top-20">
@@ -102,9 +109,9 @@ export function LegalPageShell({
                                 <span className="text-[var(--os-text-secondary)]">{t('footer_platform_name')}</span>
                             </p>
                             <div className="flex items-center gap-4">
-                                <a href="/privacy-policy"  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
-                                <a href="/terms-of-service" className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
-                                <a href="/security-audit"  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
+                                <a href={`/privacy-policy${fromAuth ? '?from=auth' : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
+                                <a href={`/terms-of-service${fromAuth ? '?from=auth' : ''}`} className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
+                                <a href={`/security-audit${fromAuth ? '?from=auth' : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
                             </div>
                         </div>
                     </div>
