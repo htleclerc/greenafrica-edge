@@ -9,6 +9,7 @@ import {
 
 const richTextComponents = {
     b: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
+    strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
 };
 
 export default function TermsOfServiceContent() {
