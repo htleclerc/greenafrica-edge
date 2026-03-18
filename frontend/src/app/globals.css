@@ -676,6 +676,9 @@ input[type="range"]::-moz-range-thumb {
 .dashboard-mobile-only {
     display: block;
 }
+.auth-hide-mobile {
+    display: none;
+}
 
 @media (min-width: 768px) {
     .dashboard-mobile-hamburger {
@@ -689,6 +692,9 @@ input[type="range"]::-moz-range-thumb {
     }
     .dashboard-mobile-only {
         display: none !important;
+    }
+    .auth-hide-mobile {
+        display: inline;
     }
 }
 

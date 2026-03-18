@@ -695,11 +695,13 @@ function PasswordStrength({ password, t }: { password: string; t: (key: string) 
 function LogoBlock() {
     return (
         <>
-            <div className="w-16 h-16 rounded-2xl border border-[#00D97E]/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]" style={{ backgroundColor: 'var(--ais-page-card)' }}>
-                <Anchor className="w-8 h-8 text-[#00D97E]" />
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
+                <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+                    <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
+                </svg>
             </div>
             <h1 className="text-2xl font-bold text-[var(--os-text-primary)] mb-1">
-                Africgreen<span className="text-[#00D97E]">OS</span>
+                AIS Portal
             </h1>
         </>
     );
@@ -708,11 +710,22 @@ function LogoBlock() {
 function AuthShell({ children, t }: { children: React.ReactNode; t: (key: string) => string }) {
     return (
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--os-bg)', color: 'var(--os-text-primary)' }}>
-            <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
+                {/* Logo — home link */}
+                <a href="/" className="flex items-center gap-2 flex-shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
+                        </svg>
+                    </div>
+                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>AIS Portal</span>
+                </a>
+                {/* Online indicator — center (dot only on mobile) */}
                 <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full os-dot-online animate-blink" />
-                    <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase">{t('system_online')}</span>
+                    <span className="w-2 h-2 rounded-full os-dot-online animate-blink flex-shrink-0" />
+                    <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase auth-hide-mobile">{t('system_online')}</span>
                 </div>
+                {/* Locale switcher — right */}
                 <LocaleSwitcher variant="dashboard" />
             </div>
 

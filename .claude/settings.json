@@ -31,7 +31,14 @@
       "Bash(git merge:*)",
       "Bash(git stash:*)",
       "Bash(git add:*)",
-      "Bash(git -c:*)"
+      "Bash(git -c:*)",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend -name tailwind.config.* -o -name postcss.config.*)",
+      "Bash(ls -la /c/Users/lecle/Workspace/africgreen/frontend/*.config.*)",
+      "Bash(grep -l \"grid-cols\\\\|flex\" /c/Users/lecle/Workspace/africgreen/frontend/src/components/dashboard/alerts/*.tsx)",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/en.json'',''utf8''\\)\\); console.log\\(''en.json: valid''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/fr.json'',''utf8''\\)\\); console.log\\(''fr.json: valid''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/pt.json'',''utf8''\\)\\); console.log\\(''pt.json: valid''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/sw.json'',''utf8''\\)\\); console.log\\(''sw.json: valid''\\)\")"
     ]
   }
 }
