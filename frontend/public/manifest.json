@@ -1,0 +1,25 @@
+{
+  "name": "AfricgreenOS — Sovereign Carbon Intelligence Platform",
+  "short_name": "AfricgreenOS",
+  "description": "Maritime carbon tax administration platform for sovereign states — AIS tracking, tax collection, compliance monitoring.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0A1110",
+  "theme_color": "#10B981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "finance", "utilities"]
+}

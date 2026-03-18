@@ -15,6 +15,10 @@ export default async function RootLayout({
         <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} data-theme="dark" suppressHydrationWarning>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <link rel="manifest" href="/manifest.json" />
+                <meta name="theme-color" content="#10B981" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 {/* Blocking script to set theme before paint — avoids flash */}
                 <script
                     dangerouslySetInnerHTML={{

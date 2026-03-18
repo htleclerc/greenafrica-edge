@@ -11,6 +11,7 @@ import { Zap, X } from 'lucide-react';
 import { RoleProvider, useRole } from '@/lib/RoleContext';
 import { SkinProvider } from '@/lib/SkinContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 
 const SIDEBAR_COLLAPSED = 56;
 const SIDEBAR_EXPANDED  = 220;
@@ -159,6 +160,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             </main>
 
             <DashboardFooter />
+            <OfflineBanner />
         </div>
     );
 }

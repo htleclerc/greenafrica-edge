@@ -2000,5 +2000,10 @@
     "section_12_row10_status": "Fase de Investigação",
     "section_12_p1": "As melhorias de segurança são monitorizadas no Registo de Melhoria Contínua da Segurança da Informação da SMCA (ISCIL/2025) e revistas mensalmente pelo CISO, DPO e Diretor da SMCA. O progresso é reportado anualmente ao Ministério das Finanças e incluído na próxima edição deste relatório público de Auditoria de Segurança.",
     "section_12_warning": "<strong>Programa de Divulgação Responsável:</strong> A SMCA opera um programa de divulgação responsável para investigadores de segurança. Se descobrir uma vulnerabilidade de segurança no Africgreen, por favor reporte a <strong>security@smca.gov.sl</strong> com encriptação PGP (chave disponível em smca.gov.sl/pgp). Comprometemo-nos a confirmar a receção dos relatórios dentro de 48 horas e a resolver vulnerabilidades confirmadas dentro dos nossos SLAs padrão. Não intentamos ações judiciais contra investigadores que sigam os princípios de divulgação responsável."
+  },
+  "Offline": {
+    "title": "Você está offline",
+    "description": "Algumas funcionalidades estão limitadas. Os dados exibidos podem não estar atualizados.",
+    "reconnected": "De volta online — atualizando dados..."
   }
 }

@@ -2003,5 +2003,10 @@
     "section_12_row10_status": "Research Phase",
     "section_12_p1": "Security improvements are tracked in the SMCA Information Security Continuous Improvement Log (ISCIL/2025) and reviewed monthly by the CISO, DPO, and SMCA Director. Progress is reported annually to the Ministry of Finance and included in the next edition of this public Security Audit report.",
     "section_12_warning": "<strong>Responsible Disclosure Program:</strong> The SMCA operates a responsible disclosure program for security researchers. If you discover a security vulnerability in Africgreen, please report it to <strong>security@smca.gov.sl</strong> with PGP encryption (key available at smca.gov.sl/pgp). We commit to acknowledging reports within 48 hours and resolving confirmed vulnerabilities within our standard SLAs. We do not pursue legal action against researchers who follow responsible disclosure principles."
+  },
+  "Offline": {
+    "title": "You are offline",
+    "description": "Some features are limited. Data shown may not be up to date.",
+    "reconnected": "Back online — refreshing data..."
   }
 }

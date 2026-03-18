@@ -2003,5 +2003,10 @@
     "section_12_row10_status": "Phase de recherche",
     "section_12_p1": "Les améliorations de sécurité sont suivies dans le Journal d'amélioration continue de la sécurité de l'information de la SMCA (ISCIL/2025) et révisées mensuellement par le RSSI, le DPO et le Directeur de la SMCA. Les progrès sont rapportés annuellement au ministère des Finances et inclus dans la prochaine édition de ce rapport public d'audit de sécurité.",
     "section_12_warning": "<strong>Programme de divulgation responsable :</strong> La SMCA exploite un programme de divulgation responsable pour les chercheurs en sécurité. Si vous découvrez une vulnérabilité de sécurité dans Africgreen, veuillez la signaler à <strong>security@smca.gov.sl</strong> avec chiffrement PGP (clé disponible sur smca.gov.sl/pgp). Nous nous engageons à accuser réception des signalements dans les 48 heures et à résoudre les vulnérabilités confirmées dans le cadre de nos SLA standards. Nous n'engageons pas de poursuites judiciaires contre les chercheurs qui suivent les principes de divulgation responsable."
+  },
+  "Offline": {
+    "title": "Vous êtes hors ligne",
+    "description": "Certaines fonctionnalités sont limitées. Les données affichées peuvent ne pas être à jour.",
+    "reconnected": "De retour en ligne — actualisation des données..."
   }
 }

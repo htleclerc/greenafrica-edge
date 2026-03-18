@@ -2000,5 +2000,10 @@
     "section_12_row10_status": "Awamu ya Utafiti",
     "section_12_p1": "Maboresho ya usalama yanafuatiliwa katika Rejista ya Maboresho ya Kuendelea ya Usalama wa Taarifa ya SMCA (ISCIL/2025) na kupitiwa kila mwezi na CISO, DPO, na Mkurugenzi wa SMCA. Maendeleo yanaripotiwa kila mwaka kwa Wizara ya Fedha na yanajumuishwa katika toleo lijalo la ripoti hii ya umma ya Ukaguzi wa Usalama.",
     "section_12_warning": "<strong>Programu ya Ufichuzi wa Uwajibikaji:</strong> SMCA inaendesha programu ya ufichuzi wa uwajibikaji kwa watafiti wa usalama. Ikiwa utagundua udhaifu wa usalama katika Africgreen, tafadhali ripoti kwa <strong>security@smca.gov.sl</strong> na usimbaji fiche wa PGP (funguo inapatikana kwenye smca.gov.sl/pgp). Tunaahidi kuthibitisha ripoti ndani ya masaa 48 na kutatua udhaifu uliothibitishwa ndani ya SLA zetu za kawaida. Hatufuatili hatua za kisheria dhidi ya watafiti wanaofuata kanuni za ufichuzi wa uwajibikaji."
+  },
+  "Offline": {
+    "title": "Huna mtandaoni",
+    "description": "Baadhi ya vipengele vimezuiwa. Data inayoonyeshwa huenda si ya hivi karibuni.",
+    "reconnected": "Umerudi mtandaoni — inasasisha data..."
   }
 }
