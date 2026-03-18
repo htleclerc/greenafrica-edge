@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Bell, ChevronDown, AlertCircle, LogOut, Settings, User,
     Shield, Ship, AlertTriangle, CreditCard, CheckCircle, Clock,
-    MapPin, Menu,
+    MapPin, Menu, Globe, Sun, Moon,
 } from 'lucide-react';
 import { DashboardKpis, SecureUser, UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
@@ -136,36 +136,37 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
 
     return (
         <header
-            className="fixed top-0 right-0 z-30 flex items-center h-14 px-2 sm:px-4 gap-1 sm:gap-2 md:gap-4 left-0 md:left-[var(--os-sidebar-w)] overflow-x-auto"
+            className="fixed top-0 right-0 flex items-center h-14 px-3 sm:px-4 gap-2 sm:gap-3 md:gap-4 left-0 md:left-[var(--os-sidebar-w)]"
             style={{
                 backgroundColor: 'var(--os-surface)',
                 borderBottom: '1px solid var(--os-border)',
                 transition: 'left 220ms cubic-bezier(0.4,0,0.2,1)',
+                zIndex: (notifOpen || profileOpen) ? 9995 : 30,
             }}
         >
             {/* Mobile hamburger */}
             <button
                 onClick={onMobileMenuToggle}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] transition-colors md:hidden flex-shrink-0"
+                className="dashboard-mobile-hamburger flex-shrink-0"
             >
                 <Menu className="w-5 h-5" />
             </button>
 
             {/* Brand + breadcrumb */}
-            <div className="flex items-center gap-2 mr-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-bold text-[var(--os-text-primary)] whitespace-nowrap">
                     Africgreen
                 </span>
                 {breadcrumb && (
                     <>
-                        <span className="text-[var(--os-text-muted)] text-sm hidden sm:inline">/</span>
-                        <span className="text-sm text-[var(--os-text-secondary)] truncate hidden sm:inline">{breadcrumb}</span>
+                        <span className="text-[var(--os-text-muted)] text-sm dashboard-hide-mobile">/</span>
+                        <span className="text-sm text-[var(--os-text-secondary)] truncate dashboard-hide-mobile">{breadcrumb}</span>
                     </>
                 )}
             </div>
 
             {/* KPI Pills — center (hidden on mobile) */}
-            <div className="hidden lg:flex flex-1 items-center justify-center gap-1 overflow-x-auto">
+            <div className="dashboard-kpi-pills flex-1 items-center justify-center gap-1 overflow-x-auto">
                 <KpiPill label={t('kpi_monthly_revenue')} value={formatUsd(kpis.monthlyRevenueUsd)} accent />
                 <KpiPill label={t('kpi_vessels_processed')} value={String(kpis.vesselsProcessed)} />
                 <KpiPill label={t('kpi_est_co2')} value={formatTons(kpis.estCo2TrackingTons)} />
@@ -173,7 +174,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
             </div>
 
             {/* Right: system status + notifications + user */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                 {/* Sync status */}
                 <div className={`
                     flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium
@@ -186,7 +187,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                 `}>
                     {isDegraded && <AlertCircle className="w-3.5 h-3.5" />}
                     {!isDegraded && <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'os-dot-online' : 'os-dot-offline'}`} />}
-                    <span className="hidden md:inline">
+                    <span className="dashboard-status-label">
                         {isDegraded ? t('status_degraded') : isOnline ? t('status_online') : t('status_offline')}
                     </span>
                 </div>
@@ -208,7 +209,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                     {/* Notification dropdown */}
                     {notifOpen && (
                         <div
-                            className="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-[360px] max-w-[360px] rounded-xl overflow-hidden shadow-2xl"
+                            className="notif-dropdown rounded-xl overflow-hidden shadow-2xl"
                             style={{
                                 backgroundColor: 'var(--os-surface)',
                                 border: '1px solid var(--os-border)',
@@ -299,14 +300,14 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                     )}
                 </div>
 
-                {/* Locale + Skin (includes light/dark toggle) — hidden on small screens */}
-                <div className="hidden sm:contents">
+                {/* Locale + Skin — desktop only */}
+                <div className="dashboard-topbar-extras">
                     <LocaleSwitcher variant="dashboard" />
                     <SkinSwitcher variant="topbar" />
                 </div>
 
                 {/* Separator */}
-                <div className="w-px h-6 hidden sm:block" style={{ backgroundColor: 'var(--os-border)' }} />
+                <div className="w-px h-6 dashboard-hide-mobile" style={{ backgroundColor: 'var(--os-border)' }} />
 
                 {/* ── Profile button + dropdown ── */}
                 <div className="relative" ref={profileRef}>
@@ -329,7 +330,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                                 {flag}
                             </span>
                         </div>
-                        <div className="hidden md:flex flex-col items-start">
+                        <div className="dashboard-hide-mobile-sm flex-col items-start">
                             <span className="text-xs font-semibold text-[var(--os-text-primary)] leading-tight">{user.fullName}</span>
                             <span className="text-[10px] leading-tight font-medium" style={{ color: roleColor }}>{roleLabel}</span>
                         </div>
@@ -342,7 +343,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                     {/* Profile dropdown */}
                     {profileOpen && (
                         <div
-                            className="absolute right-0 top-full mt-2 w-[260px] rounded-xl overflow-hidden shadow-2xl"
+                            className="profile-dropdown rounded-xl overflow-hidden shadow-2xl"
                             style={{
                                 backgroundColor: 'var(--os-surface)',
                                 border: '1px solid var(--os-border)',
@@ -400,6 +401,27 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                                     href="/dashboard/settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
+                            </div>
+
+                            {/* Language + Theme */}
+                            <div className="border-t border-[var(--os-border)] px-4 py-3 flex flex-col gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Globe className="w-3.5 h-3.5 text-[var(--os-text-muted)]" />
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                                            {t('profile_language')}
+                                        </span>
+                                    </div>
+                                    <LocaleSwitcher variant="dashboard" />
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                                        {t('profile_theme')}
+                                    </span>
+                                    <div className="mt-2">
+                                        <SkinSwitcher variant="inline" />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Session info + logout */}

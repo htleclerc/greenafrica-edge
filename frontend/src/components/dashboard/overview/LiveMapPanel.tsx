@@ -76,7 +76,7 @@ export function LiveMapPanel() {
     }
 
     return (
-        <div className="os-card overflow-hidden flex flex-col" style={{ minHeight: 'clamp(320px, 60vh, 480px)' }}>
+        <div className="os-card overflow-hidden flex flex-col" style={{ minHeight: 'min(70vh, 600px)' }}>
             {/* Header */}
             <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-[var(--os-border)]">
                 <div>
@@ -137,7 +137,7 @@ export function LiveMapPanel() {
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row flex-1 overflow-hidden" style={{ minHeight: 'clamp(260px, 50vh, 400px)' }}>
+            <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
                 {/* Leaflet Map */}
                 <LeafletMap
                     vessels={filteredVessels}

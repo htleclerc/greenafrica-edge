@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { UserRole, OperationalSite } from '@/types/secure';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 
 // ── Roles available for impersonation (SUPERADMIN can test any role) ────────
 
@@ -105,11 +106,7 @@ export function PostLoginPage() {
                         {t('system_status_online')}
                     </span>
                 </div>
-                <div className="flex items-center gap-3">
-                    {(['EN', 'FR', 'SO', 'AR'] as const).map((l) => (
-                        <button key={l} className="text-xs font-semibold text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors px-1">{l}</button>
-                    ))}
-                </div>
+                <LocaleSwitcher variant="dashboard" />
             </div>
 
             {/* Main */}

@@ -9,7 +9,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export function LandingPage() {
     return (
-        <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <main className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <Navbar activePage="overview" />
             <HeroSection />
             <CapabilitiesSection />

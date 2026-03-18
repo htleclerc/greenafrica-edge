@@ -55,7 +55,7 @@ export function SimulationSection() {
     );
 
     return (
-        <section className="pt-20 pb-16 sm:py-20 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="pt-16 pb-12 sm:py-20 px-3 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background decorative element */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-900/10 rounded-full blur-[150px]" />
 

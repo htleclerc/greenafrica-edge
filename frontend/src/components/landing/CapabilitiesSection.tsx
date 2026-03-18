@@ -34,9 +34,9 @@ export function CapabilitiesSection() {
     ];
 
     return (
-        <section className="pt-20 pb-16 sm:py-20 px-4 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="pt-16 pb-12 sm:py-20 px-3 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
                     {capabilities.map((cap, i) => (
                         <div
                             key={i}

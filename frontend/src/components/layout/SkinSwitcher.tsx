@@ -21,7 +21,7 @@ const SKINS: SkinDef[] = [
 ];
 
 interface SkinSwitcherProps {
-    variant?: 'topbar' | 'settings';
+    variant?: 'topbar' | 'settings' | 'inline';
 }
 
 export function SkinSwitcher({ variant = 'topbar' }: SkinSwitcherProps) {
@@ -117,6 +117,62 @@ export function SkinSwitcher({ variant = 'topbar' }: SkinSwitcherProps) {
                                 {t('skin_mode_light')}
                             </button>
                         </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // ── Inline variant (for use inside profile dropdown) ─────────────────────
+    if (variant === 'inline') {
+        return (
+            <div className="flex flex-col gap-2">
+                {/* Skin options as horizontal pills */}
+                <div className="flex gap-1.5">
+                    {SKINS.map((s) => {
+                        const active = skin === s.id;
+                        return (
+                            <button
+                                key={s.id}
+                                onClick={() => setSkin(s.id)}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-[10px] font-semibold flex-1 justify-center"
+                                style={{
+                                    backgroundColor: active ? `${s.accent}18` : 'var(--os-surface-2)',
+                                    border: active ? `1px solid ${s.accent}50` : '1px solid var(--os-border)',
+                                    color: active ? s.accent : 'var(--os-text-muted)',
+                                }}
+                            >
+                                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: s.accent }} />
+                                {t(s.labelKey).split(' ')[0]}
+                            </button>
+                        );
+                    })}
+                </div>
+                {/* Dark/Light toggle */}
+                {mounted && (
+                    <div className="flex rounded-lg overflow-hidden border border-[var(--os-border)]">
+                        <button
+                            onClick={() => setTheme('dark')}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all"
+                            style={{
+                                backgroundColor: isDark ? 'var(--os-brand-green)' : 'transparent',
+                                color: isDark ? '#fff' : 'var(--os-text-muted)',
+                            }}
+                        >
+                            <Moon className="w-3 h-3" />
+                            {t('skin_mode_dark')}
+                        </button>
+                        <button
+                            onClick={() => setTheme('light')}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all"
+                            style={{
+                                backgroundColor: !isDark ? 'var(--os-brand-green)' : 'transparent',
+                                color: !isDark ? '#fff' : 'var(--os-text-muted)',
+                            }}
+                        >
+                            <Sun className="w-3 h-3" />
+                            {t('skin_mode_light')}
+                        </button>
                     </div>
                 )}
             </div>

@@ -7,6 +7,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 
 function persistDemoRole(role: UserRole) {
     document.cookie = `demo_active=true; path=/; max-age=3600; SameSite=Lax`;
@@ -109,20 +110,7 @@ export function LoginPage() {
                     </div>
                     <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
-                <div className="flex items-center gap-1 sm:gap-3">
-                    {(['FR', 'EN', 'SO'] as const).map((lang) => (
-                        <button
-                            key={lang}
-                            className={`text-xs font-semibold px-2 py-1 rounded-md transition-colors ${
-                                lang === 'FR'
-                                    ? 'bg-emerald-500/15 text-emerald-400'
-                                    : 'text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]'
-                            }`}
-                        >
-                            {lang}
-                        </button>
-                    ))}
-                </div>
+                <LocaleSwitcher variant="navbar" />
             </div>
 
             {/* Main */}

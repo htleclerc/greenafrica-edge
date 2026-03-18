@@ -61,17 +61,19 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
             {/* ── Mobile overlay backdrop ── */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/60 md:hidden"
+                    className="fixed inset-0 bg-black/60 dashboard-mobile-only"
+                    style={{ zIndex: 9998 }}
                     onClick={onMobileClose}
                 />
             )}
 
             {/* ── Sidebar panel ── */}
             <aside
-                className={`fixed left-0 top-0 bottom-0 z-50 flex flex-col py-3 overflow-hidden transition-transform duration-300 ease-in-out md:translate-x-0 md:z-40 ${
+                className={`fixed left-0 top-0 bottom-0 flex flex-col py-3 overflow-hidden transition-transform duration-300 ease-in-out md:translate-x-0 ${
                     mobileOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
                 style={{
+                    zIndex: mobileOpen ? 9999 : 40,
                     width: mobileOpen ? SIDEBAR_EXPANDED : (expanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED),
                     backgroundColor: 'var(--os-surface)',
                     borderRight: '1px solid var(--os-border)',
@@ -82,7 +84,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                 {mobileOpen && (
                     <button
                         onClick={onMobileClose}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors md:hidden"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors dashboard-mobile-only"
                     >
                         <X className="w-5 h-5" />
                     </button>

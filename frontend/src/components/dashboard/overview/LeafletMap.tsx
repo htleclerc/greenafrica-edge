@@ -90,8 +90,15 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
         async function init() {
             // Dynamically import leaflet
             const L = await import('leaflet');
-            // @ts-ignore - CSS import handled by bundler
-            await import('leaflet/dist/leaflet.css');
+
+            // Inject leaflet CSS if not already present
+            if (!document.getElementById('leaflet-css')) {
+                const link = document.createElement('link');
+                link.id = 'leaflet-css';
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+            }
 
             if (cancelled || !containerRef.current) return;
             LRef.current = L;

@@ -430,6 +430,14 @@ body {
     background: var(--background);
     color: var(--foreground);
     font-family: 'Inter', 'Segoe UI', Arial, Helvetica, sans-serif;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+html {
+    width: 100%;
+    overflow-x: hidden;
 }
 
 /* Float animation for decorative elements */
@@ -527,6 +535,181 @@ input[type="range"]::-moz-range-thumb {
     50%       { opacity: 0.3; }
 }
 .animate-blink { animation: blink 1.5s ease-in-out infinite; }
+
+/* ── Navbar responsive rules (plain CSS, no Tailwind breakpoints) ─── */
+.navbar-mobile-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34D399;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.navbar-mobile-hamburger:hover {
+    background: rgba(16, 185, 129, 0.3);
+}
+.navbar-desktop-controls {
+    display: none !important;
+}
+.navbar-desktop-nav {
+    display: none;
+    align-items: center;
+    gap: 4px;
+}
+.navbar-mobile-overlay {
+    display: block;
+}
+
+@media (min-width: 1024px) {
+    .navbar-mobile-hamburger {
+        display: none !important;
+    }
+    .navbar-desktop-controls {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+    }
+    .navbar-desktop-nav {
+        display: flex;
+    }
+    .navbar-mobile-overlay {
+        display: none !important;
+    }
+}
+
+/* ── Dashboard notification dropdown ───────────────────────────────── */
+.notif-dropdown {
+    position: fixed;
+    top: 3.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    z-index: 9990;
+}
+@media (min-width: 640px) {
+    .notif-dropdown {
+        position: absolute;
+        top: 100%;
+        margin-top: 0.5rem;
+        right: 0;
+        left: auto;
+        width: 360px;
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
+/* ── Dashboard profile dropdown ────────────────────────────────────── */
+.profile-dropdown {
+    position: fixed;
+    top: 3.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    z-index: 9990;
+}
+@media (min-width: 640px) {
+    .profile-dropdown {
+        position: absolute;
+        top: 100%;
+        margin-top: 0.5rem;
+        right: 0;
+        left: auto;
+        width: 260px;
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
+/* ── Dashboard TopBar responsive rules ─────────────────────────────── */
+.dashboard-mobile-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34D399;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.dashboard-mobile-hamburger:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+.dashboard-hide-mobile {
+    display: none;
+}
+.dashboard-hide-mobile-sm {
+    display: none;
+}
+.dashboard-kpi-pills {
+    display: none;
+}
+.dashboard-status-label {
+    display: none;
+}
+.dashboard-topbar-extras {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .dashboard-hide-mobile {
+        display: inline;
+    }
+}
+
+@media (min-width: 768px) {
+    .dashboard-topbar-extras {
+        display: contents;
+    }
+}
+
+.dashboard-mobile-only {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .dashboard-mobile-hamburger {
+        display: none;
+    }
+    .dashboard-hide-mobile-sm {
+        display: flex;
+    }
+    .dashboard-status-label {
+        display: inline;
+    }
+    .dashboard-mobile-only {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-kpi-pills {
+        display: flex;
+    }
+}
+
+/* Mobile menu animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+}
+.animate-slideInRight { animation: slideInRight 0.25s ease-out; }
 
 /* Scroll smooth */
 html { scroll-behavior: smooth; }

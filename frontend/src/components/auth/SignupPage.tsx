@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
     Anchor, Shield, ArrowRight, ArrowLeft, CheckCircle,
     Building2, Ship, Eye, EyeOff, AlertCircle,
     Globe, Bell, LayoutDashboard, UserCheck,
 } from 'lucide-react';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 // Registration is handled server-side via /api/auth/register
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -13,19 +15,15 @@ import {
 type EntityType = 'port_authority' | 'shipping_agent';
 
 interface FormData {
-    // Common
     entityType: EntityType | null;
-    // Step 1 – Organization
     jurisdiction: string;
     organizationName: string;
     registryId: string;
     role: string;
-    // Step 2 – Account
     fullName: string;
     email: string;
     password: string;
     confirmPassword: string;
-    // Step 3 – Preferences
     defaultRegion: string;
     accessScope: 'national' | 'regional';
     notifyProForma: boolean;
@@ -35,20 +33,7 @@ interface FormData {
     acceptTerms: boolean;
 }
 
-// ── Role options ───────────────────────────────────────────────────────────────
-
-const PORT_AUTHORITY_ROLES = [
-    { key: 'PORT_OFFICER',    label: 'Port Officer',     description: 'Vessel inspection & compliance monitoring' },
-    { key: 'FINANCE_ADMIN',   label: 'Finance Administrator', description: 'Invoice management, revenue reporting' },
-    { key: 'COMPLIANCE_AUDITOR', label: 'Compliance Auditor', description: 'Audit log review, exemption oversight' },
-    { key: 'SUPERADMIN',      label: 'Platform Administrator', description: 'Full system access — ministry approval required' },
-];
-
-const SHIPPING_AGENT_ROLES = [
-    { key: 'FLEET_MANAGER',   label: 'Fleet Manager',    description: 'Manage vessels, view compliance status' },
-    { key: 'FINANCE_CONTACT', label: 'Finance Contact',  description: 'Invoice payment, pro-forma management' },
-    { key: 'LEGAL_REP',       label: 'Legal Representative', description: 'Exemption applications, bilateral agreements' },
-];
+// ── Static data ───────────────────────────────────────────────────────────────
 
 const JURISDICTIONS = [
     'Somaliland — Gulf of Aden EEZ',
@@ -133,7 +118,8 @@ const INITIAL: FormData = {
 };
 
 export function SignupPage() {
-    const [step, setStep] = React.useState(0); // 0 = entity type selection
+    const t = useTranslations('Signup');
+    const [step, setStep] = React.useState(0);
     const [form, setForm] = React.useState<FormData>(INITIAL);
     const [showPwd, setShowPwd]       = React.useState(false);
     const [showConfirm, setShowConfirm] = React.useState(false);
@@ -144,23 +130,40 @@ export function SignupPage() {
     const set = (key: keyof FormData, value: FormData[keyof FormData]) =>
         setForm((f) => ({ ...f, [key]: value }));
 
-    // ── Validation per step ────────────────────────────────────────────────────
+    const isPortAuth = form.entityType === 'port_authority';
+
+    const PORT_AUTHORITY_ROLES = [
+        { key: 'PORT_OFFICER',       label: t('role_port_officer'),       description: t('role_port_officer_desc') },
+        { key: 'FINANCE_ADMIN',      label: t('role_finance_admin'),      description: t('role_finance_admin_desc') },
+        { key: 'COMPLIANCE_AUDITOR', label: t('role_compliance_auditor'), description: t('role_compliance_auditor_desc') },
+        { key: 'SUPERADMIN',         label: t('role_superadmin'),         description: t('role_superadmin_desc') },
+    ];
+
+    const SHIPPING_AGENT_ROLES = [
+        { key: 'FLEET_MANAGER',   label: t('role_fleet_manager'),   description: t('role_fleet_manager_desc') },
+        { key: 'FINANCE_CONTACT', label: t('role_finance_contact'), description: t('role_finance_contact_desc') },
+        { key: 'LEGAL_REP',       label: t('role_legal_rep'),       description: t('role_legal_rep_desc') },
+    ];
+
+    const roles = isPortAuth ? PORT_AUTHORITY_ROLES : SHIPPING_AGENT_ROLES;
+
+    // ── Validation per step ──────────────────────────────────────────────────
 
     function validate(): string {
         if (step === 1) {
-            if (!form.jurisdiction) return 'Please select your jurisdiction.';
-            if (!form.organizationName.trim()) return 'Organization name is required.';
-            if (!form.registryId.trim()) return 'Registry / IMO ID is required.';
-            if (!form.role) return 'Please select your functional role.';
+            if (!form.jurisdiction) return t('error_jurisdiction');
+            if (!form.organizationName.trim()) return t('error_org_name');
+            if (!form.registryId.trim()) return t('error_registry');
+            if (!form.role) return t('error_role');
         }
         if (step === 2) {
-            if (!form.fullName.trim()) return 'Full name is required.';
-            if (!form.email.trim() || !form.email.includes('@')) return 'Valid email address required.';
-            if (form.password.length < 8) return 'Password must be at least 8 characters.';
-            if (form.password !== form.confirmPassword) return 'Passwords do not match.';
+            if (!form.fullName.trim()) return t('error_fullname');
+            if (!form.email.trim() || !form.email.includes('@')) return t('error_email');
+            if (form.password.length < 8) return t('error_password_length');
+            if (form.password !== form.confirmPassword) return t('error_password_match');
         }
         if (step === 3) {
-            if (!form.acceptTerms) return 'You must accept the terms to continue.';
+            if (!form.acceptTerms) return t('error_terms');
         }
         return '';
     }
@@ -171,8 +174,6 @@ export function SignupPage() {
         if (err) { setError(err); return; }
         if (step < 3) { setStep(step + 1); return; }
 
-        // Step 3 → Server-side registration via API route
-        // Creates auth user + profile + registration request atomically
         setLoading(true);
         try {
             const entityType = form.entityType === 'port_authority' ? 'PORT_AUTHORITY' : 'SHIPPING_AGENT';
@@ -201,7 +202,7 @@ export function SignupPage() {
             const result = await res.json();
 
             if (!res.ok) {
-                setError(result.error || 'Registration failed.');
+                setError(result.error || t('error_registration_failed'));
                 setLoading(false);
                 return;
             }
@@ -209,32 +210,31 @@ export function SignupPage() {
             setLoading(false);
             window.location.href = '/pending-approval';
         } catch {
-            setError('Server connection error. Please try again.');
+            setError(t('error_server'));
             setLoading(false);
         }
     }
 
-    // ── Success screen ─────────────────────────────────────────────────────────
+    // ── Success screen ───────────────────────────────────────────────────────
 
     if (submitted) {
         return (
-            <AuthShell>
+            <AuthShell t={t}>
                 <div className="w-full max-w-md flex flex-col items-center text-center">
                     <div className="w-16 h-16 rounded-2xl border border-[#00D97E]/30 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(0,217,126,0.15)]" style={{ backgroundColor: 'var(--ais-page-card)' }}>
                         <CheckCircle className="w-8 h-8 text-[#00D97E]" />
                     </div>
-                    <h2 className="text-2xl font-bold text-[var(--os-text-primary)] mb-2">Request Submitted</h2>
+                    <h2 className="text-2xl font-bold text-[var(--os-text-primary)] mb-2">{t('success_title')}</h2>
                     <p className="text-xs text-[var(--os-text-muted)] mb-6 leading-relaxed max-w-xs">
-                        Your access request for <span className="text-[var(--os-text-primary)] font-semibold">{form.organizationName}</span> has been received.
-                        A government administrator will review and activate your account within <span className="text-[#00D97E] font-semibold">24–48 hours</span>.
+                        {t('success_message', { org: form.organizationName })}
                     </p>
                     <div className="w-full rounded-2xl p-5 border mb-5" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
                         <div className="flex flex-col gap-3 text-left">
                             {[
-                                { label: 'Organization', value: form.organizationName },
-                                { label: 'Registry ID',  value: form.registryId },
-                                { label: 'Account',      value: form.email },
-                                { label: 'Role',         value: form.role.replace('_', ' ') },
+                                { label: t('success_org'),      value: form.organizationName },
+                                { label: t('success_registry'), value: form.registryId },
+                                { label: t('success_account'),  value: form.email },
+                                { label: t('success_role'),     value: form.role.replace('_', ' ') },
                             ].map(({ label, value }) => (
                                 <div key={label} className="flex justify-between text-xs">
                                     <span className="text-[var(--os-text-muted)]">{label}</span>
@@ -243,11 +243,8 @@ export function SignupPage() {
                             ))}
                         </div>
                     </div>
-                    <a
-                        href="/login"
-                        className="text-xs text-[#38BDF8] hover:underline"
-                    >
-                        ← Return to login
+                    <a href="/login" className="text-xs text-[#38BDF8] hover:underline">
+                        {t('success_back_login')}
                     </a>
                 </div>
             </AuthShell>
@@ -258,21 +255,20 @@ export function SignupPage() {
 
     if (step === 0) {
         return (
-            <AuthShell>
+            <AuthShell t={t}>
                 <div className="w-full max-w-sm sm:max-w-lg flex flex-col items-center">
                     <LogoBlock />
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00D97E]/60 mb-8">
-                        New Account Registration
+                        {t('new_account_registration')}
                     </p>
 
                     <div className="w-full rounded-2xl p-4 sm:p-6 border" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
-                        <h2 className="text-base font-bold text-[var(--os-text-primary)] mb-1">Who are you registering as?</h2>
+                        <h2 className="text-base font-bold text-[var(--os-text-primary)] mb-1">{t('entity_title')}</h2>
                         <p className="text-xs text-[var(--os-text-muted)] mb-5">
-                            Select the entity type that best describes your organization. Your access scope and available features will be configured accordingly.
+                            {t('entity_subtitle')}
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                            {/* Port Authority card */}
                             <button
                                 onClick={() => { set('entityType', 'port_authority'); setStep(1); }}
                                 className={`flex flex-col items-start gap-3 p-5 rounded-xl border text-left transition-all hover:border-[#00D97E]/50 hover:bg-[rgba(0,217,126,0.04)] group ${
@@ -285,19 +281,18 @@ export function SignupPage() {
                                     <Building2 className="w-5 h-5 text-[#00D97E]" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-[var(--os-text-primary)] mb-1">Port Authority</p>
+                                    <p className="text-sm font-bold text-[var(--os-text-primary)] mb-1">{t('port_authority')}</p>
                                     <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
-                                        Government agency, ministry, or port regulatory body. Full EEZ oversight and tax enforcement access.
+                                        {t('port_authority_desc')}
                                     </p>
                                 </div>
                                 <div className="mt-auto flex flex-wrap gap-1">
-                                    {['Compliance', 'Revenue', 'Audit'].map((t) => (
-                                        <span key={t} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[rgba(0,217,126,0.08)] text-[#00D97E]">{t}</span>
+                                    {[t('tag_compliance'), t('tag_revenue'), t('tag_audit')].map((tag) => (
+                                        <span key={tag} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[rgba(0,217,126,0.08)] text-[#00D97E]">{tag}</span>
                                     ))}
                                 </div>
                             </button>
 
-                            {/* Shipping Agent card */}
                             <button
                                 onClick={() => { set('entityType', 'shipping_agent'); setStep(1); }}
                                 className={`flex flex-col items-start gap-3 p-5 rounded-xl border text-left transition-all hover:border-[#38BDF8]/50 hover:bg-[rgba(56,189,248,0.04)] group ${
@@ -310,22 +305,22 @@ export function SignupPage() {
                                     <Ship className="w-5 h-5 text-[#38BDF8]" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-[var(--os-text-primary)] mb-1">Armateur / Shipping Agent</p>
+                                    <p className="text-sm font-bold text-[var(--os-text-primary)] mb-1">{t('shipping_agent')}</p>
                                     <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
-                                        Ship owner, operator, or maritime agent. Access vessel compliance status, invoices, and pro-forma management.
+                                        {t('shipping_agent_desc')}
                                     </p>
                                 </div>
                                 <div className="mt-auto flex flex-wrap gap-1">
-                                    {['Vessels', 'Invoices', 'Pro-forma'].map((t) => (
-                                        <span key={t} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[rgba(56,189,248,0.08)] text-[#38BDF8]">{t}</span>
+                                    {[t('tag_vessels'), t('tag_invoices'), t('tag_proforma')].map((tag) => (
+                                        <span key={tag} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[rgba(56,189,248,0.08)] text-[#38BDF8]">{tag}</span>
                                     ))}
                                 </div>
                             </button>
                         </div>
 
                         <p className="text-center text-xs text-[var(--os-text-muted)]">
-                            Already have an account?{' '}
-                            <a href="/login" className="text-[#38BDF8] hover:underline">Sign in</a>
+                            {t('already_have_account')}{' '}
+                            <a href="/login" className="text-[#38BDF8] hover:underline">{t('sign_in')}</a>
                         </p>
                     </div>
                 </div>
@@ -333,21 +328,14 @@ export function SignupPage() {
         );
     }
 
-    // ── Steps 1–3 ─────────────────────────────────────────────────────────────
+    // ── Steps 1–3 ───────────────────────────────────────────────────────────
 
-    const isPortAuth = form.entityType === 'port_authority';
-    const roles = isPortAuth ? PORT_AUTHORITY_ROLES : SHIPPING_AGENT_ROLES;
-    const STEP_TITLES = ['', 'Organization Profile', 'Account Credentials', 'Preferences & Access'];
-    const STEP_SUBS   = ['',
-        'Tell us about your organization. This determines your data access scope.',
-        'Set up your secure login credentials.',
-        'Configure your dashboard defaults and notification preferences.',
-    ];
+    const STEP_TITLES = ['', t('step_org_title'), t('step_account_title'), t('step_prefs_title')];
+    const STEP_SUBS   = ['', t('step_org_sub'), t('step_account_sub'), t('step_prefs_sub')];
 
     return (
-        <AuthShell>
+        <AuthShell t={t}>
             <div className="w-full max-w-sm sm:max-w-lg flex flex-col items-center">
-                {/* Logo */}
                 <LogoBlock />
                 <div className="flex items-center gap-2 mb-6">
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
@@ -356,13 +344,13 @@ export function SignupPage() {
                             : 'bg-[rgba(56,189,248,0.08)] border-[#38BDF8]/30 text-[#38BDF8]'
                     }`}>
                         {isPortAuth ? <Building2 className="w-3 h-3" /> : <Ship className="w-3 h-3" />}
-                        {isPortAuth ? 'Port Authority' : 'Armateur / Shipping Agent'}
+                        {isPortAuth ? t('port_authority') : t('shipping_agent')}
                     </div>
                     <button
                         onClick={() => { setStep(0); setError(''); }}
                         className="text-[10px] text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
                     >
-                        Change →
+                        {t('change_type')}
                     </button>
                 </div>
 
@@ -376,40 +364,38 @@ export function SignupPage() {
                     {step === 1 && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>Coastal State / Jurisdiction</FieldLabel>
+                                <FieldLabel>{t('label_jurisdiction')}</FieldLabel>
                                 <FieldSelect value={form.jurisdiction} onChange={(e) => set('jurisdiction', e.target.value)}>
-                                    <option value="">— Select jurisdiction —</option>
+                                    <option value="">{t('placeholder_jurisdiction')}</option>
                                     {JURISDICTIONS.map((j) => <option key={j} value={j}>{j}</option>)}
                                 </FieldSelect>
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>{isPortAuth ? 'Ministry / Port Authority Name' : 'Company / Shipping Company Name'}</FieldLabel>
+                                <FieldLabel>{isPortAuth ? t('label_org_name_port') : t('label_org_name_ship')}</FieldLabel>
                                 <FieldInput
                                     type="text"
-                                    placeholder={isPortAuth ? 'e.g. Berbera Port Authority' : 'e.g. MSC Mediterranean Shipping'}
+                                    placeholder={isPortAuth ? t('placeholder_org_port') : t('placeholder_org_ship')}
                                     value={form.organizationName}
                                     onChange={(e) => set('organizationName', e.target.value)}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>{isPortAuth ? 'Government Registry ID' : 'IMO Operator / Company Number'}</FieldLabel>
+                                <FieldLabel>{isPortAuth ? t('label_registry_port') : t('label_registry_ship')}</FieldLabel>
                                 <FieldInput
                                     type="text"
-                                    placeholder={isPortAuth ? 'e.g. SL-GOV-2024-0042' : 'e.g. IMO-OP-5812341'}
+                                    placeholder={isPortAuth ? t('placeholder_registry_port') : t('placeholder_registry_ship')}
                                     value={form.registryId}
                                     onChange={(e) => set('registryId', e.target.value)}
                                 />
                                 <p className="text-[10px] text-[var(--os-text-muted)]">
-                                    {isPortAuth
-                                        ? 'Your official government registry number, used for verification.'
-                                        : 'Your IMO-registered operator or company identifier.'}
+                                    {isPortAuth ? t('hint_registry_port') : t('hint_registry_ship')}
                                 </p>
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <FieldLabel>Functional Role</FieldLabel>
+                                <FieldLabel>{t('label_role')}</FieldLabel>
                                 <div className="flex flex-col gap-2">
                                     {roles.map((r) => {
                                         const isSelected = form.role === r.key;
@@ -436,7 +422,7 @@ export function SignupPage() {
                                                     <div className="flex items-center gap-2">
                                                         <p className="text-xs font-semibold text-[var(--os-text-primary)]">{r.label}</p>
                                                         {isRestricted && (
-                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(245,158,11,0.1)] text-[#F59E0B] font-bold">Ministry Only</span>
+                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(245,158,11,0.1)] text-[#F59E0B] font-bold">{t('ministry_only')}</span>
                                                         )}
                                                     </div>
                                                     <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5">{r.description}</p>
@@ -453,31 +439,31 @@ export function SignupPage() {
                     {step === 2 && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>Full Name</FieldLabel>
+                                <FieldLabel>{t('label_fullname')}</FieldLabel>
                                 <FieldInput
                                     type="text"
-                                    placeholder="e.g. Hassan Warsame"
+                                    placeholder={t('placeholder_fullname')}
                                     value={form.fullName}
                                     onChange={(e) => set('fullName', e.target.value)}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>{isPortAuth ? 'Official Email (.gov.sl)' : 'Professional Email'}</FieldLabel>
+                                <FieldLabel>{isPortAuth ? t('label_email_port') : t('label_email_ship')}</FieldLabel>
                                 <FieldInput
                                     type="email"
-                                    placeholder={isPortAuth ? 'name@berbera.gov.sl' : 'name@company.com'}
+                                    placeholder={isPortAuth ? t('placeholder_email_port') : t('placeholder_email_ship')}
                                     value={form.email}
                                     onChange={(e) => set('email', e.target.value)}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>Password</FieldLabel>
+                                <FieldLabel>{t('label_password')}</FieldLabel>
                                 <div className="relative">
                                     <FieldInput
                                         type={showPwd ? 'text' : 'password'}
-                                        placeholder="Min. 8 characters"
+                                        placeholder={t('placeholder_password')}
                                         value={form.password}
                                         onChange={(e) => set('password', e.target.value)}
                                         className="pr-10"
@@ -490,18 +476,15 @@ export function SignupPage() {
                                         {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
-                                {/* Password strength */}
-                                {form.password && (
-                                    <PasswordStrength password={form.password} />
-                                )}
+                                {form.password && <PasswordStrength password={form.password} t={t} />}
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <FieldLabel>Confirm Password</FieldLabel>
+                                <FieldLabel>{t('label_confirm_password')}</FieldLabel>
                                 <div className="relative">
                                     <FieldInput
                                         type={showConfirm ? 'text' : 'password'}
-                                        placeholder="Repeat your password"
+                                        placeholder={t('placeholder_confirm_password')}
                                         value={form.confirmPassword}
                                         onChange={(e) => set('confirmPassword', e.target.value)}
                                         className="pr-10"
@@ -515,15 +498,14 @@ export function SignupPage() {
                                     </button>
                                 </div>
                                 {form.confirmPassword && form.password !== form.confirmPassword && (
-                                    <p className="text-[10px] text-[#EF4444]">Passwords do not match.</p>
+                                    <p className="text-[10px] text-[#EF4444]">{t('passwords_no_match')}</p>
                                 )}
                             </div>
 
-                            {/* Security notice */}
                             <div className="flex gap-2.5 p-3 rounded-xl bg-[rgba(245,158,11,0.06)] border border-[#F59E0B]/20">
                                 <Shield className="w-3.5 h-3.5 text-[#F59E0B] flex-shrink-0 mt-0.5" />
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
-                                    Your credentials are encrypted with AES-256. A government administrator must approve your account before you can log in.
+                                    {t('security_notice')}
                                 </p>
                             </div>
                         </div>
@@ -532,40 +514,28 @@ export function SignupPage() {
                     {/* ── Step 3: Preferences ── */}
                     {step === 3 && (
                         <div className="flex flex-col gap-5">
-                            {/* Default views */}
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2 text-[var(--os-text-secondary)]">
                                     <LayoutDashboard className="w-3.5 h-3.5" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Default Views</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">{t('section_default_views')}</span>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <FieldLabel>Default Map Region</FieldLabel>
+                                    <FieldLabel>{t('label_default_region')}</FieldLabel>
                                     <FieldSelect value={form.defaultRegion} onChange={(e) => set('defaultRegion', e.target.value)}>
                                         {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                                     </FieldSelect>
                                 </div>
                             </div>
 
-                            {/* Data access scope */}
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2 text-[var(--os-text-secondary)]">
                                     <Globe className="w-3.5 h-3.5" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Data Access Scope</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">{t('section_data_access')}</span>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     {[
-                                        {
-                                            key: 'national' as const,
-                                            label: 'Full National Scope',
-                                            desc: 'Access all maritime zones, ports, jurisdictions, and sovereign cargo data.',
-                                            available: isPortAuth,
-                                        },
-                                        {
-                                            key: 'regional' as const,
-                                            label: 'Regional / Port Authority',
-                                            desc: 'Limited to specific coastal regions, ports, and your registered vessels.',
-                                            available: true,
-                                        },
+                                        { key: 'national' as const, label: t('scope_national'), desc: t('scope_national_desc'), available: isPortAuth },
+                                        { key: 'regional' as const, label: t('scope_regional'), desc: t('scope_regional_desc'), available: true },
                                     ].map((opt) => {
                                         const isSelected = form.accessScope === opt.key;
                                         return (
@@ -596,18 +566,17 @@ export function SignupPage() {
                                 </div>
                             </div>
 
-                            {/* Notifications */}
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2 text-[var(--os-text-secondary)]">
                                     <Bell className="w-3.5 h-3.5" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Notification Preferences</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">{t('section_notifications')}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     {[
-                                        { key: 'notifyProForma' as const,  label: 'New pro-forma invoice',  icon: '📄' },
-                                        { key: 'notifyCo2' as const,       label: 'Carbon credit issuance', icon: '🌿' },
-                                        { key: 'notifyRevenue' as const,   label: 'Revenue thresholds',     icon: '💰' },
-                                        { key: 'notifyWeekly' as const,    label: 'Weekly digest',          icon: '📊' },
+                                        { key: 'notifyProForma' as const,  label: t('notif_proforma'), icon: '📄' },
+                                        { key: 'notifyCo2' as const,       label: t('notif_co2'),      icon: '🌿' },
+                                        { key: 'notifyRevenue' as const,   label: t('notif_revenue'),  icon: '💰' },
+                                        { key: 'notifyWeekly' as const,    label: t('notif_weekly'),   icon: '📊' },
                                     ].map(({ key, label, icon }) => (
                                         <button
                                             key={key}
@@ -628,7 +597,6 @@ export function SignupPage() {
                                 </div>
                             </div>
 
-                            {/* Terms */}
                             <button
                                 onClick={() => set('acceptTerms', !form.acceptTerms)}
                                 className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--os-border)] text-left hover:border-[var(--os-border-strong)] transition-colors"
@@ -642,16 +610,15 @@ export function SignupPage() {
                                     <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
                                 </div>
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
-                                    I certify that the information provided is accurate. I accept the{' '}
-                                    <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>Terms of Service</a>,{' '}
-                                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>Privacy Protocol</a>, and the{' '}
-                                    <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>Maritime Carbon Act 2024</a>.
+                                    {t('terms_text')}{' '}
+                                    <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
+                                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
+                                    <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
                                 </p>
                             </button>
                         </div>
                     )}
 
-                    {/* Error */}
                     {error && (
                         <div className="flex items-center gap-2 mt-4 px-3 py-2.5 rounded-xl bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20">
                             <AlertCircle className="w-3.5 h-3.5 text-[#EF4444] flex-shrink-0" />
@@ -659,14 +626,13 @@ export function SignupPage() {
                         </div>
                     )}
 
-                    {/* Navigation */}
                     <div className="flex items-center gap-3 mt-6">
                         <button
                             onClick={() => { setError(''); setStep(step - 1); }}
                             className="flex items-center gap-1.5 h-11 px-4 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" />
-                            Back
+                            {t('btn_back')}
                         </button>
 
                         <button
@@ -678,7 +644,7 @@ export function SignupPage() {
                                 <span className="w-4 h-4 border-2 border-[#060D1A]/30 border-t-[#060D1A] rounded-full animate-spin" />
                             ) : (
                                 <>
-                                    {step === 3 ? 'Submit Request' : 'Continue'}
+                                    {step === 3 ? t('btn_submit') : t('btn_continue')}
                                     {step < 3 && <ArrowRight className="w-4 h-4" />}
                                 </>
                             )}
@@ -686,8 +652,8 @@ export function SignupPage() {
                     </div>
 
                     <p className="text-center text-xs text-[var(--os-text-muted)] mt-4">
-                        Step {step} of 3 · Already registered?{' '}
-                        <a href="/login" className="text-[#38BDF8] hover:underline">Sign in</a>
+                        {t('step_x_of_y', { step, total: 3 })} · {t('already_registered')}{' '}
+                        <a href="/login" className="text-[#38BDF8] hover:underline">{t('sign_in')}</a>
                     </p>
                 </div>
             </div>
@@ -697,7 +663,7 @@ export function SignupPage() {
 
 // ── Password strength meter ───────────────────────────────────────────────────
 
-function PasswordStrength({ password }: { password: string }) {
+function PasswordStrength({ password, t }: { password: string; t: (key: string) => string }) {
     const checks = [
         password.length >= 8,
         /[A-Z]/.test(password),
@@ -705,7 +671,7 @@ function PasswordStrength({ password }: { password: string }) {
         /[^A-Za-z0-9]/.test(password),
     ];
     const strength = checks.filter(Boolean).length;
-    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    const labels = ['', t('strength_weak'), t('strength_fair'), t('strength_good'), t('strength_strong')];
     const colors = ['', '#EF4444', '#F59E0B', '#38BDF8', '#22C55E'];
 
     return (
@@ -739,32 +705,23 @@ function LogoBlock() {
     );
 }
 
-function AuthShell({ children }: { children: React.ReactNode }) {
+function AuthShell({ children, t }: { children: React.ReactNode; t: (key: string) => string }) {
     return (
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--os-bg)', color: 'var(--os-text-primary)' }}>
-            {/* Top bar */}
             <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full os-dot-online animate-blink" />
-                    <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase">System Online</span>
+                    <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase">{t('system_online')}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    {(['EN', 'SO', 'AR'] as const).map((lang) => (
-                        <button key={lang} className={`text-xs font-semibold px-2 py-1 rounded-md transition-colors ${
-                            lang === 'EN' ? 'bg-[var(--os-surface-2)] text-[var(--os-text-primary)]' : 'text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]'
-                        }`}>{lang}</button>
-                    ))}
-                </div>
+                <LocaleSwitcher variant="dashboard" />
             </div>
 
-            {/* Content */}
             <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
                 {children}
             </div>
 
-            {/* Bottom bar */}
             <div className="flex items-center justify-between px-6 py-2 text-[10px] text-[var(--os-text-muted)] border-t" style={{ borderColor: 'var(--os-border)' }}>
-                <span>© 2025 Government of Somaliland</span>
+                <span>{t('copyright')}</span>
                 <div className="flex items-center gap-4">
                     <span>BER-DC1</span>
                     <span>v1.2.4-secure</span>

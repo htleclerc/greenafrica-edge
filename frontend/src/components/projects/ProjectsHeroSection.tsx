@@ -11,7 +11,7 @@ export function ProjectsHeroSection() {
     const t = useTranslations('Projects');
 
     return (
-        <section className="relative pt-14 sm:pt-20 md:pt-28 pb-12 sm:pb-16 md:pb-24 px-3 sm:px-4 md:px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
+        <section className="relative pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 md:pb-24 px-3 sm:px-4 md:px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             {/* Background gradients */}
             <div className="absolute top-0 left-1/3 w-[300px] sm:w-[500px] lg:w-[700px] h-[450px] bg-emerald-900/15 rounded-full blur-[160px]" />
             <div className="absolute bottom-0 right-1/4 w-[300px] sm:w-[500px] h-[350px] bg-teal-900/10 rounded-full blur-[130px]" />

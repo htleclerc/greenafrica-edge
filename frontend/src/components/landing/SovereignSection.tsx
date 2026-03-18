@@ -8,7 +8,7 @@ export function SovereignSection() {
     const t = useTranslations('Landing');
 
     return (
-        <section className="pt-20 pb-16 sm:py-20 px-4 sm:px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
+        <section className="pt-16 pb-12 sm:py-20 px-3 sm:px-6 relative overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg-alt)' }}>
             {/* Decorative gradient */}
             <div className="absolute top-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-emerald-900/20 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
 
