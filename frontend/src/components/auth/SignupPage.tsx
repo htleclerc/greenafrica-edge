@@ -655,6 +655,14 @@ export function SignupPage() {
                         {t('step_x_of_y', { step, total: 3 })} · {t('already_registered')}{' '}
                         <a href="/login" className="text-[#38BDF8] hover:underline">{t('sign_in')}</a>
                     </p>
+
+                    <div className="flex items-center justify-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
+                        <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_privacy')}</a>
+                        <span>·</span>
+                        <a href="/terms-of-service?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_tos')}</a>
+                        <span>·</span>
+                        <a href="/security-audit?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_maritime')}</a>
+                    </div>
                 </div>
             </div>
 
