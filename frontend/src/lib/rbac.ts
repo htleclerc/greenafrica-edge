@@ -17,6 +17,8 @@ import { UserRole } from '@/types/secure';
  * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │
  * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │
  * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │
+ * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │
+ * │ my-fleet         │ ✗            │ ✗            │ ✓             │ ✓            │
  * │ green-ledger     │ ✓            │ ✗            │ ✗             │ ✓            │
  * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │
  * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │
@@ -32,6 +34,8 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'my-fleet':     [UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'green-ledger': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],

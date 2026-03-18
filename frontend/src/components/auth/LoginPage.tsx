@@ -101,24 +101,26 @@ export function LoginPage() {
             className="min-h-screen flex flex-col"
             style={{ backgroundColor: 'var(--os-bg)', color: 'var(--os-text-primary)' }}
         >
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
-                {/* Logo — home link */}
-                <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                        </svg>
+            {/* Top bar — same h-16 as public Navbar */}
+            <div className="border-b" style={{ borderColor: 'var(--os-border)' }}>
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
+                    {/* Logo — home link */}
+                    <a href="/" className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                                <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
+                            </svg>
+                        </div>
+                        <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
+                    </a>
+                    {/* Online indicator — center (dot only on mobile) */}
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full os-dot-online animate-blink flex-shrink-0" />
+                        <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase auth-hide-mobile">{t('system_status_online')}</span>
                     </div>
-                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
-                </a>
-                {/* Online indicator — center (dot only on mobile) */}
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full os-dot-online animate-blink flex-shrink-0" />
-                    <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase auth-hide-mobile">{t('system_status_online')}</span>
+                    {/* Locale switcher — right */}
+                    <LocaleSwitcher variant="dashboard" />
                 </div>
-                {/* Locale switcher — right */}
-                <LocaleSwitcher variant="dashboard" />
             </div>
 
             {/* Main */}

@@ -11,6 +11,7 @@ import type {
     ExemptionRow,
     AuditLogRow,
     CarbonProjectRow,
+    DisputeRow,
 } from '@/types/database';
 
 import type {
@@ -21,6 +22,7 @@ import type {
     Exemption,
     AuditLogEntry,
     CarbonProject,
+    Dispute,
 } from '@/types/secure';
 
 import {
@@ -35,6 +37,8 @@ import {
     ProjectType,
     ProjectStatus,
     VerificationStandard,
+    DisputeStatus,
+    DisputeReason,
 } from '@/types/secure';
 
 // ── Vessel ──────────────────────────────────────────────────────────────────
@@ -177,6 +181,34 @@ export function rowToCarbonProject(row: CarbonProjectRow): CarbonProject {
         fundingUsd: Number(row.funding_usd),
         sdgGoals: row.sdg_goals,
         imageUrl: row.image_url ?? undefined,
+    };
+}
+
+// ── Dispute ─────────────────────────────────────────────────────────────────
+
+export function rowToDispute(row: DisputeRow): Dispute {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = row as Record<string, any>;
+    return {
+        id: row.id,
+        ref: row.ref ?? row.id,
+        transactionId: row.transaction_id,
+        transactionRef: r.transaction_ref ?? '',
+        vesselId: row.vessel_id,
+        vesselName: r.vessel_name ?? '',
+        submittedBy: row.submitted_by,
+        submittedByName: r.submitted_by_name ?? '',
+        reason: row.reason as DisputeReason,
+        description: row.description,
+        evidenceUrls: row.evidence_urls ?? [],
+        status: row.status as DisputeStatus,
+        reviewerId: row.reviewer_id,
+        reviewerName: r.reviewer_name ?? null,
+        reviewNote: row.review_note,
+        originalAmountUsd: Number(row.original_amount_usd),
+        revisedAmountUsd: row.revised_amount_usd != null ? Number(row.revised_amount_usd) : null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
     };
 }
 

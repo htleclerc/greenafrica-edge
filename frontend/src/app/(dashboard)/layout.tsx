@@ -21,6 +21,8 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/simulator'))   return { key: 'simulator',    label: 'Simulateur de Taxe Carbone' };
     if (pathname.startsWith('/dashboard/vessels'))     return { key: 'vessels',      label: 'Navires & Conformité' };
     if (pathname.startsWith('/dashboard/invoices'))    return { key: 'invoices',     label: 'Factures & Paiements' };
+    if (pathname.startsWith('/dashboard/disputes'))    return { key: 'disputes',     label: 'Contestations' };
+    if (pathname.startsWith('/dashboard/my-fleet'))    return { key: 'my-fleet',     label: 'Ma Flotte' };
     if (pathname.startsWith('/dashboard/projects'))    return { key: 'green-ledger', label: 'Green Ledger' };
     if (pathname.startsWith('/dashboard/alerts'))      return { key: 'alerts',       label: 'Alertes & Exceptions' };
     if (pathname.startsWith('/dashboard/reports'))     return { key: 'analytics',    label: 'Analytics & Rapports' };

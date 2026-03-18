@@ -265,6 +265,40 @@ export interface Database {
                 };
                 Update: Partial<Database['public']['Tables']['carbon_projects']['Insert']>;
             };
+            disputes: {
+                Row: {
+                    id: string;
+                    ref: string;
+                    transaction_id: string;
+                    vessel_id: string;
+                    submitted_by: string;
+                    reason: DbDisputeReason;
+                    description: string;
+                    evidence_urls: string[];
+                    status: DbDisputeStatus;
+                    reviewer_id: string | null;
+                    review_note: string | null;
+                    original_amount_usd: number;
+                    revised_amount_usd: number | null;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    transaction_id: string;
+                    vessel_id: string;
+                    submitted_by: string;
+                    reason: DbDisputeReason;
+                    description: string;
+                    evidence_urls?: string[];
+                    status?: DbDisputeStatus;
+                    reviewer_id?: string | null;
+                    review_note?: string | null;
+                    original_amount_usd: number;
+                    revised_amount_usd?: number | null;
+                };
+                Update: Partial<Database['public']['Tables']['disputes']['Insert']>;
+            };
             registration_requests: {
                 Row: {
                     id: string;
@@ -333,6 +367,8 @@ export interface Database {
             project_status: DbProjectStatus;
             verification_standard: DbVerificationStandard;
             tax_config_status: DbTaxConfigStatus;
+            dispute_status: DbDisputeStatus;
+            dispute_reason: DbDisputeReason;
             registration_status: DbRegistrationStatus;
             registration_entity_type: DbRegistrationEntityType;
         };
@@ -349,12 +385,14 @@ export type DbJurisdictionZone = 'EEZ' | 'PORT_VICINITY' | 'TRANSIT_LANE';
 export type DbTransactionType = 'ENTRY_TAX' | 'TRANSIT_FEE' | 'PORT_STAY';
 export type DbTransactionStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'EXEMPT' | 'DISPUTED';
 export type DbExemptionReason = 'MILITARY' | 'HUMANITARIAN' | 'SCIENTIFIC' | 'UN_AGENCY' | 'OTHER';
-export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED';
+export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED' | 'DISPUTE_FILED' | 'DISPUTE_REVIEWED';
 export type DbAuditSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 export type DbProjectType = 'BLUE_CARBON' | 'REFORESTATION' | 'SOLAR' | 'WIND' | 'METHANE_CAPTURE' | 'ENERGY_EFFICIENCY';
 export type DbProjectStatus = 'ACTIVE' | 'PENDING' | 'COMPLETED' | 'SUSPENDED' | 'UNDER_REVIEW';
 export type DbVerificationStandard = 'VERRA_VCS' | 'GOLD_STANDARD' | 'IMO_DCS' | 'PENDING_VERIFICATION';
 export type DbTaxConfigStatus = 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
+export type DbDisputeStatus = 'OPEN' | 'UNDER_REVIEW' | 'ACCEPTED' | 'REJECTED' | 'ESCALATED';
+export type DbDisputeReason = 'EMISSION_CALCULATION' | 'TAX_RATE' | 'ZONE_CLASSIFICATION' | 'VESSEL_DATA' | 'OTHER';
 export type DbRegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'MORE_INFO';
 export type DbRegistrationEntityType = 'PORT_AUTHORITY' | 'SHIPPING_AGENT' | 'FINANCE_ADMIN' | 'INSTITUTION';
 
@@ -368,4 +406,5 @@ export type TaxConfigurationRow = Database['public']['Tables']['tax_configuratio
 export type ExemptionRow = Database['public']['Tables']['exemptions']['Row'];
 export type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'];
 export type CarbonProjectRow = Database['public']['Tables']['carbon_projects']['Row'];
+export type DisputeRow = Database['public']['Tables']['disputes']['Row'];
 export type RegistrationRequestRow = Database['public']['Tables']['registration_requests']['Row'];

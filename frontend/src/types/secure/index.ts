@@ -167,6 +167,8 @@ export enum AuditAction {
     REPORT_EXPORTED         = 'REPORT_EXPORTED',
     USER_CREATED            = 'USER_CREATED',
     TRANSACTION_UPDATED     = 'TRANSACTION_UPDATED',
+    DISPUTE_FILED           = 'DISPUTE_FILED',
+    DISPUTE_REVIEWED        = 'DISPUTE_REVIEWED',
 }
 
 export enum AuditSeverity {
@@ -310,6 +312,46 @@ export interface CarbonProject {
     fundingUsd: number;
     sdgGoals: number[];         // UN SDG numbers e.g. [13, 14, 15]
     imageUrl?: string;
+}
+
+// ── Disputes ─────────────────────────────────────────────────────────────────
+
+export enum DisputeStatus {
+    OPEN            = 'OPEN',
+    UNDER_REVIEW    = 'UNDER_REVIEW',
+    ACCEPTED        = 'ACCEPTED',
+    REJECTED        = 'REJECTED',
+    ESCALATED       = 'ESCALATED',
+}
+
+export enum DisputeReason {
+    EMISSION_CALCULATION    = 'EMISSION_CALCULATION',
+    TAX_RATE                = 'TAX_RATE',
+    ZONE_CLASSIFICATION     = 'ZONE_CLASSIFICATION',
+    VESSEL_DATA             = 'VESSEL_DATA',
+    OTHER                   = 'OTHER',
+}
+
+export interface Dispute {
+    id: string;
+    ref: string;
+    transactionId: string;
+    transactionRef: string;
+    vesselId: string;
+    vesselName: string;
+    submittedBy: string;
+    submittedByName: string;
+    reason: DisputeReason;
+    description: string;
+    evidenceUrls: string[];
+    status: DisputeStatus;
+    reviewerId: string | null;
+    reviewerName: string | null;
+    reviewNote: string | null;
+    originalAmountUsd: number;
+    revisedAmountUsd: number | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 // ── Demo session ──────────────────────────────────────────────────────────────

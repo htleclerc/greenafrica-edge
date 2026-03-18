@@ -2,12 +2,13 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useKpis } from '@/hooks/useKpis';
-import { Transaction, TransactionStatus, TransactionType } from '@/types/secure';
+import { useRole } from '@/lib/RoleContext';
+import { Transaction, TransactionStatus, TransactionType, UserRole } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
 
@@ -25,6 +26,7 @@ export function InvoicesPage() {
     const t = useTranslations('InvoicesPage');
     const { data: transactions } = useTransactions();
     const { data: kpis } = useKpis();
+    const { role } = useRole();
     const [tab, setTab]             = React.useState<TabFilter>('ALL');
     const [search, setSearch]       = React.useState('');
     const [selected, setSelected]   = React.useState<Transaction | null>(null);
@@ -87,7 +89,7 @@ export function InvoicesPage() {
                 <div className={`w-full sm:w-72 md:w-80 border-r border-[var(--os-border)] flex flex-col flex-shrink-0 ${selected ? 'hidden sm:flex' : 'flex'}`}>
                     {/* Tab filters */}
                     <div className="px-3 pt-3 pb-2 flex gap-1 flex-wrap overflow-x-auto">
-                        {(['ALL', TransactionStatus.PENDING, TransactionStatus.OVERDUE, TransactionStatus.PAID] as TabFilter[]).map((f) => (
+                        {(['ALL', TransactionStatus.PENDING, TransactionStatus.OVERDUE, TransactionStatus.PAID, TransactionStatus.DISPUTED] as TabFilter[]).map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setTab(f)}
@@ -177,6 +179,7 @@ export function InvoicesPage() {
                             <InvoiceDetail
                                 tx={selected}
                                 onGenerateProForma={() => setProForma(selected)}
+                                role={role}
                             />
                         </>
                     ) : (
@@ -195,12 +198,13 @@ export function InvoicesPage() {
 
 // ── Invoice Detail Panel ──────────────────────────────────────────────────────
 
-function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerateProForma: () => void }) {
+function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGenerateProForma: () => void; role: UserRole }) {
     const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
+    const canContest = role === UserRole.SHIPPING_AGENT && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
@@ -236,6 +240,13 @@ function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerate
                         <OsButton variant="primary" size="sm" icon={<CheckCircle className="w-3.5 h-3.5" />}>
                             {t('record_payment')}
                         </OsButton>
+                    )}
+                    {canContest && (
+                        <a href={`/dashboard/disputes?new=true&txn=${tx.id}`}>
+                            <OsButton variant="outline" size="sm" icon={<Scale className="w-3.5 h-3.5" />}>
+                                {t('contest_invoice')}
+                            </OsButton>
+                        </a>
                     )}
                 </div>
             </div>
