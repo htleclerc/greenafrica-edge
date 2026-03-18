@@ -13,6 +13,7 @@ const richTextComponents = {
 
 export default function PrivacyPolicyContent() {
     const t = useTranslations('PrivacyPolicy');
+    const legal = useTranslations('Legal');
 
     const SECTIONS = [
         { id: 'preamble',      title: t('section_01_title') },
@@ -36,7 +37,7 @@ export default function PrivacyPolicyContent() {
             version={t('version')}
             effectiveDate={t('effective_date')}
             lastUpdated={t('last_updated')}
-            badgeLabel={t('badge_label')}
+            badgeLabel={legal('badge_privacy')}
             badgeColor="#38BDF8"
             sections={SECTIONS}
         >

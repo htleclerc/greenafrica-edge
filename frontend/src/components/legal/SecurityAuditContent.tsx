@@ -13,6 +13,7 @@ const richTextComponents = {
 
 export default function SecurityAuditContent() {
     const t = useTranslations('SecurityAudit');
+    const legal = useTranslations('Legal');
 
     const SECTIONS = [
         { id: 'overview',        title: t('section_01_title') },
@@ -36,7 +37,7 @@ export default function SecurityAuditContent() {
             version={t('version')}
             effectiveDate={t('effective_date')}
             lastUpdated={t('last_updated')}
-            badgeLabel={t('badge_label')}
+            badgeLabel={legal('badge_security')}
             badgeColor="#F59E0B"
             sections={SECTIONS}
         >

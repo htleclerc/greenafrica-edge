@@ -13,6 +13,7 @@ const richTextComponents = {
 
 export default function TermsOfServiceContent() {
     const t = useTranslations('TermsOfService');
+    const legal = useTranslations('Legal');
 
     const SECTIONS = [
         { id: 'acceptance',        title: t('section_01_title') },
@@ -38,7 +39,7 @@ export default function TermsOfServiceContent() {
             version={t('version')}
             effectiveDate={t('effective_date')}
             lastUpdated={t('last_updated')}
-            badgeLabel={t('badge_label')}
+            badgeLabel={legal('badge_terms')}
             badgeColor="#00D97E"
             sections={SECTIONS}
         >
