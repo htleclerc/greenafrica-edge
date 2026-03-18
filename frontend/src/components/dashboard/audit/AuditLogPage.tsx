@@ -59,14 +59,14 @@ function formatTs(iso: string): { date: string; time: string } {
 }
 
 function exportCsv(entries: AuditLogEntry[]) {
-    const header = ['ID', 'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Severity', 'IP Address', 'Details'];
+    const header = ['Ref', 'Timestamp', 'User', 'Action', 'Entity Type', 'Entity Ref', 'Severity', 'IP Address', 'Details'];
     const rows = entries.map((e) => [
-        e.id,
+        e.ref,
         e.createdAt,
         e.userFullName,
         ACTION_LABEL[e.action] ?? e.action,
         e.entityType,
-        e.entityId,
+        (e.detailsJson as Record<string, unknown>)?.entityRef as string ?? e.entityId,
         e.severity,
         e.ipAddress,
         JSON.stringify(e.detailsJson),
@@ -404,7 +404,7 @@ function EventDetailPanel({ entry, onClose }: { entry: AuditLogEntry; onClose: (
                         <p className="text-sm font-bold text-[var(--os-text-primary)]">
                             {ACTION_LABEL[entry.action] ?? entry.action}
                         </p>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('audit_event_id')} {entry.id}</p>
+                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('audit_event_id')} {entry.ref}</p>
                     </div>
                 </div>
                 <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]">
@@ -416,7 +416,7 @@ function EventDetailPanel({ entry, onClose }: { entry: AuditLogEntry; onClose: (
                 <DetailField icon={<User className="w-3.5 h-3.5" />}     label={t('audit_operator')}   value={entry.userFullName} />
                 <DetailField icon={<Clock className="w-3.5 h-3.5" />}    label={t('audit_timestamp')}  value={`${date} ${time}`} mono />
                 <DetailField icon={<Globe className="w-3.5 h-3.5" />}    label={t('audit_ip_address')} value={entry.ipAddress} mono />
-                <DetailField icon={<Tag className="w-3.5 h-3.5" />}      label={t('audit_entity')}     value={`${entry.entityType} · ${entry.entityId}`} mono />
+                <DetailField icon={<Tag className="w-3.5 h-3.5" />}      label={t('audit_entity')}     value={`${entry.entityType} · ${(entry.detailsJson as Record<string, unknown>)?.entityRef as string ?? entry.entityId}`} mono />
             </div>
 
             <div className="px-5 pb-5">

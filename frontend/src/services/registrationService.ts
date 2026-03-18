@@ -8,6 +8,7 @@ type Client = SupabaseClient<any>;
 function rowToRegistrationRequest(row: RegistrationRequestRow): RegistrationRequest {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         submittedAt: row.created_at,
         entityType: row.entity_type as RegistrationRequest['entityType'],
         orgName: row.org_name,

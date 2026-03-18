@@ -91,6 +91,7 @@ export enum JurisdictionZone {
 
 export interface TaxConfiguration {
     id: string;
+    ref: string;
     jurisdictionZone: JurisdictionZone;
     vesselCategory: VesselCategory;
     baseRateUsdPerTco2: number;
@@ -118,6 +119,7 @@ export enum TransactionStatus {
 
 export interface Transaction {
     id: string;
+    ref: string;
     vesselId: string;
     vesselName: string;
     vesselImo: string;
@@ -143,6 +145,7 @@ export enum ExemptionReason {
 
 export interface Exemption {
     id: string;
+    ref: string;
     vesselId: string;
     vesselName: string;
     reason: ExemptionReason;
@@ -174,6 +177,7 @@ export enum AuditSeverity {
 
 export interface AuditLogEntry {
     id: string;
+    ref: string;
     userId: string;
     userFullName: string;
     action: AuditAction;
@@ -235,6 +239,7 @@ export interface RegistrationDocument {
 
 export interface RegistrationRequest {
     id: string;
+    ref: string;
     submittedAt: string;            // ISO datetime
     entityType: RegistrationEntityType;
     orgName: string;
@@ -281,6 +286,7 @@ export enum VerificationStandard {
 
 export interface CarbonProject {
     id: string;
+    ref: string;
     name: string;
     description: string;
     type: ProjectType;

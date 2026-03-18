@@ -49,6 +49,7 @@ export function InvoicesPage() {
         const matchSearch = search === '' ||
             tx.vesselName.toLowerCase().includes(search.toLowerCase()) ||
             tx.vesselImo.includes(search) ||
+            tx.ref.toLowerCase().includes(search.toLowerCase()) ||
             tx.id.includes(search.toLowerCase());
         return matchTab && matchSearch;
     });
@@ -132,7 +133,7 @@ export function InvoicesPage() {
                                         <div className="flex items-center gap-1.5">
                                             {STATUS_ICON[tx.status]}
                                             <span className="text-[10px] font-mono text-[var(--os-text-muted)]">
-                                                INV-{tx.id.split('-')[1].toUpperCase()}-{String(Math.floor(Math.random() * 900) + 100)}
+                                                {tx.ref}
                                             </span>
                                         </div>
                                         <span className="text-[10px] text-[var(--os-text-muted)]">{date}</span>
@@ -197,7 +198,7 @@ export function InvoicesPage() {
 function InvoiceDetail({ tx, onGenerateProForma }: { tx: Transaction; onGenerateProForma: () => void }) {
     const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
-    const invoiceRef = `INV-2025-${tx.id.split('-')[1].toUpperCase()}`;
+    const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
 

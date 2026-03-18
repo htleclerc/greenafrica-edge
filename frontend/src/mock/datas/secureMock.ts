@@ -175,6 +175,7 @@ export const mockSecureVessels: SecureVessel[] = [
 export const mockTransactions: Transaction[] = [
     {
         id: 'txn-001',
+        ref: 'INV-2025-000001',
         vesselId: 'vsec-002',
         vesselName: 'MAERSK SEALAND',
         vesselImo: '9284758',
@@ -189,6 +190,7 @@ export const mockTransactions: Transaction[] = [
     },
     {
         id: 'txn-002',
+        ref: 'INV-2025-000002',
         vesselId: 'vsec-003',
         vesselName: 'CMA CGM AFRICA',
         vesselImo: '9451234',
@@ -203,6 +205,7 @@ export const mockTransactions: Transaction[] = [
     },
     {
         id: 'txn-003',
+        ref: 'INV-2025-000003',
         vesselId: 'vsec-004',
         vesselName: 'HAPAG-LLOYD JEDDAH',
         vesselImo: '9123456',
@@ -217,6 +220,7 @@ export const mockTransactions: Transaction[] = [
     },
     {
         id: 'txn-004',
+        ref: 'INV-2025-000004',
         vesselId: 'vsec-005',
         vesselName: 'COSCO SHANGHAI',
         vesselImo: '9876543',
@@ -231,6 +235,7 @@ export const mockTransactions: Transaction[] = [
     },
     {
         id: 'txn-005',
+        ref: 'INV-2025-000005',
         vesselId: 'vsec-006',
         vesselName: 'OCEAN VOYAGER',
         vesselImo: '9554433',
@@ -250,6 +255,7 @@ export const mockTransactions: Transaction[] = [
 export const mockAuditLog: AuditLogEntry[] = [
     {
         id: 'aud-001',
+        ref: 'AUD-000001',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.LOGIN,
@@ -262,6 +268,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-002',
+        ref: 'AUD-000002',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.INVOICE_GENERATED,
@@ -274,6 +281,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-003',
+        ref: 'AUD-000003',
         userId: 'usr-002',
         userFullName: 'Min. Al Farid',
         action: AuditAction.TAX_RATE_UPDATED,
@@ -286,6 +294,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-004',
+        ref: 'AUD-000004',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.VESSEL_VIEWED,
@@ -298,6 +307,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-005',
+        ref: 'AUD-000005',
         userId: 'usr-002',
         userFullName: 'Min. Al Farid',
         action: AuditAction.EXEMPTION_GRANTED,
@@ -310,6 +320,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-006',
+        ref: 'AUD-000006',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.REPORT_EXPORTED,
@@ -322,6 +333,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-007',
+        ref: 'AUD-000007',
         userId: 'usr-003',
         userFullName: 'Adm. Fadumo Yusuf',
         action: AuditAction.USER_CREATED,
@@ -334,6 +346,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-008',
+        ref: 'AUD-000008',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.TRANSACTION_UPDATED,
@@ -346,6 +359,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-009',
+        ref: 'AUD-000009',
         userId: 'usr-002',
         userFullName: 'Min. Al Farid',
         action: AuditAction.LOGIN,
@@ -358,6 +372,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-010',
+        ref: 'AUD-000010',
         userId: 'usr-001',
         userFullName: 'Officer Hassan',
         action: AuditAction.INVOICE_GENERATED,
@@ -370,6 +385,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-011',
+        ref: 'AUD-000011',
         userId: 'usr-003',
         userFullName: 'Adm. Fadumo Yusuf',
         action: AuditAction.LOGOUT,
@@ -382,6 +398,7 @@ export const mockAuditLog: AuditLogEntry[] = [
     },
     {
         id: 'aud-012',
+        ref: 'AUD-000012',
         userId: 'usr-002',
         userFullName: 'Min. Al Farid',
         action: AuditAction.TAX_RATE_UPDATED,
@@ -399,6 +416,7 @@ export const mockAuditLog: AuditLogEntry[] = [
 export const mockTaxConfigs: TaxConfiguration[] = [
     {
         id: 'tax-001',
+        ref: 'TAX-000001',
         jurisdictionZone: JurisdictionZone.EEZ,
         vesselCategory: VesselCategory.CONTAINER,
         baseRateUsdPerTco2: 20,
@@ -409,6 +427,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
     },
     {
         id: 'tax-002',
+        ref: 'TAX-000002',
         jurisdictionZone: JurisdictionZone.EEZ,
         vesselCategory: VesselCategory.CARGO,
         baseRateUsdPerTco2: 18,
@@ -419,6 +438,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
     },
     {
         id: 'tax-003',
+        ref: 'TAX-000003',
         jurisdictionZone: JurisdictionZone.EEZ,
         vesselCategory: VesselCategory.TANKER,
         baseRateUsdPerTco2: 22,
@@ -429,6 +449,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
     },
     {
         id: 'tax-004',
+        ref: 'TAX-000004',
         jurisdictionZone: JurisdictionZone.PORT_VICINITY,
         vesselCategory: VesselCategory.BULK_CARRIER,
         baseRateUsdPerTco2: 15,
@@ -439,6 +460,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
     },
     {
         id: 'tax-005',
+        ref: 'TAX-000005',
         jurisdictionZone: JurisdictionZone.PORT_VICINITY,
         vesselCategory: VesselCategory.FERRY,
         baseRateUsdPerTco2: 12,
@@ -454,6 +476,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
 export const mockExemptions: Exemption[] = [
     {
         id: 'exc-001',
+        ref: 'EXM-2025-000001',
         vesselId: 'vsec-ext-01',
         vesselName: 'USS Missouri',
         reason: ExemptionReason.MILITARY,
@@ -464,6 +487,7 @@ export const mockExemptions: Exemption[] = [
     },
     {
         id: 'exc-002',
+        ref: 'EXM-2025-000002',
         vesselId: 'vsec-ext-02',
         vesselName: 'WFP Coral Vessel',
         reason: ExemptionReason.HUMANITARIAN,
@@ -502,6 +526,7 @@ export const mockRevenueByCategoryData = [
 export const mockCarbonProjects: CarbonProject[] = [
     {
         id: 'prj-001',
+        ref: 'PRJ-2023-000001',
         name: 'Berbera Coastal Mangrove Restoration',
         description: 'Large-scale restoration of degraded mangrove ecosystems along the Gulf of Aden coastline, sequestering blue carbon and protecting marine biodiversity.',
         type: ProjectType.BLUE_CARBON,
@@ -527,6 +552,7 @@ export const mockCarbonProjects: CarbonProject[] = [
     },
     {
         id: 'prj-002',
+        ref: 'PRJ-2023-000002',
         name: 'Sahel Reforestation Initiative — Phase 2',
         description: 'Community-led reforestation of 6,000 ha of degraded savannah in eastern Somaliland, combining native acacia and fruit tree species.',
         type: ProjectType.REFORESTATION,
@@ -552,6 +578,7 @@ export const mockCarbonProjects: CarbonProject[] = [
     },
     {
         id: 'prj-003',
+        ref: 'PRJ-2023-000003',
         name: 'Gulf of Aden Blue Carbon Seagrass',
         description: 'Conservation and rewilding of seagrass meadows in the Gulf of Aden, acting as critical blue carbon sinks and fish nurseries.',
         type: ProjectType.BLUE_CARBON,
@@ -577,6 +604,7 @@ export const mockCarbonProjects: CarbonProject[] = [
     },
     {
         id: 'prj-004',
+        ref: 'PRJ-2023-000004',
         name: 'Berbera Port Solar Micro-Grid',
         description: 'Installation of 2.4 MW rooftop solar panels across Berbera Port facilities, displacing diesel generators and cutting port emissions by 40%.',
         type: ProjectType.SOLAR,
@@ -602,6 +630,7 @@ export const mockCarbonProjects: CarbonProject[] = [
     },
     {
         id: 'prj-005',
+        ref: 'PRJ-2023-000005',
         name: 'Livestock Methane Capture — Togdheer',
         description: 'Biodigester deployment across 120 pastoral communities in Togdheer to capture methane from livestock waste and produce clean cooking fuel.',
         type: ProjectType.METHANE_CAPTURE,
@@ -627,6 +656,7 @@ export const mockCarbonProjects: CarbonProject[] = [
     },
     {
         id: 'prj-006',
+        ref: 'PRJ-2023-000006',
         name: 'Hargeisa Wind Farm — Phase 1',
         description: '12 MW wind farm on the Ogo plateau supplying clean energy to Hargeisa grid and generating verified carbon credits under Verra VCS.',
         type: ProjectType.WIND,

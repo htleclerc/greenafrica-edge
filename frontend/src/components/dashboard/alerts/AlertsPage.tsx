@@ -18,6 +18,7 @@ type AlertCategory = 'Compliance' | 'Payment' | 'System' | 'Security';
 
 interface Alert {
     id: string;
+    ref: string;
     title: string;
     message: string;
     severity: AlertSeverity;
@@ -31,13 +32,19 @@ interface Alert {
 
 function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
     const alerts: Alert[] = [];
+    let ncIdx = 0;
+    let pdIdx = 0;
+    let ovIdx = 0;
+    let sysIdx = 0;
 
     // Non-compliant vessels
     vessels
         .filter((v) => v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT)
         .forEach((v) => {
+            ncIdx++;
             alerts.push({
                 id: `alrt-nc-${v.id}`,
+                ref: `ALRT-NC-${String(ncIdx).padStart(3, '0')}`,
                 title: 'Non-Compliant Vessel in EEZ',
                 message: `${v.name} (IMO ${v.imoNumber}, flag: ${v.flagCode}) has outstanding tax liability of $${v.taxLiabilityUsd.toLocaleString()}. Port gate lock recommended.`,
                 severity: 'critical',
@@ -52,8 +59,10 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
     vessels
         .filter((v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE)
         .forEach((v) => {
+            pdIdx++;
             alerts.push({
                 id: `alrt-pd-${v.id}`,
+                ref: `ALRT-PD-${String(pdIdx).padStart(3, '0')}`,
                 title: 'Payment Due — Pro-forma Required',
                 message: `${v.name} (IMO ${v.imoNumber}) owes $${v.taxLiabilityUsd.toLocaleString()} in carbon tax. Pro-forma invoice not yet generated.`,
                 severity: 'warning',
@@ -68,10 +77,12 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
     txns
         .filter((t) => t.status === TransactionStatus.OVERDUE)
         .forEach((t) => {
+            ovIdx++;
             alerts.push({
                 id: `alrt-ov-${t.id}`,
+                ref: `ALRT-OV-${String(ovIdx).padStart(3, '0')}`,
                 title: 'Overdue Transaction — Enforcement Required',
-                message: `Transaction ${t.id} for ${t.vesselName} (${t.transactionType}) totalling $${t.taxAmountUsd.toLocaleString()} has exceeded the 48h payment window.`,
+                message: `Transaction ${t.ref} for ${t.vesselName} (${t.transactionType}) totalling $${t.taxAmountUsd.toLocaleString()} has exceeded the 48h payment window.`,
                 severity: 'critical',
                 category: 'Payment',
                 entityRef: t.vesselName,
@@ -81,9 +92,11 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
         });
 
     // Static system alerts
+    sysIdx++;
     alerts.push(
         {
             id: 'alrt-sys-001',
+            ref: `ALRT-SYS-${String(sysIdx).padStart(3, '0')}`,
             title: 'AIS Feed Degraded — Zeila Sector',
             message: 'AIS data coverage for Zeila port vicinity is below 80% for the last 2 hours. Vessels in sector may not be tracked.',
             severity: 'warning',
@@ -94,6 +107,7 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
         },
         {
             id: 'alrt-sys-002',
+            ref: `ALRT-SYS-${String(++sysIdx).padStart(3, '0')}`,
             title: 'New Tax Rate Policy Published',
             message: 'Minister Al Farid updated the TANKER EEZ rate from $20 to $22/tCO₂. Effective immediately. Review pending invoices.',
             severity: 'info',
@@ -104,6 +118,7 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
         },
         {
             id: 'alrt-sec-001',
+            ref: `ALRT-SYS-${String(++sysIdx).padStart(3, '0')}`,
             title: 'New Admin Account Created',
             message: 'Adm. Fadumo Yusuf created a new PORT_OFFICER account (agent.ibrahim@berbera.port). Review if authorized.',
             severity: 'warning',
@@ -114,11 +129,12 @@ function buildAlerts(vessels: SecureVessel[], txns: Transaction[]): Alert[] {
         },
         {
             id: 'alrt-sec-002',
+            ref: `ALRT-SYS-${String(++sysIdx).padStart(3, '0')}`,
             title: 'Ministerial Exemption Granted',
             message: 'USS Missouri received a full carbon tax exemption (MILITARY) valid until Dec 31, 2025. Approved by Min. Al Farid.',
             severity: 'info',
             category: 'Security',
-            entityRef: 'Exemption · exc-001',
+            entityRef: 'Exemption · EXM-2025-000001',
             timestamp: '2025-03-09T07:45:00Z',
             acknowledged: false,
         },
@@ -385,7 +401,7 @@ function AlertDetailPanel({ alert, onClose, onAcknowledge }: {
                     </div>
                     <div>
                         <p className="text-sm font-bold text-[var(--os-text-primary)]">{t('alerts_detail_title')}</p>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('alerts_detail_id')} {alert.id}</p>
+                        <p className="text-[10px] text-[var(--os-text-muted)]">{t('alerts_detail_id')} {alert.ref}</p>
                     </div>
                 </div>
                 <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]">

@@ -74,7 +74,7 @@ export function RecentActivitiesTable() {
                             return (
                                 <tr key={tx.id} className="border-b border-[var(--os-border)] last:border-0 hover:bg-[var(--os-surface-2)] transition-colors cursor-pointer group">
                                     <td className="px-2 sm:px-5 py-3">
-                                        <span className="text-[10px] font-mono text-[var(--os-text-muted)]">{tx.id.toUpperCase()}</span>
+                                        <span className="text-[10px] font-mono text-[var(--os-text-muted)]">{tx.ref}</span>
                                     </td>
                                     <td className="px-2 sm:px-5 py-3">
                                         <div className="flex items-center gap-2">

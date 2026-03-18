@@ -38,6 +38,7 @@ function fmtDate(iso: string) {
 function mapRow(row: Record<string, unknown>): RegistrationRequest {
     return {
         id: row.id as string,
+        ref: row.ref as string ?? row.id as string,
         submittedAt: row.created_at as string,
         entityType: row.entity_type as RegistrationEntityType,
         orgName: row.org_name as string,
@@ -298,6 +299,7 @@ function RegistrationRow({ req, onAction }: RowProps) {
 const DEMO_REQUESTS: RegistrationRequest[] = [
     {
         id: 'demo-reg-1',
+        ref: 'REG-2026-000001',
         submittedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
         entityType: RegistrationEntityType.SHIPPING_AGENT,
         orgName: 'Berbera Maritime Services',
@@ -317,6 +319,7 @@ const DEMO_REQUESTS: RegistrationRequest[] = [
     },
     {
         id: 'demo-reg-2',
+        ref: 'REG-2026-000002',
         submittedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
         entityType: RegistrationEntityType.SHIPPING_AGENT,
         orgName: 'Red Sea Logistics Ltd',
@@ -335,6 +338,7 @@ const DEMO_REQUESTS: RegistrationRequest[] = [
     },
     {
         id: 'demo-reg-3',
+        ref: 'REG-2026-000003',
         submittedAt: new Date(Date.now() - 14 * 86_400_000).toISOString(),
         entityType: RegistrationEntityType.PORT_AUTHORITY,
         orgName: 'Somaliland Port Authority',
@@ -356,6 +360,7 @@ const DEMO_REQUESTS: RegistrationRequest[] = [
     },
     {
         id: 'demo-reg-4',
+        ref: 'REG-2026-000004',
         submittedAt: new Date(Date.now() - 20 * 86_400_000).toISOString(),
         entityType: RegistrationEntityType.INSTITUTION,
         orgName: 'Horn of Africa Institute',

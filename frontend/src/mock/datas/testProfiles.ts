@@ -110,6 +110,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
 export const MOCK_REGISTRATIONS: RegistrationRequest[] = [
     {
         id: 'reg-001',
+        ref: 'REG-2025-000001',
         submittedAt: '2025-03-08T10:23:00Z',
         entityType: RegistrationEntityType.SHIPPING_AGENT,
         orgName: 'Gulf Marine Services FZCO',
@@ -129,6 +130,7 @@ export const MOCK_REGISTRATIONS: RegistrationRequest[] = [
     },
     {
         id: 'reg-002',
+        ref: 'REG-2025-000002',
         submittedAt: '2025-03-07T15:44:00Z',
         entityType: RegistrationEntityType.SHIPPING_AGENT,
         orgName: 'East Africa Freight Ltd',
@@ -150,6 +152,7 @@ export const MOCK_REGISTRATIONS: RegistrationRequest[] = [
     },
     {
         id: 'reg-003',
+        ref: 'REG-2025-000003',
         submittedAt: '2025-03-06T09:11:00Z',
         entityType: RegistrationEntityType.INSTITUTION,
         orgName: 'Chambre de Commerce de Somaliland',
@@ -168,6 +171,7 @@ export const MOCK_REGISTRATIONS: RegistrationRequest[] = [
     },
     {
         id: 'reg-004',
+        ref: 'REG-2025-000004',
         submittedAt: '2025-03-05T22:03:00Z',
         entityType: RegistrationEntityType.SHIPPING_AGENT,
         orgName: 'Unknown Entity LLC',
@@ -186,6 +190,7 @@ export const MOCK_REGISTRATIONS: RegistrationRequest[] = [
     },
     {
         id: 'reg-005',
+        ref: 'REG-2025-000005',
         submittedAt: '2025-03-09T08:55:00Z',
         entityType: RegistrationEntityType.PORT_AUTHORITY,
         orgName: 'Autorité Portuaire de Zeïla',

@@ -83,6 +83,7 @@ export function rowToSecureVessel(
 export function rowToTransaction(row: TransactionRow): Transaction {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         vesselId: row.vessel_id,
         vesselName: row.vessel_name,
         vesselImo: row.vessel_imo,
@@ -102,6 +103,7 @@ export function rowToTransaction(row: TransactionRow): Transaction {
 export function rowToTaxConfiguration(row: TaxConfigurationRow): TaxConfiguration {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         jurisdictionZone: row.jurisdiction_zone as JurisdictionZone,
         vesselCategory: row.vessel_category as VesselCategory,
         baseRateUsdPerTco2: Number(row.base_rate_usd_per_tco2),
@@ -117,6 +119,7 @@ export function rowToTaxConfiguration(row: TaxConfigurationRow): TaxConfiguratio
 export function rowToExemption(row: ExemptionRow): Exemption {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         vesselId: row.vessel_id,
         vesselName: row.vessel_name,
         reason: row.reason as ExemptionReason,
@@ -132,6 +135,7 @@ export function rowToExemption(row: ExemptionRow): Exemption {
 export function rowToAuditLogEntry(row: AuditLogRow): AuditLogEntry {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         userId: row.user_id,
         userFullName: row.user_full_name,
         action: row.action as AuditAction,
@@ -149,6 +153,7 @@ export function rowToAuditLogEntry(row: AuditLogRow): AuditLogEntry {
 export function rowToCarbonProject(row: CarbonProjectRow): CarbonProject {
     return {
         id: row.id,
+        ref: (row as Record<string, unknown>).ref as string ?? row.id,
         name: row.name,
         description: row.description,
         type: row.type as ProjectType,
