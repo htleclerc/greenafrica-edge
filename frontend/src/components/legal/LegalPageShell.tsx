@@ -40,12 +40,20 @@ export function LegalPageShell({
                         <ArrowLeft className="w-4 h-4" />
                         {t('back_to_login')}
                     </a>
-                    <div className="flex items-center gap-4 text-[10px] text-[var(--os-text-muted)]">
-                        <span className="font-mono hidden sm:inline">{version}</span>
-                        <span className="hidden sm:inline">{t('effective_prefix')} {effectiveDate}</span>
-                        <span className="text-sm font-bold text-[var(--os-text-primary)]">
-                            Africgreen<span className="text-[#00D97E]">OS</span>
-                        </span>
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                                <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
+                            </svg>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold tracking-tight leading-tight text-[var(--os-text-primary)]">
+                                AIS Portal
+                            </span>
+                            <span className="text-[9px] font-medium tracking-widest uppercase leading-tight text-emerald-500/70">
+                                AFRICGREEN INITIATIVE
+                            </span>
+                        </div>
                     </div>
                 </header>
             ) : (
