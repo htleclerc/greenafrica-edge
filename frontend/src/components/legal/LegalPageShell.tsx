@@ -36,10 +36,10 @@ export function LegalPageShell({
             {fromAuth ? (
                 /* Back-to-login bar when coming from auth pages */
                 <header className="sticky top-0 z-10 border-b flex items-center justify-between px-4 sm:px-6 py-3" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
-                    <a href="/login" className="flex items-center gap-2 text-sm font-semibold text-[#38BDF8] hover:text-[#60CAFF] transition-colors">
+                    <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-[#38BDF8] hover:text-[#60CAFF] transition-colors">
                         <ArrowLeft className="w-4 h-4 flex-shrink-0" />
                         <span>{t('back_to_login').replace(/^←\s*/, '')}</span>
-                    </a>
+                    </button>
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
                             <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
