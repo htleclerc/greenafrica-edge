@@ -39,6 +39,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'green-ledger': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Admin

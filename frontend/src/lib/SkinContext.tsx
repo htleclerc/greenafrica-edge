@@ -45,6 +45,10 @@ export function SkinProvider({ children, defaultRole }: { children: React.ReactN
         setSkinState(newSkin);
         localStorage.setItem(STORAGE_KEY, newSkin);
         document.documentElement.setAttribute('data-skin', newSkin);
+        // Institutional = light mode, others = dark mode
+        const autoTheme = newSkin === 'institutional' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', autoTheme);
+        localStorage.setItem('theme', autoTheme);
     }, []);
 
     // On mount: always apply data-skin to <html>
@@ -55,8 +59,11 @@ export function SkinProvider({ children, defaultRole }: { children: React.ReactN
             : (defaultRole ? defaultSkinForRole(defaultRole) : 'emerald');
 
         setSkinState(resolved);
-        // Always set the attribute — even for 'emerald'
         document.documentElement.setAttribute('data-skin', resolved);
+        // Auto-set theme based on skin
+        const autoTheme = resolved === 'institutional' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', autoTheme);
+        localStorage.setItem('theme', autoTheme);
     }, [defaultRole]);
 
     return (

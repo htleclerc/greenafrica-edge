@@ -6,7 +6,7 @@ import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
-    Scale, Anchor,
+    Scale, Anchor, ClipboardCheck,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'disputes',     icon: <Scale className="w-5 h-5" />,         href: '/dashboard/disputes',    labelKey: 'nav_disputes',     section: 'ops' },
     { key: 'my-fleet',     icon: <Anchor className="w-5 h-5" />,        href: '/dashboard/my-fleet',    labelKey: 'nav_my_fleet',     section: 'ops' },
     { key: 'tco',          icon: <DollarSign className="w-5 h-5" />,    href: '/dashboard/tco',         labelKey: 'nav_tco',          section: 'ops' },
+    { key: 'inspector',    icon: <ClipboardCheck className="w-5 h-5" />,href: '/dashboard/inspector',   labelKey: 'nav_inspector',    section: 'ops' },
     { key: 'green-ledger', icon: <Leaf className="w-5 h-5" />,          href: '/dashboard/projects',    labelKey: 'nav_green_ledger', section: 'ops' },
     { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      labelKey: 'nav_alerts',       section: 'ops' },
     { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },

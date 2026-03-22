@@ -9,6 +9,7 @@ import {
     SystemStatusInfo,
     CarbonProject, ProjectStatus, ProjectType, VerificationStandard,
     Dispute, DisputeStatus, DisputeReason,
+    Inspection, InspectionType, InspectionStatus,
 } from '@/types/secure';
 
 // ── Mock User ────────────────────────────────────────────────────────────────
@@ -748,5 +749,85 @@ export const mockDisputes: Dispute[] = [
         revisedAmountUsd: null,
         createdAt: '2025-03-06T08:45:00Z',
         updatedAt: '2025-03-07T10:20:00Z',
+    },
+];
+
+// ── Inspections ─────────────────────────────────────────────────────────────
+
+export const mockInspections: Inspection[] = [
+    {
+        id: 'ins-001',
+        ref: 'INS-2025-000001',
+        vesselId: 'vsec-002',
+        vesselName: 'MAERSK SEALAND',
+        vesselMmsi: '219045000',
+        inspectorId: 'usr-001',
+        inspectorName: 'Officer Hassan',
+        inspectionType: InspectionType.ROUTINE,
+        status: InspectionStatus.COMPLETED,
+        checklist: {
+            aisTransponderActive: true,
+            emissionDocumentsOnBoard: true,
+            co2CertificateValid: true,
+            fuelLogAvailable: true,
+            safetyEquipmentOk: true,
+        },
+        findings: 'All documentation in order. AIS transponder active and verified. Vessel fully compliant.',
+        photoUrls: ['https://storage.example.com/inspections/ins-001/bridge.jpg'],
+        complianceVerified: true,
+        offlineCreated: false,
+        syncedAt: '2025-03-09T11:00:00Z',
+        createdAt: '2025-03-09T10:30:00Z',
+    },
+    {
+        id: 'ins-002',
+        ref: 'INS-2025-000002',
+        vesselId: 'vsec-001',
+        vesselName: 'MSC BERBERA',
+        vesselMmsi: '356224000',
+        inspectorId: 'usr-001',
+        inspectorName: 'Officer Hassan',
+        inspectionType: InspectionType.COMPLIANCE_CHECK,
+        status: InspectionStatus.IN_PROGRESS,
+        checklist: {
+            aisTransponderActive: true,
+            emissionDocumentsOnBoard: false,
+            co2CertificateValid: false,
+            fuelLogAvailable: true,
+            safetyEquipmentOk: true,
+        },
+        findings: 'CO2 certificate expired. Emission documents not available on board — captain states they are being couriered from Panama.',
+        photoUrls: [],
+        complianceVerified: false,
+        offlineCreated: true,
+        syncedAt: null,
+        createdAt: '2025-03-10T08:15:00Z',
+    },
+    {
+        id: 'ins-003',
+        ref: 'INS-2025-000003',
+        vesselId: 'vsec-006',
+        vesselName: 'OCEAN VOYAGER',
+        vesselMmsi: '241345000',
+        inspectorId: 'usr-001',
+        inspectorName: 'Officer Hassan',
+        inspectionType: InspectionType.FOLLOW_UP,
+        status: InspectionStatus.FLAGGED,
+        checklist: {
+            aisTransponderActive: false,
+            emissionDocumentsOnBoard: false,
+            co2CertificateValid: false,
+            fuelLogAvailable: false,
+            safetyEquipmentOk: true,
+        },
+        findings: 'AIS transponder deliberately disabled. No emission documentation whatsoever. Vessel flagged for non-compliance escalation to port authority.',
+        photoUrls: [
+            'https://storage.example.com/inspections/ins-003/ais-panel.jpg',
+            'https://storage.example.com/inspections/ins-003/bridge-overview.jpg',
+        ],
+        complianceVerified: false,
+        offlineCreated: false,
+        syncedAt: '2025-03-10T14:45:00Z',
+        createdAt: '2025-03-10T14:00:00Z',
     },
 ];

@@ -299,6 +299,39 @@ export interface Database {
                 };
                 Update: Partial<Database['public']['Tables']['disputes']['Insert']>;
             };
+            inspections: {
+                Row: {
+                    id: string;
+                    ref: string;
+                    vessel_id: string;
+                    inspector_id: string;
+                    mmsi: string;
+                    inspection_type: DbInspectionType;
+                    status: DbInspectionStatus;
+                    checklist: Record<string, unknown>;
+                    findings: string;
+                    photo_urls: string[];
+                    compliance_verified: boolean;
+                    offline_created: boolean;
+                    synced_at: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    vessel_id: string;
+                    inspector_id: string;
+                    mmsi: string;
+                    inspection_type: DbInspectionType;
+                    status?: DbInspectionStatus;
+                    checklist?: Record<string, unknown>;
+                    findings?: string;
+                    photo_urls?: string[];
+                    compliance_verified?: boolean;
+                    offline_created?: boolean;
+                    synced_at?: string | null;
+                };
+                Update: Partial<Database['public']['Tables']['inspections']['Insert']>;
+            };
             registration_requests: {
                 Row: {
                     id: string;
@@ -369,6 +402,8 @@ export interface Database {
             tax_config_status: DbTaxConfigStatus;
             dispute_status: DbDisputeStatus;
             dispute_reason: DbDisputeReason;
+            inspection_type: DbInspectionType;
+            inspection_status: DbInspectionStatus;
             registration_status: DbRegistrationStatus;
             registration_entity_type: DbRegistrationEntityType;
         };
@@ -385,7 +420,7 @@ export type DbJurisdictionZone = 'EEZ' | 'PORT_VICINITY' | 'TRANSIT_LANE';
 export type DbTransactionType = 'ENTRY_TAX' | 'TRANSIT_FEE' | 'PORT_STAY';
 export type DbTransactionStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'EXEMPT' | 'DISPUTED';
 export type DbExemptionReason = 'MILITARY' | 'HUMANITARIAN' | 'SCIENTIFIC' | 'UN_AGENCY' | 'OTHER';
-export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED' | 'DISPUTE_FILED' | 'DISPUTE_REVIEWED';
+export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED' | 'DISPUTE_FILED' | 'DISPUTE_REVIEWED' | 'INSPECTION_COMPLETED';
 export type DbAuditSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 export type DbProjectType = 'BLUE_CARBON' | 'REFORESTATION' | 'SOLAR' | 'WIND' | 'METHANE_CAPTURE' | 'ENERGY_EFFICIENCY';
 export type DbProjectStatus = 'ACTIVE' | 'PENDING' | 'COMPLETED' | 'SUSPENDED' | 'UNDER_REVIEW';
@@ -395,6 +430,8 @@ export type DbDisputeStatus = 'OPEN' | 'UNDER_REVIEW' | 'ACCEPTED' | 'REJECTED' 
 export type DbDisputeReason = 'EMISSION_CALCULATION' | 'TAX_RATE' | 'ZONE_CLASSIFICATION' | 'VESSEL_DATA' | 'OTHER';
 export type DbRegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'MORE_INFO';
 export type DbRegistrationEntityType = 'PORT_AUTHORITY' | 'SHIPPING_AGENT' | 'FINANCE_ADMIN' | 'INSTITUTION';
+export type DbInspectionType = 'ROUTINE' | 'COMPLIANCE_CHECK' | 'RANDOM' | 'FOLLOW_UP';
+export type DbInspectionStatus = 'IN_PROGRESS' | 'COMPLETED' | 'FLAGGED';
 
 // ── Row type helpers ────────────────────────────────────────────────────────
 
@@ -408,3 +445,4 @@ export type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'];
 export type CarbonProjectRow = Database['public']['Tables']['carbon_projects']['Row'];
 export type DisputeRow = Database['public']['Tables']['disputes']['Row'];
 export type RegistrationRequestRow = Database['public']['Tables']['registration_requests']['Row'];
+export type InspectionRow = Database['public']['Tables']['inspections']['Row'];

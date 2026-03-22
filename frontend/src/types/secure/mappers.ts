@@ -12,6 +12,7 @@ import type {
     AuditLogRow,
     CarbonProjectRow,
     DisputeRow,
+    InspectionRow,
 } from '@/types/database';
 
 import type {
@@ -23,6 +24,8 @@ import type {
     AuditLogEntry,
     CarbonProject,
     Dispute,
+    Inspection,
+    InspectionChecklist,
 } from '@/types/secure';
 
 import {
@@ -39,6 +42,8 @@ import {
     VerificationStandard,
     DisputeStatus,
     DisputeReason,
+    InspectionType,
+    InspectionStatus,
 } from '@/types/secure';
 
 // ── Vessel ──────────────────────────────────────────────────────────────────
@@ -221,5 +226,37 @@ export function rowToVesselPosition(row: VesselPositionRow): VesselPosition {
         heading: Number(row.heading),
         speedKnots: Number(row.speed_knots),
         lastSeenUtc: row.recorded_at,
+    };
+}
+
+// ── Inspection ─────────────────────────────────────────────────────────────
+
+export function rowToInspection(row: InspectionRow): Inspection {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = row as Record<string, any>;
+    const checklist = (row.checklist ?? {}) as unknown as InspectionChecklist;
+    return {
+        id: row.id,
+        ref: row.ref ?? row.id,
+        vesselId: row.vessel_id,
+        vesselName: r.vessel_name ?? '',
+        vesselMmsi: row.mmsi,
+        inspectorId: row.inspector_id,
+        inspectorName: r.inspector_name ?? '',
+        inspectionType: row.inspection_type as InspectionType,
+        status: row.status as InspectionStatus,
+        checklist: {
+            aisTransponderActive: checklist.aisTransponderActive ?? false,
+            emissionDocumentsOnBoard: checklist.emissionDocumentsOnBoard ?? false,
+            co2CertificateValid: checklist.co2CertificateValid ?? false,
+            fuelLogAvailable: checklist.fuelLogAvailable ?? false,
+            safetyEquipmentOk: checklist.safetyEquipmentOk ?? false,
+        },
+        findings: row.findings ?? '',
+        photoUrls: row.photo_urls ?? [],
+        complianceVerified: row.compliance_verified ?? false,
+        offlineCreated: row.offline_created ?? false,
+        syncedAt: row.synced_at,
+        createdAt: row.created_at,
     };
 }

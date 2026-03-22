@@ -169,6 +169,7 @@ export enum AuditAction {
     TRANSACTION_UPDATED     = 'TRANSACTION_UPDATED',
     DISPUTE_FILED           = 'DISPUTE_FILED',
     DISPUTE_REVIEWED        = 'DISPUTE_REVIEWED',
+    INSPECTION_COMPLETED    = 'INSPECTION_COMPLETED',
 }
 
 export enum AuditSeverity {
@@ -352,6 +353,48 @@ export interface Dispute {
     revisedAmountUsd: number | null;
     createdAt: string;
     updatedAt: string;
+}
+
+// ── Inspections ──────────────────────────────────────────────────────────────
+
+export enum InspectionType {
+    ROUTINE = 'ROUTINE',
+    COMPLIANCE_CHECK = 'COMPLIANCE_CHECK',
+    RANDOM = 'RANDOM',
+    FOLLOW_UP = 'FOLLOW_UP',
+}
+
+export enum InspectionStatus {
+    IN_PROGRESS = 'IN_PROGRESS',
+    COMPLETED = 'COMPLETED',
+    FLAGGED = 'FLAGGED',
+}
+
+export interface InspectionChecklist {
+    aisTransponderActive: boolean;
+    emissionDocumentsOnBoard: boolean;
+    co2CertificateValid: boolean;
+    fuelLogAvailable: boolean;
+    safetyEquipmentOk: boolean;
+}
+
+export interface Inspection {
+    id: string;
+    ref: string;
+    vesselId: string;
+    vesselName: string;
+    vesselMmsi: string;
+    inspectorId: string;
+    inspectorName: string;
+    inspectionType: InspectionType;
+    status: InspectionStatus;
+    checklist: InspectionChecklist;
+    findings: string;
+    photoUrls: string[];
+    complianceVerified: boolean;
+    offlineCreated: boolean;
+    syncedAt: string | null;
+    createdAt: string;
 }
 
 // ── Demo session ──────────────────────────────────────────────────────────────

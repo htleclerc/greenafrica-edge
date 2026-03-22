@@ -38,7 +38,28 @@
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/en.json'',''utf8''\\)\\); console.log\\(''en.json: valid''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/fr.json'',''utf8''\\)\\); console.log\\(''fr.json: valid''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/pt.json'',''utf8''\\)\\); console.log\\(''pt.json: valid''\\)\")",
-      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/sw.json'',''utf8''\\)\\); console.log\\(''sw.json: valid''\\)\")"
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/sw.json'',''utf8''\\)\\); console.log\\(''sw.json: valid''\\)\")",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/hooks -type f -name *.ts)",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/services -type f -name *.ts)",
+      "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/lib -type f -name *.ts)",
+      "Bash(node -e \"const en = require\\(''./frontend/messages/en.json''\\); const ar = require\\(''./frontend/messages/ar.json''\\); const countKeys = \\(obj, prefix=''''\\) => { let keys = []; for \\(const [k,v] of Object.entries\\(obj\\)\\) { if \\(typeof v === ''object'' && v !== null\\) { keys.push\\(...countKeys\\(v, prefix+k+''.''\\)\\); } else { keys.push\\(prefix+k\\); } } return keys; }; const enKeys = countKeys\\(en\\); const arKeys = countKeys\\(ar\\); console.log\\(''EN keys:'', enKeys.length\\); console.log\\(''AR keys:'', arKeys.length\\); const missing = enKeys.filter\\(k => !arKeys.includes\\(k\\)\\); const extra = arKeys.filter\\(k => !enKeys.includes\\(k\\)\\); if \\(missing.length\\) console.log\\(''Missing in AR:'', missing\\); if \\(extra.length\\) console.log\\(''Extra in AR:'', extra\\); if \\(!missing.length && !extra.length\\) console.log\\(''All keys match!''\\);\")",
+      "Bash(node -e \"const en=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/en.json'',''utf8''\\)\\);const ar=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''frontend/messages/ar.json'',''utf8''\\)\\);function ck\\(o,p\\){let r=[];for\\(let k in o\\){if\\(typeof o[k]===''object''&&o[k]!==null\\)r.push\\(...ck\\(o[k],p+k+''.''\\)\\);else r.push\\(p+k\\);}return r;}const ek=ck\\(en,''''\\),ak=ck\\(ar,''''\\);console.log\\(''EN:'',ek.length,''AR:'',ak.length\\);const m=ek.filter\\(x=>ak.indexOf\\(x\\)<0\\);const e=ak.filter\\(x=>ek.indexOf\\(x\\)<0\\);if\\(m.length\\)console.log\\(''Missing:'',m\\);if\\(e.length\\)console.log\\(''Extra:'',e\\);if\\(m.length===0&&e.length===0\\)console.log\\(''All keys match''\\);\")",
+      "Bash(node --input-type=module -e \"import fs from ''fs'';const en=JSON.parse\\(fs.readFileSync\\(''frontend/messages/en.json'',''utf8''\\)\\);const ar=JSON.parse\\(fs.readFileSync\\(''frontend/messages/ar.json'',''utf8''\\)\\);function ck\\(o,p\\){let r=[];for\\(let k in o\\){if\\(typeof o[k]===''object''&&o[k]!==null\\)r.push\\(...ck\\(o[k],p+k+''.''\\)\\);else r.push\\(p+k\\);}return r;}const ek=ck\\(en,''''\\),ak=ck\\(ar,''''\\);console.log\\(''EN:'',ek.length,''AR:'',ak.length\\);const m=ek.filter\\(x=>ak.indexOf\\(x\\)<0\\);const e=ak.filter\\(x=>ek.indexOf\\(x\\)<0\\);if\\(m.length\\)console.log\\(''Missing:'',m\\);if\\(e.length\\)console.log\\(''Extra:'',e\\);if\\(m.length===0&&e.length===0\\)console.log\\(''All keys match''\\);\")",
+      "Read(//tmp/**)",
+      "Read(//c/tmp/**)",
+      "Bash(node scripts/translate-pp-pt.js)",
+      "Bash(node scripts/translate-sa-pt.js)",
+      "Bash(node translate-ar.js)",
+      "Bash(sed -i 's/1er janvier 2025/1er janvier 2026/g; s/1 janvier 2025/1 janvier 2026/g; s/15 janvier 2025/15 janvier 2026/g; s/1er mars 2025/18 mars 2026/g; s/1 mars 2025/18 mars 2026/g' frontend/messages/fr.json)",
+      "Bash(sed -i 's/1 يناير 2025/1 يناير 2026/g; s/15 يناير 2025/15 يناير 2026/g; s/1 مارس 2025/18 مارس 2026/g' frontend/messages/ar.json)",
+      "Bash(sed -i 's/1 de janeiro de 2025/1 de janeiro de 2026/g; s/15 de janeiro de 2025/15 de janeiro de 2026/g; s/1 de março de 2025/18 de março de 2026/g; s/\"\"January 1, 2025\"\"/\"\"January 1, 2026\"\"/g; s/\"\"January 15, 2025\"\"/\"\"January 15, 2026\"\"/g; s/\"\"March 1, 2025\"\"/\"\"March 18, 2026\"\"/g' frontend/messages/pt.json)",
+      "Bash(sed -i 's/Januari 1, 2025/Januari 1, 2026/g; s/Januari 15, 2025/Januari 15, 2026/g; s/Machi 1, 2025/Machi 18, 2026/g; s/\"\"January 1, 2025\"\"/\"\"January 1, 2026\"\"/g; s/\"\"January 15, 2025\"\"/\"\"January 15, 2026\"\"/g; s/\"\"March 1, 2025\"\"/\"\"March 18, 2026\"\"/g' frontend/messages/sw.json)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300/dashboard/my-fleet)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try{JSON.parse\\(fs.readFileSync\\(''$f'',''utf8''\\)\\); console.log\\(''Valid JSON''\\)}catch\\(e\\){console.log\\(''INVALID: ''+e.message\\)}\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''$f'',''utf8''\\)\\); console.log\\(''OK''\\)\")"
     ]
   }
 }

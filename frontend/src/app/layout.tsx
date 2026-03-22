@@ -22,7 +22,7 @@ export default async function RootLayout({
                 {/* Blocking script to set theme before paint — avoids flash */}
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}else{document.documentElement.setAttribute('data-theme','dark')}var s=localStorage.getItem('africgreen_skin');document.documentElement.setAttribute('data-skin',s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald')}catch(e){}})()`,
+                        __html: `(function(){try{var s=localStorage.getItem('africgreen_skin');s=s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald';document.documentElement.setAttribute('data-skin',s);document.documentElement.setAttribute('data-theme',s==='institutional'?'light':'dark')}catch(e){}})()`,
                     }}
                 />
             </head>

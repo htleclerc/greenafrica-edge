@@ -8,6 +8,7 @@ import { DashboardFooter } from '@/components/dashboard/layout/DashboardFooter';
 import { useKpis } from '@/hooks/useKpis';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { Zap, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { RoleProvider, useRole } from '@/lib/RoleContext';
 import { SkinProvider } from '@/lib/SkinContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -24,6 +25,7 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/disputes'))    return { key: 'disputes',     label: 'Contestations' };
     if (pathname.startsWith('/dashboard/my-fleet'))    return { key: 'my-fleet',     label: 'Ma Flotte' };
     if (pathname.startsWith('/dashboard/tco'))         return { key: 'tco',          label: 'Co\u00fbt Total (TCO)' };
+    if (pathname.startsWith('/dashboard/inspector'))    return { key: 'inspector',    label: 'Inspections Terrain' };
     if (pathname.startsWith('/dashboard/projects'))    return { key: 'green-ledger', label: 'Green Ledger' };
     if (pathname.startsWith('/dashboard/alerts'))      return { key: 'alerts',       label: 'Alertes & Exceptions' };
     if (pathname.startsWith('/dashboard/reports'))     return { key: 'analytics',    label: 'Analytics & Rapports' };
@@ -40,6 +42,7 @@ function resolveNav(pathname: string): { key: string; label: string } {
 
 function DemoBanner() {
     const { role, isDemo } = useRole();
+    const t = useTranslations('Dashboard');
     const [dismissed, setDismissed] = React.useState(false);
 
     function exitDemo() {
@@ -66,12 +69,12 @@ function DemoBanner() {
         >
             <div className="flex items-center gap-2 min-w-0">
                 <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">MODE DÉMO — {profile.label}</span>
-                <span className="opacity-60 font-normal hidden sm:inline">· Les données sont fictives</span>
+                <span className="truncate">{t('demo_mode')} — {profile.label}</span>
+                <span className="opacity-60 font-normal hidden sm:inline">· {t('demo_data_fictive')}</span>
             </div>
             <div className="flex items-center gap-3">
                 <button onClick={exitDemo} className="underline font-bold hover:opacity-70 transition-opacity">
-                    Quitter le mode démo
+                    {t('demo_exit')}
                 </button>
                 <button onClick={() => setDismissed(true)} className="hover:opacity-70 transition-opacity">
                     <X className="w-3.5 h-3.5" />
