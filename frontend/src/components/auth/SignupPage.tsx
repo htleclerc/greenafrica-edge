@@ -37,11 +37,6 @@ interface FormData {
 
 const JURISDICTIONS = [
     'Somaliland — Gulf of Aden EEZ',
-    'Djibouti — Red Sea Corridor',
-    'Eritrea — Southern Red Sea',
-    'Ethiopia — Landlocked (Port Agent)',
-    'Kenya — East African Coast',
-    'Somalia — Federal Maritime',
 ];
 
 const REGIONS = [
@@ -110,7 +105,7 @@ function FieldSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSele
 
 const INITIAL: FormData = {
     entityType: null,
-    jurisdiction: '', organizationName: '', registryId: '', role: '',
+    jurisdiction: JURISDICTIONS.length === 1 ? JURISDICTIONS[0] : '', organizationName: '', registryId: '', role: '',
     fullName: '', email: '', password: '', confirmPassword: '',
     defaultRegion: REGIONS[0], accessScope: 'national',
     notifyProForma: true, notifyCo2: false, notifyRevenue: true, notifyWeekly: true,
@@ -322,6 +317,14 @@ export function SignupPage() {
                             {t('already_have_account')}{' '}
                             <a href="/login" className="text-[#38BDF8] hover:underline">{t('sign_in')}</a>
                         </p>
+                    </div>
+
+                    <div className="flex items-center justify-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
+                        <a href="/privacy-policy?from=signup" className="hover:text-emerald-400 transition-colors">{t('terms_privacy')}</a>
+                        <span>·</span>
+                        <a href="/terms-of-service?from=signup" className="hover:text-emerald-400 transition-colors">{t('terms_tos')}</a>
+                        <span>·</span>
+                        <a href="/security-audit?from=signup" className="hover:text-emerald-400 transition-colors">{t('terms_maritime')}</a>
                     </div>
                 </div>
             </AuthShell>
@@ -611,9 +614,9 @@ export function SignupPage() {
                                 </div>
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
                                     {t('terms_text')}{' '}
-                                    <a href="/terms-of-service?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
-                                    <a href="/privacy-policy?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
-                                    <a href="/security-audit?from=auth" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
+                                    <a href="/terms-of-service?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
+                                    <a href="/privacy-policy?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
+                                    <a href="/security-audit?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
                                 </p>
                             </button>
                         </div>
@@ -656,13 +659,6 @@ export function SignupPage() {
                         <a href="/login" className="text-[#38BDF8] hover:underline">{t('sign_in')}</a>
                     </p>
 
-                    <div className="flex items-center justify-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
-                        <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_privacy')}</a>
-                        <span>·</span>
-                        <a href="/terms-of-service?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_tos')}</a>
-                        <span>·</span>
-                        <a href="/security-audit?from=auth" className="hover:text-emerald-400 transition-colors">{t('terms_maritime')}</a>
-                    </div>
                 </div>
             </div>
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Navbar } from '@/components/layout/Navbar';
 
@@ -29,39 +29,30 @@ export function LegalPageShell({
 }: LegalPageShellProps) {
     const t = useTranslations('Legal');
     const searchParams = useSearchParams();
-    const fromAuth = searchParams.get('from') === 'auth';
+    const from = searchParams.get('from');
+    const fromOverlay = from === 'auth' || from === 'signup' || from === 'login';
 
     return (
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--os-bg)' }}>
-            {fromAuth ? (
-                /* Back-to-login bar when coming from auth pages */
-                <header className="sticky top-0 z-10 border-b flex items-center justify-between px-4 sm:px-6 py-3" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
-                    <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-[#38BDF8] hover:text-[#60CAFF] transition-colors">
-                        <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-                        <span>{t('back_to_login').replace(/^←\s*/, '')}</span>
+            {fromOverlay ? (
+                /* Minimal close bar when coming from auth/signup pages */
+                <header className="sticky top-0 z-10 border-b flex items-center justify-end px-4 py-2" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border)' }}>
+                    <button
+                        type="button"
+                        onClick={() => window.history.back()}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--os-surface-2)] transition-colors"
+                        style={{ color: 'var(--os-text-muted)' }}
+                        aria-label="Close"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                                <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                            </svg>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold tracking-tight leading-tight text-[var(--os-text-primary)]">
-                                AIS Portal
-                            </span>
-                            <span className="text-[9px] font-medium tracking-widest uppercase leading-tight text-emerald-500/70">
-                                AFRICGREEN INITIATIVE
-                            </span>
-                        </div>
-                    </div>
                 </header>
             ) : (
                 /* Public Navbar when coming from the website */
                 <Navbar />
             )}
 
-            <div className={`flex flex-1 max-w-7xl mx-auto w-full px-6 py-10 gap-10 ${!fromAuth ? 'pt-24' : ''}`}>
+            <div className={`flex flex-1 max-w-7xl mx-auto w-full px-6 py-10 gap-10 ${!fromOverlay ? 'pt-24' : ''}`}>
                 {/* Sidebar — table of contents */}
                 <aside className="hidden lg:flex flex-col gap-1 w-56 flex-shrink-0">
                     <div className="sticky top-20">
@@ -117,9 +108,9 @@ export function LegalPageShell({
                                 <span className="text-[var(--os-text-secondary)]">{t('footer_platform_name')}</span>
                             </p>
                             <div className="flex items-center gap-4">
-                                <a href={`/privacy-policy${fromAuth ? '?from=auth' : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
-                                <a href={`/terms-of-service${fromAuth ? '?from=auth' : ''}`} className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
-                                <a href={`/security-audit${fromAuth ? '?from=auth' : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
+                                <a href={`/privacy-policy${from ? `?from=${from}` : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
+                                <a href={`/terms-of-service${from ? `?from=${from}` : ''}`} className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
+                                <a href={`/security-audit${from ? `?from=${from}` : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
                             </div>
                         </div>
                     </div>

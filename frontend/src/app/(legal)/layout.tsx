@@ -1,9 +1,4 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-    title: 'Legal | Africgreen',
-};
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
     return (
