@@ -27,6 +27,7 @@ const ZONE_LABEL: Record<JurisdictionZone, string> = {
     [JurisdictionZone.EEZ]:           'EEZ — Zone A',
     [JurisdictionZone.PORT_VICINITY]: 'Port Vicinity',
     [JurisdictionZone.TRANSIT_LANE]:  'Transit Lane',
+    [JurisdictionZone.INTERNATIONAL]: 'International Waters',
 };
 
 const TX_TYPE_LABEL: Record<TransactionType, string> = {

@@ -87,6 +87,7 @@ export enum JurisdictionZone {
     EEZ             = 'EEZ',
     PORT_VICINITY   = 'PORT_VICINITY',
     TRANSIT_LANE    = 'TRANSIT_LANE',
+    INTERNATIONAL   = 'INTERNATIONAL',
 }
 
 export interface TaxConfiguration {
