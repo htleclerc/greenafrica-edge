@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { writeAuditLog } from '@/services/auditService';
+import { z } from 'zod';
+
+const auditLogSchema = z.object({
+    action: z.string().min(1).max(100),
+    entity_type: z.string().min(1).max(50).optional(),
+    entity_id: z.string().uuid().optional(),
+    severity: z.enum(['info', 'warning', 'error', 'critical']).optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
+});
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,10 +20,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json() as Record<string, unknown>;
+        const body = await request.json();
+        const parsed = auditLogSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid audit log payload' }, { status: 400 });
+        }
 
         await writeAuditLog(client, {
-            ...body,
+            ...parsed.data,
             user_id: user.id,
         });
 

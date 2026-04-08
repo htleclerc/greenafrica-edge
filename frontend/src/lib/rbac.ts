@@ -42,6 +42,9 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
+    // Audit
+    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+
     // Admin
     'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'tax-settings': [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],

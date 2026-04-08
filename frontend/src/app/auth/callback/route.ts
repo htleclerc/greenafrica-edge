@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
 
     const code = searchParams.get('code');
     const type = searchParams.get('type');     // recovery | signup | magiclink
-    const next = searchParams.get('next') ?? '/dashboard';
+    const rawNext = searchParams.get('next') ?? '/dashboard';
+
+    // Validate redirect target against allowlist to prevent open redirect
+    const ALLOWED_PREFIXES = ['/dashboard', '/post-login', '/admin', '/settings'];
+    const next = ALLOWED_PREFIXES.some((p) => rawNext.startsWith(p)) ? rawNext : '/dashboard';
 
     if (!code) {
         return NextResponse.redirect(`${origin}/login`);

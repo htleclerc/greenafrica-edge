@@ -13,8 +13,10 @@ const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-app
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Allow demo mode to bypass Supabase auth check
-    const isDemo = request.cookies.get('demo_active')?.value === 'true';
+    // Demo mode: only bypass auth if DEMO_SECRET (server-only env var) matches cookie value.
+    // The plain NEXT_PUBLIC_DEMO_ALLOWED boolean is NOT sufficient — a forgeable cookie is not auth.
+    const demoSecret = process.env.DEMO_SECRET;
+    const isDemo = !!demoSecret && request.cookies.get('demo_active')?.value === demoSecret;
 
     const { supabaseResponse, user } = await updateSession(request);
 
