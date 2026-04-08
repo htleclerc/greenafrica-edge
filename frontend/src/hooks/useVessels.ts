@@ -6,7 +6,7 @@ import { useDataSource, type DataSourceResult } from './useDataSource';
 import type { SecureVessel } from '@/types/secure';
 import { mockSecureVessels } from '@/mock/datas/secureMock';
 import { getVessels, getVesselsByOwner } from '@/services/vesselService';
-import { UserRole } from '@/types/secure';
+import { UserRole, isShipRole } from '@/types/secure';
 
 export function useVessels(): DataSourceResult<SecureVessel[]> {
     const { role, user } = useRole();
@@ -14,7 +14,7 @@ export function useVessels(): DataSourceResult<SecureVessel[]> {
     const fetcher = useCallback(
         async (client: Parameters<typeof getVessels>[0]) => {
             // SHIPPING_AGENT only sees own fleet
-            if (role === UserRole.SHIPPING_AGENT) {
+            if (isShipRole(role)) {
                 return getVesselsByOwner(client, user.id);
             }
             return getVessels(client);

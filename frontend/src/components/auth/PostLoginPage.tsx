@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
     Anchor, CheckCircle, ArrowRight, Rocket,
     MapPin, Eye, Building2, Ship, SkipForward,
+    ClipboardCheck, Users, DollarSign, Scale,
 } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { UserRole, OperationalSite } from '@/types/secure';
@@ -45,6 +46,38 @@ const IMPERSONATION_ROLES: RoleOption[] = [
         descriptionKey: 'role_finance_admin_desc',
         accessLevel: 'LEVEL 3',
         color: '#EAB308',
+    },
+    {
+        key: UserRole.FLEET_MANAGER,
+        icon: <Users className="w-5 h-5" />,
+        titleKey: 'role_fleet_manager',
+        descriptionKey: 'role_fleet_manager_desc',
+        accessLevel: 'LEVEL 2',
+        color: '#3B82F6',
+    },
+    {
+        key: UserRole.FINANCE_CONTACT,
+        icon: <DollarSign className="w-5 h-5" />,
+        titleKey: 'role_finance_contact',
+        descriptionKey: 'role_finance_contact_desc',
+        accessLevel: 'LEVEL 2',
+        color: '#F59E0B',
+    },
+    {
+        key: UserRole.LEGAL_REP,
+        icon: <Scale className="w-5 h-5" />,
+        titleKey: 'role_legal_rep',
+        descriptionKey: 'role_legal_rep_desc',
+        accessLevel: 'LEVEL 2',
+        color: '#EC4899',
+    },
+    {
+        key: UserRole.COMPLIANCE_AUDITOR,
+        icon: <ClipboardCheck className="w-5 h-5" />,
+        titleKey: 'role_compliance_auditor',
+        descriptionKey: 'role_compliance_auditor_desc',
+        accessLevel: 'LEVEL 3',
+        color: '#8B5CF6',
     },
 ];
 

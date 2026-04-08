@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import { Serwist, StaleWhileRevalidate, CacheFirst, ExpirationPlugin } from 'serwist';
 
 declare global {
     interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -8,7 +8,7 @@ declare global {
     }
 }
 
-declare const self: ServiceWorkerGlobalScope & typeof globalThis;
+declare const self: WorkerGlobalScope & typeof globalThis;
 
 const serwist = new Serwist({
     precacheEntries: self.__SW_MANIFEST,
@@ -18,21 +18,19 @@ const serwist = new Serwist({
     runtimeCaching: [
         // Cache API responses with StaleWhileRevalidate
         {
-            urlPattern: /\/api\/(vessels|transactions|kpis|tax)/,
-            handler: 'StaleWhileRevalidate',
-            options: {
+            matcher: /\/api\/(vessels|transactions|kpis|tax)/,
+            handler: new StaleWhileRevalidate({
                 cacheName: 'api-data',
-                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 }, // 1h
-            },
+                plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 })],
+            }),
         },
         // Cache tax configs longer (they change rarely)
         {
-            urlPattern: /\/api\/tax\/config/,
-            handler: 'CacheFirst',
-            options: {
+            matcher: /\/api\/tax\/config/,
+            handler: new CacheFirst({
                 cacheName: 'tax-configs',
-                expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 }, // 24h
-            },
+                plugins: [new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 })],
+            }),
         },
         // Default caching for everything else
         ...defaultCache,

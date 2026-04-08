@@ -17,4 +17,6 @@
 
 ## Documentation
 - Keep `recap.md` updated with prompt summaries every 6 hours.
-- Update `instructions.md` with new business rules as they emerge.
+## Branch Management
+- **`main` / `develop`**: Strict security. Authentication required via Supabase.
+- **`demo`**: Sandbox branch. Includes authentication bypass for presentations. Never merge `demo` back to `develop` or `main`.

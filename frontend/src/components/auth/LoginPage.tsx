@@ -4,29 +4,14 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Shield, Clock, Eye, EyeOff, ArrowRight, AlertCircle, Zap, ChevronRight } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
-import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 
-function persistDemoRole(role: UserRole) {
-    document.cookie = `demo_active=true; path=/; max-age=3600; SameSite=Lax`;
-    document.cookie = `demo_role=${role}; path=/; max-age=3600; SameSite=Lax`;
-    localStorage.setItem('demo_active', 'true');
-    localStorage.setItem('demo_role', role);
-}
 
-function clearDemoFlags() {
-    document.cookie = 'demo_active=; path=/; max-age=0';
-    document.cookie = 'demo_role=; path=/; max-age=0';
-    localStorage.removeItem('demo_active');
-    localStorage.removeItem('demo_role');
-}
 
-function enterDemo(role: UserRole) {
-    persistDemoRole(role);
-    window.location.href = '/dashboard';
-}
+
 
 export function LoginPage() {
     const t = useTranslations('Auth');
@@ -35,7 +20,6 @@ export function LoginPage() {
     const [showPwd, setShowPwd]   = React.useState(false);
     const [loading, setLoading]   = React.useState(false);
     const [error, setError]       = React.useState('');
-    const [showDemo, setShowDemo] = React.useState(false);
 
 
     async function handleSubmit(e: React.FormEvent) {
@@ -47,9 +31,6 @@ export function LoginPage() {
         }
 
         setLoading(true);
-
-        // Clear any leftover demo flags
-        clearDemoFlags();
 
         // Real Supabase Auth
         const supabase = createClient();
@@ -95,6 +76,22 @@ export function LoginPage() {
             window.location.href = '/dashboard';
         }
     }
+
+    function enterDemo(profile: any) {
+        setLoading(true);
+        // Set cookies for middleware and client-side RoleContext
+        document.cookie = `demo_active=true; path=/; max-age=${60 * 60 * 24}`;
+        document.cookie = `demo_role=${profile.role}; path=/; max-age=${60 * 60 * 24}`;
+        
+        // Also set localStorage for immediate RoleContext pickup
+        localStorage.setItem('demo_active', 'true');
+        localStorage.setItem('demo_role', profile.role);
+        
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 800);
+    }
+
 
     return (
         <div
@@ -231,71 +228,58 @@ export function LoginPage() {
 
                         <p className="text-center text-xs mt-4" style={{ color: 'var(--os-text-muted)' }}>
                             {t('no_account')}{' '}
-                            <a href="/signup" className="text-emerald-400 hover:underline font-semibold">{t('request_access')}</a>
                         </p>
                     </div>
 
-                    {/* ── Demo mode section ───────────────────────────────── */}
-                    <div className="w-full mt-4">
-                        <button
-                            onClick={() => setShowDemo((v) => !v)}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-                            style={{
-                                backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'var(--os-surface)',
-                                border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
-                                color: showDemo ? '#EAB308' : 'var(--os-text-muted)',
-                            }}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Zap className="w-4 h-4" />
-                                <span>{t('demo_title')}</span>
-                            </div>
-                            <ChevronRight
-                                className="w-4 h-4 transition-transform"
-                                style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                            />
-                        </button>
+                    {/* Quick Demo Access */}
+                    <div className="w-full mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--os-border)]" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500/40 whitespace-nowrap">
+                                {t('quick_demo_access') ?? 'Quick Demo Access'}
+                            </span>
+                            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--os-border)]" />
+                        </div>
 
-                        {showDemo && (
-                            <div
-                                className="mt-2 rounded-xl p-4"
-                                style={{ backgroundColor: 'var(--os-surface)', border: '1px solid rgba(234,179,8,0.2)' }}
-                            >
-                                <p className="text-[11px] mb-3" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_choose_profile')}
-                                </p>
-                                <div className="flex flex-col gap-2">
-                                    {DEMO_PROFILES.map((p) => (
-                                        <button
-                                            key={p.role}
-                                            onClick={() => enterDemo(p.role)}
-                                            className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-left transition-all group"
-                                            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                        <div className="grid grid-cols-1 gap-2.5">
+                            {DEMO_PROFILES.map((profile) => (
+                                <button
+                                    key={profile.role}
+                                    onClick={() => enterDemo(profile)}
+                                    disabled={loading}
+                                    className="group relative flex items-center justify-between p-3.5 rounded-xl border transition-all text-left overflow-hidden bg-white/5 hover:bg-white/[0.08]"
+                                    style={{ borderColor: 'var(--os-border)' }}
+                                >
+                                    <div className="flex items-center gap-3.5 relative z-10">
+                                        <div 
+                                            className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
+                                            style={{ backgroundColor: `${profile.color}15`, color: profile.color }}
                                         >
-                                            <div
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                                                style={{ backgroundColor: p.color }}
-                                            >
-                                                {p.label.charAt(0)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold" style={{ color: 'var(--os-text-primary)' }}>
-                                                    {p.label}
-                                                </p>
-                                                <p className="text-[11px] truncate" style={{ color: 'var(--os-text-muted)' }}>
-                                                    {p.description}
-                                                </p>
-                                            </div>
-                                            <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: p.color }} />
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_disclaimer')}
-                                </p>
-                            </div>
-                        )}
+                                            <Zap className="w-5 h-5 fill-current" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold leading-none mb-1" style={{ color: 'var(--os-text-primary)' }}>
+                                                {profile.label}
+                                            </p>
+                                            <p className="text-[10px] opacity-50 font-medium">
+                                                {profile.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all relative z-10" />
+                                    
+                                    {/* Hover gradient effect */}
+                                    <div 
+                                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                        style={{ background: `linear-gradient(90deg, ${profile.color}05 0%, transparent 100%)` }}
+                                    />
+                                </button>
+                            ))}
+                        </div>
                     </div>
+
+
+
 
                     <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
                         <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>

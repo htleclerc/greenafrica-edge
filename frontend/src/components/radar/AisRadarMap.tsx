@@ -9,12 +9,16 @@ import {
     Marker,
     ZoomableGroup
 } from 'react-simple-maps';
-import { mockAisVessels } from '@/mock/datas/aisMock';
 import { AisVessel, VesselStatus } from '@/domain/ais/aisConstants';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-export function AisRadarMap({ onSelectVessel }: { onSelectVessel: (v: AisVessel | null) => void }) {
+interface AisRadarMapProps {
+    vessels: AisVessel[];
+    onSelectVessel: (v: AisVessel | null) => void;
+}
+
+export function AisRadarMap({ vessels, onSelectVessel }: AisRadarMapProps) {
     const t = useTranslations('Radar');
     const [mounted, setMounted] = useState(false);
     const [activeVesselId, setActiveVesselId] = useState<string | null>(null);
@@ -73,7 +77,7 @@ export function AisRadarMap({ onSelectVessel }: { onSelectVessel: (v: AisVessel 
                         }
                     </Geographies>
 
-                    {mockAisVessels.map((vessel) => {
+                    {vessels.map((vessel) => {
                         const color = getStatusColor(vessel.status);
                         const isActive = activeVesselId === vessel.id;
                         return (

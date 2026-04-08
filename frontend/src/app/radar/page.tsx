@@ -3,7 +3,7 @@ import { RadarDashboard } from '@/components/radar/RadarDashboard';
 import { Navbar } from '@/components/layout/Navbar';
 
 export const metadata: Metadata = {
-    title: 'AIS Radar | Africgreen',
+    title: 'AIS Radar | Africgreen — Green Gate Digital System',
     description: 'Real-time sovereign maritime radar monitoring the Gulf of Aden and Somaliland EEZ.',
 };
 

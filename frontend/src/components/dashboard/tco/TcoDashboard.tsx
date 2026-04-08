@@ -10,7 +10,7 @@ import { Download, TrendingUp } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { useRole } from '@/lib/RoleContext';
 import { useTco } from '@/hooks/useTco';
-import { UserRole } from '@/types/secure';
+import { UserRole, isShipRole } from '@/types/secure';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -324,7 +324,7 @@ export default function TcoDashboard() {
     const t = useTranslations('TCO');
     const { role } = useRole();
 
-    const isShippingAgent = role === UserRole.SHIPPING_AGENT;
+    const isShippingAgent = isShipRole(role);
 
     return (
         <div className="px-3 sm:px-5 py-3 sm:py-5 flex flex-col gap-5">

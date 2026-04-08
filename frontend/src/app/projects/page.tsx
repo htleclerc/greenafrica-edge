@@ -1,7 +1,7 @@
 import { ProjectsPage } from '@/components/projects/ProjectsPage';
 
 export const metadata = {
-    title: 'Projects | AIS Portal — Africgreen Initiative',
+    title: 'Projects | Africgreen — Green Gate Digital System',
     description:
         'Explore Somaliland\'s sovereign green and carbon project portfolio — maritime carbon taxation, national carbon registry, blue carbon conservation, reforestation (VCS), clean cooking (Gold Standard), and green energy transition at Berbera Port.',
 };

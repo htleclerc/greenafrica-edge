@@ -6,13 +6,14 @@ import { DashboardSidebar } from '@/components/dashboard/layout/DashboardSidebar
 import { DashboardTopBar } from '@/components/dashboard/layout/DashboardTopBar';
 import { DashboardFooter } from '@/components/dashboard/layout/DashboardFooter';
 import { useKpis } from '@/hooks/useKpis';
-import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
-import { Zap, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { RoleProvider, useRole } from '@/lib/RoleContext';
 import { SkinProvider } from '@/lib/SkinContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { canAccess } from '@/lib/rbac';
+import { useRouter } from 'next/navigation';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { DemoBanner } from '@/components/ui/DemoBanner';
+
 
 const SIDEBAR_COLLAPSED = 56;
 const SIDEBAR_EXPANDED  = 220;
@@ -38,51 +39,9 @@ function resolveNav(pathname: string): { key: string; label: string } {
     return { key: 'map', label: 'Command Center — The Eye of Berbera' };
 }
 
-// ── Demo banner ───────────────────────────────────────────────────────────────
 
-function DemoBanner() {
-    const { role, isDemo } = useRole();
-    const t = useTranslations('Dashboard');
-    const [dismissed, setDismissed] = React.useState(false);
 
-    function exitDemo() {
-        document.cookie = 'demo_active=; path=/; max-age=0';
-        document.cookie = 'demo_role=; path=/; max-age=0';
-        localStorage.removeItem('demo_active');
-        localStorage.removeItem('demo_role');
-        window.location.href = '/login';
-    }
 
-    if (!isDemo || dismissed) return null;
-
-    const profile = DEMO_PROFILES.find((p) => p.role === role);
-    if (!profile) return null;
-
-    return (
-        <div
-            className="fixed top-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-4 py-2 text-[10px] sm:text-xs font-semibold left-0 md:left-[var(--os-sidebar-w)]"
-            style={{
-                backgroundColor: '#EAB308',
-                color: '#000',
-                transition: 'left 220ms cubic-bezier(0.4,0,0.2,1)',
-            }}
-        >
-            <div className="flex items-center gap-2 min-w-0">
-                <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{t('demo_mode')} — {profile.label}</span>
-                <span className="opacity-60 font-normal hidden sm:inline">· {t('demo_data_fictive')}</span>
-            </div>
-            <div className="flex items-center gap-3">
-                <button onClick={exitDemo} className="underline font-bold hover:opacity-70 transition-opacity">
-                    {t('demo_exit')}
-                </button>
-                <button onClick={() => setDismissed(true)} className="hover:opacity-70 transition-opacity">
-                    <X className="w-3.5 h-3.5" />
-                </button>
-            </div>
-        </div>
-    );
-}
 
 // ── Skin bridge — wraps inner layout with SkinProvider using resolved role ────
 
@@ -95,10 +54,24 @@ function SkinBridge({ children }: { children: React.ReactNode }) {
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
     const { key, label } = resolveNav(pathname);
-    const { user } = useRole();
+    const { user, role, isDemo } = useRole();
     const { data: kpis } = useKpis();
+
     const { notifications, pendingRegistrations, unreadCount, markRead, markAllRead } = useNotifications();
+
+    // Route eviction check based on RBAC
+    React.useEffect(() => {
+        if (!isDemo && role && !canAccess(key, role)) {
+            console.warn(`Unauthorized access attempt to ${key} by role ${role}`);
+            router.replace('/dashboard/vessels');
+        }
+    }, [role, key, router, isDemo]);
+
+    // Fast-fail rendering to avoid info flashes
+    const hasAccess = isDemo || (role && canAccess(key, role));
+
 
     // Persist sidebar state across navigations
     const [expanded, setExpanded] = React.useState(false);
@@ -133,7 +106,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                 '--os-sidebar-w': `${sidebarW}px`,
             } as React.CSSProperties}
         >
-            <DemoBanner />
             <DashboardSidebar
                 activePage={key}
                 expanded={expanded}
@@ -162,11 +134,17 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                     transition: 'margin-left 220ms cubic-bezier(0.4,0,0.2,1)',
                 }}
             >
-                {children}
+                {hasAccess ? children : (
+                    <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm font-medium opacity-50">Accès Refusé. Redirection en cours...</p>
+                    </div>
+                )}
             </main>
 
             <DashboardFooter />
+            {isDemo && <DemoBanner />}
             <OfflineBanner />
+
         </div>
     );
 }

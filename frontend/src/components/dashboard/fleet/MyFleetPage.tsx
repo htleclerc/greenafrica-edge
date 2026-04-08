@@ -15,6 +15,7 @@ import {
     Transaction,
     TransactionStatus,
     UserRole,
+    isShipRole,
 } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import type { BadgeVariant } from '@/lib/badgeUtils';
@@ -90,7 +91,7 @@ export function MyFleetPage() {
         .slice(0, 10);
 
     // Access guard
-    if (role !== UserRole.SHIPPING_AGENT && role !== UserRole.SUPERADMIN) {
+    if (!isShipRole(role) && role !== UserRole.SUPERADMIN) {
         return (
             <div className="flex items-center justify-center h-full text-[var(--os-text-muted)] text-sm p-8">
                 {t('access_denied')}

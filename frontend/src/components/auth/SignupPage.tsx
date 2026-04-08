@@ -131,7 +131,6 @@ export function SignupPage() {
         { key: 'PORT_OFFICER',       label: t('role_port_officer'),       description: t('role_port_officer_desc') },
         { key: 'FINANCE_ADMIN',      label: t('role_finance_admin'),      description: t('role_finance_admin_desc') },
         { key: 'COMPLIANCE_AUDITOR', label: t('role_compliance_auditor'), description: t('role_compliance_auditor_desc') },
-        { key: 'SUPERADMIN',         label: t('role_superadmin'),         description: t('role_superadmin_desc') },
     ];
 
     const SHIPPING_AGENT_ROLES = [
@@ -537,19 +536,16 @@ export function SignupPage() {
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     {[
-                                        { key: 'national' as const, label: t('scope_national'), desc: t('scope_national_desc'), available: isPortAuth },
-                                        { key: 'regional' as const, label: t('scope_regional'), desc: t('scope_regional_desc'), available: true },
-                                    ].map((opt) => {
+                                        { key: 'national' as const, label: t('scope_national'), desc: t('scope_national_desc') },
+                                        { key: 'regional' as const, label: t('scope_regional'), desc: t('scope_regional_desc') },
+                                    ].filter((opt) => isPortAuth || opt.key === 'regional').map((opt) => {
                                         const isSelected = form.accessScope === opt.key;
                                         return (
                                             <button
                                                 key={opt.key}
-                                                onClick={() => opt.available && set('accessScope', opt.key)}
-                                                disabled={!opt.available}
+                                                onClick={() => set('accessScope', opt.key)}
                                                 className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
-                                                    !opt.available
-                                                        ? 'opacity-40 cursor-not-allowed border-[var(--os-border)]'
-                                                        : isSelected
+                                                    isSelected
                                                             ? 'border-[#00D97E]/50 bg-[rgba(0,217,126,0.06)]'
                                                             : 'border-[var(--os-border)] hover:border-[var(--os-border-strong)]'
                                                 }`}
@@ -614,9 +610,9 @@ export function SignupPage() {
                                 </div>
                                 <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed">
                                     {t('terms_text')}{' '}
-                                    <a href="/terms-of-service?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
-                                    <a href="/privacy-policy?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
-                                    <a href="/security-audit?from=signup" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
+                                    <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_tos')}</a>,{' '}
+                                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_privacy')}</a>, and the{' '}
+                                    <a href="/security-audit" target="_blank" rel="noopener noreferrer" className="text-[#38BDF8] underline hover:text-[#60CAFF] transition-colors" onClick={(e) => e.stopPropagation()}>{t('terms_maritime')}</a>.
                                 </p>
                             </button>
                         </div>
@@ -706,7 +702,7 @@ function LogoBlock() {
                 </svg>
             </div>
             <h1 className="text-2xl font-bold text-[var(--os-text-primary)] mb-1">
-                AIS Portal
+                Africgreen
             </h1>
         </>
     );
@@ -723,7 +719,7 @@ function AuthShell({ children, t }: { children: React.ReactNode; t: (key: string
                             <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
                         </svg>
                     </div>
-                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>AIS Portal</span>
+                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>Africgreen</span>
                 </a>
                 {/* Online indicator — center (dot only on mobile) */}
                 <div className="flex items-center gap-2">

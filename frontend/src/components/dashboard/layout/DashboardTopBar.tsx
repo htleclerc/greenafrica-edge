@@ -26,17 +26,25 @@ function countryFlag(code: string): string {
 // ── Role label keys ──────────────────────────────────────────────────────────
 
 const ROLE_LABEL_KEY: Record<UserRole, string> = {
-    [UserRole.PORT_OFFICER]:    'role_port_officer',
-    [UserRole.FINANCE_ADMIN]:   'role_finance_admin',
-    [UserRole.SHIPPING_AGENT]:  'role_shipping_agent',
-    [UserRole.SUPERADMIN]:      'role_superadmin',
+    [UserRole.PORT_OFFICER]:       'role_port_officer',
+    [UserRole.FINANCE_ADMIN]:      'role_finance_admin',
+    [UserRole.SHIPPING_AGENT]:     'role_shipping_agent',
+    [UserRole.SUPERADMIN]:         'role_superadmin',
+    [UserRole.COMPLIANCE_AUDITOR]: 'role_compliance_auditor',
+    [UserRole.FLEET_MANAGER]:      'role_fleet_manager',
+    [UserRole.FINANCE_CONTACT]:    'role_finance_contact',
+    [UserRole.LEGAL_REP]:          'role_legal_rep',
 };
 
 const ROLE_COLOR: Record<UserRole, string> = {
-    [UserRole.PORT_OFFICER]:    '#10B981',
-    [UserRole.FINANCE_ADMIN]:   '#EAB308',
-    [UserRole.SHIPPING_AGENT]:  '#3B82F6',
-    [UserRole.SUPERADMIN]:      '#F97316',
+    [UserRole.PORT_OFFICER]:       '#10B981',
+    [UserRole.FINANCE_ADMIN]:      '#EAB308',
+    [UserRole.SHIPPING_AGENT]:     '#3B82F6',
+    [UserRole.SUPERADMIN]:         '#F97316',
+    [UserRole.COMPLIANCE_AUDITOR]: '#8B5CF6',
+    [UserRole.FLEET_MANAGER]:      '#3B82F6',
+    [UserRole.FINANCE_CONTACT]:    '#F59E0B',
+    [UserRole.LEGAL_REP]:          '#EC4899',
 };
 
 // ── Relative time formatter ──────────────────────────────────────────────────

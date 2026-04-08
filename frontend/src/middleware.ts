@@ -13,22 +13,25 @@ const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-app
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Allow demo mode to bypass Supabase auth check
-    const isDemo = request.cookies.get('demo_active')?.value === 'true';
-
     const { supabaseResponse, user } = await updateSession(request);
 
     const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
     const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
     const isPublicAuth = PUBLIC_AUTH_ROUTES.some((p) => pathname.startsWith(p));
+    
+    // Demo bypass logic
+    const demoActive = request.cookies.get('demo_active')?.value === 'true';
+    if (demoActive && isProtected) {
+        return supabaseResponse;
+    }
 
     // Public auth routes — always pass through
     if (isPublicAuth) {
         return supabaseResponse;
     }
 
-    // Not logged in AND not in demo → redirect to /login
-    if (isProtected && !user && !isDemo) {
+    // Not logged in → redirect to /login
+    if (isProtected && !user) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         url.searchParams.set('redirectTo', pathname);

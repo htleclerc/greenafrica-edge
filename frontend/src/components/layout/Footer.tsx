@@ -12,6 +12,11 @@ const PLATFORM_ROUTES: Record<string, string> = {
     reports:        '/reports',
 };
 
+const COMPANY_ROUTES: Record<string, string> = {
+    about:       '/about',
+    partnership: '/partnership',
+};
+
 const SUPPORT_ROUTES: Record<string, string> = {
     help_center:      '/terms-of-service',
     contact_support:  '/terms-of-service',
@@ -26,7 +31,7 @@ export function Footer() {
     return (
         <footer className="pt-16 pb-8 px-6" style={{ backgroundColor: 'var(--ais-footer-bg)', color: 'var(--ais-footer-text)', borderTop: '1px solid var(--ais-footer-border)' }}>
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
                     {/* Brand Column */}
                     <div>
@@ -36,7 +41,10 @@ export function Footer() {
                                     <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z"></path>
                                 </svg>
                             </div>
-                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>AIS Portal</span>
+                            <div className="flex flex-col">
+                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>Africgreen</span>
+                            <span className="text-[9px] font-medium tracking-widest uppercase text-emerald-500/60">by Solide Technology</span>
+                        </div>
                         </div>
                         <p className="text-sm leading-relaxed mb-6 pr-4" style={{ color: 'var(--ais-footer-text)' }}>
                             {t('brand_desc')}
@@ -59,6 +67,20 @@ export function Footer() {
                         <h4 className="font-semibold mb-5 text-sm" style={{ color: 'var(--ais-footer-text-bright)' }}>{t('platform')}</h4>
                         <ul className="space-y-3 text-sm">
                             {Object.entries(PLATFORM_ROUTES).map(([key, href]) => (
+                                <li key={key}>
+                                    <Link href={href} className="hover:text-emerald-400 transition-colors" style={{ color: 'var(--ais-footer-text)' }}>
+                                        {t(key)}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Company */}
+                    <div>
+                        <h4 className="font-semibold mb-5 text-sm" style={{ color: 'var(--ais-footer-text-bright)' }}>{t('company')}</h4>
+                        <ul className="space-y-3 text-sm">
+                            {Object.entries(COMPANY_ROUTES).map(([key, href]) => (
                                 <li key={key}>
                                     <Link href={href} className="hover:text-emerald-400 transition-colors" style={{ color: 'var(--ais-footer-text)' }}>
                                         {t(key)}

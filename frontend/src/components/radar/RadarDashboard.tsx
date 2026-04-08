@@ -1,17 +1,95 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Ship, Anchor, AlertTriangle, CheckCircle2, DollarSign, Activity, X } from 'lucide-react';
 import { AisRadarMap } from '@/components/radar/AisRadarMap';
-import { AisVessel, VesselStatus } from '@/domain/ais/aisConstants';
-import { radarStats } from '@/mock/datas/aisMock';
+import { AisVessel, VesselStatus, VesselType } from '@/domain/ais/aisConstants';
 import { ComplianceNoticeModal } from '@/components/invoice/ComplianceNoticeModal';
+import { createClient } from '@/lib/supabase/client';
+import { getVessels } from '@/services/vesselService';
+import type { SecureVessel } from '@/types/secure';
+
+function mapSecureToAisVessel(v: SecureVessel): AisVessel {
+    // Basic mapping
+    const typeMapping: Record<string, VesselType> = {
+        CONTAINER: VesselType.CONTAINER,
+        CARGO: VesselType.CARGO,
+        TANKER: VesselType.TANKER,
+    };
+    
+    // Status mapping
+    const statusMapping: Record<string, VesselStatus> = {
+        COMPLIANT: VesselStatus.PAID,
+        PAYMENT_DUE: VesselStatus.UNPAID,
+        NON_COMPLIANT: VesselStatus.UNPAID,
+        PROCESSING: VesselStatus.APPROACHING,
+        APPROACHING: VesselStatus.APPROACHING,
+        EXEMPT: VesselStatus.PAID,
+    };
+
+    return {
+        id: v.id,
+        name: v.name,
+        imo: v.imoNumber,
+        type: typeMapping[v.category] || VesselType.CARGO,
+        flagCode: v.flagCode,
+        speedKnot: v.position?.speedKnots || 0,
+        coordinates: {
+            lat: v.position?.lat || 11.5,
+            lng: v.position?.lng || 45.1,
+        },
+        status: statusMapping[v.complianceStatus] || VesselStatus.APPROACHING,
+        estimatedCo2: v.estimatedEmissionsTco2,
+        dueAmountUsd: v.taxLiabilityUsd,
+    };
+}
 
 export function RadarDashboard() {
     const t = useTranslations('Radar');
     const [selectedVessel, setSelectedVessel] = useState<AisVessel | null>(null);
     const [isNoticeOpen, setIsNoticeOpen] = useState(false);
+    const [liveVessels, setLiveVessels] = useState<AisVessel[]>([]);
+    
+    useEffect(() => {
+        const supabase = createClient();
+        
+        async function loadVessels() {
+            try {
+                const secureVessels = await getVessels(supabase);
+                const mapped = secureVessels.map(mapSecureToAisVessel);
+                setLiveVessels(mapped);
+            } catch (error) {
+                console.error("Error loading vessels", error);
+            }
+        }
+        
+        loadVessels();
+
+        // Subscribe to changes in vessels table for live reactivity
+        const channel = supabase.channel('public:vessels')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vessels' }, () => {
+                // When a change occurs, refetch the joined state
+                loadVessels();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vessel_positions' }, () => {
+                loadVessels();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    const radarStats = {
+        totalVessels: liveVessels.length,
+        activeAlerts: liveVessels.filter((v) => v.status === VesselStatus.UNPAID).length,
+        revenueAtRiskUsd: liveVessels
+            .filter((v) => v.status === VesselStatus.UNPAID)
+            .reduce((sum, v) => sum + v.dueAmountUsd, 0),
+        co2Tracked: liveVessels.reduce((sum, v) => sum + v.estimatedCo2, 0),
+    };
 
     const getStatusStyle = (status: VesselStatus) => {
         switch (status) {
@@ -145,7 +223,7 @@ export function RadarDashboard() {
 
                 {/* Right Panel: Interactive Map */}
                 <div className="lg:col-span-3 h-[50vh] lg:h-full">
-                    <AisRadarMap onSelectVessel={setSelectedVessel} />
+                    <AisRadarMap vessels={liveVessels} onSelectVessel={setSelectedVessel} />
                 </div>
             </div>
 

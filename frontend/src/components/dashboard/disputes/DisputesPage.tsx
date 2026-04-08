@@ -10,7 +10,7 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useDisputes } from '@/hooks/useDisputes';
 import { useRole } from '@/lib/RoleContext';
-import { Dispute, DisputeStatus, DisputeReason, UserRole } from '@/types/secure';
+import { Dispute, DisputeStatus, DisputeReason, UserRole, isShipRole } from '@/types/secure';
 import { DisputeFormModal } from './DisputeFormModal';
 import type { BadgeVariant } from '@/lib/badgeUtils';
 
@@ -83,7 +83,7 @@ export function DisputesPage() {
     const resolvedCount   = disputes.filter((d) => d.status === DisputeStatus.ACCEPTED || d.status === DisputeStatus.REJECTED).length;
 
     const isReviewer = role === UserRole.PORT_OFFICER || role === UserRole.FINANCE_ADMIN || role === UserRole.SUPERADMIN;
-    const isAgent    = role === UserRole.SHIPPING_AGENT;
+    const isAgent    = isShipRole(role);
 
     return (
         <div className="flex flex-col" style={{ height: 'calc(100vh - 3.5rem - 2rem)' }}>

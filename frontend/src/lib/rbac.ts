@@ -5,42 +5,55 @@
 
 import { UserRole } from '@/types/secure';
 
+// ── Role groups (for readability) ────────────────────────────────────────────
+
+/** All port-authority side roles */
+const PORT_ROLES = [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.COMPLIANCE_AUDITOR];
+
+/** All armateur/shipping side roles */
+const SHIP_ROLES = [UserRole.SHIPPING_AGENT, UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.LEGAL_REP];
+
+/** Every role in the system */
+const ALL_ROLES = [...PORT_ROLES, ...SHIP_ROLES, UserRole.SUPERADMIN];
+
 /**
- * Maps each nav key to the list of roles that can access it.
- * If a key is absent, it defaults to ALL roles (visible to everyone).
- *
  * RBAC Matrix:
- * ┌──────────────────┬──────────────┬──────────────┬───────────────┬──────────────┐
- * │ Page             │ PORT_OFFICER │ FINANCE_ADMIN│ SHIPPING_AGENT│ SUPERADMIN   │
- * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┤
- * │ map (Dashboard)  │ ✓            │ ✓            │ ✓             │ ✓            │
- * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │
- * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │
- * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │
- * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │
- * │ my-fleet         │ ✗            │ ✗            │ ✓             │ ✓            │
- * │ green-ledger     │ ✓            │ ✗            │ ✗             │ ✓            │
- * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │
- * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │
- * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │
- * │ tax-settings     │ ✗            │ ✓            │ ✗             │ ✓            │
- * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │
- * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │
- * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┘
+ * ┌──────────────────┬──────────┬─────────────┬──────────────────┬───────────────┬──────────────┬─────────────────┬───────────┬───────────┐
+ * │ Page             │ PORT_OFF │ FINANCE_ADM │ COMPLIANCE_AUD   │ FLEET_MGR     │ FINANCE_CON  │ LEGAL_REP       │ SHIP_AGT  │ SUPERADM  │
+ * ├──────────────────┼──────────┼─────────────┼──────────────────┼───────────────┼──────────────┼─────────────────┼───────────┼───────────┤
+ * │ map (Dashboard)  │ ✓        │ ✓           │ ✓                │ ✓             │ ✓            │ ✓               │ ✓         │ ✓         │
+ * │ simulator        │ ✓        │ ✗           │ ✗                │ ✓             │ ✗            │ ✗               │ ✓         │ ✓         │
+ * │ vessels          │ ✓        │ read        │ ✓ (audit)        │ ✓ (own fleet) │ read         │ read            │ ✓         │ ✓         │
+ * │ invoices         │ ✓        │ ✓           │ read             │ read          │ ✓ (own)      │ read            │ ✓         │ ✓         │
+ * │ disputes         │ ✓        │ ✓           │ ✓                │ ✗             │ ✗            │ ✓               │ ✓         │ ✓         │
+ * │ my-fleet         │ ✗        │ ✗           │ ✗                │ ✓             │ ✓            │ ✓               │ ✓         │ ✓         │
+ * │ tco              │ ✓        │ ✓           │ ✗                │ ✓             │ ✓            │ ✗               │ ✓         │ ✓         │
+ * │ green-ledger     │ ✓        │ ✗           │ ✓                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ alerts           │ ✓        │ ✗           │ ✓                │ ✓             │ ✓            │ ✓               │ ✓         │ ✓         │
+ * │ inspector        │ ✓        │ ✗           │ ✓                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ analytics        │ ✓        │ ✓           │ ✓                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ validations      │ ✓        │ ✗           │ ✗                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ tax-settings     │ ✗        │ ✓           │ ✗                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ revenue          │ ✗        │ ✓           │ ✗                │ ✗             │ ✗            │ ✗               │ ✗         │ ✓         │
+ * │ settings         │ ✓        │ ✓           │ ✓                │ ✓             │ ✓            │ ✓               │ ✓         │ ✓         │
+ * └──────────────────┴──────────┴─────────────┴──────────────────┴───────────────┴──────────────┴─────────────────┴───────────┴───────────┘
  */
 const NAV_PERMISSIONS: Record<string, UserRole[]> = {
-    // Ops
-    'map':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'my-fleet':     [UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'green-ledger': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
-    'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
-    'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    // Ops — everyone sees the map and settings
+    'map':          ALL_ROLES,
+    'simulator':    [UserRole.PORT_OFFICER, UserRole.FLEET_MANAGER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'vessels':      ALL_ROLES,
+    'invoices':     ALL_ROLES,
+    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.COMPLIANCE_AUDITOR, UserRole.LEGAL_REP, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'my-fleet':     [UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.LEGAL_REP, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'green-ledger': [UserRole.PORT_OFFICER, UserRole.COMPLIANCE_AUDITOR, UserRole.SUPERADMIN],
+    'alerts':       [UserRole.PORT_OFFICER, UserRole.COMPLIANCE_AUDITOR, ...SHIP_ROLES, UserRole.SUPERADMIN],
+    'inspector':    [UserRole.PORT_OFFICER, UserRole.COMPLIANCE_AUDITOR, UserRole.SUPERADMIN],
+    'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.COMPLIANCE_AUDITOR, UserRole.SUPERADMIN],
+
+    // Audit trail — compliance-focused
+    'audit':        [UserRole.PORT_OFFICER, UserRole.COMPLIANCE_AUDITOR, UserRole.SUPERADMIN],
 
     // Admin
     'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
@@ -48,7 +61,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Settings — everyone
-    'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'settings':     ALL_ROLES,
 };
 
 /**

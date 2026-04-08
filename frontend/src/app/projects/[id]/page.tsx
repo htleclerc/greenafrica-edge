@@ -11,12 +11,12 @@ export async function generateMetadata({ params }: Props) {
 
     if (!project) {
         return {
-            title: 'Project Not Found | AIS Portal',
+            title: 'Project Not Found | Africgreen',
         };
     }
 
     return {
-        title: `${project.name} | AIS Portal — Africgreen Initiative`,
+        title: `${project.name} | Africgreen — Green Gate Digital System`,
         description: project.description,
     };
 }

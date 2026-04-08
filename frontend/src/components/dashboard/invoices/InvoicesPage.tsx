@@ -8,7 +8,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useKpis } from '@/hooks/useKpis';
 import { useRole } from '@/lib/RoleContext';
-import { Transaction, TransactionStatus, TransactionType, UserRole } from '@/types/secure';
+import { Transaction, TransactionStatus, TransactionType, UserRole, isShipRole } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
 
@@ -204,7 +204,7 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
-    const canContest = role === UserRole.SHIPPING_AGENT && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
+    const canContest = isShipRole(role) && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),

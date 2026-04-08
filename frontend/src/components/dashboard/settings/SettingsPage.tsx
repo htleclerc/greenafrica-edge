@@ -6,19 +6,25 @@ import {
     User, Shield, Bell, Globe, Monitor, Key,
     Save, AlertTriangle, CheckCircle2, Eye, EyeOff,
     LogOut, Trash2, Download, Clock, Smartphone,
-    Mail, Lock,
+    Mail, Lock, Users, Send, XCircle,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { SkinSwitcher } from '@/components/layout/SkinSwitcher';
-import { UserRole, OperationalSite } from '@/types/secure';
+import { UserRole, OperationalSite, InvitationStatus, isShipRole } from '@/types/secure';
+import type { Invitation } from '@/types/secure';
+import { mockInvitations } from '@/mock/datas/secureMock';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ROLE_I18N_KEY: Record<UserRole, string> = {
-    [UserRole.PORT_OFFICER]:   'settings_role_port_officer',
-    [UserRole.FINANCE_ADMIN]:  'settings_role_finance_admin',
-    [UserRole.SUPERADMIN]:     'settings_role_superadmin',
-    [UserRole.SHIPPING_AGENT]: 'settings_role_shipping_agent',
+    [UserRole.PORT_OFFICER]:       'settings_role_port_officer',
+    [UserRole.FINANCE_ADMIN]:      'settings_role_finance_admin',
+    [UserRole.COMPLIANCE_AUDITOR]: 'settings_role_compliance_auditor',
+    [UserRole.FLEET_MANAGER]:      'settings_role_fleet_manager',
+    [UserRole.FINANCE_CONTACT]:    'settings_role_finance_contact',
+    [UserRole.LEGAL_REP]:          'settings_role_legal_rep',
+    [UserRole.SHIPPING_AGENT]:     'settings_role_shipping_agent',
+    [UserRole.SUPERADMIN]:         'settings_role_superadmin',
 };
 
 const SITE_I18N_KEY: Record<OperationalSite, string> = {
@@ -33,17 +39,19 @@ const TAB_I18N_KEY: Record<string, string> = {
     notifications: 'settings_notifications',
     preferences: 'settings_preferences',
     sessions: 'settings_sessions',
+    team: 'settings_team',
 };
 
-const TABS = [
+const ALL_TABS = [
     { key: 'profile',       icon: User },
     { key: 'security',      icon: Shield },
     { key: 'notifications', icon: Bell },
     { key: 'preferences',   icon: Globe },
     { key: 'sessions',      icon: Monitor },
+    { key: 'team',          icon: Users },
 ] as const;
 
-type TabKey = (typeof TABS)[number]['key'];
+type TabKey = (typeof ALL_TABS)[number]['key'];
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
     return (
@@ -582,11 +590,245 @@ function SessionsTab() {
     );
 }
 
+// ── Invitation permissions ────────────────────────────────────────────────────
+
+const INVITE_PERMISSIONS: Record<UserRole, UserRole[]> = {
+    // Port Authority: can invite their own team roles
+    [UserRole.PORT_OFFICER]:       [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.COMPLIANCE_AUDITOR],
+    [UserRole.FINANCE_ADMIN]:      [UserRole.FINANCE_ADMIN],
+    [UserRole.COMPLIANCE_AUDITOR]: [],
+    // Shipping / Armateur: fleet manager (chief) can invite all armateur sub-roles
+    [UserRole.FLEET_MANAGER]:      [UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.LEGAL_REP],
+    [UserRole.FINANCE_CONTACT]:    [],
+    [UserRole.LEGAL_REP]:          [],
+    [UserRole.SHIPPING_AGENT]:     [UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.LEGAL_REP],
+    // Admin: can invite anyone
+    [UserRole.SUPERADMIN]:         [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.COMPLIANCE_AUDITOR, UserRole.FLEET_MANAGER, UserRole.FINANCE_CONTACT, UserRole.LEGAL_REP],
+};
+
+function canInvite(role: UserRole): boolean {
+    return INVITE_PERMISSIONS[role].length > 0;
+}
+
+// ── Team tab ─────────────────────────────────────────────────────────────────
+
+function TeamTab() {
+    const t = useTranslations('DashboardPages');
+    const { role, user } = useRole();
+    const allowedRoles = INVITE_PERMISSIONS[role];
+
+    const [invitations, setInvitations] = React.useState<Invitation[]>(() => {
+        if (role === UserRole.SUPERADMIN) return [...mockInvitations];
+        return mockInvitations.filter((inv) => inv.invitedBy === user.id);
+    });
+
+    const [email, setEmail] = React.useState('');
+    const [name, setName] = React.useState('');
+    const [inviteRole, setInviteRole] = React.useState<UserRole>(allowedRoles[0]);
+    const [successMsg, setSuccessMsg] = React.useState('');
+
+    const pendingCount = invitations.filter((i) => i.status === InvitationStatus.PENDING).length;
+
+    function handleSend() {
+        if (!email.trim()) return;
+        const newInv: Invitation = {
+            id: `inv-new-${Date.now()}`,
+            ref: `INV-2025-${String(invitations.length + 1).padStart(6, '0')}`,
+            invitedEmail: email.trim(),
+            invitedFullName: name.trim(),
+            invitedRole: inviteRole,
+            invitedBy: user.id,
+            invitedByName: user.fullName,
+            orgName: isShipRole(role) ? 'MARINER Corp' : null,
+            operationalSite: user.operationalSite,
+            status: InvitationStatus.PENDING,
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+            acceptedAt: null,
+        };
+        setInvitations((prev) => [newInv, ...prev]);
+        setEmail('');
+        setName('');
+        setSuccessMsg(t('settings_invite_sent'));
+        setTimeout(() => setSuccessMsg(''), 3000);
+    }
+
+    function handleRevoke(id: string) {
+        setInvitations((prev) =>
+            prev.map((inv) => inv.id === id ? { ...inv, status: InvitationStatus.REVOKED } : inv)
+        );
+    }
+
+    const STATUS_COLOR: Record<InvitationStatus, { bg: string; text: string }> = {
+        [InvitationStatus.PENDING]:  { bg: 'rgba(234,179,8,0.12)', text: '#EAB308' },
+        [InvitationStatus.ACCEPTED]: { bg: 'rgba(34,197,94,0.12)', text: '#22C55E' },
+        [InvitationStatus.EXPIRED]:  { bg: 'rgba(156,163,175,0.12)', text: '#9CA3AF' },
+        [InvitationStatus.REVOKED]:  { bg: 'rgba(239,68,68,0.12)', text: '#EF4444' },
+    };
+
+    const STATUS_I18N: Record<InvitationStatus, string> = {
+        [InvitationStatus.PENDING]:  'settings_invite_pending',
+        [InvitationStatus.ACCEPTED]: 'settings_invite_accepted',
+        [InvitationStatus.EXPIRED]:  'settings_invite_expired',
+        [InvitationStatus.REVOKED]:  'settings_invite_revoked',
+    };
+
+    return (
+        <div className="flex flex-col gap-8">
+            <Section
+                title={t('settings_team_title')}
+                description={role === UserRole.SUPERADMIN
+                    ? t('settings_team_desc_admin')
+                    : isShipRole(role)
+                        ? t('settings_team_desc')
+                        : t('settings_team_desc_port')
+                }
+            >
+                {/* Invite form */}
+                <div
+                    className="p-4 rounded-xl flex flex-col gap-3"
+                    style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--os-text-muted)' }}>
+                                {t('settings_invite_email')} *
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder={t('settings_invite_email_placeholder')}
+                                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                                style={{
+                                    backgroundColor: 'var(--os-bg)',
+                                    border: '1px solid var(--os-border)',
+                                    color: 'var(--os-text-primary)',
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--os-text-muted)' }}>
+                                {t('settings_invite_name')}
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={t('settings_invite_name_placeholder')}
+                                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                                style={{
+                                    backgroundColor: 'var(--os-bg)',
+                                    border: '1px solid var(--os-border)',
+                                    color: 'var(--os-text-primary)',
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex items-end gap-3">
+                        <div className="flex-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest mb-1 block" style={{ color: 'var(--os-text-muted)' }}>
+                                {t('settings_invite_role')}
+                            </label>
+                            <select
+                                value={inviteRole}
+                                onChange={(e) => setInviteRole(e.target.value as UserRole)}
+                                disabled={allowedRoles.length === 1}
+                                className="w-full px-3 py-2 rounded-lg text-sm outline-none disabled:opacity-60"
+                                style={{
+                                    backgroundColor: 'var(--os-bg)',
+                                    border: '1px solid var(--os-border)',
+                                    color: 'var(--os-text-primary)',
+                                }}
+                            >
+                                {allowedRoles.map((r) => (
+                                    <option key={r} value={r}>{t(ROLE_I18N_KEY[r] as Parameters<typeof t>[0])}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            onClick={handleSend}
+                            disabled={!email.trim()}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ backgroundColor: '#10B981' }}
+                        >
+                            <Send className="w-4 h-4" />
+                            {t('settings_invite_send')}
+                        </button>
+                    </div>
+                    {successMsg && (
+                        <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> {successMsg}
+                        </span>
+                    )}
+                </div>
+            </Section>
+
+            {/* Invitations list */}
+            <Section
+                title={`${t('settings_team_invitations')} ${pendingCount > 0 ? `(${pendingCount})` : ''}`}
+            >
+                {invitations.length === 0 ? (
+                    <p className="text-sm py-6 text-center" style={{ color: 'var(--os-text-muted)' }}>
+                        {t('settings_invite_empty')}
+                    </p>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {invitations.map((inv) => {
+                            const sc = STATUS_COLOR[inv.status];
+                            return (
+                                <div
+                                    key={inv.id}
+                                    className="flex items-center gap-3 p-3 rounded-xl"
+                                    style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--os-text-primary)' }}>
+                                                {inv.invitedFullName || inv.invitedEmail}
+                                            </p>
+                                            <span
+                                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase"
+                                                style={{ backgroundColor: sc.bg, color: sc.text }}
+                                            >
+                                                {t(STATUS_I18N[inv.status] as Parameters<typeof t>[0])}
+                                            </span>
+                                        </div>
+                                        <p className="text-[11px] truncate" style={{ color: 'var(--os-text-muted)' }}>
+                                            {inv.invitedEmail} · {t(ROLE_I18N_KEY[inv.invitedRole] as Parameters<typeof t>[0])}
+                                        </p>
+                                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
+                                            {inv.ref} · {new Date(inv.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    {inv.status === InvitationStatus.PENDING && (
+                                        <button
+                                            onClick={() => handleRevoke(inv.id)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors hover:bg-[rgba(239,68,68,0.1)]"
+                                            style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                                        >
+                                            <XCircle className="w-3.5 h-3.5" />
+                                            {t('settings_invite_revoke')}
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </Section>
+        </div>
+    );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
     const t = useTranslations('DashboardPages');
+    const { role } = useRole();
     const [activeTab, setActiveTab] = React.useState<TabKey>('profile');
+
+    const tabs = ALL_TABS.filter(({ key }) => key !== 'team' || canInvite(role));
 
     const CONTENT: Record<TabKey, React.ReactNode> = {
         profile:       <ProfileTab />,
@@ -594,6 +836,7 @@ export function SettingsPage() {
         notifications: <NotificationsTab />,
         preferences:   <PreferencesTab />,
         sessions:      <SessionsTab />,
+        team:          <TeamTab />,
     };
 
     return (
@@ -620,7 +863,7 @@ export function SettingsPage() {
                         minHeight: undefined,
                     }}
                 >
-                    {TABS.map(({ key, icon: Icon }) => (
+                    {tabs.map(({ key, icon: Icon }) => (
                         <button
                             key={key}
                             onClick={() => setActiveTab(key)}

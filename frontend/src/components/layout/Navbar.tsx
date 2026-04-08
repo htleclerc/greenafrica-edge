@@ -12,6 +12,8 @@ import {
     Leaf,
     FolderOpen,
     FileText,
+    Building2,
+    Handshake,
     LogIn,
     ChevronRight,
 } from 'lucide-react';
@@ -28,6 +30,8 @@ const NAV_ROUTES: Record<string, string> = {
     carbon_credits: '/carbon-credits',
     projects: '/projects',
     reports: '/reports',
+    about: '/about',
+    partnership: '/partnership',
 };
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
@@ -36,6 +40,8 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
     carbon_credits: <Leaf className="w-5 h-5" />,
     projects: <FolderOpen className="w-5 h-5" />,
     reports: <FileText className="w-5 h-5" />,
+    about: <Building2 className="w-5 h-5" />,
+    partnership: <Handshake className="w-5 h-5" />,
 };
 
 export function Navbar({ activePage = 'overview' }: NavbarProps) {
@@ -43,7 +49,9 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
     const c = useTranslations('Common');
     const [mobileOpen, setMobileOpen] = React.useState(false);
 
-    const navItems = ['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports'];
+    const mainItems = ['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports'];
+    const companyItems = ['about', 'partnership'];
+    const navItems = [...mainItems, ...companyItems];
 
     // Lock body scroll when mobile menu is open
     React.useEffect(() => {
@@ -66,7 +74,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                     borderBottom: '1px solid var(--ais-nav-border)',
                 }}
             >
-                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
+                <div className="mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -79,23 +87,46 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                                 className="text-sm font-bold tracking-tight leading-tight"
                                 style={{ color: 'var(--ais-nav-text)' }}
                             >
-                                AIS Portal
+                                Africgreen
                             </span>
                             <span className="text-[9px] font-medium tracking-widest uppercase leading-tight text-emerald-500/70">
-                                AFRICGREEN
+                                GREEN GATE DIGITAL SYSTEM
                             </span>
                         </div>
                     </Link>
 
                     {/* Desktop nav */}
                     <div className="navbar-desktop-nav">
-                        {navItems.map((key) => {
+                        {mainItems.map((key) => {
                             const isActive = activePage === key;
                             return (
                                 <Link
                                     key={key}
                                     href={NAV_ROUTES[key] ?? '/'}
-                                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                    className="px-3 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap"
+                                    style={{
+                                        color: isActive ? 'var(--ais-nav-text)' : 'var(--ais-nav-text-muted)',
+                                        backgroundColor: isActive ? 'var(--ais-nav-item-active-bg)' : 'transparent',
+                                        border: isActive
+                                            ? '1px solid var(--ais-nav-item-active-border)'
+                                            : '1px solid transparent',
+                                    }}
+                                >
+                                    {t(key)}
+                                </Link>
+                            );
+                        })}
+
+                        {/* Separator */}
+                        <div className="w-px h-5 mx-2 flex-shrink-0" style={{ backgroundColor: 'var(--ais-nav-border)' }} />
+
+                        {companyItems.map((key) => {
+                            const isActive = activePage === key;
+                            return (
+                                <Link
+                                    key={key}
+                                    href={NAV_ROUTES[key] ?? '/'}
+                                    className="px-3 py-2 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap"
                                     style={{
                                         color: isActive ? 'var(--ais-nav-text)' : 'var(--ais-nav-text-muted)',
                                         backgroundColor: isActive ? 'var(--ais-nav-item-active-bg)' : 'transparent',
@@ -118,7 +149,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                             <ThemeToggleButton />
                             <Link
                                 href="/login"
-                                className="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap"
+                                className="text-[13px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap"
                             >
                                 {c('sign_in')}
                             </Link>

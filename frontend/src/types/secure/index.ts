@@ -6,10 +6,33 @@
 // ── User & Auth ──────────────────────────────────────────────────────────────
 
 export enum UserRole {
-    PORT_OFFICER    = 'PORT_OFFICER',
-    FINANCE_ADMIN   = 'FINANCE_ADMIN',
-    SUPERADMIN      = 'SUPERADMIN',
-    SHIPPING_AGENT  = 'SHIPPING_AGENT',
+    // Port Authority roles
+    PORT_OFFICER       = 'PORT_OFFICER',
+    FINANCE_ADMIN      = 'FINANCE_ADMIN',
+    COMPLIANCE_AUDITOR = 'COMPLIANCE_AUDITOR',
+    // Shipping / Armateur roles
+    FLEET_MANAGER      = 'FLEET_MANAGER',
+    FINANCE_CONTACT    = 'FINANCE_CONTACT',
+    LEGAL_REP          = 'LEGAL_REP',
+    // Keep legacy alias for backward compat in mock data
+    SHIPPING_AGENT     = 'SHIPPING_AGENT',
+    // System
+    SUPERADMIN         = 'SUPERADMIN',
+}
+
+/** Returns true if the role belongs to the shipping/armateur side */
+export function isShipRole(role: UserRole): boolean {
+    return role === UserRole.SHIPPING_AGENT
+        || role === UserRole.FLEET_MANAGER
+        || role === UserRole.FINANCE_CONTACT
+        || role === UserRole.LEGAL_REP;
+}
+
+/** Returns true if the role belongs to the port authority side */
+export function isPortRole(role: UserRole): boolean {
+    return role === UserRole.PORT_OFFICER
+        || role === UserRole.FINANCE_ADMIN
+        || role === UserRole.COMPLIANCE_AUDITOR;
 }
 
 export enum OperationalSite {
@@ -395,6 +418,31 @@ export interface Inspection {
     offlineCreated: boolean;
     syncedAt: string | null;
     createdAt: string;
+}
+
+// ── Invitations ──────────────────────────────────────────────────────────────
+
+export enum InvitationStatus {
+    PENDING   = 'PENDING',
+    ACCEPTED  = 'ACCEPTED',
+    EXPIRED   = 'EXPIRED',
+    REVOKED   = 'REVOKED',
+}
+
+export interface Invitation {
+    id: string;
+    ref: string;
+    invitedEmail: string;
+    invitedFullName: string;
+    invitedRole: UserRole;
+    invitedBy: string;
+    invitedByName: string;
+    orgName: string | null;
+    operationalSite: OperationalSite;
+    status: InvitationStatus;
+    createdAt: string;
+    expiresAt: string;
+    acceptedAt: string | null;
 }
 
 // ── Demo session ──────────────────────────────────────────────────────────────

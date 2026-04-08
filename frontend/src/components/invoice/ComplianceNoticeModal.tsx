@@ -3,7 +3,8 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Printer, ShieldCheck } from 'lucide-react';
-import { AisVessel } from '@/domain/ais/aisConstants';
+import { AisVessel, VesselStatus } from '@/domain/ais/aisConstants';
+import { createClient } from '@/lib/supabase/client';
 
 interface ComplianceNoticeModalProps {
     vessel: AisVessel;
@@ -15,6 +16,23 @@ export function ComplianceNoticeModal({ vessel, onClose }: ComplianceNoticeModal
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handlePayNow = async () => {
+        try {
+            const supabase = createClient();
+            const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+                body: { vesselId: vessel.id, amountUsd: vessel.dueAmountUsd }
+            });
+            if (data?.url) {
+                window.location.href = data.url;
+            } else if (error) {
+                console.error("Stripe error:", error);
+                alert("Payment gateway currently unavailable. (Simulated Edge Function Error)");
+            }
+        } catch (e) {
+            console.error('Payment Error:', e);
+        }
     };
 
     const invoiceDate = new Date().toLocaleDateString();
@@ -38,11 +56,20 @@ export function ComplianceNoticeModal({ vessel, onClose }: ComplianceNoticeModal
                         </button>
                         <button
                             onClick={handlePrint}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm"
                         >
                             <Printer className="w-4 h-4" />
                             {t('btn_print')}
                         </button>
+                        {vessel.status === VesselStatus.UNPAID && (
+                            <button
+                                onClick={handlePayNow}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                Pay Now (Stripe)
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -152,7 +179,7 @@ export function ComplianceNoticeModal({ vessel, onClose }: ComplianceNoticeModal
                                 {/* Mock Signature */}
                                 <p className="font-[Brush_Script_MT,cursive] text-4xl text-emerald-900 opacity-80 transform -rotate-3">Validated</p>
                             </div>
-                            <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">AIS Portal System</p>
+                            <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">Green Gate Digital System</p>
                             <p className="text-[10px] text-slate-500 uppercase">{t('authorized_sig')}</p>
                         </div>
                     </div>
