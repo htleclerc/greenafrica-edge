@@ -1,4 +1,4 @@
-name: CI
+name: CI — Lint, Test, Build
 
 on:
   push:
@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ── Frontend checks ──────────────────────────────────────────────────────
   frontend:
-    name: Frontend (Next.js)
+    name: Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,27 +28,31 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install
         run: npm ci
 
-      - name: TypeScript check
+      - name: TypeScript
         run: npx tsc --noEmit
 
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
+      - name: Tests
         run: npm run test
 
-      - name: Validate locale files
+      - name: Locale files valid
         run: |
           for f in messages/*.json; do
-            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "OK: $f" || exit 1
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "✓ $f" || exit 1
           done
 
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+  # ── Backend checks ───────────────────────────────────────────────────────
   backend:
     name: Backend (Go)
     runs-on: ubuntu-latest
@@ -59,11 +68,6 @@ jobs:
           go-version: '1.23'
           cache-dependency-path: backend/go.sum
 
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Build
-        run: go build -o /dev/null ./cmd/api
+      - run: go mod download
+      - run: go vet ./...
+      - run: go build -o /dev/null ./cmd/api
