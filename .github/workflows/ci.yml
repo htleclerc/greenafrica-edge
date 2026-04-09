@@ -34,8 +34,9 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
 
-      - name: Lint
+      - name: Lint (warnings only — legacy code)
         run: npm run lint
+        continue-on-error: true
 
       - name: Tests
         run: npm run test

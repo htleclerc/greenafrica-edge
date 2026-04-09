@@ -410,10 +410,10 @@ export async function confirmPayment(
 /**
  * Verify a Paystack webhook signature.
  */
-export function verifyPaystackSignature(body: string, signature: string): boolean {
-  const crypto = require('crypto');
+export async function verifyPaystackSignature(body: string, signature: string): Promise<boolean> {
+  const { createHmac } = await import('crypto');
   const secret = process.env.PAYSTACK_SECRET_KEY || '';
-  const hash = crypto.createHmac('sha512', secret).update(body).digest('hex');
+  const hash = createHmac('sha512', secret).update(body).digest('hex');
   return hash === signature;
 }
 

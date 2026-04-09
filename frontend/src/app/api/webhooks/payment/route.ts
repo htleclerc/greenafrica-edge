@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     if (paystackSig) {
       // ── Paystack ──────────────────────────────────────────────────────
-      if (!verifyPaystackSignature(rawBody, paystackSig)) {
+      if (!(await verifyPaystackSignature(rawBody, paystackSig))) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
       provider = 'paystack';
