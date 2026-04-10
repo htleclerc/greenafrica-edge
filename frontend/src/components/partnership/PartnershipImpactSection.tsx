@@ -28,7 +28,7 @@ export function PartnershipImpactSection() {
                 </p>
 
                 <Link
-                    href="/login"
+                    href="/partnership/contact"
                     className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-8 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
                 >
                     {t('impact_cta')}
