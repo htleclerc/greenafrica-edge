@@ -25,7 +25,10 @@
       "Bash(node -e \"const j=require\\(''./messages/en.json''\\); console.log\\(Object.keys\\(j\\).join\\(''\\\\n''\\)\\)\")",
       "Bash(xargs grep:*)",
       "Bash(find /c/Users/lecle/Workspace/africgreen/frontend/src/domain -type f -name *.ts)",
-      "Bash(node -e \"const p = require\\(''./node_modules/@supabase/supabase-js/package.json''\\); console.log\\(''supabase-js:'', p.version\\); const s = require\\(''./node_modules/@supabase/ssr/package.json''\\); console.log\\(''ssr:'', s.version\\)\")"
+      "Bash(node -e \"const p = require\\(''./node_modules/@supabase/supabase-js/package.json''\\); console.log\\(''supabase-js:'', p.version\\); const s = require\\(''./node_modules/@supabase/ssr/package.json''\\); console.log\\(''ssr:'', s.version\\)\")",
+      "Skill(plan-design-review)",
+      "Skill(plan-design-review:*)",
+      "Bash(netstat -ano)"
     ]
   }
 }

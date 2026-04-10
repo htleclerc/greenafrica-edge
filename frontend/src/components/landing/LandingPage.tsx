@@ -5,6 +5,8 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { CapabilitiesSection } from '@/components/landing/CapabilitiesSection';
 import { SimulationSection } from '@/components/landing/SimulationSection';
 import { SovereignSection } from '@/components/landing/SovereignSection';
+import { AboutTeaserSection } from '@/components/landing/AboutTeaserSection';
+import { GreenGateTeaserSection } from '@/components/landing/GreenGateTeaserSection';
 import { Footer } from '@/components/layout/Footer';
 
 export function LandingPage() {
@@ -13,7 +15,9 @@ export function LandingPage() {
             <Navbar activePage="overview" />
             <HeroSection />
             <CapabilitiesSection />
+            <AboutTeaserSection />
             <SimulationSection />
+            <GreenGateTeaserSection />
             <SovereignSection />
             <Footer />
         </main>

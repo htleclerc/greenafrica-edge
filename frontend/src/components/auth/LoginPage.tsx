@@ -230,67 +230,82 @@ export function LoginPage() {
                         </p>
                     </div>
 
-                    {/* ── Demo mode section ───────────────────────────────── */}
-                    <div className="w-full mt-4">
-                        <button
-                            onClick={() => setShowDemo((v) => !v)}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-                            style={{
-                                backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'var(--os-surface)',
-                                border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
-                                color: showDemo ? '#EAB308' : 'var(--os-text-muted)',
-                            }}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Zap className="w-4 h-4" />
-                                <span>{t('demo_title')}</span>
-                            </div>
-                            <ChevronRight
-                                className="w-4 h-4 transition-transform"
-                                style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                            />
-                        </button>
-
-                        {showDemo && (
-                            <div
-                                className="mt-2 rounded-xl p-4"
-                                style={{ backgroundColor: 'var(--os-surface)', border: '1px solid rgba(234,179,8,0.2)' }}
+                    {/* Quick Demo Access (Conditional) */}
+                    {process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true' && (
+                        <div className="w-full mt-8 pt-8 border-t border-slate-700/50">
+                            <button
+                                onClick={() => setShowDemo((v) => !v)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all group"
+                                style={{ 
+                                    backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'rgba(30, 41, 59, 0.5)',
+                                    border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
+                                    color: showDemo ? '#EAB308' : 'var(--os-text-muted)'
+                                }}
                             >
-                                <p className="text-[11px] mb-3" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_choose_profile')}
-                                </p>
-                                <div className="flex flex-col gap-2">
-                                    {DEMO_PROFILES.map((p) => (
-                                        <button
-                                            key={p.role}
-                                            onClick={() => enterDemo(p.role)}
-                                            className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-left transition-all group"
-                                            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
-                                        >
-                                            <div
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                                                style={{ backgroundColor: p.color }}
-                                            >
-                                                {p.label.charAt(0)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold" style={{ color: 'var(--os-text-primary)' }}>
-                                                    {p.label}
-                                                </p>
-                                                <p className="text-[11px] truncate" style={{ color: 'var(--os-text-muted)' }}>
-                                                    {p.description}
-                                                </p>
-                                            </div>
-                                            <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: p.color }} />
-                                        </button>
-                                    ))}
+                                <div className="flex items-center gap-2">
+                                    <Zap className={`w-4 h-4 ${showDemo ? 'text-yellow-500' : 'text-slate-400'}`} />
+                                    <span className={showDemo ? '' : 'group-hover:text-slate-200 transition-colors'}>
+                                        {t('demo_title')}
+                                    </span>
                                 </div>
-                                <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_disclaimer')}
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                                <ChevronRight 
+                                    className="w-4 h-4 transition-transform duration-300"
+                                    style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }} 
+                                />
+                            </button>
+
+                            {showDemo && (
+                                <div 
+                                    className="mt-4 rounded-xl p-5 border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300"
+                                >
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="h-4 w-1 bg-yellow-500 rounded-full" />
+                                        <h3 className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                                            {t('demo_choose_profile')}
+                                        </h3>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {DEMO_PROFILES.map((profile) => (
+                                            <button
+                                                key={profile.role}
+                                                onClick={() => enterDemo(profile.role)}
+                                                className="group relative flex items-center gap-4 p-4 rounded-xl border border-slate-700/50 bg-slate-800/60 hover:bg-slate-700/60 hover:border-yellow-500/30 transition-all duration-300"
+                                            >
+                                                <div 
+                                                    className="h-10 w-10 min-w-[40px] rounded-lg flex items-center justify-center text-white font-bold"
+                                                    style={{ backgroundColor: profile.color }}
+                                                >
+                                                    {profile.label.charAt(0)}
+                                                </div>
+                                                
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <div className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors">
+                                                        {profile.label}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400 truncate">
+                                                        {profile.description}
+                                                    </div>
+                                                </div>
+
+                                                <ArrowRight 
+                                                    size={16} 
+                                                    className="text-slate-500 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" 
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                                        <AlertCircle size={14} className="text-yellow-500/70 mt-0.5 flex-shrink-0" />
+                                        <p className="text-[10px] leading-relaxed text-slate-400 italic">
+                                            {t('demo_disclaimer')}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
                         <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>

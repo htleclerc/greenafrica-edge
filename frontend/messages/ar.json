@@ -31,7 +31,9 @@
     "platform": "المنصة",
     "governance": "الحوكمة",
     "impact": "الأثر",
-    "resources": "الموارد"
+    "resources": "الموارد",
+    "about": "حول",
+    "partnership": "شراكة"
   },
   "Landing": {
     "badge": "بروتوكول استخبارات الكربون السيادي",

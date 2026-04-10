@@ -39,6 +39,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
     React.useEffect(() => {
         async function resolve() {
+            const supabase = createClient();
+            
             // 1) Check demo mode flags
             let demoActive = localStorage.getItem('demo_active');
             let demoRole   = localStorage.getItem('demo_role') as UserRole | null;
@@ -52,15 +54,33 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (demoActive === 'true' && demoRole) {
-                const resolvedRole = Object.values(UserRole).includes(demoRole) ? demoRole : UserRole.PORT_OFFICER;
-                const user = TEST_PROFILES.find((p) => p.role === resolvedRole) ?? TEST_PROFILES[0];
-                setCtx({ role: resolvedRole, user, isDemo: true, ready: true });
-                return;
+                const demoAllowedByEnv = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
+                
+                if (demoAllowedByEnv) {
+                    // Optional: Double check with Supabase for a "live" toggle
+                    const { data: config } = await supabase
+                        .from('app_config')
+                        .select('value')
+                        .eq('key', 'demo_mode')
+                        .single();
+                    
+                    const isRemoteEnabled = (config?.value as any)?.enabled ?? true;
+
+                    if (isRemoteEnabled) {
+                        const resolvedRole = Object.values(UserRole).includes(demoRole) ? demoRole : UserRole.PORT_OFFICER;
+                        const user = TEST_PROFILES.find((p) => p.role === resolvedRole) ?? TEST_PROFILES[0];
+                        setCtx({ role: resolvedRole, user, isDemo: true, ready: true });
+                        return;
+                    }
+                }
+                
+                // If demo cookies are present but mode is disabled, we clear them
+                localStorage.removeItem('demo_active');
+                localStorage.removeItem('demo_role');
             }
 
             // 2) Real auth: check Supabase session
             try {
-                const supabase = createClient();
                 const { data: { user: authUser } } = await supabase.auth.getUser();
 
                 if (authUser) {

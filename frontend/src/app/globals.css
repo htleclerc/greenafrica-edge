@@ -562,7 +562,7 @@ input[type="range"]::-moz-range-thumb {
 .navbar-desktop-nav {
     display: none;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
 }
 .navbar-mobile-overlay {
     display: block;
@@ -575,7 +575,7 @@ input[type="range"]::-moz-range-thumb {
     .navbar-desktop-controls {
         display: flex !important;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
     }
     .navbar-desktop-nav {
         display: flex;

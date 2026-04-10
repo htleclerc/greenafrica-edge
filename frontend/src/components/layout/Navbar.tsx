@@ -14,6 +14,8 @@ import {
     FileText,
     LogIn,
     ChevronRight,
+    Building2,
+    Handshake,
 } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
@@ -29,6 +31,8 @@ const NAV_ROUTES: Record<string, string> = {
     carbon_credits: '/carbon-credits',
     projects: '/projects',
     reports: '/reports',
+    about: '/about',
+    partnership: '/partnership',
 };
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
@@ -37,6 +41,8 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
     carbon_credits: <Leaf className="w-5 h-5" />,
     projects: <FolderOpen className="w-5 h-5" />,
     reports: <FileText className="w-5 h-5" />,
+    about: <Building2 className="w-5 h-5" />,
+    partnership: <Handshake className="w-5 h-5" />,
 };
 
 export function Navbar({ activePage = 'overview' }: NavbarProps) {
@@ -44,7 +50,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
     const c = useTranslations('Common');
     const [mobileOpen, setMobileOpen] = React.useState(false);
 
-    const navItems = ['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports'];
+    const navItems = ['overview', 'carbon_tax', 'carbon_credits', 'projects', 'reports', 'about', 'partnership'];
 
     // Lock body scroll when mobile menu is open
     React.useEffect(() => {
@@ -67,7 +73,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                     borderBottom: '1px solid var(--ais-nav-border)',
                 }}
             >
-                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-12 h-16 flex items-center justify-between gap-6">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
                         <AfricGreenLogo size={32} variant="dark" className="flex-shrink-0 rounded-lg" />
@@ -92,7 +98,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                                 <Link
                                     key={key}
                                     href={NAV_ROUTES[key] ?? '/'}
-                                    className="px-4 py-2 min-h-[44px] flex items-center rounded-lg text-sm font-medium transition-all"
+                                    className="px-3 py-2 min-h-[44px] flex items-center rounded-lg text-sm font-medium transition-all"
                                     style={{
                                         color: isActive ? 'var(--ais-nav-text)' : 'var(--ais-nav-text-muted)',
                                         backgroundColor: isActive ? 'var(--ais-nav-item-active-bg)' : 'transparent',
@@ -110,7 +116,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                     {/* Right side */}
                     <div className="flex items-center gap-2">
                         {/* Desktop only controls — hidden on mobile via CSS */}
-                        <div className="navbar-desktop-controls" style={{ display: 'none' }}>
+                        <div className="navbar-desktop-controls">
                             <LocaleSwitcher variant="navbar" />
                             <ThemeToggleButton />
                             <Link
