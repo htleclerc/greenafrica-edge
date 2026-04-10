@@ -462,10 +462,11 @@ input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 6px;
+    height: 10px;
     border-radius: 999px;
     background: var(--os-surface-3, #1E293B);
     outline: none;
+    cursor: pointer;
     transition: background 0.2s;
 }
 

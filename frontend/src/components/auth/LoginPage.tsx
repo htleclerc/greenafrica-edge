@@ -197,7 +197,7 @@ export function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowPwd((p) => !p)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
                                         style={{ color: 'var(--os-text-muted)' }}
                                     >
                                         {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

@@ -47,7 +47,7 @@ export function AboutTeaserSection() {
                                     <Icon className={`w-5 h-5 text-${color}-400`} />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>
+                                    <h3 className="text-base font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>
                                         {t(`${key}_title`)}
                                     </h3>
                                     <p className="text-xs leading-relaxed" style={{ color: 'var(--ais-page-text-muted)' }}>

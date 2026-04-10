@@ -54,10 +54,10 @@ export function Footer() {
                     {/* Platform Links */}
                     <div>
                         <h4 className="font-semibold mb-5 text-sm" style={{ color: 'var(--ais-footer-text-bright)' }}>{t('platform')}</h4>
-                        <ul className="space-y-3 text-sm">
+                        <ul className="space-y-1 text-sm">
                             {Object.entries(PLATFORM_ROUTES).map(([key, href]) => (
                                 <li key={key}>
-                                    <Link href={href} className="hover:text-emerald-400 transition-colors" style={{ color: 'var(--ais-footer-text)' }}>
+                                    <Link href={href} className="hover:text-emerald-400 transition-colors py-2 inline-block" style={{ color: 'var(--ais-footer-text)' }}>
                                         {t(key)}
                                     </Link>
                                 </li>
@@ -68,10 +68,10 @@ export function Footer() {
                     {/* Support & Legal */}
                     <div>
                         <h4 className="font-semibold mb-5 text-sm" style={{ color: 'var(--ais-footer-text-bright)' }}>{t('support_legal')}</h4>
-                        <ul className="space-y-3 text-sm">
+                        <ul className="space-y-1 text-sm">
                             {Object.entries(SUPPORT_ROUTES).map(([key, href]) => (
                                 <li key={key}>
-                                    <Link href={href} className="hover:text-emerald-400 transition-colors" style={{ color: 'var(--ais-footer-text)' }}>
+                                    <Link href={href} className="hover:text-emerald-400 transition-colors py-2 inline-block" style={{ color: 'var(--ais-footer-text)' }}>
                                         {t(key)}
                                     </Link>
                                 </li>

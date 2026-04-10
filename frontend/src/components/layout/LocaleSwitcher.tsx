@@ -60,7 +60,7 @@ export function LocaleSwitcher({ variant = 'navbar' }: LocaleSwitcherProps) {
                     <button
                         key={l.code}
                         onClick={() => switchLocale(l.code)}
-                        className={`px-2 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all ${
+                        className={`px-2 py-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-md text-[10px] font-bold tracking-wider transition-all ${
                             isActive ? 'bg-emerald-500 text-white' : ''
                         }`}
                         style={!isActive ? { color: isDashboard ? 'var(--os-text-muted)' : 'var(--ais-nav-text-muted)' } : undefined}
