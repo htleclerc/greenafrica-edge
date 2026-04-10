@@ -8,6 +8,7 @@ import {
     Globe, Bell, LayoutDashboard, UserCheck,
 } from 'lucide-react';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 // Registration is handled server-side via /api/auth/register
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -700,10 +701,8 @@ function PasswordStrength({ password, t }: { password: string; t: (key: string) 
 function LogoBlock() {
     return (
         <>
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
-                <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-                    <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
-                </svg>
+            <div className="mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
+                <AfricGreenLogo size={56} variant="dark" className="rounded-2xl" />
             </div>
             <h1 className="text-2xl font-bold text-[var(--os-text-primary)] mb-1">
                 AIS Portal
@@ -718,12 +717,8 @@ function AuthShell({ children, t }: { children: React.ReactNode; t: (key: string
             <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
                 {/* Logo — home link */}
                 <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                        </svg>
-                    </div>
-                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>AIS Portal</span>
+                    <AfricGreenLogo size={28} variant="dark" className="flex-shrink-0 rounded-lg" />
+                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>AfricGreen</span>
                 </a>
                 {/* Online indicator — center (dot only on mobile) */}
                 <div className="flex items-center gap-2">

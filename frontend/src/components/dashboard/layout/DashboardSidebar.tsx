@@ -12,6 +12,7 @@ import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_EXPANDED  = 220;
@@ -100,20 +101,9 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                     href="/dashboard"
                     onClick={onMobileClose}
                     className="flex items-center gap-2.5 flex-shrink-0 mb-4 px-3 h-10"
-                    title="Africgreen"
+                    title="AfricGreen"
                 >
-                    <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{
-                            backgroundColor: 'rgba(16,185,129,0.1)',
-                            border: '1px solid rgba(16,185,129,0.2)',
-                            minWidth: 40,
-                        }}
-                    >
-                        <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
-                        </svg>
-                    </div>
+                    <AfricGreenLogo size={40} variant="dark" className="flex-shrink-0 rounded-xl" />
                     <div
                         className="flex flex-col overflow-hidden"
                         style={{

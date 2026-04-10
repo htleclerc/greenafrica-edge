@@ -8,6 +8,7 @@ import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
 function persistDemoRole(role: UserRole) {
     document.cookie = `demo_active=true; path=/; max-age=3600; SameSite=Lax`;
@@ -106,11 +107,7 @@ export function LoginPage() {
                 <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
                     {/* Logo — home link */}
                     <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                                <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                            </svg>
-                        </div>
+                        <AfricGreenLogo size={32} variant="dark" className="flex-shrink-0 rounded-lg" />
                         <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                     </a>
                     {/* Online indicator — center (dot only on mobile) */}
@@ -127,10 +124,8 @@ export function LoginPage() {
             <div className="flex-1 flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md flex flex-col items-center">
                     {/* Logo */}
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
-                        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
-                        </svg>
+                    <div className="mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
+                        <AfricGreenLogo size={56} variant="dark" className="rounded-2xl" />
                     </div>
                     <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</h1>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500/60 mb-8">

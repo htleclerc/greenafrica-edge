@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { OsButton } from '@/components/ui/OsButton';
 import { createClient } from '@/lib/supabase/client';
 
@@ -93,11 +94,7 @@ export function ResetPasswordPage() {
             {/* Top bar */}
             <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
                 <a href="/" className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                        </svg>
-                    </div>
+                    <AfricGreenLogo size={28} variant="dark" className="rounded-lg" />
                     <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
             </div>

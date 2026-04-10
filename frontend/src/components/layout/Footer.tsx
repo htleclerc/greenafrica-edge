@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Linkedin, Twitter, Youtube } from 'lucide-react';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
 const PLATFORM_ROUTES: Record<string, string> = {
     overview:       '/',
@@ -31,12 +32,8 @@ export function Footer() {
                     {/* Brand Column */}
                     <div>
                         <div className="flex items-center gap-2.5 mb-5">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
-                                <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                                    <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z"></path>
-                                </svg>
-                            </div>
-                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>AIS Portal</span>
+                            <AfricGreenLogo size={32} variant="dark" className="rounded-lg" />
+                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>AfricGreen</span>
                         </div>
                         <p className="text-sm leading-relaxed mb-6 pr-4" style={{ color: 'var(--ais-footer-text)' }}>
                             {t('brand_desc')}
