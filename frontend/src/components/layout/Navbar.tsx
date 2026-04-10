@@ -95,7 +95,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                                 <Link
                                     key={key}
                                     href={NAV_ROUTES[key] ?? '/'}
-                                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                    className="px-4 py-2 min-h-[44px] flex items-center rounded-lg text-sm font-medium transition-all"
                                     style={{
                                         color: isActive ? 'var(--ais-nav-text)' : 'var(--ais-nav-text-muted)',
                                         backgroundColor: isActive ? 'var(--ais-nav-item-active-bg)' : 'transparent',
@@ -118,7 +118,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                             <ThemeToggleButton />
                             <Link
                                 href="/login"
-                                className="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap"
+                                className="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 min-h-[44px] inline-flex items-center rounded-lg transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap"
                             >
                                 {c('sign_in')}
                             </Link>
