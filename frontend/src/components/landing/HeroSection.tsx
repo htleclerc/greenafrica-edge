@@ -36,6 +36,7 @@ export function HeroSection() {
                 {/* Main Title */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
                     <span style={{ color: 'var(--ais-page-text)' }}>{t('hero_title_line1')}</span>
+                    {' '}
                     <br />
                     <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-yellow-400 bg-clip-text text-transparent">
                         {t('hero_title_line2')}
