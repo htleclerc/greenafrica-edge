@@ -36,6 +36,14 @@ export function CapabilitiesSection() {
     return (
         <section className="pt-16 pb-12 sm:py-20 px-3 sm:px-6 relative" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
             <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-10 sm:mb-12">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-[0.15em] uppercase mb-4">
+                        {t('capabilities_badge')}
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
+                        {t('capabilities_title')}
+                    </h2>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
                     {capabilities.map((cap, i) => (
                         <div
