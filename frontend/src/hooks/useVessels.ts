@@ -22,5 +22,5 @@ export function useVessels(): DataSourceResult<SecureVessel[]> {
         [role, user.id],
     );
 
-    return useDataSource(mockSecureVessels, fetcher);
+    return useDataSource(mockSecureVessels, fetcher, 'vessels', 30_000);
 }

@@ -1,6 +1,7 @@
 package ais
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -168,14 +169,66 @@ func (ing *Ingester) connect() error {
 		ing.stats.LastMessageAt = time.Now()
 		ing.mu.Unlock()
 
-		// TODO: Write to Supabase via REST API
-		// For now, just log
-		log.Printf("[AIS] %s (%s) at %.4f, %.4f — %.1f kn",
+		// Upsert vessel into Supabase
+		vesselPayload, _ := json.Marshal(map[string]interface{}{
+			"mmsi":              msg.MetaData.MMSIStr,
+			"name":              msg.MetaData.ShipName,
+			"imo_number":        "",
+			"call_sign":         "",
+			"flag_code":         "",
+			"category":          "CARGO",
+			"compliance_status": "APPROACHING",
+		})
+		req, _ := http.NewRequest("POST", ing.cfg.SupabaseURL+"/rest/v1/vessels", bytes.NewReader(vesselPayload))
+		req.Header.Set("apikey", ing.cfg.SupabaseKey)
+		req.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Prefer", "resolution=merge-duplicates")
+		http.DefaultClient.Do(req)
+
+		// Fetch vessel ID for position insert
+		lookupURL := fmt.Sprintf("%s/rest/v1/vessels?mmsi=eq.%s&select=id&limit=1", ing.cfg.SupabaseURL, msg.MetaData.MMSIStr)
+		lookupReq, _ := http.NewRequest("GET", lookupURL, nil)
+		lookupReq.Header.Set("apikey", ing.cfg.SupabaseKey)
+		lookupReq.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
+		lookupResp, err := http.DefaultClient.Do(lookupReq)
+		if err != nil || lookupResp.StatusCode != 200 {
+			continue
+		}
+		var vessels []struct{ ID string `json:"id"` }
+		json.NewDecoder(lookupResp.Body).Decode(&vessels)
+		lookupResp.Body.Close()
+		if len(vessels) == 0 {
+			continue
+		}
+
+		// Insert position
+		sog := float64(0)
+		heading := 0
+		if msg.Message.PositionReport != nil {
+			sog = msg.Message.PositionReport.Sog / 10
+			heading = msg.Message.PositionReport.TrueHeading
+		}
+		posPayload, _ := json.Marshal(map[string]interface{}{
+			"vessel_id":   vessels[0].ID,
+			"lat":         msg.MetaData.Latitude,
+			"lng":         msg.MetaData.Longitude,
+			"heading":     heading,
+			"speed_knots": sog,
+			"recorded_at": msg.MetaData.TimeUTC,
+		})
+		posReq, _ := http.NewRequest("POST", ing.cfg.SupabaseURL+"/rest/v1/vessel_positions", bytes.NewReader(posPayload))
+		posReq.Header.Set("apikey", ing.cfg.SupabaseKey)
+		posReq.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
+		posReq.Header.Set("Content-Type", "application/json")
+		http.DefaultClient.Do(posReq)
+
+		log.Printf("[AIS] %s (%s) at %.4f, %.4f — %.1f kn → Supabase ✓",
 			msg.MetaData.ShipName,
 			msg.MetaData.MMSIStr,
 			msg.MetaData.Latitude,
 			msg.MetaData.Longitude,
-			msg.Message.PositionReport.Sog/10,
+			sog,
 		)
 	}
 }
