@@ -28,7 +28,9 @@
       "Bash(node -e \"const p = require\\(''./node_modules/@supabase/supabase-js/package.json''\\); console.log\\(''supabase-js:'', p.version\\); const s = require\\(''./node_modules/@supabase/ssr/package.json''\\); console.log\\(''ssr:'', s.version\\)\")",
       "Skill(plan-design-review)",
       "Skill(plan-design-review:*)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300)"
     ]
   }
 }

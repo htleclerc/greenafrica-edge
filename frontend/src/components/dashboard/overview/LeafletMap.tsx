@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import 'leaflet/dist/leaflet.css';
 import { SecureVessel, VesselComplianceStatus } from '@/types/secure';
 
 // ── Somaliland EEZ boundary (approximate) ────────────────────────────────────
@@ -91,15 +92,6 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
             // Dynamically import leaflet
             const L = await import('leaflet');
 
-            // Inject leaflet CSS if not already present
-            if (!document.getElementById('leaflet-css')) {
-                const link = document.createElement('link');
-                link.id = 'leaflet-css';
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                document.head.appendChild(link);
-            }
-
             if (cancelled || !containerRef.current) return;
             LRef.current = L;
 
@@ -160,7 +152,7 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
                 if (!cancelled && map) {
                     map.invalidateSize();
                 }
-            }, 200);
+            }, 400);
 
             setReady(true);
         }
