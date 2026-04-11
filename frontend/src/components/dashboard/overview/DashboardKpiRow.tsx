@@ -25,12 +25,15 @@ interface KpiCardProps {
     accentColor: string;
     tag?: string;
     tagColor?: string;
+    href?: string;
 }
 
-function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag, tagColor }: KpiCardProps) {
+function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag, tagColor, href }: KpiCardProps) {
     const isPositive = delta !== undefined && delta >= 0;
+    const Wrapper = href ? 'a' : 'div';
+    const wrapperProps = href ? { href } : {};
     return (
-        <div className="os-card p-2.5 sm:p-3 md:p-5 flex flex-col gap-2 sm:gap-3 relative overflow-hidden">
+        <Wrapper {...wrapperProps} className={`os-card p-2.5 sm:p-3 md:p-5 flex flex-col gap-2 sm:gap-3 relative overflow-hidden ${href ? 'cursor-pointer hover:border-[color-mix(in_srgb,var(--os-border)_50%,white)] hover:scale-[1.02] active:scale-[0.98] transition-all' : ''}`}>
             {/* Accent bar top */}
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: accentColor }} />
 
@@ -82,6 +85,7 @@ export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
                 accentColor="#38BDF8"
                 tag={t('kpi_tag_live')}
                 tagColor="#38BDF8"
+                href="/dashboard/vessels"
             />
             <KpiCard
                 label={t('kpi_tax_revenue')}
@@ -93,6 +97,7 @@ export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
                 accentColor="#00D97E"
                 tag={t('kpi_tag_collection_day')}
                 tagColor="#00D97E"
+                href="/dashboard/invoices"
             />
             <KpiCard
                 label={t('kpi_est_emissions')}
@@ -103,6 +108,7 @@ export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
                 accentColor="#F59E0B"
                 tag={t('kpi_tag_threshold')}
                 tagColor="#F59E0B"
+                href="/dashboard/reports"
             />
             <KpiCard
                 label={t('kpi_carbon_credits')}
@@ -112,6 +118,7 @@ export function DashboardKpiRow({ kpis }: { kpis: DashboardKpis }) {
                 accentColor="#A78BFA"
                 tag={t('kpi_tag_price_unit')}
                 tagColor="#A78BFA"
+                href="/dashboard/projects"
             />
         </div>
     );
