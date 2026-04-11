@@ -264,3 +264,8 @@ func (h *Handler) Stop(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"status":"stopped"}`))
 }
+
+// AutoStart starts the ingester programmatically (for boot-time auto-start).
+func (h *Handler) AutoStart() error {
+	return h.ingester.Start()
+}

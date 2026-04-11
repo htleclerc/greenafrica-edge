@@ -31,11 +31,18 @@ func main() {
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 
-	// AIS ingestion status
+	// AIS ingestion — auto-start if API key is configured
 	aisHandler := ais.NewHandler(cfg)
 	mux.HandleFunc("GET /api/v1/ais/status", aisHandler.Status)
 	mux.HandleFunc("POST /api/v1/ais/start", aisHandler.Start)
 	mux.HandleFunc("POST /api/v1/ais/stop", aisHandler.Stop)
+
+	if cfg.AISStreamAPIKey != "" {
+		log.Println("[AIS] API key found — auto-starting ingestion...")
+		if err := aisHandler.AutoStart(); err != nil {
+			log.Printf("[AIS] Auto-start failed: %v (use POST /api/v1/ais/start to retry)", err)
+		}
+	}
 
 	// Apply middleware
 	handler := middleware.Chain(
