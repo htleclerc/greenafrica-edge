@@ -68,7 +68,7 @@ function KpiCard({ label, value, sub, delta, deltaLabel, icon, accentColor, tag,
                     {isPositive ? '+' : ''}{delta}% {deltaLabel}
                 </div>
             )}
-        </div>
+        </Wrapper>
     );
 }
 
