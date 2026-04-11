@@ -6,6 +6,7 @@ import { CarbonTaxHeroSection } from '@/components/carbon-tax/CarbonTaxHeroSecti
 import { CarbonTaxRatesSection } from '@/components/carbon-tax/CarbonTaxRatesSection';
 import { CarbonTaxVesselsSection } from '@/components/carbon-tax/CarbonTaxVesselsSection';
 import { CarbonTaxRevenueSection } from '@/components/carbon-tax/CarbonTaxRevenueSection';
+import { CarbonTaxImoSection } from '@/components/carbon-tax/CarbonTaxImoSection';
 import { CarbonTaxComplianceSection } from '@/components/carbon-tax/CarbonTaxComplianceSection';
 
 export function CarbonTaxPage() {
@@ -16,6 +17,7 @@ export function CarbonTaxPage() {
             <CarbonTaxRatesSection />
             <CarbonTaxVesselsSection />
             <CarbonTaxRevenueSection />
+            <CarbonTaxImoSection />
             <CarbonTaxComplianceSection />
             <Footer />
         </main>

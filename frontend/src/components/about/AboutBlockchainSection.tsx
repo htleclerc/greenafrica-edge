@@ -3,6 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { Link2, Eye, ShieldCheck, Lock } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400' },
+    purple:  { bg: 'bg-purple-500/10',  text: 'text-purple-400' },
+};
+
 const FEATURES = [
     { icon: Link2, key: 'blockchain_traceability', color: 'emerald' },
     { icon: Eye, key: 'blockchain_transparency', color: 'yellow' },
@@ -33,8 +40,8 @@ export function AboutBlockchainSection() {
                             className="rounded-2xl p-8 hover:border-emerald-500/20 transition-all duration-300 flex gap-5"
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
-                            <div className={`w-12 h-12 rounded-xl bg-${color}-500/10 flex items-center justify-center flex-shrink-0`}>
-                                <Icon className={`w-6 h-6 text-${color}-400`} />
+                            <div className={`w-12 h-12 rounded-xl ${COLOR_MAP[color].bg} flex items-center justify-center flex-shrink-0`}>
+                                <Icon className={`w-6 h-6 ${COLOR_MAP[color].text}`} />
                             </div>
                             <div>
                                 <h3 className="text-base font-bold mb-2" style={{ color: 'var(--ais-page-text)' }}>

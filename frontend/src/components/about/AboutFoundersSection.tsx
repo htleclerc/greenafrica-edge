@@ -3,6 +3,12 @@
 import { useTranslations } from 'next-intl';
 import { User } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; border: string; borderHover: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', borderHover: 'group-hover:border-emerald-500/40', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20',  borderHover: 'group-hover:border-yellow-500/40',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    border: 'border-blue-500/20',    borderHover: 'group-hover:border-blue-500/40',    text: 'text-blue-400' },
+};
+
 const FOUNDERS = [
     { key: 'kpatchavi', color: 'emerald' },
     { key: 'radji', color: 'yellow' },
@@ -35,14 +41,14 @@ export function AboutFoundersSection() {
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
                             {/* Avatar placeholder */}
-                            <div className={`w-20 h-20 rounded-full bg-${color}-500/10 border-2 border-${color}-500/20 flex items-center justify-center mx-auto mb-6 group-hover:border-${color}-500/40 transition-colors`}>
-                                <User className={`w-8 h-8 text-${color}-400`} />
+                            <div className={`w-20 h-20 rounded-full ${COLOR_MAP[color].bg} border-2 ${COLOR_MAP[color].border} flex items-center justify-center mx-auto mb-6 ${COLOR_MAP[color].borderHover} transition-colors`}>
+                                <User className={`w-8 h-8 ${COLOR_MAP[color].text}`} />
                             </div>
 
                             <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>
                                 {t(`founder_${key}_name`)}
                             </h3>
-                            <p className={`text-xs font-semibold text-${color}-400 uppercase tracking-wider mb-4`}>
+                            <p className={`text-xs font-semibold ${COLOR_MAP[color].text} uppercase tracking-wider mb-4`}>
                                 {t(`founder_${key}_role`)}
                             </p>
                             <p className="text-sm leading-relaxed" style={{ color: 'var(--ais-page-text-muted)' }}>

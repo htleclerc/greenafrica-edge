@@ -3,6 +3,12 @@
 import { useTranslations } from 'next-intl';
 import { Leaf, Shield, Database } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400' },
+};
+
 const PILLARS = [
     { icon: Leaf, key: 'pillar_african', color: 'emerald' },
     { icon: Shield, key: 'pillar_sovereignty', color: 'yellow' },
@@ -34,8 +40,8 @@ export function AboutMissionSection() {
                             className="rounded-2xl p-8 hover:border-emerald-500/20 transition-all duration-300"
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
-                            <div className={`w-12 h-12 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-5`}>
-                                <Icon className={`w-6 h-6 text-${color}-400`} />
+                            <div className={`w-12 h-12 rounded-xl ${COLOR_MAP[color].bg} flex items-center justify-center mb-5`}>
+                                <Icon className={`w-6 h-6 ${COLOR_MAP[color].text}`} />
                             </div>
                             <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--ais-page-text)' }}>
                                 {t(`${key}_title`)}

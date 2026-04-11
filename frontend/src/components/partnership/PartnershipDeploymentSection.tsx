@@ -3,6 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { Monitor, Database, ShieldCheck, BarChart3 } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400' },
+    purple:  { bg: 'bg-purple-500/10',  text: 'text-purple-400' },
+};
+
 const CAPABILITIES = [
     { icon: Monitor, key: 'cap_digital', color: 'emerald' },
     { icon: Database, key: 'cap_blockchain', color: 'yellow' },
@@ -35,8 +42,8 @@ export function PartnershipDeploymentSection() {
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
                             <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                <div className={`w-12 h-12 rounded-xl bg-${color}-500/10 flex items-center justify-center`}>
-                                    <Icon className={`w-6 h-6 text-${color}-400`} />
+                                <div className={`w-12 h-12 rounded-xl ${COLOR_MAP[color].bg} flex items-center justify-center`}>
+                                    <Icon className={`w-6 h-6 ${COLOR_MAP[color].text}`} />
                                 </div>
                                 <span className="text-[10px] font-bold text-emerald-500/50">{String(i + 1).padStart(2, '0')}</span>
                             </div>

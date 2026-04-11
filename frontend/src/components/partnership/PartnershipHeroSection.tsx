@@ -3,6 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { Landmark, Handshake, Globe, Zap } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400' },
+    purple:  { bg: 'bg-purple-500/10',  text: 'text-purple-400' },
+};
+
 const STATS = [
     { icon: Landmark, color: 'emerald', key: 'stat_partner' },
     { icon: Handshake, color: 'yellow', key: 'stat_agreement' },
@@ -55,8 +62,8 @@ export function PartnershipHeroSection() {
                             className="rounded-2xl p-6 hover:border-emerald-500/20 transition-all duration-300"
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                         >
-                            <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-4`}>
-                                <Icon className={`w-5 h-5 text-${color}-400`} />
+                            <div className={`w-10 h-10 rounded-xl ${COLOR_MAP[color].bg} flex items-center justify-center mb-4`}>
+                                <Icon className={`w-5 h-5 ${COLOR_MAP[color].text}`} />
                             </div>
                             <p className="text-lg font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>{t(`${key}_value`)}</p>
                             <p className="text-xs font-medium" style={{ color: 'var(--ais-page-text-dim)' }}>{t(`${key}_label`)}</p>

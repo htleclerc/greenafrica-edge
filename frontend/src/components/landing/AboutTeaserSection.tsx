@@ -4,6 +4,12 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Building2, Shield, Leaf, ArrowRight } from 'lucide-react';
 
+const COLOR_MAP: Record<string, { bg: string; text: string }> = {
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+    yellow:  { bg: 'bg-yellow-500/10',  text: 'text-yellow-400' },
+    blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400' },
+};
+
 const PILLARS = [
     { icon: Building2, key: 'teaser_african', color: 'emerald' },
     { icon: Shield, key: 'teaser_blockchain', color: 'yellow' },
@@ -43,8 +49,8 @@ export function AboutTeaserSection() {
                                 className="rounded-xl p-5 flex items-start gap-4 hover:border-emerald-500/20 transition-all"
                                 style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid var(--ais-page-border)' }}
                             >
-                                <div className={`w-10 h-10 rounded-lg bg-${color}-500/10 flex items-center justify-center flex-shrink-0`}>
-                                    <Icon className={`w-5 h-5 text-${color}-400`} />
+                                <div className={`w-10 h-10 rounded-lg ${COLOR_MAP[color].bg} flex items-center justify-center flex-shrink-0`}>
+                                    <Icon className={`w-5 h-5 ${COLOR_MAP[color].text}`} />
                                 </div>
                                 <div>
                                     <h3 className="text-base font-bold mb-1" style={{ color: 'var(--ais-page-text)' }}>
