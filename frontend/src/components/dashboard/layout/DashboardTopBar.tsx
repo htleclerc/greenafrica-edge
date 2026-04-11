@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Bell, ChevronDown, AlertCircle, LogOut, Settings, User,
     Shield, Ship, AlertTriangle, CreditCard, CheckCircle, Clock,
-    MapPin, Menu, Globe, Sun, Moon,
+    MapPin, Menu,
 } from 'lucide-react';
 import { DashboardKpis, SecureUser, UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
@@ -403,37 +403,8 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                                 />
                             </div>
 
-                            {/* Language + Theme */}
-                            <div className="border-t border-[var(--os-border)] px-4 py-3 flex flex-col gap-3">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Globe className="w-3.5 h-3.5 text-[var(--os-text-muted)]" />
-                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
-                                            {t('profile_language')}
-                                        </span>
-                                    </div>
-                                    <LocaleSwitcher variant="dashboard" />
-                                </div>
-                                <div>
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
-                                        {t('profile_theme')}
-                                    </span>
-                                    <div className="mt-2">
-                                        <SkinSwitcher variant="inline" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Session info + logout */}
+                            {/* Logout */}
                             <div className="border-t border-[var(--os-border)] px-4 py-2">
-                                <div className="flex items-center justify-between text-[10px] text-[var(--os-text-muted)] mb-2">
-                                    <span>{t('profile_last_login')}</span>
-                                    <span className="font-mono">{new Date(user.lastLogin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-[10px] text-[var(--os-text-muted)] mb-3">
-                                    <span>IP</span>
-                                    <span className="font-mono">{user.ipAddress}</span>
-                                </div>
                                 <button
                                     onClick={handleLogout}
                                     className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-[#EF4444] hover:bg-[rgba(239,68,68,0.08)] transition-colors"
