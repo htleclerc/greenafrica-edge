@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import {
-    Bell, ChevronDown, AlertCircle, LogOut, Settings, User,
+    Bell, ChevronDown, AlertCircle, LogOut, Settings,
     Shield, Ship, AlertTriangle, CreditCard, CheckCircle, Clock,
     MapPin, Menu,
 } from 'lucide-react';
@@ -378,26 +378,12 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                                 </div>
                             </div>
 
-                            {/* Menu items */}
+                            {/* Menu item */}
                             <div className="py-1">
-                                <ProfileMenuItem
-                                    icon={<User className="w-3.5 h-3.5" />}
-                                    label={t('profile_my_profile')}
-                                    sub={user.email}
-                                    href="/dashboard/settings"
-                                    onClick={() => setProfileOpen(false)}
-                                />
                                 <ProfileMenuItem
                                     icon={<Settings className="w-3.5 h-3.5" />}
                                     label={t('profile_settings')}
                                     sub={t('profile_settings_sub')}
-                                    href="/dashboard/settings"
-                                    onClick={() => setProfileOpen(false)}
-                                />
-                                <ProfileMenuItem
-                                    icon={<Shield className="w-3.5 h-3.5" />}
-                                    label={t('profile_security')}
-                                    sub={t('profile_security_sub')}
                                     href="/dashboard/settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
