@@ -296,7 +296,7 @@ export function TaxSimulatorPage() {
                                 <button
                                     key={p.label}
                                     onClick={() => applyPreset(p)}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:brightness-125 hover:scale-[1.03] active:scale-[0.97]"
                                     style={{
                                         backgroundColor: inputs.category === p.category && inputs.enginePowerKw === p.enginePowerKw
                                             ? 'rgba(16,185,129,0.12)'
@@ -321,7 +321,7 @@ export function TaxSimulatorPage() {
                                 <select
                                     value={inputs.category}
                                     onChange={(e) => set('category', e.target.value as VesselCategory)}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     {Object.entries(CATEGORY_I18N_KEY).map(([k, i18nKey]) => (
@@ -336,7 +336,7 @@ export function TaxSimulatorPage() {
                                 <select
                                     value={inputs.fuelType}
                                     onChange={(e) => set('fuelType', e.target.value as 'HFO' | 'MDO')}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     <option value="HFO">{t('simulator_fuel_hfo')}</option>
@@ -380,7 +380,7 @@ export function TaxSimulatorPage() {
                                     <Label>{t('simulator_port_stay')}</Label>
                                     <button
                                         onClick={() => set('includePortVicinity', !inputs.includePortVicinity)}
-                                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all"
+                                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all cursor-pointer hover:brightness-125 active:scale-[0.97]"
                                         style={{
                                             backgroundColor: inputs.includePortVicinity ? 'rgba(16,185,129,0.12)' : 'var(--os-surface-2)',
                                             color: inputs.includePortVicinity ? '#10B981' : 'var(--os-text-muted)',
@@ -531,14 +531,14 @@ export function TaxSimulatorPage() {
                     {/* Actions */}
                     <div className="flex flex-col gap-2">
                         <button
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all"
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98]"
                             style={{ backgroundColor: '#10B981', color: '#fff' }}
                         >
                             <FileText className="w-4 h-4" />
                             {t('simulator_generate_pdf')}
                         </button>
                         <button
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all"
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all cursor-pointer hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] active:scale-[0.98]"
                             style={{ backgroundColor: 'var(--os-surface)', color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
                             onClick={() => setInputs({
                                 category: VesselCategory.CONTAINER, enginePowerKw: 12_000, grossTonnage: 18_000,
@@ -598,7 +598,7 @@ function FaqPanel() {
                         >
                             <button
                                 onClick={() => setOpenIdx(isOpen ? null : i)}
-                                className="flex items-start gap-2 w-full py-3 text-left transition-colors"
+                                className="flex items-start gap-2 w-full py-3 text-left transition-colors cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded-lg px-1 -mx-1"
                             >
                                 <ChevronDown
                                     className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 transition-transform"
