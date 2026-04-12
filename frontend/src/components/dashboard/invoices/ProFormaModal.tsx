@@ -9,7 +9,7 @@ import { useVessels } from '@/hooks/useVessels';
 import { useTaxConfigs } from '@/hooks/useTaxConfigs';
 import { createClient } from '@/lib/supabase/client';
 import { getProfileById, type ProfileSummary } from '@/services/profileService';
-import { type InvoiceData } from '@/services/invoiceService';
+import { type InvoiceData, statusToMode, buildVerifyUrl, generateQrCodeDataUrl } from '@/services/invoiceService';
 import { useRole } from '@/lib/RoleContext';
 
 interface ProFormaModalProps {
@@ -55,11 +55,35 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
     const ownerName = owner?.fullName ?? 'Unassigned shipping agent';
     const ownerEmail = owner?.email ?? `operations@${tx.vesselName.toLowerCase().replace(/\s+/g, '')}.logistics.so`;
 
+    // ── Mode + status badge from transaction status ──
+    const { mode, badge } = React.useMemo(() => statusToMode(tx.status), [tx.status]);
+    const isInvoice = mode === 'invoice';
+    const docTitle = isInvoice ? 'Tax Invoice Preview' : 'Pro-forma Invoice Preview';
+    const docTypeLabel = isInvoice ? 'TAX INVOICE' : 'PRO-FORMA INVOICE';
+
     // ── Invoice metadata ──
     const currentYear = new Date().getFullYear();
-    const invoiceRef  = `INV-${currentYear}-${tx.id.split('-')[1].toUpperCase()}`;
+    const refPrefix = isInvoice ? 'INV' : 'PRO';
+    const invoiceRef  = `${refPrefix}-${currentYear}-${tx.id.split('-')[1].toUpperCase()}`;
     const issueDate   = new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     const dueDate     = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // ── Verification QR code ──
+    const verifyUrl = React.useMemo(() => buildVerifyUrl(invoiceRef), [invoiceRef]);
+    const [qrDataUrl, setQrDataUrl] = React.useState<string>('');
+    React.useEffect(() => {
+        generateQrCodeDataUrl(verifyUrl).then(setQrDataUrl).catch(() => setQrDataUrl(''));
+    }, [verifyUrl]);
+
+    // Badge colors for the HTML preview
+    const badgeStyle: Record<string, { bg: string; fg: string }> = {
+        'PAID':     { bg: '#10B981', fg: '#FFFFFF' },
+        'EXEMPT':   { bg: '#0EA5E9', fg: '#FFFFFF' },
+        'OVERDUE':  { bg: '#DC2626', fg: '#FFFFFF' },
+        'DISPUTED': { bg: '#F97316', fg: '#FFFFFF' },
+        'TO PAY':   { bg: '#EAB308', fg: '#0D1F18' },
+    };
+    const badgeColors = badgeStyle[badge];
 
     const TX_TYPE_LABEL: Record<TransactionType, string> = {
         [TransactionType.ENTRY_TAX]:   t('type_entry_tax'),
@@ -95,6 +119,9 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
             subtotalUsd: tx.taxAmountUsd,
             exemptionUsd: 0,
             totalUsd: tx.taxAmountUsd,
+            mode,
+            badge,
+            verifyUrl,
             lineItems: [
                 {
                     zone: 'EEZ',
@@ -115,6 +142,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                 body: JSON.stringify({
                     invoiceData,
                     transactionId: tx.id,
+                    transactionStatus: tx.status,
                     vesselId: vessel?.id ?? null,
                     actingUserId: user.id,
                     actingUserName: user.fullName,
@@ -148,9 +176,17 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
             >
                 {/* Modal toolbar */}
                 <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
-                    <div>
-                        <h2 className="text-sm font-bold text-[var(--os-text-primary)]">{t('proforma_preview_title')}</h2>
-                        <p className="text-[10px] text-[var(--os-text-muted)]">{invoiceRef} · {tx.vesselName}</p>
+                    <div className="flex items-center gap-3">
+                        <div>
+                            <h2 className="text-sm font-bold text-[var(--os-text-primary)]">{docTitle}</h2>
+                            <p className="text-[10px] text-[var(--os-text-muted)]">{invoiceRef} · {tx.vesselName}</p>
+                        </div>
+                        <span
+                            className="text-[10px] font-bold px-2 py-1 rounded-md tracking-wider"
+                            style={{ backgroundColor: badgeColors.bg, color: badgeColors.fg }}
+                        >
+                            {badge}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <OsButton
@@ -332,11 +368,25 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                                             OFFICIAL DOCUMENT
                                         </div>
                                         <p style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px', color: '#0D1F18' }}>
-                                            PRO-FORMA INVOICE
+                                            {docTypeLabel}
                                         </p>
                                         <p style={{ fontSize: '9px', color: '#475569', fontStyle: 'italic' }}>
                                             Maritime Environmental Levy Notice
                                         </p>
+                                        {/* Status badge — TO PAY / PAID / OVERDUE / etc. */}
+                                        <div style={{
+                                            display: 'inline-block',
+                                            marginTop: '6px',
+                                            padding: '4px 10px',
+                                            background: badgeColors.bg,
+                                            color: badgeColors.fg,
+                                            fontSize: '11px',
+                                            fontWeight: 800,
+                                            letterSpacing: '1.5px',
+                                            borderRadius: '2px',
+                                        }}>
+                                            {badge}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -425,14 +475,34 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                                     </span>
                                 </div>
 
-                                {/* Signature & seal */}
-                                <div className="grid grid-cols-2 gap-4 mb-3" style={{ fontSize: '8px', color: '#64748B' }}>
+                                {/* Signature, QR code & seal — 3 columns */}
+                                <div className="grid grid-cols-3 gap-3 mb-3" style={{ fontSize: '8px', color: '#64748B' }}>
+                                    {/* Left: signature line */}
                                     <div>
                                         <p style={{ borderTop: '1px solid #94A3B8', paddingTop: '4px', marginTop: '24px' }}>
                                             Authorized Signatory<br />
-                                            <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director, Maritime Carbon Tax Authority</span>
+                                            <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director,<br />Maritime Carbon Tax Authority</span>
                                         </p>
                                     </div>
+                                    {/* Center: verification QR code */}
+                                    <div style={{ textAlign: 'center' }}>
+                                        {qrDataUrl ? (
+                                            <img
+                                                src={qrDataUrl}
+                                                alt="Verification QR code"
+                                                style={{ width: '64px', height: '64px', display: 'inline-block' }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: '64px', height: '64px', display: 'inline-block', background: '#F1F5F9' }} />
+                                        )}
+                                        <p style={{ fontSize: '7px', fontWeight: 700, marginTop: '4px', color: '#0D1F18' }}>
+                                            VERIFY ONLINE
+                                        </p>
+                                        <p style={{ fontSize: '6px', color: '#64748B', marginTop: '1px' }}>
+                                            Scan to check status
+                                        </p>
+                                    </div>
+                                    {/* Right: official seal */}
                                     <div className="text-right">
                                         <div style={{
                                             display: 'inline-block',

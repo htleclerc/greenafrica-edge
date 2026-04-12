@@ -382,7 +382,7 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                 </div>
             )}
 
-            {/* Pro-forma CTA */}
+            {/* Pro-forma / Invoice CTA — label adapts to transaction status */}
             <OsButton
                 variant="primary"
                 size="md"
@@ -390,7 +390,7 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                 onClick={onGenerateProForma}
                 className="w-full"
             >
-                {t('generate_proforma_pdf')}
+                {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
             </OsButton>
         </div>
     );

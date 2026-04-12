@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { generateInvoicePdf, type InvoiceData } from '@/services/invoiceService';
+import { generateInvoicePdf, statusToMode, buildVerifyUrl, type InvoiceData } from '@/services/invoiceService';
 
 /**
  * POST /api/invoices/generate
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     let body: {
         invoiceData: InvoiceData;
         transactionId: string;
+        transactionStatus?: string;
         vesselId: string | null;
         actingUserId: string;
         actingUserName: string;
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { invoiceData, transactionId, vesselId, actingUserId, actingUserName } = body;
+    const { invoiceData, transactionId, transactionStatus, vesselId, actingUserId, actingUserName } = body;
 
     if (!invoiceData || !transactionId) {
         return NextResponse.json(
@@ -50,12 +51,24 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // Resolve mode + badge from transaction status (PENDING/OVERDUE → proforma TO PAY,
+    // PAID → invoice PAID, etc.)
+    const { mode, badge } = statusToMode(transactionStatus || 'PENDING');
+    const enrichedInvoiceData: InvoiceData = {
+        ...invoiceData,
+        mode,
+        badge,
+        verifyUrl: invoiceData.verifyUrl || buildVerifyUrl(invoiceData.invoiceRef),
+    };
+
     const admin = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 1. Generate PDF buffer
-        const pdfBuffer = generateInvoicePdf(invoiceData);
-        const fileName = `invoices/${invoiceData.invoiceRef}.pdf`;
+        // 1. Generate PDF buffer (now async because of QR code generation)
+        const pdfBuffer = await generateInvoicePdf(enrichedInvoiceData);
+        // Filename prefix reflects mode for clarity in the storage bucket
+        const filePrefix = mode === 'invoice' ? 'invoice' : 'proforma';
+        const fileName = `invoices/${filePrefix}-${invoiceData.invoiceRef}.pdf`;
 
         // 2. Upload to storage with service_role (bypasses RLS)
         const { error: uploadError } = await admin.storage
@@ -111,6 +124,8 @@ export async function POST(request: NextRequest) {
                 vesselName: invoiceData.vesselName,
                 invoiceRef: invoiceData.invoiceRef,
                 amount: invoiceData.totalUsd,
+                mode,
+                badge,
                 pdfUrl,
             },
         });
@@ -123,6 +138,9 @@ export async function POST(request: NextRequest) {
             success: true,
             pdfUrl,
             invoiceRef: invoiceData.invoiceRef,
+            mode,
+            badge,
+            verifyUrl: enrichedInvoiceData.verifyUrl,
         });
     } catch (err) {
         console.error('[Invoice API] Internal error:', err);

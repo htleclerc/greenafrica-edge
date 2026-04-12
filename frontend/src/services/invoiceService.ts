@@ -1,5 +1,30 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+
+/**
+ * Invoice mode determines title, badge, filename prefix, and document tone.
+ *
+ *   STATUS         → MODE         → BADGE          → DOC TYPE
+ *   PENDING        → proforma     → TO PAY         → PRO-FORMA INVOICE
+ *   OVERDUE        → proforma     → OVERDUE        → PRO-FORMA INVOICE
+ *   DISPUTED       → proforma     → DISPUTED       → PRO-FORMA INVOICE
+ *   PAID           → invoice      → PAID           → TAX INVOICE
+ *   EXEMPT         → invoice      → EXEMPT         → TAX INVOICE (exempted)
+ */
+export type InvoiceMode = 'proforma' | 'invoice';
+export type InvoiceBadge = 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT';
+
+export function statusToMode(status: string): { mode: InvoiceMode; badge: InvoiceBadge } {
+  switch (status) {
+    case 'PAID':     return { mode: 'invoice',  badge: 'PAID' };
+    case 'EXEMPT':   return { mode: 'invoice',  badge: 'EXEMPT' };
+    case 'OVERDUE':  return { mode: 'proforma', badge: 'OVERDUE' };
+    case 'DISPUTED': return { mode: 'proforma', badge: 'DISPUTED' };
+    case 'PENDING':
+    default:         return { mode: 'proforma', badge: 'TO PAY' };
+  }
+}
 
 interface InvoiceData {
   invoiceRef: string;
@@ -22,14 +47,78 @@ interface InvoiceData {
     rate: number;
     amount: number;
   }>;
+  // New fields for mode + verification
+  mode?: InvoiceMode;
+  badge?: InvoiceBadge;
+  verifyUrl?: string;       // URL encoded in the QR code
 }
 
 /**
- * Generate an official institutional carbon tax pro-forma invoice PDF.
- * Includes branded header, official seal, signature blocks, legal preamble.
+ * Generate a verification URL for an invoice ref.
+ * Used by both the HTML preview and the PDF QR code.
+ */
+export function buildVerifyUrl(invoiceRef: string): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
+  return `${base}/verify/${encodeURIComponent(invoiceRef)}`;
+}
+
+/**
+ * Generate a QR code as a base64 PNG data URL.
+ * Used to embed in jsPDF via addImage and in HTML preview via <img>.
+ */
+export async function generateQrCodeDataUrl(text: string): Promise<string> {
+  return QRCode.toDataURL(text, {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    scale: 4,
+    color: {
+      dark: '#0D1F18',
+      light: '#FFFFFF',
+    },
+  });
+}
+
+/**
+ * Resolve QR code synchronously by pre-generating it before calling.
+ * jsPDF can embed PNG via addImage when given a base64 data URL.
+ */
+async function resolveInvoiceArtifacts(data: InvoiceData): Promise<{ qrDataUrl: string }> {
+  const verifyUrl = data.verifyUrl || buildVerifyUrl(data.invoiceRef);
+  const qrDataUrl = await generateQrCodeDataUrl(verifyUrl);
+  return { qrDataUrl };
+}
+
+/**
+ * Get the human-readable doc type name based on mode.
+ */
+function docTypeName(mode: InvoiceMode | undefined): string {
+  return mode === 'invoice' ? 'TAX INVOICE' : 'PRO-FORMA INVOICE';
+}
+
+/**
+ * Get badge background color (institutional palette).
+ */
+function badgeColor(badge: InvoiceBadge | undefined): { bg: [number, number, number]; fg: [number, number, number] } {
+  switch (badge) {
+    case 'PAID':     return { bg: [16, 185, 129],  fg: [255, 255, 255] };  // emerald
+    case 'EXEMPT':   return { bg: [14, 165, 233],  fg: [255, 255, 255] };  // sky
+    case 'OVERDUE':  return { bg: [220, 38, 38],   fg: [255, 255, 255] };  // red
+    case 'DISPUTED': return { bg: [249, 115, 22],  fg: [255, 255, 255] };  // orange
+    case 'TO PAY':
+    default:         return { bg: [234, 179, 8],   fg: [13, 31, 24] };     // amber on dark
+  }
+}
+
+/**
+ * Generate an official institutional carbon tax pro-forma/invoice PDF.
+ * Includes branded header, official seal, signature blocks, legal preamble,
+ * status badge (TO PAY / PAID / OVERDUE / DISPUTED / EXEMPT), and a verification
+ * QR code linking to /verify/<ref>.
+ *
  * Returns the PDF as a Uint8Array buffer.
  */
-export function generateInvoicePdf(data: InvoiceData): Uint8Array {
+export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array> {
+  const { qrDataUrl } = await resolveInvoiceArtifacts(data);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -90,11 +179,27 @@ export function generateInvoicePdf(data: InvoiceData): Uint8Array {
 
   doc.setTextColor(13, 31, 24);
   doc.setFontSize(13);
-  doc.text('PRO-FORMA INVOICE', rightX, logoY + 12, { align: 'right' });
+  doc.text(docTypeName(data.mode), rightX, logoY + 12, { align: 'right' });
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
   doc.text('Maritime Environmental Levy Notice', rightX, logoY + 17, { align: 'right' });
+
+  // ── Status badge (TO PAY / PAID / OVERDUE / DISPUTED / EXEMPT) ──
+  if (data.badge) {
+    const colors = badgeColor(data.badge);
+    const badgeText = data.badge;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    const badgeW = doc.getTextWidth(badgeText) + 8;
+    const badgeH = 6;
+    const badgeX = rightX - badgeW;
+    const badgeY = logoY + 20;
+    doc.setFillColor(...colors.bg);
+    doc.rect(badgeX, badgeY, badgeW, badgeH, 'F');
+    doc.setTextColor(...colors.fg);
+    doc.text(badgeText, badgeX + badgeW / 2, badgeY + 4.2, { align: 'center' });
+  }
 
   // ── Header divider ──
   doc.setDrawColor(13, 31, 24);
@@ -213,21 +318,37 @@ export function generateInvoicePdf(data: InvoiceData): Uint8Array {
   doc.setFontSize(16);
   doc.text(`$${data.totalUsd.toLocaleString()}.00`, tableX + tableW - 4, y + 8.5, { align: 'right' });
 
-  // ── Signature & seal ──
+  // ── Signature, QR code & seal (3 columns) ──
   y += 22;
+
+  // Left: signature line
   doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(0.3);
-  doc.line(margin, y, margin + 70, y);
+  doc.line(margin, y, margin + 60, y);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
   doc.text('Authorized Signatory', margin, y + 4);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 31, 24);
-  doc.text('Director, Maritime Carbon Tax Authority', margin, y + 8);
+  doc.text('Director, Maritime Carbon', margin, y + 8);
+  doc.text('Tax Authority', margin, y + 11);
 
-  // Official seal (circle with text)
-  const sealX = pageWidth - margin - 22;
+  // Center: QR code for verification
+  const qrSize = 26;
+  const qrX = (pageWidth - qrSize) / 2;
+  const qrY = y - 6;
+  doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(13, 31, 24);
+  doc.text('VERIFY ONLINE', pageWidth / 2, qrY + qrSize + 3, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+  doc.text('Scan to check status', pageWidth / 2, qrY + qrSize + 6, { align: 'center' });
+
+  // Right: official seal (circle with text)
+  const sealX = pageWidth - margin - 14;
   const sealY = y - 4;
   doc.setDrawColor(4, 120, 87);
   doc.setLineWidth(1.2);
@@ -279,7 +400,7 @@ export async function generateAndStoreInvoice(
   client: SupabaseClient,
   data: InvoiceData,
 ): Promise<string | null> {
-  const pdfBuffer = generateInvoicePdf(data);
+  const pdfBuffer = await generateInvoicePdf(data);
   const fileName = `invoices/${data.invoiceRef}.pdf`;
 
   const { error: uploadError } = await client.storage

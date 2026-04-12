@@ -1102,6 +1102,7 @@
     "audit_sent_to_agent": "Envoyée à l'agent",
     "audit_viewed_by_recipient": "Vue par le destinataire",
     "generate_proforma_pdf": "Générer la facture pro-forma (PDF)",
+    "view_tax_invoice": "Voir la facture fiscale (PDF)",
     "proforma_preview_title": "Aperçu de la facture pro-forma",
     "print_save_pdf": "Imprimer / Enregistrer PDF",
     "vessel_and_port_call": "Navire et escale",

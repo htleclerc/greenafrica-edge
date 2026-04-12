@@ -1034,6 +1034,7 @@
     "audit_sent_to_agent": "أُرسلت إلى الوكيل",
     "audit_viewed_by_recipient": "شوهدت من المستلم",
     "generate_proforma_pdf": "إنشاء فاتورة أولية (PDF)",
+    "view_tax_invoice": "عرض الفاتورة الضريبية (PDF)",
     "proforma_preview_title": "معاينة الفاتورة الأولية",
     "print_save_pdf": "طباعة / حفظ PDF",
     "vessel_and_port_call": "السفينة والرسو",

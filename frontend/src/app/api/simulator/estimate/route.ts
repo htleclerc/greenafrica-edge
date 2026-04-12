@@ -85,7 +85,12 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-        const pdfBuffer = generateInvoicePdf(invoiceData);
+        // Pre-estimate is always a "proforma TO PAY" by definition
+        const pdfBuffer = await generateInvoicePdf({
+            ...invoiceData,
+            mode: 'proforma',
+            badge: 'TO PAY',
+        });
 
         // Return binary PDF directly so the browser can save it
         return new NextResponse(new Uint8Array(pdfBuffer), {
