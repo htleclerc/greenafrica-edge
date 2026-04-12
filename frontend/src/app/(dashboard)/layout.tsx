@@ -34,6 +34,7 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/settings'))    return { key: 'settings',     label: 'Paramètres' };
     if (pathname.startsWith('/admin/tax-settings'))    return { key: 'tax-settings', label: 'Taxe carbone — Paramètres' };
     if (pathname.startsWith('/admin/revenue'))         return { key: 'revenue',      label: 'Tableau des recettes' };
+    if (pathname.startsWith('/admin/payments'))        return { key: 'payments',     label: 'Fournisseurs de paiement' };
     if (pathname.startsWith('/admin'))                 return { key: 'tax-settings', label: 'Console Admin' };
     return { key: 'map', label: 'Command Center — The Eye of Berbera' };
 }

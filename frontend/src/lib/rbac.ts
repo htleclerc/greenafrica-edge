@@ -25,6 +25,7 @@ import { UserRole } from '@/types/secure';
  * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │
  * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │
  * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │
+ * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │
  * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │
  * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┘
  */
@@ -49,6 +50,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Settings — everyone
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
