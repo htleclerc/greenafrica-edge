@@ -129,18 +129,22 @@ func (ing *Ingester) connect() error {
 	}
 	defer conn.Close()
 
-	// Subscribe to Somaliland EEZ bounding box
+	// DEBUG MODE: wide bounding box to verify API key + connectivity.
+	// Covers Red Sea + Gulf of Aden + Arabian Sea + NW Indian Ocean.
+	// TODO: restrict back to Somaliland EEZ once first messages confirmed.
 	sub := map[string]interface{}{
 		"APIKey": ing.cfg.AISStreamAPIKey,
 		"BoundingBoxes": [][]interface{}{
-			{[]float64{9.5, 43.0}, []float64{13.5, 52.0}},
+			{[]float64{5.0, 40.0}, []float64{25.0, 75.0}},
 		},
+		// Filter to position reports only (skip static-only updates)
+		"FilterMessageTypes": []string{"PositionReport"},
 	}
 	if err := conn.WriteJSON(sub); err != nil {
 		return fmt.Errorf("subscribe: %w", err)
 	}
 
-	log.Println("[AIS] Connected to aisstream.io — listening for vessels in Somaliland EEZ")
+	log.Println("[AIS] Connected to aisstream.io — DEBUG bbox (Red Sea + Gulf of Aden + Arabian Sea)")
 
 	for {
 		select {
@@ -149,7 +153,9 @@ func (ing *Ingester) connect() error {
 		default:
 		}
 
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		// 5-minute read timeout — long enough that low-traffic zones don't trigger
+		// constant reconnect, short enough to detect real connection drops
+		conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
 		_, rawMsg, err := conn.ReadMessage()
 		if err != nil {
 			return fmt.Errorf("read: %w", err)

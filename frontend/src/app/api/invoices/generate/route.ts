@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateInvoicePdf, statusToMode, buildVerifyUrl, type InvoiceData } from '@/services/invoiceService';
+import { sendInvoiceEmail } from '@/services/emailService';
 
 /**
  * POST /api/invoices/generate
@@ -134,6 +135,44 @@ export async function POST(request: NextRequest) {
             console.error('[Invoice API] Audit log failed:', auditError.message);
         }
 
+        // 7. Send the document by email to the vessel owner (best-effort)
+        let emailResult: { success: boolean; id?: string; error?: string } = { success: false };
+        if (vesselId) {
+            // Look up the owner profile via vessels.owner_id → profiles
+            const { data: vesselWithOwner } = await admin
+                .from('vessels')
+                .select('owner_id')
+                .eq('id', vesselId)
+                .single();
+
+            if (vesselWithOwner?.owner_id) {
+                const { data: ownerProfile } = await admin
+                    .from('profiles')
+                    .select('email, full_name')
+                    .eq('id', vesselWithOwner.owner_id)
+                    .single();
+
+                if (ownerProfile?.email) {
+                    emailResult = await sendInvoiceEmail({
+                        to: ownerProfile.email,
+                        recipientName: ownerProfile.full_name || 'Shipping Agent',
+                        vesselName: invoiceData.vesselName,
+                        invoiceRef: invoiceData.invoiceRef,
+                        amountUsd: invoiceData.totalUsd,
+                        dueDate: invoiceData.periodEnd,
+                        mode,
+                        badge,
+                        pdfBuffer: pdfBuffer,
+                        verifyUrl: enrichedInvoiceData.verifyUrl!,
+                    });
+
+                    if (!emailResult.success) {
+                        console.error('[Invoice API] Email failed:', emailResult.error);
+                    }
+                }
+            }
+        }
+
         return NextResponse.json({
             success: true,
             pdfUrl,
@@ -141,6 +180,7 @@ export async function POST(request: NextRequest) {
             mode,
             badge,
             verifyUrl: enrichedInvoiceData.verifyUrl,
+            email: emailResult,
         });
     } catch (err) {
         console.error('[Invoice API] Internal error:', err);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { sendRegistrationApprovalEmail } from '@/services/emailService';
 
 /**
  * POST /api/auth/approve
@@ -98,7 +99,29 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', requestId);
 
-        return NextResponse.json({ success: true, userId: targetProfile.id });
+        // 8. Fetch the full profile so we can send a proper welcome email
+        const { data: fullProfile } = await adminClient
+            .from('profiles')
+            .select('email, full_name, role, operational_site')
+            .eq('id', targetProfile.id)
+            .single();
+
+        let emailResult: { success: boolean; id?: string; error?: string } = { success: false };
+        if (fullProfile?.email) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
+            emailResult = await sendRegistrationApprovalEmail({
+                to: fullProfile.email,
+                recipientName: fullProfile.full_name || 'User',
+                role: fullProfile.role,
+                operationalSite: fullProfile.operational_site,
+                activationUrl: `${appUrl}/login`,
+            });
+            if (!emailResult.success) {
+                console.error('[Approve] Email failed:', emailResult.error);
+            }
+        }
+
+        return NextResponse.json({ success: true, userId: targetProfile.id, email: emailResult });
     } catch {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
