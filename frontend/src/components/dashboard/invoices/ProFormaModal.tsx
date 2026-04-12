@@ -9,8 +9,7 @@ import { useVessels } from '@/hooks/useVessels';
 import { useTaxConfigs } from '@/hooks/useTaxConfigs';
 import { createClient } from '@/lib/supabase/client';
 import { getProfileById, type ProfileSummary } from '@/services/profileService';
-import { generateAndStoreInvoice, type InvoiceData } from '@/services/invoiceService';
-import { writeAuditLog } from '@/services/auditService';
+import { type InvoiceData } from '@/services/invoiceService';
 import { useRole } from '@/lib/RoleContext';
 
 interface ProFormaModalProps {
@@ -82,8 +81,6 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
         setSendStatus('generating');
         setErrorMsg(null);
 
-        const client = createClient();
-
         const invoiceData: InvoiceData = {
             invoiceRef,
             vesselName: tx.vesselName,
@@ -110,44 +107,27 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
         };
 
         try {
-            // 1. Generate PDF + upload to Supabase Storage
-            const pdfUrl = await generateAndStoreInvoice(client, invoiceData);
-
-            if (!pdfUrl) {
-                throw new Error('Failed to upload invoice PDF');
-            }
-
-            // 2. Update transaction with PDF URL
-            await client
-                .from('transactions')
-                .update({ invoice_pdf_url: pdfUrl })
-                .eq('id', tx.id);
-
-            // 3. Mark vessel as having a pro-forma generated
-            if (vessel) {
-                await client
-                    .from('vessels')
-                    .update({ pro_forma_generated: true })
-                    .eq('id', vessel.id);
-            }
-
-            // 4. Audit log
-            await writeAuditLog(client, {
-                user_id: user.id,
-                user_full_name: user.fullName,
-                action: 'INVOICE_GENERATED',
-                severity: 'INFO',
-                entity_type: 'Transaction',
-                entity_id: tx.id,
-                details_json: {
-                    vesselName: tx.vesselName,
-                    invoiceRef,
-                    amount: tx.taxAmountUsd,
-                    pdfUrl,
-                },
+            // Server-side PDF generation + upload + DB updates + audit log
+            // (uses service_role key, bypasses RLS)
+            const response = await fetch('/api/invoices/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    invoiceData,
+                    transactionId: tx.id,
+                    vesselId: vessel?.id ?? null,
+                    actingUserId: user.id,
+                    actingUserName: user.fullName,
+                }),
             });
 
-            // 5. Trigger browser print preview AND mark as success
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to generate invoice');
+            }
+
+            // Trigger browser print preview AND mark as success
             setSendStatus('success');
             window.print();
             onSent?.();
