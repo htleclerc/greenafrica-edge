@@ -11,6 +11,7 @@ import { useRole } from '@/lib/RoleContext';
 import { Transaction, TransactionStatus, TransactionType, UserRole } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
+import { WireTransferModal, type WireTransferInstructions } from './WireTransferModal';
 
 const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
     [TransactionStatus.PAID]:     <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />,
@@ -24,13 +25,82 @@ type TabFilter = 'ALL' | TransactionStatus;
 
 export function InvoicesPage() {
     const t = useTranslations('InvoicesPage');
-    const { data: transactions } = useTransactions();
+    const { data: transactions, refetch: refetchTransactions } = useTransactions();
     const { data: kpis } = useKpis();
-    const { role } = useRole();
+    const { role, user } = useRole();
     const [tab, setTab]             = React.useState<TabFilter>('ALL');
     const [search, setSearch]       = React.useState('');
     const [selected, setSelected]   = React.useState<Transaction | null>(null);
     const [proForma, setProForma]   = React.useState<Transaction | null>(null);
+    const [wireInstructions, setWireInstructions] = React.useState<{
+        instructions: WireTransferInstructions;
+        invoiceRef: string;
+        vesselName: string;
+    } | null>(null);
+    const [paymentLoading, setPaymentLoading] = React.useState<string | null>(null);
+    const [paymentError, setPaymentError]     = React.useState<string | null>(null);
+
+    // ── Pay Now handler — calls /api/payments/create ──
+    async function handlePayNow(tx: Transaction) {
+        setPaymentLoading(tx.id);
+        setPaymentError(null);
+        try {
+            const res = await fetch('/api/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId: tx.id }),
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                throw new Error(result.error || 'Payment creation failed');
+            }
+            // Wire transfer → show modal with instructions
+            if (result.provider === 'wire_transfer' && result.wireInstructions) {
+                setWireInstructions({
+                    instructions: result.wireInstructions,
+                    invoiceRef: result.wireInstructions.reference.split('/')[1] || tx.ref,
+                    vesselName: tx.vesselName,
+                });
+            } else if (result.checkoutUrl) {
+                // Online provider → redirect to checkout
+                window.location.href = result.checkoutUrl;
+            } else {
+                throw new Error('No checkout URL or wire instructions returned');
+            }
+        } catch (err) {
+            setPaymentError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setPaymentLoading(null);
+        }
+    }
+
+    // ── Record Payment handler — admin marks tx as PAID manually ──
+    async function handleRecordPayment(tx: Transaction) {
+        setPaymentLoading(tx.id);
+        setPaymentError(null);
+        try {
+            const res = await fetch('/api/transactions/mark-paid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    transactionId: tx.id,
+                    actingUserId: user.id,
+                    actingUserName: user.fullName,
+                }),
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                throw new Error(result.error || 'Mark as paid failed');
+            }
+            // Refresh the transaction list to reflect the new status
+            refetchTransactions();
+            setSelected(null);
+        } catch (err) {
+            setPaymentError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setPaymentLoading(null);
+        }
+    }
 
     // Auto-select transaction from URL params (?vessel=<imo> or ?tx=<ref>)
     React.useEffect(() => {
@@ -200,6 +270,10 @@ export function InvoicesPage() {
                             <InvoiceDetail
                                 tx={selected}
                                 onGenerateProForma={() => setProForma(selected)}
+                                onPayNow={() => handlePayNow(selected)}
+                                onRecordPayment={() => handleRecordPayment(selected)}
+                                isPaymentLoading={paymentLoading === selected.id}
+                                paymentError={paymentError}
                                 role={role}
                             />
                         </>
@@ -213,13 +287,39 @@ export function InvoicesPage() {
 
             {/* Pro-forma modal */}
             {proForma && <ProFormaModal tx={proForma} onClose={() => setProForma(null)} />}
+
+            {/* Wire transfer instructions modal */}
+            {wireInstructions && (
+                <WireTransferModal
+                    instructions={wireInstructions.instructions}
+                    invoiceRef={wireInstructions.invoiceRef}
+                    vesselName={wireInstructions.vesselName}
+                    onClose={() => setWireInstructions(null)}
+                />
+            )}
         </div>
     );
 }
 
 // ── Invoice Detail Panel ──────────────────────────────────────────────────────
 
-function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGenerateProForma: () => void; role: UserRole }) {
+function InvoiceDetail({
+    tx,
+    onGenerateProForma,
+    onPayNow,
+    onRecordPayment,
+    isPaymentLoading,
+    paymentError,
+    role,
+}: {
+    tx: Transaction;
+    onGenerateProForma: () => void;
+    onPayNow: () => void;
+    onRecordPayment: () => void;
+    isPaymentLoading: boolean;
+    paymentError: string | null;
+    role: UserRole;
+}) {
     const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
     const invoiceRef = tx.ref;
@@ -258,8 +358,14 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                         {t('generate_statement')}
                     </OsButton>
                     {!isPaid && (
-                        <OsButton variant="primary" size="sm" icon={<CheckCircle className="w-3.5 h-3.5" />}>
-                            {t('record_payment')}
+                        <OsButton
+                            variant="primary"
+                            size="sm"
+                            icon={<CheckCircle className="w-3.5 h-3.5" />}
+                            onClick={onRecordPayment}
+                            disabled={isPaymentLoading}
+                        >
+                            {isPaymentLoading ? 'Recording…' : t('record_payment')}
                         </OsButton>
                     )}
                     {canContest && (
@@ -284,6 +390,28 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                         {t('override')}
                     </button>
                 </div>
+            )}
+
+            {/* Payment error banner */}
+            {paymentError && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20">
+                    <AlertTriangle className="w-4 h-4 text-[#EF4444] flex-shrink-0" />
+                    <p className="text-xs text-[#EF4444]">{paymentError}</p>
+                </div>
+            )}
+
+            {/* Pay Now CTA — for shipping agents on unpaid invoices */}
+            {!isPaid && role === UserRole.SHIPPING_AGENT && (
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<CheckCircle className="w-4 h-4" />}
+                    onClick={onPayNow}
+                    disabled={isPaymentLoading}
+                    className="w-full"
+                >
+                    {isPaymentLoading ? 'Creating payment session…' : `Pay Now — $${tx.taxAmountUsd.toLocaleString()}`}
+                </OsButton>
             )}
 
             {/* Tabs */}

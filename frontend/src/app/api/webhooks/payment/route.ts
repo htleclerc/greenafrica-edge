@@ -86,15 +86,29 @@ export async function POST(request: NextRequest) {
 
     // ── Process successful payment ────────────────────────────────────
     if (isSuccess) {
-      // Find transaction by reference
-      const { data: tx } = await adminClient
+      // The `reference` from providers is the canonical invoiceRef
+      // (e.g. "INV-2026-XXXX") which contains the transaction ID suffix
+      // after the second dash. Extract it and look up by ID prefix.
+      //
+      // Format: INV-YYYY-{first-segment-of-tx-uuid}
+      // We use ILIKE 'segment%' since the segment is uppercase but DB
+      // UUIDs may be lowercase.
+      const refMatch = reference.match(/^(?:PRO|INV)-\d{4}-(.+)$/i);
+      const idSuffix = refMatch ? refMatch[1].toLowerCase() : reference;
+
+      const { data: txs } = await adminClient
         .from('transactions')
         .select('id, vessel_id, vessel_name, tax_amount_usd')
-        .eq('id', reference)
-        .single();
+        .ilike('id', `${idSuffix}%`)
+        .limit(1);
+
+      const tx = txs && txs.length > 0 ? txs[0] : null;
 
       if (!tx) {
-        return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Transaction not found', reference, idSuffix },
+          { status: 404 },
+        );
       }
 
       await confirmPayment(adminClient, tx.id, providerRef);
