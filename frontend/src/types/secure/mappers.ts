@@ -84,6 +84,7 @@ export function rowToSecureVessel(
         portCall: row.port_call ?? '',
         proFormaGenerated: row.pro_forma_generated,
         lastTransactionId: row.last_transaction_id,
+        ownerId: (row as Record<string, unknown>).owner_id as string | null ?? null,
     };
 }
 

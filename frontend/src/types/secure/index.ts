@@ -79,6 +79,7 @@ export interface SecureVessel {
     portCall: string;           // e.g. 'BERBERA'
     proFormaGenerated: boolean;
     lastTransactionId: string | null;
+    ownerId?: string | null;    // links to profiles.id (shipping agent) — optional for mocks
 }
 
 // ── Tax Configuration ─────────────────────────────────────────────────────────

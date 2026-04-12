@@ -1,0 +1,8 @@
+# Compiled binaries
+api
+api.exe
+africgreen-api
+*.exe
+
+# Env (already in root .gitignore but explicit here)
+.env
