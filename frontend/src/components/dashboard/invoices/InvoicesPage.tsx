@@ -517,16 +517,36 @@ function InvoiceDetail({
                 <TransactionAuditTrail transactionId={tx.id} />
             )}
 
-            {/* Pro-forma / Invoice CTA — label adapts to transaction status */}
-            <OsButton
-                variant="primary"
-                size="md"
-                icon={<FileText className="w-4 h-4" />}
-                onClick={onGenerateProForma}
-                className="w-full"
-            >
-                {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
-            </OsButton>
+            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status */}
+            {isPaid && tx.receiptPdfUrl ? (
+                // PAID with a real receipt PDF — open the receipt directly
+                <a
+                    href={tx.receiptPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full"
+                >
+                    <OsButton
+                        variant="primary"
+                        size="md"
+                        icon={<FileText className="w-4 h-4" />}
+                        className="w-full"
+                    >
+                        Download Official Receipt (PDF)
+                    </OsButton>
+                </a>
+            ) : (
+                // Unpaid (or paid without a generated receipt yet) — open the modal
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
+                </OsButton>
+            )}
         </div>
     );
 }

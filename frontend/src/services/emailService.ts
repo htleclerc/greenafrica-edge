@@ -236,6 +236,8 @@ export interface PaymentConfirmationParams {
     amountUsd: number;
     paidAt: string;
     receiptUrl?: string;
+    receiptRef?: string;          // RCT-YYYY-XXXX
+    receiptPdfBuffer?: Uint8Array; // Attach the receipt PDF directly
 }
 
 export async function sendPaymentConfirmationEmail(p: PaymentConfirmationParams): Promise<EmailResult> {
@@ -249,22 +251,35 @@ export async function sendPaymentConfirmationEmail(p: PaymentConfirmationParams)
 
         <h2>Payment Details</h2>
         <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${p.receiptRef
+            ? `<div class="meta-row"><span class="meta-label">Receipt</span><span class="meta-value" style="font-family:monospace;color:#10B981">${escapeHtml(p.receiptRef)}</span></div>`
+            : ''}
         <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
         <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
         <div class="meta-row"><span class="meta-label">Settled On</span><span class="meta-value">${escapeHtml(p.paidAt)}</span></div>
 
-        ${p.receiptUrl
-            ? `<a href="${escapeHtml(p.receiptUrl)}" class="btn">Download Receipt PDF →</a>`
+        ${p.receiptPdfBuffer
+            ? '<p style="margin-top:16px;font-size:13px;color:#10B981"><strong>Your official receipt is attached to this email as a PDF.</strong> Retain it for your records and tax filings.</p>'
             : ''}
 
-        <p style="margin-top:20px">A complete transaction record is available in your portal under <em>Invoices & Payments</em>.</p>
+        ${p.receiptUrl
+            ? `<a href="${escapeHtml(p.receiptUrl)}" class="btn">Download Receipt Online →</a>`
+            : ''}
+
+        <p style="margin-top:20px">A complete transaction record is available in your portal under <em>Invoices &amp; Payments</em>.</p>
     `;
 
     return sendEmail({
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Payment of $${p.amountUsd.toLocaleString()} confirmed` }),
-        text: `Payment confirmed for ${p.invoiceRef}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nPaid: ${p.paidAt}`,
+        text: `Payment confirmed for ${p.invoiceRef}\nReceipt: ${p.receiptRef || 'see attachment'}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nPaid: ${p.paidAt}`,
+        attachments: p.receiptPdfBuffer
+            ? [{
+                filename: `${p.receiptRef || 'receipt'}.pdf`,
+                content: Buffer.from(p.receiptPdfBuffer),
+            }]
+            : undefined,
     });
 }
 

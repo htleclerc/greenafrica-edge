@@ -130,6 +130,7 @@ export interface Transaction {
     taxAmountUsd: number;
     status: TransactionStatus;
     invoicePdfUrl: string | null;
+    receiptPdfUrl?: string | null;
     portCall: string;
     createdAt: string;          // ISO datetime
     paidAt: string | null;

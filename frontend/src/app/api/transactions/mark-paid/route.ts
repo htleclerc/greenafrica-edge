@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendPaymentConfirmationEmail } from '@/services/emailService';
+import {
+    generateReceiptPdf,
+    generateAndStoreReceipt,
+    buildReceiptRef,
+    type ReceiptData,
+} from '@/services/invoiceService';
 
 /**
  * POST /api/transactions/mark-paid
@@ -102,8 +108,8 @@ export async function POST(request: NextRequest) {
         },
     });
 
-    // 4. Send confirmation email to vessel owner
-    let emailResult: { success: boolean; id?: string; error?: string } = { success: false };
+    // 4. Look up vessel owner profile (used by both receipt generation and email)
+    let ownerProfile: { email: string; full_name: string } | null = null;
     if (tx.vessel_id) {
         const { data: vessel } = await admin
             .from('vessels')
@@ -112,30 +118,81 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (vessel?.owner_id) {
-            const { data: ownerProfile } = await admin
+            const { data: profile } = await admin
                 .from('profiles')
                 .select('email, full_name')
                 .eq('id', vessel.owner_id)
                 .single();
+            if (profile) ownerProfile = profile;
+        }
+    }
 
-            if (ownerProfile?.email) {
-                emailResult = await sendPaymentConfirmationEmail({
-                    to: ownerProfile.email,
-                    recipientName: ownerProfile.full_name || 'Shipping Agent',
-                    vesselName: tx.vessel_name,
-                    invoiceRef,
-                    amountUsd: Number(tx.tax_amount_usd),
-                    paidAt: new Date(paidAt).toLocaleString('en-GB', {
-                        day: '2-digit', month: 'long', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit',
-                    }),
-                    receiptUrl: tx.invoice_pdf_url ?? undefined,
-                });
+    // 5. Generate the OFFICIAL RECEIPT PDF + upload to Storage
+    //    This is the proof-of-payment document, separate from the pro-forma.
+    const paidAtDate = new Date(paidAt);
+    const receiptRef = buildReceiptRef(tx.id, paidAtDate);
+    const receiptData: ReceiptData = {
+        receiptRef,
+        invoiceRef,
+        vesselName: tx.vessel_name,
+        vesselImo: tx.vessel_imo,
+        vesselMmsi: '',  // not in select, fall back to empty
+        ownerName: ownerProfile?.full_name || 'Unassigned shipping agent',
+        jurisdiction: 'Republic of Somaliland',
+        amountUsd: Number(tx.tax_amount_usd),
+        paidAt: paidAtDate.toLocaleString('en-GB', {
+            day: '2-digit', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+        }) + ' UTC',
+        paymentMethod,
+        paymentReference: paymentReference ?? undefined,
+        paymentNotes: paymentNotes ?? undefined,
+        confirmedBy: body.actingUserName,
+    };
 
-                if (!emailResult.success) {
-                    console.error('[Mark Paid] Email failed:', emailResult.error);
-                }
-            }
+    let receiptPdfUrl: string | null = null;
+    let receiptPdfBuffer: Uint8Array | null = null;
+    try {
+        receiptPdfUrl = await generateAndStoreReceipt(admin, receiptData);
+        // Re-generate the buffer for the email attachment
+        // (cheap — qrcode + jspdf rendering takes <100ms)
+        receiptPdfBuffer = await generateReceiptPdf(receiptData);
+    } catch (err) {
+        console.error('[Mark Paid] Receipt generation failed:', err);
+    }
+
+    // 6. Update transaction with the receipt URL (best-effort — column may
+    //    not exist yet if migration 014 hasn't been applied)
+    if (receiptPdfUrl) {
+        const { error: updateErr } = await admin
+            .from('transactions')
+            .update({ receipt_pdf_url: receiptPdfUrl })
+            .eq('id', tx.id);
+        if (updateErr) {
+            console.warn('[Mark Paid] receipt_pdf_url update failed (apply migration 014?):', updateErr.message);
+        }
+    }
+
+    // 7. Send confirmation email with the receipt PDF attached
+    let emailResult: { success: boolean; id?: string; error?: string } = { success: false };
+    if (ownerProfile?.email) {
+        emailResult = await sendPaymentConfirmationEmail({
+            to: ownerProfile.email,
+            recipientName: ownerProfile.full_name || 'Shipping Agent',
+            vesselName: tx.vessel_name,
+            invoiceRef,
+            amountUsd: Number(tx.tax_amount_usd),
+            paidAt: new Date(paidAt).toLocaleString('en-GB', {
+                day: '2-digit', month: 'long', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+            }),
+            receiptUrl: receiptPdfUrl ?? undefined,
+            receiptRef,
+            receiptPdfBuffer: receiptPdfBuffer ?? undefined,
+        });
+
+        if (!emailResult.success) {
+            console.error('[Mark Paid] Email failed:', emailResult.error);
         }
     }
 
@@ -143,6 +200,8 @@ export async function POST(request: NextRequest) {
         success: true,
         transactionId: tx.id,
         invoiceRef,
+        receiptRef,
+        receiptPdfUrl,
         paidAt,
         paymentMethod,
         paymentReference,

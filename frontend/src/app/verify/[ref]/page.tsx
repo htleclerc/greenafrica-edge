@@ -34,23 +34,47 @@ async function fetchInvoiceStatus(ref: string): Promise<VerifyResult> {
 
     const admin = createClient(supabaseUrl, supabaseKey);
 
-    // Strip the prefix (PRO- or INV-) and look up the transaction by ID suffix
-    // The ref format is {PRO|INV}-{YEAR}-{TX_ID_SUFFIX} where TX_ID_SUFFIX is the
+    // Strip the prefix (PRO- / INV- / RCT-) and look up the transaction by ID suffix.
+    // The ref format is {PRO|INV|RCT}-{YEAR}-{TX_ID_SUFFIX} where TX_ID_SUFFIX is the
     // first segment of the transaction UUID after the dash.
-    const match = ref.match(/^(PRO|INV)-\d{4}-(.+)$/i);
+    //   PRO-2026-XXXX → pro-forma (unpaid bill)
+    //   INV-2026-XXXX → tax invoice (legal bill)
+    //   RCT-2026-XXXX → official receipt (proof of payment)
+    const match = ref.match(/^(PRO|INV|RCT)-\d{4}-(.+)$/i);
     if (!match) return { found: false };
 
     const idSuffix = match[2].toLowerCase();
 
     // Find transaction whose id starts with the suffix
-    const { data: txs } = await admin
-        .from('transactions')
-        .select('id, vessel_name, vessel_imo, port_call, transaction_type, tax_amount_usd, status, paid_at, created_at, invoice_pdf_url')
-        .ilike('id', `${idSuffix}%`)
-        .limit(1);
+    // Note: receipt_pdf_url may not exist yet if migration 014 hasn't been applied.
+    // We try a wider select first; if it errors we fall back without that column.
+    let txs;
+    {
+        const result = await admin
+            .from('transactions')
+            .select('id, vessel_name, vessel_imo, port_call, transaction_type, tax_amount_usd, status, paid_at, created_at, invoice_pdf_url, receipt_pdf_url')
+            .ilike('id', `${idSuffix}%`)
+            .limit(1);
+        if (result.error) {
+            const fallback = await admin
+                .from('transactions')
+                .select('id, vessel_name, vessel_imo, port_call, transaction_type, tax_amount_usd, status, paid_at, created_at, invoice_pdf_url')
+                .ilike('id', `${idSuffix}%`)
+                .limit(1);
+            txs = fallback.data;
+        } else {
+            txs = result.data;
+        }
+    }
 
     if (!txs || txs.length === 0) return { found: false };
     const tx = txs[0];
+
+    // For RCT- refs, prefer the receipt PDF; otherwise the invoice PDF
+    const isReceipt = ref.toUpperCase().startsWith('RCT-');
+    const preferredPdfUrl = isReceipt
+        ? (tx as { receipt_pdf_url?: string | null }).receipt_pdf_url || tx.invoice_pdf_url
+        : tx.invoice_pdf_url;
 
     return {
         found: true,
@@ -63,7 +87,7 @@ async function fetchInvoiceStatus(ref: string): Promise<VerifyResult> {
         status: tx.status,
         paidAt: tx.paid_at,
         createdAt: tx.created_at,
-        pdfUrl: tx.invoice_pdf_url,
+        pdfUrl: preferredPdfUrl,
     };
 }
 
