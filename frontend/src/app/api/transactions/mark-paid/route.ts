@@ -6,9 +6,20 @@ import { sendPaymentConfirmationEmail } from '@/services/emailService';
  * POST /api/transactions/mark-paid
  *
  * Marks a transaction as PAID, updates the linked vessel's compliance status
- * to COMPLIANT, writes an audit log, and emails the shipping agent a receipt.
+ * to COMPLIANT, writes a rich audit log capturing how the payment was made,
+ * and emails the shipping agent a receipt.
  *
- * Body: { transactionId: string, actingUserId: string, actingUserName: string }
+ * Body: {
+ *   transactionId:    string,
+ *   actingUserId:     string,
+ *   actingUserName:   string,
+ *   paymentMethod?:   'wire_transfer'|'stripe'|'paystack'|'flutterwave'|'wave'|'cash'|'mobile_money'|'other',
+ *   paymentReference?: string,  // bank confirmation number, SWIFT MT103 ref, etc.
+ *   paymentNotes?:    string,  // free text from the admin
+ * }
+ *
+ * paymentMethod defaults to 'wire_transfer' (the platform's manual flow)
+ * if not provided.
  */
 export async function POST(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,7 +28,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
 
-    let body: { transactionId: string; actingUserId: string; actingUserName: string };
+    let body: {
+        transactionId: string;
+        actingUserId: string;
+        actingUserName: string;
+        paymentMethod?: string;
+        paymentReference?: string;
+        paymentNotes?: string;
+    };
     try {
         body = await request.json();
     } catch {
@@ -27,6 +45,10 @@ export async function POST(request: NextRequest) {
     if (!body.transactionId) {
         return NextResponse.json({ error: 'transactionId is required' }, { status: 400 });
     }
+
+    const paymentMethod = body.paymentMethod || 'wire_transfer';
+    const paymentReference = body.paymentReference?.trim() || null;
+    const paymentNotes = body.paymentNotes?.trim() || null;
 
     const admin = createClient(supabaseUrl, supabaseKey);
     const paidAt = new Date().toISOString();
@@ -51,7 +73,11 @@ export async function POST(request: NextRequest) {
             .eq('id', tx.vessel_id);
     }
 
-    // 3. Audit log
+    // 3. Audit log — capture WHO confirmed, WHEN, BY WHAT MEANS, and the
+    //    bank/provider reference if any. This is the canonical source of
+    //    truth for the payment trail in the Audit tab of InvoicesPage.
+    const createdAt = new Date(tx.created_at);
+    const invoiceRef = `INV-${createdAt.getFullYear()}-${tx.id.split('-')[1].toUpperCase()}`;
     await admin.from('audit_logs').insert({
         user_id: body.actingUserId,
         user_full_name: body.actingUserName,
@@ -60,10 +86,19 @@ export async function POST(request: NextRequest) {
         entity_type: 'Transaction',
         entity_id: tx.id,
         details_json: {
+            event: 'PAYMENT_RECEIVED',
+            invoiceRef,
             vesselName: tx.vessel_name,
-            amount: Number(tx.tax_amount_usd),
+            vesselImo: tx.vessel_imo,
+            amountUsd: Number(tx.tax_amount_usd),
+            currency: 'USD',
+            previousStatus: 'PENDING',
             newStatus: 'PAID',
             paidAt,
+            paymentMethod,
+            paymentReference,
+            paymentNotes,
+            confirmedBy: body.actingUserName,
         },
     });
 
@@ -84,8 +119,6 @@ export async function POST(request: NextRequest) {
                 .single();
 
             if (ownerProfile?.email) {
-                const createdAt = new Date(tx.created_at);
-                const invoiceRef = `INV-${createdAt.getFullYear()}-${tx.id.split('-')[1].toUpperCase()}`;
                 emailResult = await sendPaymentConfirmationEmail({
                     to: ownerProfile.email,
                     recipientName: ownerProfile.full_name || 'Shipping Agent',
@@ -109,7 +142,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
         success: true,
         transactionId: tx.id,
+        invoiceRef,
         paidAt,
+        paymentMethod,
+        paymentReference,
+        paymentNotes,
         email: emailResult,
     });
 }
