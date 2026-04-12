@@ -30,6 +30,11 @@ INSERT INTO public.vessel_positions (vessel_id, lat, lng, heading, speed_knots, 
 ('10000000-0000-0000-0000-000000000005', 11.800000, 43.900000, 80.0, 12.2, 'TRANSIT_LANE', '2025-03-08T21:00:00Z'),
 ('10000000-0000-0000-0000-000000000006', 12.800000, 47.100000, 200.0, 10.2, 'EEZ', '2025-03-09T07:00:00Z');
 
+-- Positions for EXEMPT vessels (USS Missouri + WFP Coral) so they appear on the map
+INSERT INTO public.vessel_positions (vessel_id, lat, lng, heading, speed_knots, zone, recorded_at) VALUES
+('10000000-0000-0000-0000-000000000101', 12.450000, 45.800000, 85.0, 18.5, 'EEZ', '2026-04-12T11:00:00Z'),
+('10000000-0000-0000-0000-000000000102', 11.700000, 46.200000, 230.0, 11.0, 'EEZ', '2026-04-12T11:00:00Z');
+
 -- ── Transactions ────────────────────────────────────────────────────────────
 
 INSERT INTO public.transactions (id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, invoice_pdf_url, port_call, created_at, paid_at) VALUES

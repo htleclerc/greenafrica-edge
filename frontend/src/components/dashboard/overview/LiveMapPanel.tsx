@@ -66,6 +66,11 @@ export function LiveMapPanel() {
         ? vessels
         : vessels.filter((v) => activeFilters.has(v.complianceStatus));
 
+    // Visible on map = filtered vessels that have a real position (lat/lng != 0)
+    const mappableVessels = filteredVessels.filter(
+        (v) => v.position.lat !== 0 && v.position.lng !== 0,
+    );
+
     function toggleFilter(status: VesselComplianceStatus) {
         setActiveFilters((prev) => {
             const next = new Set(prev);
@@ -88,8 +93,11 @@ export function LiveMapPanel() {
                         <span className="w-1.5 h-1.5 rounded-full bg-[#00D97E] animate-pulse" />
                         {t('map_live_badge')}
                     </span>
-                    <span className="text-[10px] font-medium text-[var(--os-text-muted)] tabular-nums">
-                        {filteredVessels.length} / {vessels.length}
+                    <span
+                        className="text-[10px] font-medium text-[var(--os-text-muted)] tabular-nums"
+                        title={`${mappableVessels.length} visible on map · ${filteredVessels.length} after filter · ${vessels.length} total`}
+                    >
+                        {mappableVessels.length} / {vessels.length}
                     </span>
                     <div className="relative">
                         <button
