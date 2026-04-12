@@ -281,77 +281,191 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                             </div>
                         </div>
 
-                        {/* Right: PDF preview */}
+                        {/* Right: Official PDF preview */}
                         <div
-                            className="rounded-xl border border-[var(--os-border)] overflow-hidden print-only"
-                            style={{ backgroundColor: 'white', color: '#1a1a1a', fontFamily: 'serif' }}
+                            className="rounded-lg overflow-hidden print-only shadow-2xl"
+                            style={{
+                                backgroundColor: 'white',
+                                color: '#0D1F18',
+                                fontFamily: '"Times New Roman", Georgia, serif',
+                                border: '1px solid #E2E8F0',
+                            }}
                         >
+                            {/* Top emerald accent bar */}
+                            <div style={{ height: '6px', background: 'linear-gradient(90deg, #047857 0%, #10B981 50%, #EAB308 100%)' }} />
+
                             <div className="p-6">
-                                {/* PDF header */}
-                                <div className="flex items-start justify-between mb-6 pb-4 border-b border-gray-200">
-                                    <div>
-                                        <h2 className="text-base font-bold text-gray-900">{t('pdf_title')}</h2>
-                                        <p className="text-xs text-gray-500 mt-0.5">{t('pdf_subtitle')}</p>
+                                {/* Official header with logo */}
+                                <div className="flex items-start justify-between mb-5 pb-4" style={{ borderBottom: '2px solid #0D1F18' }}>
+                                    <div className="flex items-start gap-3">
+                                        {/* Logo */}
+                                        <img
+                                            src="/brand/africgreen-icon-emerald.svg"
+                                            alt="AfricGreen"
+                                            style={{ width: '52px', height: '52px', flexShrink: 0 }}
+                                        />
+                                        <div>
+                                            <p style={{ fontSize: '20px', fontWeight: 800, color: '#0D1F18', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                                                AFRICGREEN
+                                            </p>
+                                            <p style={{ fontSize: '8px', fontWeight: 700, color: '#059669', letterSpacing: '2px', marginTop: '3px' }}>
+                                                SOVEREIGN CARBON PLATFORM
+                                            </p>
+                                            <p style={{ fontSize: '9px', color: '#475569', marginTop: '6px', lineHeight: 1.3 }}>
+                                                Republic of Somaliland<br />
+                                                Ministry of Environment & Climate Change<br />
+                                                Maritime Carbon Tax Authority
+                                            </p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">AFRICGREEN</p>
-                                        <p className="text-[10px] text-gray-500">{t('pdf_government')}</p>
-                                        <p className="text-[10px] text-gray-500">{t('pdf_ministry')}</p>
+                                        <div style={{
+                                            display: 'inline-block',
+                                            padding: '4px 10px',
+                                            background: '#0D1F18',
+                                            color: '#10B981',
+                                            fontSize: '9px',
+                                            fontWeight: 700,
+                                            letterSpacing: '2px',
+                                            borderRadius: '2px',
+                                        }}>
+                                            OFFICIAL DOCUMENT
+                                        </div>
+                                        <p style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px', color: '#0D1F18' }}>
+                                            PRO-FORMA INVOICE
+                                        </p>
+                                        <p style={{ fontSize: '9px', color: '#475569', fontStyle: 'italic' }}>
+                                            Maritime Environmental Levy Notice
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Meta */}
-                                <div className="grid grid-cols-2 gap-4 mb-5 text-xs">
+                                {/* Reference block */}
+                                <div className="grid grid-cols-2 gap-4 mb-4" style={{ fontSize: '10px' }}>
                                     <div>
-                                        <p className="text-gray-500 mb-0.5">{t('pdf_issued_to')}</p>
-                                        <p className="font-semibold text-gray-900">{ownerName}</p>
-                                        <p className="text-gray-600">{tx.vesselName}</p>
-                                        <p className="text-gray-600">IMO: {tx.vesselImo}</p>
+                                        <p style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '8px', fontWeight: 700, marginBottom: '4px' }}>
+                                            Issued To
+                                        </p>
+                                        <p style={{ fontWeight: 700, color: '#0D1F18', fontSize: '11px' }}>{ownerName}</p>
+                                        <p style={{ color: '#334155', marginTop: '2px' }}>Vessel: {tx.vesselName}</p>
+                                        <p style={{ color: '#334155' }}>IMO: {tx.vesselImo} · MMSI: {vessel?.mmsi ?? '—'}</p>
+                                        <p style={{ color: '#334155' }}>Port of Call: {tx.portCall}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-gray-500 mb-0.5">{t('pdf_invoice_no')}</p>
-                                        <p className="font-bold text-gray-900">{invoiceRef}</p>
-                                        <p className="text-gray-600 mt-1">{t('pdf_date')}: {issueDate}</p>
-                                        <p className="text-gray-600">{t('pdf_due')}: {dueDate}</p>
+                                        <p style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '8px', fontWeight: 700, marginBottom: '4px' }}>
+                                            Reference
+                                        </p>
+                                        <p style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: '#047857' }}>
+                                            {invoiceRef}
+                                        </p>
+                                        <p style={{ color: '#334155', marginTop: '4px' }}>
+                                            <strong>Issued:</strong> {issueDate}
+                                        </p>
+                                        <p style={{ color: '#DC2626', fontWeight: 600 }}>
+                                            <strong>Due:</strong> {dueDate}
+                                        </p>
                                     </div>
+                                </div>
+
+                                {/* Legal preamble */}
+                                <div style={{
+                                    background: '#F0FAF4',
+                                    borderLeft: '3px solid #10B981',
+                                    padding: '8px 12px',
+                                    marginBottom: '12px',
+                                    fontSize: '9px',
+                                    color: '#0D1F18',
+                                    fontStyle: 'italic',
+                                    lineHeight: 1.4,
+                                }}>
+                                    Pursuant to the Maritime Carbon Tax Act (2024) and IMO MEPC.346(78), the
+                                    above-named vessel is hereby notified of carbon emission liabilities incurred
+                                    within the Somaliland Exclusive Economic Zone (EEZ).
                                 </div>
 
                                 {/* Line items */}
-                                <table className="w-full text-xs mb-4">
+                                <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse', marginBottom: '8px' }}>
                                     <thead>
-                                        <tr className="border-y border-gray-200">
-                                            <th className="py-2 text-left text-gray-600 font-semibold">{t('pdf_col_description')}</th>
-                                            <th className="py-2 text-right text-gray-600 font-semibold">{t('pdf_col_qty')}</th>
-                                            <th className="py-2 text-right text-gray-600 font-semibold">{t('pdf_col_rate')}</th>
-                                            <th className="py-2 text-right text-gray-600 font-semibold">{t('pdf_col_amount')}</th>
+                                        <tr style={{ background: '#0D1F18', color: 'white' }}>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, letterSpacing: '0.5px' }}>Description</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, letterSpacing: '0.5px' }}>Qty</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, letterSpacing: '0.5px' }}>Rate</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, letterSpacing: '0.5px' }}>Amount (USD)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {[
-                                            { desc: t('pdf_carbon_emissions_tax'), qty: `${tx.emissionsTco2} tCO₂`, rate: `$${realRate.toFixed(2)}/t`, amount: carbonTaxFee },
-                                            { desc: t('fee_port_call'),              qty: '1',                        rate: `$${portCallFee}`,         amount: portCallFee },
-                                            { desc: t('fee_security_surcharge'),       qty: '1',                        rate: `$${securityFee}`,          amount: securityFee },
-                                        ].map(({ desc, qty, rate, amount }) => (
-                                            <tr key={desc} className="border-b border-gray-100">
-                                                <td className="py-2 text-gray-700">{desc}</td>
-                                                <td className="py-2 text-right text-gray-600">{qty}</td>
-                                                <td className="py-2 text-right text-gray-600">{rate}</td>
-                                                <td className="py-2 text-right font-medium text-gray-900">${amount.toLocaleString()}.00</td>
+                                            { desc: 'Carbon Emissions Tax (IMO Cubic Law)', qty: `${tx.emissionsTco2.toFixed(2)} tCO₂`, rate: `$${realRate.toFixed(2)}/t`, amount: carbonTaxFee },
+                                            { desc: 'Port Call Fixed Fee', qty: '1', rate: `$${portCallFee}`, amount: portCallFee },
+                                            { desc: 'Maritime Security Surcharge', qty: '1', rate: `$${securityFee}`, amount: securityFee },
+                                        ].map(({ desc, qty, rate, amount }, i) => (
+                                            <tr key={desc} style={{ background: i % 2 === 0 ? '#F8FAFC' : 'white' }}>
+                                                <td style={{ padding: '6px 8px', color: '#0D1F18' }}>{desc}</td>
+                                                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>{qty}</td>
+                                                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>{rate}</td>
+                                                <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0D1F18', fontFamily: 'monospace' }}>${amount.toLocaleString()}.00</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
 
                                 {/* Total */}
-                                <div className="flex justify-between items-center py-3 border-t border-gray-300">
-                                    <span className="text-sm font-bold text-gray-900">{t('total_due')}</span>
-                                    <span className="text-lg font-bold text-gray-900">${tx.taxAmountUsd.toLocaleString()}.00</span>
+                                <div style={{
+                                    background: '#0D1F18',
+                                    color: 'white',
+                                    padding: '10px 12px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: '12px',
+                                }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Total Due (USD)</span>
+                                    <span style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', fontFamily: 'monospace' }}>
+                                        ${tx.taxAmountUsd.toLocaleString()}.00
+                                    </span>
+                                </div>
+
+                                {/* Signature & seal */}
+                                <div className="grid grid-cols-2 gap-4 mb-3" style={{ fontSize: '8px', color: '#64748B' }}>
+                                    <div>
+                                        <p style={{ borderTop: '1px solid #94A3B8', paddingTop: '4px', marginTop: '24px' }}>
+                                            Authorized Signatory<br />
+                                            <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director, Maritime Carbon Tax Authority</span>
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div style={{
+                                            display: 'inline-block',
+                                            border: '2px solid #047857',
+                                            borderRadius: '50%',
+                                            padding: '14px 10px',
+                                            color: '#047857',
+                                            fontSize: '7px',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.5px',
+                                            transform: 'rotate(-8deg)',
+                                            opacity: 0.85,
+                                            textAlign: 'center',
+                                            lineHeight: 1.1,
+                                        }}>
+                                            OFFICIAL<br />SEAL<br />SOMALILAND
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Footer */}
-                                <div className="mt-4 pt-4 border-t border-gray-100 text-[10px] text-gray-400">
-                                    <p>{t('pdf_payment_notice')}</p>
-                                    <p className="mt-1">{t('pdf_remit_to')}</p>
+                                <div style={{
+                                    borderTop: '1px solid #E2E8F0',
+                                    paddingTop: '8px',
+                                    fontSize: '7px',
+                                    color: '#94A3B8',
+                                    lineHeight: 1.4,
+                                }}>
+                                    <p><strong>Payment terms:</strong> 30 days from issuance. Late payment incurs 1.5% monthly interest.</p>
+                                    <p><strong>Remit to:</strong> Sovereign Climate Fund · Bank of Somaliland · SWIFT BSSLSO21 · Ref: {invoiceRef}</p>
+                                    <p style={{ marginTop: '4px', textAlign: 'center', color: '#CBD5E1' }}>
+                                        Document generated by AfricgreenOS · Sovereign Carbon Intelligence Platform · AES-256 Encrypted
+                                    </p>
                                 </div>
                             </div>
                         </div>

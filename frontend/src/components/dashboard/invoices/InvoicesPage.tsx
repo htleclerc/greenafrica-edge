@@ -32,6 +32,27 @@ export function InvoicesPage() {
     const [selected, setSelected]   = React.useState<Transaction | null>(null);
     const [proForma, setProForma]   = React.useState<Transaction | null>(null);
 
+    // Auto-select transaction from URL params (?vessel=<imo> or ?tx=<ref>)
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || transactions.length === 0) return;
+        const params = new URLSearchParams(window.location.search);
+        const vesselImo = params.get('vessel');
+        const txRef = params.get('tx');
+
+        if (txRef) {
+            const match = transactions.find((tx) => tx.ref === txRef);
+            if (match) setSelected(match);
+            return;
+        }
+        if (vesselImo) {
+            // Find latest transaction for this vessel by IMO
+            const matches = transactions
+                .filter((tx) => tx.vesselImo === vesselImo)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            if (matches.length > 0) setSelected(matches[0]);
+        }
+    }, [transactions]);
+
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
         [TransactionStatus.PENDING]:  t('status_pending'),

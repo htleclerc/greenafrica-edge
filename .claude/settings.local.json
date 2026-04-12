@@ -30,7 +30,10 @@
       "Skill(plan-design-review:*)",
       "Bash(netstat -ano)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300/)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3300)",
+      "Bash(npm run:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/Go/bin:$HOME/go/bin\")",
+      "Bash(go run:*)"
     ]
   }
 }

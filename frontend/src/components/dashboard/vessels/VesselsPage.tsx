@@ -266,7 +266,7 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
             </td>
             <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <a
-                    href={`/dashboard/invoices?vessel=${v.id}`}
+                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                     onClick={(e) => e.stopPropagation()}
                     className="text-[10px] font-semibold text-[#38BDF8] hover:underline whitespace-nowrap"
                 >
@@ -334,7 +334,7 @@ function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onCl
             </div>
             <div className="flex flex-col gap-2 justify-center">
                 <a
-                    href={`/dashboard/invoices?vessel=${v.id}`}
+                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                     className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
                 >
                     {t('generate_proforma')}

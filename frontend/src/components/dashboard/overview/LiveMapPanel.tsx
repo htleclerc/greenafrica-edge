@@ -217,13 +217,13 @@ function VesselDetailPanel({
 
             <div className="flex flex-col gap-2">
                 <a
-                    href={`/dashboard/vessels?id=${vessel.id}`}
+                    href={`/dashboard/vessels?imo=${vessel.imoNumber}`}
                     className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:border-[var(--os-border-strong)] hover:text-[var(--os-text-primary)] transition-colors text-center"
                 >
                     {t('detail_hail_ship')}
                 </a>
                 <a
-                    href={`/dashboard/invoices?vessel=${vessel.id}`}
+                    href={`/dashboard/invoices?vessel=${vessel.imoNumber}`}
                     className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors text-center shadow-[0_0_12px_rgba(0,217,126,0.2)]"
                 >
                     {t('detail_generate_proforma')}

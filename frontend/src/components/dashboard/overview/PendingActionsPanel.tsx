@@ -42,7 +42,7 @@ export function PendingActionsPanel() {
                             icon={<AlertTriangle className="w-4 h-4" />}
                             title={t('action_generate_proforma', { name: v.name })}
                             sub={t('action_proforma_sub', { amount: v.taxLiabilityUsd.toLocaleString(), imo: v.imoNumber })}
-                            href={`/dashboard/invoices?vessel=${v.id}`}
+                            href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                             color="#EF4444"
                         />
                     ))}
