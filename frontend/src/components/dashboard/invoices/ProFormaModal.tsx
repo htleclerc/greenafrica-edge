@@ -287,7 +287,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                             style={{
                                 backgroundColor: 'white',
                                 color: '#0D1F18',
-                                fontFamily: '"Times New Roman", Georgia, serif',
+                                fontFamily: 'var(--font-plex), "IBM Plex Sans", "Open Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
                                 border: '1px solid #E2E8F0',
                             }}
                         >

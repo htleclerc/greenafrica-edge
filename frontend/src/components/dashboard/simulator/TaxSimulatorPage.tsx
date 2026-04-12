@@ -250,6 +250,65 @@ export function TaxSimulatorPage() {
     const riskColor = { low: '#22C55E', medium: '#F59E0B', high: '#EF4444' }[riskLevel];
     const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
+    // ── Pre-estimate PDF generation ──
+    const [pdfStatus, setPdfStatus] = React.useState<'idle' | 'generating' | 'error'>('idle');
+    const [pdfError, setPdfError]   = React.useState<string | null>(null);
+
+    async function handleGenerateEstimatePdf() {
+        if (pdfStatus === 'generating') return;
+        setPdfStatus('generating');
+        setPdfError(null);
+
+        try {
+            const response = await fetch('/api/simulator/estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vesselCategory: inputs.category,
+                    fuelType: inputs.fuelType,
+                    enginePowerKw: inputs.enginePowerKw,
+                    grossTonnage: inputs.grossTonnage,
+                    speedKnots: inputs.speedKnots,
+                    eezDistanceNm: inputs.eezDistanceNm,
+                    portStayHours: inputs.portStayHours,
+                    eezEmissionsTco2: result.eezCo2Tons,
+                    portEmissionsTco2: result.portCo2Tons,
+                    totalCo2Tons: result.totalCo2Tons,
+                    eezTaxUsd: result.eezTaxUsd,
+                    portTaxUsd: result.portTaxUsd,
+                    totalTaxUsd: result.totalTaxUsd,
+                    eezRate: result.eezRate,
+                    portRate: result.portRate,
+                    effectiveRate: result.effectiveRate,
+                    riskLevel,
+                }),
+            });
+
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errBody.error || `HTTP ${response.status}`);
+            }
+
+            // Stream the PDF blob and trigger download
+            const blob = await response.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            a.href     = url;
+            a.download = `africgreen-pre-estimate-${ts}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setPdfStatus('idle');
+        } catch (err) {
+            console.error('[Estimate] Failed:', err);
+            setPdfError(err instanceof Error ? err.message : 'Failed to generate PDF');
+            setPdfStatus('error');
+        }
+    }
+
     return (
         <div className="px-3 sm:px-6 py-3 sm:py-6 flex flex-col gap-6">
 
@@ -531,12 +590,28 @@ export function TaxSimulatorPage() {
                     {/* Actions */}
                     <div className="flex flex-col gap-2">
                         <button
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98]"
+                            onClick={handleGenerateEstimatePdf}
+                            disabled={pdfStatus === 'generating'}
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                             style={{ backgroundColor: '#10B981', color: '#fff' }}
                         >
-                            <FileText className="w-4 h-4" />
-                            {t('simulator_generate_pdf')}
+                            {pdfStatus === 'generating' ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Generating PDF…
+                                </>
+                            ) : (
+                                <>
+                                    <FileText className="w-4 h-4" />
+                                    {t('simulator_generate_pdf')}
+                                </>
+                            )}
                         </button>
+                        {pdfError && (
+                            <div className="text-[11px] text-[#EF4444] bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20 rounded-lg px-3 py-2">
+                                {pdfError}
+                            </div>
+                        )}
                         <button
                             className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all cursor-pointer hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] active:scale-[0.98]"
                             style={{ backgroundColor: 'var(--os-surface)', color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
