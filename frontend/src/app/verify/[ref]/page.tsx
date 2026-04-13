@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle } from 'lucide-react';
+import { parseInvoiceRef } from '@/services/invoiceService';
 
 /**
  * Public verification page — anyone can scan a QR code on a printed
@@ -34,16 +35,14 @@ async function fetchInvoiceStatus(ref: string): Promise<VerifyResult> {
 
     const admin = createClient(supabaseUrl, supabaseKey);
 
-    // Strip the prefix (PRO- / INV- / RCT-) and look up the transaction by ID suffix.
-    // The ref format is {PRO|INV|RCT}-{YEAR}-{TX_ID_SUFFIX} where TX_ID_SUFFIX is the
-    // first segment of the transaction UUID after the dash.
+    // Parse the canonical reference format via the shared helper.
     //   PRO-2026-XXXX → pro-forma (unpaid bill)
     //   INV-2026-XXXX → tax invoice (legal bill)
     //   RCT-2026-XXXX → official receipt (proof of payment)
-    const match = ref.match(/^(PRO|INV|RCT)-\d{4}-(.+)$/i);
-    if (!match) return { found: false };
+    const parsed = parseInvoiceRef(ref);
+    if (!parsed) return { found: false };
 
-    const idSuffix = match[2].toLowerCase();
+    const idSuffix = parsed.idSuffix;
 
     // Find transaction whose id starts with the suffix
     // Note: receipt_pdf_url may not exist yet if migration 014 hasn't been applied.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature } from '@/services/paymentService';
 import { writeAuditLog } from '@/services/auditService';
+import { parseInvoiceRef } from '@/services/invoiceService';
 
 /**
  * POST /api/webhooks/payment
@@ -87,14 +88,10 @@ export async function POST(request: NextRequest) {
     // ── Process successful payment ────────────────────────────────────
     if (isSuccess) {
       // The `reference` from providers is the canonical invoiceRef
-      // (e.g. "INV-2026-XXXX") which contains the transaction ID suffix
-      // after the second dash. Extract it and look up by ID prefix.
-      //
-      // Format: INV-YYYY-{first-segment-of-tx-uuid}
-      // We use ILIKE 'segment%' since the segment is uppercase but DB
-      // UUIDs may be lowercase.
-      const refMatch = reference.match(/^(?:PRO|INV)-\d{4}-(.+)$/i);
-      const idSuffix = refMatch ? refMatch[1].toLowerCase() : reference;
+      // (e.g. "INV-2026-XXXX"). Parse it via the shared helper so the
+      // logic stays consistent with /verify and the modal builders.
+      const parsed = parseInvoiceRef(reference);
+      const idSuffix = parsed ? parsed.idSuffix : reference.toLowerCase();
 
       const { data: txs } = await adminClient
         .from('transactions')

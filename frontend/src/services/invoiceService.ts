@@ -63,6 +63,41 @@ export function buildVerifyUrl(invoiceRef: string): string {
 }
 
 /**
+ * Parse a canonical invoice/receipt reference into its parts.
+ *
+ * Format: {PRO|INV|RCT}-{4-digit year}-{transaction-id-suffix}
+ *
+ * The suffix is the first segment of the transaction UUID after the
+ * first dash (uppercased). This is the same logic used to BUILD the
+ * ref in ProFormaModal and buildReceiptRef, so parsing inverts it.
+ *
+ * Returns null on malformed input — never throws.
+ *
+ * Examples:
+ *   "INV-2026-1A2B3C4D" → { type: 'INV', year: 2026, idSuffix: '1a2b3c4d' }
+ *   "rct-2025-FOO"      → { type: 'RCT', year: 2025, idSuffix: 'foo' }
+ *   "PRO-XX-YYY"        → null
+ *   "garbage"           → null
+ */
+export type InvoiceRefType = 'PRO' | 'INV' | 'RCT';
+export interface ParsedInvoiceRef {
+  type: InvoiceRefType;
+  year: number;
+  idSuffix: string;  // lowercase — ready for ILIKE on a uuid column
+}
+
+export function parseInvoiceRef(ref: string): ParsedInvoiceRef | null {
+  if (!ref || typeof ref !== 'string') return null;
+  const match = ref.trim().match(/^(PRO|INV|RCT)-(\d{4})-(.+)$/i);
+  if (!match) return null;
+  return {
+    type: match[1].toUpperCase() as InvoiceRefType,
+    year: parseInt(match[2], 10),
+    idSuffix: match[3].toLowerCase(),
+  };
+}
+
+/**
  * Generate a QR code as a base64 PNG data URL.
  * Used to embed in jsPDF via addImage and in HTML preview via <img>.
  */
@@ -389,7 +424,7 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
     { align: 'center' },
   );
 
-  return doc.output('arraybuffer') as unknown as Uint8Array;
+  return new Uint8Array(doc.output('arraybuffer'));
 }
 
 /**
@@ -751,7 +786,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
     { align: 'center' },
   );
 
-  return doc.output('arraybuffer') as unknown as Uint8Array;
+  return new Uint8Array(doc.output('arraybuffer'));
 }
 
 /**

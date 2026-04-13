@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canAccess, filterNavItems } from '../rbac';
+import { canAccess, canEdit, filterNavItems } from '../rbac';
 import { UserRole } from '@/types/secure';
 
 describe('canAccess', () => {
@@ -33,15 +33,24 @@ describe('canAccess', () => {
     it('grants FINANCE_ADMIN access to tax-settings', () => {
       expect(canAccess('tax-settings', UserRole.FINANCE_ADMIN)).toBe(true);
     });
-    it('denies PORT_OFFICER access to tax-settings', () => {
-      expect(canAccess('tax-settings', UserRole.PORT_OFFICER)).toBe(false);
+    it('grants PORT_OFFICER read access to tax-settings (changed in 2026)', () => {
+      // PORT_OFFICER needs to view exemptions when handling EXEMPT vessels.
+      // Read-only is enforced by canEdit() in the page itself.
+      expect(canAccess('tax-settings', UserRole.PORT_OFFICER)).toBe(true);
     });
     it('denies SHIPPING_AGENT access to revenue', () => {
       expect(canAccess('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
     });
+    it('denies SHIPPING_AGENT access to payments', () => {
+      expect(canAccess('payments', UserRole.SHIPPING_AGENT)).toBe(false);
+    });
+    it('grants FINANCE_ADMIN access to payments', () => {
+      expect(canAccess('payments', UserRole.FINANCE_ADMIN)).toBe(true);
+    });
     it('grants SUPERADMIN access to all admin pages', () => {
       expect(canAccess('tax-settings', UserRole.SUPERADMIN)).toBe(true);
       expect(canAccess('revenue', UserRole.SUPERADMIN)).toBe(true);
+      expect(canAccess('payments', UserRole.SUPERADMIN)).toBe(true);
       expect(canAccess('validations', UserRole.SUPERADMIN)).toBe(true);
     });
   });
@@ -84,6 +93,40 @@ describe('canAccess', () => {
         expect(canAccess(page, UserRole.SUPERADMIN)).toBe(true);
       });
     });
+  });
+});
+
+describe('canEdit (read vs write distinction)', () => {
+  it('grants FINANCE_ADMIN edit on tax-settings', () => {
+    expect(canEdit('tax-settings', UserRole.FINANCE_ADMIN)).toBe(true);
+  });
+
+  it('grants SUPERADMIN edit on tax-settings', () => {
+    expect(canEdit('tax-settings', UserRole.SUPERADMIN)).toBe(true);
+  });
+
+  it('denies PORT_OFFICER edit on tax-settings (read-only)', () => {
+    // PORT_OFFICER can ACCESS the page but cannot perform write actions.
+    expect(canAccess('tax-settings', UserRole.PORT_OFFICER)).toBe(true);
+    expect(canEdit('tax-settings', UserRole.PORT_OFFICER)).toBe(false);
+  });
+
+  it('denies SHIPPING_AGENT edit on tax-settings (no access at all)', () => {
+    // canEdit must return false even if SHIPPING_AGENT has no NAV_PERMISSIONS entry.
+    expect(canEdit('tax-settings', UserRole.SHIPPING_AGENT)).toBe(false);
+  });
+
+  it('grants edit on a page with no read-only roles configured', () => {
+    // Pages without an entry in READ_ONLY_ROLES default to "everyone with
+    // canAccess can also edit". 'invoices' is universal access + no read-only.
+    expect(canEdit('invoices', UserRole.SHIPPING_AGENT)).toBe(true);
+    expect(canEdit('invoices', UserRole.PORT_OFFICER)).toBe(true);
+  });
+
+  it('denies edit on a page the user has no access to', () => {
+    // SHIPPING_AGENT has no access to revenue → cannot edit either
+    expect(canAccess('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
+    expect(canEdit('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
   });
 });
 
