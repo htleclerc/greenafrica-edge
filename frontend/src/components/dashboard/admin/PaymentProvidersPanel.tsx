@@ -3,7 +3,7 @@
 import * as React from 'react';
 import {
     CheckCircle2, AlertTriangle, RefreshCw, Save, Lock, Eye,
-    CreditCard, Building2, Globe, Smartphone, Banknote, Shield,
+    CreditCard, Building2, Globe, Smartphone, Banknote, Shield, Briefcase,
 } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { useRole } from '@/lib/RoleContext';
@@ -11,7 +11,7 @@ import { canEdit } from '@/lib/rbac';
 
 // ── Provider metadata ──────────────────────────────────────────────────────
 
-type ProviderKey = 'stripe' | 'paystack' | 'flutterwave' | 'wave' | 'wire_transfer';
+type ProviderKey = 'stripe' | 'paystack' | 'flutterwave' | 'wave' | 'payoneer' | 'wire_transfer';
 
 interface ProviderConfig {
     provider: ProviderKey;
@@ -53,6 +53,12 @@ const PROVIDER_META: Record<ProviderKey, ProviderMetaUI> = {
         color: '#1DC9B7',
         description: 'Mobile money for West/East Africa',
         coverage: 'XOF / SOS · mobile money',
+    },
+    payoneer: {
+        icon: Briefcase,
+        color: '#FF4800',
+        description: 'B2B cross-border payments — global enterprise',
+        coverage: 'Worldwide · USD / EUR / GBP',
     },
     wire_transfer: {
         icon: Banknote,

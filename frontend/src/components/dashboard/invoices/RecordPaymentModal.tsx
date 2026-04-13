@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { X, CheckCircle2, Building2, CreditCard, Smartphone, Banknote, MoreHorizontal } from 'lucide-react';
+import { X, CheckCircle2, Building2, CreditCard, Smartphone, Banknote, MoreHorizontal, Briefcase } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 
 export interface RecordPaymentInput {
@@ -19,6 +19,7 @@ export type PaymentMethod =
     | 'paystack'
     | 'flutterwave'
     | 'wave'
+    | 'payoneer'
     | 'other';
 
 interface MethodOption {
@@ -57,6 +58,13 @@ const METHOD_OPTIONS: MethodOption[] = [
         sublabel: 'POS / manual card swipe',
         icon: CreditCard,
         color: '#A78BFA',
+    },
+    {
+        key: 'payoneer',
+        label: 'Payoneer',
+        sublabel: 'B2B cross-border (USD/EUR/GBP)',
+        icon: Briefcase,
+        color: '#FF4800',
     },
     {
         key: 'other',

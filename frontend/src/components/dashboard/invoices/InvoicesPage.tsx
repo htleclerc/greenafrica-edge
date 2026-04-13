@@ -574,6 +574,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
     paystack:      'Paystack',
     flutterwave:   'Flutterwave',
     wave:          'Wave Mobile Money',
+    payoneer:      'Payoneer',
     other:         'Other',
 };
 

@@ -3,12 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 /**
  * Multi-Provider Payment Service — Admin-Configurable
  *
- * 5 providers, switchable at runtime via admin settings (payment_config table):
- * 1. Stripe     — International cards + SEPA (stripe.com)
- * 2. Paystack   — Africa cards + bank + mobile (paystack.com, owned by Stripe)
+ * 6 providers, switchable at runtime via admin settings (payment_config table):
+ * 1. Stripe      — International cards + SEPA (stripe.com)
+ * 2. Paystack    — Africa cards + bank + mobile (paystack.com, owned by Stripe)
  * 3. Flutterwave — Africa + global (flutterwave.com)
- * 4. Wave       — Mobile money West/East Africa (wave.com)
- * 5. Wire       — SWIFT bank transfer (always available, no API)
+ * 4. Wave        — Mobile money West/East Africa (wave.com)
+ * 5. Payoneer    — B2B cross-border, marketplaces, global (payoneer.com)
+ * 6. Wire        — SWIFT bank transfer (always available, no API)
  *
  * Admin can switch the active provider from /dashboard/settings without redeploying.
  * The active provider is stored in Supabase `payment_config` table.
@@ -16,7 +17,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-export type PaymentProvider = 'stripe' | 'paystack' | 'flutterwave' | 'wave' | 'wire_transfer';
+export type PaymentProvider =
+  | 'stripe'
+  | 'paystack'
+  | 'flutterwave'
+  | 'wave'
+  | 'payoneer'
+  | 'wire_transfer';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'cancelled' | 'processing';
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'XOF' | 'SOS' | 'KES' | 'NGN' | 'GHS';
 
@@ -96,6 +103,11 @@ const PROVIDERS: Record<PaymentProvider, {
     displayName: 'Wave Mobile Money',
     currencies: ['XOF', 'SOS'],
     envKey: 'WAVE_API_KEY',
+  },
+  payoneer: {
+    displayName: 'Payoneer (B2B Cross-Border)',
+    currencies: ['USD', 'EUR', 'GBP'],
+    envKey: 'PAYONEER_API_KEY',
   },
   wire_transfer: {
     displayName: 'Wire Transfer (SWIFT)',
@@ -250,6 +262,56 @@ async function createWavePayment(payment: PaymentRequest): Promise<PaymentResult
   return ok('wave', data.id, data.wave_launch_url || data.checkout_url);
 }
 
+// ── Payoneer ────────────────────────────────────────────────────────────────
+//
+// Uses the Payoneer Checkout API (`/v4/programs/{programId}/charges`).
+// Auth = Bearer token (PAYONEER_API_KEY). Program ID = PAYONEER_PROGRAM_ID.
+// Webhooks land at /api/webhooks/payment with header `payoneer-signature`,
+// HMAC-SHA256 of the raw body using PAYONEER_WEBHOOK_SECRET.
+
+async function createPayoneerPayment(payment: PaymentRequest): Promise<PaymentResult> {
+  const key = process.env.PAYONEER_API_KEY;
+  const programId = process.env.PAYONEER_PROGRAM_ID;
+  if (!key || !programId) return fail('payoneer', payment.invoiceRef);
+
+  const baseUrl = process.env.PAYONEER_API_BASE_URL || 'https://api.payoneer.com';
+
+  const res = await fetch(`${baseUrl}/v4/programs/${programId}/charges`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      reference_id: payment.invoiceRef,
+      amount: { value: payment.amount.toFixed(2), currency: payment.currency },
+      description: payment.description,
+      return_url: successUrl(payment.invoiceRef),
+      cancel_url: cancelUrl(payment.invoiceRef),
+      customer: {
+        email: payment.customerEmail || 'payment@africgreen.gov.sl',
+        name: payment.metadata.ownerEntity,
+      },
+      metadata: {
+        transaction_id: payment.transactionId,
+        vessel_imo: payment.metadata.vesselImo,
+        vessel_name: payment.metadata.vesselName,
+        jurisdiction: payment.metadata.jurisdiction,
+        tax_period: payment.metadata.taxPeriod,
+      },
+    }),
+  });
+
+  if (!res.ok) return fail('payoneer', payment.invoiceRef);
+  const data = await res.json();
+
+  const checkoutUrl = data.checkout_url || data.redirect_url || data.payment_url;
+  const id = data.id || data.charge_id || payment.invoiceRef;
+  if (!checkoutUrl) return fail('payoneer', payment.invoiceRef);
+
+  return ok('payoneer', id, checkoutUrl);
+}
+
 // ── Wire Transfer ───────────────────────────────────────────────────────────
 
 function createWireTransfer(payment: PaymentRequest): PaymentResult {
@@ -286,6 +348,7 @@ const PROVIDER_HANDLERS: Record<PaymentProvider, (p: PaymentRequest) => Promise<
   paystack: createPaystackPayment,
   flutterwave: createFlutterwavePayment,
   wave: createWavePayment,
+  payoneer: createPayoneerPayment,
   wire_transfer: createWireTransfer,
 };
 
@@ -422,4 +485,15 @@ export async function verifyPaystackSignature(body: string, signature: string): 
  */
 export function verifyFlutterwaveSignature(signature: string): boolean {
   return signature === process.env.FLUTTERWAVE_WEBHOOK_HASH;
+}
+
+/**
+ * Verify a Payoneer webhook signature (HMAC-SHA256 of raw body).
+ */
+export async function verifyPayoneerSignature(body: string, signature: string): Promise<boolean> {
+  const secret = process.env.PAYONEER_WEBHOOK_SECRET || '';
+  if (!secret || !signature) return false;
+  const { createHmac } = await import('crypto');
+  const hash = createHmac('sha256', secret).update(body).digest('hex');
+  return hash === signature;
 }

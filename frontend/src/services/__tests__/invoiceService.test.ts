@@ -313,7 +313,7 @@ describe('generateReceiptPdf', () => {
     it('handles all known payment methods without throwing', async () => {
         const methods = [
             'wire_transfer', 'cash', 'mobile_money', 'card',
-            'stripe', 'paystack', 'flutterwave', 'wave', 'other',
+            'stripe', 'paystack', 'flutterwave', 'wave', 'payoneer', 'other',
         ];
         for (const method of methods) {
             const buffer = await generateReceiptPdf({ ...MOCK_RECEIPT_DATA, paymentMethod: method });

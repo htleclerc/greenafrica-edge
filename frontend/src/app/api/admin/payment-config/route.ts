@@ -30,13 +30,13 @@ export async function GET() {
 }
 
 const updateSchema = z.object({
-  activeProvider: z.enum(['stripe', 'paystack', 'flutterwave', 'wave', 'wire_transfer']),
+  activeProvider: z.enum(['stripe', 'paystack', 'flutterwave', 'wave', 'payoneer', 'wire_transfer']),
 });
 
 /**
  * PUT /api/admin/payment-config
  * Switch the active payment provider.
- * Body: { activeProvider: "stripe" | "paystack" | "flutterwave" | "wave" | "wire_transfer" }
+ * Body: { activeProvider: "stripe" | "paystack" | "flutterwave" | "wave" | "payoneer" | "wire_transfer" }
  */
 export async function PUT(request: NextRequest) {
   try {

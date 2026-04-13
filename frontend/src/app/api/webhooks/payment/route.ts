@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature } from '@/services/paymentService';
+import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature, verifyPayoneerSignature } from '@/services/paymentService';
 import { writeAuditLog } from '@/services/auditService';
 import { parseInvoiceRef } from '@/services/invoiceService';
 
@@ -15,6 +15,7 @@ import { parseInvoiceRef } from '@/services/invoiceService';
  * - Flutterwave: verif-hash header
  * - Stripe:      stripe-signature header
  * - Wave:        x-wave-signature header
+ * - Payoneer:    payoneer-signature header
  */
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
     const flutterwaveSig = request.headers.get('verif-hash');
     const stripeSig = request.headers.get('stripe-signature');
     const waveSig = request.headers.get('x-wave-signature');
+    const payoneerSig = request.headers.get('payoneer-signature');
 
     let provider: string;
     let reference: string;
@@ -76,6 +78,18 @@ export async function POST(request: NextRequest) {
       reference = body.client_reference || '';
       providerRef = body.id || '';
       isSuccess = body.payment_status === 'succeeded';
+
+    } else if (payoneerSig) {
+      // ── Payoneer ──────────────────────────────────────────────────────
+      if (!(await verifyPayoneerSignature(rawBody, payoneerSig))) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+      provider = 'payoneer';
+      reference = body.reference_id || body.data?.reference_id || '';
+      providerRef = body.id || body.data?.id || '';
+      // Payoneer fires multiple event types; only "charge.succeeded" / "payment.completed" finalize
+      const eventType = body.event_type || body.type || '';
+      isSuccess = eventType === 'charge.succeeded' || eventType === 'payment.completed';
 
     } else {
       return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
