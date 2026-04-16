@@ -6,3 +6,4 @@ build/
 .next/
 .DS_Store
 .ostack/
+frontend/.qa-screenshots/

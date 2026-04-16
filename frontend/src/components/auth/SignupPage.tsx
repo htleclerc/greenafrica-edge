@@ -718,7 +718,7 @@ function AuthShell({ children, t }: { children: React.ReactNode; t: (key: string
                 {/* Logo — home link */}
                 <a href="/" className="flex items-center gap-2 flex-shrink-0">
                     <AfricGreenLogo size={28} variant="dark" className="flex-shrink-0 rounded-lg" />
-                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>AfricGreen</span>
+                    <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
                 {/* Online indicator — center (dot only on mobile) */}
                 <div className="flex items-center gap-2">
