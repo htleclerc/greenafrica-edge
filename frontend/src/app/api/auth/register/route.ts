@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
+// Accepts the 7 roles proposed by the signup form; maps them to the 4 DB roles below.
 const registerSchema = z.object({
     email: z.email(),
     password: z.string().min(8).max(128),
     fullName: z.string().min(2).max(100),
-    role: z.enum(['PORT_OFFICER', 'FINANCE_ADMIN', 'SHIPPING_AGENT']),
+    role: z.enum([
+        // Port authority side
+        'PORT_OFFICER',
+        'FINANCE_ADMIN',
+        'COMPLIANCE_AUDITOR',
+        // Shipping agent side
+        'SHIPPING_AGENT',
+        'FLEET_MANAGER',
+        'FINANCE_CONTACT',
+        'LEGAL_REP',
+    ]),
     entityType: z.string().min(1).max(50),
     orgName: z.string().min(2).max(200),
     registryId: z.string().max(100).optional().default(''),
@@ -18,6 +29,19 @@ const registerSchema = z.object({
     notifyRevenue: z.boolean().optional().default(true),
     notifyWeekly: z.boolean().optional().default(true),
 });
+
+// Map the 7 form roles to the 4 actual DB roles.
+// The original "job title" is preserved in registration_requests.requested_role
+// so admins can see what the user actually applied for.
+const ROLE_MAP: Record<string, 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT'> = {
+    PORT_OFFICER:       'PORT_OFFICER',
+    FINANCE_ADMIN:      'FINANCE_ADMIN',
+    COMPLIANCE_AUDITOR: 'PORT_OFFICER',
+    SHIPPING_AGENT:     'SHIPPING_AGENT',
+    FLEET_MANAGER:      'SHIPPING_AGENT',
+    FINANCE_CONTACT:    'SHIPPING_AGENT',
+    LEGAL_REP:          'SHIPPING_AGENT',
+};
 
 /**
  * POST /api/auth/register
@@ -38,11 +62,14 @@ export async function POST(request: NextRequest) {
         }
 
         const {
-            email, password, fullName, role,
+            email, password, fullName, role: submittedRole,
             entityType, orgName, registryId, jurisdiction,
             defaultRegion, accessScope,
             notifyProForma, notifyCo2, notifyRevenue, notifyWeekly,
         } = parsed.data;
+
+        // Map the form role to a DB role (4 actual roles in the system).
+        const role = ROLE_MAP[submittedRole];
 
         // ── Admin client (service_role — bypasses RLS) ──────────────────────
         const adminClient = createClient(
@@ -114,7 +141,7 @@ export async function POST(request: NextRequest) {
                 org_name: orgName.trim(),
                 org_registry_id: registryId.trim(),
                 jurisdiction,
-                requested_role: role,
+                requested_role: submittedRole,
                 contact_name: fullName.trim(),
                 contact_email: email.trim().toLowerCase(),
                 password_hash: '***',
