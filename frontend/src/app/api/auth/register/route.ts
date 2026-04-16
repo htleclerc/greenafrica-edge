@@ -33,7 +33,10 @@ const registerSchema = z.object({
 // Map the 7 form roles to the 4 actual DB roles.
 // The original "job title" is preserved in registration_requests.requested_role
 // so admins can see what the user actually applied for.
-const ROLE_MAP: Record<string, 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT'> = {
+type FormRole = z.infer<typeof registerSchema>['role'];
+type DbRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT';
+
+export const ROLE_MAP: Record<FormRole, DbRole> = {
     PORT_OFFICER:       'PORT_OFFICER',
     FINANCE_ADMIN:      'FINANCE_ADMIN',
     COMPLIANCE_AUDITOR: 'PORT_OFFICER',
