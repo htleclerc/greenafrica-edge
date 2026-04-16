@@ -1,30 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+import { timingSafeEqual } from 'crypto';
+
+const setupAdminSchema = z.object({
+    email: z.email(),
+    password: z.string().min(12).max(128),
+    fullName: z.string().min(2).max(100),
+    setupSecret: z.string().min(1),
+});
 
 /**
  * POST /api/auth/setup-admin
- * Body: { email, password, fullName, setupSecret }
  *
  * Bootstrap route to create the first SUPERADMIN user.
  * Protected by SETUP_SECRET env var — only works when no SUPERADMIN exists yet.
  */
 export async function POST(request: NextRequest) {
     try {
-        const { email, password, fullName, setupSecret } = await request.json() as {
-            email: string;
-            password: string;
-            fullName: string;
-            setupSecret: string;
-        };
+        const body = await request.json();
+        const parsed = setupAdminSchema.safeParse(body);
 
-        // Verify the setup secret
-        const expectedSecret = process.env.SETUP_SECRET;
-        if (!expectedSecret || setupSecret !== expectedSecret) {
-            return NextResponse.json({ error: 'Invalid setup secret' }, { status: 403 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
         }
 
-        if (!email || !password || !fullName) {
-            return NextResponse.json({ error: 'email, password, and fullName are required' }, { status: 400 });
+        const { email, password, fullName, setupSecret } = parsed.data;
+
+        // Verify the setup secret with constant-time comparison
+        const expectedSecret = process.env.SETUP_SECRET;
+        if (!expectedSecret) {
+            return NextResponse.json({ error: 'Setup not configured' }, { status: 403 });
+        }
+
+        const secretBuffer = Buffer.from(setupSecret, 'utf8');
+        const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
+        if (secretBuffer.length !== expectedBuffer.length || !timingSafeEqual(secretBuffer, expectedBuffer)) {
+            return NextResponse.json({ error: 'Invalid setup secret' }, { status: 403 });
         }
 
         // Use service_role for admin operations
@@ -61,7 +73,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (authError) {
-            return NextResponse.json({ error: authError.message }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to create admin account' }, { status: 500 });
         }
 
         // Explicitly create/update profile (don't rely on trigger alone)
@@ -80,7 +92,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             userId: authData.user?.id,
-            message: `SUPERADMIN ${email} created and activated. You can now login.`,
+            message: 'SUPERADMIN created and activated. You can now login.',
         });
     } catch {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

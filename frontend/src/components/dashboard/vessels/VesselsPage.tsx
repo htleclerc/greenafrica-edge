@@ -2,11 +2,61 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Filter, Download, Plus, Ship } from 'lucide-react';
+import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, AlertTriangle, Radio, Shield } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { useVessels } from '@/hooks/useVessels';
 import { useKpis } from '@/hooks/useKpis';
 import { SecureVessel, VesselComplianceStatus, VesselCategory } from '@/types/secure';
+
+// ── Status → Action mapping ──────────────────────────────────────────────────
+// Each compliance status maps to a context-appropriate primary action.
+// Pro-forma generation is only the right CTA when payment is actually due.
+
+interface VesselAction {
+    labelKey: string;
+    href: (v: SecureVessel) => string;
+    icon: React.ReactNode;
+    color: string;
+}
+
+const STATUS_ACTION: Record<VesselComplianceStatus, VesselAction> = {
+    [VesselComplianceStatus.COMPLIANT]: {
+        labelKey: 'action_view_receipt',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <CheckCircle2 className="w-3 h-3" />,
+        color: '#22C55E',
+    },
+    [VesselComplianceStatus.PROCESSING]: {
+        labelKey: 'action_track_payment',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <Clock className="w-3 h-3" />,
+        color: '#F59E0B',
+    },
+    [VesselComplianceStatus.PAYMENT_DUE]: {
+        labelKey: 'action_generate_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <FileText className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.NON_COMPLIANT]: {
+        labelKey: 'action_issue_notice',
+        href: (v) => `/dashboard/disputes?new=true&vessel=${v.imoNumber}`,
+        icon: <AlertTriangle className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.APPROACHING]: {
+        labelKey: 'action_hail_vessel',
+        href: (v) => `/dashboard/simulator?imo=${v.imoNumber}`,
+        icon: <Radio className="w-3 h-3" />,
+        color: '#38BDF8',
+    },
+    [VesselComplianceStatus.EXEMPT]: {
+        labelKey: 'action_view_exemption',
+        href: () => `/admin/tax-settings#exemptions`,
+        icon: <Shield className="w-3 h-3" />,
+        color: '#0EA5E9',
+    },
+};
 
 const COMPLIANCE_VARIANT: Record<VesselComplianceStatus, Parameters<typeof OsBadge>[0]['variant']> = {
     [VesselComplianceStatus.COMPLIANT]:     'compliant',
@@ -217,6 +267,7 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
         : t('yesterday');
     const lastSeenSub = minsAgo < 120 ? t('in_eez_ago', { minutes: minsAgo }) : t('departed');
     const isAlert = v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE || v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT;
+    const action = STATUS_ACTION[v.complianceStatus];
 
     return (
         <tr
@@ -266,11 +317,13 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
             </td>
             <td className="px-2 sm:px-4 py-3 sm:py-4">
                 <a
-                    href={`/dashboard/invoices?vessel=${v.id}`}
+                    href={action.href(v)}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-[10px] font-semibold text-[#38BDF8] hover:underline whitespace-nowrap"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold hover:underline whitespace-nowrap transition-colors"
+                    style={{ color: action.color }}
                 >
-                    {t('proforma_link')}
+                    {action.icon}
+                    {t(action.labelKey)}
                 </a>
             </td>
         </tr>
@@ -334,7 +387,7 @@ function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onCl
             </div>
             <div className="flex flex-col gap-2 justify-center">
                 <a
-                    href={`/dashboard/invoices?vessel=${v.id}`}
+                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                     className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
                 >
                     {t('generate_proforma')}

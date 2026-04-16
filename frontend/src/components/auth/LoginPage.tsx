@@ -8,6 +8,7 @@ import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
 function persistDemoRole(role: UserRole) {
     document.cookie = `demo_active=true; path=/; max-age=3600; SameSite=Lax`;
@@ -106,11 +107,7 @@ export function LoginPage() {
                 <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
                     {/* Logo — home link */}
                     <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                                <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                            </svg>
-                        </div>
+                        <AfricGreenLogo size={32} variant="dark" className="flex-shrink-0 rounded-lg" />
                         <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                     </a>
                     {/* Online indicator — center (dot only on mobile) */}
@@ -127,10 +124,8 @@ export function LoginPage() {
             <div className="flex-1 flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md flex flex-col items-center">
                     {/* Logo */}
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
-                        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
-                        </svg>
+                    <div className="mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
+                        <AfricGreenLogo size={56} variant="dark" className="rounded-2xl" />
                     </div>
                     <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</h1>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500/60 mb-8">
@@ -202,7 +197,7 @@ export function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowPwd((p) => !p)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
                                         style={{ color: 'var(--os-text-muted)' }}
                                     >
                                         {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -235,67 +230,82 @@ export function LoginPage() {
                         </p>
                     </div>
 
-                    {/* ── Demo mode section ───────────────────────────────── */}
-                    <div className="w-full mt-4">
-                        <button
-                            onClick={() => setShowDemo((v) => !v)}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-                            style={{
-                                backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'var(--os-surface)',
-                                border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
-                                color: showDemo ? '#EAB308' : 'var(--os-text-muted)',
-                            }}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Zap className="w-4 h-4" />
-                                <span>{t('demo_title')}</span>
-                            </div>
-                            <ChevronRight
-                                className="w-4 h-4 transition-transform"
-                                style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                            />
-                        </button>
-
-                        {showDemo && (
-                            <div
-                                className="mt-2 rounded-xl p-4"
-                                style={{ backgroundColor: 'var(--os-surface)', border: '1px solid rgba(234,179,8,0.2)' }}
+                    {/* Quick Demo Access (Conditional) */}
+                    {process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true' && (
+                        <div className="w-full mt-8 pt-8 border-t border-slate-700/50">
+                            <button
+                                onClick={() => setShowDemo((v) => !v)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all group"
+                                style={{ 
+                                    backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'rgba(30, 41, 59, 0.5)',
+                                    border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
+                                    color: showDemo ? '#EAB308' : 'var(--os-text-muted)'
+                                }}
                             >
-                                <p className="text-[11px] mb-3" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_choose_profile')}
-                                </p>
-                                <div className="flex flex-col gap-2">
-                                    {DEMO_PROFILES.map((p) => (
-                                        <button
-                                            key={p.role}
-                                            onClick={() => enterDemo(p.role)}
-                                            className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-left transition-all group"
-                                            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
-                                        >
-                                            <div
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                                                style={{ backgroundColor: p.color }}
-                                            >
-                                                {p.label.charAt(0)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold" style={{ color: 'var(--os-text-primary)' }}>
-                                                    {p.label}
-                                                </p>
-                                                <p className="text-[11px] truncate" style={{ color: 'var(--os-text-muted)' }}>
-                                                    {p.description}
-                                                </p>
-                                            </div>
-                                            <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: p.color }} />
-                                        </button>
-                                    ))}
+                                <div className="flex items-center gap-2">
+                                    <Zap className={`w-4 h-4 ${showDemo ? 'text-yellow-500' : 'text-slate-400'}`} />
+                                    <span className={showDemo ? '' : 'group-hover:text-slate-200 transition-colors'}>
+                                        {t('demo_title')}
+                                    </span>
                                 </div>
-                                <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('demo_disclaimer')}
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                                <ChevronRight 
+                                    className="w-4 h-4 transition-transform duration-300"
+                                    style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }} 
+                                />
+                            </button>
+
+                            {showDemo && (
+                                <div 
+                                    className="mt-4 rounded-xl p-5 border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300"
+                                >
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="h-4 w-1 bg-yellow-500 rounded-full" />
+                                        <h3 className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                                            {t('demo_choose_profile')}
+                                        </h3>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {DEMO_PROFILES.map((profile) => (
+                                            <button
+                                                key={profile.role}
+                                                onClick={() => enterDemo(profile.role)}
+                                                className="group relative flex items-center gap-4 p-4 rounded-xl border border-slate-700/50 bg-slate-800/60 hover:bg-slate-700/60 hover:border-yellow-500/30 transition-all duration-300"
+                                            >
+                                                <div 
+                                                    className="h-10 w-10 min-w-[40px] rounded-lg flex items-center justify-center text-white font-bold"
+                                                    style={{ backgroundColor: profile.color }}
+                                                >
+                                                    {profile.label.charAt(0)}
+                                                </div>
+                                                
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <div className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors">
+                                                        {profile.label}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400 truncate">
+                                                        {profile.description}
+                                                    </div>
+                                                </div>
+
+                                                <ArrowRight 
+                                                    size={16} 
+                                                    className="text-slate-500 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" 
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                                        <AlertCircle size={14} className="text-yellow-500/70 mt-0.5 flex-shrink-0" />
+                                        <p className="text-[10px] leading-relaxed text-slate-400 italic">
+                                            {t('demo_disclaimer')}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="flex items-center flex-wrap gap-3 sm:gap-6 mt-5 text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
                         <a href="/privacy-policy?from=auth" className="hover:text-emerald-400 transition-colors">{t('link_privacy')}</a>

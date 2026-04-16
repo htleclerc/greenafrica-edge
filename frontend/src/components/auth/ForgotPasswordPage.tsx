@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Mail, ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Shield } from 'lucide-react';
+import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { OsButton } from '@/components/ui/OsButton';
 import { createClient } from '@/lib/supabase/client';
 
@@ -48,11 +49,7 @@ export function ForgotPasswordPage() {
             {/* Top bar */}
             <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--os-border)' }}>
                 <a href="/" className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" />
-                        </svg>
-                    </div>
+                    <AfricGreenLogo size={28} variant="dark" className="rounded-lg" />
                     <span className="text-sm font-bold" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                 </a>
             </div>
@@ -61,10 +58,8 @@ export function ForgotPasswordPage() {
             <div className="flex-1 flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md flex flex-col items-center">
                     {/* Logo */}
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
-                        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-                            <path d="M12 22C12 22 20 18 20 12C20 6 12 2 12 2C12 2 4 6 4 12C4 18 12 22 12 22Z" fill="#10B981" />
-                        </svg>
+                    <div className="mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
+                        <AfricGreenLogo size={56} variant="dark" className="rounded-2xl" />
                     </div>
                     <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>
                         {t('forgot_title')}

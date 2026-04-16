@@ -79,6 +79,7 @@ export interface SecureVessel {
     portCall: string;           // e.g. 'BERBERA'
     proFormaGenerated: boolean;
     lastTransactionId: string | null;
+    ownerId?: string | null;    // links to profiles.id (shipping agent) — optional for mocks
 }
 
 // ── Tax Configuration ─────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ export enum JurisdictionZone {
     EEZ             = 'EEZ',
     PORT_VICINITY   = 'PORT_VICINITY',
     TRANSIT_LANE    = 'TRANSIT_LANE',
+    INTERNATIONAL   = 'INTERNATIONAL',
 }
 
 export interface TaxConfiguration {
@@ -128,6 +130,7 @@ export interface Transaction {
     taxAmountUsd: number;
     status: TransactionStatus;
     invoicePdfUrl: string | null;
+    receiptPdfUrl?: string | null;
     portCall: string;
     createdAt: string;          // ISO datetime
     paidAt: string | null;

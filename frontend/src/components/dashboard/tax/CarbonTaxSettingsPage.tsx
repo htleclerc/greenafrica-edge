@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Download, Plus, Save, AlertTriangle, CheckCircle, Edit2 } from 'lucide-react';
+import { Download, Plus, Save, AlertTriangle, CheckCircle, Edit2, Eye } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useTaxConfigs } from '@/hooks/useTaxConfigs';
@@ -14,6 +14,8 @@ import {
     TransactionType, TransactionStatus,
 } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
+import { useRole } from '@/lib/RoleContext';
+import { canEdit } from '@/lib/rbac';
 
 const CATEGORY_LABEL: Partial<Record<VesselCategory, string>> = {
     [VesselCategory.CONTAINER]:    'Container Ship',
@@ -27,6 +29,7 @@ const ZONE_LABEL: Record<JurisdictionZone, string> = {
     [JurisdictionZone.EEZ]:           'EEZ — Zone A',
     [JurisdictionZone.PORT_VICINITY]: 'Port Vicinity',
     [JurisdictionZone.TRANSIT_LANE]:  'Transit Lane',
+    [JurisdictionZone.INTERNATIONAL]: 'International Waters',
 };
 
 const TX_TYPE_LABEL: Record<TransactionType, string> = {
@@ -45,6 +48,8 @@ const TX_STATUS_LABEL: Record<TransactionStatus, string> = {
 
 export function CarbonTaxSettingsPage() {
     const t = useTranslations('TaxSettingsPage');
+    const { role } = useRole();
+    const isReadOnly = !canEdit('tax-settings', role);
     const { data: taxConfigs } = useTaxConfigs();
     const { data: transactions } = useTransactions();
     const { data: exemptions } = useExemptions();
@@ -86,6 +91,12 @@ export function CarbonTaxSettingsPage() {
                         <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[rgba(0,217,126,0.1)] text-[#00D97E] border border-[#00D97E]/20">
                             LIVE
                         </span>
+                        {isReadOnly && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[rgba(56,189,248,0.1)] text-[#38BDF8] border border-[#38BDF8]/20">
+                                <Eye className="w-3 h-3" />
+                                READ-ONLY
+                            </span>
+                        )}
                     </div>
                     <p className="text-xs text-[var(--os-text-muted)]">
                         {t('subtitle')}
@@ -95,9 +106,11 @@ export function CarbonTaxSettingsPage() {
                     <OsButton variant="secondary" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
                         {t('export_report')}
                     </OsButton>
-                    <OsButton variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />}>
-                        {t('new_regulation')}
-                    </OsButton>
+                    {!isReadOnly && (
+                        <OsButton variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />}>
+                            {t('new_regulation')}
+                        </OsButton>
+                    )}
                 </div>
             </div>
 
@@ -127,9 +140,11 @@ export function CarbonTaxSettingsPage() {
                                         <CheckCircle className="w-3.5 h-3.5" /> {t('saved')}
                                     </span>
                                 )}
-                                <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave}>
-                                    {t('save_publish')}
-                                </OsButton>
+                                {!isReadOnly && (
+                                    <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave}>
+                                        {t('save_publish')}
+                                    </OsButton>
+                                )}
                             </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -190,12 +205,14 @@ export function CarbonTaxSettingsPage() {
                                                     />
                                                 </td>
                                                 <td className="px-5 py-3">
-                                                    <button
-                                                        onClick={() => setEditId(isEditing ? null : cfg.id)}
-                                                        className="text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
-                                                    >
-                                                        <Edit2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                                    {!isReadOnly && (
+                                                        <button
+                                                            onClick={() => setEditId(isEditing ? null : cfg.id)}
+                                                            className="text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -304,12 +321,16 @@ export function CarbonTaxSettingsPage() {
                                         <p className="text-[10px] text-[var(--os-text-muted)]">{ex.reason.replace('_', ' ')}</p>
                                         <p className="text-[10px] text-[var(--os-text-muted)]">Until: {ex.validUntil}</p>
                                     </div>
-                                    <button className="text-[10px] font-semibold text-[#38BDF8] hover:underline mt-0.5">{t('review')}</button>
+                                    {!isReadOnly && (
+                                        <button className="text-[10px] font-semibold text-[#38BDF8] hover:underline mt-0.5">{t('review')}</button>
+                                    )}
                                 </div>
                             ))}
-                            <OsButton variant="outline" size="sm" icon={<Plus className="w-3 h-3" />} className="w-full">
-                                {t('request_exemption')}
-                            </OsButton>
+                            {!isReadOnly && (
+                                <OsButton variant="outline" size="sm" icon={<Plus className="w-3 h-3" />} className="w-full">
+                                    {t('request_exemption')}
+                                </OsButton>
+                            )}
                         </div>
                     </div>
 

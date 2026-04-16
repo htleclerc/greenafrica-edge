@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import 'leaflet/dist/leaflet.css';
 import { SecureVessel, VesselComplianceStatus } from '@/types/secure';
 
 // ── Somaliland EEZ boundary (approximate) ────────────────────────────────────
@@ -91,15 +92,6 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
             // Dynamically import leaflet
             const L = await import('leaflet');
 
-            // Inject leaflet CSS if not already present
-            if (!document.getElementById('leaflet-css')) {
-                const link = document.createElement('link');
-                link.id = 'leaflet-css';
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                document.head.appendChild(link);
-            }
-
             if (cancelled || !containerRef.current) return;
             LRef.current = L;
 
@@ -160,7 +152,7 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
                 if (!cancelled && map) {
                     map.invalidateSize();
                 }
-            }, 200);
+            }, 400);
 
             setReady(true);
         }
@@ -199,35 +191,54 @@ export default function LeafletMap({ vessels, selectedId, onSelectVessel, dotCol
         markersRef.current.forEach((m) => m.remove());
         markersRef.current = [];
 
-        // Add new markers
-        vessels.forEach((v) => {
-            const color = dotColor[v.complianceStatus];
-            const isSelected = selectedId === v.id;
-            const size = isSelected ? 28 : 20;
-            const glow = isSelected ? `drop-shadow(0 0 6px ${color})` : `drop-shadow(0 0 3px ${color}80)`;
+        // Detect overlapping markers (within ~3km of each other) so we can
+        // offset them slightly. Critical for the Berbera Port marker which
+        // sits at (10.44, 45.04) and overlaps any vessel docked there.
+        const PORT_THRESHOLD = 0.05; // ~5km in degrees
+        function distFromPort(lat: number, lng: number) {
+            return Math.sqrt(Math.pow(lat - BERBERA[0], 2) + Math.pow(lng - BERBERA[1], 2));
+        }
 
-            const icon = L.divIcon({
-                className: '',
-                iconSize: [size, size],
-                iconAnchor: [size / 2, size / 2],
-                html: `<div style="width:${size}px;height:${size}px;filter:${glow};transform:rotate(${v.position.heading}deg);transition:all 300ms ease">
-                    <svg viewBox="0 0 24 24" fill="none" width="${size}" height="${size}">
-                        <path d="M12 2L6 18L12 15L18 18L12 2Z" fill="${color}" stroke="${color}" stroke-width="0.5" stroke-linejoin="round"/>
-                    </svg>
-                </div>`,
+        // Add new markers — skip vessels with no valid position (lat/lng = 0)
+        vessels
+            .filter((v) => v.position.lat !== 0 && v.position.lng !== 0)
+            .forEach((v) => {
+                const color = dotColor[v.complianceStatus];
+                const isSelected = selectedId === v.id;
+                const size = isSelected ? 28 : 20;
+                const glow = isSelected ? `drop-shadow(0 0 6px ${color})` : `drop-shadow(0 0 3px ${color}80)`;
+
+                // Offset markers that would overlap the Berbera port marker
+                let displayLat = v.position.lat;
+                let displayLng = v.position.lng;
+                if (distFromPort(displayLat, displayLng) < PORT_THRESHOLD) {
+                    // Push the vessel slightly south-east of the port for visibility
+                    displayLat -= 0.06;
+                    displayLng += 0.06;
+                }
+
+                const icon = L.divIcon({
+                    className: '',
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2],
+                    html: `<div style="width:${size}px;height:${size}px;filter:${glow};transform:rotate(${v.position.heading}deg);transition:all 300ms ease">
+                        <svg viewBox="0 0 24 24" fill="none" width="${size}" height="${size}">
+                            <path d="M12 2L6 18L12 15L18 18L12 2Z" fill="${color}" stroke="${color}" stroke-width="0.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>`,
+                });
+
+                const marker = L.marker([displayLat, displayLng], { icon })
+                    .addTo(map)
+                    .bindTooltip(`<div><span style="font-weight:bold">${v.name}</span><br/><span style="color:${color};font-size:10px">${v.position.speedKnots} kn · ${v.position.heading}°</span></div>`, {
+                        direction: 'top',
+                        offset: [0, -12],
+                        className: 'vessel-tooltip',
+                    })
+                    .on('click', () => onSelectVessel(v.id));
+
+                markersRef.current.push(marker);
             });
-
-            const marker = L.marker([v.position.lat, v.position.lng], { icon })
-                .addTo(map)
-                .bindTooltip(`<div><span style="font-weight:bold">${v.name}</span><br/><span style="color:${color};font-size:10px">${v.position.speedKnots} kn · ${v.position.heading}°</span></div>`, {
-                    direction: 'top',
-                    offset: [0, -12],
-                    className: 'vessel-tooltip',
-                })
-                .on('click', () => onSelectVessel(v.id));
-
-            markersRef.current.push(marker);
-        });
     }, [vessels, selectedId, dotColor, onSelectVessel, ready]);
 
     // ── Fly to selected vessel ───────────────────────────────────────────────

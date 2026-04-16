@@ -250,6 +250,65 @@ export function TaxSimulatorPage() {
     const riskColor = { low: '#22C55E', medium: '#F59E0B', high: '#EF4444' }[riskLevel];
     const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
+    // ── Pre-estimate PDF generation ──
+    const [pdfStatus, setPdfStatus] = React.useState<'idle' | 'generating' | 'error'>('idle');
+    const [pdfError, setPdfError]   = React.useState<string | null>(null);
+
+    async function handleGenerateEstimatePdf() {
+        if (pdfStatus === 'generating') return;
+        setPdfStatus('generating');
+        setPdfError(null);
+
+        try {
+            const response = await fetch('/api/simulator/estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vesselCategory: inputs.category,
+                    fuelType: inputs.fuelType,
+                    enginePowerKw: inputs.enginePowerKw,
+                    grossTonnage: inputs.grossTonnage,
+                    speedKnots: inputs.speedKnots,
+                    eezDistanceNm: inputs.eezDistanceNm,
+                    portStayHours: inputs.portStayHours,
+                    eezEmissionsTco2: result.eezCo2Tons,
+                    portEmissionsTco2: result.portCo2Tons,
+                    totalCo2Tons: result.totalCo2Tons,
+                    eezTaxUsd: result.eezTaxUsd,
+                    portTaxUsd: result.portTaxUsd,
+                    totalTaxUsd: result.totalTaxUsd,
+                    eezRate: result.eezRate,
+                    portRate: result.portRate,
+                    effectiveRate: result.effectiveRate,
+                    riskLevel,
+                }),
+            });
+
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errBody.error || `HTTP ${response.status}`);
+            }
+
+            // Stream the PDF blob and trigger download
+            const blob = await response.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            a.href     = url;
+            a.download = `africgreen-pre-estimate-${ts}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setPdfStatus('idle');
+        } catch (err) {
+            console.error('[Estimate] Failed:', err);
+            setPdfError(err instanceof Error ? err.message : 'Failed to generate PDF');
+            setPdfStatus('error');
+        }
+    }
+
     return (
         <div className="px-3 sm:px-6 py-3 sm:py-6 flex flex-col gap-6">
 
@@ -296,7 +355,7 @@ export function TaxSimulatorPage() {
                                 <button
                                     key={p.label}
                                     onClick={() => applyPreset(p)}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:brightness-125 hover:scale-[1.03] active:scale-[0.97]"
                                     style={{
                                         backgroundColor: inputs.category === p.category && inputs.enginePowerKw === p.enginePowerKw
                                             ? 'rgba(16,185,129,0.12)'
@@ -321,7 +380,7 @@ export function TaxSimulatorPage() {
                                 <select
                                     value={inputs.category}
                                     onChange={(e) => set('category', e.target.value as VesselCategory)}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     {Object.entries(CATEGORY_I18N_KEY).map(([k, i18nKey]) => (
@@ -336,7 +395,7 @@ export function TaxSimulatorPage() {
                                 <select
                                     value={inputs.fuelType}
                                     onChange={(e) => set('fuelType', e.target.value as 'HFO' | 'MDO')}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     <option value="HFO">{t('simulator_fuel_hfo')}</option>
@@ -380,7 +439,7 @@ export function TaxSimulatorPage() {
                                     <Label>{t('simulator_port_stay')}</Label>
                                     <button
                                         onClick={() => set('includePortVicinity', !inputs.includePortVicinity)}
-                                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all"
+                                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all cursor-pointer hover:brightness-125 active:scale-[0.97]"
                                         style={{
                                             backgroundColor: inputs.includePortVicinity ? 'rgba(16,185,129,0.12)' : 'var(--os-surface-2)',
                                             color: inputs.includePortVicinity ? '#10B981' : 'var(--os-text-muted)',
@@ -531,14 +590,30 @@ export function TaxSimulatorPage() {
                     {/* Actions */}
                     <div className="flex flex-col gap-2">
                         <button
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all"
+                            onClick={handleGenerateEstimatePdf}
+                            disabled={pdfStatus === 'generating'}
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                             style={{ backgroundColor: '#10B981', color: '#fff' }}
                         >
-                            <FileText className="w-4 h-4" />
-                            {t('simulator_generate_pdf')}
+                            {pdfStatus === 'generating' ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Generating PDF…
+                                </>
+                            ) : (
+                                <>
+                                    <FileText className="w-4 h-4" />
+                                    {t('simulator_generate_pdf')}
+                                </>
+                            )}
                         </button>
+                        {pdfError && (
+                            <div className="text-[11px] text-[#EF4444] bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20 rounded-lg px-3 py-2">
+                                {pdfError}
+                            </div>
+                        )}
                         <button
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all"
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all cursor-pointer hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] active:scale-[0.98]"
                             style={{ backgroundColor: 'var(--os-surface)', color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
                             onClick={() => setInputs({
                                 category: VesselCategory.CONTAINER, enginePowerKw: 12_000, grossTonnage: 18_000,
@@ -598,7 +673,7 @@ function FaqPanel() {
                         >
                             <button
                                 onClick={() => setOpenIdx(isOpen ? null : i)}
-                                className="flex items-start gap-2 w-full py-3 text-left transition-colors"
+                                className="flex items-start gap-2 w-full py-3 text-left transition-colors cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded-lg px-1 -mx-1"
                             >
                                 <ChevronDown
                                     className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 transition-transform"

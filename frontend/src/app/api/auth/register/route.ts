@@ -1,60 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+
+// Accepts the 7 roles proposed by the signup form; maps them to the 4 DB roles below.
+const registerSchema = z.object({
+    email: z.email(),
+    password: z.string().min(8).max(128),
+    fullName: z.string().min(2).max(100),
+    role: z.enum([
+        // Port authority side
+        'PORT_OFFICER',
+        'FINANCE_ADMIN',
+        'COMPLIANCE_AUDITOR',
+        // Shipping agent side
+        'SHIPPING_AGENT',
+        'FLEET_MANAGER',
+        'FINANCE_CONTACT',
+        'LEGAL_REP',
+    ]),
+    entityType: z.string().min(1).max(50),
+    orgName: z.string().min(2).max(200),
+    registryId: z.string().max(100).optional().default(''),
+    jurisdiction: z.string().max(100).optional().default(''),
+    defaultRegion: z.string().max(100).optional().default('Full EEZ Overview'),
+    accessScope: z.string().max(50).optional().default('regional'),
+    notifyProForma: z.boolean().optional().default(true),
+    notifyCo2: z.boolean().optional().default(true),
+    notifyRevenue: z.boolean().optional().default(true),
+    notifyWeekly: z.boolean().optional().default(true),
+});
+
+// Map the 7 form roles to the 4 actual DB roles.
+// The original "job title" is preserved in registration_requests.requested_role
+// so admins can see what the user actually applied for.
+type FormRole = z.infer<typeof registerSchema>['role'];
+type DbRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT';
+
+export const ROLE_MAP: Record<FormRole, DbRole> = {
+    PORT_OFFICER:       'PORT_OFFICER',
+    FINANCE_ADMIN:      'FINANCE_ADMIN',
+    COMPLIANCE_AUDITOR: 'PORT_OFFICER',
+    SHIPPING_AGENT:     'SHIPPING_AGENT',
+    FLEET_MANAGER:      'SHIPPING_AGENT',
+    FINANCE_CONTACT:    'SHIPPING_AGENT',
+    LEGAL_REP:          'SHIPPING_AGENT',
+};
 
 /**
  * POST /api/auth/register
  *
  * Server-side registration: creates auth user + profile + registration request
  * in a single atomic operation. Does NOT depend on the DB trigger.
- *
- * Body: {
- *   email, password, fullName, role,
- *   entityType, orgName, registryId, jurisdiction,
- *   defaultRegion, accessScope,
- *   notifyProForma, notifyCo2, notifyRevenue, notifyWeekly
- * }
  */
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json() as {
-            email: string;
-            password: string;
-            fullName: string;
-            role: string;
-            entityType: string;
-            orgName: string;
-            registryId: string;
-            jurisdiction: string;
-            defaultRegion: string;
-            accessScope: string;
-            notifyProForma: boolean;
-            notifyCo2: boolean;
-            notifyRevenue: boolean;
-            notifyWeekly: boolean;
-        };
+        const body = await request.json();
+        const parsed = registerSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: 'Validation failed', details: parsed.error.issues.map((i) => i.message) },
+                { status: 400 },
+            );
+        }
 
         const {
-            email, password, fullName, role,
+            email, password, fullName, role: submittedRole,
             entityType, orgName, registryId, jurisdiction,
             defaultRegion, accessScope,
             notifyProForma, notifyCo2, notifyRevenue, notifyWeekly,
-        } = body;
+        } = parsed.data;
 
-        // ── Validation ──────────────────────────────────────────────────────
-        if (!email || !password || !fullName || !role || !entityType || !orgName) {
-            return NextResponse.json(
-                { error: 'Missing required fields' },
-                { status: 400 },
-            );
-        }
-
-        const VALID_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SHIPPING_AGENT'];
-        if (!VALID_ROLES.includes(role)) {
-            return NextResponse.json(
-                { error: 'Invalid role. SUPERADMIN cannot self-register.' },
-                { status: 400 },
-            );
-        }
+        // Map the form role to a DB role (4 actual roles in the system).
+        const role = ROLE_MAP[submittedRole];
 
         // ── Admin client (service_role — bypasses RLS) ──────────────────────
         const adminClient = createClient(
@@ -91,7 +109,7 @@ export async function POST(request: NextRequest) {
 
         if (authError) {
             return NextResponse.json(
-                { error: authError.message },
+                { error: 'Registration failed. Please try again.' },
                 { status: 500 },
             );
         }
@@ -113,7 +131,7 @@ export async function POST(request: NextRequest) {
             // Rollback: delete the auth user if profile creation fails
             await adminClient.auth.admin.deleteUser(userId);
             return NextResponse.json(
-                { error: 'Failed to create profile: ' + profileError.message },
+                { error: 'Failed to create profile. Please try again.' },
                 { status: 500 },
             );
         }
@@ -126,7 +144,7 @@ export async function POST(request: NextRequest) {
                 org_name: orgName.trim(),
                 org_registry_id: registryId.trim(),
                 jurisdiction,
-                requested_role: role,
+                requested_role: submittedRole,
                 contact_name: fullName.trim(),
                 contact_email: email.trim().toLowerCase(),
                 password_hash: '***',

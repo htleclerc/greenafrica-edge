@@ -276,9 +276,9 @@ export function SimulationSection() {
                         <div className="mb-8">
                             <div className="flex items-center gap-2 mb-4">
                                 <TrendingUp className={`w-4 h-4 ${mode === 'STATE' ? 'text-yellow-400' : 'text-amber-500'}`} />
-                                <h3 className={`text-xs font-bold tracking-[0.15em] uppercase ${mode === 'STATE' ? 'text-yellow-400' : 'text-amber-500'}`}>
+                                <p className={`text-xs font-bold tracking-[0.15em] uppercase ${mode === 'STATE' ? 'text-yellow-400' : 'text-amber-500'}`}>
                                     {mode === 'STATE' ? t('sim_result_title') : t('sim_tax_liability_title')}
-                                </h3>
+                                </p>
                             </div>
                             <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
                                 {mode === 'STATE'
@@ -327,10 +327,10 @@ export function SimulationSection() {
                         {/* Environmental Impact or Offset */}
                         {mode === 'STATE' ? (
                             <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 40%, transparent)', border: '1px solid var(--ais-page-border)' }}>
-                                <h4 className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                                <p className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-2">
                                     <TreePine className="w-3.5 h-3.5" />
                                     {t('sim_impact_title')}
-                                </h4>
+                                </p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex items-center gap-3">
                                         <TreePine className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -350,10 +350,10 @@ export function SimulationSection() {
                             </div>
                         ) : (
                             <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--ais-page-bg) 40%, transparent)', border: '1px solid var(--ais-page-border)' }}>
-                                <h4 className="text-xs font-bold text-amber-500 mb-3 flex items-center gap-2">
+                                <p className="text-xs font-bold text-amber-500 mb-3 flex items-center gap-2">
                                     <AlertCircle className="w-3.5 h-3.5" />
                                     {t('sim_compliance_cost')}
-                                </h4>
+                                </p>
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="text-lg font-bold" style={{ color: 'var(--ais-page-text)' }}>{formatCurrency(companyResult.offsetCostEstimate)}</p>

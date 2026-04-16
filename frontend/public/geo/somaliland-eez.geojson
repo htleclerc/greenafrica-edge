@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "zone": "PORT_VICINITY", "name": "Port of Berbera" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [45.00, 10.42], [45.08, 10.42], [45.08, 10.48],
+          [45.00, 10.48], [45.00, 10.42]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "zone": "PORT_VICINITY", "name": "Port of Zeila" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [43.44, 11.33], [43.52, 11.33], [43.52, 11.39],
+          [43.44, 11.39], [43.44, 11.33]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "zone": "EEZ", "name": "Somaliland Exclusive Economic Zone" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [43.20, 10.00], [51.50, 10.00], [51.50, 13.00],
+          [49.00, 12.50], [45.00, 11.80], [43.20, 11.50],
+          [43.20, 10.00]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "zone": "TRANSIT_LANE", "name": "Gulf of Aden Transit Corridor" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [43.00, 11.50], [51.50, 11.50], [51.50, 13.50],
+          [43.00, 13.50], [43.00, 11.50]
+        ]]
+      }
+    }
+  ]
+}

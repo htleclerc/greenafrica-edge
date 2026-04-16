@@ -25,6 +25,7 @@ export function useDataSource<T>(
     mockData: T,
     fetcher: (client: ReturnType<typeof createClient>) => Promise<T>,
     cacheKey?: string,
+    pollIntervalMs?: number,
 ): DataSourceResult<T> {
     const { isDemo, ready } = useRole();
     const [data, setData] = useState<T>(mockData);
@@ -73,6 +74,13 @@ export function useDataSource<T>(
     useEffect(() => {
         if (ready) fetchData();
     }, [ready, fetchData]);
+
+    // Optional polling for live data (e.g., vessel positions)
+    useEffect(() => {
+        if (!pollIntervalMs || isDemo || !ready) return;
+        const interval = setInterval(fetchData, pollIntervalMs);
+        return () => clearInterval(interval);
+    }, [pollIntervalMs, isDemo, ready, fetchData]);
 
     return { data, loading, error, isOffline, refetch: fetchData };
 }

@@ -1,0 +1,77 @@
+{
+  "date": "2026-04-08",
+  "branch": "develop",
+  "commit": "78a8385",
+  "auditor": "cso-skill",
+  "candidates_scanned": 12,
+  "false_positives_filtered": 7,
+  "findings_reported": 5,
+  "findings": [
+    {
+      "id": 1,
+      "severity": "HIGH",
+      "confidence": 9,
+      "category": "Access Control",
+      "owasp": "A01",
+      "title": "Audit log injection via unvalidated body spread",
+      "file": "frontend/src/app/api/audit/route.ts",
+      "line": 17,
+      "verification": "independently-verified",
+      "status": "open"
+    },
+    {
+      "id": 2,
+      "severity": "HIGH",
+      "confidence": 9,
+      "category": "Access Control",
+      "owasp": "A01",
+      "title": "Open redirect via unvalidated next parameter in auth callback",
+      "file": "frontend/src/app/auth/callback/route.ts",
+      "line": 60,
+      "verification": "independently-verified",
+      "status": "open"
+    },
+    {
+      "id": 3,
+      "severity": "HIGH",
+      "confidence": 8,
+      "category": "Security Misconfiguration",
+      "owasp": "A05",
+      "title": "Wildcard CORS on admin-only approve-registration edge function",
+      "file": "supabase/functions/approve-registration/index.ts",
+      "line": 10,
+      "verification": "independently-verified",
+      "status": "open"
+    },
+    {
+      "id": 4,
+      "severity": "MEDIUM",
+      "confidence": 8,
+      "category": "Security Misconfiguration",
+      "owasp": "A05",
+      "title": "Demo mode cookie bypass on auth middleware",
+      "file": "frontend/src/middleware.ts",
+      "line": 17,
+      "verification": "independently-verified",
+      "status": "open"
+    },
+    {
+      "id": 5,
+      "severity": "HIGH",
+      "confidence": 10,
+      "category": "Security Misconfiguration",
+      "owasp": "A05",
+      "title": "No security headers configured (CSP, HSTS, X-Frame-Options)",
+      "file": "frontend/next.config.ts",
+      "line": 0,
+      "verification": "independently-verified",
+      "status": "open"
+    }
+  ],
+  "also_noted": [
+    "Secrets leaked in git history (.claude/settings.json, scripts/db-connect.mjs) — already cleaned on disk, rotation required",
+    "No Zod validation on any API route (CLAUDE.md mandates it)",
+    "npm audit: 7 high + 2 moderate vulnerabilities",
+    "Supabase seed.sql has hardcoded demo passwords in git"
+  ]
+}

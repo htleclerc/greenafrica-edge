@@ -11,6 +11,9 @@ import { useRole } from '@/lib/RoleContext';
 import { Transaction, TransactionStatus, TransactionType, UserRole } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
+import { WireTransferModal, type WireTransferInstructions } from './WireTransferModal';
+import { RecordPaymentModal, type RecordPaymentInput } from './RecordPaymentModal';
+import { createClient } from '@/lib/supabase/client';
 
 const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
     [TransactionStatus.PAID]:     <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />,
@@ -24,13 +27,115 @@ type TabFilter = 'ALL' | TransactionStatus;
 
 export function InvoicesPage() {
     const t = useTranslations('InvoicesPage');
-    const { data: transactions } = useTransactions();
+    const { data: transactions, refetch: refetchTransactions } = useTransactions();
     const { data: kpis } = useKpis();
-    const { role } = useRole();
+    const { role, user } = useRole();
     const [tab, setTab]             = React.useState<TabFilter>('ALL');
     const [search, setSearch]       = React.useState('');
     const [selected, setSelected]   = React.useState<Transaction | null>(null);
     const [proForma, setProForma]   = React.useState<Transaction | null>(null);
+    const [wireInstructions, setWireInstructions] = React.useState<{
+        instructions: WireTransferInstructions;
+        invoiceRef: string;
+        vesselName: string;
+    } | null>(null);
+    const [recordPaymentTx, setRecordPaymentTx] = React.useState<Transaction | null>(null);
+    const [paymentLoading, setPaymentLoading] = React.useState<string | null>(null);
+    const [paymentError, setPaymentError]     = React.useState<string | null>(null);
+
+    // ── Pay Now handler — calls /api/payments/create ──
+    async function handlePayNow(tx: Transaction) {
+        setPaymentLoading(tx.id);
+        setPaymentError(null);
+        try {
+            const res = await fetch('/api/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId: tx.id }),
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                throw new Error(result.error || 'Payment creation failed');
+            }
+            // Wire transfer → show modal with instructions
+            if (result.provider === 'wire_transfer' && result.wireInstructions) {
+                setWireInstructions({
+                    instructions: result.wireInstructions,
+                    invoiceRef: result.wireInstructions.reference.split('/')[1] || tx.ref,
+                    vesselName: tx.vesselName,
+                });
+            } else if (result.checkoutUrl) {
+                // Online provider → redirect to checkout
+                window.location.href = result.checkoutUrl;
+            } else {
+                throw new Error('No checkout URL or wire instructions returned');
+            }
+        } catch (err) {
+            setPaymentError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setPaymentLoading(null);
+        }
+    }
+
+    // ── Record Payment: open the modal so the admin can pick method + ref + notes ──
+    function handleOpenRecordPayment(tx: Transaction) {
+        setPaymentError(null);
+        setRecordPaymentTx(tx);
+    }
+
+    // ── Confirm Payment: actually POST to mark-paid with the modal's input ──
+    async function handleConfirmPayment(input: RecordPaymentInput) {
+        if (!recordPaymentTx) return;
+        setPaymentLoading(recordPaymentTx.id);
+        setPaymentError(null);
+        try {
+            const res = await fetch('/api/transactions/mark-paid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    transactionId: recordPaymentTx.id,
+                    actingUserId: user.id,
+                    actingUserName: user.fullName,
+                    paymentMethod: input.paymentMethod,
+                    paymentReference: input.paymentReference,
+                    paymentNotes: input.paymentNotes,
+                }),
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                throw new Error(result.error || 'Mark as paid failed');
+            }
+            // Refresh + close
+            refetchTransactions();
+            setRecordPaymentTx(null);
+            setSelected(null);
+        } catch (err) {
+            setPaymentError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setPaymentLoading(null);
+        }
+    }
+
+    // Auto-select transaction from URL params (?vessel=<imo> or ?tx=<ref>)
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || transactions.length === 0) return;
+        const params = new URLSearchParams(window.location.search);
+        const vesselImo = params.get('vessel');
+        const txRef = params.get('tx');
+
+        if (txRef) {
+            const match = transactions.find((tx) => tx.ref === txRef);
+            if (match) setSelected(match);
+            return;
+        }
+        if (vesselImo) {
+            // Find latest transaction for this vessel by IMO
+            const matches = transactions
+                .filter((tx) => tx.vesselImo === vesselImo)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            if (matches.length > 0) setSelected(matches[0]);
+        }
+    }, [transactions]);
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
@@ -179,6 +284,10 @@ export function InvoicesPage() {
                             <InvoiceDetail
                                 tx={selected}
                                 onGenerateProForma={() => setProForma(selected)}
+                                onPayNow={() => handlePayNow(selected)}
+                                onRecordPayment={() => handleOpenRecordPayment(selected)}
+                                isPaymentLoading={paymentLoading === selected.id}
+                                paymentError={paymentError}
                                 role={role}
                             />
                         </>
@@ -192,13 +301,52 @@ export function InvoicesPage() {
 
             {/* Pro-forma modal */}
             {proForma && <ProFormaModal tx={proForma} onClose={() => setProForma(null)} />}
+
+            {/* Wire transfer instructions modal */}
+            {wireInstructions && (
+                <WireTransferModal
+                    instructions={wireInstructions.instructions}
+                    invoiceRef={wireInstructions.invoiceRef}
+                    vesselName={wireInstructions.vesselName}
+                    onClose={() => setWireInstructions(null)}
+                />
+            )}
+
+            {/* Record Payment modal — admin captures method + reference + notes */}
+            {recordPaymentTx && (
+                <RecordPaymentModal
+                    invoiceRef={recordPaymentTx.ref}
+                    vesselName={recordPaymentTx.vesselName}
+                    amountUsd={recordPaymentTx.taxAmountUsd}
+                    isLoading={paymentLoading === recordPaymentTx.id}
+                    error={paymentError}
+                    onConfirm={handleConfirmPayment}
+                    onClose={() => setRecordPaymentTx(null)}
+                />
+            )}
         </div>
     );
 }
 
 // ── Invoice Detail Panel ──────────────────────────────────────────────────────
 
-function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGenerateProForma: () => void; role: UserRole }) {
+function InvoiceDetail({
+    tx,
+    onGenerateProForma,
+    onPayNow,
+    onRecordPayment,
+    isPaymentLoading,
+    paymentError,
+    role,
+}: {
+    tx: Transaction;
+    onGenerateProForma: () => void;
+    onPayNow: () => void;
+    onRecordPayment: () => void;
+    isPaymentLoading: boolean;
+    paymentError: string | null;
+    role: UserRole;
+}) {
     const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
     const invoiceRef = tx.ref;
@@ -237,8 +385,14 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                         {t('generate_statement')}
                     </OsButton>
                     {!isPaid && (
-                        <OsButton variant="primary" size="sm" icon={<CheckCircle className="w-3.5 h-3.5" />}>
-                            {t('record_payment')}
+                        <OsButton
+                            variant="primary"
+                            size="sm"
+                            icon={<CheckCircle className="w-3.5 h-3.5" />}
+                            onClick={onRecordPayment}
+                            disabled={isPaymentLoading}
+                        >
+                            {isPaymentLoading ? 'Recording…' : t('record_payment')}
                         </OsButton>
                     )}
                     {canContest && (
@@ -263,6 +417,28 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
                         {t('override')}
                     </button>
                 </div>
+            )}
+
+            {/* Payment error banner */}
+            {paymentError && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20">
+                    <AlertTriangle className="w-4 h-4 text-[#EF4444] flex-shrink-0" />
+                    <p className="text-xs text-[#EF4444]">{paymentError}</p>
+                </div>
+            )}
+
+            {/* Pay Now CTA — for shipping agents on unpaid invoices */}
+            {!isPaid && role === UserRole.SHIPPING_AGENT && (
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<CheckCircle className="w-4 h-4" />}
+                    onClick={onPayNow}
+                    disabled={isPaymentLoading}
+                    className="w-full"
+                >
+                    {isPaymentLoading ? 'Creating payment session…' : `Pay Now — $${tx.taxAmountUsd.toLocaleString()}`}
+                </OsButton>
             )}
 
             {/* Tabs */}
@@ -338,39 +514,222 @@ function InvoiceDetail({ tx, onGenerateProForma, role }: { tx: Transaction; onGe
             )}
 
             {activeTab === 'audit' && (
-                <div className="os-card p-5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-4">{t('tab_audit_trail')}</h4>
-                    <div className="flex flex-col gap-3">
-                        {[
-                            { label: t('audit_invoice_created'), sub: t('audit_by_system'), time: '10:41 UTC', color: '#00D97E' },
-                            { label: t('audit_sent_to_agent'), sub: `to operations@${tx.vesselName.toLowerCase().replace(' ', '')}.com`, time: '10:48 UTC', color: '#38BDF8' },
-                            { label: t('audit_viewed_by_recipient'), sub: 'IP: 192.168.43.21 (Dubai)', time: '11:13 UTC', color: '#F59E0B' },
-                        ].map(({ label, sub, time, color }) => (
-                            <div key={label} className="flex items-start gap-3">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: `${color}14` }}>
-                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-semibold text-[var(--os-text-primary)]">{label}</p>
-                                    <p className="text-[10px] text-[var(--os-text-muted)]">{sub}</p>
-                                </div>
-                                <span className="text-[10px] text-[var(--os-text-muted)] flex-shrink-0">{time}</span>
-                            </div>
-                        ))}
-                    </div>
+                <TransactionAuditTrail transactionId={tx.id} />
+            )}
+
+            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status */}
+            {isPaid && tx.receiptPdfUrl ? (
+                // PAID with a real receipt PDF — open the receipt directly
+                <a
+                    href={tx.receiptPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full"
+                >
+                    <OsButton
+                        variant="primary"
+                        size="md"
+                        icon={<FileText className="w-4 h-4" />}
+                        className="w-full"
+                    >
+                        Download Official Receipt (PDF)
+                    </OsButton>
+                </a>
+            ) : (
+                // Unpaid (or paid without a generated receipt yet) — open the modal
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
+                </OsButton>
+            )}
+        </div>
+    );
+}
+
+// ── Transaction Audit Trail ──────────────────────────────────────────────────
+// Reads real audit_logs entries for a given transaction and renders the
+// payment timeline (creation → invoice generation → email sent → payment
+// received). Replaces the previously hardcoded fake trail.
+
+interface AuditEntry {
+    id: string;
+    action: string;
+    user_full_name: string;
+    severity: string;
+    created_at: string;
+    details_json: Record<string, unknown>;
+}
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+    wire_transfer: 'Wire Transfer',
+    cash:          'Cash',
+    mobile_money:  'Mobile Money',
+    card:          'Card',
+    stripe:        'Stripe',
+    paystack:      'Paystack',
+    flutterwave:   'Flutterwave',
+    wave:          'Wave Mobile Money',
+    payoneer:      'Payoneer',
+    other:         'Other',
+};
+
+function TransactionAuditTrail({ transactionId }: { transactionId: string }) {
+    const [entries, setEntries] = React.useState<AuditEntry[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError]     = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            setLoading(true);
+            setError(null);
+            try {
+                const supabase = createClient();
+                const { data, error: dbErr } = await supabase
+                    .from('audit_logs')
+                    .select('id, action, user_full_name, severity, created_at, details_json')
+                    .eq('entity_type', 'Transaction')
+                    .eq('entity_id', transactionId)
+                    .order('created_at', { ascending: true });
+                if (cancelled) return;
+                if (dbErr) {
+                    setError(dbErr.message);
+                    setEntries([]);
+                } else {
+                    setEntries(data ?? []);
+                }
+            } catch (err) {
+                if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load');
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+        load();
+        return () => { cancelled = true; };
+    }, [transactionId]);
+
+    function describe(entry: AuditEntry): { label: string; sub: string; color: string } {
+        const d = entry.details_json || {};
+        const event = (d as { event?: string }).event;
+
+        if (event === 'PAYMENT_RECEIVED' || (d as { newStatus?: string }).newStatus === 'PAID') {
+            const method = (d as { paymentMethod?: string }).paymentMethod;
+            const ref = (d as { paymentReference?: string }).paymentReference;
+            const amount = (d as { amountUsd?: number }).amountUsd;
+            const methodLabel = method ? PAYMENT_METHOD_LABEL[method] || method : 'Unknown method';
+            const subParts = [
+                `via ${methodLabel}`,
+                amount ? `$${amount.toLocaleString()}` : null,
+                ref ? `Ref: ${ref}` : null,
+                `confirmed by ${entry.user_full_name}`,
+            ].filter(Boolean);
+            return {
+                label: 'Payment received',
+                sub: subParts.join(' · '),
+                color: '#10B981',
+            };
+        }
+        if (event === 'PAYMENT_CHECKOUT_CREATED') {
+            const provider = (d as { provider?: string }).provider;
+            return {
+                label: 'Payment checkout created',
+                sub: `Provider: ${provider || 'unknown'}`,
+                color: '#38BDF8',
+            };
+        }
+        if (entry.action === 'INVOICE_GENERATED') {
+            const mode = (d as { mode?: string }).mode;
+            const ref = (d as { invoiceRef?: string }).invoiceRef;
+            return {
+                label: mode === 'invoice' ? 'Tax invoice generated' : 'Pro-forma generated',
+                sub: `${ref || ''} · by ${entry.user_full_name}`,
+                color: '#10B981',
+            };
+        }
+        if (entry.action === 'TRANSACTION_UPDATED') {
+            const oldS = (d as { previousStatus?: string; oldStatus?: string }).previousStatus
+                || (d as { oldStatus?: string }).oldStatus;
+            const newS = (d as { newStatus?: string }).newStatus;
+            return {
+                label: 'Transaction updated',
+                sub: oldS && newS ? `${oldS} → ${newS} · by ${entry.user_full_name}` : `by ${entry.user_full_name}`,
+                color: '#F59E0B',
+            };
+        }
+        return {
+            label: entry.action.replace(/_/g, ' ').toLowerCase(),
+            sub: `by ${entry.user_full_name}`,
+            color: '#94A3B8',
+        };
+    }
+
+    return (
+        <div className="os-card p-5">
+            <div className="flex items-center justify-between mb-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">
+                    Audit Trail
+                </h4>
+                {entries.length > 0 && (
+                    <span className="text-[10px] text-[var(--os-text-muted)]">{entries.length} events</span>
+                )}
+            </div>
+
+            {loading && (
+                <p className="text-xs text-[var(--os-text-muted)]">Loading audit log…</p>
+            )}
+
+            {error && (
+                <div className="p-3 rounded-xl text-[11px] text-[#EF4444] bg-[rgba(239,68,68,0.08)] border border-[#EF4444]/20">
+                    Failed to load audit log: {error}
                 </div>
             )}
 
-            {/* Pro-forma CTA */}
-            <OsButton
-                variant="primary"
-                size="md"
-                icon={<FileText className="w-4 h-4" />}
-                onClick={onGenerateProForma}
-                className="w-full"
-            >
-                {t('generate_proforma_pdf')}
-            </OsButton>
+            {!loading && !error && entries.length === 0 && (
+                <p className="text-xs text-[var(--os-text-muted)]">
+                    No audit events yet for this transaction.
+                </p>
+            )}
+
+            {!loading && entries.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {entries.map((e) => {
+                        const { label, sub, color } = describe(e);
+                        const ts = new Date(e.created_at);
+                        const time = ts.toLocaleString('en-GB', {
+                            day: '2-digit', month: 'short',
+                            hour: '2-digit', minute: '2-digit',
+                        });
+                        const notes = (e.details_json as { paymentNotes?: string })?.paymentNotes;
+                        return (
+                            <div key={e.id} className="flex items-start gap-3">
+                                <div
+                                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                                    style={{ backgroundColor: `${color}14` }}
+                                >
+                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-[var(--os-text-primary)]">{label}</p>
+                                    <p className="text-[10px] text-[var(--os-text-muted)] break-words">{sub}</p>
+                                    {notes && (
+                                        <p className="text-[10px] text-[var(--os-text-secondary)] mt-1 italic">
+                                            &ldquo;{notes}&rdquo;
+                                        </p>
+                                    )}
+                                </div>
+                                <span className="text-[10px] text-[var(--os-text-muted)] flex-shrink-0 whitespace-nowrap">
+                                    {time}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

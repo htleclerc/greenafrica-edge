@@ -34,6 +34,7 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/settings'))    return { key: 'settings',     label: 'Paramètres' };
     if (pathname.startsWith('/admin/tax-settings'))    return { key: 'tax-settings', label: 'Taxe carbone — Paramètres' };
     if (pathname.startsWith('/admin/revenue'))         return { key: 'revenue',      label: 'Tableau des recettes' };
+    if (pathname.startsWith('/admin/payments'))        return { key: 'payments',     label: 'Fournisseurs de paiement' };
     if (pathname.startsWith('/admin'))                 return { key: 'tax-settings', label: 'Console Admin' };
     return { key: 'map', label: 'Command Center — The Eye of Berbera' };
 }
@@ -96,18 +97,28 @@ function SkinBridge({ children }: { children: React.ReactNode }) {
 function DashboardInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { key, label } = resolveNav(pathname);
-    const { user } = useRole();
+    const { user, isDemo, ready } = useRole();
     const { data: kpis } = useKpis();
     const { notifications, pendingRegistrations, unreadCount, markRead, markAllRead } = useNotifications();
 
     // Persist sidebar state across navigations
-    const [expanded, setExpanded] = React.useState(false);
-    const [mobileOpen, setMobileOpen] = React.useState(false);
-
+    // ── RBAC Enforcement & Demo Bypass ─────────────────────────────────────────
+    const [isEvicted, setIsEvicted] = React.useState(false);
+    
     React.useEffect(() => {
+        const demoAllowed = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
+        const isDemoSessionFlag = isDemo && demoAllowed;
+
+        if (!ready || !user) return;
+        
+        // In demo mode (if allowed), we allow access to all dashboard pages for all roles
+        if (isDemoSessionFlag) return;
         const saved = localStorage.getItem('sidebar_expanded');
         if (saved === 'true') setExpanded(true);
     }, []);
+
+    const [expanded, setExpanded] = React.useState(false);
+    const [mobileOpen, setMobileOpen] = React.useState(false);
 
     // Close mobile sidebar on route change
     React.useEffect(() => {
@@ -133,7 +144,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                 '--os-sidebar-w': `${sidebarW}px`,
             } as React.CSSProperties}
         >
-            <DemoBanner />
+            {/* Demo Mode Banner (Conditional) */}
+            {isDemo && process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true' && <DemoBanner />}
             <DashboardSidebar
                 activePage={key}
                 expanded={expanded}

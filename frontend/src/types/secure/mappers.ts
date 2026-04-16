@@ -84,6 +84,7 @@ export function rowToSecureVessel(
         portCall: row.port_call ?? '',
         proFormaGenerated: row.pro_forma_generated,
         lastTransactionId: row.last_transaction_id,
+        ownerId: (row as Record<string, unknown>).owner_id as string | null ?? null,
     };
 }
 
@@ -101,6 +102,7 @@ export function rowToTransaction(row: TransactionRow): Transaction {
         taxAmountUsd: Number(row.tax_amount_usd),
         status: row.status as TransactionStatus,
         invoicePdfUrl: row.invoice_pdf_url,
+        receiptPdfUrl: (row as Record<string, unknown>).receipt_pdf_url as string | null ?? null,
         portCall: row.port_call ?? '',
         createdAt: row.created_at,
         paidAt: row.paid_at,

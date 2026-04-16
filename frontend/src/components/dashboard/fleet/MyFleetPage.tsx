@@ -258,7 +258,7 @@ function FleetVesselCard({
             {/* Actions */}
             <div className="flex items-center gap-2 pt-1 border-t border-[var(--os-border)]">
                 <a
-                    href={`/dashboard/invoices?vessel=${v.id}`}
+                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                     className="flex items-center gap-1.5 text-[10px] font-semibold text-[#38BDF8] hover:underline"
                 >
                     <FileText className="w-3 h-3" />

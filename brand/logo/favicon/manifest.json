@@ -1,0 +1,33 @@
+{
+  "name": "AfricGreen",
+  "short_name": "AfricGreen",
+  "description": "Sovereign Carbon Intelligence Platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0A1110",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "/brand/logo/favicon/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/brand/logo/favicon/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/logo/favicon/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/logo/favicon/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    }
+  ]
+}

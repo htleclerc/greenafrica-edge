@@ -54,7 +54,7 @@ export function SovereignSection() {
                             {/* Map mockup header */}
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h4 className="text-sm font-bold" style={{ color: 'var(--ais-page-text)' }}>{t('sovereign_tracking_title')}</h4>
+                                    <h4 className="text-sm font-semibold" style={{ color: 'var(--ais-page-text)' }}>{t('sovereign_tracking_title')}</h4>
                                     <p className="text-[10px] mt-0.5" style={{ color: 'var(--ais-page-text-dim)' }}>Berbera Maritime Zone</p>
                                 </div>
                                 <div className="flex items-center gap-2">

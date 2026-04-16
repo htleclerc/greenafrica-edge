@@ -23,8 +23,9 @@ import { UserRole } from '@/types/secure';
  * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │
  * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │
  * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │
- * │ tax-settings     │ ✗            │ ✓            │ ✗             │ ✓            │
+ * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │
  * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │
+ * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │
  * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │
  * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┘
  */
@@ -42,22 +43,49 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
+    // Audit
+    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+
     // Admin
     'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
-    'tax-settings': [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Settings — everyone
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
 };
 
 /**
- * Check if a given role can access a specific nav item.
+ * Pages where some roles get READ-ONLY access (visible in the menu and
+ * navigable, but cannot perform write actions like Edit/Add/Save/Delete).
+ *
+ * Used by pages to gate their action buttons. Defaults to "everyone in
+ * NAV_PERMISSIONS can edit" — only listed roles get the read-only treatment.
+ */
+const READ_ONLY_ROLES: Record<string, UserRole[]> = {
+    'tax-settings': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads, cannot modify rates/exemptions
+    'revenue':      [UserRole.PORT_OFFICER],  // same posture for revenue dashboard
+};
+
+/**
+ * Check if a given role can access a specific nav item (read or write).
  */
 export function canAccess(navKey: string, role: UserRole): boolean {
     const allowed = NAV_PERMISSIONS[navKey];
     if (!allowed) return true; // unknown key → allow by default
     return allowed.includes(role);
+}
+
+/**
+ * Check if a given role can perform write actions on a specific nav item.
+ * Returns false for roles that have read-only access.
+ */
+export function canEdit(navKey: string, role: UserRole): boolean {
+    if (!canAccess(navKey, role)) return false;
+    const readOnlyRoles = READ_ONLY_ROLES[navKey];
+    if (!readOnlyRoles) return true;
+    return !readOnlyRoles.includes(role);
 }
 
 /**
