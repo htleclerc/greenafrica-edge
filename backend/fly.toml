@@ -1,25 +1,23 @@
-# Fly.io deployment config for AfricgreenOS Go backend
-# Deploy: fly deploy --config backend/fly.toml
+# fly.toml app configuration file generated for africgreen on 2026-04-16T23:14:03Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "africgreen-api"
-primary_region = "cdg" # Paris (closest to East Africa with good latency)
+app = 'africgreen'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "Dockerfile"
-
-[env]
-  PORT = "8080"
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
+  processes = ['app']
 
-[[http_service.checks]]
-  grace_period = "10s"
-  interval = "30s"
-  method = "GET"
-  path = "/health"
-  timeout = "5s"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
