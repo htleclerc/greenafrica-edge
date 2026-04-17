@@ -69,7 +69,13 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
     const dueDate     = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
     // ── Verification QR code ──
-    const verifyUrl = React.useMemo(() => buildVerifyUrl(invoiceRef), [invoiceRef]);
+    // Pass the live browser origin so the QR resolves to the current deployment
+    // (prod URL when viewed in prod, preview URL in preview, etc.) instead of
+    // whatever NEXT_PUBLIC_APP_URL happens to be baked in at build time.
+    const verifyUrl = React.useMemo(
+        () => buildVerifyUrl(invoiceRef, typeof window !== 'undefined' ? window.location.origin : undefined),
+        [invoiceRef],
+    );
     const [qrDataUrl, setQrDataUrl] = React.useState<string>('');
     React.useEffect(() => {
         generateQrCodeDataUrl(verifyUrl).then(setQrDataUrl).catch(() => setQrDataUrl(''));

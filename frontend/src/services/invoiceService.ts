@@ -56,9 +56,23 @@ interface InvoiceData {
 /**
  * Generate a verification URL for an invoice ref.
  * Used by both the HTML preview and the PDF QR code.
+ *
+ * Origin resolution (in order):
+ *   1. explicit `origin` arg — caller passed `window.location.origin` (client)
+ *      or the `Origin`/`Host` header from the incoming request (server).
+ *   2. `NEXT_PUBLIC_APP_URL` env — for server contexts without a request
+ *      (e.g. cron jobs).
+ *   3. `window.location.origin` — last-ditch client fallback.
+ *   4. Path-only (`/verify/...`) — no origin found; caller likely rendering
+ *      a non-QR context. QR codes need absolute URLs, so callers embedding
+ *      in PDFs MUST provide an origin.
  */
-export function buildVerifyUrl(invoiceRef: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
+export function buildVerifyUrl(invoiceRef: string, origin?: string): string {
+  const resolved =
+    origin
+    || process.env.NEXT_PUBLIC_APP_URL
+    || (typeof window !== 'undefined' ? window.location.origin : '');
+  const base = resolved.replace(/\/+$/, '');
   return `${base}/verify/${encodeURIComponent(invoiceRef)}`;
 }
 

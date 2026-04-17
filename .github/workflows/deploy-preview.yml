@@ -12,7 +12,6 @@ jobs:
   preview:
     name: Vercel Preview
     runs-on: ubuntu-latest
-    needs: [] # runs independently, CI runs in parallel
     environment:
       name: preview
       url: ${{ steps.deploy.outputs.url }}
@@ -36,7 +35,7 @@ jobs:
         run: |
           URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "### 🔗 Preview: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Preview: $URL" >> "$GITHUB_STEP_SUMMARY"
         working-directory: frontend
 
       - name: Comment PR with preview URL
@@ -44,7 +43,7 @@ jobs:
         with:
           script: |
             const url = '${{ steps.deploy.outputs.url }}';
-            const body = `## 🚀 Preview deployed\n\n${url}\n\n_Auto-deployed by Vercel on commit ${context.sha.slice(0,7)}_`;
+            const body = `## Preview deployed\n\n${url}\n\nBackend: \`${{ secrets.BACKEND_URL }}/health\`\n\n_Auto-deployed on commit ${context.sha.slice(0,7)}_`;
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo, issue_number: context.issue.number,
             });
