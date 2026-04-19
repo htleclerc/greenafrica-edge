@@ -163,7 +163,7 @@ async function createPaystackPayment(payment: PaymentRequest): Promise<PaymentRe
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      email: payment.customerEmail || 'payment@africgreen.gov.sl',
+      email: payment.customerEmail || 'payment@greengate.africa',
       amount: amountSmallest,
       currency: payment.currency,
       reference: payment.invoiceRef,
@@ -211,12 +211,12 @@ async function createFlutterwavePayment(payment: PaymentRequest): Promise<Paymen
       currency: payment.currency,
       redirect_url: successUrl(payment.invoiceRef),
       customer: {
-        email: payment.customerEmail || 'payment@africgreen.gov.sl',
+        email: payment.customerEmail || 'payment@greengate.africa',
         phonenumber: payment.customerPhone || '',
         name: payment.metadata.ownerEntity,
       },
       customizations: {
-        title: 'AfricgreenOS — Carbon Tax Payment',
+        title: 'Green Gate OS — Carbon Tax Payment',
         description: `Carbon Tax Invoice ${payment.invoiceRef} — ${payment.metadata.vesselName}`,
         logo: `${APP_URL}/logo.png`,
       },
@@ -289,7 +289,7 @@ async function createPayoneerPayment(payment: PaymentRequest): Promise<PaymentRe
       return_url: successUrl(payment.invoiceRef),
       cancel_url: cancelUrl(payment.invoiceRef),
       customer: {
-        email: payment.customerEmail || 'payment@africgreen.gov.sl',
+        email: payment.customerEmail || 'payment@greengate.africa',
         name: payment.metadata.ownerEntity,
       },
       metadata: {
@@ -322,7 +322,7 @@ function createWireTransfer(payment: PaymentRequest): PaymentResult {
     provider: 'wire_transfer',
     status: 'pending',
     wireInstructions: {
-      beneficiary: 'AfricGreen Maritime Carbon Tax Authority',
+      beneficiary: 'Green Gate Maritime Carbon Tax Authority',
       bank: 'International Bank of Somaliland',
       swiftCode: 'IBSLSLMG',
       iban: 'SL00 0000 0000 0000 0000 00',

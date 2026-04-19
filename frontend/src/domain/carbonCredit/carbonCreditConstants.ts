@@ -18,7 +18,7 @@ export const CreditStandardLabel: Record<CreditStandard, string> = {
     [CreditStandard.VCS]: 'VCS (Verra)',
     [CreditStandard.GOLD_STANDARD]: 'Gold Standard',
     [CreditStandard.ARTICLE6]: 'Paris Art. 6',
-    [CreditStandard.AFRICGREEN_SOVEREIGN]: 'Africgreen Sovereign',
+    [CreditStandard.AFRICGREEN_SOVEREIGN]: 'Green Gate Sovereign',
     [CreditStandard.ACMI]: 'ACMI',
 };
 

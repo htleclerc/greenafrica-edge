@@ -155,7 +155,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
             {/* Brand + breadcrumb */}
             <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-bold text-[var(--os-text-primary)] whitespace-nowrap">
-                    Africgreen
+                    Green Gate
                 </span>
                 {breadcrumb && (
                     <>

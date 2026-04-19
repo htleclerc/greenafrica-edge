@@ -95,7 +95,7 @@ export const carbonTaxRates: CarbonTaxRate[] = [
     {
         id: 'africgreen',
         regulation: TaxRegulation.AFRICGREEN_SOVEREIGN,
-        name: 'Africgreen Sovereign Rate',
+        name: 'Green Gate Sovereign Rate',
         ratePerTon: 25,
         applicability: 'All vessels >500 GT transiting Somaliland ZEE',
         effectiveDate: '2024-01-01',
@@ -284,7 +284,7 @@ export const complianceRegulations: ComplianceRegulation[] = [
     {
         id: 'reg_africgreen',
         code: TaxRegulation.AFRICGREEN_SOVEREIGN,
-        name: 'Africgreen Sovereign Framework',
+        name: 'Green Gate Sovereign Framework',
         authority: 'Somaliland MoECC',
         description:
             'Maritime Environmental Levy applicable to all commercial vessels transiting or anchoring in Somaliland Exclusive Economic Zone (ZEE). Based on polluter-pays principle.',
@@ -335,7 +335,7 @@ export const complianceRegulations: ComplianceRegulation[] = [
         name: 'Paris Agreement — Art. 6 (Carbon Markets)',
         authority: 'UNFCCC',
         description:
-            'Establishes cooperative approaches for countries to meet NDCs through carbon credit trading. Africgreen aligns sovereign carbon offsets with Article 6.2 and 6.4 mechanisms.',
+            'Establishes cooperative approaches for countries to meet NDCs through carbon credit trading. Green Gate aligns sovereign carbon offsets with Article 6.2 and 6.4 mechanisms.',
         keyRequirement: 'Corresponding adjustments to avoid double-counting of carbon credits.',
         effectiveDate: '2021-11-01',
         penaltyNote: 'Non-recognized credits cannot be used for NDC compliance.',

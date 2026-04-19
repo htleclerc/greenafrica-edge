@@ -127,7 +127,7 @@ export async function fetchVerraProjects(
     {
       projectId: 'VCS-2468',
       name: 'Gulf of Aden Blue Carbon Initiative, Somaliland',
-      proponent: 'AfricGreen Foundation',
+      proponent: 'Green Gate Foundation',
       methodology: 'VM0033',
       country: 'Somaliland',
       region: 'East Africa',

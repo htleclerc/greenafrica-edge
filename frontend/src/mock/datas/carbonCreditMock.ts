@@ -102,7 +102,7 @@ export const marketRates: MarketRate[] = [
     {
         id: 'africgreen_sovereign',
         standard: CreditStandard.AFRICGREEN_SOVEREIGN,
-        name: 'Africgreen Sovereign Credits',
+        name: 'Green Gate Sovereign Credits',
         grade: CreditGrade.AA,
         pricePerTon: 14.5,
         priceMin: 12,

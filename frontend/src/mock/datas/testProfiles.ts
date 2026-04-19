@@ -40,7 +40,7 @@ export const TEST_PROFILES: SecureUser[] = [
     },
     {
         id: 'usr-test-003',
-        email: 'superadmin@africgreen.gov.sl',
+        email: 'superadmin@greengate.africa',
         fullName: 'Min. Al-Farid Ibrahim',
         role: UserRole.SUPERADMIN,
         operationalSite: OperationalSite.NATIONAL_HQ,

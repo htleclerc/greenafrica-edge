@@ -82,7 +82,7 @@ export function Navbar({ activePage = 'overview' }: NavbarProps) {
                                 className="text-sm font-bold tracking-tight leading-tight"
                                 style={{ color: 'var(--ais-nav-text)' }}
                             >
-                                AfricGreen
+                                Green Gate
                             </span>
                             <span className="text-[9px] font-medium tracking-widest uppercase leading-tight text-emerald-500/70">
                                 SOVEREIGN CARBON PLATFORM
