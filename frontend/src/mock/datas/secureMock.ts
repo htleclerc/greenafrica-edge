@@ -611,7 +611,7 @@ export const mockCarbonProjects: CarbonProject[] = [
         description: 'Installation of 2.4 MW rooftop solar panels across Berbera Port facilities, displacing diesel generators and cutting port emissions by 40%.',
         type: ProjectType.SOLAR,
         status: ProjectStatus.ACTIVE,
-        operatorName: 'AfricGreen Energy Solutions',
+        operatorName: 'Green Gate Energy Solutions',
         operatorId: 'org-004',
         locationName: 'Berbera Port Industrial Zone',
         locationCoords: { lat: 10.43, lng: 45.02 },

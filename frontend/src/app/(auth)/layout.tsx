@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Secure Access | Africgreen',
+    title: 'Secure Access | Green Gate',
     description: 'Sovereign Access Portal — Authorized personnel only.',
 };
 

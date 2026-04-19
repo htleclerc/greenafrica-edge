@@ -18,9 +18,12 @@ type Config struct {
 func Load() *Config {
 	_ = godotenv.Load() // optional .env file
 
-	origins := []string{"http://localhost:3300"}
+	origins := []string{"http://localhost:3300", "http://localhost:3000"}
 	if appURL := os.Getenv("APP_URL"); appURL != "" {
 		origins = append(origins, appURL)
+	}
+	if vercelURL := os.Getenv("VERCEL_URL"); vercelURL != "" {
+		origins = append(origins, "https://"+vercelURL)
 	}
 
 	return &Config{

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Africgreen — Database Row → TypeScript Interface Mappers
+// Green Gate — Database Row → TypeScript Interface Mappers
 // Converts snake_case DB rows to camelCase domain types
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -130,7 +130,7 @@ describe('parseInvoiceRef', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildVerifyUrl — depends on NEXT_PUBLIC_APP_URL env var with localhost fallback
+// buildVerifyUrl — prefers explicit origin, falls back to NEXT_PUBLIC_APP_URL
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('buildVerifyUrl', () => {
@@ -144,21 +144,39 @@ describe('buildVerifyUrl', () => {
         }
     });
 
-    it('uses NEXT_PUBLIC_APP_URL when set', () => {
+    it('prefers explicit origin arg over env (caller context wins)', () => {
+        process.env.NEXT_PUBLIC_APP_URL = 'https://env.example.com';
+        expect(buildVerifyUrl('INV-2026-FOO', 'https://live.africgreen.app')).toBe(
+            'https://live.africgreen.app/verify/INV-2026-FOO',
+        );
+    });
+
+    it('falls back to NEXT_PUBLIC_APP_URL when no origin provided', () => {
         process.env.NEXT_PUBLIC_APP_URL = 'https://africgreen.vercel.app';
         expect(buildVerifyUrl('INV-2026-FOO')).toBe(
             'https://africgreen.vercel.app/verify/INV-2026-FOO',
         );
     });
 
-    it('falls back to localhost:3300 when env var is missing', () => {
+    it('strips trailing slashes from the resolved origin', () => {
+        expect(buildVerifyUrl('INV-2026-FOO', 'https://live.africgreen.app/')).toBe(
+            'https://live.africgreen.app/verify/INV-2026-FOO',
+        );
+    });
+
+    it('falls back to window.location.origin when no origin arg and no env', () => {
+        // In jsdom (test env) window.location.origin defaults to http://localhost:3000.
+        // This mirrors the real client-side fallback in a browser context.
         delete process.env.NEXT_PUBLIC_APP_URL;
-        expect(buildVerifyUrl('INV-2026-FOO')).toBe('http://localhost:3300/verify/INV-2026-FOO');
+        expect(buildVerifyUrl('INV-2026-FOO')).toBe(
+            `${window.location.origin}/verify/INV-2026-FOO`,
+        );
     });
 
     it('URL-encodes the ref so QR codes survive special chars', () => {
-        process.env.NEXT_PUBLIC_APP_URL = 'https://test.dev';
-        expect(buildVerifyUrl('INV-2026-A B')).toBe('https://test.dev/verify/INV-2026-A%20B');
+        expect(buildVerifyUrl('INV-2026-A B', 'https://test.dev')).toBe(
+            'https://test.dev/verify/INV-2026-A%20B',
+        );
     });
 });
 

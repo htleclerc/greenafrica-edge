@@ -37,7 +37,7 @@ export const faqItems = [
     },
     {
         question: "Can we integrate existing legacy systems?",
-        answer: "Absolutely. Africgreen features a robust, API-first interoperability layer designed to seamlessly connect with existing government IT infrastructure, legacy environmental databases, and international reporting frameworks."
+        answer: "Absolutely. Green Gate features a robust, API-first interoperability layer designed to seamlessly connect with existing government IT infrastructure, legacy environmental databases, and international reporting frameworks."
     },
     {
         question: "What support is available for staff training?",

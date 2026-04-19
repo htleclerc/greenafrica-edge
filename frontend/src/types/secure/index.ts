@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Africgreen — Secure Platform Types
+// Green Gate — Secure Platform Types
 // All enums and interfaces for the authenticated dashboard area
 // ─────────────────────────────────────────────────────────────────────────────
 

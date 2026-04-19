@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Africgreen — RBAC Permission Matrix (Demo Mode)
+// Green Gate — RBAC Permission Matrix (Demo Mode)
 // Defines which sidebar nav items each role can see.
 // ─────────────────────────────────────────────────────────────────────────────
 

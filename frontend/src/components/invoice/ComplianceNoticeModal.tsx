@@ -63,7 +63,7 @@ export function ComplianceNoticeModal({ vessel, onClose }: ComplianceNoticeModal
                             <div>
                                 <h1 className="text-xl font-bold tracking-widest text-emerald-900 uppercase">{t('republic')}</h1>
                                 <p className="text-sm font-medium text-slate-600 uppercase tracking-wider mt-1">{t('ministry')}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">Africgreen Sovereign Registry</p>
+                                <p className="text-xs text-slate-500 mt-0.5">Green Gate Sovereign Registry</p>
                             </div>
                         </div>
                         <div className="text-right">

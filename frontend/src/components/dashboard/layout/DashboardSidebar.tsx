@@ -102,7 +102,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                     href="/dashboard"
                     onClick={onMobileClose}
                     className="flex items-center gap-2.5 flex-shrink-0 mb-4 px-3 h-10"
-                    title="AfricGreen"
+                    title="Green Gate"
                 >
                     <AfricGreenLogo size={40} variant="dark" className="flex-shrink-0 rounded-xl" />
                     <div

@@ -56,7 +56,7 @@ export default async function RootLayout({
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 {/* Open Graph */}
                 <meta property="og:type" content="website" />
-                <meta property="og:site_name" content="AfricGreen" />
+                <meta property="og:site_name" content="Green Gate" />
                 <meta property="og:image" content="/og/og-image.png" />
                 <meta property="og:image:width" content="1200" />
                 <meta property="og:image:height" content="630" />

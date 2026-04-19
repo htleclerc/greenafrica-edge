@@ -55,11 +55,20 @@ export async function POST(request: NextRequest) {
     // Resolve mode + badge from transaction status (PENDING/OVERDUE → proforma TO PAY,
     // PAID → invoice PAID, etc.)
     const { mode, badge } = statusToMode(transactionStatus || 'PENDING');
+
+    // Derive origin from the incoming request so the QR code points at the
+    // actual deployment (prod/preview/local) instead of a hardcoded env value.
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const requestOrigin = forwardedHost
+        ? `${forwardedProto || 'https'}://${forwardedHost}`
+        : new URL(request.url).origin;
+
     const enrichedInvoiceData: InvoiceData = {
         ...invoiceData,
         mode,
         badge,
-        verifyUrl: invoiceData.verifyUrl || buildVerifyUrl(invoiceData.invoiceRef),
+        verifyUrl: invoiceData.verifyUrl || buildVerifyUrl(invoiceData.invoiceRef, requestOrigin),
     };
 
     const admin = createClient(supabaseUrl, supabaseKey);

@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 /**
- * Centralized email service for AfricgreenOS notifications.
+ * Centralized email service for Green Gate OS notifications.
  *
  * All emails go through Resend (https://resend.com). Templates are inline
  * HTML strings with the same emerald/dark institutional brand as the rest
@@ -9,10 +9,10 @@ import { Resend } from 'resend';
  *
  * Required env:
  *   - RESEND_API_KEY    (server-side only, from resend.com dashboard)
- *   - EMAIL_FROM        (verified sender address, e.g. "noreply@africgreen.com")
+ *   - EMAIL_FROM        (verified sender address, e.g. "noreply@greengate.africa")
  *
  * Optional env:
- *   - EMAIL_REPLY_TO    (e.g. "support@africgreen.com")
+ *   - EMAIL_REPLY_TO    (e.g. "support@greengate.africa")
  *   - NEXT_PUBLIC_APP_URL (used to build links inside emails — defaults to localhost:3300)
  */
 
@@ -31,7 +31,7 @@ function getResend(): Resend {
 }
 
 function fromAddress(): string {
-    return process.env.EMAIL_FROM || 'noreply@africgreen.com';
+    return process.env.EMAIL_FROM || 'noreply@greengate.africa';
 }
 
 function replyTo(): string | undefined {
@@ -96,7 +96,7 @@ function emailLayout(content: string, options?: { previewText?: string }): strin
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AfricGreen</title>
+<title>Green Gate</title>
 <style>
     body { margin:0; padding:0; background:#0A1110; font-family: 'IBM Plex Sans', 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
     .preheader { display:none !important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; }
@@ -295,11 +295,11 @@ export interface RegistrationApprovalParams {
 }
 
 export async function sendRegistrationApprovalEmail(p: RegistrationApprovalParams): Promise<EmailResult> {
-    const subject = `Welcome to AfricGreen — Your account has been approved`;
+    const subject = `Welcome to Green Gate — Your account has been approved`;
     const content = `
         <h1>Account Approved ✓</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Your application to access the AfricGreen Sovereign Carbon Platform has been reviewed and <strong>approved</strong>.</p>
+        <p>Your application to access the Green Gate Sovereign Carbon Platform has been reviewed and <strong>approved</strong>.</p>
 
         <h2>Account Details</h2>
         <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
@@ -318,8 +318,8 @@ export async function sendRegistrationApprovalEmail(p: RegistrationApprovalParam
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Your AfricGreen account is now active` }),
-        text: `Welcome to AfricGreen\n\nYour account has been approved.\nRole: ${p.role}\nSite: ${p.operationalSite}\n\nActivate: ${p.activationUrl}`,
+        html: emailLayout(content, { previewText: `Your Green Gate account is now active` }),
+        text: `Welcome to Green Gate\n\nYour account has been approved.\nRole: ${p.role}\nSite: ${p.operationalSite}\n\nActivate: ${p.activationUrl}`,
     });
 }
 
@@ -347,7 +347,7 @@ export async function sendPartnershipConfirmationEmail(p: PartnershipConfirmatio
 
         <div class="alert alert-success">Your request is in our queue. Please reference <strong>${escapeHtml(p.requestId)}</strong> in any follow-up correspondence.</div>
 
-        <p>In the meantime, feel free to explore our public dashboard to learn more about how AfricGreen is securing Africa's maritime climate wealth.</p>
+        <p>In the meantime, feel free to explore our public dashboard to learn more about how Green Gate is securing Africa's maritime climate wealth.</p>
 
         <a href="${appUrl()}" class="btn-outline btn">Visit Our Platform →</a>
     `;

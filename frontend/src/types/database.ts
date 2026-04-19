@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Africgreen — Supabase Database Types
+// Green Gate — Supabase Database Types
 // Generated manually to match migrations 001-005
 // ─────────────────────────────────────────────────────────────────────────────
 

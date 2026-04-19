@@ -102,11 +102,11 @@ export const greenProjects: GreenProject[] = [
         startDate: '2024-01-01',
         endDate: '2026-12-31',
         description:
-            'Implementation of the Maritime Environmental Levy at Berbera Port — the first sovereign carbon tax mechanism in the Horn of Africa. Covers all vessels transiting the Somaliland EEZ under the Africgreen Sovereign Framework. Revenue channelled to the Somaliland Climate Fund.',
+            'Implementation of the Maritime Environmental Levy at Berbera Port — the first sovereign carbon tax mechanism in the Horn of Africa. Covers all vessels transiting the Somaliland EEZ under the Green Gate Sovereign Framework. Revenue channelled to the Somaliland Climate Fund.',
         sdgGoals: [13, 17, 16, 8],
         progressPct: 52,
-        partners: ['Africgreen', 'Somaliland MoECC', 'IMO'],
-        certificationTarget: 'Africgreen Sovereign',
+        partners: ['Green Gate', 'Somaliland MoECC', 'IMO'],
+        certificationTarget: 'Green Gate Sovereign',
         isHighlight: true,
     },
     {
@@ -172,7 +172,7 @@ export const greenProjects: GreenProject[] = [
             'Restoration of 48 000 ha of degraded endemic dry-montane forest in the Golis range. Supported by SCCWG carbon stock assessment (2019). Certified VCS credits to be issued at completion of Year 2 monitoring.',
         sdgGoals: [13, 15, 1, 8],
         progressPct: 34,
-        partners: ['Verra', 'World Bank FCPF', 'Africgreen'],
+        partners: ['Verra', 'World Bank FCPF', 'Green Gate'],
         certificationTarget: 'VCS',
         isHighlight: false,
     },
@@ -292,7 +292,7 @@ export const projectMilestones: MilestoneEvent[] = [
         date: 'Jan 2024',
         title: 'Carbon Tax Pilot: First Levy Collected',
         categoryKey: ProjectCategory.CARBON_TAX_POLICY,
-        description: 'First Maritime Environmental Levy collected at Berbera Port under Africgreen Framework.',
+        description: 'First Maritime Environmental Levy collected at Berbera Port under Green Gate Framework.',
     },
     {
         date: 'Jan 2024',
@@ -334,7 +334,7 @@ export const projectMilestones: MilestoneEvent[] = [
         date: 'Q2 2026',
         title: 'First Sovereign Credits Issued',
         categoryKey: ProjectCategory.CARBON_TAX_POLICY,
-        description: 'Africgreen Sovereign Credits issued via national registry under Paris Art. 6.2 framework.',
+        description: 'Green Gate Sovereign Credits issued via national registry under Paris Art. 6.2 framework.',
     },
 ];
 

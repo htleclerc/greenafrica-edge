@@ -32,7 +32,7 @@ func Logger(next http.Handler) http.Handler {
 func Auth(secret string) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/health" || secret == "" {
+			if r.URL.Path == "/health" || r.URL.Path == "/" || secret == "" {
 				next.ServeHTTP(w, r)
 				return
 			}

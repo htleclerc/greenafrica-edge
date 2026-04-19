@@ -295,7 +295,7 @@ export function TaxSimulatorPage() {
             const a    = document.createElement('a');
             const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             a.href     = url;
-            a.download = `africgreen-pre-estimate-${ts}.pdf`;
+            a.download = `greengate-pre-estimate-${ts}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

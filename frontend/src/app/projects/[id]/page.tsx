@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props) {
     }
 
     return {
-        title: `${project.name} | AIS Portal — Africgreen Initiative`,
+        title: `${project.name} | AIS Portal — Green Gate Initiative`,
         description: project.description,
     };
 }

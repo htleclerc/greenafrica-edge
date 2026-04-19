@@ -9,7 +9,7 @@ interface AfricGreenLogoProps {
 }
 
 /**
- * Brand icon — renders the AfricGreen shield emblem from /public/brand/.
+ * Brand icon — renders the Green Gate shield emblem from /public/brand/.
  * Use variant="dark" on dark backgrounds (default), variant="light" on light backgrounds.
  */
 export function AfricGreenLogo({ size = 32, variant = 'dark', className }: AfricGreenLogoProps) {
@@ -20,7 +20,7 @@ export function AfricGreenLogo({ size = 32, variant = 'dark', className }: Afric
     return (
         <Image
             src={src}
-            alt="AfricGreen"
+            alt="Green Gate"
             width={size}
             height={size}
             className={className}

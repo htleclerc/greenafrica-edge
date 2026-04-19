@@ -207,7 +207,7 @@ describe('createPaymentRequest', () => {
         expect(result.provider).toBe('wire_transfer');
         expect(result.status).toBe('pending');
         expect(result.wireInstructions).toBeDefined();
-        expect(result.wireInstructions?.beneficiary).toMatch(/AfricGreen/);
+        expect(result.wireInstructions?.beneficiary).toMatch(/Green Gate/);
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

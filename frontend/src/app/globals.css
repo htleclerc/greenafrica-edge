@@ -497,7 +497,7 @@ input[type="range"]::-moz-range-thumb {
     box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
 }
 
-/* ── Africgreen Secure Platform Utilities ── */
+/* ── Green Gate Secure Platform Utilities ── */
 .os-bg          { background-color: var(--os-bg); }
 .os-surface     { background-color: var(--os-surface); }
 .os-surface-2   { background-color: var(--os-surface-2); }

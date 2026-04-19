@@ -19,6 +19,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Root → health redirect
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/health", http.StatusTemporaryRedirect)
+	})
+
 	// Health check
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
