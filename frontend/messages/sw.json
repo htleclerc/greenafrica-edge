@@ -117,7 +117,11 @@
     "faq_title": "Maswali Yanayoulizwa Mara kwa Mara",
     "faq_subtitle": "Pata majibu kuhusu utekelezaji, kufuata sheria, na usalama.",
     "ready_title": "Uko tayari kubadilisha utawala wako wa ikolojia?",
-    "ready_subtitle": "Jiunge na mtandao wa mataifa yanayofikiri mbele yanayotumia data kulinda urithi wao wa asili na kulinda mustakabali wao wa kiuchumi."
+    "ready_subtitle": "Jiunge na mtandao wa mataifa yanayofikiri mbele yanayotumia data kulinda urithi wao wa asili na kulinda mustakabali wao wa kiuchumi.",
+    "teaser_greengate_badge": "USAMBAZAJI WA KWANZA — SOMALILAND",
+    "teaser_greengate_title": "Mfumo wa Dijiti wa Green Gate",
+    "teaser_greengate_desc": "Jukwaa la mapinduzi lililojengwa kwenye blockchain linalowezesha mataifa ya Afrika kuchukua suluhisho la kidijiti la kukusanya kodi za kaboni na kimazingira — limesambazwa kwa mara ya kwanza kwa ushirikiano na nchi changa ya Somaliland.",
+    "teaser_greengate_cta": "Gundua Ushirikiano"
   },
   "Calculator": {
     "title": "Kikokotoo cha Uzalishaji na Malipo ya Fidia",
@@ -668,7 +672,7 @@
     "sidebar_collapse": "Punguza menyu",
     "sidebar_expand": "Panua menyu",
     "sidebar_app_title": "AIS Portal",
-    "sidebar_app_subtitle": "Green Gate",
+    "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "SERIKALI YA SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "IMESIMBWA"

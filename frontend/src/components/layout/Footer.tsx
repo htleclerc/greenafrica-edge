@@ -33,7 +33,7 @@ export function Footer() {
                     <div>
                         <div className="flex items-center gap-2.5 mb-5">
                             <AfricGreenLogo size={32} variant="dark" className="rounded-lg" />
-                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>Green Gate</span>
+                            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--ais-footer-text-bright)' }}>GREEN GATE</span>
                         </div>
                         <p className="text-sm leading-relaxed mb-6 pr-4" style={{ color: 'var(--ais-footer-text)' }}>
                             {t('brand_desc')}

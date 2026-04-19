@@ -117,7 +117,11 @@
     "faq_title": "Perguntas Frequentes",
     "faq_subtitle": "Encontre respostas sobre implementação, conformidade e segurança.",
     "ready_title": "Pronto para transformar sua governança ecológica?",
-    "ready_subtitle": "Junte-se à rede de nações visionárias que utilizam dados para proteger seu patrimônio natural e garantir seu futuro econômico."
+    "ready_subtitle": "Junte-se à rede de nações visionárias que utilizam dados para proteger seu patrimônio natural e garantir seu futuro econômico.",
+    "teaser_greengate_badge": "PRIMEIRA IMPLANTAÇÃO — SOMALILÂNDIA",
+    "teaser_greengate_title": "O Sistema Digital Green Gate",
+    "teaser_greengate_desc": "Uma plataforma revolucionária baseada em blockchain que permite aos estados africanos adotarem uma solução digital para a coleta de impostos de carbono e ambientais — primeira implantação em parceria com o jovem estado da Somalilândia.",
+    "teaser_greengate_cta": "Descubra a Parceria"
   },
   "Calculator": {
     "title": "Calculadora de Emissões e Pagamento de Compensação",
@@ -668,7 +672,7 @@
     "sidebar_collapse": "Recolher menu",
     "sidebar_expand": "Expandir menu",
     "sidebar_app_title": "AIS Portal",
-    "sidebar_app_subtitle": "Green Gate",
+    "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOVERNO DE SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CRIPTOGRAFADO"
