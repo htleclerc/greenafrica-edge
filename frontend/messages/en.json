@@ -1105,7 +1105,7 @@
     "generate_proforma_pdf": "Generate Pro-forma Invoice (PDF)",
     "view_tax_invoice": "View Tax Invoice (PDF)",
     "proforma_preview_title": "Pro-forma Invoice Preview",
-    "print_save_pdf": "Print / Save PDF",
+    "print_save_pdf": "Print PDF",
     "vessel_and_port_call": "Vessel & Port Call",
     "change_vessel": "Change Vessel",
     "arrival_date": "Arrival Date",
@@ -1137,7 +1137,7 @@
     "pdf_payment_notice": "Payment required within 30 days to obtain maritime clearance.",
     "pdf_remit_to": "Remit to the Sovereign Climate Fund — BER-DC1 / AES-256 Encrypted",
     "cancel": "Cancel",
-    "draft_save": "Draft Save",
+    "draft_save": "Save PDF",
     "print_and_send": "Print & Send →",
     "contest_invoice": "Contest"
   },

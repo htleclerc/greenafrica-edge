@@ -1038,7 +1038,7 @@
     "generate_proforma_pdf": "Tengeneza Ankara ya Pro-forma (PDF)",
     "view_tax_invoice": "Tazama Ankara ya Kodi (PDF)",
     "proforma_preview_title": "Muhtasari wa Ankara ya Pro-forma",
-    "print_save_pdf": "Chapisha / Hifadhi PDF",
+    "print_save_pdf": "Chapisha PDF",
     "vessel_and_port_call": "Meli na Kusimama Bandarini",
     "change_vessel": "Badilisha Meli",
     "arrival_date": "Tarehe ya Kuwasili",
@@ -1070,7 +1070,7 @@
     "pdf_payment_notice": "Malipo yanahitajika ndani ya siku 30 ili kupata ruhusa ya bahari.",
     "pdf_remit_to": "Tuma kwa Mfuko wa Hali ya Hewa wa Enzi Kuu — BER-DC1 / Usimbaji AES-256",
     "cancel": "Ghairi",
-    "draft_save": "Hifadhi Rasimu",
+    "draft_save": "Hifadhi PDF",
     "print_and_send": "Chapisha na Tuma →",
     "contest_invoice": "Contest"
   },

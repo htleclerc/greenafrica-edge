@@ -165,6 +165,7 @@ export enum AuditAction {
     LOGOUT                  = 'LOGOUT',
     VESSEL_VIEWED           = 'VESSEL_VIEWED',
     INVOICE_GENERATED       = 'INVOICE_GENERATED',
+    INVOICE_SENT            = 'INVOICE_SENT',
     TAX_RATE_UPDATED        = 'TAX_RATE_UPDATED',
     EXEMPTION_GRANTED       = 'EXEMPTION_GRANTED',
     REPORT_EXPORTED         = 'REPORT_EXPORTED',

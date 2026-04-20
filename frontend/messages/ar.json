@@ -1041,7 +1041,7 @@
     "generate_proforma_pdf": "إنشاء فاتورة أولية (PDF)",
     "view_tax_invoice": "عرض الفاتورة الضريبية (PDF)",
     "proforma_preview_title": "معاينة الفاتورة الأولية",
-    "print_save_pdf": "طباعة / حفظ PDF",
+    "print_save_pdf": "طباعة PDF",
     "vessel_and_port_call": "السفينة والرسو",
     "change_vessel": "تغيير السفينة",
     "arrival_date": "تاريخ الوصول",
@@ -1073,7 +1073,7 @@
     "pdf_payment_notice": "يجب الدفع خلال 30 يوماً للحصول على التخليص البحري.",
     "pdf_remit_to": "التحويل إلى صندوق المناخ السيادي — BER-DC1 / مشفر AES-256",
     "cancel": "إلغاء",
-    "draft_save": "حفظ كمسودة",
+    "draft_save": "حفظ PDF",
     "print_and_send": "طباعة وإرسال →",
     "contest_invoice": "نزاع"
   },

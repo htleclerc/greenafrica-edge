@@ -651,6 +651,20 @@ function TransactionAuditTrail({ transactionId }: { transactionId: string }) {
                 color: '#10B981',
             };
         }
+        if (entry.action === 'INVOICE_SENT') {
+            const mode = (d as { mode?: string }).mode;
+            const ref = (d as { invoiceRef?: string }).invoiceRef;
+            const email = (d as { recipientEmail?: string }).recipientEmail;
+            const delivery = (d as { delivery?: { succeeded?: boolean; error?: string | null } }).delivery;
+            const status = delivery?.succeeded === false
+                ? ' · delivery pending (SMTP not verified)'
+                : '';
+            return {
+                label: mode === 'invoice' ? 'Tax invoice emailed to armateur' : 'Pro-forma emailed to armateur',
+                sub: `${ref || ''}${email ? ` → ${email}` : ''} · by ${entry.user_full_name}${status}`,
+                color: '#38BDF8',
+            };
+        }
         if (entry.action === 'TRANSACTION_UPDATED') {
             const oldS = (d as { previousStatus?: string; oldStatus?: string }).previousStatus
                 || (d as { oldStatus?: string }).oldStatus;

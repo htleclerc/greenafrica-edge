@@ -1,14 +1,33 @@
+import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle } from 'lucide-react';
-import { parseInvoiceRef } from '@/services/invoiceService';
+import { verifyInvoiceSignature } from '@/services/invoiceService';
+import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 /**
- * Public verification page — anyone can scan a QR code on a printed
- * pro-forma or invoice and land here to check the document's status
- * in real time.
+ * Public verification page — anyone can scan the QR on a printed pro-forma
+ * or invoice and land here to confirm the document is authentic.
  *
- * No auth required. Read-only. Uses service_role key on the server
- * to bypass RLS, but only returns a small public-safe summary.
+ * Security model (post-2026-04 fraud audit):
+ *
+ *   1. The QR URL carries `?h=<contentHash>&s=<signature>`. Without both,
+ *      the page returns "Document Not Found" with NO DB lookup — this
+ *      neutralizes ref-enumeration: an attacker cannot probe refs by
+ *      walking `PRO-2026-00000000` → `PRO-2026-ffffffff` because every
+ *      response is identical.
+ *
+ *   2. The signature is a constant-time HMAC-SHA256 check. Forged URLs
+ *      (valid ref, wrong signature) land in the same "Not Found" branch.
+ *
+ *   3. Only after the signature passes do we hit the DB — by equality on
+ *      `transactions.invoice_ref`. We additionally compare the DB
+ *      content_hash to the URL hash to catch any mismatch (stale link,
+ *      rotated signing secret, replay).
+ *
+ *   4. The verifier sees the authoritative fields (amount, vessel, owner,
+ *      IMO) with a prominent "Compare this to your printed document — if
+ *      they don't match, it's a forgery" notice. This is the only signal
+ *      the verifier has that the paper copy wasn't re-typed after issue.
  */
 
 interface VerifyResult {
@@ -22,71 +41,59 @@ interface VerifyResult {
     status?: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPT' | 'DISPUTED';
     paidAt?: string | null;
     createdAt?: string;
-    pdfUrl?: string | null;
+    contentHash?: string;
+    downloadUrl?: string | null;
 }
 
-async function fetchInvoiceStatus(ref: string): Promise<VerifyResult> {
+async function fetchVerifiedInvoice(
+    ref: string,
+    hash: string | null,
+    signature: string | null,
+): Promise<VerifyResult> {
+    // Per-IP throttle. Returns { found: false } when exceeded so the
+    // response shape is identical to "ref doesn't exist" / "bad signature"
+    // — attackers can't distinguish throttling from missing data.
+    const h = await headers();
+    const clientId = getClientId(h);
+    const rate = await enforceRateLimit('verify', clientId);
+    if (!rate.allowed) return { found: false };
+
+    // No signature tokens → treat as "not found" so enumeration attempts
+    // get the same response as a missing ref.
+    if (!hash || !signature) return { found: false };
+    if (!verifyInvoiceSignature(ref, hash, signature)) return { found: false };
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return { found: false };
 
-    if (!supabaseUrl || !supabaseKey) {
-        return { found: false };
-    }
+    // Using the anon key + SECURITY DEFINER RPC so the set of columns
+    // reachable from this public endpoint is hard-capped at the DB layer.
+    // A future refactor that tries to read extra columns would need to
+    // alter the function signature — a deliberate, reviewable change.
+    const anon = createClient(supabaseUrl, anonKey);
 
-    const admin = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await anon.rpc('verify_invoice_lookup', {
+        p_ref: ref,
+        p_hash: hash,
+    });
 
-    // Parse the canonical reference format via the shared helper.
-    //   PRO-2026-XXXX → pro-forma (unpaid bill)
-    //   INV-2026-XXXX → tax invoice (legal bill)
-    //   RCT-2026-XXXX → official receipt (proof of payment)
-    const parsed = parseInvoiceRef(ref);
-    if (!parsed) return { found: false };
-
-    const idSuffix = parsed.idSuffix;
-
-    // Find transaction whose id starts with the suffix
-    // Note: receipt_pdf_url may not exist yet if migration 014 hasn't been applied.
-    // We try a wider select first; if it errors we fall back without that column.
-    let txs;
-    {
-        const result = await admin
-            .from('transactions')
-            .select('id, vessel_name, vessel_imo, port_call, transaction_type, tax_amount_usd, status, paid_at, created_at, invoice_pdf_url, receipt_pdf_url')
-            .ilike('id', `${idSuffix}%`)
-            .limit(1);
-        if (result.error) {
-            const fallback = await admin
-                .from('transactions')
-                .select('id, vessel_name, vessel_imo, port_call, transaction_type, tax_amount_usd, status, paid_at, created_at, invoice_pdf_url')
-                .ilike('id', `${idSuffix}%`)
-                .limit(1);
-            txs = fallback.data;
-        } else {
-            txs = result.data;
-        }
-    }
-
-    if (!txs || txs.length === 0) return { found: false };
-    const tx = txs[0];
-
-    // For RCT- refs, prefer the receipt PDF; otherwise the invoice PDF
-    const isReceipt = ref.toUpperCase().startsWith('RCT-');
-    const preferredPdfUrl = isReceipt
-        ? (tx as { receipt_pdf_url?: string | null }).receipt_pdf_url || tx.invoice_pdf_url
-        : tx.invoice_pdf_url;
+    if (error || !data || data.length === 0) return { found: false };
+    const tx = data[0];
 
     return {
         found: true,
-        invoiceRef: ref.toUpperCase(),
+        invoiceRef: tx.invoice_ref ?? ref,
         vesselName: tx.vessel_name,
         vesselImo: tx.vessel_imo,
-        portCall: tx.port_call,
+        portCall: tx.port_call ?? '—',
         transactionType: tx.transaction_type,
         amountUsd: Number(tx.tax_amount_usd),
-        status: tx.status,
+        status: tx.status as VerifyResult['status'],
         paidAt: tx.paid_at,
         createdAt: tx.created_at,
-        pdfUrl: preferredPdfUrl,
+        contentHash: tx.content_hash ?? undefined,
+        downloadUrl: `/api/invoices/${encodeURIComponent(ref)}/download?h=${hash}&s=${signature}`,
     };
 }
 
@@ -98,9 +105,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     EXEMPT:   { label: 'Exempt',    color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)', Icon: Shield },
 };
 
-export default async function VerifyPage({ params }: { params: Promise<{ ref: string }> }) {
+export default async function VerifyPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ ref: string }>;
+    searchParams: Promise<{ h?: string; s?: string }>;
+}) {
     const { ref } = await params;
-    const result = await fetchInvoiceStatus(ref);
+    const { h, s } = await searchParams;
+    const result = await fetchVerifiedInvoice(ref, h ?? null, s ?? null);
 
     return (
         <div
@@ -135,7 +149,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ ref: st
                             <Shield style={{ width: '18px', height: '18px', color: 'white' }} />
                         </div>
                         <div>
-                            <p style={{ fontSize: '14px', fontWeight: 800, color: 'white', margin: 0, letterSpacing: '-0.3px' }}>AFRICGREEN</p>
+                            <p style={{ fontSize: '14px', fontWeight: 800, color: 'white', margin: 0, letterSpacing: '-0.3px' }}>GREEN GATE</p>
                             <p style={{ fontSize: '8px', fontWeight: 700, color: '#10B981', margin: 0, letterSpacing: '1.5px' }}>SOVEREIGN CARBON PLATFORM</p>
                         </div>
                     </div>
@@ -148,10 +162,11 @@ export default async function VerifyPage({ params }: { params: Promise<{ ref: st
                         <XCircle style={{ width: '48px', height: '48px', color: '#DC2626', margin: '0 auto 12px' }} />
                         <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'white', margin: '0 0 6px' }}>Document Not Found</h1>
                         <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
-                            No document matches reference <code style={{ color: '#10B981', fontFamily: 'monospace' }}>{ref}</code>
+                            The verification link is missing, invalid, or the document does not exist.
                         </p>
                         <p style={{ fontSize: '11px', color: '#64748B', marginTop: '16px' }}>
-                            If you believe this is an error, contact the Maritime Carbon Tax Authority.
+                            Always scan the QR code printed on an original document — typed or altered
+                            links will not verify.
                         </p>
                     </div>
                 ) : (() => {
@@ -178,16 +193,33 @@ export default async function VerifyPage({ params }: { params: Promise<{ ref: st
                                 </p>
                             </div>
 
+                            {/* Anti-forgery notice */}
+                            <div style={{
+                                margin: '16px 24px 0',
+                                padding: '10px 12px',
+                                background: 'rgba(16,185,129,0.08)',
+                                borderLeft: '3px solid #10B981',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                color: '#94A3B8',
+                                lineHeight: 1.5,
+                            }}>
+                                <strong style={{ color: '#10B981' }}>Verify these fields</strong> against your printed document.
+                                If the amount, vessel, or IMO differ, <strong style={{ color: '#DC2626' }}>the document is a forgery</strong> —
+                                contact the Maritime Carbon Tax Authority.
+                            </div>
+
                             {/* Details */}
-                            <div style={{ padding: '20px 24px' }}>
-                                <DetailRow label="Vessel" value={result.vesselName} />
+                            <div style={{ padding: '12px 24px 4px' }}>
+                                <DetailRow label="Vessel" value={result.vesselName} bold />
                                 <DetailRow label="IMO Number" value={result.vesselImo} mono />
                                 <DetailRow label="Port of Call" value={result.portCall} />
                                 <DetailRow label="Transaction Type" value={result.transactionType?.replace('_', ' ')} />
                                 <DetailRow
                                     label="Amount Due"
-                                    value={`$${result.amountUsd?.toLocaleString()} USD`}
+                                    value={`$${result.amountUsd?.toLocaleString('en-US', { maximumFractionDigits: 0 })} USD`}
                                     bold
+                                    highlight={config.color}
                                 />
                                 <DetailRow
                                     label="Issued"
@@ -197,15 +229,23 @@ export default async function VerifyPage({ params }: { params: Promise<{ ref: st
                                     <DetailRow
                                         label="Paid On"
                                         value={new Date(result.paidAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        highlight={config.color}
+                                        highlight="#10B981"
                                     />
                                 )}
                             </div>
 
-                            {result.pdfUrl && (
+                            {/* Content-hash fingerprint — small, so paranoid verifiers
+                                 can cross-check the 8-char prefix vs the PDF metadata */}
+                            {result.contentHash && (
+                                <div style={{ padding: '4px 24px 12px', fontFamily: 'monospace', fontSize: '10px', color: '#475569' }}>
+                                    Fingerprint: {result.contentHash.slice(0, 16)}…
+                                </div>
+                            )}
+
+                            {result.downloadUrl && (
                                 <div style={{ padding: '0 24px 20px' }}>
                                     <a
-                                        href={result.pdfUrl}
+                                        href={result.downloadUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         style={{
@@ -238,7 +278,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ ref: st
                     textAlign: 'center',
                 }}>
                     <p style={{ margin: 0 }}>
-                        Republic of Somaliland · Maritime Carbon Tax Authority · AES-256 Encrypted
+                        Republic of Somaliland · Maritime Carbon Tax Authority · Verified by SOLIDE TECHNOLOGY
                     </p>
                 </div>
             </div>

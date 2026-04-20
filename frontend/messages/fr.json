@@ -1105,7 +1105,7 @@
     "generate_proforma_pdf": "Générer la facture pro-forma (PDF)",
     "view_tax_invoice": "Voir la facture fiscale (PDF)",
     "proforma_preview_title": "Aperçu de la facture pro-forma",
-    "print_save_pdf": "Imprimer / Enregistrer PDF",
+    "print_save_pdf": "Imprimer PDF",
     "vessel_and_port_call": "Navire et escale",
     "change_vessel": "Changer de navire",
     "arrival_date": "Date d'arrivée",
@@ -1137,7 +1137,7 @@
     "pdf_payment_notice": "Paiement requis sous 30 jours pour obtenir l'autorisation maritime.",
     "pdf_remit_to": "Verser au Fonds Souverain pour le Climat — BER-DC1 / Chiffrement AES-256",
     "cancel": "Annuler",
-    "draft_save": "Enregistrer le brouillon",
+    "draft_save": "Enregistrer PDF",
     "print_and_send": "Imprimer et envoyer →",
     "contest_invoice": "Contester"
   },

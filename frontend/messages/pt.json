@@ -1038,7 +1038,7 @@
     "generate_proforma_pdf": "Gerar Fatura Pro-forma (PDF)",
     "view_tax_invoice": "Ver Fatura Fiscal (PDF)",
     "proforma_preview_title": "Pré-visualização da Fatura Pro-forma",
-    "print_save_pdf": "Imprimir / Salvar PDF",
+    "print_save_pdf": "Imprimir PDF",
     "vessel_and_port_call": "Embarcação e Escala",
     "change_vessel": "Alterar Embarcação",
     "arrival_date": "Data de Chegada",
@@ -1070,7 +1070,7 @@
     "pdf_payment_notice": "Pagamento necessário em até 30 dias para obter autorização marítima.",
     "pdf_remit_to": "Remeter ao Fundo Soberano do Clima — BER-DC1 / Criptografia AES-256",
     "cancel": "Cancelar",
-    "draft_save": "Salvar Rascunho",
+    "draft_save": "Salvar PDF",
     "print_and_send": "Imprimir e Enviar →",
     "contest_invoice": "Contestar"
   },
