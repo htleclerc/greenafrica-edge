@@ -2,7 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 // Routes that require authentication
-const PROTECTED_PREFIXES = ['/dashboard', '/admin'];
+// /auth/setup-password is here because it's reached AFTER /auth/sl has
+// established a Supabase session — visiting it without auth means the
+// invitation link is expired or the cookies were cleared; bounce to /login.
+const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/auth/setup-password'];
 
 // Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
 const AUTH_ROUTES = ['/login', '/post-login'];

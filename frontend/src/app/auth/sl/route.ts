@@ -4,12 +4,17 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 /**
- * GET /auth/sl?t=<signed-jwt>
+ * GET /auth/sl?t=<signed-jwt>[&r=<same-origin-path>]
  *
  * Custom signed login link. The JWT (HS256) is generated offline via
- * scripts/gen-signed-link.mjs and carries { email, exp }. On valid
+ * scripts/gen-signed-link.mjs OR server-side via lib/auth/signedLink.ts
+ * (used by the invite-armateur flow) and carries { email, exp }. On valid
  * signature + not-expired, we mint a fresh Supabase OTP via the admin API,
  * exchange it for a session, set cookies via the SSR helper, and redirect.
+ *
+ * Optional `r` param: same-origin path to redirect to after auth (defaults
+ * to /dashboard). Used by invite flow to land users on /auth/setup-password
+ * so they can set their initial password before reaching the dashboard.
  *
  * Why not use Supabase's magic link directly?
  *   - Supabase OTP_EXP is a project-wide setting (default 1h).
@@ -78,7 +83,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Session exchange failed' }, { status: 500 });
     }
 
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    // Resolve the post-auth redirect target. Defaults to /dashboard; the
+    // optional `r` param lets a caller (e.g. invite flow) send the user
+    // somewhere else first. We strictly require a same-origin path (starts
+    // with '/' and is NOT a protocol-relative '//host' URL) — anything else
+    // would be an open-redirect vulnerability.
+    let redirectPath = '/dashboard';
+    const rParam = request.nextUrl.searchParams.get('r');
+    if (rParam && rParam.startsWith('/') && !rParam.startsWith('//')) {
+        redirectPath = rParam;
+    }
+
+    const response = NextResponse.redirect(new URL(redirectPath, request.url));
     // Wipe any stale demo-mode flag so the real Supabase session is what the
     // RoleContext picks up. localStorage is cleared client-side in RoleContext.
     response.cookies.set('demo_active', '', { path: '/', maxAge: 0 });
