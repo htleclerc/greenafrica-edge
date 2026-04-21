@@ -135,6 +135,12 @@ export interface Transaction {
     portCall: string;
     createdAt: string;          // ISO datetime
     paidAt: string | null;
+    // HMAC fields exposed so the armateur "Voir la proforma" button can
+    // construct the signed download URL without an extra round-trip.
+    // Null until /api/invoices/generate has been called by staff.
+    invoiceRef?: string | null;
+    contentHash?: string | null;
+    verifySignature?: string | null;
 }
 
 // ── Exemptions ────────────────────────────────────────────────────────────────
@@ -210,6 +216,16 @@ export interface DashboardKpis {
     nonCompliantCount: number;
     systemStatus: 'ONLINE' | 'DEGRADED' | 'OFFLINE';
     lastAisSyncUtc: string;
+}
+
+// Armateur-specific KPIs. Different shape from DashboardKpis because the
+// armateur's priorities are outstanding balance + overdue count, not platform-
+// wide revenue/CO2. Used only when role === SHIPPING_AGENT on /dashboard.
+export interface ArmateurKpis {
+    outstandingTotalUsd: number;        // SUM(tax_amount_usd) WHERE status=PENDING on own fleet
+    vesselsActive: number;              // count own fleet with compliance_status != EXEMPT
+    taxPaidYtdUsd: number;              // SUM(tax_amount_usd) WHERE status=PAID and YTD on own fleet
+    overdueCount: number;               // count tx PENDING with created_at < NOW - 30 days
 }
 
 // ── System Status ─────────────────────────────────────────────────────────────

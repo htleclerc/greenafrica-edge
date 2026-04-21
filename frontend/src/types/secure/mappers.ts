@@ -91,9 +91,10 @@ export function rowToSecureVessel(
 // ── Transaction ─────────────────────────────────────────────────────────────
 
 export function rowToTransaction(row: TransactionRow): Transaction {
+    const r = row as Record<string, unknown>;
     return {
         id: row.id,
-        ref: (row as Record<string, unknown>).ref as string ?? row.id,
+        ref: (r.ref as string) ?? row.id,
         vesselId: row.vessel_id,
         vesselName: row.vessel_name,
         vesselImo: row.vessel_imo,
@@ -102,10 +103,13 @@ export function rowToTransaction(row: TransactionRow): Transaction {
         taxAmountUsd: Number(row.tax_amount_usd),
         status: row.status as TransactionStatus,
         invoicePdfUrl: row.invoice_pdf_url,
-        receiptPdfUrl: (row as Record<string, unknown>).receipt_pdf_url as string | null ?? null,
+        receiptPdfUrl: (r.receipt_pdf_url as string | null) ?? null,
         portCall: row.port_call ?? '',
         createdAt: row.created_at,
         paidAt: row.paid_at,
+        invoiceRef: (r.invoice_ref as string | null) ?? null,
+        contentHash: (r.content_hash as string | null) ?? null,
+        verifySignature: (r.verify_signature as string | null) ?? null,
     };
 }
 

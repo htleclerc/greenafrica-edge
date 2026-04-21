@@ -988,7 +988,9 @@
     "status_paid": "PAGO",
     "status_pending": "PENDENTE",
     "status_overdue": "ATRASADO",
-    "status_disputed": "CONTESTADO"
+    "status_disputed": "CONTESTADO",
+    "detail_view_payments": "Ver Pagamentos",
+    "detail_simulate": "Simular"
   },
   "InvoicesPage": {
     "status_paid": "PAGO",
@@ -2260,7 +2262,7 @@
     "checklist_title": "Lista de Verificação de Conformidade",
     "check_ais": "Transponder AIS Ativo",
     "check_documents": "Documentos de Emissão a Bordo",
-    "check_co2_cert": "Certificado CO\u2082 Válido",
+    "check_co2_cert": "Certificado CO₂ Válido",
     "check_fuel_log": "Registro de Combustível Disponível",
     "check_safety": "Equipamento de Segurança OK",
     "findings_label": "Constatações e Observações",
@@ -2312,5 +2314,48 @@
     "submitting": "Enviando...",
     "success_title": "Solicitação Recebida",
     "success_desc": "Obrigado pelo seu interesse na implantação do sistema Green Gate Digital. A nossa equipa de parcerias analisará o seu pedido e responderá em até 48 horas."
+  },
+  "ArmateurDashboard": {
+    "title": "Portal do armador",
+    "sub": "{company} · {count, plural, =0 {nenhuma embarcação ativa} =1 {1 embarcação ativa} other {# embarcações ativas}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Em aberto",
+    "vessels_active_label": "Embarcações ativas",
+    "paid_ytd_label": "Pago no ano",
+    "overdue_label": "Em atraso"
+  },
+  "NextPaymentCard": {
+    "label": "Próximo pagamento",
+    "empty_title": "Em dia",
+    "empty_sub": "Nenhum pagamento pendente em sua frota.",
+    "empty_cta": "Simular um pagamento",
+    "cta": "Ver detalhes",
+    "days_caption": "{count, plural, =1 {dia restante} other {dias restantes}}",
+    "overdue_caption": "{count, plural, =1 {dia em atraso} other {dias em atraso}}"
+  },
+  "OnboardingBanner": {
+    "title": "Bem-vindo",
+    "sub": "Registe a sua primeira embarcação para começar a usar o portal.",
+    "cta": "Adicionar embarcação"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {1 fatura em atraso} other {# faturas em atraso}}",
+    "total": "Total: {total}",
+    "cta": "Pagar agora"
+  },
+  "ProformaActionButton": {
+    "generate": "Gerar pró-forma",
+    "view": "Ver pró-forma",
+    "pending": "Pendente",
+    "pending_tooltip": "Aguardando a emissão pela autoridade portuária."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Data",
+    "col_ref": "Referência",
+    "col_amount": "Montante",
+    "col_status": "Estado",
+    "empty_title": "Sem pagamentos",
+    "empty_sub": "Esta embarcação ainda não tem histórico de pagamentos."
   }
 }

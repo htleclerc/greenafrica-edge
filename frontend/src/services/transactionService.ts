@@ -23,6 +23,25 @@ export async function getTransactionsByVessel(client: Client, vesselId: string):
     return ((data ?? []) as TransactionRow[]).map(rowToTransaction);
 }
 
+/**
+ * Oldest PENDING transaction. When SSR-scoped as a SHIPPING_AGENT, RLS filters
+ * to own fleet automatically. Returns null when there's no PENDING tx — caller
+ * renders the "Compte à jour" empty state for armateurs.
+ *
+ * Used by NextPaymentCard to show days-remaining based on a 30-day due-window
+ * (created_at + 30d). PR-2 NET-30 will replace this with a stored due_date.
+ */
+export async function getNextPendingTransaction(client: Client): Promise<Transaction | null> {
+    const { data } = await client
+        .from('transactions')
+        .select('*')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+    return data ? rowToTransaction(data as TransactionRow) : null;
+}
+
 export async function createTransaction(
     client: Client,
     input: Record<string, unknown>,

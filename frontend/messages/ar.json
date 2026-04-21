@@ -991,7 +991,9 @@
     "status_paid": "مدفوع",
     "status_pending": "معلق",
     "status_overdue": "متأخر",
-    "status_disputed": "متنازع عليه"
+    "status_disputed": "متنازع عليه",
+    "detail_view_payments": "عرض المدفوعات",
+    "detail_simulate": "محاكاة"
   },
   "InvoicesPage": {
     "status_paid": "مدفوع",
@@ -2263,7 +2265,7 @@
     "checklist_title": "قائمة التحقق من الامتثال",
     "check_ais": "جهاز إرسال AIS نشط",
     "check_documents": "وثائق الانبعاثات على متن السفينة",
-    "check_co2_cert": "شهادة CO\u2082 صالحة",
+    "check_co2_cert": "شهادة CO₂ صالحة",
     "check_fuel_log": "سجل الوقود متاح",
     "check_safety": "معدات السلامة جيدة",
     "findings_label": "النتائج والملاحظات",
@@ -2315,5 +2317,48 @@
     "submitting": "جارٍ الإرسال...",
     "success_title": "تم استلام الطلب",
     "success_desc": "شكراً لاهتمامك بنشر نظام Green Gate الرقمي. سيقوم فريق الشراكات لدينا بمراجعة طلبك والرد عليك خلال 48 ساعة."
+  },
+  "ArmateurDashboard": {
+    "title": "بوابة مالك السفينة",
+    "sub": "{company} · {count, plural, =0 {لا توجد سفن نشطة} =1 {سفينة واحدة نشطة} other {# سفن نشطة}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "مستحق",
+    "vessels_active_label": "السفن النشطة",
+    "paid_ytd_label": "المدفوع هذا العام",
+    "overdue_label": "متأخر"
+  },
+  "NextPaymentCard": {
+    "label": "الدفع التالي",
+    "empty_title": "كل شيء محدث",
+    "empty_sub": "لا توجد مدفوعات معلقة على أسطولك.",
+    "empty_cta": "محاكاة دفعة",
+    "cta": "عرض التفاصيل",
+    "days_caption": "{count, plural, =1 {يوم متبقٍ} other {أيام متبقية}}",
+    "overdue_caption": "{count, plural, =1 {يوم متأخر} other {أيام متأخرة}}"
+  },
+  "OnboardingBanner": {
+    "title": "مرحباً",
+    "sub": "سجّل سفينتك الأولى للبدء باستخدام البوابة.",
+    "cta": "إضافة سفينة"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {فاتورة متأخرة واحدة} other {# فواتير متأخرة}}",
+    "total": "الإجمالي: {total}",
+    "cta": "ادفع الآن"
+  },
+  "ProformaActionButton": {
+    "generate": "إنشاء فاتورة مبدئية",
+    "view": "عرض الفاتورة المبدئية",
+    "pending": "معلّق",
+    "pending_tooltip": "بانتظار إصدارها من سلطة الميناء."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "التاريخ",
+    "col_ref": "المرجع",
+    "col_amount": "المبلغ",
+    "col_status": "الحالة",
+    "empty_title": "لا توجد مدفوعات",
+    "empty_sub": "لا يوجد سجل مدفوعات لهذه السفينة بعد."
   }
 }

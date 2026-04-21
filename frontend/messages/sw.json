@@ -988,7 +988,9 @@
     "status_paid": "IMELIPWA",
     "status_pending": "INASUBIRI",
     "status_overdue": "IMECHELEWA",
-    "status_disputed": "INAPINGWA"
+    "status_disputed": "INAPINGWA",
+    "detail_view_payments": "Ona Malipo",
+    "detail_simulate": "Jaribu"
   },
   "InvoicesPage": {
     "status_paid": "IMELIPWA",
@@ -2260,7 +2262,7 @@
     "checklist_title": "Orodha ya Ukaguzi wa Utiifu",
     "check_ais": "Kipitishio cha AIS Kinafanya Kazi",
     "check_documents": "Nyaraka za Uzalishaji Kwenye Meli",
-    "check_co2_cert": "Cheti cha CO\u2082 Halali",
+    "check_co2_cert": "Cheti cha CO₂ Halali",
     "check_fuel_log": "Kumbukumbu ya Mafuta Inapatikana",
     "check_safety": "Vifaa vya Usalama Sawa",
     "findings_label": "Matokeo na Uchunguzi",
@@ -2312,5 +2314,48 @@
     "submitting": "Inatuma...",
     "success_title": "Ombi Limepokelewa",
     "success_desc": "Asante kwa kupendezwa na kupeleka mfumo wa Green Gate Digital. Timu yetu ya ushirikiano itakagua ombi lako na kukujibu ndani ya masaa 48."
+  },
+  "ArmateurDashboard": {
+    "title": "Lango la Mmiliki wa Meli",
+    "sub": "{company} · {count, plural, =0 {hakuna meli inayotumika} =1 {meli 1 inayotumika} other {meli # zinazotumika}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Bado kulipwa",
+    "vessels_active_label": "Meli zinazotumika",
+    "paid_ytd_label": "Imelipwa mwaka huu",
+    "overdue_label": "Imechelewa"
+  },
+  "NextPaymentCard": {
+    "label": "Malipo Yajayo",
+    "empty_title": "Umekamilisha",
+    "empty_sub": "Hakuna malipo yanayosubiri kwa meli zako.",
+    "empty_cta": "Jaribu malipo",
+    "cta": "Ona maelezo",
+    "days_caption": "{count, plural, =1 {siku iliyobaki} other {siku zilizobaki}}",
+    "overdue_caption": "{count, plural, =1 {siku imechelewa} other {siku zimechelewa}}"
+  },
+  "OnboardingBanner": {
+    "title": "Karibu",
+    "sub": "Sajili meli yako ya kwanza ili kuanza kutumia lango.",
+    "cta": "Ongeza meli"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {ankara 1 iliyochelewa} other {ankara # zilizochelewa}}",
+    "total": "Jumla: {total}",
+    "cta": "Lipa sasa"
+  },
+  "ProformaActionButton": {
+    "generate": "Tengeneza Pro-forma",
+    "view": "Ona pro-forma",
+    "pending": "Inasubiri",
+    "pending_tooltip": "Inasubiri kutolewa na mamlaka ya bandari."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Tarehe",
+    "col_ref": "Marejeleo",
+    "col_amount": "Kiasi",
+    "col_status": "Hali",
+    "empty_title": "Hakuna malipo",
+    "empty_sub": "Meli hii bado haina historia ya malipo."
   }
 }

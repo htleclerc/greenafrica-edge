@@ -1055,7 +1055,9 @@
     "status_paid": "PAYÉ",
     "status_pending": "EN ATTENTE",
     "status_overdue": "EN RETARD",
-    "status_disputed": "CONTESTÉ"
+    "status_disputed": "CONTESTÉ",
+    "detail_view_payments": "Voir les paiements",
+    "detail_simulate": "Simuler"
   },
   "InvoicesPage": {
     "status_paid": "PAYÉ",
@@ -2327,7 +2329,7 @@
     "checklist_title": "Liste de Conformité",
     "check_ais": "Transpondeur AIS Actif",
     "check_documents": "Documents d'Émission à Bord",
-    "check_co2_cert": "Certificat CO\u2082 Valide",
+    "check_co2_cert": "Certificat CO₂ Valide",
     "check_fuel_log": "Journal de Carburant Disponible",
     "check_safety": "Équipement de Sécurité OK",
     "findings_label": "Constatations & Observations",
@@ -2379,5 +2381,48 @@
     "submitting": "Envoi en cours...",
     "success_title": "Demande Reçue",
     "success_desc": "Merci pour votre intérêt dans le déploiement du système Green Gate Digital. Notre équipe partenariat examinera votre demande et vous répondra sous 48 heures."
+  },
+  "ArmateurDashboard": {
+    "title": "Portail armateur",
+    "sub": "{company} · {count, plural, =0 {aucun vessel actif} =1 {1 vessel actif} other {# vessels actifs}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Solde dû",
+    "vessels_active_label": "Vessels actifs",
+    "paid_ytd_label": "Payé YTD",
+    "overdue_label": "En retard"
+  },
+  "NextPaymentCard": {
+    "label": "Prochain paiement",
+    "empty_title": "Compte à jour",
+    "empty_sub": "Aucun paiement en cours pour vos vessels.",
+    "empty_cta": "Simuler un paiement",
+    "cta": "Voir les détails",
+    "days_caption": "{count, plural, =1 {jour restant} other {jours restants}}",
+    "overdue_caption": "{count, plural, =1 {jour de retard} other {jours de retard}}"
+  },
+  "OnboardingBanner": {
+    "title": "Bienvenue",
+    "sub": "Ajoutez votre premier vessel pour commencer à utiliser le portail.",
+    "cta": "Ajouter un vessel"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {1 facture en retard} other {# factures en retard}}",
+    "total": "Total : {total}",
+    "cta": "Régler maintenant"
+  },
+  "ProformaActionButton": {
+    "generate": "Générer la proforma",
+    "view": "Voir la proforma",
+    "pending": "En attente",
+    "pending_tooltip": "En attente de génération par l'autorité portuaire."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Date",
+    "col_ref": "Référence",
+    "col_amount": "Montant",
+    "col_status": "Statut",
+    "empty_title": "Aucun paiement",
+    "empty_sub": "Ce vessel n'a pas encore d'historique de paiement."
   }
 }
