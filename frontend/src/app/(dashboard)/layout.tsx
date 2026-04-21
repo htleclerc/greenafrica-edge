@@ -101,24 +101,20 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     const { data: kpis } = useKpis();
     const { notifications, pendingRegistrations, unreadCount, markRead, markAllRead } = useNotifications();
 
-    // Persist sidebar state across navigations
-    // ── RBAC Enforcement & Demo Bypass ─────────────────────────────────────────
-    const [isEvicted, setIsEvicted] = React.useState(false);
-    
-    React.useEffect(() => {
-        const demoAllowed = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
-        const isDemoSessionFlag = isDemo && demoAllowed;
-
-        if (!ready || !user) return;
-        
-        // In demo mode (if allowed), we allow access to all dashboard pages for all roles
-        if (isDemoSessionFlag) return;
-        const saved = localStorage.getItem('sidebar_expanded');
-        if (saved === 'true') setExpanded(true);
-    }, []);
-
-    const [expanded, setExpanded] = React.useState(false);
+    // Sidebar state — default EXPANDED (the role/nav matrix is wide enough that
+    // labels make day-to-day navigation faster). Users who prefer the icon-only
+    // 56px mode can collapse it; their preference is persisted in localStorage.
+    //
+    // SSR renders expanded; on mount we hydrate from localStorage if the user
+    // previously collapsed it (brief flash from wide → narrow is acceptable for
+    // a non-critical UX preference).
+    const [expanded, setExpanded] = React.useState(true);
     const [mobileOpen, setMobileOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        const saved = localStorage.getItem('sidebar_expanded');
+        if (saved === 'false') setExpanded(false);
+    }, []);
 
     // Close mobile sidebar on route change
     React.useEffect(() => {
