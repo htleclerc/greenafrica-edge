@@ -16,6 +16,8 @@ import {
 import { transactionVariant } from '@/lib/badgeUtils';
 import { useRole } from '@/lib/RoleContext';
 import { canEdit } from '@/lib/rbac';
+import { updateTaxConfiguration } from '@/services/taxService';
+import { createClient } from '@/lib/supabase/client';
 
 const CATEGORY_LABEL: Partial<Record<VesselCategory, string>> = {
     [VesselCategory.CONTAINER]:    'Container Ship',
@@ -55,9 +57,15 @@ export function CarbonTaxSettingsPage() {
     const { data: exemptions } = useExemptions();
     const { data: kpis } = useKpis();
     const [configs, setConfigs] = React.useState<TaxConfiguration[]>(taxConfigs);
-    React.useEffect(() => { setConfigs(taxConfigs); }, [taxConfigs]);
+    const [originalConfigs, setOriginalConfigs] = React.useState<TaxConfiguration[]>(taxConfigs);
+    React.useEffect(() => {
+        setConfigs(taxConfigs);
+        setOriginalConfigs(taxConfigs);
+    }, [taxConfigs]);
     const [editId, setEditId]   = React.useState<string | null>(null);
     const [saved, setSaved]     = React.useState(false);
+    const [saving, setSaving]   = React.useState(false);
+    const [saveError, setSaveError] = React.useState<string | null>(null);
 
     function handleRateChange(id: string, value: number) {
         setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, baseRateUsdPerTco2: value } : c));
@@ -67,10 +75,45 @@ export function CarbonTaxSettingsPage() {
         setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, multiplier: value } : c));
     }
 
-    function handleSave() {
-        setSaved(true);
-        setEditId(null);
-        setTimeout(() => setSaved(false), 3000);
+    async function handleSave() {
+        if (isReadOnly || saving) return;
+        setSaving(true);
+        setSaveError(null);
+
+        const dirty = configs.filter((c) => {
+            const orig = originalConfigs.find((o) => o.id === c.id);
+            if (!orig) return false;
+            return orig.baseRateUsdPerTco2 !== c.baseRateUsdPerTco2 || orig.multiplier !== c.multiplier;
+        });
+
+        if (dirty.length === 0) {
+            setSaving(false);
+            setEditId(null);
+            return;
+        }
+
+        try {
+            const client = createClient();
+            const results = await Promise.all(
+                dirty.map((c) =>
+                    updateTaxConfiguration(client, c.id, {
+                        base_rate_usd_per_tco2: c.baseRateUsdPerTco2,
+                        multiplier: c.multiplier,
+                    }),
+                ),
+            );
+            if (results.some((r) => r === null)) {
+                throw new Error('One or more rows failed to update. Check RLS policies and your role.');
+            }
+            setOriginalConfigs(configs);
+            setSaved(true);
+            setEditId(null);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            setSaveError(err instanceof Error ? err.message : 'Save failed');
+        } finally {
+            setSaving(false);
+        }
     }
 
     const totalRevenueMtd = transactions
@@ -140,9 +183,14 @@ export function CarbonTaxSettingsPage() {
                                         <CheckCircle className="w-3.5 h-3.5" /> {t('saved')}
                                     </span>
                                 )}
+                                {saveError && (
+                                    <span className="flex items-center gap-1 text-xs text-[#EF4444]" title={saveError}>
+                                        <AlertTriangle className="w-3.5 h-3.5" /> {saveError}
+                                    </span>
+                                )}
                                 {!isReadOnly && (
-                                    <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave}>
-                                        {t('save_publish')}
+                                    <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave} disabled={saving}>
+                                        {saving ? 'Saving…' : t('save_publish')}
                                     </OsButton>
                                 )}
                             </div>

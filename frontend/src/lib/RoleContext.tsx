@@ -40,46 +40,10 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     React.useEffect(() => {
         async function resolve() {
             const supabase = createClient();
-            
-            // 1) Check demo mode flags
-            let demoActive = localStorage.getItem('demo_active');
-            let demoRole   = localStorage.getItem('demo_role') as UserRole | null;
 
-            if (!demoActive || !demoRole) {
-                const cookieMap = Object.fromEntries(
-                    document.cookie.split(';').map((c) => c.trim().split('='))
-                );
-                demoActive = cookieMap['demo_active'] ?? null;
-                demoRole   = (cookieMap['demo_role'] ?? null) as UserRole | null;
-            }
-
-            if (demoActive === 'true' && demoRole) {
-                const demoAllowedByEnv = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
-                
-                if (demoAllowedByEnv) {
-                    // Optional: Double check with Supabase for a "live" toggle
-                    const { data: config } = await supabase
-                        .from('app_config')
-                        .select('value')
-                        .eq('key', 'demo_mode')
-                        .single();
-                    
-                    const isRemoteEnabled = (config?.value as any)?.enabled ?? true;
-
-                    if (isRemoteEnabled) {
-                        const resolvedRole = Object.values(UserRole).includes(demoRole) ? demoRole : UserRole.PORT_OFFICER;
-                        const user = TEST_PROFILES.find((p) => p.role === resolvedRole) ?? TEST_PROFILES[0];
-                        setCtx({ role: resolvedRole, user, isDemo: true, ready: true });
-                        return;
-                    }
-                }
-                
-                // If demo cookies are present but mode is disabled, we clear them
-                localStorage.removeItem('demo_active');
-                localStorage.removeItem('demo_role');
-            }
-
-            // 2) Real auth: check Supabase session
+            // 1) Real auth takes precedence. If a Supabase session exists, use it
+            //    and clear any stale demo flags so the demo profile can't shadow a
+            //    real login (e.g. after /auth/sl signed link).
             try {
                 const { data: { user: authUser } } = await supabase.auth.getUser();
 
@@ -91,6 +55,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                         .single();
 
                     if (profile) {
+                        localStorage.removeItem('demo_active');
+                        localStorage.removeItem('demo_role');
+                        document.cookie = 'demo_active=; path=/; max-age=0';
+                        document.cookie = 'demo_role=; path=/; max-age=0';
+
                         const user: SecureUser = {
                             id: profile.id,
                             email: profile.email,
@@ -109,7 +78,43 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
             } catch {
-                // Supabase call failed — fall through to default
+                // Supabase call failed — fall through to demo / default
+            }
+
+            // 2) No real session → check demo mode flags
+            let demoActive = localStorage.getItem('demo_active');
+            let demoRole   = localStorage.getItem('demo_role') as UserRole | null;
+
+            if (!demoActive || !demoRole) {
+                const cookieMap = Object.fromEntries(
+                    document.cookie.split(';').map((c) => c.trim().split('='))
+                );
+                demoActive = cookieMap['demo_active'] ?? null;
+                demoRole   = (cookieMap['demo_role'] ?? null) as UserRole | null;
+            }
+
+            if (demoActive === 'true' && demoRole) {
+                const demoAllowedByEnv = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
+
+                if (demoAllowedByEnv) {
+                    const { data: config } = await supabase
+                        .from('app_config')
+                        .select('value')
+                        .eq('key', 'demo_mode')
+                        .single();
+
+                    const isRemoteEnabled = (config?.value as any)?.enabled ?? true;
+
+                    if (isRemoteEnabled) {
+                        const resolvedRole = Object.values(UserRole).includes(demoRole) ? demoRole : UserRole.PORT_OFFICER;
+                        const user = TEST_PROFILES.find((p) => p.role === resolvedRole) ?? TEST_PROFILES[0];
+                        setCtx({ role: resolvedRole, user, isDemo: true, ready: true });
+                        return;
+                    }
+                }
+
+                localStorage.removeItem('demo_active');
+                localStorage.removeItem('demo_role');
             }
 
             // 3) Fallback: no session, no demo → default (middleware should redirect to /login)

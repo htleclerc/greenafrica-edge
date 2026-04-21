@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale } from 'lucide-react';
+import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale, Download } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -116,12 +116,20 @@ export function InvoicesPage() {
         }
     }
 
+    // Optional vessel-scope filter driven by the URL (?vessel=<imo>). When
+    // present, the LEFT list is filtered to that vessel and the most recent
+    // tx is auto-selected. Armateurs reach this via "View Payments" on the
+    // LiveMapPanel popup or on MyFleet vessel cards.
+    const [vesselImoFilter, setVesselImoFilter] = React.useState<string | null>(null);
+
     // Auto-select transaction from URL params (?vessel=<imo> or ?tx=<ref>)
     React.useEffect(() => {
-        if (typeof window === 'undefined' || transactions.length === 0) return;
+        if (typeof window === 'undefined') return;
         const params = new URLSearchParams(window.location.search);
         const vesselImo = params.get('vessel');
         const txRef = params.get('tx');
+        setVesselImoFilter(vesselImo);
+        if (transactions.length === 0) return;
 
         if (txRef) {
             const match = transactions.find((tx) => tx.ref === txRef);
@@ -136,6 +144,42 @@ export function InvoicesPage() {
             if (matches.length > 0) setSelected(matches[0]);
         }
     }, [transactions]);
+
+    // Exports the currently visible (filtered) list to a CSV blob. Runs fully
+    // client-side — no server round-trip, no PII leaves the tab. Column order
+    // matches the table columns visible in the UI for consistency with what
+    // the user sees.
+    function handleExportCsv() {
+        const rows = filtered;
+        if (rows.length === 0) return;
+        const header = ['date', 'ref', 'vessel_name', 'vessel_imo', 'type', 'amount_usd', 'status', 'paid_at'];
+        const body = rows.map((tx) => [
+            new Date(tx.createdAt).toISOString(),
+            tx.ref,
+            tx.vesselName,
+            tx.vesselImo,
+            tx.transactionType,
+            String(tx.taxAmountUsd),
+            tx.status,
+            tx.paidAt ?? '',
+        ]);
+        const escape = (v: string) =>
+            /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+        const csv =
+            [header, ...body].map((row) => row.map(escape).join(',')).join('\n') + '\n';
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = vesselImoFilter
+            ? `payments-vessel-${vesselImoFilter}-${stamp}.csv`
+            : `payments-${stamp}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
@@ -153,12 +197,13 @@ export function InvoicesPage() {
 
     const filtered = transactions.filter((tx) => {
         const matchTab = tab === 'ALL' || tx.status === tab;
+        const matchVessel = !vesselImoFilter || tx.vesselImo === vesselImoFilter;
         const matchSearch = search === '' ||
             tx.vesselName.toLowerCase().includes(search.toLowerCase()) ||
             tx.vesselImo.includes(search) ||
             tx.ref.toLowerCase().includes(search.toLowerCase()) ||
             tx.id.includes(search.toLowerCase());
-        return matchTab && matchSearch;
+        return matchTab && matchVessel && matchSearch;
     });
 
     const totalRevenue = transactions
@@ -209,9 +254,9 @@ export function InvoicesPage() {
                         ))}
                     </div>
 
-                    {/* Search */}
-                    <div className="px-3 pb-2">
-                        <div className="relative">
+                    {/* Search + Export row */}
+                    <div className="px-3 pb-2 flex items-center gap-2">
+                        <div className="relative flex-1 min-w-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--os-text-muted)]" />
                             <input
                                 value={search}
@@ -220,7 +265,36 @@ export function InvoicesPage() {
                                 className="w-full h-8 pl-8 pr-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)] text-xs text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:outline-none focus:border-[#00D97E]/50 transition-colors"
                             />
                         </div>
+                        <button
+                            onClick={handleExportCsv}
+                            disabled={filtered.length === 0}
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                            aria-label={t('export_csv')}
+                            title={t('export_csv')}
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">{t('export_csv')}</span>
+                        </button>
                     </div>
+                    {vesselImoFilter && (
+                        <div className="px-3 pb-2 flex items-center gap-2 text-[11px] text-[var(--os-text-muted)]">
+                            <Ship className="w-3 h-3" />
+                            <span>{t('filter_by_vessel', { imo: vesselImoFilter })}</span>
+                            <button
+                                onClick={() => {
+                                    setVesselImoFilter(null);
+                                    if (typeof window !== 'undefined') {
+                                        const url = new URL(window.location.href);
+                                        url.searchParams.delete('vessel');
+                                        window.history.replaceState(null, '', url.toString());
+                                    }
+                                }}
+                                className="ml-auto text-[var(--os-brand-green)] hover:underline"
+                            >
+                                {t('filter_clear')}
+                            </button>
+                        </div>
+                    )}
 
                     {/* Invoice list */}
                     <div className="flex-1 overflow-y-auto divide-y divide-[var(--os-border)]">
@@ -649,6 +723,20 @@ function TransactionAuditTrail({ transactionId }: { transactionId: string }) {
                 label: mode === 'invoice' ? 'Tax invoice generated' : 'Pro-forma generated',
                 sub: `${ref || ''} · by ${entry.user_full_name}`,
                 color: '#10B981',
+            };
+        }
+        if (entry.action === 'INVOICE_SENT') {
+            const mode = (d as { mode?: string }).mode;
+            const ref = (d as { invoiceRef?: string }).invoiceRef;
+            const email = (d as { recipientEmail?: string }).recipientEmail;
+            const delivery = (d as { delivery?: { succeeded?: boolean; error?: string | null } }).delivery;
+            const status = delivery?.succeeded === false
+                ? ' · delivery pending (SMTP not verified)'
+                : '';
+            return {
+                label: mode === 'invoice' ? 'Tax invoice emailed to armateur' : 'Pro-forma emailed to armateur',
+                sub: `${ref || ''}${email ? ` → ${email}` : ''} · by ${entry.user_full_name}${status}`,
+                color: '#38BDF8',
             };
         }
         if (entry.action === 'TRANSACTION_UPDATED') {

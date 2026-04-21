@@ -117,6 +117,10 @@ export interface Database {
                     port_call: string | null;
                     created_at: string;
                     paid_at: string | null;
+                    proforma_sent_at: string | null;
+                    invoice_ref: string | null;
+                    content_hash: string | null;
+                    verify_signature: string | null;
                 };
                 Insert: {
                     id?: string;
@@ -130,6 +134,10 @@ export interface Database {
                     invoice_pdf_url?: string | null;
                     port_call?: string | null;
                     paid_at?: string | null;
+                    proforma_sent_at?: string | null;
+                    invoice_ref?: string | null;
+                    content_hash?: string | null;
+                    verify_signature?: string | null;
                 };
                 Update: Partial<Database['public']['Tables']['transactions']['Insert']>;
             };
@@ -420,7 +428,7 @@ export type DbJurisdictionZone = 'EEZ' | 'PORT_VICINITY' | 'TRANSIT_LANE';
 export type DbTransactionType = 'ENTRY_TAX' | 'TRANSIT_FEE' | 'PORT_STAY';
 export type DbTransactionStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'EXEMPT' | 'DISPUTED';
 export type DbExemptionReason = 'MILITARY' | 'HUMANITARIAN' | 'SCIENTIFIC' | 'UN_AGENCY' | 'OTHER';
-export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED' | 'DISPUTE_FILED' | 'DISPUTE_REVIEWED' | 'INSPECTION_COMPLETED';
+export type DbAuditAction = 'LOGIN' | 'LOGOUT' | 'VESSEL_VIEWED' | 'INVOICE_GENERATED' | 'INVOICE_SENT' | 'TAX_RATE_UPDATED' | 'EXEMPTION_GRANTED' | 'REPORT_EXPORTED' | 'USER_CREATED' | 'TRANSACTION_UPDATED' | 'DISPUTE_FILED' | 'DISPUTE_REVIEWED' | 'INSPECTION_COMPLETED';
 export type DbAuditSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 export type DbProjectType = 'BLUE_CARBON' | 'REFORESTATION' | 'SOLAR' | 'WIND' | 'METHANE_CAPTURE' | 'ENERGY_EFFICIENCY';
 export type DbProjectStatus = 'ACTIVE' | 'PENDING' | 'COMPLETED' | 'SUSPENDED' | 'UNDER_REVIEW';

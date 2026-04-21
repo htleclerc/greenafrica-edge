@@ -1,6 +1,15 @@
 import pg from 'pg';
 const { Client } = pg;
 
+// Reads password from frontend/.env.local (Node 20.12+ built-in, no dotenv needed).
+process.loadEnvFile(new URL('../frontend/.env.local', import.meta.url));
+
+const password = process.env.SUPABASE_DB_PASSWORD;
+if (!password) {
+  console.error('❌ Missing SUPABASE_DB_PASSWORD in frontend/.env.local');
+  process.exit(1);
+}
+
 const connConfigs = [
   {
     name: 'direct-5432',
@@ -8,7 +17,7 @@ const connConfigs = [
     port: 5432,
     database: 'postgres',
     user: 'postgres',
-    password: 'RrV6.$r&-E_Gmi5',
+    password,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },
@@ -18,13 +27,13 @@ const connConfigs = [
     port: 6543,
     database: 'postgres',
     user: 'postgres',
-    password: 'RrV6.$r&-E_Gmi5',
+    password,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },
   {
     name: 'connstring-direct',
-    connectionString: 'postgresql://postgres:RrV6.$r&-E_Gmi5@db.dyjolepwxxsedwngkfox.supabase.co:5432/postgres',
+    connectionString: `postgresql://postgres:${encodeURIComponent(password)}@db.dyjolepwxxsedwngkfox.supabase.co:5432/postgres`,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },
@@ -34,7 +43,7 @@ const connConfigs = [
     port: 6543,
     database: 'postgres',
     user: 'postgres.dyjolepwxxsedwngkfox',
-    password: 'RrV6.$r&-E_Gmi5',
+    password,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },
@@ -44,7 +53,7 @@ const connConfigs = [
     port: 6543,
     database: 'postgres',
     user: 'postgres.dyjolepwxxsedwngkfox',
-    password: 'RrV6.$r&-E_Gmi5',
+    password,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },
@@ -54,7 +63,7 @@ const connConfigs = [
     port: 6543,
     database: 'postgres',
     user: 'postgres.dyjolepwxxsedwngkfox',
-    password: 'RrV6.$r&-E_Gmi5',
+    password,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
   },

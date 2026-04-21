@@ -400,3 +400,56 @@ export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<Emai
         text: `OVERDUE: ${p.invoiceRef}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nDays overdue: ${p.daysOverdue}\n\nPay at: ${p.verifyUrl}`,
     });
 }
+
+// ── 6. Armateur invitation email ─────────────────────────────────────────────
+//
+// Sent by MANAGER / PORT_OFFICER / SUPERADMIN when onboarding a new shipping
+// agent. The recipient clicks the link → /auth/sl exchanges it for a Supabase
+// session → /auth/setup-password lets them choose their password → /dashboard.
+//
+// The link has a 6h TTL (configurable). The signed envelope is generated via
+// lib/auth/signedLink.ts so it cannot be forged.
+
+export interface ArmateurInviteParams {
+    to: string;
+    recipientName: string;
+    inviterName: string;       // who sent the invite (e.g. "Hassan Mahdi, Operations Manager")
+    orgName?: string;          // optional org name for personalization
+    inviteUrl: string;         // signed link — /auth/sl?t=...&r=/auth/setup-password
+    ttlHours: number;          // for the "valid for X hours" message
+}
+
+export async function sendArmateurInviteEmail(p: ArmateurInviteParams): Promise<EmailResult> {
+    const subject = `You're invited to Green Gate — Set up your shipping agent account`;
+    const orgLine = p.orgName
+        ? `<div class="meta-row"><span class="meta-label">Organization</span><span class="meta-value">${escapeHtml(p.orgName)}</span></div>`
+        : '';
+    const content = `
+        <h1>Welcome to Green Gate</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p><strong>${escapeHtml(p.inviterName)}</strong> has invited you to join the Green Gate Sovereign Carbon Platform as a <strong>Shipping Agent</strong>.</p>
+
+        <h2>Account Details</h2>
+        <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
+        <div class="meta-row"><span class="meta-label">Role</span><span class="meta-value">Shipping Agent</span></div>
+        ${orgLine}
+
+        <p>Click the button below to activate your account and choose your password. The link is valid for <strong>${p.ttlHours} hours</strong>.</p>
+
+        <a href="${escapeHtml(p.inviteUrl)}" class="btn">Activate My Account →</a>
+
+        <div class="alert alert-warn" style="margin-top:24px">
+            For your security, this link can only be used once and expires in ${p.ttlHours} hours.
+            If it expires, ask ${escapeHtml(p.inviterName)} to issue a new invitation.
+        </div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If you did not expect this invitation, you can safely ignore this email — no account will be created without you setting a password.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `${p.inviterName} invited you to Green Gate` }),
+        text: `You've been invited to Green Gate as a Shipping Agent by ${p.inviterName}.\n\nActivate your account: ${p.inviteUrl}\n\nThis link expires in ${p.ttlHours} hours.`,
+    });
+}

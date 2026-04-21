@@ -30,6 +30,7 @@ const ROLE_LABEL_KEY: Record<UserRole, string> = {
     [UserRole.FINANCE_ADMIN]:   'role_finance_admin',
     [UserRole.SHIPPING_AGENT]:  'role_shipping_agent',
     [UserRole.SUPERADMIN]:      'role_superadmin',
+    [UserRole.MANAGER]:         'role_operations_manager',
 };
 
 const ROLE_COLOR: Record<UserRole, string> = {
@@ -37,6 +38,7 @@ const ROLE_COLOR: Record<UserRole, string> = {
     [UserRole.FINANCE_ADMIN]:   '#EAB308',
     [UserRole.SHIPPING_AGENT]:  '#3B82F6',
     [UserRole.SUPERADMIN]:      '#F97316',
+    [UserRole.MANAGER]:         '#8B5CF6',
 };
 
 // ── Relative time formatter ──────────────────────────────────────────────────

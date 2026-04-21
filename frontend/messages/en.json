@@ -905,6 +905,7 @@
     "settings_role_finance_admin": "Finance Administrator",
     "settings_role_superadmin": "Super Administrator",
     "settings_role_shipping_agent": "Shipowner / Maritime Agent",
+    "settings_role_operations_manager": "Operations Manager",
     "settings_site_berbera": "Port of Berbera",
     "settings_site_national_hq": "National Headquarters — Hargeisa",
     "settings_site_zeila": "Port of Zeila",
@@ -1054,7 +1055,9 @@
     "status_paid": "PAID",
     "status_pending": "PENDING",
     "status_overdue": "OVERDUE",
-    "status_disputed": "DISPUTED"
+    "status_disputed": "DISPUTED",
+    "detail_view_payments": "View Payments",
+    "detail_simulate": "Simulate"
   },
   "InvoicesPage": {
     "status_paid": "PAID",
@@ -1105,7 +1108,7 @@
     "generate_proforma_pdf": "Generate Pro-forma Invoice (PDF)",
     "view_tax_invoice": "View Tax Invoice (PDF)",
     "proforma_preview_title": "Pro-forma Invoice Preview",
-    "print_save_pdf": "Print / Save PDF",
+    "print_save_pdf": "Print PDF",
     "vessel_and_port_call": "Vessel & Port Call",
     "change_vessel": "Change Vessel",
     "arrival_date": "Arrival Date",
@@ -1137,9 +1140,12 @@
     "pdf_payment_notice": "Payment required within 30 days to obtain maritime clearance.",
     "pdf_remit_to": "Remit to the Sovereign Climate Fund — BER-DC1 / AES-256 Encrypted",
     "cancel": "Cancel",
-    "draft_save": "Draft Save",
+    "draft_save": "Save PDF",
     "print_and_send": "Print & Send →",
-    "contest_invoice": "Contest"
+    "contest_invoice": "Contest",
+    "export_csv": "Export CSV",
+    "filter_by_vessel": "Filtered by vessel IMO {imo}",
+    "filter_clear": "Clear"
   },
   "MyFleet": {
     "status_compliant": "COMPLIANT",
@@ -1528,6 +1534,8 @@
     "role_finance_admin_desc": "Invoice management, revenue reporting",
     "role_compliance_auditor": "Compliance Auditor",
     "role_compliance_auditor_desc": "Audit log review, exemption oversight",
+    "role_operations_manager": "Operations Manager",
+    "role_operations_manager_desc": "Day-to-day platform operations (vessels, alerts, validations) without access to money or RBAC settings",
     "role_superadmin": "Platform Administrator",
     "role_superadmin_desc": "Full system access — ministry approval required",
     "role_fleet_manager": "Fleet Manager",
@@ -2406,5 +2414,48 @@
     "submitting": "Sending...",
     "success_title": "Request Received",
     "success_desc": "Thank you for your interest in deploying the Green Gate Digital System. Our partnership team will review your request and get back to you within 48 hours."
+  },
+  "ArmateurDashboard": {
+    "title": "Armateur Portal",
+    "sub": "{company} · {count, plural, =0 {no active vessel} =1 {1 active vessel} other {# active vessels}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Outstanding",
+    "vessels_active_label": "Active Vessels",
+    "paid_ytd_label": "Paid YTD",
+    "overdue_label": "Overdue"
+  },
+  "NextPaymentCard": {
+    "label": "Next Payment",
+    "empty_title": "All caught up",
+    "empty_sub": "No pending payment on your fleet.",
+    "empty_cta": "Simulate a payment",
+    "cta": "View details",
+    "days_caption": "{count, plural, =1 {day remaining} other {days remaining}}",
+    "overdue_caption": "{count, plural, =1 {day overdue} other {days overdue}}"
+  },
+  "OnboardingBanner": {
+    "title": "Welcome aboard",
+    "sub": "Register your first vessel to start using the portal.",
+    "cta": "Add a vessel"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {1 overdue invoice} other {# overdue invoices}}",
+    "total": "Total: {total}",
+    "cta": "Settle now"
+  },
+  "ProformaActionButton": {
+    "generate": "Generate Pro-forma",
+    "view": "View proforma",
+    "pending": "Pending",
+    "pending_tooltip": "Waiting for the port authority to issue this invoice."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Date",
+    "col_ref": "Reference",
+    "col_amount": "Amount",
+    "col_status": "Status",
+    "empty_title": "No payments",
+    "empty_sub": "This vessel has no payment history yet."
   }
 }

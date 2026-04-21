@@ -1,37 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { sendRegistrationApprovalEmail } from '@/services/emailService';
+import { requireRole } from '@/lib/auth/requireRole';
+import { UserRole } from '@/types/secure';
 
 /**
  * POST /api/auth/approve
  * Body: { requestId: string, reviewNote?: string }
  *
- * Called by SUPERADMIN / PORT_OFFICER to approve a registration request.
- * Sets profiles.is_active = true for the user matching the registration email.
- * Updates registration_requests.status = 'APPROVED'.
+ * Called by SUPERADMIN / PORT_OFFICER / MANAGER to approve a registration
+ * request. Sets profiles.is_active = true for the user matching the
+ * registration email. Updates registration_requests.status = 'APPROVED'.
+ *
+ * MANAGER is allowed because registration approval is an operational task,
+ * not a money-rail action — the actual role assignment is mechanical
+ * (read from registration_requests.requested_role, not chosen by the
+ * approver).
  */
+const APPROVER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER];
+
 export async function POST(request: NextRequest) {
+    const auth = await requireRole(APPROVER_ROLES);
+    if (auth.error) return auth.error;
+
     try {
-        const client = await createClient();
-
-        // 1. Verify caller is authenticated + admin
-        const { data: { user } } = await client.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: callerProfile } = await client
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (!callerProfile || !['SUPERADMIN', 'PORT_OFFICER'].includes(callerProfile.role)) {
-            return NextResponse.json({ error: 'Forbidden — admin role required' }, { status: 403 });
-        }
-
-        // 2. Parse request body
         const { requestId, reviewNote } = await request.json() as {
             requestId: string;
             reviewNote?: string;
@@ -41,13 +33,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'requestId is required' }, { status: 400 });
         }
 
-        // 3. Use service_role client for admin operations (bypasses RLS)
+        // Use service_role client for admin operations (bypasses RLS).
+        // requireRole already validated the caller — the admin client is only
+        // used to perform privileged writes after that gate.
         const adminClient = createAdminClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
         );
 
-        // 4. Fetch the registration request
         const { data: regRequest, error: regError } = await adminClient
             .from('registration_requests')
             .select('*')
@@ -62,7 +55,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Already approved' }, { status: 409 });
         }
 
-        // 5. Find the profile by email and activate it
         const { data: targetProfile, error: profileError } = await adminClient
             .from('profiles')
             .select('id')
@@ -75,7 +67,6 @@ export async function POST(request: NextRequest) {
             }, { status: 404 });
         }
 
-        // 6. Activate the profile
         const { error: updateError } = await adminClient
             .from('profiles')
             .update({
@@ -88,18 +79,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
-        // 7. Update registration request status
         await adminClient
             .from('registration_requests')
             .update({
                 status: 'APPROVED',
-                reviewed_by: user.id,
+                reviewed_by: auth.user.id,
                 reviewed_at: new Date().toISOString(),
                 review_note: reviewNote ?? null,
             })
             .eq('id', requestId);
 
-        // 8. Fetch the full profile so we can send a proper welcome email
         const { data: fullProfile } = await adminClient
             .from('profiles')
             .select('email, full_name, role, operational_site')

@@ -146,7 +146,7 @@ describe('buildVerifyUrl', () => {
 
     it('prefers explicit origin arg over env (caller context wins)', () => {
         process.env.NEXT_PUBLIC_APP_URL = 'https://env.example.com';
-        expect(buildVerifyUrl('INV-2026-FOO', 'https://live.africgreen.app')).toBe(
+        expect(buildVerifyUrl('INV-2026-FOO', { origin: 'https://live.africgreen.app' })).toBe(
             'https://live.africgreen.app/verify/INV-2026-FOO',
         );
     });
@@ -159,23 +159,35 @@ describe('buildVerifyUrl', () => {
     });
 
     it('strips trailing slashes from the resolved origin', () => {
-        expect(buildVerifyUrl('INV-2026-FOO', 'https://live.africgreen.app/')).toBe(
+        expect(buildVerifyUrl('INV-2026-FOO', { origin: 'https://live.africgreen.app/' })).toBe(
             'https://live.africgreen.app/verify/INV-2026-FOO',
         );
     });
 
-    it('falls back to window.location.origin when no origin arg and no env', () => {
-        // In jsdom (test env) window.location.origin defaults to http://localhost:3000.
-        // This mirrors the real client-side fallback in a browser context.
+    it('falls back to window.location.origin (or path-only in a node env) when no origin arg and no env', () => {
+        // In a browser / jsdom context, window.location.origin is used; in a
+        // plain node env (no window), the URL degrades to a path-only form.
+        // Both paths are legitimate fallbacks in the real callers.
         delete process.env.NEXT_PUBLIC_APP_URL;
+        const expectedBase = typeof window !== 'undefined' ? window.location.origin : '';
         expect(buildVerifyUrl('INV-2026-FOO')).toBe(
-            `${window.location.origin}/verify/INV-2026-FOO`,
+            `${expectedBase}/verify/INV-2026-FOO`,
         );
     });
 
     it('URL-encodes the ref so QR codes survive special chars', () => {
-        expect(buildVerifyUrl('INV-2026-A B', 'https://test.dev')).toBe(
+        expect(buildVerifyUrl('INV-2026-A B', { origin: 'https://test.dev' })).toBe(
             'https://test.dev/verify/INV-2026-A%20B',
+        );
+    });
+
+    it('appends content hash + HMAC signature when both supplied', () => {
+        expect(buildVerifyUrl('INV-2026-FOO', {
+            origin: 'https://live.africgreen.app',
+            contentHash: 'deadbeef',
+            signature: 'cafef00d',
+        })).toBe(
+            'https://live.africgreen.app/verify/INV-2026-FOO?h=deadbeef&s=cafef00d',
         );
     });
 });

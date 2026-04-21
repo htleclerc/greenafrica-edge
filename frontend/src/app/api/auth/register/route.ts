@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
-// Accepts the 7 roles proposed by the signup form; maps them to the 4 DB roles below.
+// Accepts 8 form roles, maps them to the 5 DB roles (PORT_OFFICER,
+// FINANCE_ADMIN, SHIPPING_AGENT, MANAGER) — see ROLE_MAP below. SUPERADMIN is
+// not assignable via signup (created manually by existing SUPERADMINs).
 const registerSchema = z.object({
     email: z.email(),
     password: z.string().min(8).max(128),
@@ -12,6 +14,7 @@ const registerSchema = z.object({
         'PORT_OFFICER',
         'FINANCE_ADMIN',
         'COMPLIANCE_AUDITOR',
+        'OPERATIONS_MANAGER',
         // Shipping agent side
         'SHIPPING_AGENT',
         'FLEET_MANAGER',
@@ -30,16 +33,18 @@ const registerSchema = z.object({
     notifyWeekly: z.boolean().optional().default(true),
 });
 
-// Map the 7 form roles to the 4 actual DB roles.
-// The original "job title" is preserved in registration_requests.requested_role
-// so admins can see what the user actually applied for.
+// Map the 8 form roles to the 4 assignable DB roles (SUPERADMIN excluded —
+// elevated only via direct admin action). The original "job title" is
+// preserved in registration_requests.requested_role so admins can see what
+// the user actually applied for.
 type FormRole = z.infer<typeof registerSchema>['role'];
-type DbRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT';
+type DbRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT' | 'MANAGER';
 
 export const ROLE_MAP: Record<FormRole, DbRole> = {
     PORT_OFFICER:       'PORT_OFFICER',
     FINANCE_ADMIN:      'FINANCE_ADMIN',
     COMPLIANCE_AUDITOR: 'PORT_OFFICER',
+    OPERATIONS_MANAGER: 'MANAGER',
     SHIPPING_AGENT:     'SHIPPING_AGENT',
     FLEET_MANAGER:      'SHIPPING_AGENT',
     FINANCE_CONTACT:    'SHIPPING_AGENT',

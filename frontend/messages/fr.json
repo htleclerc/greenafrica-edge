@@ -905,6 +905,7 @@
     "settings_role_finance_admin": "Administrateur Financier",
     "settings_role_superadmin": "Super Administrateur",
     "settings_role_shipping_agent": "Armateur / Agent Maritime",
+    "settings_role_operations_manager": "Manager Opérations",
     "settings_site_berbera": "Port de Berbera",
     "settings_site_national_hq": "Siège National — Hargeisa",
     "settings_site_zeila": "Port de Zeïla",
@@ -1054,7 +1055,9 @@
     "status_paid": "PAYÉ",
     "status_pending": "EN ATTENTE",
     "status_overdue": "EN RETARD",
-    "status_disputed": "CONTESTÉ"
+    "status_disputed": "CONTESTÉ",
+    "detail_view_payments": "Voir les paiements",
+    "detail_simulate": "Simuler"
   },
   "InvoicesPage": {
     "status_paid": "PAYÉ",
@@ -1105,7 +1108,7 @@
     "generate_proforma_pdf": "Générer la facture pro-forma (PDF)",
     "view_tax_invoice": "Voir la facture fiscale (PDF)",
     "proforma_preview_title": "Aperçu de la facture pro-forma",
-    "print_save_pdf": "Imprimer / Enregistrer PDF",
+    "print_save_pdf": "Imprimer PDF",
     "vessel_and_port_call": "Navire et escale",
     "change_vessel": "Changer de navire",
     "arrival_date": "Date d'arrivée",
@@ -1137,9 +1140,12 @@
     "pdf_payment_notice": "Paiement requis sous 30 jours pour obtenir l'autorisation maritime.",
     "pdf_remit_to": "Verser au Fonds Souverain pour le Climat — BER-DC1 / Chiffrement AES-256",
     "cancel": "Annuler",
-    "draft_save": "Enregistrer le brouillon",
+    "draft_save": "Enregistrer PDF",
     "print_and_send": "Imprimer et envoyer →",
-    "contest_invoice": "Contester"
+    "contest_invoice": "Contester",
+    "export_csv": "Exporter CSV",
+    "filter_by_vessel": "Filtré sur vessel IMO {imo}",
+    "filter_clear": "Effacer"
   },
   "Disputes": {
     "kpi_total": "Total Contestations",
@@ -1582,6 +1588,8 @@
     "role_finance_admin_desc": "Gestion des factures, rapports de revenus",
     "role_compliance_auditor": "Auditeur de conformité",
     "role_compliance_auditor_desc": "Revue du journal d’audit, supervision des exemptions",
+    "role_operations_manager": "Manager Opérations",
+    "role_operations_manager_desc": "Opérations quotidiennes de la plateforme (navires, alertes, validations) sans accès aux finances ni au RBAC",
     "role_superadmin": "Administrateur de la plateforme",
     "role_superadmin_desc": "Accès complet au système — approbation ministérielle requise",
     "role_fleet_manager": "Gestionnaire de flotte",
@@ -2324,7 +2332,7 @@
     "checklist_title": "Liste de Conformité",
     "check_ais": "Transpondeur AIS Actif",
     "check_documents": "Documents d'Émission à Bord",
-    "check_co2_cert": "Certificat CO\u2082 Valide",
+    "check_co2_cert": "Certificat CO₂ Valide",
     "check_fuel_log": "Journal de Carburant Disponible",
     "check_safety": "Équipement de Sécurité OK",
     "findings_label": "Constatations & Observations",
@@ -2376,5 +2384,48 @@
     "submitting": "Envoi en cours...",
     "success_title": "Demande Reçue",
     "success_desc": "Merci pour votre intérêt dans le déploiement du système Green Gate Digital. Notre équipe partenariat examinera votre demande et vous répondra sous 48 heures."
+  },
+  "ArmateurDashboard": {
+    "title": "Portail armateur",
+    "sub": "{company} · {count, plural, =0 {aucun vessel actif} =1 {1 vessel actif} other {# vessels actifs}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Solde dû",
+    "vessels_active_label": "Vessels actifs",
+    "paid_ytd_label": "Payé YTD",
+    "overdue_label": "En retard"
+  },
+  "NextPaymentCard": {
+    "label": "Prochain paiement",
+    "empty_title": "Compte à jour",
+    "empty_sub": "Aucun paiement en cours pour vos vessels.",
+    "empty_cta": "Simuler un paiement",
+    "cta": "Voir les détails",
+    "days_caption": "{count, plural, =1 {jour restant} other {jours restants}}",
+    "overdue_caption": "{count, plural, =1 {jour de retard} other {jours de retard}}"
+  },
+  "OnboardingBanner": {
+    "title": "Bienvenue",
+    "sub": "Ajoutez votre premier vessel pour commencer à utiliser le portail.",
+    "cta": "Ajouter un vessel"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {1 facture en retard} other {# factures en retard}}",
+    "total": "Total : {total}",
+    "cta": "Régler maintenant"
+  },
+  "ProformaActionButton": {
+    "generate": "Générer la proforma",
+    "view": "Voir la proforma",
+    "pending": "En attente",
+    "pending_tooltip": "En attente de génération par l'autorité portuaire."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Date",
+    "col_ref": "Référence",
+    "col_amount": "Montant",
+    "col_status": "Statut",
+    "empty_title": "Aucun paiement",
+    "empty_sub": "Ce vessel n'a pas encore d'historique de paiement."
   }
 }

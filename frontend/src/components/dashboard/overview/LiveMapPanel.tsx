@@ -6,7 +6,8 @@ import { Layers, Filter, ZoomIn, ZoomOut, RefreshCw, Loader2 } from 'lucide-reac
 import { useTranslations } from 'next-intl';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { useVessels } from '@/hooks/useVessels';
-import { VesselComplianceStatus, SecureVessel } from '@/types/secure';
+import { useRole } from '@/lib/RoleContext';
+import { VesselComplianceStatus, SecureVessel, UserRole } from '@/types/secure';
 
 // ── Leaflet loaded client-side only ──────────────────────────────────────────
 
@@ -223,20 +224,66 @@ function VesselDetailPanel({
                 </p>
             </div>
 
-            <div className="flex flex-col gap-2">
-                <a
-                    href={`/dashboard/vessels?imo=${vessel.imoNumber}`}
-                    className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:border-[var(--os-border-strong)] hover:text-[var(--os-text-primary)] transition-colors text-center"
-                >
-                    {t('detail_hail_ship')}
-                </a>
-                <a
-                    href={`/dashboard/invoices?vessel=${vessel.imoNumber}`}
-                    className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors text-center shadow-[0_0_12px_rgba(0,217,126,0.2)]"
-                >
-                    {t('detail_generate_proforma')}
-                </a>
-            </div>
+            <VesselActionButtons vessel={vessel} t={t} />
+        </div>
+    );
+}
+
+// Role-aware action buttons on the vessel detail popover. Staff see
+// "Generate Pro-forma" (routes to invoices page where ProFormaModal lives);
+// armateur sees "Voir la proforma" / "Simuler" (no generation affordance).
+function VesselActionButtons({
+    vessel,
+    t,
+}: {
+    vessel: SecureVessel;
+    t: (key: string) => string;
+}) {
+    const { role } = useRole();
+    const isArmateur = role === UserRole.SHIPPING_AGENT;
+
+    const secondary = (
+        <a
+            href={`/dashboard/vessels?imo=${vessel.imoNumber}`}
+            className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:border-[var(--os-border-strong)] hover:text-[var(--os-text-primary)] transition-colors text-center"
+        >
+            {t('detail_hail_ship')}
+        </a>
+    );
+
+    const primary = isArmateur ? (
+        <a
+            href={`/dashboard/invoices?vessel=${vessel.imoNumber}`}
+            className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors text-center shadow-[0_0_12px_rgba(0,217,126,0.2)]"
+        >
+            {t('detail_view_payments')}
+        </a>
+    ) : (
+        <a
+            href={`/dashboard/invoices?vessel=${vessel.imoNumber}`}
+            className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors text-center shadow-[0_0_12px_rgba(0,217,126,0.2)]"
+        >
+            {t('detail_generate_proforma')}
+        </a>
+    );
+
+    // Armateur also gets a Simuler secondary CTA — the simulator is where
+    // they explore the tax impact of future calls without triggering real
+    // proforma issuance.
+    const simulate = isArmateur ? (
+        <a
+            href={`/dashboard/simulator?imo=${vessel.imoNumber}`}
+            className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs font-semibold text-[var(--os-text-secondary)] hover:border-[var(--os-border-strong)] hover:text-[var(--os-text-primary)] transition-colors text-center"
+        >
+            {t('detail_simulate')}
+        </a>
+    ) : null;
+
+    return (
+        <div className="flex flex-col gap-2">
+            {secondary}
+            {primary}
+            {simulate}
         </div>
     );
 }

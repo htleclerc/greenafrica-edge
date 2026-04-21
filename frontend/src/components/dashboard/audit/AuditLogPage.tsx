@@ -6,6 +6,7 @@ import {
     Download, RefreshCw, Shield, AlertTriangle, Info,
     Search, ChevronRight, X, User, Clock, Globe, Tag,
     LogIn, LogOut, FileText, DollarSign, CheckCircle, UserPlus, ArrowUpDown,
+    Send,
 } from 'lucide-react';
 import { OsBadge, severityVariant } from '@/components/ui/OsBadge';
 import { useAuditLog } from '@/hooks/useAuditLog';
@@ -18,6 +19,7 @@ const ACTION_LABEL: Record<string, string> = {
     [AuditAction.LOGOUT]:              'Logout',
     [AuditAction.VESSEL_VIEWED]:       'Vessel Viewed',
     [AuditAction.INVOICE_GENERATED]:   'Invoice Generated',
+    [AuditAction.INVOICE_SENT]:        'Invoice Sent to Armateur',
     [AuditAction.TAX_RATE_UPDATED]:    'Tax Rate Updated',
     [AuditAction.EXEMPTION_GRANTED]:   'Exemption Granted',
     [AuditAction.REPORT_EXPORTED]:     'Report Exported',
@@ -30,6 +32,7 @@ const ACTION_ICON: Record<string, React.ReactNode> = {
     [AuditAction.LOGOUT]:              <LogOut className="w-3.5 h-3.5" />,
     [AuditAction.VESSEL_VIEWED]:       <Globe className="w-3.5 h-3.5" />,
     [AuditAction.INVOICE_GENERATED]:   <FileText className="w-3.5 h-3.5" />,
+    [AuditAction.INVOICE_SENT]:        <Send className="w-3.5 h-3.5" />,
     [AuditAction.TAX_RATE_UPDATED]:    <DollarSign className="w-3.5 h-3.5" />,
     [AuditAction.EXEMPTION_GRANTED]:   <CheckCircle className="w-3.5 h-3.5" />,
     [AuditAction.REPORT_EXPORTED]:     <Download className="w-3.5 h-3.5" />,

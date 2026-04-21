@@ -35,7 +35,9 @@
       "Bash(export PATH=\"$PATH:/c/Program Files/Go/bin:$HOME/go/bin\")",
       "Bash(go run:*)",
       "Bash(gh run:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3300)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

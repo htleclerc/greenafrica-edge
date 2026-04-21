@@ -1,3 +1,4 @@
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
@@ -46,6 +47,13 @@ interface InvoiceData {
     emissionsTco2: number;
     rate: number;
     amount: number;
+    /** Display overrides used for non-carbon lines (fixed port fee, flat
+     *  surcharges, …) so the generated PDF matches the HTML preview 1:1.
+     *  If omitted, the PDF falls back to the carbon-tax rendering
+     *  (emissionsTco2 + $/t). */
+    description?: string;
+    qtyDisplay?: string;
+    rateDisplay?: string;
   }>;
   // New fields for mode + verification
   mode?: InvoiceMode;
@@ -54,26 +62,118 @@ interface InvoiceData {
 }
 
 /**
+ * Compute a canonical string for an invoice's authoritative fields.
+ * The SAME function must be used when signing (server) and when verifying
+ * (server) — any divergence breaks the hash chain.
+ *
+ * Ordering is deterministic (fixed key sequence, not JSON.stringify which
+ * preserves declaration order but is fragile to future refactors). Numbers
+ * are coerced to fixed-precision strings so a float like 6312.00 vs 6312
+ * don't produce different hashes.
+ */
+export function canonicalizeInvoiceFields(fields: {
+  invoiceRef: string;
+  vesselImo: string;
+  vesselName: string;
+  ownerName: string;
+  totalUsd: number;
+  periodStart: string;
+  periodEnd: string;
+  mode: InvoiceMode;
+}): string {
+  const parts = [
+    `ref=${fields.invoiceRef}`,
+    `imo=${fields.vesselImo}`,
+    `vessel=${fields.vesselName}`,
+    `owner=${fields.ownerName}`,
+    `total=${Number(fields.totalUsd).toFixed(2)}`,
+    `start=${fields.periodStart}`,
+    `end=${fields.periodEnd}`,
+    `mode=${fields.mode}`,
+  ];
+  return parts.join('|');
+}
+
+/** SHA-256 of the canonical payload — embedded in the QR URL as `?h=...`
+ *  so the verifier can see the bound content hash on /verify. */
+export function hashInvoiceFields(fields: Parameters<typeof canonicalizeInvoiceFields>[0]): string {
+  return createHash('sha256').update(canonicalizeInvoiceFields(fields)).digest('hex');
+}
+
+/** Read the signing secret. THROWS in production if missing so misconfig
+ *  doesn't silently downgrade to unsigned URLs. In dev, falls back to a
+ *  constant so local flows work without ceremony. */
+function getSigningSecret(): string {
+  const secret = process.env.INVOICE_SIGNING_SECRET;
+  if (!secret || secret.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '[invoiceService] INVOICE_SIGNING_SECRET missing or too short (need >=32 chars). ' +
+        'Generate one with `openssl rand -hex 32` and set it in the environment.',
+      );
+    }
+    // Dev-only fallback — documented, not a secret worth rotating.
+    return 'dev-unsafe-invoice-signing-secret-REPLACE-IN-PROD-xxxxxx';
+  }
+  return secret;
+}
+
+/** Compute an HMAC-SHA256 signature binding (ref, hash) to the Green Gate
+ *  signing key. Anyone can build a URL with a random ref; only the server
+ *  can produce a URL whose `?s=...` validates. */
+export function signInvoiceRef(invoiceRef: string, contentHash: string): string {
+  return createHmac('sha256', getSigningSecret())
+    .update(`${invoiceRef}:${contentHash}`)
+    .digest('hex');
+}
+
+/** Constant-time comparison. Returns false on length mismatch. Used by
+ *  the /verify route and the signed PDF download route to reject forgeries. */
+export function verifyInvoiceSignature(
+  invoiceRef: string,
+  contentHash: string,
+  signature: string,
+): boolean {
+  const expected = signInvoiceRef(invoiceRef, contentHash);
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const actualBuf = Buffer.from(signature, 'hex');
+  if (expectedBuf.length !== actualBuf.length || expectedBuf.length === 0) {
+    return false;
+  }
+  return timingSafeEqual(expectedBuf, actualBuf);
+}
+
+/**
  * Generate a verification URL for an invoice ref.
  * Used by both the HTML preview and the PDF QR code.
  *
+ * The URL embeds the content hash and an HMAC signature so anyone scanning
+ * the QR lands on a page that can (a) prove the document came from Green
+ * Gate without touching the DB (signature check at the edge) and (b) show
+ * the authoritative hash the verifier is expected to compare against the
+ * printed document's content.
+ *
  * Origin resolution (in order):
- *   1. explicit `origin` arg — caller passed `window.location.origin` (client)
- *      or the `Origin`/`Host` header from the incoming request (server).
- *   2. `NEXT_PUBLIC_APP_URL` env — for server contexts without a request
- *      (e.g. cron jobs).
+ *   1. explicit `origin` arg — caller passed `window.location.origin` or
+ *      `Origin`/`Host` headers from the incoming request.
+ *   2. `NEXT_PUBLIC_APP_URL` env — for server contexts without a request.
  *   3. `window.location.origin` — last-ditch client fallback.
- *   4. Path-only (`/verify/...`) — no origin found; caller likely rendering
- *      a non-QR context. QR codes need absolute URLs, so callers embedding
- *      in PDFs MUST provide an origin.
  */
-export function buildVerifyUrl(invoiceRef: string, origin?: string): string {
+export function buildVerifyUrl(
+  invoiceRef: string,
+  options?: { contentHash?: string; signature?: string; origin?: string },
+): string {
   const resolved =
-    origin
+    options?.origin
     || process.env.NEXT_PUBLIC_APP_URL
     || (typeof window !== 'undefined' ? window.location.origin : '');
   const base = resolved.replace(/\/+$/, '');
-  return `${base}/verify/${encodeURIComponent(invoiceRef)}`;
+  const path = `${base}/verify/${encodeURIComponent(invoiceRef)}`;
+  if (options?.contentHash && options?.signature) {
+    const qs = new URLSearchParams({ h: options.contentHash, s: options.signature });
+    return `${path}?${qs.toString()}`;
+  }
+  return path;
 }
 
 /**
@@ -145,6 +245,107 @@ function docTypeName(mode: InvoiceMode | undefined): string {
 }
 
 /**
+ * Cached base64 data URL of the official Somaliland flag PNG
+ * (includes the Shahada calligraphy in the top green band).
+ *
+ * Loaded lazily from public/brand/somaliland-flag.png on first use.
+ * Server-side only — client-side imports fall back to vector primitives.
+ */
+let CACHED_SOMALILAND_FLAG_PNG: string | null = null;
+
+async function loadSomalilandFlagPng(): Promise<string | null> {
+  if (CACHED_SOMALILAND_FLAG_PNG !== null) return CACHED_SOMALILAND_FLAG_PNG;
+  if (typeof window !== 'undefined') return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { readFileSync } = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { join } = require('path');
+    const svgPath = join(process.cwd(), 'public', 'brand', 'somaliland-flag.svg');
+    const svgBuffer = readFileSync(svgPath);
+    // Use sharp (already installed by Next.js) to rasterize the SVG (which includes
+    // the Shahada calligraphy in the top green band) to a PNG jsPDF can embed.
+    // Rasterize at ~300dpi for a 16mm wide flag (188px is plenty).
+    // Keep file small: quantize colors + max compression. The flag has few
+    // colors so this is near-lossless and keeps the PDF under ~60KB overhead.
+    const sharp = (await import('sharp')).default;
+    const pngBuffer = await sharp(svgBuffer, { density: 400 })
+      .resize(240, 120, { fit: 'fill' })
+      .png({ palette: true, compressionLevel: 9 })
+      .toBuffer();
+    CACHED_SOMALILAND_FLAG_PNG = `data:image/png;base64,${pngBuffer.toString('base64')}`;
+    return CACHED_SOMALILAND_FLAG_PNG;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Draw the Somaliland flag.
+ *
+ * Preferred path (server-side): use the official PNG asset which includes the
+ * Shahada calligraphy ("لا إله إلا الله محمد رسول الله") in the top green band
+ * plus the 5-point black star on the white band.
+ *
+ * Fallback path (client-side or PNG unavailable): draw 3 horizontal stripes +
+ * star using jsPDF primitives. Colors match the official flag:
+ * green #006d21, white #ffffff, red #df0000.
+ */
+async function drawSomalilandFlag(doc: jsPDF, x: number, y: number, w: number, h: number): Promise<void> {
+  const pngDataUrl = await loadSomalilandFlagPng();
+  if (pngDataUrl) {
+    try {
+      doc.addImage(pngDataUrl, 'PNG', x, y, w, h);
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.15);
+      doc.rect(x, y, w, h, 'S');
+      return;
+    } catch (err) {
+      // fall through to vector fallback
+      void err;
+    }
+  }
+
+  // ── Vector fallback ──
+  const band = h / 3;
+  doc.setFillColor(0, 109, 33);
+  doc.rect(x, y, w, band, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y + band, w, band, 'F');
+  doc.setFillColor(223, 0, 0);
+  doc.rect(x, y + 2 * band, w, band, 'F');
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.15);
+  doc.rect(x, y, w, h, 'S');
+  const cx = x + w / 2;
+  const cy = y + band + band / 2;
+  const R = Math.min(band * 0.45, w * 0.09);
+  const r = R * 0.4;
+  const pts: [number, number][] = [];
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? R : r;
+    const theta = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push([cx + radius * Math.cos(theta), cy + radius * Math.sin(theta)]);
+  }
+  const offsets: [number, number][] = [];
+  for (let i = 1; i < pts.length; i++) {
+    offsets.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+  }
+  offsets.push([pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]]);
+  doc.setFillColor(0, 0, 0);
+  doc.lines(offsets, pts[0][0], pts[0][1], [1, 1], 'F', true);
+}
+
+/**
+ * Format a USD amount for display — forces en-US thousands separators
+ * (comma) with NO decimals. Used consistently in PDFs and HTML preview
+ * to avoid locale-dependent separators and duplicated ".00" suffixes.
+ */
+function fmtUsd(n: number): string {
+  return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+/**
  * Get badge background color (institutional palette).
  */
 function badgeColor(badge: InvoiceBadge | undefined): { bg: [number, number, number]; fg: [number, number, number] } {
@@ -202,20 +403,30 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.line(logoX + 6, logoY + 9, logoX + 8, logoY + 7);
   doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
 
+  // ── Somaliland flag below the logo (port country) ──
+  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
+
   // ── Brand text ──
+  const brandX = logoX + logoSize + 4;
   doc.setTextColor(13, 31, 24); // #0D1F18
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('AFRICGREEN', logoX + logoSize + 4, logoY + 6);
+  doc.text('GREEN GATE', brandX, logoY + 6);
   doc.setFontSize(7);
   doc.setTextColor(5, 150, 105);
-  doc.text('SOVEREIGN CARBON PLATFORM', logoX + logoSize + 4, logoY + 10);
-  doc.setFontSize(8);
+  doc.text('SOVEREIGN CARBON PLATFORM', brandX, logoY + 10);
+  // Solide Technology — concessionaire collecting the payment
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(4, 120, 87);
+  doc.text('SOLIDE TECHNOLOGY — Concessionaire', brandX, logoY + 14.5);
+  // Sovereign authority block
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
   doc.setTextColor(71, 85, 105); // slate-600
-  doc.text('Republic of Somaliland', logoX + logoSize + 4, logoY + 14);
-  doc.text('Ministry of Environment & Climate Change', logoX + logoSize + 4, logoY + 17.5);
-  doc.text('Maritime Carbon Tax Authority', logoX + logoSize + 4, logoY + 21);
+  doc.text('Republic of Somaliland', brandX, logoY + 19);
+  doc.text('Ministry of Environment & Climate Change', brandX, logoY + 22.5);
+  doc.text('Maritime Carbon Tax Authority', brandX, logoY + 26);
 
   // ── Right header: OFFICIAL DOCUMENT badge + title ──
   const rightX = pageWidth - margin;
@@ -253,10 +464,10 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   // ── Header divider ──
   doc.setDrawColor(13, 31, 24);
   doc.setLineWidth(0.6);
-  doc.line(margin, 40, pageWidth - margin, 40);
+  doc.line(margin, 44, pageWidth - margin, 44);
 
   // ── Reference block ──
-  let y = 48;
+  let y = 52;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(100, 116, 139);
@@ -296,23 +507,38 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.setFontSize(8);
   doc.setTextColor(13, 31, 24);
   doc.text(
-    'Pursuant to the Maritime Carbon Tax Act (2024) and IMO MEPC.346(78), the above-named',
+    'Pursuant to Ministerial Decree MOE&CC/MWI/36/2026 (Hargeisa, 31 March 2026), the Maritime',
     margin + 4,
     y,
   );
   doc.text(
-    'vessel is hereby notified of carbon emission liabilities incurred within the',
+    'Carbon Tax Act (2024) and IMO MEPC.346(78), the above-named vessel is hereby notified of',
     margin + 4,
     y + 3.5,
   );
   doc.text(
-    'Somaliland Exclusive Economic Zone (EEZ).',
+    'carbon emission liabilities incurred within the Somaliland EEZ. Collection: SOLIDE TECHNOLOGY.',
     margin + 4,
     y + 7,
   );
 
+  // ── Late payment penalty notice ──
+  y += 13;
+  doc.setFillColor(254, 242, 242); // red-50
+  doc.rect(margin, y - 3, pageWidth - 2 * margin, 7, 'F');
+  doc.setFillColor(220, 38, 38);
+  doc.rect(margin, y - 3, 1, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(185, 28, 28);
+  doc.text(
+    'LATE PAYMENT PENALTY — A flat fee of US$20,000 applies if the amount is not settled by the due date.',
+    margin + 4,
+    y + 1,
+  );
+
   // ── Line items table ──
-  y += 16;
+  y += 10;
   const tableX = margin;
   const tableW = pageWidth - 2 * margin;
   const colDescW = tableW * 0.5;
@@ -341,15 +567,19 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
       doc.setFillColor(248, 250, 252);
       doc.rect(tableX, y, tableW, 7, 'F');
     }
+    const description = item.description
+      ?? (item.zone === 'EEZ' ? 'Carbon Emissions Tax (IMO Cubic Law)' : item.zone);
+    const qty = item.qtyDisplay ?? `${item.emissionsTco2.toFixed(2)} tCO2`;
+    const rate = item.rateDisplay ?? `$${item.rate.toFixed(2)}/t`;
     doc.setTextColor(13, 31, 24);
-    doc.text(item.zone === 'EEZ' ? 'Carbon Emissions Tax (IMO Cubic Law)' : item.zone, tableX + 2, y + 4.6);
+    doc.text(description, tableX + 2, y + 4.6);
     doc.setFont('courier', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(`${item.emissionsTco2.toFixed(2)} tCO2`, tableX + colDescW + colQtyW - 2, y + 4.6, { align: 'right' });
-    doc.text(`$${item.rate.toFixed(2)}/t`, tableX + colDescW + colQtyW + colRateW - 2, y + 4.6, { align: 'right' });
+    doc.text(qty, tableX + colDescW + colQtyW - 2, y + 4.6, { align: 'right' });
+    doc.text(rate, tableX + colDescW + colQtyW + colRateW - 2, y + 4.6, { align: 'right' });
     doc.setFont('courier', 'bold');
     doc.setTextColor(13, 31, 24);
-    doc.text(`$${item.amount.toLocaleString()}.00`, tableX + tableW - 2, y + 4.6, { align: 'right' });
+    doc.text(`$${fmtUsd(item.amount)}`, tableX + tableW - 2, y + 4.6, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     y += 7;
   });
@@ -365,7 +595,7 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.setTextColor(16, 185, 129);
   doc.setFont('courier', 'bold');
   doc.setFontSize(16);
-  doc.text(`$${data.totalUsd.toLocaleString()}.00`, tableX + tableW - 4, y + 8.5, { align: 'right' });
+  doc.text(`$${fmtUsd(data.totalUsd)}`, tableX + tableW - 4, y + 8.5, { align: 'right' });
 
   // ── Signature, QR code & seal (3 columns) ──
   y += 22;
@@ -420,12 +650,12 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
   doc.text(
-    'Payment terms: 30 days from issuance. Late payment incurs 1.5% monthly interest.',
+    'Payment terms: 30 days from issuance. Late settlement incurs a flat US$20,000 penalty fee.',
     margin,
     footerY + 4,
   );
   doc.text(
-    `Remit to: Sovereign Climate Fund · Bank of Somaliland · SWIFT BSSLSO21 · Ref: ${data.invoiceRef}`,
+    `Remit to: SOLIDE TECHNOLOGY (Concessionaire) · Bank of Somaliland · SWIFT BSSLSO21 · Ref: ${data.invoiceRef}`,
     margin,
     footerY + 7.5,
   );
@@ -560,20 +790,28 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.line(logoX + 6, logoY + 9, logoX + 8, logoY + 7);
   doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
 
+  // Somaliland flag below the logo
+  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
+
   // Brand text
+  const brandX = logoX + logoSize + 4;
   doc.setTextColor(13, 31, 24);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('AFRICGREEN', logoX + logoSize + 4, logoY + 6);
+  doc.text('GREEN GATE', brandX, logoY + 6);
   doc.setFontSize(7);
   doc.setTextColor(5, 150, 105);
-  doc.text('SOVEREIGN CARBON PLATFORM', logoX + logoSize + 4, logoY + 10);
+  doc.text('SOVEREIGN CARBON PLATFORM', brandX, logoY + 10);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(4, 120, 87);
+  doc.text('SOLIDE TECHNOLOGY — Concessionaire', brandX, logoY + 14.5);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text('Republic of Somaliland', logoX + logoSize + 4, logoY + 14);
-  doc.text('Ministry of Environment & Climate Change', logoX + logoSize + 4, logoY + 17.5);
-  doc.text('Maritime Carbon Tax Authority', logoX + logoSize + 4, logoY + 21);
+  doc.text('Republic of Somaliland', brandX, logoY + 19);
+  doc.text('Ministry of Environment & Climate Change', brandX, logoY + 22.5);
+  doc.text('Maritime Carbon Tax Authority', brandX, logoY + 26);
 
   // Right header: OFFICIAL RECEIPT badge + title + PAID stamp
   const rightX = pageWidth - margin;
@@ -603,10 +841,10 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   // Header divider
   doc.setDrawColor(13, 31, 24);
   doc.setLineWidth(0.6);
-  doc.line(margin, 40, pageWidth - margin, 40);
+  doc.line(margin, 44, pageWidth - margin, 44);
 
   // Reference + paid-to block
-  let y = 48;
+  let y = 52;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(100, 116, 139);
@@ -675,7 +913,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.setFont('courier', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(16, 185, 129);
-  doc.text(`$${data.amountUsd.toLocaleString()}.00 USD`, margin + 4, y + 14);
+  doc.text(`$${fmtUsd(data.amountUsd)} USD`, margin + 4, y + 14);
 
   // Payment method details box
   y += 24;

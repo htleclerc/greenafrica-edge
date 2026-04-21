@@ -838,6 +838,7 @@
     "settings_role_finance_admin": "Msimamizi wa Fedha",
     "settings_role_superadmin": "Msimamizi Mkuu",
     "settings_role_shipping_agent": "Mmiliki wa Meli / Wakala wa Bahari",
+    "settings_role_operations_manager": "Meneja wa Uendeshaji",
     "settings_site_berbera": "Bandari ya Berbera",
     "settings_site_national_hq": "Makao Makuu ya Taifa — Hargeisa",
     "settings_site_zeila": "Bandari ya Zeila",
@@ -987,7 +988,9 @@
     "status_paid": "IMELIPWA",
     "status_pending": "INASUBIRI",
     "status_overdue": "IMECHELEWA",
-    "status_disputed": "INAPINGWA"
+    "status_disputed": "INAPINGWA",
+    "detail_view_payments": "Ona Malipo",
+    "detail_simulate": "Jaribu"
   },
   "InvoicesPage": {
     "status_paid": "IMELIPWA",
@@ -1038,7 +1041,7 @@
     "generate_proforma_pdf": "Tengeneza Ankara ya Pro-forma (PDF)",
     "view_tax_invoice": "Tazama Ankara ya Kodi (PDF)",
     "proforma_preview_title": "Muhtasari wa Ankara ya Pro-forma",
-    "print_save_pdf": "Chapisha / Hifadhi PDF",
+    "print_save_pdf": "Chapisha PDF",
     "vessel_and_port_call": "Meli na Kusimama Bandarini",
     "change_vessel": "Badilisha Meli",
     "arrival_date": "Tarehe ya Kuwasili",
@@ -1070,9 +1073,12 @@
     "pdf_payment_notice": "Malipo yanahitajika ndani ya siku 30 ili kupata ruhusa ya bahari.",
     "pdf_remit_to": "Tuma kwa Mfuko wa Hali ya Hewa wa Enzi Kuu — BER-DC1 / Usimbaji AES-256",
     "cancel": "Ghairi",
-    "draft_save": "Hifadhi Rasimu",
+    "draft_save": "Hifadhi PDF",
     "print_and_send": "Chapisha na Tuma →",
-    "contest_invoice": "Contest"
+    "contest_invoice": "Contest",
+    "export_csv": "Hamisha CSV",
+    "filter_by_vessel": "Imechujwa kwa meli IMO {imo}",
+    "filter_clear": "Futa"
   },
   "Disputes": {
     "kpi_total": "Jumla ya Migogoro",
@@ -1515,6 +1521,8 @@
     "role_finance_admin_desc": "Usimamizi wa ankara, ripoti za mapato",
     "role_compliance_auditor": "Mkaguzi wa Uzingatiaji",
     "role_compliance_auditor_desc": "Ukaguzi wa kumbukumbu za ukaguzi, usimamizi wa misamaha",
+    "role_operations_manager": "Meneja wa Uendeshaji",
+    "role_operations_manager_desc": "Shughuli za kila siku za jukwaa (meli, tahadhari, uthibitisho) bila ufikiaji wa fedha au RBAC",
     "role_superadmin": "Msimamizi wa Jukwaa",
     "role_superadmin_desc": "Ufikiaji kamili wa mfumo — idhini ya wizara inahitajika",
     "role_fleet_manager": "Meneja wa Meli",
@@ -2257,7 +2265,7 @@
     "checklist_title": "Orodha ya Ukaguzi wa Utiifu",
     "check_ais": "Kipitishio cha AIS Kinafanya Kazi",
     "check_documents": "Nyaraka za Uzalishaji Kwenye Meli",
-    "check_co2_cert": "Cheti cha CO\u2082 Halali",
+    "check_co2_cert": "Cheti cha CO₂ Halali",
     "check_fuel_log": "Kumbukumbu ya Mafuta Inapatikana",
     "check_safety": "Vifaa vya Usalama Sawa",
     "findings_label": "Matokeo na Uchunguzi",
@@ -2309,5 +2317,48 @@
     "submitting": "Inatuma...",
     "success_title": "Ombi Limepokelewa",
     "success_desc": "Asante kwa kupendezwa na kupeleka mfumo wa Green Gate Digital. Timu yetu ya ushirikiano itakagua ombi lako na kukujibu ndani ya masaa 48."
+  },
+  "ArmateurDashboard": {
+    "title": "Lango la Mmiliki wa Meli",
+    "sub": "{company} · {count, plural, =0 {hakuna meli inayotumika} =1 {meli 1 inayotumika} other {meli # zinazotumika}}"
+  },
+  "ArmateurKpiRow": {
+    "outstanding_label": "Bado kulipwa",
+    "vessels_active_label": "Meli zinazotumika",
+    "paid_ytd_label": "Imelipwa mwaka huu",
+    "overdue_label": "Imechelewa"
+  },
+  "NextPaymentCard": {
+    "label": "Malipo Yajayo",
+    "empty_title": "Umekamilisha",
+    "empty_sub": "Hakuna malipo yanayosubiri kwa meli zako.",
+    "empty_cta": "Jaribu malipo",
+    "cta": "Ona maelezo",
+    "days_caption": "{count, plural, =1 {siku iliyobaki} other {siku zilizobaki}}",
+    "overdue_caption": "{count, plural, =1 {siku imechelewa} other {siku zimechelewa}}"
+  },
+  "OnboardingBanner": {
+    "title": "Karibu",
+    "sub": "Sajili meli yako ya kwanza ili kuanza kutumia lango.",
+    "cta": "Ongeza meli"
+  },
+  "OverdueBanner": {
+    "title": "{count, plural, =1 {ankara 1 iliyochelewa} other {ankara # zilizochelewa}}",
+    "total": "Jumla: {total}",
+    "cta": "Lipa sasa"
+  },
+  "ProformaActionButton": {
+    "generate": "Tengeneza Pro-forma",
+    "view": "Ona pro-forma",
+    "pending": "Inasubiri",
+    "pending_tooltip": "Inasubiri kutolewa na mamlaka ya bandari."
+  },
+  "VesselPaymentsTab": {
+    "col_date": "Tarehe",
+    "col_ref": "Marejeleo",
+    "col_amount": "Kiasi",
+    "col_status": "Hali",
+    "empty_title": "Hakuna malipo",
+    "empty_sub": "Meli hii bado haina historia ya malipo."
   }
 }

@@ -422,7 +422,7 @@ export const mockTaxConfigs: TaxConfiguration[] = [
         jurisdictionZone: JurisdictionZone.EEZ,
         vesselCategory: VesselCategory.CONTAINER,
         baseRateUsdPerTco2: 20,
-        multiplier: 1.2,
+        multiplier: 2.0,
         effectiveDate: '2025-01-01',
         status: 'ACTIVE',
         createdBy: 'usr-002',
