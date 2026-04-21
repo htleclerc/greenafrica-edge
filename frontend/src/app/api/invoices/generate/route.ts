@@ -44,7 +44,15 @@ type PostBody = {
     sendEmail?: boolean;
 };
 
-const STAFF_ROLES = new Set(['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN']);
+// STAFF_ROLES are the only roles that may POST /api/invoices/generate.
+// SHIPPING_AGENT was removed 2026-04-21: armateurs consume proformas via the
+// read-only /api/invoices/[ref]/download endpoint, they do not create them.
+// MANAGER is excluded — managers onboard armateurs, they don't issue invoices.
+export const STAFF_ROLES = new Set(['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN']);
+
+export function canGenerateInvoice(role: string | null | undefined): boolean {
+    return role !== null && role !== undefined && STAFF_ROLES.has(role);
+}
 
 function json(status: number, body: Record<string, unknown>) {
     return NextResponse.json(body, { status });
@@ -100,7 +108,12 @@ export async function POST(request: NextRequest) {
         return json(404, { error: 'Transaction not found' });
     }
 
-    // ── 4. Authorize — staff may issue for any tx; agents only for their own fleet ─
+    // ── 4. Authorize — staff only. Armateurs consume proformas via
+    //       /api/invoices/[ref]/download; they do not issue them.
+    if (!canGenerateInvoice(callerProfile.role)) {
+        return json(403, { error: 'Forbidden' });
+    }
+
     let vesselOwnerId: string | null = null;
     let vesselOwnerEmail: string | null = null;
     let vesselOwnerName: string | null = null;
@@ -111,13 +124,6 @@ export async function POST(request: NextRequest) {
             .eq('id', tx.vessel_id)
             .single();
         vesselOwnerId = vessel?.owner_id ?? null;
-    }
-    const isStaff = STAFF_ROLES.has(callerProfile.role);
-    const isOwnerOfVessel = callerProfile.role === 'SHIPPING_AGENT'
-        && vesselOwnerId !== null
-        && vesselOwnerId === callerId;
-    if (!isStaff && !isOwnerOfVessel) {
-        return json(403, { error: 'Forbidden' });
     }
 
     if (vesselOwnerId) {
