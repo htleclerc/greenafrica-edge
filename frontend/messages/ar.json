@@ -1078,7 +1078,10 @@
     "cancel": "إلغاء",
     "draft_save": "حفظ PDF",
     "print_and_send": "طباعة وإرسال →",
-    "contest_invoice": "نزاع"
+    "contest_invoice": "نزاع",
+    "export_csv": "تصدير CSV",
+    "filter_by_vessel": "تمت التصفية حسب IMO السفينة {imo}",
+    "filter_clear": "مسح"
   },
   "Disputes": {
     "kpi_total": "إجمالي النزاعات",

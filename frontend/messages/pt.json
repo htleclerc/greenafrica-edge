@@ -1075,7 +1075,10 @@
     "cancel": "Cancelar",
     "draft_save": "Salvar PDF",
     "print_and_send": "Imprimir e Enviar →",
-    "contest_invoice": "Contestar"
+    "contest_invoice": "Contestar",
+    "export_csv": "Exportar CSV",
+    "filter_by_vessel": "Filtrado por embarcação IMO {imo}",
+    "filter_clear": "Limpar"
   },
   "Disputes": {
     "kpi_total": "Total de Disputas",

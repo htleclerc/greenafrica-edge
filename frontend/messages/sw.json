@@ -1075,7 +1075,10 @@
     "cancel": "Ghairi",
     "draft_save": "Hifadhi PDF",
     "print_and_send": "Chapisha na Tuma →",
-    "contest_invoice": "Contest"
+    "contest_invoice": "Contest",
+    "export_csv": "Hamisha CSV",
+    "filter_by_vessel": "Imechujwa kwa meli IMO {imo}",
+    "filter_clear": "Futa"
   },
   "Disputes": {
     "kpi_total": "Jumla ya Migogoro",

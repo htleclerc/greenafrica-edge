@@ -1142,7 +1142,10 @@
     "cancel": "Cancel",
     "draft_save": "Save PDF",
     "print_and_send": "Print & Send →",
-    "contest_invoice": "Contest"
+    "contest_invoice": "Contest",
+    "export_csv": "Export CSV",
+    "filter_by_vessel": "Filtered by vessel IMO {imo}",
+    "filter_clear": "Clear"
   },
   "MyFleet": {
     "status_compliant": "COMPLIANT",

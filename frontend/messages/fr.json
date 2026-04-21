@@ -1142,7 +1142,10 @@
     "cancel": "Annuler",
     "draft_save": "Enregistrer PDF",
     "print_and_send": "Imprimer et envoyer →",
-    "contest_invoice": "Contester"
+    "contest_invoice": "Contester",
+    "export_csv": "Exporter CSV",
+    "filter_by_vessel": "Filtré sur vessel IMO {imo}",
+    "filter_clear": "Effacer"
   },
   "Disputes": {
     "kpi_total": "Total Contestations",
