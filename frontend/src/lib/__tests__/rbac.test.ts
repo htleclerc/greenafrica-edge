@@ -1,20 +1,43 @@
 import { describe, it, expect } from 'vitest';
-import { canAccess, canEdit, filterNavItems } from '../rbac';
+import { canAccess, canEdit, filterNavItems, MONEY_RAIL_KEYS } from '../rbac';
 import { UserRole } from '@/types/secure';
+
+const ALL_ROLES = [
+  UserRole.PORT_OFFICER,
+  UserRole.FINANCE_ADMIN,
+  UserRole.SHIPPING_AGENT,
+  UserRole.SUPERADMIN,
+  UserRole.MANAGER,
+] as const;
 
 describe('canAccess', () => {
   const universalPages = ['map', 'vessels', 'invoices', 'settings', 'disputes'];
 
   universalPages.forEach((page) => {
     it(`allows core roles to access "${page}"`, () => {
-      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN].forEach((role) => {
+      ALL_ROLES.forEach((role) => {
         expect(canAccess(page, role)).toBe(true);
       });
     });
   });
 
-  it('allows access to unknown nav keys', () => {
-    expect(canAccess('nonexistent-page', UserRole.PORT_OFFICER)).toBe(true);
+  // ── Deny-by-default for unknown nav keys (was fail-open before PR-1) ──
+  describe('unknown nav key — deny-by-default', () => {
+    it('denies PORT_OFFICER on unknown key', () => {
+      expect(canAccess('nonexistent-page', UserRole.PORT_OFFICER)).toBe(false);
+    });
+    it('denies FINANCE_ADMIN on unknown key', () => {
+      expect(canAccess('nonexistent-page', UserRole.FINANCE_ADMIN)).toBe(false);
+    });
+    it('denies SHIPPING_AGENT on unknown key', () => {
+      expect(canAccess('nonexistent-page', UserRole.SHIPPING_AGENT)).toBe(false);
+    });
+    it('denies MANAGER on unknown key', () => {
+      expect(canAccess('nonexistent-page', UserRole.MANAGER)).toBe(false);
+    });
+    it('allows SUPERADMIN on unknown key (escape hatch for fast iteration)', () => {
+      expect(canAccess('nonexistent-page', UserRole.SUPERADMIN)).toBe(true);
+    });
   });
 
   describe('port-authority restricted pages', () => {
@@ -27,15 +50,16 @@ describe('canAccess', () => {
     it('denies FINANCE_ADMIN access to green-ledger', () => {
       expect(canAccess('green-ledger', UserRole.FINANCE_ADMIN)).toBe(false);
     });
+    it('denies MANAGER access to green-ledger', () => {
+      expect(canAccess('green-ledger', UserRole.MANAGER)).toBe(false);
+    });
   });
 
   describe('admin pages', () => {
     it('grants FINANCE_ADMIN access to tax-settings', () => {
       expect(canAccess('tax-settings', UserRole.FINANCE_ADMIN)).toBe(true);
     });
-    it('grants PORT_OFFICER read access to tax-settings (changed in 2026)', () => {
-      // PORT_OFFICER needs to view exemptions when handling EXEMPT vessels.
-      // Read-only is enforced by canEdit() in the page itself.
+    it('grants PORT_OFFICER read access to tax-settings', () => {
       expect(canAccess('tax-settings', UserRole.PORT_OFFICER)).toBe(true);
     });
     it('denies SHIPPING_AGENT access to revenue', () => {
@@ -65,6 +89,9 @@ describe('canAccess', () => {
     it('denies FINANCE_ADMIN access to my-fleet', () => {
       expect(canAccess('my-fleet', UserRole.FINANCE_ADMIN)).toBe(false);
     });
+    it('denies MANAGER access to my-fleet', () => {
+      expect(canAccess('my-fleet', UserRole.MANAGER)).toBe(false);
+    });
   });
 
   describe('audit', () => {
@@ -74,11 +101,45 @@ describe('canAccess', () => {
     it('grants SUPERADMIN access to audit', () => {
       expect(canAccess('audit', UserRole.SUPERADMIN)).toBe(true);
     });
+    it('grants MANAGER access to audit (read-only)', () => {
+      expect(canAccess('audit', UserRole.MANAGER)).toBe(true);
+      expect(canEdit('audit', UserRole.MANAGER)).toBe(false);
+    });
     it('denies SHIPPING_AGENT access to audit', () => {
       expect(canAccess('audit', UserRole.SHIPPING_AGENT)).toBe(false);
     });
     it('denies FINANCE_ADMIN access to audit', () => {
       expect(canAccess('audit', UserRole.FINANCE_ADMIN)).toBe(false);
+    });
+  });
+
+  // ── MANAGER role — the new role from PR-1 ──
+  describe('MANAGER role — ops access', () => {
+    const allowedOpsKeys = [
+      'map', 'simulator', 'vessels', 'invoices', 'disputes', 'tco',
+      'alerts', 'inspector', 'audit', 'validations', 'settings',
+    ];
+    allowedOpsKeys.forEach((key) => {
+      it(`grants MANAGER access to ops key "${key}"`, () => {
+        expect(canAccess(key, UserRole.MANAGER)).toBe(true);
+      });
+    });
+  });
+
+  describe('MANAGER role — money-rail denials (no money, no RBAC)', () => {
+    const moneyRail = ['tax-settings', 'revenue', 'payments'];
+    moneyRail.forEach((key) => {
+      it(`denies MANAGER access to money-rail key "${key}"`, () => {
+        expect(canAccess(key, UserRole.MANAGER)).toBe(false);
+      });
+    });
+
+    it('denies MANAGER access to my-fleet (shipping-only)', () => {
+      expect(canAccess('my-fleet', UserRole.MANAGER)).toBe(false);
+    });
+
+    it('denies MANAGER access to green-ledger (analyst-only)', () => {
+      expect(canAccess('green-ledger', UserRole.MANAGER)).toBe(false);
     });
   });
 
@@ -106,27 +167,57 @@ describe('canEdit (read vs write distinction)', () => {
   });
 
   it('denies PORT_OFFICER edit on tax-settings (read-only)', () => {
-    // PORT_OFFICER can ACCESS the page but cannot perform write actions.
     expect(canAccess('tax-settings', UserRole.PORT_OFFICER)).toBe(true);
     expect(canEdit('tax-settings', UserRole.PORT_OFFICER)).toBe(false);
   });
 
   it('denies SHIPPING_AGENT edit on tax-settings (no access at all)', () => {
-    // canEdit must return false even if SHIPPING_AGENT has no NAV_PERMISSIONS entry.
     expect(canEdit('tax-settings', UserRole.SHIPPING_AGENT)).toBe(false);
   });
 
   it('grants edit on a page with no read-only roles configured', () => {
-    // Pages without an entry in READ_ONLY_ROLES default to "everyone with
-    // canAccess can also edit". 'invoices' is universal access + no read-only.
     expect(canEdit('invoices', UserRole.SHIPPING_AGENT)).toBe(true);
     expect(canEdit('invoices', UserRole.PORT_OFFICER)).toBe(true);
   });
 
   it('denies edit on a page the user has no access to', () => {
-    // SHIPPING_AGENT has no access to revenue → cannot edit either
     expect(canAccess('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
     expect(canEdit('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
+  });
+
+  // ── MANAGER read-only on sensitive pages ──
+  it('denies MANAGER edit on invoices (read-only)', () => {
+    expect(canAccess('invoices', UserRole.MANAGER)).toBe(true);
+    expect(canEdit('invoices', UserRole.MANAGER)).toBe(false);
+  });
+
+  it('denies MANAGER edit on disputes (read-only — resolve = money action)', () => {
+    expect(canAccess('disputes', UserRole.MANAGER)).toBe(true);
+    expect(canEdit('disputes', UserRole.MANAGER)).toBe(false);
+  });
+
+  it('denies MANAGER edit on audit (read-only)', () => {
+    expect(canAccess('audit', UserRole.MANAGER)).toBe(true);
+    expect(canEdit('audit', UserRole.MANAGER)).toBe(false);
+  });
+
+  it('grants MANAGER edit on validations (ops write)', () => {
+    expect(canAccess('validations', UserRole.MANAGER)).toBe(true);
+    expect(canEdit('validations', UserRole.MANAGER)).toBe(true);
+  });
+});
+
+describe('MONEY_RAIL_KEYS export', () => {
+  it('exposes the canonical money-rail keys for server-side guards', () => {
+    expect(MONEY_RAIL_KEYS.has('tax-settings')).toBe(true);
+    expect(MONEY_RAIL_KEYS.has('revenue')).toBe(true);
+    expect(MONEY_RAIL_KEYS.has('payments')).toBe(true);
+  });
+
+  it('does NOT include ops keys', () => {
+    expect(MONEY_RAIL_KEYS.has('vessels')).toBe(false);
+    expect(MONEY_RAIL_KEYS.has('alerts')).toBe(false);
+    expect(MONEY_RAIL_KEYS.has('audit')).toBe(false);
   });
 });
 
@@ -152,5 +243,15 @@ describe('filterNavItems', () => {
   it('returns all items for SUPERADMIN', () => {
     const result = filterNavItems(allItems, UserRole.SUPERADMIN);
     expect(result).toHaveLength(allItems.length);
+  });
+
+  it('filters out money-rail and shipping-only items for MANAGER', () => {
+    const result = filterNavItems(allItems, UserRole.MANAGER);
+    const keys = result.map((item) => item.key);
+    expect(keys).toContain('map');
+    expect(keys).toContain('settings');
+    expect(keys).not.toContain('tax-settings');
+    expect(keys).not.toContain('my-fleet');
+    expect(keys).not.toContain('green-ledger');
   });
 });

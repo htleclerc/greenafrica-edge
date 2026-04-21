@@ -245,26 +245,78 @@ function docTypeName(mode: InvoiceMode | undefined): string {
 }
 
 /**
- * Draw the Somaliland flag (3 horizontal stripes + 5-point black star).
- * Vector drawing — no external assets, works everywhere jsPDF does.
- * Colors match the official flag: green #006d21, white #ffffff, red #df0000.
+ * Cached base64 data URL of the official Somaliland flag PNG
+ * (includes the Shahada calligraphy in the top green band).
+ *
+ * Loaded lazily from public/brand/somaliland-flag.png on first use.
+ * Server-side only — client-side imports fall back to vector primitives.
  */
-function drawSomalilandFlag(doc: jsPDF, x: number, y: number, w: number, h: number): void {
+let CACHED_SOMALILAND_FLAG_PNG: string | null = null;
+
+async function loadSomalilandFlagPng(): Promise<string | null> {
+  if (CACHED_SOMALILAND_FLAG_PNG !== null) return CACHED_SOMALILAND_FLAG_PNG;
+  if (typeof window !== 'undefined') return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { readFileSync } = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { join } = require('path');
+    const svgPath = join(process.cwd(), 'public', 'brand', 'somaliland-flag.svg');
+    const svgBuffer = readFileSync(svgPath);
+    // Use sharp (already installed by Next.js) to rasterize the SVG (which includes
+    // the Shahada calligraphy in the top green band) to a PNG jsPDF can embed.
+    // Rasterize at ~300dpi for a 16mm wide flag (188px is plenty).
+    // Keep file small: quantize colors + max compression. The flag has few
+    // colors so this is near-lossless and keeps the PDF under ~60KB overhead.
+    const sharp = (await import('sharp')).default;
+    const pngBuffer = await sharp(svgBuffer, { density: 400 })
+      .resize(240, 120, { fit: 'fill' })
+      .png({ palette: true, compressionLevel: 9 })
+      .toBuffer();
+    CACHED_SOMALILAND_FLAG_PNG = `data:image/png;base64,${pngBuffer.toString('base64')}`;
+    return CACHED_SOMALILAND_FLAG_PNG;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Draw the Somaliland flag.
+ *
+ * Preferred path (server-side): use the official PNG asset which includes the
+ * Shahada calligraphy ("لا إله إلا الله محمد رسول الله") in the top green band
+ * plus the 5-point black star on the white band.
+ *
+ * Fallback path (client-side or PNG unavailable): draw 3 horizontal stripes +
+ * star using jsPDF primitives. Colors match the official flag:
+ * green #006d21, white #ffffff, red #df0000.
+ */
+async function drawSomalilandFlag(doc: jsPDF, x: number, y: number, w: number, h: number): Promise<void> {
+  const pngDataUrl = await loadSomalilandFlagPng();
+  if (pngDataUrl) {
+    try {
+      doc.addImage(pngDataUrl, 'PNG', x, y, w, h);
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.15);
+      doc.rect(x, y, w, h, 'S');
+      return;
+    } catch (err) {
+      // fall through to vector fallback
+      void err;
+    }
+  }
+
+  // ── Vector fallback ──
   const band = h / 3;
-  // Green band (top) — #006d21
   doc.setFillColor(0, 109, 33);
   doc.rect(x, y, w, band, 'F');
-  // White band (middle) — #ffffff
   doc.setFillColor(255, 255, 255);
   doc.rect(x, y + band, w, band, 'F');
-  // Red band (bottom) — #df0000
   doc.setFillColor(223, 0, 0);
   doc.rect(x, y + 2 * band, w, band, 'F');
-  // Thin frame
   doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(0.15);
   doc.rect(x, y, w, h, 'S');
-  // Black 5-point star in the centre of the white band
   const cx = x + w / 2;
   const cy = y + band + band / 2;
   const R = Math.min(band * 0.45, w * 0.09);
@@ -352,7 +404,7 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
 
   // ── Somaliland flag below the logo (port country) ──
-  drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
+  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
 
   // ── Brand text ──
   const brandX = logoX + logoSize + 4;
@@ -739,7 +791,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
 
   // Somaliland flag below the logo
-  drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
+  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
 
   // Brand text
   const brandX = logoX + logoSize + 4;

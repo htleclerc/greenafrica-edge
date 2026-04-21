@@ -10,6 +10,7 @@ export enum UserRole {
     FINANCE_ADMIN   = 'FINANCE_ADMIN',
     SUPERADMIN      = 'SUPERADMIN',
     SHIPPING_AGENT  = 'SHIPPING_AGENT',
+    MANAGER         = 'MANAGER',
 }
 
 export enum OperationalSite {

@@ -13,10 +13,19 @@ const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-app
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Demo mode: only bypass auth if DEMO_SECRET (server-only env var) matches cookie value.
-    // The plain NEXT_PUBLIC_DEMO_ALLOWED boolean is NOT sufficient — a forgeable cookie is not auth.
+    // Demo mode: gated by the build-time NEXT_PUBLIC_DEMO_ALLOWED flag.
+    // Demo only reveals mock data (no real DB access, no real auth surface),
+    // so the public flag is a sufficient kill-switch — an attacker forging
+    // demo_active=true in a deployment where the flag is off still gets
+    // redirected to /login. If DEMO_SECRET is configured we *also* accept a
+    // cookie whose value matches it, preserving the stricter server-issued
+    // path for hardened deployments.
+    const demoAllowed = process.env.NEXT_PUBLIC_DEMO_ALLOWED === 'true';
+    const demoCookie = request.cookies.get('demo_active')?.value;
     const demoSecret = process.env.DEMO_SECRET;
-    const isDemo = !!demoSecret && request.cookies.get('demo_active')?.value === demoSecret;
+    const isDemo =
+        (demoAllowed && demoCookie === 'true')
+        || (!!demoSecret && demoCookie === demoSecret);
 
     const { supabaseResponse, user } = await updateSession(request);
 

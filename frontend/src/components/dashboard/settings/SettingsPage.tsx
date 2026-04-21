@@ -19,6 +19,7 @@ const ROLE_I18N_KEY: Record<UserRole, string> = {
     [UserRole.FINANCE_ADMIN]:  'settings_role_finance_admin',
     [UserRole.SUPERADMIN]:     'settings_role_superadmin',
     [UserRole.SHIPPING_AGENT]: 'settings_role_shipping_agent',
+    [UserRole.MANAGER]:        'settings_role_operations_manager',
 };
 
 const SITE_I18N_KEY: Record<OperationalSite, string> = {

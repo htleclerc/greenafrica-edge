@@ -1,7 +1,16 @@
 import pg from 'pg';
 const { Client } = pg;
 
-const password = 'RrV6.$r&-E_Gmi5';
+// Reads password from frontend/.env.local (Node 20.12+ built-in, no dotenv needed).
+// Add SUPABASE_DB_PASSWORD=... to frontend/.env.local after rotating in
+// Supabase dashboard → Settings → Database → Reset database password.
+process.loadEnvFile(new URL('../frontend/.env.local', import.meta.url));
+
+const password = process.env.SUPABASE_DB_PASSWORD;
+if (!password) {
+  console.error('❌ Missing SUPABASE_DB_PASSWORD in frontend/.env.local');
+  process.exit(1);
+}
 
 // Try multiple connection strategies
 const configs = [

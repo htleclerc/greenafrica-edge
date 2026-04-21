@@ -91,6 +91,25 @@ INSERT INTO auth.users (
     '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
+-- Superadmin — Green Gate platform owner
+INSERT INTO auth.users (
+    id, instance_id, aud, role,
+    email, encrypted_password,
+    email_confirmed_at, created_at, updated_at,
+    raw_user_meta_data, raw_app_meta_data,
+    confirmation_token, recovery_token
+) VALUES (
+    '00000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'sadmin@greengate.africa',
+    crypt('Demo@2025!', gen_salt('bf')),
+    NOW(), NOW(), NOW(),
+    jsonb_build_object('full_name', 'Green Gate Superadmin', 'role', 'SUPERADMIN'),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    '', ''
+) ON CONFLICT (id) DO NOTHING;
+
 -- ── 2. Mettre à jour les profils créés par le trigger ────────────────────────
 -- Le trigger a déjà créé les lignes, on enrichit les champs manquants.
 
@@ -130,6 +149,15 @@ UPDATE public.profiles SET
     is_demo          = TRUE
 WHERE id = '00000000-0000-0000-0000-000000000004';
 
+UPDATE public.profiles SET
+    operational_site = 'NATIONAL_HQ',
+    country_code     = 'SO',
+    timezone         = 'Africa/Mogadishu',
+    preferred_language = 'fr',
+    ip_address       = '197.231.44.02'::INET,
+    is_demo          = FALSE
+WHERE id = '00000000-0000-0000-0000-000000000005';
+
 -- ── 3. Créer les identités auth ──────────────────────────────────────────────
 -- Nécessaire pour que Supabase Auth reconnaisse les comptes.
 
@@ -164,6 +192,13 @@ INSERT INTO auth.identities (
     '00000000-0000-0000-0000-000000000004',
     'superadmin@africgreen.gov.sl', 'email',
     jsonb_build_object('sub', '00000000-0000-0000-0000-000000000004', 'email', 'superadmin@africgreen.gov.sl'),
+    NOW(), NOW(), NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000005',
+    'sadmin@greengate.africa', 'email',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000005', 'email', 'sadmin@greengate.africa'),
     NOW(), NOW(), NOW()
 )
 ON CONFLICT DO NOTHING;

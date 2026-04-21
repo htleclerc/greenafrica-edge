@@ -7,6 +7,8 @@ import {
     buildReceiptRef,
     type ReceiptData,
 } from '@/services/invoiceService';
+import { requireRole } from '@/lib/auth/requireRole';
+import { UserRole } from '@/types/secure';
 
 /**
  * POST /api/transactions/mark-paid
@@ -28,6 +30,13 @@ import {
  * if not provided.
  */
 export async function POST(request: NextRequest) {
+    // Money-rail action: only SUPERADMIN and FINANCE_ADMIN may mark invoices
+    // paid. Without this guard, any authenticated user (including a
+    // SHIPPING_AGENT or MANAGER) could call this endpoint with any
+    // transactionId and forge payment records.
+    const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
+    if (auth.error) return auth.error;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !supabaseKey) {
@@ -51,6 +60,12 @@ export async function POST(request: NextRequest) {
     if (!body.transactionId) {
         return NextResponse.json({ error: 'transactionId is required' }, { status: 400 });
     }
+
+    // Override caller-supplied actingUserId/Name with the verified session
+    // identity. The body fields are kept for legacy compatibility but the
+    // server side trusts only the JWT-derived profile.
+    body.actingUserId = auth.user.id;
+    body.actingUserName = auth.user.fullName;
 
     const paymentMethod = body.paymentMethod || 'wire_transfer';
     const paymentReference = body.paymentReference?.trim() || null;

@@ -70,7 +70,7 @@ export default async function RootLayout({
                     }}
                 />
             </head>
-            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${spaceGrotesk.variable} ${sora.variable}`}>
+            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${spaceGrotesk.variable} ${sora.variable}`} suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider
                         attribute="data-theme"

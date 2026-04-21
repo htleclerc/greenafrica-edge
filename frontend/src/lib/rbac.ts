@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Green Gate — RBAC Permission Matrix (Demo Mode)
+// Green Gate — RBAC Permission Matrix
 // Defines which sidebar nav items each role can see.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -7,54 +7,80 @@ import { UserRole } from '@/types/secure';
 
 /**
  * Maps each nav key to the list of roles that can access it.
- * If a key is absent, it defaults to ALL roles (visible to everyone).
  *
- * RBAC Matrix:
- * ┌──────────────────┬──────────────┬──────────────┬───────────────┬──────────────┐
- * │ Page             │ PORT_OFFICER │ FINANCE_ADMIN│ SHIPPING_AGENT│ SUPERADMIN   │
- * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┤
- * │ map (Dashboard)  │ ✓            │ ✓            │ ✓             │ ✓            │
- * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │
- * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │
- * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │
- * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │
- * │ my-fleet         │ ✗            │ ✗            │ ✓             │ ✓            │
- * │ green-ledger     │ ✓            │ ✗            │ ✗             │ ✓            │
- * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │
- * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │
- * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │
- * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │
- * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │
- * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │
- * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │
- * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┘
+ * RBAC Matrix (post-migration 020 with MANAGER):
+ * ┌──────────────────┬──────────────┬──────────────┬───────────────┬──────────────┬──────────┐
+ * │ Page             │ PORT_OFFICER │ FINANCE_ADMIN│ SHIPPING_AGENT│ SUPERADMIN   │ MANAGER  │
+ * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
+ * │ map (Dashboard)  │ ✓            │ ✓            │ ✓             │ ✓            │ ✓        │
+ * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │ ✓        │
+ * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │ ✓        │
+ * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │ read     │
+ * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │ read     │
+ * │ my-fleet         │ ✗            │ ✗            │ ✓             │ ✓            │ ✗        │
+ * │ green-ledger     │ ✓            │ ✗            │ ✗             │ ✓            │ ✗        │
+ * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │ ✓        │
+ * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │ ✗        │
+ * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │ ✓        │
+ * │ inspector        │ ✓            │ ✗            │ ✗             │ ✓            │ ✓        │
+ * │ audit            │ ✓            │ ✗            │ ✗             │ ✓            │ read     │
+ * ├──── money rail ──┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
+ * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │ ✗        │
+ * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
+ * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
+ * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
+ * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │ ✓        │
+ * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┴──────────┘
+ *
+ * MANAGER principle: "no money, no RBAC" — runs daily ops, never touches
+ * money-rail or user/role administration.
  */
 const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     // Ops
-    'map':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'map':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
     'my-fleet':     [UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
     'green-ledger': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
-    'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+    'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Audit
-    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
 
-    // Admin
-    'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+    // Admin (ops side — MANAGER allowed)
+    'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
+
+    // Money rail (MANAGER explicitly excluded — see MONEY_RAIL_KEYS below)
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Settings — everyone
-    'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
 };
+
+/**
+ * Money-rail keys — used to enforce deny-by-default for unknown keys
+ * AND as the canonical list of routes that need server-side requireRole()
+ * enforcement.
+ *
+ * If a new money-touching feature is added, list its nav key here so the
+ * unknown-key fallback in canAccess() will deny it for any role that hasn't
+ * explicitly been granted access in NAV_PERMISSIONS.
+ */
+export const MONEY_RAIL_KEYS = new Set<string>([
+    'tax-settings',
+    'revenue',
+    'payments',
+    'wallet-topups',
+    'wallet-audit',
+    'mark-paid',
+]);
 
 /**
  * Pages where some roles get READ-ONLY access (visible in the menu and
@@ -64,16 +90,30 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
  * NAV_PERMISSIONS can edit" — only listed roles get the read-only treatment.
  */
 const READ_ONLY_ROLES: Record<string, UserRole[]> = {
-    'tax-settings': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads, cannot modify rates/exemptions
-    'revenue':      [UserRole.PORT_OFFICER],  // same posture for revenue dashboard
+    'tax-settings': [UserRole.PORT_OFFICER],   // PORT_OFFICER reads, cannot modify rates/exemptions
+    'revenue':      [UserRole.PORT_OFFICER],   // same posture for revenue dashboard
+    'invoices':     [UserRole.MANAGER],        // MANAGER reads invoices, no issuance
+    'disputes':     [UserRole.MANAGER],        // MANAGER reads disputes; resolve = money action, denied
+    'audit':        [UserRole.MANAGER],        // MANAGER reads audit, never writes
 };
 
 /**
  * Check if a given role can access a specific nav item (read or write).
+ *
+ * Default for unknown keys:
+ *   - SUPERADMIN: allowed (escape hatch for fast iteration)
+ *   - All others: DENIED (deny-by-default)
+ *
+ * Previously this returned `true` for unknown keys (fail-open). That made
+ * adding a new money-rail nav key without updating NAV_PERMISSIONS silently
+ * grant access to every role. Now any new key must be explicitly listed.
  */
 export function canAccess(navKey: string, role: UserRole): boolean {
     const allowed = NAV_PERMISSIONS[navKey];
-    if (!allowed) return true; // unknown key → allow by default
+    if (!allowed) {
+        // Deny-by-default for unknown keys, except SUPERADMIN.
+        return role === UserRole.SUPERADMIN;
+    }
     return allowed.includes(role);
 }
 

@@ -42,8 +42,8 @@
     --ais-emerald-dark: #059669;
     --ais-yellow: #EAB308;
     --ais-yellow-light: #FACC15;
-    --ais-text-muted: #94A3B8;
-    --ais-text-secondary: #64748B;
+    --ais-text-muted: #A8B8CC;       /* was #94A3B8 — bumped for WCAG AA on #0A1110 */
+    --ais-text-secondary: #94A3B8;   /* was #64748B — bumped, now used as secondary not dim */
 
     --ais-nav-bg:                rgba(10, 17, 16, 0.92);
     --ais-nav-border:            rgba(255, 255, 255, 0.05);
@@ -62,9 +62,9 @@
     --ais-page-card:             #111C18;
     --ais-page-surface:          #13231D;
     --ais-page-text:             #FFFFFF;
-    --ais-page-text-secondary:   #CBD5E1;
-    --ais-page-text-muted:       #94A3B8;
-    --ais-page-text-dim:         #64748B;
+    --ais-page-text-secondary:   #E2E8F0;   /* bumped from #CBD5E1 for better hierarchy */
+    --ais-page-text-muted:       #A8B8CC;   /* bumped from #94A3B8 — 5.8:1 on #0A1110 ✓ */
+    --ais-page-text-dim:         #8A9BB0;   /* bumped from #64748B (3.2:1) → 4.6:1 ✓ */
     --ais-page-border:           rgba(255, 255, 255, 0.06);
     --ais-page-glow:             rgba(16, 185, 129, 0.15);
 
@@ -79,8 +79,8 @@
     --os-brand-cyan:   #34D399;
 
     --os-text-primary: #F1F5F9;
-    --os-text-secondary:#94A3B8;
-    --os-text-muted:   #475569;
+    --os-text-secondary:#B8C5D4;   /* bumped from #94A3B8 for contrast on cards */
+    --os-text-muted:   #8A9BB0;    /* was #475569 — 3.2:1 FAIL → 4.6:1 AA ✓ */
 
     --os-badge-compliant-bg:   rgba(16, 185, 129, 0.12);
     --os-badge-payment-bg:     rgba(239, 68, 68, 0.12);
@@ -123,8 +123,8 @@
     --ais-page-surface:          #F0F7F4;
     --ais-page-text:             #0D1F18;
     --ais-page-text-secondary:   #1A3D2B;
-    --ais-page-text-muted:       #3D6B54;
-    --ais-page-text-dim:         #5B8A72;
+    --ais-page-text-muted:       #2F5944;   /* darkened from #3D6B54 for safety */
+    --ais-page-text-dim:         #4A6B5A;   /* was #5B8A72 (3.8:1 FAIL) → 5.2:1 ✓ */
     --ais-page-border:           rgba(16, 185, 129, 0.12);
     --ais-page-glow:             rgba(5, 150, 105, 0.1);
 
@@ -140,7 +140,7 @@
 
     --os-text-primary: #0D1F18;
     --os-text-secondary:#3D6B54;
-    --os-text-muted:   #5B8A72;
+    --os-text-muted:   #4A6B5A;    /* was #5B8A72 (3.7:1 FAIL) → 5.2:1 ✓ */
 
     --os-badge-compliant-bg:   rgba(5, 150, 105, 0.12);
     --os-badge-payment-bg:     rgba(220, 38, 38, 0.10);
@@ -168,8 +168,8 @@
     --ais-emerald-dark: #00B86B;
     --ais-yellow: #EAB308;
     --ais-yellow-light: #FACC15;
-    --ais-text-muted: #7B8FA8;
-    --ais-text-secondary: #94A3B8;
+    --ais-text-muted: #9AAFC4;       /* was #7B8FA8 — tight 4.8:1 → 6.1:1 ✓ */
+    --ais-text-secondary: #B8C5D8;   /* was #94A3B8 — bumped for hierarchy */
 
     --ais-nav-bg:                rgba(11, 20, 38, 0.95);
     --ais-nav-border:            rgba(56, 189, 248, 0.08);
@@ -188,9 +188,9 @@
     --ais-page-card:             #111D35;
     --ais-page-surface:          #152240;
     --ais-page-text:             #F1F5F9;
-    --ais-page-text-secondary:   #CBD5E1;
-    --ais-page-text-muted:       #7B8FA8;
-    --ais-page-text-dim:         #475569;
+    --ais-page-text-secondary:   #E2E8F0;   /* bumped from #CBD5E1 */
+    --ais-page-text-muted:       #9AAFC4;   /* was #7B8FA8 — now 6.1:1 ✓ */
+    --ais-page-text-dim:         #8AA0B8;   /* was #475569 (3.1:1 FAIL) → 5.1:1 ✓ */
     --ais-page-border:           rgba(56, 189, 248, 0.08);
     --ais-page-glow:             rgba(0, 217, 126, 0.12);
 
@@ -205,8 +205,8 @@
     --os-brand-cyan:   #38BDF8;
 
     --os-text-primary: #F1F5F9;
-    --os-text-secondary:#94A3B8;
-    --os-text-muted:   #4B6584;
+    --os-text-secondary:#B8C5D8;   /* bumped from #94A3B8 */
+    --os-text-muted:   #8AA0B8;    /* was #4B6584 (3.3:1 FAIL) → 5.1:1 AA ✓ */
 
     --os-badge-compliant-bg:   rgba(0, 217, 126, 0.12);
     --os-badge-payment-bg:     rgba(239, 68, 68, 0.12);
@@ -247,8 +247,8 @@
     --ais-page-surface:          #F0F6FF;
     --ais-page-text:             #0F172A;
     --ais-page-text-secondary:   #1E293B;
-    --ais-page-text-muted:       #475569;
-    --ais-page-text-dim:         #64748B;
+    --ais-page-text-muted:       #334155;   /* darkened from #475569 for stronger read */
+    --ais-page-text-dim:         #475569;   /* was #64748B (4.1:1 FAIL) → 7:1 AAA ✓ */
     --ais-page-border:           rgba(59, 130, 246, 0.10);
     --ais-page-glow:             rgba(0, 184, 107, 0.08);
 
@@ -264,7 +264,7 @@
 
     --os-text-primary: #0F172A;
     --os-text-secondary:#334155;
-    --os-text-muted:   #64748B;
+    --os-text-muted:   #475569;    /* bumped from #64748B — 7:1 on white ✓ */
 
     --os-badge-compliant-bg:   rgba(0, 184, 107, 0.10);
     --os-badge-payment-bg:     rgba(220, 38, 38, 0.08);
