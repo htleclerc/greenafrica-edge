@@ -16,6 +16,15 @@
 --   3. Does NOT grant MANAGER any access to transactions, payment_config,
 --      app_config, or any money-rail table — those policies stay unchanged.
 --
+-- IMPLEMENTATION NOTE — Postgres 55P04 workaround:
+--   ALTER TYPE ... ADD VALUE creates an enum label but Postgres rejects
+--   USING that label in the SAME transaction (error 55P04 "unsafe use of
+--   new value"). The Supabase SQL editor runs the pasted script as one
+--   transaction. To avoid 55P04, every policy below compares
+--   public.get_user_role()::text against text literals — string-vs-string
+--   comparison sidesteps the enum-value-committed check.
+--   Functionally identical: enum values serialize to their textual labels.
+--
 -- Rollback strategy: feature flag `NEXT_PUBLIC_FEATURE_MANAGER_ROLE=false`
 -- in env keeps MANAGER invisible in UI. Postgres enum values cannot be
 -- removed cleanly — they stay in the type permanently, harmless if no
@@ -23,38 +32,29 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── Extend user_role enum ───────────────────────────────────────────────────
--- ALTER TYPE ... ADD VALUE is non-transactional in PG12+ but safe here:
--- no existing row carries this value yet.
 ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'MANAGER';
-
--- The public.get_user_role() helper from migration 001 returns user_role —
--- it transparently picks up the new value, no change needed.
 
 -- ── RLS: vessels (MANAGER reads + writes, like PORT_OFFICER) ────────────────
 DROP POLICY IF EXISTS "Officers can manage vessels" ON public.vessels;
 CREATE POLICY "Officers and managers can manage vessels"
     ON public.vessels FOR INSERT
     WITH CHECK (
-        public.get_user_role() IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
+        public.get_user_role()::text IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
     );
 
 DROP POLICY IF EXISTS "Officers can update vessels" ON public.vessels;
 CREATE POLICY "Officers and managers can update vessels"
     ON public.vessels FOR UPDATE
     USING (
-        public.get_user_role() IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
+        public.get_user_role()::text IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
     );
 
--- The SELECT policy already permits MANAGER implicitly via the
--- "Shipping agents see own fleet" policy (which grants visibility to anyone
--- not in PORT_OFFICER/FINANCE_ADMIN/SUPERADMIN only if owner_id matches).
--- We need a separate SELECT grant for MANAGER to see all vessels:
 DROP POLICY IF EXISTS "Shipping agents see own fleet" ON public.vessels;
 CREATE POLICY "Vessel SELECT — agents see own, staff see all"
     ON public.vessels FOR SELECT
     USING (
         owner_id = auth.uid()
-        OR public.get_user_role() IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN', 'MANAGER')
+        OR public.get_user_role()::text IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN', 'MANAGER')
     );
 
 -- ── RLS: vessel_positions (MANAGER write for AIS feed maintenance) ──────────
@@ -62,7 +62,7 @@ DROP POLICY IF EXISTS "Officers can insert positions" ON public.vessel_positions
 CREATE POLICY "Officers and managers can insert positions"
     ON public.vessel_positions FOR INSERT
     WITH CHECK (
-        public.get_user_role() IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
+        public.get_user_role()::text IN ('PORT_OFFICER', 'SUPERADMIN', 'MANAGER')
     );
 
 DROP POLICY IF EXISTS "Users see positions of visible vessels" ON public.vessel_positions;
@@ -74,7 +74,7 @@ CREATE POLICY "Position SELECT — agents see own fleet, staff see all"
             WHERE v.id = vessel_positions.vessel_id
             AND (
                 v.owner_id = auth.uid()
-                OR public.get_user_role() IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN', 'MANAGER')
+                OR public.get_user_role()::text IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN', 'MANAGER')
             )
         )
     );
@@ -89,7 +89,7 @@ CREATE POLICY "Admins and managers can read all registrations"
         EXISTS (
             SELECT 1 FROM public.profiles p
             WHERE p.id = auth.uid()
-            AND p.role IN ('SUPERADMIN', 'PORT_OFFICER', 'MANAGER')
+            AND p.role::text IN ('SUPERADMIN', 'PORT_OFFICER', 'MANAGER')
         )
     );
 
@@ -101,7 +101,7 @@ CREATE POLICY "Admins and managers can update registrations"
         EXISTS (
             SELECT 1 FROM public.profiles p
             WHERE p.id = auth.uid()
-            AND p.role IN ('SUPERADMIN', 'PORT_OFFICER', 'MANAGER')
+            AND p.role::text IN ('SUPERADMIN', 'PORT_OFFICER', 'MANAGER')
         )
     );
 
