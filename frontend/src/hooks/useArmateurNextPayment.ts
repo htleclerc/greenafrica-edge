@@ -3,11 +3,19 @@
 import { useCallback } from 'react';
 import { useDataSource, type DataSourceResult } from './useDataSource';
 import type { Transaction } from '@/types/secure';
+import { mockTransactions } from '@/mock/datas/secureMock';
+import { TransactionStatus } from '@/types/secure';
 import { getNextPendingTransaction } from '@/services/transactionService';
 
-// Demo mock — a PENDING tx 6 days old so the armateur preview shows a realistic
-// "24 days remaining" state. Set to null to demo the empty "Compte à jour" state.
-const mockNextPending: Transaction | null = null;
+// Demo mock — resolves to the oldest PENDING tx in the mock fixture for
+// the demo armateur's fleet (txn-006, MSC BERBERA, created 6d ago so the
+// NextPaymentCard reads ~24 days remaining). Returns null if someone
+// removes the PENDING fixture, naturally reverting to the empty state.
+const mockNextPending: Transaction | null =
+    mockTransactions
+        .filter((tx) => tx.status === TransactionStatus.PENDING)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]
+    ?? null;
 
 /**
  * The armateur's next-upcoming payment. Returns the oldest PENDING transaction

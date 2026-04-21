@@ -74,6 +74,7 @@ export const mockSecureVessels: SecureVessel[] = [
         portCall: 'BERBERA',
         proFormaGenerated: false,
         lastTransactionId: null,
+        ownerId: 'usr-test-004', // Ahmed Warsame (MARINER Corp) — demo armateur
     },
     {
         id: 'vsec-002',
@@ -93,6 +94,7 @@ export const mockSecureVessels: SecureVessel[] = [
         portCall: 'BERBERA',
         proFormaGenerated: true,
         lastTransactionId: 'txn-001',
+        ownerId: 'usr-test-004', // Ahmed Warsame (MARINER Corp) — demo armateur
     },
     {
         id: 'vsec-003',
@@ -248,6 +250,23 @@ export const mockTransactions: Transaction[] = [
         invoicePdfUrl: null,
         portCall: 'BERBERA',
         createdAt: '2025-03-08T12:00:00Z',
+        paidAt: null,
+    },
+    // Demo armateur (usr-test-004) PENDING tx for MSC BERBERA. Created 6 days
+    // ago so the NextPaymentCard shows "24 days remaining" in the demo view.
+    {
+        id: 'txn-006',
+        ref: 'PRO-2026-000006',
+        vesselId: 'vsec-001',
+        vesselName: 'MSC BERBERA',
+        vesselImo: '9348576',
+        transactionType: TransactionType.ENTRY_TAX,
+        emissionsTco2: 215.4,
+        taxAmountUsd: 4_250,
+        status: TransactionStatus.PENDING,
+        invoicePdfUrl: null,
+        portCall: 'BERBERA',
+        createdAt: new Date(Date.now() - 6 * 86400000).toISOString(),
         paidAt: null,
     },
 ];
