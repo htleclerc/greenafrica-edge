@@ -2,6 +2,7 @@
 
 **Date**: 2026-04-22
 **Status**: Draft — pending user validation
+**Schema terminology note**: The billing table in the existing schema is named `transactions` (migration 003). Throughout this spec we use "transaction" for the DB entity and "invoice / pro-forma" for the user-facing document. They refer to the same row — the `document_type` column distinguishes PROFORMA / FINAL / COMPLEMENT / REFUND. Do not confuse with the existing `transaction_type` enum (ENTRY_TAX / TRANSIT_FEE / PORT_STAY), which represents the kind of maritime charge.
 **Owner**: AfricGreen platform team
 **Related migrations**: builds on 001–022
 **Scope**: MVP feature for automated carbon tax pro-forma delivered before vessel arrival, with reconciliation after EEZ exit and manual cascade to shipowner on unpaid balance.
@@ -164,9 +165,13 @@ CREATE TYPE shipowner_account_state AS ENUM (
   'ACTIVE'    -- B2: logged in at least once
 );
 
-CREATE TYPE invoice_type AS ENUM (
+CREATE TYPE document_type AS ENUM (
   'PROFORMA', 'FINAL', 'COMPLEMENT', 'REFUND'
 );
+
+-- Extend existing transaction_status with credit note value:
+ALTER TYPE public.transaction_status ADD VALUE IF NOT EXISTS 'CREDIT_NOTE_ISSUED';
+ALTER TYPE public.transaction_status ADD VALUE IF NOT EXISTS 'VOID';
 
 CREATE TYPE emission_factor_source AS ENUM (
   'EU_MRV', 'IMO_CATEGORY', 'FALLBACK'
@@ -191,8 +196,8 @@ CREATE TABLE arrival_alerts (
   status              arrival_alert_status NOT NULL DEFAULT 'DETECTED',
   matched_agent_id    UUID REFERENCES profiles(id),
   matched_via         TEXT CHECK (matched_via IN ('AUTO_MAPPING', 'CLAIM', 'PORT_OFFICER')),
-  proforma_invoice_id UUID REFERENCES invoices(id),
-  final_invoice_id    UUID REFERENCES invoices(id),
+  proforma_transaction_id UUID REFERENCES transactions(id),
+  final_transaction_id    UUID REFERENCES transactions(id),
   arrived_at          TIMESTAMPTZ,
   departed_eez_at     TIMESTAMPTZ,
   cancelled_reason    TEXT,
@@ -333,31 +338,38 @@ CREATE TABLE equasis_scrape_proposals (
 
 ### 5.3 Extensions to existing tables
 
-#### `invoices`
+#### `transactions` (the billing table; `invoice` is the UI label)
 
 ```sql
-ALTER TABLE invoices
-  ADD COLUMN invoice_type             invoice_type NOT NULL DEFAULT 'FINAL',
-  ADD COLUMN related_invoice_id       UUID REFERENCES invoices(id),
+ALTER TABLE transactions
+  ADD COLUMN document_type            document_type NOT NULL DEFAULT 'FINAL',
+  ADD COLUMN related_transaction_id   UUID REFERENCES transactions(id),
   ADD COLUMN arrival_alert_id         UUID REFERENCES arrival_alerts(id),
   ADD COLUMN agent_profile_id         UUID REFERENCES profiles(id),
   ADD COLUMN shipowner_id             UUID REFERENCES shipowners(id),
   ADD COLUMN distance_eez_nm          NUMERIC(10, 2),
   ADD COLUMN emission_factor_used_id  UUID REFERENCES emission_factors(id),
   ADD COLUMN rate_usd_per_tco2        NUMERIC(10, 2) NOT NULL DEFAULT 40.00,
-  ADD COLUMN owner_escalation_due_at  TIMESTAMPTZ,   -- staged by daily cron; "eligible since"
-  ADD COLUMN escalated_to_owner_at    TIMESTAMPTZ,   -- actual send timestamp, set by Port Officer
+  ADD COLUMN owner_escalation_due_at  TIMESTAMPTZ,
+  ADD COLUMN escalated_to_owner_at    TIMESTAMPTZ,
   ADD COLUMN escalated_to_owner_email TEXT,
-  ADD COLUMN escalated_by             UUID REFERENCES profiles(id);
+  ADD COLUMN escalated_by             UUID REFERENCES profiles(id),
+  ADD COLUMN breakdown_json           JSONB;  -- per-line detail (distance, factor, rate)
 
-CREATE INDEX idx_invoices_alert ON invoices(arrival_alert_id);
-CREATE INDEX idx_invoices_agent_status
-  ON invoices(agent_profile_id, status)
-  WHERE invoice_type = 'PROFORMA';
-CREATE INDEX idx_invoices_unpaid_escalation_due
-  ON invoices(status, invoice_type, owner_escalation_due_at)
+CREATE INDEX idx_txn_alert ON transactions(arrival_alert_id);
+CREATE INDEX idx_txn_agent_status
+  ON transactions(agent_profile_id, status)
+  WHERE document_type = 'PROFORMA';
+CREATE INDEX idx_txn_unpaid_escalation_due
+  ON transactions(status, document_type, owner_escalation_due_at)
   WHERE status = 'PENDING' AND escalated_to_owner_at IS NULL;
 ```
+
+Column mapping to existing columns (no renames):
+- `tax_amount_usd` (existing) = total amount — used for pro-forma, final, complement
+- `emissions_tco2` (existing) = tCO₂ estimated or actual
+- `status` (existing) = transaction_status enum; adds values `CREDIT_NOTE_ISSUED` and `VOID`
+- `invoice_pdf_url` (existing) = URL to the rendered PDF in Storage
 
 #### `vessels` — detention (dormant, post-MVP)
 
@@ -536,13 +548,16 @@ Agent clicks Claim:
          distance_nm, emission_factor_g_co2_per_nm, emission_factor_source,
          emission_factor_id, rate_usd_per_tco2
      } }
-4. INSERT invoices (
-     invoice_type='PROFORMA', status='PENDING',
+4. INSERT transactions (
+     document_type='PROFORMA', status='PENDING',
      arrival_alert_id, agent_profile_id, shipowner_id,
-     vessel_id, distance_eez_nm, emission_factor_used_id,
-     rate_usd_per_tco2, total_amount=usd_amount, …
+     vessel_id, vessel_name, vessel_imo,
+     transaction_type='ENTRY_TAX',        -- matches existing enum
+     distance_eez_nm, emission_factor_used_id,
+     rate_usd_per_tco2, tax_amount_usd=usd_amount,
+     emissions_tco2=tco2,
+     breakdown_json={distance_nm, factor_g, factor_source, rate}, …
    )
-5. INSERT invoice_lines (breakdown detail)
 6. Render PDF (one per language in proforma.languages_default) via
    @react-pdf/renderer, using the existing invoice PDF template
 7. Upload PDFs to Storage bucket "invoices/" (path invoices/<year>/<invoice_no>.{lang}.pdf)
@@ -553,7 +568,7 @@ Agent clicks Claim:
            portal link with magic-token (invoice_view_token)
      CC: finance@africgreen based on proforma.email_cc_admin
 9. UPDATE arrival_alert status='PROFORMA_SENT',
-                         proforma_invoice_id=<new invoice id>
+                         proforma_transaction_id=<new transaction id>
 10. INSERT audit_log ('PROFORMA_SENT', …)
 
 Failure handling:
@@ -626,28 +641,31 @@ Go reconcile.Tracker (ticker reconciliation.check_interval_min, default 5 min):
       pgmq.send('reconciliation_queue', { arrival_alert_id })
 
 /api/queue/process-reconcile handler:
-  1. Load alert + proforma_invoice + all vessel_positions in window
+  1. Load alert + proforma transaction + all vessel_positions in window
      [first_position_in_eez, departed_eez_at]
   2. GET Go /api/v1/alerts/:id/distance-final
        → { total_distance_eez_nm, points_used }
   3. POST Go /api/v1/tax/calculate with the real distance
      → { tco2_real, usd_real, breakdown }
-  4. Compute delta_pct = |usd_real - proforma.total_amount| / proforma.total_amount * 100
+  4. Compute delta_pct = |usd_real - proforma.tax_amount_usd| / proforma.tax_amount_usd * 100
   5. Decide:
      If delta_pct <= reconciliation.tolerance_pct (10%):
-       INSERT invoices (invoice_type='FINAL', status=proforma.status,
-                        total_amount=usd_real, related_invoice_id=proforma.id, …)
+       INSERT transactions (document_type='FINAL', status=proforma.status,
+                            tax_amount_usd=usd_real, emissions_tco2=tco2_real,
+                            related_transaction_id=proforma.id,
+                            transaction_type='ENTRY_TAX', …)
        note: "Reconciled within tolerance, no adjustment"
-     Else if usd_real > proforma.total_amount:
-       INSERT invoices (invoice_type='COMPLEMENT', status='PENDING',
-                        total_amount=usd_real - proforma.total_amount,
-                        related_invoice_id=proforma.id, …)
+     Else if usd_real > proforma.tax_amount_usd:
+       INSERT transactions (document_type='COMPLEMENT', status='PENDING',
+                            tax_amount_usd=usd_real - proforma.tax_amount_usd,
+                            emissions_tco2=tco2_real - proforma.emissions_tco2,
+                            related_transaction_id=proforma.id, …)
      Else:
-       INSERT invoices (invoice_type='REFUND', status='CREDIT_NOTE_ISSUED',
-                        total_amount=-(proforma.total_amount - usd_real),
-                        related_invoice_id=proforma.id, …)
+       INSERT transactions (document_type='REFUND', status='CREDIT_NOTE_ISSUED',
+                            tax_amount_usd=-(proforma.tax_amount_usd - usd_real),
+                            related_transaction_id=proforma.id, …)
   6. Render & email like pro-forma flow
-  7. UPDATE arrival_alert status='RECONCILED', final_invoice_id=<new invoice id>
+  7. UPDATE arrival_alert status='RECONCILED', final_transaction_id=<new transaction id>
   8. INSERT audit_log
 ```
 
@@ -655,9 +673,9 @@ Go reconcile.Tracker (ticker reconciliation.check_interval_min, default 5 min):
 
 ```
 pg_cron 'unpaid-escalation' (daily):
-  UPDATE invoices
+  UPDATE transactions
      SET owner_escalation_due_at = NOW()   -- staged; means "eligible since"
-   WHERE invoice_type='PROFORMA' AND status='PENDING'
+   WHERE document_type='PROFORMA' AND status='PENDING'
      AND arrival_alert_id IN (
        SELECT id FROM arrival_alerts
         WHERE arrived_at < NOW() - (SELECT (value::text)::int
