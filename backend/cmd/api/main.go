@@ -31,7 +31,9 @@ func main() {
 	})
 
 	// Tax calculation (batch)
-	taxHandler := tax.NewHandler(cfg)
+	// Task 10 will wire real db + appcfg deps; for now pass nil so handler
+	// returns 503 at runtime until then.
+	taxHandler := tax.NewHandler(cfg, nil, nil)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 
