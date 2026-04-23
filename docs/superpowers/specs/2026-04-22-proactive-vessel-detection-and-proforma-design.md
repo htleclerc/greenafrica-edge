@@ -4,6 +4,7 @@
 **Status**: Draft — pending user validation
 **Plan 1 status**: Schema foundation applied — migrations 023–031 present, all migration tests green.
 **Plan 2 status**: Go backend applied — corridor watcher, EEZ tracker, emissions cascade, tax calculator with breakdown, reconcile sweeper, alert distance-final endpoint. Migrations 032–033 added (alert_distance_final_nm RPC + SHIPOWNER read policies). All Go and migration tests green.
+**Plan 3 status**: Pro-forma pipeline applied — agent-match pg_cron (cascade A), pgmq pop/ack/enqueue RPCs, proforma-worker cron hitting /api/queue/process-proforma every minute, proformaPipelineService orchestrating Go tax API → DB insert → PDF (reuses invoiceService) → Storage → Resend email (reuses emailService) → alert transition. Agent UI at /dashboard/incoming-vessels with claim dialog capturing owner email at source AGENT_CLAIM. Migrations 034–035. E2E happy path covers DETECTED → MATCHED_AUTO → PROFORMA_SENT.
 **Schema terminology note**: The billing table in the existing schema is named `transactions` (migration 003). Throughout this spec we use "transaction" for the DB entity and "invoice / pro-forma" for the user-facing document. They refer to the same row — the `document_type` column distinguishes PROFORMA / FINAL / COMPLEMENT / REFUND. Do not confuse with the existing `transaction_type` enum (ENTRY_TAX / TRANSIT_FEE / PORT_STAY), which represents the kind of maritime charge.
 **Owner**: AfricGreen platform team
 **Related migrations**: builds on 001–022
