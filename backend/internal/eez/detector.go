@@ -87,7 +87,7 @@ func Detect(lat, lng float64) Zone {
 func pointInPolygon(lat, lng float64, poly Polygon) bool {
 	inside := false
 	n := len(poly)
-	for i, j := 0, n-1; i < n; j = i {
+	for i, j := 0, n-1; i < n; j, i = i, i+1 {
 		yi, xi := poly[i].Lat, poly[i].Lng
 		yj, xj := poly[j].Lat, poly[j].Lng
 
@@ -95,7 +95,6 @@ func pointInPolygon(lat, lng float64, poly Polygon) bool {
 			lat < (yj-yi)*(lng-xi)/(xj-xi)+yi {
 			inside = !inside
 		}
-		i++
 	}
 	return inside
 }
