@@ -5,8 +5,16 @@
 ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'SHIPOWNER';
 
 -- Helper function: is caller admin?
+-- SECURITY DEFINER + empty search_path + fully-qualified identifiers so an
+-- attacker with CREATE rights on a schema they control cannot shadow
+-- `profiles` via search_path manipulation.
 CREATE OR REPLACE FUNCTION public.is_admin_or_officer()
-RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER AS $$
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles p
      WHERE p.id = auth.uid()

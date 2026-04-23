@@ -17,7 +17,7 @@ CREATE TABLE public.shipowners (
     ('AGENT_CLAIM', 'PORT_OFFICER', 'EQUASIS_VERIFIED')),
   email_verified_at     TIMESTAMPTZ,
   account_state         public.shipowner_account_state NOT NULL DEFAULT 'GHOST',
-  profile_id            UUID REFERENCES public.profiles(id),
+  profile_id            UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -48,8 +48,10 @@ CREATE INDEX idx_oam_lookup
   WHERE active = TRUE;
 
 -- ── vessels extensions ─────────────────────────────────────────────────────
+-- shipowner_id: use SET NULL on delete so a Port Officer cleaning up a
+-- duplicate shipowner row does not cascade-delete vessels across the fleet.
 ALTER TABLE public.vessels
-  ADD COLUMN shipowner_id UUID REFERENCES public.shipowners(id),
+  ADD COLUMN shipowner_id UUID REFERENCES public.shipowners(id) ON DELETE SET NULL,
   ADD COLUMN last_zone    TEXT;
 
 CREATE INDEX idx_vessels_shipowner ON public.vessels(shipowner_id)
@@ -57,3 +59,11 @@ CREATE INDEX idx_vessels_shipowner ON public.vessels(shipowner_id)
 
 COMMENT ON COLUMN public.vessels.last_zone IS
   'Cached last-known zone from Go eez detector. Values: EEZ, PORT_VICINITY, TRANSIT_LANE, INTERNATIONAL. Updated per AIS tick to detect zone-edge transitions.';
+
+-- Disambiguate the pre-existing `owner_id` column (mig 003) from the new
+-- `shipowner_id`: the former is the local shipping agent (used for RLS scope
+-- of the dashboard), the latter is the actual vessel owner / operator.
+COMMENT ON COLUMN public.vessels.owner_id IS
+  'Local shipping agent representing the vessel (profiles.id). Despite the name, this is NOT the ship owner — see shipowner_id for the registered owner record.';
+COMMENT ON COLUMN public.vessels.shipowner_id IS
+  'Registered owner / operator of the vessel (shipowners.id). Distinct from owner_id which denotes the local shipping agent.';
