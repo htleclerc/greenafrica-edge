@@ -2427,5 +2427,28 @@
     "col_status": "Statut",
     "empty_title": "Aucun paiement",
     "empty_sub": "Ce vessel n'a pas encore d'historique de paiement."
+  },
+  "IncomingVessels": {
+    "title": "Navires entrants",
+    "subtitle": "Navires approchant des ports somalilandais, en attente de prise en charge par un agent pour l'émission du pro-forma.",
+    "empty": "Aucun navire en attente de prise en charge.",
+    "claim": "Prendre en charge",
+    "col": {
+      "vessel": "Navire",
+      "imo": "IMO",
+      "distance": "Distance",
+      "eta": "ETA",
+      "estimated": "Transit estimé",
+      "actions": "Actions"
+    },
+    "claimDialog": {
+      "title": "Prendre en charge le navire",
+      "description": "En prenant en charge {vessel}, vous devenez l'agent maritime pour cette escale et déclenchez la génération du pro-forma.",
+      "ownerEmailLabel": "Email officiel de l'armateur (requis)",
+      "invalidEmail": "Saisir une adresse email valide.",
+      "cancel": "Annuler",
+      "confirm": "Prendre en charge et générer le pro-forma",
+      "claiming": "Prise en charge…"
+    }
   }
 }

@@ -2360,5 +2360,28 @@
     "col_status": "Hali",
     "empty_title": "Hakuna malipo",
     "empty_sub": "Meli hii bado haina historia ya malipo."
+  },
+  "IncomingVessels": {
+    "title": "Incoming Vessels",
+    "subtitle": "Vessels approaching Somaliland ports, awaiting an agent to claim and issue the pro-forma.",
+    "empty": "No vessels currently awaiting claim.",
+    "claim": "Claim",
+    "col": {
+      "vessel": "Vessel",
+      "imo": "IMO",
+      "distance": "Distance",
+      "eta": "ETA",
+      "estimated": "Estimated transit",
+      "actions": "Actions"
+    },
+    "claimDialog": {
+      "title": "Claim vessel",
+      "description": "Claiming {vessel} will assign you as the shipping agent for this call and trigger pro-forma generation.",
+      "ownerEmailLabel": "Ship owner official email (required)",
+      "invalidEmail": "Enter a valid email address.",
+      "cancel": "Cancel",
+      "confirm": "Claim and generate pro-forma",
+      "claiming": "Claiming…"
+    }
   }
 }
