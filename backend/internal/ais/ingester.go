@@ -2,6 +2,8 @@ package ais
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +13,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/htleclerc/africgreen/backend/internal/config"
+	"github.com/htleclerc/africgreen/backend/internal/corridor"
+	"github.com/htleclerc/africgreen/backend/internal/eez"
 )
 
 // AIS message from aisstream.io
@@ -35,11 +39,14 @@ type AISMessage struct {
 
 // Ingester manages the AIS WebSocket connection and writes positions to Supabase.
 type Ingester struct {
-	cfg        *config.Config
-	mu         sync.Mutex
-	running    bool
-	stopCh     chan struct{}
-	stats      Stats
+	cfg     *config.Config
+	db      *sql.DB // nullable for backward compat
+	watcher *corridor.Watcher
+	tracker *eez.Tracker
+	mu      sync.Mutex
+	running bool
+	stopCh  chan struct{}
+	stats   Stats
 }
 
 type Stats struct {
@@ -54,6 +61,19 @@ func NewIngester(cfg *config.Config) *Ingester {
 	return &Ingester{
 		cfg:    cfg,
 		stopCh: make(chan struct{}),
+	}
+}
+
+// NewIngesterWithDeps constructs an Ingester with db + hooks wired in.
+// Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition.
+func NewIngesterWithDeps(cfg *config.Config, db *sql.DB,
+	watcher *corridor.Watcher, tracker *eez.Tracker) *Ingester {
+	return &Ingester{
+		cfg:     cfg,
+		db:      db,
+		watcher: watcher,
+		tracker: tracker,
+		stopCh:  make(chan struct{}),
 	}
 }
 
@@ -229,6 +249,35 @@ func (ing *Ingester) connect() error {
 		posReq.Header.Set("Content-Type", "application/json")
 		http.DefaultClient.Do(posReq)
 
+		// Fire corridor + EEZ hooks. Errors are logged but do not break ingestion;
+		// the reconcile sweeper is the eventually-consistent safety net.
+		if ing.watcher != nil {
+			ctx := context.Background()
+			_, werr := ing.watcher.Evaluate(ctx, corridor.Position{
+				VesselID:   vessels[0].ID,
+				IMO:        "", // static data not in PositionReport; watcher no-ops on empty IMO.
+				Lat:        msg.MetaData.Latitude,
+				Lng:        msg.MetaData.Longitude,
+				SpeedKnots: sog,
+				RecordedAt: time.Now(),
+			})
+			if werr != nil {
+				log.Printf("[AIS] corridor.Evaluate: %v", werr)
+			}
+		}
+		if ing.tracker != nil {
+			ctx := context.Background()
+			_, terr := ing.tracker.OnPosition(ctx, eez.Position{
+				VesselID:   vessels[0].ID,
+				Lat:        msg.MetaData.Latitude,
+				Lng:        msg.MetaData.Longitude,
+				RecordedAt: time.Now(),
+			})
+			if terr != nil {
+				log.Printf("[AIS] eez.OnPosition: %v", terr)
+			}
+		}
+
 		log.Printf("[AIS] %s (%s) at %.4f, %.4f — %.1f kn → Supabase ✓",
 			msg.MetaData.ShipName,
 			msg.MetaData.MMSIStr,
@@ -248,6 +297,14 @@ type Handler struct {
 func NewHandler(cfg *config.Config) *Handler {
 	return &Handler{
 		ingester: NewIngester(cfg),
+	}
+}
+
+// NewHandlerWithDeps wires corridor + eez hooks through the ingester.
+func NewHandlerWithDeps(cfg *config.Config, db *sql.DB,
+	watcher *corridor.Watcher, tracker *eez.Tracker) *Handler {
+	return &Handler{
+		ingester: NewIngesterWithDeps(cfg, db, watcher, tracker),
 	}
 }
 

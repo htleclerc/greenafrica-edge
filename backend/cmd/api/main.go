@@ -9,36 +9,58 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/ais"
+	"github.com/htleclerc/africgreen/backend/internal/alerts"
+	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/config"
+	"github.com/htleclerc/africgreen/backend/internal/corridor"
+	"github.com/htleclerc/africgreen/backend/internal/eez"
 	"github.com/htleclerc/africgreen/backend/internal/middleware"
+	"github.com/htleclerc/africgreen/backend/internal/reconcile"
+	"github.com/htleclerc/africgreen/backend/internal/supadb"
 	"github.com/htleclerc/africgreen/backend/internal/tax"
 )
 
 func main() {
 	cfg := config.Load()
 
+	// ── Database ───────────────────────────────────────────────────────────
+	db, err := supadb.Open(cfg.SupabaseDBURL)
+	if err != nil {
+		log.Fatalf("[DB] open: %v", err)
+	}
+	defer db.Close()
+
+	appcfg := appconfig.New(db)
+	watcher := corridor.New(db, appcfg)
+	tracker := eez.NewTracker(db)
+	sweeper := reconcile.NewSweeper(db)
+
+	// ── Graceful shutdown context ─────────────────────────────────────────
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	mux := http.NewServeMux()
 
-	// Root → health redirect
+	// Root + health
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/health", http.StatusTemporaryRedirect)
 	})
-
-	// Health check
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok","service":"africgreen-api","version":"0.1.0"}`))
+		w.Write([]byte(`{"status":"ok","service":"africgreen-api","version":"0.2.0"}`))
 	})
 
-	// Tax calculation (batch)
-	// Task 10 will wire real db + appcfg deps; for now pass nil so handler
-	// returns 503 at runtime until then.
-	taxHandler := tax.NewHandler(cfg, nil, nil)
+	// Tax
+	taxHandler := tax.NewHandler(cfg, db, appcfg)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 
-	// AIS ingestion — auto-start if API key is configured
-	aisHandler := ais.NewHandler(cfg)
+	// Alerts
+	alertsHandler := alerts.NewHandler(db)
+	mux.HandleFunc("GET /api/v1/alerts/{id}/distance-final", alertsHandler.DistanceFinal)
+
+	// AIS (now with corridor + eez hooks wired via NewHandlerWithDeps)
+	aisHandler := ais.NewHandlerWithDeps(cfg, db, watcher, tracker)
 	mux.HandleFunc("GET /api/v1/ais/status", aisHandler.Status)
 	mux.HandleFunc("POST /api/v1/ais/start", aisHandler.Start)
 	mux.HandleFunc("POST /api/v1/ais/stop", aisHandler.Stop)
@@ -50,7 +72,19 @@ func main() {
 		}
 	}
 
-	// Apply middleware
+	// Reconcile sweeper
+	intervalMin, err := appcfg.GetInt(ctx, "reconciliation.check_interval_min")
+	if err != nil || intervalMin <= 0 {
+		intervalMin = 5
+	}
+	go func() {
+		log.Printf("[reconcile] sweeper starting, interval=%dmin", intervalMin)
+		if err := sweeper.Start(ctx, time.Duration(intervalMin)*time.Minute); err != nil {
+			log.Printf("[reconcile] sweeper stopped: %v", err)
+		}
+	}()
+
+	// Middleware
 	handler := middleware.Chain(
 		mux,
 		middleware.CORS(cfg.AllowedOrigins),
@@ -66,10 +100,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Graceful shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
 	go func() {
 		log.Printf("[API] Listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -82,10 +112,8 @@ func main() {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("[API] Shutdown error: %v", err)
 	}
-
 	log.Println("[API] Stopped.")
 }
