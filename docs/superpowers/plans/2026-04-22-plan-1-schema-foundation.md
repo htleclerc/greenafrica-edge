@@ -199,7 +199,7 @@ DO $$ BEGIN
   ASSERT EXISTS (SELECT 1 FROM pg_type WHERE typname='arrival_alert_status'),
     'arrival_alert_status enum missing';
   ASSERT (
-    SELECT array_agg(enumlabel ORDER BY enumsortorder)
+    SELECT array_agg(enumlabel::text ORDER BY enumsortorder)
       FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
      WHERE t.typname='arrival_alert_status'
   ) = ARRAY[
@@ -364,7 +364,7 @@ BEGIN;
 DO $$ BEGIN
   ASSERT EXISTS (SELECT 1 FROM pg_type WHERE typname='shipowner_account_state'),
     'shipowner_account_state enum missing';
-  ASSERT (SELECT array_agg(enumlabel ORDER BY enumsortorder)
+  ASSERT (SELECT array_agg(enumlabel::text ORDER BY enumsortorder)
             FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
            WHERE t.typname='shipowner_account_state')
          = ARRAY['GHOST','INVITED','ACTIVE'],
@@ -535,7 +535,7 @@ BEGIN;
 
 -- Enum emission_factor_source
 DO $$ BEGIN
-  ASSERT (SELECT array_agg(enumlabel ORDER BY enumsortorder)
+  ASSERT (SELECT array_agg(enumlabel::text ORDER BY enumsortorder)
             FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
            WHERE t.typname='emission_factor_source')
          = ARRAY['EU_MRV','IMO_CATEGORY','FALLBACK'],
@@ -705,7 +705,7 @@ BEGIN;
 
 -- document_type enum
 DO $$ BEGIN
-  ASSERT (SELECT array_agg(enumlabel ORDER BY enumsortorder)
+  ASSERT (SELECT array_agg(enumlabel::text ORDER BY enumsortorder)
             FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
            WHERE t.typname='document_type')
          = ARRAY['PROFORMA','FINAL','COMPLEMENT','REFUND'],
