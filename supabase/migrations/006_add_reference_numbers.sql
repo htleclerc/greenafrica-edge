@@ -104,13 +104,30 @@ FROM (
 WHERE tax_configurations.id = sub.id;
 
 -- ── Set sequences to max current value ────────────────────────────────────────
+-- Note: Postgres sequences start at 1, so setval(seq, 0) errors. Use a helper
+-- that passes `is_called=false` when the table is empty so nextval() returns 1,
+-- and `is_called=true` when the table has rows so nextval() returns N+1.
+DO $$
+DECLARE c bigint;
+BEGIN
+    SELECT COUNT(*) INTO c FROM transactions;
+    PERFORM setval('seq_transaction_ref', GREATEST(c, 1), c > 0);
 
-SELECT setval('seq_transaction_ref', COALESCE((SELECT COUNT(*) FROM transactions), 0));
-SELECT setval('seq_audit_ref', COALESCE((SELECT COUNT(*) FROM audit_logs), 0));
-SELECT setval('seq_exemption_ref', COALESCE((SELECT COUNT(*) FROM exemptions), 0));
-SELECT setval('seq_registration_ref', COALESCE((SELECT COUNT(*) FROM registration_requests), 0));
-SELECT setval('seq_project_ref', COALESCE((SELECT COUNT(*) FROM carbon_projects), 0));
-SELECT setval('seq_tax_config_ref', COALESCE((SELECT COUNT(*) FROM tax_configurations), 0));
+    SELECT COUNT(*) INTO c FROM audit_logs;
+    PERFORM setval('seq_audit_ref', GREATEST(c, 1), c > 0);
+
+    SELECT COUNT(*) INTO c FROM exemptions;
+    PERFORM setval('seq_exemption_ref', GREATEST(c, 1), c > 0);
+
+    SELECT COUNT(*) INTO c FROM registration_requests;
+    PERFORM setval('seq_registration_ref', GREATEST(c, 1), c > 0);
+
+    SELECT COUNT(*) INTO c FROM carbon_projects;
+    PERFORM setval('seq_project_ref', GREATEST(c, 1), c > 0);
+
+    SELECT COUNT(*) INTO c FROM tax_configurations;
+    PERFORM setval('seq_tax_config_ref', GREATEST(c, 1), c > 0);
+END $$;
 
 -- ── Triggers for auto-generating ref on INSERT ────────────────────────────────
 
