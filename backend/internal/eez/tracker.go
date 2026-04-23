@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -74,17 +75,28 @@ func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
 		}
 		n, _ := res.RowsAffected()
 		if n == 0 {
-			// Retroactive alert: we have to read vessel.imo_number first
+			// Retroactive alert: the vessel entered EEZ without any prior
+			// DETECTED/CLAIMED/… alert (AIS gap, spoofing, etc.). Create one
+			// in ARRIVED state so the pipeline has something to reconcile.
 			var imo string
-			_ = t.db.QueryRowContext(ctx,
-				`SELECT imo_number FROM public.vessels WHERE id=$1`, p.VesselID).Scan(&imo)
-			if imo != "" {
-				_, _ = t.db.ExecContext(ctx,
-					`INSERT INTO public.arrival_alerts
-					   (vessel_id, imo_number, detected_lat, detected_lng,
-					    distance_to_port_nm, status, arrived_at)
-					 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5)`,
-					p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt)
+			if lerr := t.db.QueryRowContext(ctx,
+				`SELECT imo_number FROM public.vessels WHERE id=$1`, p.VesselID,
+			).Scan(&imo); lerr != nil {
+				log.Printf("[eez] retroactive alert: lookup imo for vessel=%s: %v", p.VesselID, lerr)
+				return evt, nil
+			}
+			if imo == "" {
+				log.Printf("[eez] retroactive alert skipped: vessel=%s has empty imo", p.VesselID)
+				return evt, nil
+			}
+			if _, ierr := t.db.ExecContext(ctx,
+				`INSERT INTO public.arrival_alerts
+				   (vessel_id, imo_number, detected_lat, detected_lng,
+				    distance_to_port_nm, status, arrived_at)
+				 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5)`,
+				p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt,
+			); ierr != nil {
+				log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
 			}
 		}
 	}

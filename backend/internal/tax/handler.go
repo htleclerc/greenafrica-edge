@@ -3,6 +3,7 @@ package tax
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
@@ -58,7 +59,9 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 		RateOverride: req.RateOverride,
 	})
 	if err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+		log.Printf("[tax] calculate imo=%s cat=%s gt=%d dist=%.1f: %v",
+			req.IMO, req.Category, req.GrossTonnage, req.DistanceNM, err)
+		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

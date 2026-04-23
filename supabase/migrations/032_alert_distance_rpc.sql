@@ -22,7 +22,10 @@ AS $$
     SELECT
       vp.lat,
       vp.lng,
-      ROW_NUMBER() OVER (ORDER BY vp.recorded_at) AS rn
+      -- Tiebreak on vp.id so identical recorded_at values produce a
+      -- deterministic ordering (financial figure, same alert must return
+      -- the same total across calls).
+      ROW_NUMBER() OVER (ORDER BY vp.recorded_at, vp.id) AS rn
     FROM public.vessel_positions vp
     JOIN alert a
       ON vp.vessel_id = a.vessel_id

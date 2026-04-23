@@ -40,12 +40,14 @@ type AISMessage struct {
 // Ingester manages the AIS WebSocket connection and writes positions to Supabase.
 type Ingester struct {
 	cfg     *config.Config
-	db      *sql.DB // nullable for backward compat
+	db      *sql.DB // nullable when tests don't need hooks
 	watcher *corridor.Watcher
 	tracker *eez.Tracker
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
+	ctx     context.Context    // hook ctx, cancelled by Stop() so in-flight corridor/eez calls unwind
+	cancel  context.CancelFunc
 	stats   Stats
 }
 
@@ -57,15 +59,11 @@ type Stats struct {
 	Errors        int64     `json:"errors"`
 }
 
-func NewIngester(cfg *config.Config) *Ingester {
-	return &Ingester{
-		cfg:    cfg,
-		stopCh: make(chan struct{}),
-	}
-}
-
 // NewIngesterWithDeps constructs an Ingester with db + hooks wired in.
-// Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition.
+// Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition
+// using a context that Stop() cancels, so shutdown unwinds in-flight hooks.
+//
+// Pass nil for db/watcher/tracker in tests that only need the WebSocket side.
 func NewIngesterWithDeps(cfg *config.Config, db *sql.DB,
 	watcher *corridor.Watcher, tracker *eez.Tracker) *Ingester {
 	return &Ingester{
@@ -94,12 +92,14 @@ func (ing *Ingester) Start() error {
 	ing.stats.Running = true
 	ing.stats.StartedAt = time.Now()
 	ing.stopCh = make(chan struct{})
+	ing.ctx, ing.cancel = context.WithCancel(context.Background())
 
 	go ing.run()
 	return nil
 }
 
-// Stop gracefully stops the ingester.
+// Stop gracefully stops the ingester. Cancels the hook context so any
+// in-flight corridor.Evaluate / eez.OnPosition call unwinds promptly.
 func (ing *Ingester) Stop() {
 	ing.mu.Lock()
 	defer ing.mu.Unlock()
@@ -108,6 +108,9 @@ func (ing *Ingester) Stop() {
 		return
 	}
 
+	if ing.cancel != nil {
+		ing.cancel()
+	}
 	close(ing.stopCh)
 	ing.running = false
 	ing.stats.Running = false
@@ -249,11 +252,15 @@ func (ing *Ingester) connect() error {
 		posReq.Header.Set("Content-Type", "application/json")
 		http.DefaultClient.Do(posReq)
 
-		// Fire corridor + EEZ hooks. Errors are logged but do not break ingestion;
-		// the reconcile sweeper is the eventually-consistent safety net.
+		// Fire corridor + EEZ hooks under the ingester's ctx so Stop() cancels
+		// in-flight calls. Errors are logged but do not break ingestion — the
+		// reconcile sweeper is the eventually-consistent safety net.
+		hookCtx := ing.ctx
+		if hookCtx == nil {
+			hookCtx = context.Background()
+		}
 		if ing.watcher != nil {
-			ctx := context.Background()
-			_, werr := ing.watcher.Evaluate(ctx, corridor.Position{
+			_, werr := ing.watcher.Evaluate(hookCtx, corridor.Position{
 				VesselID:   vessels[0].ID,
 				IMO:        "", // static data not in PositionReport; watcher no-ops on empty IMO.
 				Lat:        msg.MetaData.Latitude,
@@ -266,8 +273,7 @@ func (ing *Ingester) connect() error {
 			}
 		}
 		if ing.tracker != nil {
-			ctx := context.Background()
-			_, terr := ing.tracker.OnPosition(ctx, eez.Position{
+			_, terr := ing.tracker.OnPosition(hookCtx, eez.Position{
 				VesselID:   vessels[0].ID,
 				Lat:        msg.MetaData.Latitude,
 				Lng:        msg.MetaData.Longitude,
@@ -294,14 +300,9 @@ type Handler struct {
 	ingester *Ingester
 }
 
-func NewHandler(cfg *config.Config) *Handler {
-	return &Handler{
-		ingester: NewIngester(cfg),
-	}
-}
-
-// NewHandlerWithDeps wires corridor + eez hooks through the ingester.
-func NewHandlerWithDeps(cfg *config.Config, db *sql.DB,
+// NewHandler wires corridor + eez hooks through the ingester. Pass nil for
+// db/watcher/tracker if you only need the WebSocket side (e.g., in tests).
+func NewHandler(cfg *config.Config, db *sql.DB,
 	watcher *corridor.Watcher, tracker *eez.Tracker) *Handler {
 	return &Handler{
 		ingester: NewIngesterWithDeps(cfg, db, watcher, tracker),

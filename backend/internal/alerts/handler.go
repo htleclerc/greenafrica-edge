@@ -4,6 +4,7 @@ package alerts
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -31,7 +32,8 @@ func (h *Handler) DistanceFinal(w http.ResponseWriter, r *http.Request) {
 	err := h.db.QueryRowContext(r.Context(),
 		`SELECT public.alert_distance_final_nm($1)`, id).Scan(&nm)
 	if err != nil {
-		http.Error(w, `{"error":"db error: `+err.Error()+`"}`, http.StatusInternalServerError)
+		log.Printf("[alerts] distance-final alert=%s: %v", id, err)
+		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return
 	}
 
