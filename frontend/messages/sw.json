@@ -2431,5 +2431,35 @@
       "sending": "Sending…",
       "successToast": "Cascade email sent to {email}"
     }
+  },
+  "_TODO_AdminMappings": "Proper Swahili translation pending — strings below are English fallback.",
+  "AdminMappings": {
+    "title": "Owner → Agent Mappings",
+    "subtitle": "Configure cascade A — which local shipping agent handles a given shipowner's vessels.",
+    "addSectionTitle": "Add a mapping",
+    "showActiveOnly": "Show active only",
+    "col": {
+      "shipowner": "Shipowner",
+      "agent": "Agent",
+      "priority": "Priority",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until",
+      "active": "Active",
+      "actions": "Actions"
+    },
+    "form": {
+      "shipowner": "Shipowner",
+      "agent": "Agent",
+      "priority": "Priority (lower = first)",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until (optional)",
+      "submit": "Add mapping",
+      "submitting": "Adding…"
+    },
+    "deactivate": "Deactivate",
+    "deactivating": "Deactivating…",
+    "deactivated": "Deactivated",
+    "active": "Active",
+    "empty": "No mappings yet. Add one to enable cascade A."
   }
 }

@@ -2497,5 +2497,34 @@
       "sending": "Envoi…",
       "successToast": "Email de relance envoyé à {email}"
     }
+  },
+  "AdminMappings": {
+    "title": "Mappages Armateur → Agent",
+    "subtitle": "Configurer la cascade A — quel agent maritime local prend en charge les navires d'un armateur donné.",
+    "addSectionTitle": "Ajouter un mappage",
+    "showActiveOnly": "Afficher uniquement les actifs",
+    "col": {
+      "shipowner": "Armateur",
+      "agent": "Agent",
+      "priority": "Priorité",
+      "validFrom": "Valide à partir du",
+      "validUntil": "Valide jusqu'au",
+      "active": "Actif",
+      "actions": "Actions"
+    },
+    "form": {
+      "shipowner": "Armateur",
+      "agent": "Agent",
+      "priority": "Priorité (plus bas = en premier)",
+      "validFrom": "Valide à partir du",
+      "validUntil": "Valide jusqu'au (optionnel)",
+      "submit": "Ajouter le mappage",
+      "submitting": "Ajout en cours…"
+    },
+    "deactivate": "Désactiver",
+    "deactivating": "Désactivation…",
+    "deactivated": "Désactivé",
+    "active": "Actif",
+    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
   }
 }
