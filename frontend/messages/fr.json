@@ -2450,5 +2450,52 @@
       "confirm": "Prendre en charge et générer le pro-forma",
       "claiming": "Prise en charge…"
     }
+  },
+  "AdminEscalations": {
+    "title": "Escalades",
+    "subtitle": "Alertes non réclamées hors SLA agent et pro-formas impayés éligibles à la relance armateur.",
+    "tabs": {
+      "unclaimed": "Non réclamées (revue Port)",
+      "unpaid": "Impayés 7j+ (relance armateur)"
+    },
+    "unclaimed": {
+      "col": {
+        "vessel": "Navire",
+        "imo": "IMO",
+        "detectedAgo": "Détecté",
+        "distance": "Distance",
+        "eta": "ETA",
+        "actions": "Actions"
+      },
+      "assign": "Assigner",
+      "assignComingSoon": "L'interface d'assignation d'agent arrivera dans un prochain lot du Plan 5.",
+      "empty": "Aucune alerte escaladée."
+    },
+    "unpaid": {
+      "col": {
+        "vessel": "Navire",
+        "imo": "IMO",
+        "ref": "Réf.",
+        "amount": "Montant",
+        "arrived": "Arrivé le",
+        "overdue": "Jours de retard",
+        "ownerEmail": "Email armateur",
+        "actions": "Actions"
+      },
+      "escalate": "Relancer l'armateur",
+      "noEmail": "—",
+      "empty": "Aucun pro-forma impayé en attente de relance armateur."
+    },
+    "dialog": {
+      "title": "Relancer l'armateur enregistré",
+      "description": "Envoyer la lettre d'accompagnement et le PDF du pro-forma à l'armateur de {vessel} (IMO {imo}).",
+      "ownerEmailLabel": "Email officiel de l'armateur",
+      "ownerEmailNewHint": "Cette valeur diffère de l'email enregistré — elle sera sauvegardée avec PORT_OFFICER comme source.",
+      "localeLabel": "Langue de la lettre",
+      "cancel": "Annuler",
+      "confirm": "Envoyer",
+      "sending": "Envoi…",
+      "successToast": "Email de relance envoyé à {email}"
+    }
   }
 }

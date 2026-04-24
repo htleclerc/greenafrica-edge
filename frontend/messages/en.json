@@ -2480,5 +2480,52 @@
       "confirm": "Claim and generate pro-forma",
       "claiming": "Claiming…"
     }
+  },
+  "AdminEscalations": {
+    "title": "Escalations",
+    "subtitle": "Unclaimed alerts past the agent SLA and unpaid pro-formas eligible for owner cascade.",
+    "tabs": {
+      "unclaimed": "Unclaimed (Port Officer review)",
+      "unpaid": "Unpaid 7d+ (owner cascade)"
+    },
+    "unclaimed": {
+      "col": {
+        "vessel": "Vessel",
+        "imo": "IMO",
+        "detectedAgo": "Detected",
+        "distance": "Distance",
+        "eta": "ETA",
+        "actions": "Actions"
+      },
+      "assign": "Assign",
+      "assignComingSoon": "Agent assignment UI coming in Plan 5 follow-up.",
+      "empty": "No escalated alerts."
+    },
+    "unpaid": {
+      "col": {
+        "vessel": "Vessel",
+        "imo": "IMO",
+        "ref": "Ref",
+        "amount": "Amount",
+        "arrived": "Arrived",
+        "overdue": "Days overdue",
+        "ownerEmail": "Owner email",
+        "actions": "Actions"
+      },
+      "escalate": "Escalate to owner",
+      "noEmail": "—",
+      "empty": "No unpaid pro-formas awaiting owner cascade."
+    },
+    "dialog": {
+      "title": "Escalate to registered owner",
+      "description": "Send the cover letter + pro-forma PDF to the shipowner for {vessel} (IMO {imo}).",
+      "ownerEmailLabel": "Shipowner official email",
+      "ownerEmailNewHint": "This value differs from the stored email — it will be saved with PORT_OFFICER as source.",
+      "localeLabel": "Letter language",
+      "cancel": "Cancel",
+      "confirm": "Send",
+      "sending": "Sending…",
+      "successToast": "Cascade email sent to {email}"
+    }
   }
 }
