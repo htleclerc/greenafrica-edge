@@ -21,7 +21,8 @@ INSERT INTO auth.users (
     email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
     raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
     '00000000-0000-0000-0000-000000000000',
@@ -31,7 +32,8 @@ INSERT INTO auth.users (
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Officer Hassan Mohamoud', 'role', 'PORT_OFFICER'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', ''
+    '', '',
+    '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Finance Admin — Fadumo Yusuf
@@ -40,7 +42,8 @@ INSERT INTO auth.users (
     email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
     raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current
 ) VALUES (
     '00000000-0000-0000-0000-000000000002',
     '00000000-0000-0000-0000-000000000000',
@@ -50,7 +53,8 @@ INSERT INTO auth.users (
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Adm. Fadumo Yusuf', 'role', 'FINANCE_ADMIN'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', ''
+    '', '',
+    '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Shipping Agent — Ahmed Warsame
@@ -59,7 +63,8 @@ INSERT INTO auth.users (
     email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
     raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current
 ) VALUES (
     '00000000-0000-0000-0000-000000000003',
     '00000000-0000-0000-0000-000000000000',
@@ -69,7 +74,8 @@ INSERT INTO auth.users (
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Ahmed Warsame', 'role', 'SHIPPING_AGENT'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', ''
+    '', '',
+    '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Superadmin — Al-Farid Ibrahim (invisible en UI, mais existe en DB)
@@ -78,7 +84,8 @@ INSERT INTO auth.users (
     email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
     raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current
 ) VALUES (
     '00000000-0000-0000-0000-000000000004',
     '00000000-0000-0000-0000-000000000000',
@@ -88,7 +95,8 @@ INSERT INTO auth.users (
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Min. Al-Farid Ibrahim', 'role', 'SUPERADMIN'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', ''
+    '', '',
+    '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Superadmin — Green Gate platform owner
@@ -97,7 +105,8 @@ INSERT INTO auth.users (
     email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
     raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current
 ) VALUES (
     '00000000-0000-0000-0000-000000000005',
     '00000000-0000-0000-0000-000000000000',
@@ -107,7 +116,8 @@ INSERT INTO auth.users (
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Green Gate Superadmin', 'role', 'SUPERADMIN'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', ''
+    '', '',
+    '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ── 2. Mettre à jour les profils créés par le trigger ────────────────────────
