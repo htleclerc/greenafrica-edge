@@ -2556,5 +2556,33 @@
     "deactivated": "Deactivated",
     "active": "Active",
     "empty": "No mappings yet. Add one to enable cascade A."
+  },
+  "AdminTaxPipeline": {
+    "sectionTitle": "Carbon tax pipeline",
+    "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",
+    "labels": {
+      "carbon_tax.rate_usd_per_tco2": "Carbon tax rate (USD / tCO₂)",
+      "arrival.corridor_radius_nm": "Approach corridor radius (NM)",
+      "arrival.claim_sla_hours": "Agent claim SLA (hours)",
+      "arrival.escalation_eta_buffer_h": "Escalation ETA buffer (hours)",
+      "reconciliation.tolerance_pct": "Reconciliation tolerance (%)",
+      "reconciliation.check_interval_min": "Reconciliation check interval (min)",
+      "owner_escalation.delay_days": "Owner escalation delay (days)",
+      "owner_escalation.reminder_count": "Agent reminders before owner cascade",
+      "proforma.languages_default": "Default pro-forma languages",
+      "feature.ais_global_enabled": "Global AIS (Phase 2)",
+      "feature.equasis_scraper_enabled": "EQUASIS scraper (Phase 2)",
+      "feature.vessel_detention_enabled": "Vessel detention (post-MVP)",
+      "feature.shipowner_portal_enabled": "Shipowner portal",
+      "queue.worker_url": "Queue worker URL",
+      "queue.worker_secret": "Queue worker secret"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "readOnly": "Read-only (SUPERADMIN required to edit)",
+    "secretMask": "••••••••",
+    "showSecret": "Show",
+    "hideSecret": "Hide",
+    "successToast": "Saved"
   }
 }

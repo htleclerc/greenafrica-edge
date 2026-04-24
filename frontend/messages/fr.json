@@ -2526,5 +2526,33 @@
     "deactivated": "Désactivé",
     "active": "Actif",
     "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
+  },
+  "AdminTaxPipeline": {
+    "sectionTitle": "Pipeline de taxe carbone",
+    "sectionSubtitle": "Configuration d'exécution pour la détection, la réconciliation, l'escalade et les feature flags. Les secrets ne peuvent être modifiés que par un SUPERADMIN.",
+    "labels": {
+      "carbon_tax.rate_usd_per_tco2": "Taux de la taxe carbone (USD / tCO₂)",
+      "arrival.corridor_radius_nm": "Rayon du couloir d'approche (NM)",
+      "arrival.claim_sla_hours": "SLA de revendication par l'agent (heures)",
+      "arrival.escalation_eta_buffer_h": "Tampon ETA pour l'escalade (heures)",
+      "reconciliation.tolerance_pct": "Tolérance de réconciliation (%)",
+      "reconciliation.check_interval_min": "Intervalle de vérification de réconciliation (min)",
+      "owner_escalation.delay_days": "Délai d'escalade à l'armateur (jours)",
+      "owner_escalation.reminder_count": "Rappels à l'agent avant cascade armateur",
+      "proforma.languages_default": "Langues par défaut des pro-forma",
+      "feature.ais_global_enabled": "AIS global (Phase 2)",
+      "feature.equasis_scraper_enabled": "Scraper EQUASIS (Phase 2)",
+      "feature.vessel_detention_enabled": "Immobilisation des navires (post-MVP)",
+      "feature.shipowner_portal_enabled": "Portail armateur",
+      "queue.worker_url": "URL du worker de file d'attente",
+      "queue.worker_secret": "Secret du worker de file d'attente"
+    },
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "readOnly": "Lecture seule (SUPERADMIN requis pour modifier)",
+    "secretMask": "••••••••",
+    "showSecret": "Afficher",
+    "hideSecret": "Masquer",
+    "successToast": "Enregistré"
   }
 }
