@@ -63,6 +63,23 @@ Organized by priority and blast radius. Each item is ready to pick up in a fresh
 
 ### 🔥 P0 — blockers for production rollout
 
+#### B0. Client-side auth "Failed to fetch" against local Supabase (QA 2026-04-24)
+
+**Problem**: After fixing CSP + email_change seed, the Supabase Auth server-side **succeeds** (audit log shows `action:login` event for `demo.officer@…`), but the browser client reports `TypeError: Failed to fetch` from `SupabaseAuthClient.signInWithPassword` and cookies are never set. Login UI stays stuck on `/login` with the spinner running. All three Plan 3+5 auth-gated pages are therefore unreachable in local dev.
+
+**Hypothesis**: Supabase auth cookies are `Secure` by default; browsers drop them over `http://localhost`. Alternatively a response-body parse issue.
+
+**Workarounds to try**:
+- Set Supabase client `auth: { persistSession: true, storage: localStorage }` — moves from cookies to localStorage for dev.
+- Add `GOTRUE_COOKIE_OPTIONS_SAME_SITE=lax` and un-set `Secure` in `supabase/config.toml` (`[auth.cookies]` section if supported).
+- Use `http://localhost:3300` (not `127.0.0.1`) to match Supabase default cookie domain.
+
+**Report**: [`docs/qa-reports/qa-report-africgreen-2026-04-24.md`](../qa-reports/qa-report-africgreen-2026-04-24.md)
+
+**Fixes already merged** (from 2026-04-24 QA run):
+- `5ecdc43` ISSUE-001: next-intl dotted keys in `AdminTaxPipeline.labels` crashed every route
+- `8c2e5ac` ISSUE-002 + ISSUE-003: CSP hardcoded to hosted-only Supabase; seed.sql created `auth.users` with NULL `email_change` tokens
+
 #### B1. Dev-server secret injection for the two queue workers
 
 **Problem**: the Plan 3 and Plan 4 E2E tests are marked `DONE_WITH_CONCERNS` because the running Next.js dev server doesn't have `QUEUE_WORKER_SECRET` in its env. Route handlers return 500 before auth is checked. The frontend tests pass; the full pgmq round-trip does not.
