@@ -218,7 +218,7 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
         <div className="px-5 py-3 grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(180px,1.2fr)_auto] gap-3 items-center">
             <div>
                 <p className="text-xs font-semibold text-[var(--os-text-primary)]">
-                    {t(`labels.${configKey}`)}
+                    {t(`labels.${configKey.replace(/\./g, '_')}`)}
                 </p>
                 <p className="text-[10px] font-mono text-[var(--os-text-muted)] mt-0.5">
                     {configKey}
