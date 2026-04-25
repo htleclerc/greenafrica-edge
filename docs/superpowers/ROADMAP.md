@@ -63,16 +63,21 @@ Organized by priority and blast radius. Each item is ready to pick up in a fresh
 
 ### 🔥 P0 — blockers for production rollout
 
-#### B0. Client-side auth "Failed to fetch" against local Supabase (QA 2026-04-24)
+#### B0. CORS credentials mismatch on local Supabase (QA 2026-04-24/25 — root cause now identified)
 
-**Problem**: After fixing CSP + email_change seed, the Supabase Auth server-side **succeeds** (audit log shows `action:login` event for `demo.officer@…`), but the browser client reports `TypeError: Failed to fetch` from `SupabaseAuthClient.signInWithPassword` and cookies are never set. Login UI stays stuck on `/login` with the spinner running. All three Plan 3+5 auth-gated pages are therefore unreachable in local dev.
+**Problem**: `@supabase/ssr` `createBrowserClient` calls `fetch(...)` with `credentials: 'include'`. Local Supabase Kong responds with `Access-Control-Allow-Origin: *` AND `Access-Control-Allow-Credentials: true` simultaneously, which violates the CORS spec — when credentials are included, Allow-Origin MUST be a specific origin (not `*`). Browsers therefore reject the response and the fetch promise rejects with `TypeError: Failed to fetch`. The Supabase client swallows this and the UI hangs on the spinner forever.
 
-**Hypothesis**: Supabase auth cookies are `Secure` by default; browsers drop them over `http://localhost`. Alternatively a response-body parse issue.
+Production-hosted Supabase echoes the Origin specifically, so this only breaks LOCAL dev, not prod.
 
-**Workarounds to try**:
-- Set Supabase client `auth: { persistSession: true, storage: localStorage }` — moves from cookies to localStorage for dev.
-- Add `GOTRUE_COOKIE_OPTIONS_SAME_SITE=lax` and un-set `Secure` in `supabase/config.toml` (`[auth.cookies]` section if supported).
-- Use `http://localhost:3300` (not `127.0.0.1`) to match Supabase default cookie domain.
+**Verified**: manual `fetch(authUrl, {method: 'POST', headers: {...}, body: ...})` from page context returns 200 / 69ms. Adding `credentials: 'include'` to the same call → fails in 8ms with `Failed to fetch`.
+
+**Workarounds, ranked**:
+1. **Use the hosted Supabase for local dev** (the default `.env.local`). Migrate Plan 1-5 migrations to hosted via `supabase db push` so the new tables exist there too. This is the "real production-like" path.
+2. **Patch local Kong** to echo the request Origin instead of `*`. Edit `~/.cache/supabase/kong-template/cors.lua` (or whichever the CLI uses) to set `Access-Control-Allow-Origin: <Origin>` from the request. Brittle — gets clobbered on `supabase` CLI upgrade.
+3. **Use a CORS proxy** (e.g., a tiny Next.js API route that forwards to local Supabase) so requests look same-origin. Disposable scaffolding.
+4. **Use `localhost` not `127.0.0.1`** — some Chrome versions are more lenient on `localhost` even with `*`. Worth trying first; cheapest if it works.
+
+**Not viable**: changing the Supabase client to `credentials: 'omit'` — `@supabase/ssr` does not expose this knob, and patching it would break SSR session handling.
 
 **Report**: [`docs/qa-reports/qa-report-africgreen-2026-04-24.md`](../qa-reports/qa-report-africgreen-2026-04-24.md)
 
