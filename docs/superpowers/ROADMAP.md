@@ -85,6 +85,31 @@ Production-hosted Supabase echoes the Origin specifically, so this only breaks L
 - `5ecdc43` ISSUE-001: next-intl dotted keys in `AdminTaxPipeline.labels` crashed every route
 - `8c2e5ac` ISSUE-002 + ISSUE-003: CSP hardcoded to hosted-only Supabase; seed.sql created `auth.users` with NULL `email_change` tokens
 
+**Hosted Supabase migration push (2026-04-25)**:
+- Hosted DB had partial schema state — migrations 001-008, 011-022 already applied (manually, no tracking) but 009 (`app_config`) and 010 (`eu_mrv_cache`) were missing.
+- Marked 001-008, 011-022 as `applied` in remote tracking; marked 009-010 as `reverted` to re-run.
+- `supabase db push --include-all` then applied 009, 010, 027-037 cleanly (15 migrations total, including the 13 from Plans 1-5).
+- Found same ISSUE-003 (NULL token columns) on hosted's pre-existing `auth.users` rows. Patched in-place via `supabase db query`:
+  ```sql
+  UPDATE auth.users SET
+    email_change = COALESCE(email_change, ''),
+    email_change_token_new = COALESCE(email_change_token_new, ''),
+    email_change_token_current = COALESCE(email_change_token_current, ''),
+    confirmation_token = COALESCE(confirmation_token, ''),
+    recovery_token = COALESCE(recovery_token, ''),
+    reauthentication_token = COALESCE(reauthentication_token, ''),
+    phone_change = COALESCE(phone_change, ''),
+    phone_change_token = COALESCE(phone_change_token, '')
+  WHERE … (any IS NULL);
+  ```
+- After patch, manual `fetch(/auth/v1/token)` returns 200 / 414ms with full access_token. Hosted auth is functional.
+
+**Remaining residual** — UI login flow still hangs in `browse` headless:
+- `@supabase/ssr` `createBrowserClient` `signInWithPassword` never resolves in the browse-spawned Chromium even though raw fetch + token endpoint return 200.
+- Cookies stay empty after the click. Real Chrome/Firefox in normal use don't have this issue (the user logs in fine in production daily).
+- Hypothesis: headless Chromium cookie-write semantics differ from regular Chrome on cross-origin Set-Cookie with `Secure` flag. Likely a `browse` tool quirk, not an app bug.
+- For future /qa runs against this app: either (a) run the QA tool in an authenticated session via cookie-import from a real browser, or (b) bypass auth for QA by setting a session cookie programmatically before navigation.
+
 #### B1. Dev-server secret injection for the two queue workers
 
 **Problem**: the Plan 3 and Plan 4 E2E tests are marked `DONE_WITH_CONCERNS` because the running Next.js dev server doesn't have `QUEUE_WORKER_SECRET` in its env. Route handlers return 500 before auth is checked. The frontend tests pass; the full pgmq round-trip does not.
