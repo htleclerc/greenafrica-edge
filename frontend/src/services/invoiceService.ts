@@ -610,8 +610,7 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.text('Authorized Signatory', margin, y + 4);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 31, 24);
-  doc.text('Director, Maritime Carbon', margin, y + 8);
-  doc.text('Tax Authority', margin, y + 11);
+  doc.text('Director, Solid Technology', margin, y + 8);
 
   // Center: QR code for verification
   const qrSize = 26;
@@ -981,7 +980,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.text(data.confirmedBy, margin, y + 8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
-  doc.text('Maritime Carbon Tax Authority', margin, y + 11);
+  doc.text('Director, Solid Technology', margin, y + 11);
 
   // Center: QR code
   const qrSize = 26;
