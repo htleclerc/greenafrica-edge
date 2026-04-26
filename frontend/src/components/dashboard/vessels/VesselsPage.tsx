@@ -403,7 +403,6 @@ function VesselCard({ vessel: v, isSelected, onSelect, complianceLabel, category
 
 function VesselDetailDrawer({ vessel: v, onClose, isArmateur }: { vessel: SecureVessel; onClose: () => void; isArmateur: boolean }) {
     const t = useTranslations('VesselsPage');
-    const ctaKey = isArmateur ? 'pay_proforma' : 'generate_proforma';
     return (
         <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-200">
             <div>
@@ -425,12 +424,14 @@ function VesselDetailDrawer({ vessel: v, onClose, isArmateur }: { vessel: Secure
                 <p className="text-xs text-[var(--os-text-muted)]">DWT: {v.grossTonnageDwt.toLocaleString()}</p>
             </div>
             <div className="flex flex-col gap-2 justify-center">
-                <a
-                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
-                    className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
-                >
-                    {t(ctaKey)}
-                </a>
+                {!isArmateur && (
+                    <a
+                        href={`/dashboard/invoices?vessel=${v.imoNumber}`}
+                        className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
+                    >
+                        {t('generate_proforma')}
+                    </a>
+                )}
                 <button
                     onClick={onClose}
                     className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
