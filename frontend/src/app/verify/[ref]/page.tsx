@@ -1,23 +1,23 @@
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle, FileText, Receipt, RotateCcw } from 'lucide-react';
 import { verifyInvoiceSignature } from '@/services/invoiceService';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 /**
  * Public verification page — anyone can scan the QR on a printed pro-forma
- * or invoice and land here to confirm the document is authentic.
+ * or receipt and land here to confirm the document is authentic.
  *
  * Security model (post-2026-04 fraud audit):
  *
  *   1. The QR URL carries `?h=<contentHash>&s=<signature>`. Without both,
- *      the page returns "Document Not Found" with NO DB lookup — this
+ *      the page returns "Unknown Document" with NO DB lookup — this
  *      neutralizes ref-enumeration: an attacker cannot probe refs by
  *      walking `PRO-2026-00000000` → `PRO-2026-ffffffff` because every
  *      response is identical.
  *
  *   2. The signature is a constant-time HMAC-SHA256 check. Forged URLs
- *      (valid ref, wrong signature) land in the same "Not Found" branch.
+ *      (valid ref, wrong signature) land in the same "Unknown" branch.
  *
  *   3. Only after the signature passes do we hit the DB — by equality on
  *      `transactions.invoice_ref`. We additionally compare the DB
@@ -25,14 +25,18 @@ import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
  *      rotated signing secret, replay).
  *
  *   4. The verifier sees the authoritative fields (amount, vessel, owner,
- *      IMO) with a prominent "Compare this to your printed document — if
- *      they don't match, it's a forgery" notice. This is the only signal
- *      the verifier has that the paper copy wasn't re-typed after issue.
+ *      IMO) plus a label that names the document flavor (Pro-forma /
+ *      Receipt / Refund) and a generation date. For receipts we also call
+ *      out the payment state (Paid, Unpaid, In Default) so the operator
+ *      doesn't have to interpret an enum.
  */
+
+type DocumentType = 'PROFORMA' | 'FINAL' | 'COMPLEMENT' | 'REFUND';
 
 interface VerifyResult {
     found: boolean;
     invoiceRef?: string;
+    documentType?: DocumentType;
     vesselName?: string;
     vesselImo?: string;
     portCall?: string;
@@ -58,8 +62,6 @@ async function fetchVerifiedInvoice(
     const rate = await enforceRateLimit('verify', clientId);
     if (!rate.allowed) return { found: false };
 
-    // No signature tokens → treat as "not found" so enumeration attempts
-    // get the same response as a missing ref.
     if (!hash || !signature) return { found: false };
     if (!verifyInvoiceSignature(ref, hash, signature)) return { found: false };
 
@@ -67,10 +69,6 @@ async function fetchVerifiedInvoice(
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !anonKey) return { found: false };
 
-    // Using the anon key + SECURITY DEFINER RPC so the set of columns
-    // reachable from this public endpoint is hard-capped at the DB layer.
-    // A future refactor that tries to read extra columns would need to
-    // alter the function signature — a deliberate, reviewable change.
     const anon = createClient(supabaseUrl, anonKey);
 
     const { data, error } = await anon.rpc('verify_invoice_lookup', {
@@ -84,6 +82,7 @@ async function fetchVerifiedInvoice(
     return {
         found: true,
         invoiceRef: tx.invoice_ref ?? ref,
+        documentType: (tx.document_type ?? 'FINAL') as DocumentType,
         vesselName: tx.vessel_name,
         vesselImo: tx.vessel_imo,
         portCall: tx.port_call ?? '—',
@@ -97,13 +96,99 @@ async function fetchVerifiedInvoice(
     };
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: typeof CheckCircle2 }> = {
-    PAID:     { label: 'Paid',      color: '#10B981', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 },
-    PENDING:  { label: 'To Pay',    color: '#EAB308', bg: 'rgba(234,179,8,0.1)',  Icon: Clock },
-    OVERDUE:  { label: 'Overdue',   color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  Icon: AlertTriangle },
-    DISPUTED: { label: 'Disputed',  color: '#F97316', bg: 'rgba(249,115,22,0.1)', Icon: AlertTriangle },
-    EXEMPT:   { label: 'Exempt',    color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)', Icon: Shield },
-};
+interface DocumentDescriptor {
+    kind: 'proforma' | 'receipt' | 'refund';
+    title: string;          // e.g. "Pro-forma Invoice"
+    issueLabel: string;     // e.g. "Pro-forma generated on"
+    Icon: typeof FileText;
+    accent: string;         // hex
+}
+
+function describeDocument(documentType: DocumentType): DocumentDescriptor {
+    switch (documentType) {
+        case 'PROFORMA':
+            return {
+                kind: 'proforma',
+                title: 'Pro-forma Invoice',
+                issueLabel: 'Pro-forma generated on',
+                Icon: FileText,
+                accent: '#EAB308',
+            };
+        case 'REFUND':
+            return {
+                kind: 'refund',
+                title: 'Refund Note',
+                issueLabel: 'Refund note generated on',
+                Icon: RotateCcw,
+                accent: '#0EA5E9',
+            };
+        case 'COMPLEMENT':
+            return {
+                kind: 'receipt',
+                title: 'Complementary Receipt',
+                issueLabel: 'Receipt generated on',
+                Icon: Receipt,
+                accent: '#10B981',
+            };
+        case 'FINAL':
+        default:
+            return {
+                kind: 'receipt',
+                title: 'Tax Receipt',
+                issueLabel: 'Receipt generated on',
+                Icon: Receipt,
+                accent: '#10B981',
+            };
+    }
+}
+
+interface PaymentBadge {
+    label: string;
+    color: string;
+    bg: string;
+    Icon: typeof CheckCircle2;
+}
+
+/** Map (documentType, status) → a verifier-facing payment badge.
+ *
+ *  For PROFORMA the badge expresses "what the agent is expected to do":
+ *    PENDING → "To Pay", OVERDUE → "Overdue", PAID → "Paid in Advance".
+ *  For FINAL/COMPLEMENT (a receipt) it expresses settlement state:
+ *    PAID → "Paid", PENDING → "Unpaid", OVERDUE → "In Default of Payment".
+ *  REFUND has no payment status — caller should skip the badge entirely. */
+function paymentBadge(
+    descriptor: DocumentDescriptor,
+    status: VerifyResult['status'],
+): PaymentBadge | null {
+    if (descriptor.kind === 'refund') return null;
+    const s = status ?? 'PENDING';
+
+    if (s === 'EXEMPT') {
+        return { label: 'Exempt',   color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)', Icon: Shield };
+    }
+    if (s === 'DISPUTED') {
+        return { label: 'Disputed', color: '#F97316', bg: 'rgba(249,115,22,0.1)', Icon: AlertTriangle };
+    }
+
+    if (descriptor.kind === 'receipt') {
+        if (s === 'PAID')    return { label: 'Paid',                 color: '#10B981', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 };
+        if (s === 'OVERDUE') return { label: 'In Default of Payment', color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  Icon: AlertTriangle };
+        return                       { label: 'Unpaid',               color: '#EAB308', bg: 'rgba(234,179,8,0.1)',  Icon: Clock };
+    }
+
+    // proforma
+    if (s === 'PAID')    return { label: 'Paid in Advance', color: '#10B981', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 };
+    if (s === 'OVERDUE') return { label: 'Overdue',         color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  Icon: AlertTriangle };
+    return                       { label: 'To Pay',          color: '#EAB308', bg: 'rgba(234,179,8,0.1)',  Icon: Clock };
+}
+
+function formatDate(iso?: string, withTime = false): string {
+    if (!iso) return '—';
+    const opts: Intl.DateTimeFormatOptions = withTime
+        ? { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+        : { day: '2-digit', month: 'long', year: 'numeric' };
+    return new Date(iso).toLocaleDateString('en-GB', opts);
+}
 
 export default async function VerifyPage({
     params,
@@ -156,118 +241,11 @@ export default async function VerifyPage({
                     <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>Document Verification Service</p>
                 </div>
 
-                {/* Status content */}
                 {!result.found ? (
-                    <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-                        <XCircle style={{ width: '48px', height: '48px', color: '#DC2626', margin: '0 auto 12px' }} />
-                        <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'white', margin: '0 0 6px' }}>Document Not Found</h1>
-                        <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
-                            The verification link is missing, invalid, or the document does not exist.
-                        </p>
-                        <p style={{ fontSize: '11px', color: '#64748B', marginTop: '16px' }}>
-                            Always scan the QR code printed on an original document — typed or altered
-                            links will not verify.
-                        </p>
-                    </div>
-                ) : (() => {
-                    const config = STATUS_CONFIG[result.status || 'PENDING'];
-                    const Icon = config.Icon;
-                    return (
-                        <>
-                            {/* Status hero */}
-                            <div style={{
-                                padding: '32px 24px',
-                                background: config.bg,
-                                textAlign: 'center',
-                                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                            }}>
-                                <Icon style={{ width: '56px', height: '56px', color: config.color, margin: '0 auto 12px' }} />
-                                <p style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', letterSpacing: '2px', margin: 0 }}>
-                                    DOCUMENT STATUS
-                                </p>
-                                <h1 style={{ fontSize: '32px', fontWeight: 800, color: config.color, margin: '4px 0', letterSpacing: '-0.5px' }}>
-                                    {config.label.toUpperCase()}
-                                </h1>
-                                <p style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748B', margin: 0 }}>
-                                    {result.invoiceRef}
-                                </p>
-                            </div>
-
-                            {/* Anti-forgery notice */}
-                            <div style={{
-                                margin: '16px 24px 0',
-                                padding: '10px 12px',
-                                background: 'rgba(16,185,129,0.08)',
-                                borderLeft: '3px solid #10B981',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                color: '#94A3B8',
-                                lineHeight: 1.5,
-                            }}>
-                                <strong style={{ color: '#10B981' }}>Verify these fields</strong> against your printed document.
-                                If the amount, vessel, or IMO differ, <strong style={{ color: '#DC2626' }}>the document is a forgery</strong> —
-                                contact the Maritime Carbon Tax Authority.
-                            </div>
-
-                            {/* Details */}
-                            <div style={{ padding: '12px 24px 4px' }}>
-                                <DetailRow label="Vessel" value={result.vesselName} bold />
-                                <DetailRow label="IMO Number" value={result.vesselImo} mono />
-                                <DetailRow label="Port of Call" value={result.portCall} />
-                                <DetailRow label="Transaction Type" value={result.transactionType?.replace('_', ' ')} />
-                                <DetailRow
-                                    label="Amount Due"
-                                    value={`$${result.amountUsd?.toLocaleString('en-US', { maximumFractionDigits: 0 })} USD`}
-                                    bold
-                                    highlight={config.color}
-                                />
-                                <DetailRow
-                                    label="Issued"
-                                    value={result.createdAt ? new Date(result.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
-                                />
-                                {result.paidAt && (
-                                    <DetailRow
-                                        label="Paid On"
-                                        value={new Date(result.paidAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        highlight="#10B981"
-                                    />
-                                )}
-                            </div>
-
-                            {/* Content-hash fingerprint — small, so paranoid verifiers
-                                 can cross-check the 8-char prefix vs the PDF metadata */}
-                            {result.contentHash && (
-                                <div style={{ padding: '4px 24px 12px', fontFamily: 'monospace', fontSize: '10px', color: '#475569' }}>
-                                    Fingerprint: {result.contentHash.slice(0, 16)}…
-                                </div>
-                            )}
-
-                            {result.downloadUrl && (
-                                <div style={{ padding: '0 24px 20px' }}>
-                                    <a
-                                        href={result.downloadUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            display: 'block',
-                                            textAlign: 'center',
-                                            padding: '12px',
-                                            background: '#10B981',
-                                            color: '#0D1F18',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            textDecoration: 'none',
-                                            borderRadius: '10px',
-                                            letterSpacing: '0.5px',
-                                        }}
-                                    >
-                                        Download Original PDF →
-                                    </a>
-                                </div>
-                            )}
-                        </>
-                    );
-                })()}
+                    <UnknownDocumentBlock />
+                ) : (
+                    <FoundDocumentBlock result={result} />
+                )}
 
                 {/* Footer */}
                 <div style={{
@@ -283,6 +261,130 @@ export default async function VerifyPage({
                 </div>
             </div>
         </div>
+    );
+}
+
+function UnknownDocumentBlock() {
+    return (
+        <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+            <XCircle style={{ width: '48px', height: '48px', color: '#DC2626', margin: '0 auto 12px' }} />
+            <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'white', margin: '0 0 6px' }}>Unknown Document</h1>
+            <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                This document was not issued by Green Gate, or the verification link
+                has been altered after printing.
+            </p>
+            <p style={{ fontSize: '11px', color: '#64748B', marginTop: '16px', lineHeight: 1.5 }}>
+                Always scan the QR code printed on an original document — typed or
+                hand-edited links cannot be verified.
+            </p>
+        </div>
+    );
+}
+
+function FoundDocumentBlock({ result }: { result: VerifyResult }) {
+    const descriptor = describeDocument(result.documentType ?? 'FINAL');
+    const badge = paymentBadge(descriptor, result.status);
+    const HeroIcon = badge?.Icon ?? descriptor.Icon;
+    const heroColor = badge?.color ?? descriptor.accent;
+    const heroBg = badge?.bg ?? 'rgba(255,255,255,0.03)';
+
+    return (
+        <>
+            {/* Document type hero — always names the document flavor first,
+                  then (when applicable) the payment state underneath. */}
+            <div style={{
+                padding: '32px 24px',
+                background: heroBg,
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}>
+                <HeroIcon style={{ width: '56px', height: '56px', color: heroColor, margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', letterSpacing: '2px', margin: 0 }}>
+                    {descriptor.title.toUpperCase()}
+                </p>
+                {badge && (
+                    <h1 style={{ fontSize: '28px', fontWeight: 800, color: heroColor, margin: '4px 0', letterSpacing: '-0.5px' }}>
+                        {badge.label.toUpperCase()}
+                    </h1>
+                )}
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '4px 0 0' }}>
+                    {descriptor.issueLabel}{' '}
+                    <strong style={{ color: 'white' }}>{formatDate(result.createdAt)}</strong>
+                </p>
+                <p style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748B', marginTop: '8px' }}>
+                    {result.invoiceRef}
+                </p>
+            </div>
+
+            {/* Anti-forgery notice */}
+            <div style={{
+                margin: '16px 24px 0',
+                padding: '10px 12px',
+                background: 'rgba(16,185,129,0.08)',
+                borderLeft: '3px solid #10B981',
+                borderRadius: '6px',
+                fontSize: '11px',
+                color: '#94A3B8',
+                lineHeight: 1.5,
+            }}>
+                <strong style={{ color: '#10B981' }}>Verify these fields</strong> against your printed document.
+                If the amount, vessel, or IMO differ, <strong style={{ color: '#DC2626' }}>the document is a forgery</strong> —
+                contact the Maritime Carbon Tax Authority.
+            </div>
+
+            {/* Details */}
+            <div style={{ padding: '12px 24px 4px' }}>
+                <DetailRow label="Vessel" value={result.vesselName} bold />
+                <DetailRow label="IMO Number" value={result.vesselImo} mono />
+                <DetailRow label="Port of Call" value={result.portCall} />
+                <DetailRow label="Transaction Type" value={result.transactionType?.replace('_', ' ')} />
+                <DetailRow
+                    label={descriptor.kind === 'refund' ? 'Refund Amount' : 'Amount Due'}
+                    value={`$${result.amountUsd?.toLocaleString('en-US', { maximumFractionDigits: 0 })} USD`}
+                    bold
+                    highlight={heroColor}
+                />
+                {result.paidAt && (
+                    <DetailRow
+                        label="Paid On"
+                        value={formatDate(result.paidAt, true)}
+                        highlight="#10B981"
+                    />
+                )}
+            </div>
+
+            {/* Content-hash fingerprint — small, so paranoid verifiers
+                  can cross-check the 16-char prefix vs the PDF metadata */}
+            {result.contentHash && (
+                <div style={{ padding: '4px 24px 12px', fontFamily: 'monospace', fontSize: '10px', color: '#475569' }}>
+                    Fingerprint: {result.contentHash.slice(0, 16)}…
+                </div>
+            )}
+
+            {result.downloadUrl && (
+                <div style={{ padding: '0 24px 20px' }}>
+                    <a
+                        href={result.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'block',
+                            textAlign: 'center',
+                            padding: '12px',
+                            background: '#10B981',
+                            color: '#0D1F18',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            borderRadius: '10px',
+                            letterSpacing: '0.5px',
+                        }}
+                    >
+                        Download Original PDF →
+                    </a>
+                </div>
+            )}
+        </>
     );
 }
 

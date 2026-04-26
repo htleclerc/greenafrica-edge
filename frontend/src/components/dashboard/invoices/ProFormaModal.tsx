@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { X, Printer, Ship, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Printer, Ship, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Transaction, TransactionType, JurisdictionZone } from '@/types/secure';
 import { OsButton } from '@/components/ui/OsButton';
 import { useVessels } from '@/hooks/useVessels';
@@ -22,7 +22,7 @@ type SendStatus = 'idle' | 'generating' | 'success' | 'error';
 
 export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
     const t = useTranslations('InvoicesPage');
-    const { user } = useRole();
+    const { isDemo } = useRole();
     const { data: vessels } = useVessels();
     const { data: taxConfigs } = useTaxConfigs();
 
@@ -216,7 +216,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 : <Printer className="w-3.5 h-3.5" />}
                             onClick={handlePrintSave}
-                            disabled={isBusy}
+                            disabled={isBusy || isDemo}
                         >
                             {isBusy && lastAction === 'printSave' ? t('print_save_pdf') + '…' : t('print_save_pdf')}
                         </OsButton>
@@ -225,6 +225,18 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                         </button>
                     </div>
                 </div>
+
+                {/* Demo-mode guard. The Generate / Save / Send actions all hit
+                     /api/invoices/generate which loads the row from `transactions`
+                     by id. Mock txns (txn-001…) don't exist in the DB, so a click
+                     in demo would 404. We hard-disable the buttons and surface a
+                     banner that points to the env knob. */}
+                {isDemo && (
+                    <div className="px-5 py-2 bg-[rgba(234,179,8,0.08)] border-b border-[#EAB308]/20 flex items-center gap-2 text-xs text-[#EAB308]">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {t('demo_generate_disabled')}
+                    </div>
+                )}
 
                 {/* Status banner */}
                 {sendStatus === 'success' && (
@@ -598,7 +610,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                             size="sm"
                             icon={isBusy && lastAction === 'draftSave' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : undefined}
                             onClick={handleDraftSave}
-                            disabled={isBusy}
+                            disabled={isBusy || isDemo}
                         >
                             {isBusy && lastAction === 'draftSave' ? t('draft_save') + '…' : t('draft_save')}
                         </OsButton>
@@ -607,7 +619,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                             size="sm"
                             icon={isBusy && lastAction === 'sendEmail' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
                             onClick={handleSendEmail}
-                            disabled={isBusy}
+                            disabled={isBusy || isDemo}
                         >
                             {isBusy && lastAction === 'sendEmail' ? 'Sending…' : t('print_and_send')}
                         </OsButton>
