@@ -1,7 +1,7 @@
-# Compiled binaries
-api
-api.exe
-africgreen-api
+# Compiled binaries (anchored to backend/ so they don't match cmd/api/ source dir)
+/api
+/api.exe
+/africgreen-api
 *.exe
 
 # Env (already in root .gitignore but explicit here)

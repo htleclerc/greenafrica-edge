@@ -19,7 +19,7 @@ import { Redis } from '@upstash/redis';
  * failure (recommended in production — prevents silent downgrade to unlimited).
  */
 
-type LimiterKey = 'verify' | 'invoice-download';
+type LimiterKey = 'verify' | 'invoice-download' | 'signup';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -37,6 +37,11 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // /api/invoices/[ref]/download — same traffic shape as verify, but
     // the response is heavier (PDF), so we cap lower.
     'invoice-download': { perMinute: 10, perHour: 60 },
+
+    // /api/auth/register — a real human signs up once. Strict caps prevent
+    // both account-creation spam and email-enumeration via the duplicate-email
+    // check (returns 409 distinguishable from 200, A2 audit Task 7).
+    signup: { perMinute: 5, perHour: 30 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.

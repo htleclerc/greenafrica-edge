@@ -2,6 +2,8 @@ package ais
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +13,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/htleclerc/africgreen/backend/internal/config"
+	"github.com/htleclerc/africgreen/backend/internal/corridor"
+	"github.com/htleclerc/africgreen/backend/internal/eez"
 )
 
 // AIS message from aisstream.io
@@ -35,11 +39,17 @@ type AISMessage struct {
 
 // Ingester manages the AIS WebSocket connection and writes positions to Supabase.
 type Ingester struct {
-	cfg        *config.Config
-	mu         sync.Mutex
-	running    bool
-	stopCh     chan struct{}
-	stats      Stats
+	cfg     *config.Config
+	db      *sql.DB // nullable when tests don't need hooks
+	watcher *corridor.Watcher
+	tracker *eez.Tracker
+	mu      sync.Mutex
+	running bool
+	stopCh  chan struct{}
+	done    chan struct{}      // closed when the run() goroutine returns; lets Wait() bound shutdown
+	ctx     context.Context    // hook ctx, cancelled by Stop() so in-flight corridor/eez calls unwind
+	cancel  context.CancelFunc
+	stats   Stats
 }
 
 type Stats struct {
@@ -50,10 +60,19 @@ type Stats struct {
 	Errors        int64     `json:"errors"`
 }
 
-func NewIngester(cfg *config.Config) *Ingester {
+// NewIngesterWithDeps constructs an Ingester with db + hooks wired in.
+// Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition
+// using a context that Stop() cancels, so shutdown unwinds in-flight hooks.
+//
+// Pass nil for db/watcher/tracker in tests that only need the WebSocket side.
+func NewIngesterWithDeps(cfg *config.Config, db *sql.DB,
+	watcher *corridor.Watcher, tracker *eez.Tracker) *Ingester {
 	return &Ingester{
-		cfg:    cfg,
-		stopCh: make(chan struct{}),
+		cfg:     cfg,
+		db:      db,
+		watcher: watcher,
+		tracker: tracker,
+		stopCh:  make(chan struct{}),
 	}
 }
 
@@ -74,12 +93,36 @@ func (ing *Ingester) Start() error {
 	ing.stats.Running = true
 	ing.stats.StartedAt = time.Now()
 	ing.stopCh = make(chan struct{})
+	ing.done = make(chan struct{})
+	ing.ctx, ing.cancel = context.WithCancel(context.Background())
 
-	go ing.run()
+	go func() {
+		defer close(ing.done)
+		ing.run()
+	}()
 	return nil
 }
 
-// Stop gracefully stops the ingester.
+// Wait blocks until the run() goroutine returns or ctx is cancelled. Use to
+// bound shutdown time (e.g., 5s) so the process exits even if a hook handler
+// hangs. Returns ctx.Err() on timeout, nil on clean exit.
+func (ing *Ingester) Wait(ctx context.Context) error {
+	ing.mu.Lock()
+	done := ing.done
+	ing.mu.Unlock()
+	if done == nil {
+		return nil
+	}
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Stop gracefully stops the ingester. Cancels the hook context so any
+// in-flight corridor.Evaluate / eez.OnPosition call unwinds promptly.
 func (ing *Ingester) Stop() {
 	ing.mu.Lock()
 	defer ing.mu.Unlock()
@@ -88,6 +131,9 @@ func (ing *Ingester) Stop() {
 		return
 	}
 
+	if ing.cancel != nil {
+		ing.cancel()
+	}
 	close(ing.stopCh)
 	ing.running = false
 	ing.stats.Running = false
@@ -229,6 +275,38 @@ func (ing *Ingester) connect() error {
 		posReq.Header.Set("Content-Type", "application/json")
 		http.DefaultClient.Do(posReq)
 
+		// Fire corridor + EEZ hooks under the ingester's ctx so Stop() cancels
+		// in-flight calls. Errors are logged but do not break ingestion — the
+		// reconcile sweeper is the eventually-consistent safety net.
+		hookCtx := ing.ctx
+		if hookCtx == nil {
+			hookCtx = context.Background()
+		}
+		if ing.watcher != nil {
+			_, werr := ing.watcher.Evaluate(hookCtx, corridor.Position{
+				VesselID:   vessels[0].ID,
+				IMO:        "", // static data not in PositionReport; watcher no-ops on empty IMO.
+				Lat:        msg.MetaData.Latitude,
+				Lng:        msg.MetaData.Longitude,
+				SpeedKnots: sog,
+				RecordedAt: time.Now(),
+			})
+			if werr != nil {
+				log.Printf("[AIS] corridor.Evaluate: %v", werr)
+			}
+		}
+		if ing.tracker != nil {
+			_, terr := ing.tracker.OnPosition(hookCtx, eez.Position{
+				VesselID:   vessels[0].ID,
+				Lat:        msg.MetaData.Latitude,
+				Lng:        msg.MetaData.Longitude,
+				RecordedAt: time.Now(),
+			})
+			if terr != nil {
+				log.Printf("[AIS] eez.OnPosition: %v", terr)
+			}
+		}
+
 		log.Printf("[AIS] %s (%s) at %.4f, %.4f — %.1f kn → Supabase ✓",
 			msg.MetaData.ShipName,
 			msg.MetaData.MMSIStr,
@@ -245,9 +323,12 @@ type Handler struct {
 	ingester *Ingester
 }
 
-func NewHandler(cfg *config.Config) *Handler {
+// NewHandler wires corridor + eez hooks through the ingester. Pass nil for
+// db/watcher/tracker if you only need the WebSocket side (e.g., in tests).
+func NewHandler(cfg *config.Config, db *sql.DB,
+	watcher *corridor.Watcher, tracker *eez.Tracker) *Handler {
 	return &Handler{
-		ingester: NewIngester(cfg),
+		ingester: NewIngesterWithDeps(cfg, db, watcher, tracker),
 	}
 }
 
@@ -274,4 +355,12 @@ func (h *Handler) Stop(w http.ResponseWriter, r *http.Request) {
 // AutoStart starts the ingester programmatically (for boot-time auto-start).
 func (h *Handler) AutoStart() error {
 	return h.ingester.Start()
+}
+
+// Shutdown stops the ingester and waits up to ctx for the goroutine to exit.
+// Use a bounded ctx (e.g., 5s) so the process exits even if a hook handler
+// fails to observe ctx cancellation. Safe to call when not running.
+func (h *Handler) Shutdown(ctx context.Context) error {
+	h.ingester.Stop()
+	return h.ingester.Wait(ctx)
 }

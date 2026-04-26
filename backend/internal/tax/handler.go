@@ -1,92 +1,80 @@
 package tax
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 
+	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/config"
 )
 
 // Handler exposes tax calculation endpoints.
 type Handler struct {
-	cfg *config.Config
+	cfg  *config.Config
+	calc *Calculator
 }
 
-func NewHandler(cfg *config.Config) *Handler {
-	return &Handler{cfg: cfg}
+// NewHandler builds a tax HTTP handler. db + appcfg may be nil during a
+// transition period (pre-Task-10 wiring); the handler will return 503 in
+// that case rather than panicking.
+func NewHandler(cfg *config.Config, db *sql.DB, appcfg *appconfig.Reader) *Handler {
+	h := &Handler{cfg: cfg}
+	if db != nil && appcfg != nil {
+		h.calc = NewCalculator(db, appcfg)
+	}
+	return h
 }
 
 type CalculateRequest struct {
-	VesselID string `json:"vesselId"`
-	Since    string `json:"since,omitempty"`
-}
-
-type BatchCalculateRequest struct {
-	VesselIDs []string `json:"vesselIds"`
-	Since     string   `json:"since,omitempty"`
-}
-
-type TaxBreakdown struct {
-	VesselID       string  `json:"vesselId"`
-	VesselName     string  `json:"vesselName"`
-	EmissionsTco2  float64 `json:"emissionsTco2"`
-	TotalTaxUSD    float64 `json:"totalTaxUsd"`
-	Zone           string  `json:"zone"`
-	DaysInZone     int     `json:"daysInZone"`
-	RatePerTco2    float64 `json:"ratePerTco2"`
+	IMO          string   `json:"imo"`
+	Category     string   `json:"category"`
+	GrossTonnage int      `json:"gross_tonnage"`
+	DistanceNM   float64  `json:"distance_nm"`
+	RateOverride *float64 `json:"rate_override,omitempty"`
 }
 
 // Calculate handles single vessel tax calculation.
 // POST /api/v1/tax/calculate
 func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
+	if h.calc == nil {
+		http.Error(w, `{"error":"tax calculator not wired (db/appcfg missing)"}`, http.StatusServiceUnavailable)
+		return
+	}
 	var req CalculateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
 		return
 	}
-
-	if req.VesselID == "" {
-		http.Error(w, `{"error":"vesselId is required"}`, http.StatusBadRequest)
+	if req.Category == "" || req.DistanceNM < 0 {
+		http.Error(w, `{"error":"category and distance_nm are required"}`, http.StatusBadRequest)
 		return
 	}
-
-	// TODO: Implement when Supabase REST client is wired up
-	// 1. Fetch vessel from Supabase
-	// 2. Fetch position history
-	// 3. Run EEZ detection on each position
-	// 4. Apply tax rates per zone
-	// 5. Return breakdown
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":   "not_implemented",
-		"vesselId": req.VesselID,
-		"message":  "Tax calculation will be implemented when Go backend is activated. Use Next.js /api/tax/calculate for now.",
+	res, err := h.calc.Calculate(r.Context(), Input{
+		IMO:          req.IMO,
+		Category:     req.Category,
+		GrossTonnage: req.GrossTonnage,
+		DistanceNM:   req.DistanceNM,
+		RateOverride: req.RateOverride,
 	})
+	if err != nil {
+		log.Printf("[tax] calculate imo=%s cat=%s gt=%d dist=%.1f: %v",
+			req.IMO, req.Category, req.GrossTonnage, req.DistanceNM, err)
+		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(res)
 }
 
-// BatchCalculate handles bulk vessel tax calculation.
+// BatchCalculate is a stub; Plan 2 implements single-vessel calculation only.
 // POST /api/v1/tax/batch
 func (h *Handler) BatchCalculate(w http.ResponseWriter, r *http.Request) {
-	var req BatchCalculateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
-		return
-	}
-
-	if len(req.VesselIDs) == 0 {
-		http.Error(w, `{"error":"vesselIds is required"}`, http.StatusBadRequest)
-		return
-	}
-
-	// TODO: Implement batch calculation
-	// This is the main reason for the Go backend:
-	// calculate tax for 100+ vessels in parallel without serverless timeouts
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":     "not_implemented",
-		"vesselCount": len(req.VesselIDs),
-		"message":    "Batch tax calculation will be implemented when Go backend is activated.",
+	w.WriteHeader(http.StatusNotImplemented)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"status":  "not_implemented",
+		"message": "Plan 2 implements single-vessel calculation only; batch is out of scope for MVP.",
 	})
 }

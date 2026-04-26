@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 // Accepts 8 form roles, maps them to the 5 DB roles (PORT_OFFICER,
 // FINANCE_ADMIN, SHIPPING_AGENT, MANAGER) — see ROLE_MAP below. SUPERADMIN is
@@ -59,6 +60,24 @@ export const ROLE_MAP: Record<FormRole, DbRole> = {
  */
 export async function POST(request: NextRequest) {
     try {
+        // Throttle BEFORE parsing the body — caps account-creation spam and
+        // email-enumeration attempts (the duplicate-email branch returns 409
+        // distinguishably from 200). Fail-open in dev when Upstash creds are
+        // absent; set RATE_LIMIT_STRICT=true in prod to fail-closed.
+        const clientId = getClientId(request.headers);
+        const rate = await enforceRateLimit('signup', clientId);
+        if (!rate.allowed) {
+            return NextResponse.json(
+                { error: 'Too many signup attempts. Please try again later.' },
+                {
+                    status: 429,
+                    headers: rate.reset
+                        ? { 'Retry-After': String(Math.ceil((rate.reset - Date.now()) / 1000)) }
+                        : undefined,
+                },
+            );
+        }
+
         const body = await request.json();
         const parsed = registerSchema.safeParse(body);
 

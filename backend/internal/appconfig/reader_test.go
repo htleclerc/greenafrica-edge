@@ -1,0 +1,57 @@
+package appconfig
+
+import (
+	"context"
+	"os"
+	"testing"
+
+	"github.com/htleclerc/africgreen/backend/internal/supadb"
+)
+
+func openTestDB(t *testing.T) *Reader {
+	t.Helper()
+	url := os.Getenv("SUPABASE_DB_URL")
+	if url == "" {
+		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+	}
+	db, err := supadb.Open(url)
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	return New(db)
+}
+
+func TestGetInt_ReadsSeededRate(t *testing.T) {
+	r := openTestDB(t)
+	got, err := r.GetInt(context.Background(), "carbon_tax.rate_usd_per_tco2")
+	if err != nil {
+		t.Fatalf("GetInt: %v", err)
+	}
+	if got != 40 {
+		t.Fatalf("rate = %d, want 40", got)
+	}
+}
+
+func TestGetBool_False(t *testing.T) {
+	r := openTestDB(t)
+	got, err := r.GetBool(context.Background(), "feature.ais_global_enabled")
+	if err != nil {
+		t.Fatalf("GetBool: %v", err)
+	}
+	if got {
+		t.Fatalf("feature.ais_global_enabled = true, want false")
+	}
+}
+
+func TestGetStringSlice_Languages(t *testing.T) {
+	r := openTestDB(t)
+	got, err := r.GetStringSlice(context.Background(), "proforma.languages_default")
+	if err != nil {
+		t.Fatalf("GetStringSlice: %v", err)
+	}
+	want := []string{"en", "fr", "ar"}
+	if len(got) != 3 || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
+		t.Fatalf("languages = %v, want %v", got, want)
+	}
+}

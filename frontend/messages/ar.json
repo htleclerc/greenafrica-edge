@@ -2363,5 +2363,135 @@
     "col_status": "الحالة",
     "empty_title": "لا توجد مدفوعات",
     "empty_sub": "لا يوجد سجل مدفوعات لهذه السفينة بعد."
+  },
+  "IncomingVessels": {
+    "title": "السفن القادمة",
+    "subtitle": "سفن تقترب من موانئ صوماليلاند، بانتظار وكيل شحن لاستلامها وإصدار الفاتورة المبدئية.",
+    "empty": "لا توجد سفن حالياً بانتظار الاستلام.",
+    "claim": "استلام",
+    "col": {
+      "vessel": "السفينة",
+      "imo": "رقم IMO",
+      "distance": "المسافة",
+      "eta": "الوصول المتوقع",
+      "estimated": "العبور المقدَّر",
+      "actions": "إجراءات"
+    },
+    "claimDialog": {
+      "title": "استلام السفينة",
+      "description": "استلام {vessel} سيعيّنك وكيل الشحن لهذه الرحلة ويبدأ توليد الفاتورة المبدئية.",
+      "ownerEmailLabel": "البريد الإلكتروني الرسمي لمالك السفينة (مطلوب)",
+      "invalidEmail": "أدخل بريداً إلكترونياً صالحاً.",
+      "cancel": "إلغاء",
+      "confirm": "استلام وإصدار الفاتورة المبدئية",
+      "claiming": "جارٍ الاستلام…"
+    }
+  },
+  "_TODO_AdminEscalations": "Proper Arabic translation pending — strings below are English fallback.",
+  "AdminEscalations": {
+    "title": "Escalations",
+    "subtitle": "Unclaimed alerts past the agent SLA and unpaid pro-formas eligible for owner cascade.",
+    "tabs": {
+      "unclaimed": "Unclaimed (Port Officer review)",
+      "unpaid": "Unpaid 7d+ (owner cascade)"
+    },
+    "unclaimed": {
+      "col": {
+        "vessel": "Vessel",
+        "imo": "IMO",
+        "detectedAgo": "Detected",
+        "distance": "Distance",
+        "eta": "ETA",
+        "actions": "Actions"
+      },
+      "assign": "Assign",
+      "assignComingSoon": "Agent assignment UI coming in Plan 5 follow-up.",
+      "empty": "No escalated alerts."
+    },
+    "unpaid": {
+      "col": {
+        "vessel": "Vessel",
+        "imo": "IMO",
+        "ref": "Ref",
+        "amount": "Amount",
+        "arrived": "Arrived",
+        "overdue": "Days overdue",
+        "ownerEmail": "Owner email",
+        "actions": "Actions"
+      },
+      "escalate": "Escalate to owner",
+      "noEmail": "—",
+      "empty": "No unpaid pro-formas awaiting owner cascade."
+    },
+    "dialog": {
+      "title": "Escalate to registered owner",
+      "description": "Send the cover letter + pro-forma PDF to the shipowner for {vessel} (IMO {imo}).",
+      "ownerEmailLabel": "Shipowner official email",
+      "ownerEmailNewHint": "This value differs from the stored email — it will be saved with PORT_OFFICER as source.",
+      "localeLabel": "Letter language",
+      "cancel": "Cancel",
+      "confirm": "Send",
+      "sending": "Sending…",
+      "successToast": "Cascade email sent to {email}"
+    }
+  },
+  "_TODO_AdminMappings": "Proper Arabic translation pending — strings below are English fallback.",
+  "AdminMappings": {
+    "title": "Owner → Agent Mappings",
+    "subtitle": "Configure cascade A — which local shipping agent handles a given shipowner's vessels.",
+    "addSectionTitle": "Add a mapping",
+    "showActiveOnly": "Show active only",
+    "col": {
+      "shipowner": "Shipowner",
+      "agent": "Agent",
+      "priority": "Priority",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until",
+      "active": "Active",
+      "actions": "Actions"
+    },
+    "form": {
+      "shipowner": "Shipowner",
+      "agent": "Agent",
+      "priority": "Priority (lower = first)",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until (optional)",
+      "submit": "Add mapping",
+      "submitting": "Adding…"
+    },
+    "deactivate": "Deactivate",
+    "deactivating": "Deactivating…",
+    "deactivated": "Deactivated",
+    "active": "Active",
+    "empty": "No mappings yet. Add one to enable cascade A."
+  },
+  "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into ar",
+  "AdminTaxPipeline": {
+    "sectionTitle": "Carbon tax pipeline",
+    "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",
+    "labels": {
+      "carbon_tax_rate_usd_per_tco2": "Carbon tax rate (USD / tCO₂)",
+      "arrival_corridor_radius_nm": "Approach corridor radius (NM)",
+      "arrival_claim_sla_hours": "Agent claim SLA (hours)",
+      "arrival_escalation_eta_buffer_h": "Escalation ETA buffer (hours)",
+      "reconciliation_tolerance_pct": "Reconciliation tolerance (%)",
+      "reconciliation_check_interval_min": "Reconciliation check interval (min)",
+      "owner_escalation_delay_days": "Owner escalation delay (days)",
+      "owner_escalation_reminder_count": "Agent reminders before owner cascade",
+      "proforma_languages_default": "Default pro-forma languages",
+      "feature_ais_global_enabled": "Global AIS (Phase 2)",
+      "feature_equasis_scraper_enabled": "EQUASIS scraper (Phase 2)",
+      "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
+      "feature_shipowner_portal_enabled": "Shipowner portal",
+      "queue_worker_url": "Queue worker URL",
+      "queue_worker_secret": "Queue worker secret"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "readOnly": "Read-only (SUPERADMIN required to edit)",
+    "secretMask": "••••••••",
+    "showSecret": "Show",
+    "hideSecret": "Hide",
+    "successToast": "Saved"
   }
 }
