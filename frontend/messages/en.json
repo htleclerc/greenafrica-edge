@@ -1229,6 +1229,8 @@
     "action_view_receipt": "View receipt →",
     "action_track_payment": "Track payment →",
     "action_generate_proforma": "Generate Pro-forma →",
+    "action_pay_proforma": "Pay pro-forma →",
+    "action_view_proforma": "View pro-forma →",
     "action_issue_notice": "Issue notice →",
     "action_hail_vessel": "Hail vessel →",
     "action_view_exemption": "View exemption →",
@@ -1241,6 +1243,7 @@
     "drawer_emissions_tax": "Emissions & Tax",
     "drawer_estimated_emissions": "{value} tCO₂ estimated",
     "generate_proforma": "Generate Pro-forma →",
+    "pay_proforma": "Pay pro-forma →",
     "close": "Close"
   },
   "GreenLedgerPage": {
