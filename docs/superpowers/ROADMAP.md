@@ -1,6 +1,6 @@
 # Carbon Tax Pro-Forma — Project Roadmap
 
-**Last updated**: 2026-04-24 after Plan 5 merge (commit `d7576b8` on `origin/develop`)
+**Last updated**: 2026-04-26 after B1 + B2 + P1.1-P1.4 fixes (commit `861816d` on `origin/develop`)
 **Master spec**: [`specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md`](specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md)
 
 > Single pane of glass for this project. Start here when resuming in a new session.
@@ -110,61 +110,33 @@ Production-hosted Supabase echoes the Origin specifically, so this only breaks L
 - Hypothesis: headless Chromium cookie-write semantics differ from regular Chrome on cross-origin Set-Cookie with `Secure` flag. Likely a `browse` tool quirk, not an app bug.
 - For future /qa runs against this app: either (a) run the QA tool in an authenticated session via cookie-import from a real browser, or (b) bypass auth for QA by setting a session cookie programmatically before navigation.
 
-#### B1. Dev-server secret injection for the two queue workers
+#### ✅ B1. Dev-server secret injection for the two queue workers — DONE 2026-04-26
 
-**Problem**: the Plan 3 and Plan 4 E2E tests are marked `DONE_WITH_CONCERNS` because the running Next.js dev server doesn't have `QUEUE_WORKER_SECRET` in its env. Route handlers return 500 before auth is checked. The frontend tests pass; the full pgmq round-trip does not.
+`QUEUE_WORKER_SECRET`, `AFRICGREEN_API_URL`, `AFRICGREEN_API_SECRET` added to `frontend/.env.local`. `app_config.queue.worker_secret` synchronised on hosted Supabase. Verified live on dev server: wrong secret → 401, right secret + empty queue → 204 on both `/api/queue/process-proforma` and `/api/queue/process-reconciliation`. **Full E2E tests not run** to avoid polluting hosted DB with test data — would require local Supabase or staging DB.
 
-**Fix** (manual, one-off):
+#### ✅ B2. A2 signup audit — 2 P0 bugs — DONE 2026-04-26 (commit `d584ed1`)
 
-1. Add to `frontend/.env.local`:
-   ```
-   QUEUE_WORKER_SECRET=<openssl rand -hex 32>
-   AFRICGREEN_API_URL=http://127.0.0.1:8080
-   AFRICGREEN_API_SECRET=<same value as Go backend's API_SECRET>
-   ```
-2. Update `app_config.queue.worker_secret` in Supabase to the same value:
-   ```sql
-   UPDATE public.app_config
-      SET value = to_jsonb('<same value>'::text)
-    WHERE key = 'queue.worker_secret';
-   ```
-3. Restart `npm run dev`. Re-run both E2E tests:
-   ```bash
-   cd frontend && npx vitest run proforma-happy-path reconciliation-happy-path
-   ```
+- **Wrong role enum**: `/api/auth/approve/route.ts` no longer rewrites `profiles.role`; only flips `is_active`. Register-time `ROLE_MAP` is now the single source of truth. 10 regression tests covering all 8 form roles in [`route.test.ts`](../../frontend/src/app/api/auth/approve/route.test.ts).
+- **Sidebar link**: was already present in `DashboardSidebar.tsx:41` with correct RBAC gating in `rbac.ts:56`. Audit was stale on this point.
+- **Bonus**: server-side role guard added to [`/dashboard/validations/page.tsx`](../../frontend/src/app/(dashboard)/dashboard/validations/page.tsx) — redirects non-admins to `/dashboard`.
 
-**Expected after fix**: both E2E tests go green end-to-end.
+### 🟠 P1 — important polish (all done 2026-04-26)
 
-#### B2. A2 signup audit — 2 P0 bugs
+#### ✅ P1.1 Go backend context propagation — DONE (commit `861816d`)
 
-From [`audits/2026-04-24-a2-signup-audit.md`](../audits/2026-04-24-a2-signup-audit.md):
+Added `Ingester.done` channel + `Ingester.Wait(ctx)` + `Handler.Shutdown(ctx)`. `cmd/api/main.go` now bounds AIS shutdown to 5s before HTTP drain. Anchored binary patterns in `backend/.gitignore` (`/api`, `/api.exe`) so they no longer match `cmd/api/` source.
 
-- **Wrong role enum in approve route**: `/api/auth/approve/route.ts:70-77` writes `regRequest.requested_role` (a form role like `FLEET_MANAGER`) directly onto `profiles.role`, which is not a valid `user_role` enum value. Approval of any SHIPPING_AGENT silently fails, leaving the user stuck at `is_active=false`. Fix: remove the `role:` line from the approve update — register already sets the correct mapped role. Add a test covering all 8 form roles.
-- **Missing sidebar link**: admins have no discoverable path to `/dashboard/validations`. Add the sidebar entry gated on `SUPERADMIN | PORT_OFFICER | MANAGER`.
+#### ✅ P1.2 host.docker.internal Linux fallback — DONE (commit `0d9c0b9`)
 
-### 🟠 P1 — important polish
+Documented in [`docs/dev-setup-queue-worker.md`](../dev-setup-queue-worker.md). Three workarounds (bridge IP, /etc/hosts in container, shared network). No migration fix because 035/036 are already applied to hosted DB and the value is meant to be per-environment.
 
-#### P1.1 Go backend context propagation
+#### ✅ P1.3 Delete dead Edge Function — DONE (commit `7bc0b22`)
 
-Plan 2 code review (commit `3f7fdfa` applied partial fixes). Remaining known concern: the `ais.Ingester` now owns a cancellable ctx (Plan 2 follow-up fix), BUT long-running operations inside hook handlers may still not unwind instantly on SIGTERM. Add a hard-kill timeout of ~5s on the in-flight hook ctx during shutdown. Low-severity — surfaces only on forcibly-terminated deploys.
+`supabase/functions/approve-registration/` removed. Old `tax.NewIngester` / `tax.NewHandler` stubs were already removed in Plan 2 review.
 
-#### P1.2 Sanitize secret storage in Docker-reachable URLs
+#### ✅ P1.4 Rate-limit `/api/auth/register` — DONE (commit `7bc0b22`)
 
-`supabase/migrations/035_proforma_worker_cron.sql` and `036_reconciliation_trigger_and_cron.sql` both use `host.docker.internal` for the worker URL. On Linux (non-Docker-Desktop), this doesn't resolve by default. Document in the README OR add a `supabase/config.toml` entry:
-
-```toml
-[db]
-extra_hosts = ["host.docker.internal:host-gateway"]
-```
-
-#### P1.3 Delete dead code
-
-- `supabase/functions/approve-registration/` Edge Function is unused (audit Task 7 found zero frontend references; would 409 if called).
-- The old `tax.NewIngester` / `tax.NewHandler` stubs were removed in Plan 2 review cleanup — confirm nothing in other project repos still imports them.
-
-#### P1.4 Rate-limit `/api/auth/register`
-
-Audit Task 7 flagged this. The repo already has `frontend/src/lib/rateLimit.ts` (Upstash Redis-backed). Wire it into the register route.
+`enforceRateLimit('signup')` wired in with strict 5/min, 30/hour per-IP bucket via existing `lib/rateLimit.ts`. Caps account-creation spam and email-enumeration via the duplicate-email 409 branch. Fail-open in dev when Upstash creds absent; `RATE_LIMIT_STRICT=true` in prod for fail-closed.
 
 ### 🟡 P2 — nice-to-have
 
@@ -285,12 +257,12 @@ Claude will read the roadmap + the specific file references and hand you back a 
 
 ## Suggested next session picks
 
-Ranked by value × effort:
+Ranked by value × effort (B0 → B2 + all P1s closed 2026-04-26):
 
-1. **B1 — fix QUEUE_WORKER_SECRET** (15 min, unblocks both E2E tests going fully green). Start here.
-2. **B2 — approve route role bug** (1 hour, fixes a real production-blocking bug; adds test coverage). Independent of B1.
-3. **P1.2 — host.docker.internal Linux fallback** (30 min, removes a platform-specific footgun).
-4. **P2 — REFUND badge + proper Arabic translations** (2 hours, polish).
+1. **Live smoke test** of the signup → `/dashboard/validations` → approve flow on hosted, end-to-end (30 min). Confirms B2 fix works in production-shadow before promoting to prod.
+2. **E2E pgmq round-trip** — set up a local or staging Supabase, then run `npx vitest run proforma-happy-path reconciliation-happy-path` (1 hour). Validates B1 against a real queue, not just the route auth.
+3. **P2 — REFUND badge + AR/PT/SW translations** (2 hours, polish).
+4. **A2 audit P2s** — drop/nullable `registration_requests.password_hash`, reconcile `OPERATIONS_MANAGER` across schema/UI/i18n, resolve `reviewed_by` UUID to a real name in Validations UI (1-2 hours).
 5. **Phase 2 shipowner portal** (multi-session — write Plan 6 first).
 
 Each of these is a clean restart target.
