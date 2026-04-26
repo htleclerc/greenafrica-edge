@@ -410,9 +410,9 @@
     "founder_radji_name": "Safiou RADJI",
     "founder_radji_role": "Expert-Comptable — Pionnier de la Finance Durable",
     "founder_radji_bio": "Expert-comptable, pionnier de la finance durable en Afrique et spécialiste du digital et de l'innovation. Profondément impliqué dans les projets de Partenariats Public/Privé et le transfert d'expertises sur le continent.",
-    "founder_dia_name": "Mamadou DIA",
-    "founder_dia_role": "Homme d'Affaires & Lobbyiste",
-    "founder_dia_bio": "Homme d'affaires et lobbyiste auprès d'États africains, apportant des relations stratégiques et une compréhension profonde des dynamiques politiques continentales au partenariat.",
+    "founder_dia_name": "Leclerc HOUNMENOU",
+    "founder_dia_role": "Partenaire Technique — Mise en Place de la Plateforme",
+    "founder_dia_bio": "Partenaire technique pour la mise en place de la plateforme, apportant son expertise en ingénierie logicielle et son leadership dans la construction et l'exploitation de l'infrastructure numérique qui propulse Green Gate.",
     "blockchain_badge": "TECHNOLOGIE",
     "blockchain_title": "Fiabilité Garantie par la Blockchain",
     "blockchain_desc": "Green Gate offre une solution numérique basée sur le processus de la blockchain, assurant le plus haut niveau de fiabilité pour la gestion souveraine des actifs environnementaux.",
@@ -2427,5 +2427,132 @@
     "col_status": "Statut",
     "empty_title": "Aucun paiement",
     "empty_sub": "Ce vessel n'a pas encore d'historique de paiement."
+  },
+  "IncomingVessels": {
+    "title": "Navires entrants",
+    "subtitle": "Navires approchant des ports somalilandais, en attente de prise en charge par un agent pour l'émission du pro-forma.",
+    "empty": "Aucun navire en attente de prise en charge.",
+    "claim": "Prendre en charge",
+    "col": {
+      "vessel": "Navire",
+      "imo": "IMO",
+      "distance": "Distance",
+      "eta": "ETA",
+      "estimated": "Transit estimé",
+      "actions": "Actions"
+    },
+    "claimDialog": {
+      "title": "Prendre en charge le navire",
+      "description": "En prenant en charge {vessel}, vous devenez l'agent maritime pour cette escale et déclenchez la génération du pro-forma.",
+      "ownerEmailLabel": "Email officiel de l'armateur (requis)",
+      "invalidEmail": "Saisir une adresse email valide.",
+      "cancel": "Annuler",
+      "confirm": "Prendre en charge et générer le pro-forma",
+      "claiming": "Prise en charge…"
+    }
+  },
+  "AdminEscalations": {
+    "title": "Escalades",
+    "subtitle": "Alertes non réclamées hors SLA agent et pro-formas impayés éligibles à la relance armateur.",
+    "tabs": {
+      "unclaimed": "Non réclamées (revue Port)",
+      "unpaid": "Impayés 7j+ (relance armateur)"
+    },
+    "unclaimed": {
+      "col": {
+        "vessel": "Navire",
+        "imo": "IMO",
+        "detectedAgo": "Détecté",
+        "distance": "Distance",
+        "eta": "ETA",
+        "actions": "Actions"
+      },
+      "assign": "Assigner",
+      "assignComingSoon": "L'interface d'assignation d'agent arrivera dans un prochain lot du Plan 5.",
+      "empty": "Aucune alerte escaladée."
+    },
+    "unpaid": {
+      "col": {
+        "vessel": "Navire",
+        "imo": "IMO",
+        "ref": "Réf.",
+        "amount": "Montant",
+        "arrived": "Arrivé le",
+        "overdue": "Jours de retard",
+        "ownerEmail": "Email armateur",
+        "actions": "Actions"
+      },
+      "escalate": "Relancer l'armateur",
+      "noEmail": "—",
+      "empty": "Aucun pro-forma impayé en attente de relance armateur."
+    },
+    "dialog": {
+      "title": "Relancer l'armateur enregistré",
+      "description": "Envoyer la lettre d'accompagnement et le PDF du pro-forma à l'armateur de {vessel} (IMO {imo}).",
+      "ownerEmailLabel": "Email officiel de l'armateur",
+      "ownerEmailNewHint": "Cette valeur diffère de l'email enregistré — elle sera sauvegardée avec PORT_OFFICER comme source.",
+      "localeLabel": "Langue de la lettre",
+      "cancel": "Annuler",
+      "confirm": "Envoyer",
+      "sending": "Envoi…",
+      "successToast": "Email de relance envoyé à {email}"
+    }
+  },
+  "AdminMappings": {
+    "title": "Mappages Armateur → Agent",
+    "subtitle": "Configurer la cascade A — quel agent maritime local prend en charge les navires d'un armateur donné.",
+    "addSectionTitle": "Ajouter un mappage",
+    "showActiveOnly": "Afficher uniquement les actifs",
+    "col": {
+      "shipowner": "Armateur",
+      "agent": "Agent",
+      "priority": "Priorité",
+      "validFrom": "Valide à partir du",
+      "validUntil": "Valide jusqu'au",
+      "active": "Actif",
+      "actions": "Actions"
+    },
+    "form": {
+      "shipowner": "Armateur",
+      "agent": "Agent",
+      "priority": "Priorité (plus bas = en premier)",
+      "validFrom": "Valide à partir du",
+      "validUntil": "Valide jusqu'au (optionnel)",
+      "submit": "Ajouter le mappage",
+      "submitting": "Ajout en cours…"
+    },
+    "deactivate": "Désactiver",
+    "deactivating": "Désactivation…",
+    "deactivated": "Désactivé",
+    "active": "Actif",
+    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
+  },
+  "AdminTaxPipeline": {
+    "sectionTitle": "Pipeline de taxe carbone",
+    "sectionSubtitle": "Configuration d'exécution pour la détection, la réconciliation, l'escalade et les feature flags. Les secrets ne peuvent être modifiés que par un SUPERADMIN.",
+    "labels": {
+      "carbon_tax_rate_usd_per_tco2": "Taux de la taxe carbone (USD / tCO₂)",
+      "arrival_corridor_radius_nm": "Rayon du couloir d'approche (NM)",
+      "arrival_claim_sla_hours": "SLA de revendication par l'agent (heures)",
+      "arrival_escalation_eta_buffer_h": "Tampon ETA pour l'escalade (heures)",
+      "reconciliation_tolerance_pct": "Tolérance de réconciliation (%)",
+      "reconciliation_check_interval_min": "Intervalle de vérification de réconciliation (min)",
+      "owner_escalation_delay_days": "Délai d'escalade à l'armateur (jours)",
+      "owner_escalation_reminder_count": "Rappels à l'agent avant cascade armateur",
+      "proforma_languages_default": "Langues par défaut des pro-forma",
+      "feature_ais_global_enabled": "AIS global (Phase 2)",
+      "feature_equasis_scraper_enabled": "Scraper EQUASIS (Phase 2)",
+      "feature_vessel_detention_enabled": "Immobilisation des navires (post-MVP)",
+      "feature_shipowner_portal_enabled": "Portail armateur",
+      "queue_worker_url": "URL du worker de file d'attente",
+      "queue_worker_secret": "Secret du worker de file d'attente"
+    },
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "readOnly": "Lecture seule (SUPERADMIN requis pour modifier)",
+    "secretMask": "••••••••",
+    "showSecret": "Afficher",
+    "hideSecret": "Masquer",
+    "successToast": "Enregistré"
   }
 }

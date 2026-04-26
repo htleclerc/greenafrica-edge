@@ -67,12 +67,13 @@ export async function POST(request: NextRequest) {
             }, { status: 404 });
         }
 
+        // Only flip is_active. The DB role was already set by /api/auth/register
+        // via ROLE_MAP — re-writing it here with regRequest.requested_role would
+        // store a form role (e.g. FLEET_MANAGER) into the user_role enum column
+        // and raise an enum violation. Single source of truth: register-time mapping.
         const { error: updateError } = await adminClient
             .from('profiles')
-            .update({
-                is_active: true,
-                role: regRequest.requested_role,
-            })
+            .update({ is_active: true })
             .eq('id', targetProfile.id);
 
         if (updateError) {

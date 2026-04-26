@@ -528,7 +528,7 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                                     <div>
                                         <p style={{ borderTop: '1px solid #94A3B8', paddingTop: '4px', marginTop: '24px' }}>
                                             Authorized Signatory<br />
-                                            <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director,<br />Maritime Carbon Tax Authority</span>
+                                            <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director, Solid Technology</span>
                                         </p>
                                     </div>
                                     {/* Center: verification QR code */}

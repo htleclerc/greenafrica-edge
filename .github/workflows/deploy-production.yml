@@ -69,6 +69,10 @@ jobs:
   deploy:
     name: Vercel Production
     runs-on: ubuntu-latest
+    # Opt-in: skips cleanly until VERCEL_TOKEN/ORG_ID/PROJECT_ID secrets are configured.
+    # Enable with: gh variable set VERCEL_ENABLED --body "true" -R htleclerc/africgreen
+    # Dependent job `healthcheck` skips automatically when this job is skipped.
+    if: ${{ vars.VERCEL_ENABLED == 'true' }}
     needs: [ci, migrations]
     environment:
       name: production

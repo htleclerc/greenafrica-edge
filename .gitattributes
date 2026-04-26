@@ -1,0 +1,5 @@
+# Pin shell scripts and SQL files to LF so Windows checkouts with
+# core.autocrlf=true don't break `/usr/bin/env bash` shebangs or psql
+# ingestion of migration test files.
+*.sh  text eol=lf
+*.sql text eol=lf

@@ -10,6 +10,7 @@ type Config struct {
 	Port            string
 	SupabaseURL     string
 	SupabaseKey     string // service_role key
+	SupabaseDBURL   string // postgresql://... connection string
 	AISStreamAPIKey string
 	APISecret       string // internal API auth
 	AllowedOrigins  []string
@@ -30,6 +31,7 @@ func Load() *Config {
 		Port:            getEnv("PORT", "8080"),
 		SupabaseURL:     os.Getenv("SUPABASE_URL"),
 		SupabaseKey:     os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		SupabaseDBURL:   getEnv("SUPABASE_DB_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres"),
 		AISStreamAPIKey: os.Getenv("AISSTREAM_API_KEY"),
 		APISecret:       os.Getenv("API_SECRET"),
 		AllowedOrigins:  origins,

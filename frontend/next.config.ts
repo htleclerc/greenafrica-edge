@@ -10,6 +10,18 @@ const withSerwist = withSerwistInit({
     disable: process.env.NODE_ENV === 'development',
 });
 
+// Allow the configured Supabase origin (+ its ws variant) in connect-src so
+// local Supabase (http://127.0.0.1:54321) works in dev without weakening the
+// prod CSP. In prod NEXT_PUBLIC_SUPABASE_URL is https://<project>.supabase.co
+// which is already covered by the https://*.supabase.co wildcard.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const supabaseWs = supabaseUrl
+  .replace(/^https:\/\//, 'wss://')
+  .replace(/^http:\/\//, 'ws://');
+const localSupabaseAllow = supabaseUrl && !supabaseUrl.includes('.supabase.co')
+  ? ` ${supabaseUrl} ${supabaseWs}`
+  : '';
+
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -25,9 +37,9 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.supabase.co",
+      `img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.supabase.co${localSupabaseAllow}`,
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      `connect-src 'self' https://*.supabase.co wss://*.supabase.co${localSupabaseAllow}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

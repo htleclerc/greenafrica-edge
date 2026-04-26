@@ -6,13 +6,15 @@ import type { DashboardKpis, ArmateurKpis } from '@/types/secure';
 import { mockKpis } from '@/mock/datas/secureMock';
 import { getDashboardKpis, getArmateurKpis } from '@/services/kpiService';
 
-// Mock ArmateurKpis for demo mode. Shape mirrors the real service output so
-// the UI renders identically in demo and in real auth.
+// Mock ArmateurKpis for demo mode. Aligned with the demo armateur
+// (usr-test-004 / MARINER Corp) fleet: owns vsec-001 (MSC BERBERA, PAYMENT_DUE,
+// $4,250 pending via txn-006) + vsec-002 (MAERSK SEALAND, COMPLIANT, $3,780
+// paid via txn-001). Keep in sync when mock fixtures change.
 const mockArmateurKpis: ArmateurKpis = {
-    outstandingTotalUsd: 12400,
-    vesselsActive: 3,
-    taxPaidYtdUsd: 48500,
-    overdueCount: 0,
+    outstandingTotalUsd: 4_250,   // txn-006 PENDING
+    vesselsActive: 2,             // vsec-001 + vsec-002 (neither EXEMPT)
+    taxPaidYtdUsd: 3_780,         // txn-001 PAID
+    overdueCount: 0,              // txn-006 is 6d old, far from the 30d overdue threshold
 };
 
 export function useKpis(): DataSourceResult<DashboardKpis> {
