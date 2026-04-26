@@ -110,6 +110,15 @@ func main() {
 	<-ctx.Done()
 	log.Println("[API] Shutting down...")
 
+	// Stop the AIS ingester first so its hook handlers (corridor, EEZ) observe
+	// ctx cancellation. Bound the wait to 5s — if a hook is hung, the process
+	// must still exit. The HTTP server gets its own 10s window after.
+	aisShutdownCtx, aisCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := aisHandler.Shutdown(aisShutdownCtx); err != nil {
+		log.Printf("[AIS] Shutdown timed out: %v (forcing exit)", err)
+	}
+	aisCancel()
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {

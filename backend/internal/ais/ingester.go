@@ -46,6 +46,7 @@ type Ingester struct {
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
+	done    chan struct{}      // closed when the run() goroutine returns; lets Wait() bound shutdown
 	ctx     context.Context    // hook ctx, cancelled by Stop() so in-flight corridor/eez calls unwind
 	cancel  context.CancelFunc
 	stats   Stats
@@ -92,10 +93,32 @@ func (ing *Ingester) Start() error {
 	ing.stats.Running = true
 	ing.stats.StartedAt = time.Now()
 	ing.stopCh = make(chan struct{})
+	ing.done = make(chan struct{})
 	ing.ctx, ing.cancel = context.WithCancel(context.Background())
 
-	go ing.run()
+	go func() {
+		defer close(ing.done)
+		ing.run()
+	}()
 	return nil
+}
+
+// Wait blocks until the run() goroutine returns or ctx is cancelled. Use to
+// bound shutdown time (e.g., 5s) so the process exits even if a hook handler
+// hangs. Returns ctx.Err() on timeout, nil on clean exit.
+func (ing *Ingester) Wait(ctx context.Context) error {
+	ing.mu.Lock()
+	done := ing.done
+	ing.mu.Unlock()
+	if done == nil {
+		return nil
+	}
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Stop gracefully stops the ingester. Cancels the hook context so any
@@ -332,4 +355,12 @@ func (h *Handler) Stop(w http.ResponseWriter, r *http.Request) {
 // AutoStart starts the ingester programmatically (for boot-time auto-start).
 func (h *Handler) AutoStart() error {
 	return h.ingester.Start()
+}
+
+// Shutdown stops the ingester and waits up to ctx for the goroutine to exit.
+// Use a bounded ctx (e.g., 5s) so the process exits even if a hook handler
+// fails to observe ctx cancellation. Safe to call when not running.
+func (h *Handler) Shutdown(ctx context.Context) error {
+	h.ingester.Stop()
+	return h.ingester.Wait(ctx)
 }
