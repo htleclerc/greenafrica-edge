@@ -1309,7 +1309,20 @@
     "doc_view": "Voir",
     "generate_proforma": "Générer la pro-forma →",
     "pay_proforma": "Payer la pro-forma →",
-    "close": "Fermer"
+    "close": "Fermer",
+    "add_vessel_title": "Enregistrer un navire",
+    "add_vessel_subtitle": "Ajouter manuellement un navire à votre flotte",
+    "add_vessel_imo": "Numéro IMO",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Nom du navire",
+    "add_vessel_call_sign": "Indicatif d'appel",
+    "add_vessel_flag": "Pavillon (ISO-2)",
+    "add_vessel_type": "Type",
+    "add_vessel_dwt": "TPL (port en lourd)",
+    "add_vessel_cancel": "Annuler",
+    "add_vessel_submit": "Enregistrer le navire",
+    "add_vessel_submitting": "Enregistrement…",
+    "add_vessel_error_dwt": "Le TPL doit être un nombre positif"
   },
   "GreenLedgerPage": {
     "page_title": "Registre Vert",

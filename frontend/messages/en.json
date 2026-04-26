@@ -1255,7 +1255,20 @@
     "doc_view": "View",
     "generate_proforma": "Generate Pro-forma →",
     "pay_proforma": "Pay pro-forma →",
-    "close": "Close"
+    "close": "Close",
+    "add_vessel_title": "Register a vessel",
+    "add_vessel_subtitle": "Add a vessel to your fleet manually",
+    "add_vessel_imo": "IMO number",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Vessel name",
+    "add_vessel_call_sign": "Call sign",
+    "add_vessel_flag": "Flag (ISO-2)",
+    "add_vessel_type": "Type",
+    "add_vessel_dwt": "DWT (gross tonnage)",
+    "add_vessel_cancel": "Cancel",
+    "add_vessel_submit": "Register vessel",
+    "add_vessel_submitting": "Registering…",
+    "add_vessel_error_dwt": "DWT must be a positive number"
   },
   "GreenLedgerPage": {
     "page_title": "Green Ledger",
