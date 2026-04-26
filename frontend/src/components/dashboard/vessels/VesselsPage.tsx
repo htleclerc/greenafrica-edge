@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, AlertTriangle, Radio, Shield } from 'lucide-react';
+import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, AlertTriangle, Radio, Shield, CreditCard, Eye } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { useVessels } from '@/hooks/useVessels';
 import { useKpis } from '@/hooks/useKpis';
-import { SecureVessel, VesselComplianceStatus, VesselCategory } from '@/types/secure';
+import { useRole } from '@/lib/RoleContext';
+import { SecureVessel, VesselComplianceStatus, VesselCategory, UserRole } from '@/types/secure';
 
 // ── Status → Action mapping ──────────────────────────────────────────────────
 // Each compliance status maps to a context-appropriate primary action.
@@ -19,7 +20,9 @@ interface VesselAction {
     color: string;
 }
 
-const STATUS_ACTION: Record<VesselComplianceStatus, VesselAction> = {
+// Staff (PORT_OFFICER / FINANCE_ADMIN / SUPERADMIN / MANAGER) actions —
+// authority-side language: generate, issue, hail.
+const STAFF_ACTION: Record<VesselComplianceStatus, VesselAction> = {
     [VesselComplianceStatus.COMPLIANT]: {
         labelKey: 'action_view_receipt',
         href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
@@ -58,6 +61,35 @@ const STATUS_ACTION: Record<VesselComplianceStatus, VesselAction> = {
     },
 };
 
+// Armateur (SHIPPING_AGENT / SHIPOWNER) actions — debtor-side language: pay,
+// view. The system mints proformas; the armateur settles them. Same hrefs land
+// on /dashboard/invoices?vessel=… where they can preview + pay the document.
+const ARMATEUR_ACTION: Record<VesselComplianceStatus, VesselAction> = {
+    ...STAFF_ACTION,
+    [VesselComplianceStatus.PAYMENT_DUE]: {
+        labelKey: 'action_pay_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <CreditCard className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.NON_COMPLIANT]: {
+        labelKey: 'action_pay_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <CreditCard className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.APPROACHING]: {
+        labelKey: 'action_view_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <Eye className="w-3 h-3" />,
+        color: '#38BDF8',
+    },
+};
+
+function isArmateurRole(role: UserRole): boolean {
+    return role === UserRole.SHIPPING_AGENT;
+}
+
 const COMPLIANCE_VARIANT: Record<VesselComplianceStatus, Parameters<typeof OsBadge>[0]['variant']> = {
     [VesselComplianceStatus.COMPLIANT]:     'compliant',
     [VesselComplianceStatus.PAYMENT_DUE]:   'payment_due',
@@ -71,11 +103,15 @@ type FilterStatus = 'ALL' | VesselComplianceStatus;
 
 export function VesselsPage() {
     const t = useTranslations('VesselsPage');
+    const { role } = useRole();
     const { data: vessels } = useVessels();
     const { data: kpis } = useKpis();
     const [search, setSearch]       = React.useState('');
     const [filterStatus, setFilter] = React.useState<FilterStatus>('ALL');
     const [selected, setSelected]   = React.useState<string | null>(null);
+
+    const isArmateur = isArmateurRole(role);
+    const actionMap  = isArmateur ? ARMATEUR_ACTION : STAFF_ACTION;
 
     const COMPLIANCE_LABEL: Record<VesselComplianceStatus, string> = {
         [VesselComplianceStatus.COMPLIANT]:     t('status_compliant'),
@@ -192,6 +228,7 @@ export function VesselsPage() {
                                 onSelect={() => setSelected(selected === v.id ? null : v.id)}
                                 complianceLabel={COMPLIANCE_LABEL}
                                 categoryLabel={CATEGORY_LABEL}
+                                actionMap={actionMap}
                             />
                         ))}
                     </tbody>
@@ -232,7 +269,7 @@ export function VesselsPage() {
 
             {/* Vessel detail drawer (bottom) */}
             {vessel && (
-                <VesselDetailDrawer vessel={vessel} onClose={() => setSelected(null)} />
+                <VesselDetailDrawer vessel={vessel} onClose={() => setSelected(null)} isArmateur={isArmateur} />
             )}
         </div>
     );
@@ -252,12 +289,13 @@ function KpiPill({ label, value, color, dot }: { label: string; value: string; c
     );
 }
 
-function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryLabel }: {
+function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryLabel, actionMap }: {
     vessel: SecureVessel;
     isSelected: boolean;
     onSelect: () => void;
     complianceLabel: Record<VesselComplianceStatus, string>;
     categoryLabel: Record<VesselCategory, string>;
+    actionMap: Record<VesselComplianceStatus, VesselAction>;
 }) {
     const t = useTranslations('VesselsPage');
     const lastSeen = new Date(v.position.lastSeenUtc);
@@ -267,7 +305,7 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
         : t('yesterday');
     const lastSeenSub = minsAgo < 120 ? t('in_eez_ago', { minutes: minsAgo }) : t('departed');
     const isAlert = v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE || v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT;
-    const action = STATUS_ACTION[v.complianceStatus];
+    const action = actionMap[v.complianceStatus];
 
     return (
         <tr
@@ -363,8 +401,9 @@ function VesselCard({ vessel: v, isSelected, onSelect, complianceLabel, category
     );
 }
 
-function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onClose: () => void }) {
+function VesselDetailDrawer({ vessel: v, onClose, isArmateur }: { vessel: SecureVessel; onClose: () => void; isArmateur: boolean }) {
     const t = useTranslations('VesselsPage');
+    const ctaKey = isArmateur ? 'pay_proforma' : 'generate_proforma';
     return (
         <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-200">
             <div>
@@ -390,7 +429,7 @@ function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onCl
                     href={`/dashboard/invoices?vessel=${v.imoNumber}`}
                     className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
                 >
-                    {t('generate_proforma')}
+                    {t(ctaKey)}
                 </a>
                 <button
                     onClick={onClose}
