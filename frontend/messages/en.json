@@ -1142,6 +1142,7 @@
     "cancel": "Cancel",
     "draft_save": "Save PDF",
     "print_and_send": "Print & Send →",
+    "demo_generate_disabled": "Demo mode — proforma generation is disabled. Set NEXT_PUBLIC_DEMO_ALLOWED=false in frontend/.env.local and sign in with a real account to generate.",
     "contest_invoice": "Contest",
     "export_csv": "Export CSV",
     "filter_by_vessel": "Filtered by vessel IMO {imo}",
