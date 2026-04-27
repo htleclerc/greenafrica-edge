@@ -2568,7 +2568,9 @@
       "validFrom": "Valid from",
       "validUntil": "Valid until",
       "active": "Active",
-      "actions": "Actions"
+      "actions": "Actions",
+      "email": "Email",
+      "portalState": "Portal access"
     },
     "form": {
       "shipowner": "Shipowner",
@@ -2583,7 +2585,23 @@
     "deactivating": "Deactivating…",
     "deactivated": "Deactivated",
     "active": "Active",
-    "empty": "No mappings yet. Add one to enable cascade A."
+    "empty": "No mappings yet. Add one to enable cascade A.",
+    "mappingsSectionTitle": "Existing mappings",
+    "shipownersSectionTitle": "Shipowners",
+    "shipownersSectionSubtitle": "Grant portal access to a shipowner so they can track their fleet, invoices, and disputes. Only SUPERADMIN and MANAGER can invite.",
+    "emptyShipowners": "No shipowners on file yet.",
+    "state": {
+      "ghost": "Not invited",
+      "invited": "Invited",
+      "active": "Active"
+    },
+    "invite": "Invite",
+    "reinvite": "Re-send invite",
+    "inviteDialogTitle": "Invite shipowner to portal",
+    "inviteDialogSubtitle": "Send a portal access email to {name}. They'll receive a magic link to set up their account.",
+    "sendInvite": "Send invite",
+    "sending": "Sending…",
+    "cancel": "Cancel"
   },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",

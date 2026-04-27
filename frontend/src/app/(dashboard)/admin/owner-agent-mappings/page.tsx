@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import { listMappings } from '@/services/ownerAgentMappingService';
+import { listShipowners } from '@/services/shipownerService';
 import { OwnerAgentMappingList } from './OwnerAgentMappingList';
 import { AddMappingForm } from './AddMappingForm';
+import { ShipownersList } from './ShipownersList';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,9 +23,9 @@ export default async function OwnerAgentMappingsPage() {
         redirect('/dashboard');
     }
 
-    const [mappings, shipownersRes, agentsRes] = await Promise.all([
+    const [mappings, shipownersFull, agentsRes] = await Promise.all([
         listMappings(supabase),
-        supabase.from('shipowners').select('id, name').order('name'),
+        listShipowners(supabase),
         supabase
             .from('profiles')
             .select('id, full_name, email')
@@ -31,6 +33,7 @@ export default async function OwnerAgentMappingsPage() {
             .order('full_name'),
     ]);
 
+    const canInvite = ['SUPERADMIN', 'MANAGER'].includes(profile.role);
     const t = await getTranslations('AdminMappings');
 
     return (
@@ -45,7 +48,7 @@ export default async function OwnerAgentMappingsPage() {
                     {t('addSectionTitle')}
                 </h2>
                 <AddMappingForm
-                    shipowners={(shipownersRes.data ?? []) as { id: string; name: string }[]}
+                    shipowners={shipownersFull.map((s) => ({ id: s.id, name: s.name }))}
                     agents={
                         (agentsRes.data ?? []) as {
                             id: string;
@@ -56,6 +59,19 @@ export default async function OwnerAgentMappingsPage() {
                 />
             </div>
 
+            <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-3 text-[var(--os-text-primary)]">
+                    {t('shipownersSectionTitle')}
+                </h2>
+                <p className="text-xs text-[var(--os-text-muted)] mb-3">
+                    {t('shipownersSectionSubtitle')}
+                </p>
+                <ShipownersList shipowners={shipownersFull} canInvite={canInvite} />
+            </div>
+
+            <h2 className="text-lg font-semibold mb-3 text-[var(--os-text-primary)]">
+                {t('mappingsSectionTitle')}
+            </h2>
             <OwnerAgentMappingList mappings={mappings} />
         </div>
     );
