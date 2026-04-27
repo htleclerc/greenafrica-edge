@@ -89,9 +89,20 @@ export function InvoicesPage() {
         setPaymentLoading(recordPaymentTx.id);
         setPaymentError(null);
         try {
+            // Idempotency-Key: one UUID per click. If the network drops the
+            // response or the user double-clicks, the server replays the
+            // cached response instead of re-flipping status / re-emitting
+            // audit log / re-generating receipt / re-sending email.
+            // See migration 039 + frontend/src/app/api/lib/idempotency.ts.
+            const idempotencyKey = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+                ? crypto.randomUUID()
+                : `mp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
             const res = await fetch('/api/transactions/mark-paid', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Idempotency-Key': idempotencyKey,
+                },
                 body: JSON.stringify({
                     transactionId: recordPaymentTx.id,
                     actingUserId: user.id,

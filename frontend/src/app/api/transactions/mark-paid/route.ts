@@ -9,6 +9,7 @@ import {
 } from '@/services/invoiceService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
+import { acquireIdempotency } from '@/app/api/lib/idempotency';
 
 /**
  * POST /api/transactions/mark-paid
@@ -72,18 +73,76 @@ export async function POST(request: NextRequest) {
     const paymentNotes = body.paymentNotes?.trim() || null;
 
     const admin = createClient(supabaseUrl, supabaseKey);
+
+    // Idempotency: clients SHOULD send `Idempotency-Key: <uuid>` for retry
+    // safety. If absent, we fall back to a domain state guard below
+    // (.neq('status', 'PAID')) so double-submits are still safe — but the
+    // client loses access to the cached response.
+    const idem = await acquireIdempotency(request, admin, auth.user.id, body);
+    if (idem.kind === 'replay') return idem.response;
+    if (idem.kind === 'conflict') return idem.response;
+
+    try {
+        const result = await processMarkPaid(admin, body, paymentMethod, paymentReference, paymentNotes);
+        await idem.commit(result.status, result.payload);
+        return NextResponse.json(result.payload, { status: result.status });
+    } catch (err) {
+        await idem.rollback();
+        throw err;
+    }
+}
+
+async function processMarkPaid(
+    admin: ReturnType<typeof createClient>,
+    body: {
+        transactionId: string;
+        actingUserId: string;
+        actingUserName: string;
+    },
+    paymentMethod: string,
+    paymentReference: string | null,
+    paymentNotes: string | null,
+): Promise<{ status: number; payload: Record<string, unknown> }> {
     const paidAt = new Date().toISOString();
 
-    // 1. Update transaction
+    // 1. Update transaction — STATE GUARD: only flip PENDING (or any non-PAID
+    //    state) to PAID. Atomic at the Postgres level: two concurrent UPDATEs
+    //    cannot both succeed because the second sees status='PAID' and
+    //    matches 0 rows.
     const { data: tx, error: txErr } = await admin
         .from('transactions')
         .update({ status: 'PAID', paid_at: paidAt })
         .eq('id', body.transactionId)
+        .neq('status', 'PAID')
         .select('id, vessel_id, vessel_name, vessel_imo, tax_amount_usd, invoice_pdf_url, created_at')
         .single();
 
     if (txErr || !tx) {
-        return NextResponse.json({ error: txErr?.message || 'Transaction not found' }, { status: 404 });
+        // Either the transaction does not exist OR it's already PAID. Fetch
+        // existing state to distinguish — and if it's already paid, return a
+        // 200 with `alreadyPaid: true` so retries are safe even without an
+        // Idempotency-Key. We do NOT re-emit audit logs / receipts / emails.
+        const { data: existing } = await admin
+            .from('transactions')
+            .select('id, status, paid_at, receipt_pdf_url')
+            .eq('id', body.transactionId)
+            .single();
+        if (existing?.status === 'PAID') {
+            return {
+                status: 200,
+                payload: {
+                    success: true,
+                    alreadyPaid: true,
+                    transactionId: existing.id,
+                    paidAt: existing.paid_at,
+                    receiptPdfUrl: existing.receipt_pdf_url ?? null,
+                },
+            };
+        }
+        return {
+            status: 404,
+            payload: { error: txErr?.message || 'Transaction not found' },
+        };
     }
 
     // 2. Update vessel compliance status
@@ -211,16 +270,19 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    return NextResponse.json({
-        success: true,
-        transactionId: tx.id,
-        invoiceRef,
-        receiptRef,
-        receiptPdfUrl,
-        paidAt,
-        paymentMethod,
-        paymentReference,
-        paymentNotes,
-        email: emailResult,
-    });
+    return {
+        status: 200,
+        payload: {
+            success: true,
+            transactionId: tx.id,
+            invoiceRef,
+            receiptRef,
+            receiptPdfUrl,
+            paidAt,
+            paymentMethod,
+            paymentReference,
+            paymentNotes,
+            email: emailResult,
+        },
+    };
 }
