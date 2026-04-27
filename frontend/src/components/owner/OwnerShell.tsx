@@ -3,21 +3,22 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { LayoutDashboard, Ship, FileText, AlertTriangle, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
 interface NavItem {
     href: string;
-    label: string;
+    labelKey: 'dashboard' | 'vessels' | 'invoices' | 'alerts';
     icon: React.ReactNode;
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { href: '/owner/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { href: '/owner/vessels',   label: 'Vessels',   icon: <Ship className="w-4 h-4" /> },
-    { href: '/owner/invoices',  label: 'Invoices',  icon: <FileText className="w-4 h-4" /> },
-    { href: '/owner/alerts',    label: 'Alerts',    icon: <AlertTriangle className="w-4 h-4" /> },
+    { href: '/owner/dashboard', labelKey: 'dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { href: '/owner/vessels',   labelKey: 'vessels',   icon: <Ship className="w-4 h-4" /> },
+    { href: '/owner/invoices',  labelKey: 'invoices',  icon: <FileText className="w-4 h-4" /> },
+    { href: '/owner/alerts',    labelKey: 'alerts',    icon: <AlertTriangle className="w-4 h-4" /> },
 ];
 
 interface OwnerShellProps {
@@ -34,6 +35,7 @@ interface OwnerShellProps {
 export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const t = useTranslations('OwnerPortal');
     const [signingOut, setSigningOut] = React.useState(false);
 
     async function logout() {
@@ -60,7 +62,7 @@ export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
                             Green Gate
                         </span>
                         <span className="text-[9px] font-semibold tracking-widest uppercase text-emerald-500/70">
-                            Shipowner Portal
+                            {t('brand')}
                         </span>
                     </div>
                 </Link>
@@ -79,7 +81,7 @@ export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
                                 }}
                             >
                                 {item.icon}
-                                {item.label}
+                                {t(`nav.${item.labelKey}`)}
                             </Link>
                         );
                     })}
@@ -97,7 +99,7 @@ export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
                     <button
                         onClick={logout}
                         disabled={signingOut}
-                        title="Sign out"
+                        title={t('nav.signOut')}
                         className="p-2 rounded-lg transition-colors hover:bg-[rgba(239,68,68,0.10)]"
                         style={{ color: '#EF4444' }}
                     >
@@ -127,7 +129,7 @@ export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
                         >
                             {item.icon}
                             <span className="text-[9px] font-semibold uppercase tracking-wider">
-                                {item.label}
+                                {t(`nav.${item.labelKey}`)}
                             </span>
                         </Link>
                     );

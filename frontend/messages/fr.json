@@ -2600,5 +2600,114 @@
     "showSecret": "Afficher",
     "hideSecret": "Masquer",
     "successToast": "Enregistré"
+  },
+  "OwnerPortal": {
+    "brand": "Portail Armateur",
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "vessels": "Navires",
+      "invoices": "Factures",
+      "alerts": "Alertes",
+      "signOut": "Se déconnecter"
+    },
+    "login": {
+      "title": "Connectez-vous avec votre email",
+      "subtitle": "Nous vous enverrons un lien à usage unique. Pas de mot de passe requis.",
+      "footerNote": "L'accès est sur invitation. Si vous n'avez pas reçu d'invitation, contactez l'équipe Operations Portuaires pour activer votre compte.",
+      "emailLabel": "Email",
+      "submit": "Envoyer le lien de connexion",
+      "sending": "Envoi…",
+      "linkSent": "Si <strong>{email}</strong> est enregistré comme armateur, un lien de connexion arrive. Vérifiez votre boîte mail.",
+      "errors": {
+        "noOwnerRecord": "Nous n'avons pas trouvé de profil armateur pour cette adresse.",
+        "invited": "Votre invitation est encore en attente — ouvrez le lien magique depuis votre email d'invitation.",
+        "ghost": "Votre compte n'a pas encore été invité au portail.",
+        "callbackFailed": "Le lien de connexion a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.",
+        "generic": "Échec de la connexion. Réessayez."
+      }
+    },
+    "dashboard": {
+      "subtitle": "Aperçu de votre flotte et de vos obligations.",
+      "stat": {
+        "activeVessels": "Navires actifs",
+        "openAlerts": "Alertes ouvertes",
+        "unpaidProforma": "Pro-formas impayées",
+        "paidYtd": "Payé YTD"
+      },
+      "quickActions": "Actions rapides",
+      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives."
+    },
+    "vessels": {
+      "title": "Navires",
+      "countOne": "{count} navire enregistré.",
+      "countOther": "{count} navires enregistrés.",
+      "empty": "Aucun navire lié à votre compte pour le moment.",
+      "loadFailed": "Échec du chargement des navires : {error}",
+      "back": "Tous les navires",
+      "specifications": "Caractéristiques",
+      "recentAlerts": "Alertes récentes",
+      "noAlerts": "Pas encore d'alertes sur ce navire.",
+      "field": {
+        "flag": "Pavillon",
+        "category": "Catégorie",
+        "lastZone": "Dernière zone",
+        "tonnage": "Tonnage brut (DWT)",
+        "enginePower": "Puissance moteur",
+        "designSpeed": "Vitesse de design",
+        "estimatedCo2": "CO₂ estimé",
+        "taxLiability": "Taxe due",
+        "compliance": "Conformité"
+      }
+    },
+    "invoices": {
+      "title": "Factures",
+      "subtitle": "Pro-formas, taxations finales, compléments et remboursements pour votre flotte.",
+      "loadFailed": "Échec du chargement des factures : {error}",
+      "empty": "Aucune facture pour le moment.",
+      "pay": "Payer",
+      "dispute": "Contester",
+      "paymentDeclared": "Paiement déclaré",
+      "downloadPdf": "PDF",
+      "downloadAria": "Télécharger le PDF pour {ref}",
+      "payDialog": {
+        "title": "Déclarer un paiement",
+        "subtitle": "Saisissez la référence du virement bancaire pour la pro-forma {ref} ({amount}). Le service Finance la rapprochera du relevé bancaire et confirmera.",
+        "referenceLabel": "Référence bancaire",
+        "referencePlaceholder": "WIRE-2026-00123",
+        "notesLabel": "Notes (optionnel)",
+        "notesPlaceholder": "Banque émettrice, nom du payeur…",
+        "cancel": "Annuler",
+        "submit": "Soumettre la déclaration",
+        "submitting": "Envoi…"
+      },
+      "disputeDialog": {
+        "title": "Contester la charge",
+        "subtitle": "Ouvrir une contestation sur {ref}. Operations Portuaires examinera et répondra par email.",
+        "reasonLabel": "Motif",
+        "reasonPlaceholder": "Choisir un motif…",
+        "descriptionLabel": "Description ({count}/10+)",
+        "descriptionPlaceholder": "Expliquez pourquoi vous estimez cette taxation incorrecte…",
+        "evidenceLabel": "URL de preuve (optionnel)",
+        "evidencePlaceholder": "https://...",
+        "cancel": "Annuler",
+        "submit": "Ouvrir la contestation",
+        "submitting": "Envoi…",
+        "reason": {
+          "EMISSION_CALCULATION": "Calcul des émissions",
+          "TAX_RATE": "Taux de taxation",
+          "ZONE_CLASSIFICATION": "Classification de zone",
+          "VESSEL_DATA": "Données du navire",
+          "OTHER": "Autre"
+        }
+      }
+    },
+    "alerts": {
+      "title": "Alertes",
+      "subtitle": "Navires en approche, en zone, ou récemment réconciliés.",
+      "loadFailed": "Échec du chargement des alertes : {error}",
+      "openSection": "Ouvertes ({count})",
+      "closedSection": "Fermées ({count})",
+      "emptyOpen": "Aucune alerte active."
+    }
   }
 }

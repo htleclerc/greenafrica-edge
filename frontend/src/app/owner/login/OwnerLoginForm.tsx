@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { OsInput } from '@/components/ui/OsInput';
 import { OsButton } from '@/components/ui/OsButton';
 
 export function OwnerLoginForm() {
+    const t = useTranslations('OwnerPortal.login');
     const [email, setEmail] = React.useState('');
     const [pending, setPending] = React.useState(false);
     const [sentTo, setSentTo] = React.useState<string | null>(null);
@@ -42,7 +44,7 @@ export function OwnerLoginForm() {
                 setSentTo(email);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to send link');
+            setError(err instanceof Error ? err.message : t('errors.generic'));
         } finally {
             setPending(false);
         }
@@ -58,8 +60,10 @@ export function OwnerLoginForm() {
                     color: '#86EFAC',
                 }}
             >
-                If <strong>{sentTo}</strong> is registered as a shipowner, a sign-in link is
-                on its way. Check your inbox.
+                {t.rich('linkSent', {
+                    email: sentTo,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                })}
             </div>
         );
     }
@@ -67,7 +71,7 @@ export function OwnerLoginForm() {
     return (
         <form onSubmit={submit} className="flex flex-col gap-4">
             <OsInput
-                label="Email"
+                label={t('emailLabel')}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -82,7 +86,7 @@ export function OwnerLoginForm() {
                 loading={pending}
                 disabled={pending || !email}
             >
-                {pending ? 'Sending…' : 'Send sign-in link'}
+                {pending ? t('sending') : t('submit')}
             </OsButton>
         </form>
     );

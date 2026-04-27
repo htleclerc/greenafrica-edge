@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { OwnerLoginForm } from './OwnerLoginForm';
 
 export const metadata = {
@@ -14,6 +15,7 @@ export default async function OwnerLoginPage({
     searchParams: Promise<SearchParams>;
 }) {
     const { error } = await searchParams;
+    const t = await getTranslations('OwnerPortal');
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 os-bg">
@@ -29,13 +31,13 @@ export default async function OwnerLoginPage({
                         className="text-[10px] font-semibold tracking-widest uppercase mb-1"
                         style={{ color: 'rgb(16,185,129,0.7)' }}
                     >
-                        Green Gate · Shipowner portal
+                        Green Gate · {t('brand')}
                     </div>
                     <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">
-                        Sign in with your email
+                        {t('login.title')}
                     </h1>
                     <p className="text-sm text-[var(--os-text-muted)] mt-1">
-                        We'll send a one-time link to your inbox. No password required.
+                        {t('login.subtitle')}
                     </p>
                 </div>
 
@@ -44,25 +46,21 @@ export default async function OwnerLoginPage({
                 <OwnerLoginForm />
 
                 <p className="text-xs text-[var(--os-text-muted)] mt-6">
-                    Access is invitation-only. If you haven't received an invite, ask the
-                    Port Operations team to enrol your account.
+                    {t('login.footerNote')}
                 </p>
             </div>
         </div>
     );
 }
 
-function ErrorBanner({ code }: { code: string }) {
+async function ErrorBanner({ code }: { code: string }) {
+    const t = await getTranslations('OwnerPortal.login.errors');
     const message =
-        code === 'no_owner_record'
-            ? "We couldn't find a shipowner profile for that email."
-            : code === 'state_invited'
-              ? 'Your invitation is still pending — please open the magic link from your invitation email.'
-              : code === 'state_ghost'
-                ? 'Your account has not been invited to the portal yet.'
-                : code === 'callback_failed'
-                  ? 'The sign-in link has expired or was already used. Request a new one below.'
-                  : 'Sign-in failed. Try again.';
+        code === 'no_owner_record' ? t('noOwnerRecord')
+            : code === 'state_invited' ? t('invited')
+                : code === 'state_ghost' ? t('ghost')
+                    : code === 'callback_failed' ? t('callbackFailed')
+                        : t('generic');
     return (
         <div
             className="mb-4 px-3 py-2 rounded-lg text-xs"
