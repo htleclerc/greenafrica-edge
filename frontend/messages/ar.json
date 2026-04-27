@@ -2493,5 +2493,60 @@
     "showSecret": "Show",
     "hideSecret": "Hide",
     "successToast": "Saved"
+  },
+  "AdminEquasis": {
+    "title": "Equasis proposals",
+    "subtitle": "Owner-email discovery queue. Manual entries and scraper output land here for human validation before any change reaches the shipowners table.",
+    "pendingTitle": "Pending review",
+    "pendingSubtitle": "Owner-email proposals awaiting validation. Apply writes through the trust chain (won't overwrite officer-set emails).",
+    "resolvedTitle": "Recently resolved (last 30 days, {count})",
+    "newProposal": "New proposal",
+    "emptyPending": "No pending proposals.",
+    "col": {
+      "imo": "IMO",
+      "proposedOwner": "Proposed owner",
+      "email": "Email",
+      "country": "Country",
+      "source": "Source",
+      "scraped": "Scraped",
+      "outcome": "Outcome",
+      "reason": "Reason",
+      "reviewed": "Reviewed"
+    },
+    "outcome": {
+      "applied": "Applied",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "apply": "Apply",
+      "reject": "Reject"
+    },
+    "applyDialog": {
+      "title": "Apply this proposal?",
+      "subtitle": "Writes the proposed values into the shipowner row using source EQUASIS_VERIFIED. Officer-set emails are preserved (trust chain prevents downgrade). Name + country fill only if currently empty.",
+      "officerEmailWarning": "Email already set by a port officer (trust 3). The proposed email won't overwrite it — apply will only update name/country if empty.",
+      "submit": "Apply proposal",
+      "cancel": "Cancel"
+    },
+    "rejectDialog": {
+      "title": "Reject proposal",
+      "subtitle": "Reject the proposal for IMO {imo}? The shipowner row stays untouched.",
+      "placeholder": "Why is this proposal rejected? (visible in the audit trail)",
+      "submit": "Reject",
+      "cancel": "Cancel"
+    },
+    "createDialog": {
+      "title": "New manual proposal",
+      "subtitle": "Lands in the review queue with source manual. Same validation gate as scraper proposals — nothing is applied automatically.",
+      "field": {
+        "imo": "IMO number",
+        "owner": "Proposed owner name",
+        "manager": "Manager (optional)",
+        "email": "Email (optional)",
+        "country": "Country code (optional)"
+      },
+      "submit": "Create proposal",
+      "cancel": "Cancel"
+    }
   }
 }
