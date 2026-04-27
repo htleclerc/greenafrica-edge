@@ -2538,9 +2538,7 @@
       "validFrom": "Valide à partir du",
       "validUntil": "Valide jusqu'au",
       "active": "Actif",
-      "actions": "Actions",
-      "email": "Email",
-      "portalState": "Accès portail"
+      "actions": "Actions"
     },
     "form": {
       "shipowner": "Armateur",
@@ -2555,23 +2553,7 @@
     "deactivating": "Désactivation…",
     "deactivated": "Désactivé",
     "active": "Actif",
-    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A.",
-    "mappingsSectionTitle": "Mappages existants",
-    "shipownersSectionTitle": "Armateurs",
-    "shipownersSectionSubtitle": "Donner accès au portail à un armateur pour qu'il suive sa flotte, ses factures et ses litiges. Seuls SUPERADMIN et MANAGER peuvent inviter.",
-    "emptyShipowners": "Aucun armateur enregistré pour le moment.",
-    "state": {
-      "ghost": "Non invité",
-      "invited": "Invité",
-      "active": "Actif"
-    },
-    "invite": "Inviter",
-    "reinvite": "Renvoyer l'invitation",
-    "inviteDialogTitle": "Inviter un armateur au portail",
-    "inviteDialogSubtitle": "Envoyer un email d'accès au portail à {name}. Il recevra un lien magique pour configurer son compte.",
-    "sendInvite": "Envoyer l'invitation",
-    "sending": "Envoi…",
-    "cancel": "Annuler"
+    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
   },
   "AdminTaxPipeline": {
     "sectionTitle": "Pipeline de taxe carbone",
@@ -2708,6 +2690,61 @@
       "openSection": "Ouvertes ({count})",
       "closedSection": "Fermées ({count})",
       "emptyOpen": "Aucune alerte active."
+    }
+  },
+  "AdminEquasis": {
+    "title": "Propositions Equasis",
+    "subtitle": "File de découverte d'emails armateurs. Les saisies manuelles et la sortie du scraper atterrissent ici pour validation humaine avant toute écriture sur shipowners.",
+    "pendingTitle": "À examiner",
+    "pendingSubtitle": "Propositions d'emails armateurs en attente de validation. L'application passe par la chaîne de confiance (n'écrase pas les emails saisis par un officier).",
+    "resolvedTitle": "Récemment résolues (30 derniers jours, {count})",
+    "newProposal": "Nouvelle proposition",
+    "emptyPending": "Aucune proposition en attente.",
+    "col": {
+      "imo": "OMI",
+      "proposedOwner": "Armateur proposé",
+      "email": "Email",
+      "country": "Pays",
+      "source": "Source",
+      "scraped": "Récolte",
+      "outcome": "Résultat",
+      "reason": "Motif",
+      "reviewed": "Examiné"
+    },
+    "outcome": {
+      "applied": "Appliqué",
+      "rejected": "Rejeté"
+    },
+    "actions": {
+      "apply": "Appliquer",
+      "reject": "Rejeter"
+    },
+    "applyDialog": {
+      "title": "Appliquer cette proposition ?",
+      "subtitle": "Écrit les valeurs proposées sur l'armateur avec source EQUASIS_VERIFIED. Les emails saisis par un officier sont préservés (la chaîne de confiance empêche un déclassement). Nom + pays ne remplissent que si actuellement vides.",
+      "officerEmailWarning": "Email déjà saisi par un officier portuaire (confiance 3). L'email proposé ne sera pas écrasé — l'application ne mettra à jour que nom/pays si vides.",
+      "submit": "Appliquer la proposition",
+      "cancel": "Annuler"
+    },
+    "rejectDialog": {
+      "title": "Rejeter la proposition",
+      "subtitle": "Rejeter la proposition pour OMI {imo} ? L'armateur reste intact.",
+      "placeholder": "Pourquoi cette proposition est-elle rejetée ? (visible dans l'audit trail)",
+      "submit": "Rejeter",
+      "cancel": "Annuler"
+    },
+    "createDialog": {
+      "title": "Nouvelle proposition manuelle",
+      "subtitle": "Atterrit dans la file de revue avec source manual. Même validation que les propositions du scraper — rien n'est appliqué automatiquement.",
+      "field": {
+        "imo": "Numéro OMI",
+        "owner": "Nom de l'armateur proposé",
+        "manager": "Manager (optionnel)",
+        "email": "Email (optionnel)",
+        "country": "Code pays (optionnel)"
+      },
+      "submit": "Créer la proposition",
+      "cancel": "Annuler"
     }
   }
 }
