@@ -2493,5 +2493,114 @@
     "showSecret": "Show",
     "hideSecret": "Hide",
     "successToast": "Saved"
+  },
+  "OwnerPortal": {
+    "brand": "Shipowner Portal",
+    "nav": {
+      "dashboard": "Dashboard",
+      "vessels": "Vessels",
+      "invoices": "Invoices",
+      "alerts": "Alerts",
+      "signOut": "Sign out"
+    },
+    "login": {
+      "title": "Sign in with your email",
+      "subtitle": "We'll send a one-time link to your inbox. No password required.",
+      "footerNote": "Access is invitation-only. If you haven't received an invite, ask the Port Operations team to enrol your account.",
+      "emailLabel": "Email",
+      "submit": "Send sign-in link",
+      "sending": "Sending…",
+      "linkSent": "If <strong>{email}</strong> is registered as a shipowner, a sign-in link is on its way. Check your inbox.",
+      "errors": {
+        "noOwnerRecord": "We couldn't find a shipowner profile for that email.",
+        "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
+        "ghost": "Your account has not been invited to the portal yet.",
+        "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
+        "generic": "Sign-in failed. Try again."
+      }
+    },
+    "dashboard": {
+      "subtitle": "Snapshot of your fleet and obligations.",
+      "stat": {
+        "activeVessels": "Active vessels",
+        "openAlerts": "Open alerts",
+        "unpaidProforma": "Unpaid pro-formas",
+        "paidYtd": "Paid YTD"
+      },
+      "quickActions": "Quick actions",
+      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>."
+    },
+    "vessels": {
+      "title": "Vessels",
+      "countOne": "{count} vessel on file.",
+      "countOther": "{count} vessels on file.",
+      "empty": "No vessels linked to your account yet.",
+      "loadFailed": "Failed to load vessels: {error}",
+      "back": "All vessels",
+      "specifications": "Specifications",
+      "recentAlerts": "Recent alerts",
+      "noAlerts": "No alerts on this vessel yet.",
+      "field": {
+        "flag": "Flag",
+        "category": "Category",
+        "lastZone": "Last zone",
+        "tonnage": "Gross tonnage (DWT)",
+        "enginePower": "Engine power",
+        "designSpeed": "Design speed",
+        "estimatedCo2": "Estimated CO₂",
+        "taxLiability": "Tax liability",
+        "compliance": "Compliance"
+      }
+    },
+    "invoices": {
+      "title": "Invoices",
+      "subtitle": "Pro-formas, final assessments, complements and refunds for your fleet.",
+      "loadFailed": "Failed to load invoices: {error}",
+      "empty": "No invoices on file yet.",
+      "pay": "Pay",
+      "dispute": "Dispute",
+      "paymentDeclared": "Payment declared",
+      "downloadPdf": "PDF",
+      "downloadAria": "Download PDF for {ref}",
+      "payDialog": {
+        "title": "Declare payment",
+        "subtitle": "Enter the bank-transfer reference for pro-forma {ref} ({amount}). Finance will reconcile it against the bank statement and confirm.",
+        "referenceLabel": "Bank reference",
+        "referencePlaceholder": "WIRE-2026-00123",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Sender bank, payer name…",
+        "cancel": "Cancel",
+        "submit": "Submit declaration",
+        "submitting": "Submitting…"
+      },
+      "disputeDialog": {
+        "title": "Dispute charge",
+        "subtitle": "Open a dispute on {ref}. Port Operations will review and respond by email.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Select a reason…",
+        "descriptionLabel": "Description ({count}/10+)",
+        "descriptionPlaceholder": "Explain why you believe this assessment is incorrect…",
+        "evidenceLabel": "Evidence URL (optional)",
+        "evidencePlaceholder": "https://...",
+        "cancel": "Cancel",
+        "submit": "Open dispute",
+        "submitting": "Submitting…",
+        "reason": {
+          "EMISSION_CALCULATION": "Emission calculation",
+          "TAX_RATE": "Tax rate",
+          "ZONE_CLASSIFICATION": "Zone classification",
+          "VESSEL_DATA": "Vessel data",
+          "OTHER": "Other"
+        }
+      }
+    },
+    "alerts": {
+      "title": "Alerts",
+      "subtitle": "Vessels approaching, in zone, or recently reconciled.",
+      "loadFailed": "Failed to load alerts: {error}",
+      "openSection": "Open ({count})",
+      "closedSection": "Closed ({count})",
+      "emptyOpen": "No active alerts."
+    }
   }
 }
