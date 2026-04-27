@@ -6,8 +6,10 @@ import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, Al
 import { OsBadge } from '@/components/ui/OsBadge';
 import { useVessels } from '@/hooks/useVessels';
 import { useKpis } from '@/hooks/useKpis';
+import { useTransactions } from '@/hooks/useTransactions';
 import { useRole } from '@/lib/RoleContext';
-import { SecureVessel, VesselComplianceStatus, VesselCategory, UserRole } from '@/types/secure';
+import { SecureVessel, VesselComplianceStatus, VesselCategory, UserRole, Transaction, TransactionStatus } from '@/types/secure';
+import { transactionVariant } from '@/lib/badgeUtils';
 
 // ── Status → Action mapping ──────────────────────────────────────────────────
 // Each compliance status maps to a context-appropriate primary action.
@@ -106,6 +108,7 @@ export function VesselsPage() {
     const { role } = useRole();
     const { data: vessels } = useVessels();
     const { data: kpis } = useKpis();
+    const { data: transactions } = useTransactions();
     const [search, setSearch]       = React.useState('');
     const [filterStatus, setFilter] = React.useState<FilterStatus>('ALL');
     const [selected, setSelected]   = React.useState<string | null>(null);
@@ -269,7 +272,12 @@ export function VesselsPage() {
 
             {/* Vessel detail drawer (bottom) */}
             {vessel && (
-                <VesselDetailDrawer vessel={vessel} onClose={() => setSelected(null)} isArmateur={isArmateur} />
+                <VesselDetailDrawer
+                    vessel={vessel}
+                    onClose={() => setSelected(null)}
+                    isArmateur={isArmateur}
+                    documents={transactions.filter((tx) => tx.vesselId === vessel.id)}
+                />
             )}
         </div>
     );
@@ -401,43 +409,132 @@ function VesselCard({ vessel: v, isSelected, onSelect, complianceLabel, category
     );
 }
 
-function VesselDetailDrawer({ vessel: v, onClose, isArmateur }: { vessel: SecureVessel; onClose: () => void; isArmateur: boolean }) {
+function VesselDetailDrawer({ vessel: v, onClose, isArmateur, documents }: {
+    vessel: SecureVessel;
+    onClose: () => void;
+    isArmateur: boolean;
+    documents: Transaction[];
+}) {
     const t = useTranslations('VesselsPage');
     return (
-        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-200">
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_identity')}</p>
-                <p className="text-sm font-bold text-[var(--os-text-primary)]">{v.name}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">IMO {v.imoNumber} · MMSI {v.mmsi}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_call_sign')}: {v.callSign} · {t('drawer_flag')}: {v.flagCode}</p>
-            </div>
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_position')}</p>
-                <p className="text-xs text-[var(--os-text-primary)]">{v.position.lat.toFixed(4)}° N, {v.position.lng.toFixed(4)}° E</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_heading')} {v.position.heading}° · {v.position.speedKnots} kn</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_port')}: {v.portCall}</p>
-            </div>
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_emissions_tax')}</p>
-                <p className="text-xl font-bold text-[#EF4444] tabular-nums">${v.taxLiabilityUsd.toLocaleString()}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_estimated_emissions', { value: v.estimatedEmissionsTco2 })}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">DWT: {v.grossTonnageDwt.toLocaleString()}</p>
-            </div>
-            <div className="flex flex-col gap-2 justify-center">
-                {!isArmateur && (
-                    <a
-                        href={`/dashboard/invoices?vessel=${v.imoNumber}`}
-                        className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
+        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 flex flex-col gap-4 animate-in slide-in-from-bottom-2 duration-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_identity')}</p>
+                    <p className="text-sm font-bold text-[var(--os-text-primary)]">{v.name}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">IMO {v.imoNumber} · MMSI {v.mmsi}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_call_sign')}: {v.callSign} · {t('drawer_flag')}: {v.flagCode}</p>
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_position')}</p>
+                    <p className="text-xs text-[var(--os-text-primary)]">{v.position.lat.toFixed(4)}° N, {v.position.lng.toFixed(4)}° E</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_heading')} {v.position.heading}° · {v.position.speedKnots} kn</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_port')}: {v.portCall}</p>
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_emissions_tax')}</p>
+                    <p className="text-xl font-bold text-[#EF4444] tabular-nums">${v.taxLiabilityUsd.toLocaleString()}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_estimated_emissions', { value: v.estimatedEmissionsTco2 })}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">DWT: {v.grossTonnageDwt.toLocaleString()}</p>
+                </div>
+                <div className="flex flex-col gap-2 justify-center">
+                    {!isArmateur && (
+                        <a
+                            href={`/dashboard/invoices?vessel=${v.imoNumber}`}
+                            className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
+                        >
+                            {t('generate_proforma')}
+                        </a>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
                     >
-                        {t('generate_proforma')}
-                    </a>
-                )}
-                <button
-                    onClick={onClose}
-                    className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
-                >
-                    {t('close')}
-                </button>
+                        {t('close')}
+                    </button>
+                </div>
+            </div>
+
+            {/* Documents (proformas + invoices) — armateur view only */}
+            {isArmateur && documents.length > 0 && (
+                <DrawerDocuments documents={documents} vesselImo={v.imoNumber} />
+            )}
+        </div>
+    );
+}
+
+function DrawerDocuments({ documents, vesselImo }: { documents: Transaction[]; vesselImo: string }) {
+    const t = useTranslations('VesselsPage');
+
+    const STATUS_LABEL: Record<TransactionStatus, string> = {
+        [TransactionStatus.PAID]:     t('status_compliant'),
+        [TransactionStatus.PENDING]:  t('status_payment_due'),
+        [TransactionStatus.OVERDUE]:  t('status_non_compliant'),
+        [TransactionStatus.EXEMPT]:   t('status_exempt'),
+        [TransactionStatus.DISPUTED]: t('status_processing'),
+    };
+
+    const sorted = [...documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return (
+        <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_documents')}</p>
+            <div className="rounded-xl border border-[var(--os-border)] overflow-hidden">
+                <table className="w-full text-xs">
+                    <thead className="bg-[var(--os-surface-3)]">
+                        <tr className="text-left text-[10px] uppercase tracking-widest text-[var(--os-text-muted)]">
+                            <th className="px-3 py-2 font-bold">{t('doc_reference')}</th>
+                            <th className="px-3 py-2 font-bold">{t('doc_issued')}</th>
+                            <th className="px-3 py-2 font-bold">{t('doc_status')}</th>
+                            <th className="px-3 py-2 font-bold text-right">{t('doc_amount')}</th>
+                            <th className="px-3 py-2 font-bold text-right">{t('col_actions')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sorted.map((tx) => {
+                            const isPaid    = tx.status === TransactionStatus.PAID;
+                            const isPayable = tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE;
+                            const href      = `/dashboard/invoices?vessel=${vesselImo}&txn=${tx.id}`;
+                            return (
+                                <tr key={tx.id} className="border-t border-[var(--os-border)]">
+                                    <td className="px-3 py-2.5">
+                                        <p className="font-mono font-semibold text-[var(--os-text-primary)]">{tx.ref}</p>
+                                        <p className="text-[10px] text-[var(--os-text-muted)]">{tx.transactionType.replace('_', ' ')}</p>
+                                    </td>
+                                    <td className="px-3 py-2.5 text-[var(--os-text-secondary)]">
+                                        {new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                    </td>
+                                    <td className="px-3 py-2.5">
+                                        <OsBadge variant={transactionVariant(tx.status)} label={STATUS_LABEL[tx.status]} />
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono font-bold text-[var(--os-text-primary)] tabular-nums">
+                                        ${tx.taxAmountUsd.toLocaleString()}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right">
+                                        {isPayable && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#EF4444] hover:underline">
+                                                <CreditCard className="w-3 h-3" />
+                                                {t('doc_pay')}
+                                            </a>
+                                        )}
+                                        {isPaid && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#22C55E] hover:underline">
+                                                <Eye className="w-3 h-3" />
+                                                {t('doc_view_invoice')}
+                                            </a>
+                                        )}
+                                        {!isPayable && !isPaid && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--os-text-secondary)] hover:underline">
+                                                <Eye className="w-3 h-3" />
+                                                {t('doc_view')}
+                                            </a>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
