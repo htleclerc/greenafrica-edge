@@ -4,7 +4,7 @@
 
 **Goal:** Detect vessels declaring Berbera/Zeila as their AIS Destination at the origin port (1-3 weeks before EEZ entry) and create UNCLAIMED `arrival_alerts` for human review, behind `feature.ais_global_enabled`.
 
-**Architecture:** New isolated Go module `backend/internal/originport/` with `matcher`, `cache`, `watcher`. Existing `corridor.Watcher` is untouched. AIS ingester gains a second WebSocket subscription (4 quadrants of the world, `ShipStaticData` only) gated by the feature flag. Three new migrations (042-044) plus a guard (045) on the `agent-match` cron so ORIGINPORT alerts stay UNCLAIMED. New admin page `/admin/origin-port-proposals` for reviewing fuzzy matches, with allow-list auto-enrichment.
+**Architecture:** New isolated Go module `backend/internal/originport/` with `matcher`, `cache`, `watcher`. Existing `corridor.Watcher` is untouched. AIS ingester gains a second WebSocket subscription (4 quadrants of the world, `ShipStaticData` only) gated by the feature flag. Three new migrations (042-044) plus a guard (046) on the `agent-match` cron so ORIGINPORT alerts stay UNCLAIMED. New admin page `/admin/origin-port-proposals` for reviewing fuzzy matches, with allow-list auto-enrichment.
 
 **Tech Stack:** Go 1.25 (`gorilla/websocket`, `database/sql`, `pgx/v5`, in-package Levenshtein), PostgreSQL 17 + RLS, Next.js 16 / React 19 / TypeScript strict / TailwindCSS v4, `next-intl`, Vitest, real-DB Go integration tests via `supadb.Open`.
 
@@ -27,14 +27,14 @@
 
 | Path | Responsibility |
 |---|---|
-| `supabase/migrations/042_arrival_alerts_detection_source.sql` | Add `detection_source` enum + drop NOT NULL on corridor cols + index |
-| `supabase/migrations/043_destination_match_proposals.sql` | New table + RLS + unique pending index |
-| `supabase/migrations/044_origin_port_allow_list_config.sql` | Seed `arrival.origin_port_allow_list` in `app_config` |
-| `supabase/migrations/045_agent_match_skip_originport.sql` | Replace `agent-match` cron function to skip ORIGINPORT |
-| `supabase/tests/migrations/042_detection_source.test.sql` | Mig 042 schema + backfill assertions |
-| `supabase/tests/migrations/043_destination_match_proposals.test.sql` | Mig 043 RLS + index assertions |
-| `supabase/tests/migrations/044_origin_port_allow_list.test.sql` | Mig 044 seed assertions |
-| `supabase/tests/migrations/045_agent_match_skip_originport.test.sql` | Mig 045 function-body assertion |
+| `supabase/migrations/043_arrival_alerts_detection_source.sql` | Add `detection_source` enum + drop NOT NULL on corridor cols + index |
+| `supabase/migrations/044_destination_match_proposals.sql` | New table + RLS + unique pending index |
+| `supabase/migrations/045_origin_port_allow_list_config.sql` | Seed `arrival.origin_port_allow_list` in `app_config` |
+| `supabase/migrations/046_agent_match_skip_originport.sql` | Replace `agent-match` cron function to skip ORIGINPORT |
+| `supabase/tests/migrations/043_detection_source.test.sql` | Mig 043 schema + backfill assertions |
+| `supabase/tests/migrations/044_destination_match_proposals.test.sql` | Mig 044 RLS + index assertions |
+| `supabase/tests/migrations/045_origin_port_allow_list.test.sql` | Mig 045 seed assertions |
+| `supabase/tests/migrations/046_agent_match_skip_originport.test.sql` | Mig 046 function-body assertion |
 | `backend/internal/originport/matcher.go` | `matchDestination()` + `Levenshtein()` + `Normalize()` |
 | `backend/internal/originport/matcher_test.go` | Table-driven test, ≥30 variants |
 | `backend/internal/originport/cache.go` | LRU MMSI→IMO with 24h TTL, race-safe |
@@ -66,15 +66,15 @@
 
 ---
 
-## Task 1: Migration 042 — `detection_source` enum + nullable corridor columns
+## Task 1: Migration 043 — `detection_source` enum + nullable corridor columns
 
 **Files:**
-- Create: `supabase/migrations/042_arrival_alerts_detection_source.sql`
-- Create: `supabase/tests/migrations/042_detection_source.test.sql`
+- Create: `supabase/migrations/043_arrival_alerts_detection_source.sql`
+- Create: `supabase/tests/migrations/043_detection_source.test.sql`
 
 - [ ] **Step 1: Write the failing test**
 
-`supabase/tests/migrations/042_detection_source.test.sql`:
+`supabase/tests/migrations/043_detection_source.test.sql`:
 
 ```sql
 BEGIN;
@@ -149,18 +149,18 @@ ROLLBACK;
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-./supabase/tests/run.sh migrations/042_detection_source.test.sql
+./supabase/tests/run.sh migrations/043_detection_source.test.sql
 ```
 
 Expected: FAIL with `relation "public.arrival_alerts" missing column "detection_source"` (or "type detection_source does not exist" depending on which assertion runs first).
 
 - [ ] **Step 3: Write the migration**
 
-`supabase/migrations/042_arrival_alerts_detection_source.sql`:
+`supabase/migrations/043_arrival_alerts_detection_source.sql`:
 
 ```sql
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 042 — Plan 8: detection_source enum + nullable corridor columns
+-- Migration 043 — Plan 8: detection_source enum + nullable corridor columns
 --
 -- Adds a discriminator so downstream consumers (agent-match cron, admin UI)
 -- can distinguish corridor-detected alerts from origin-port-detected alerts.
@@ -198,7 +198,7 @@ CREATE INDEX arrival_alerts_originport_unclaimed_idx
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-supabase db reset && ./supabase/tests/run.sh migrations/042_detection_source.test.sql
+supabase db reset && ./supabase/tests/run.sh migrations/043_detection_source.test.sql
 ```
 
 Expected: `OK` for all 5 assertion blocks.
@@ -206,22 +206,22 @@ Expected: `OK` for all 5 assertion blocks.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/042_arrival_alerts_detection_source.sql \
-        supabase/tests/migrations/042_detection_source.test.sql
-git commit -m "chore(mig): Plan 8 Task 1 — detection_source enum + nullable corridor cols (042)"
+git add supabase/migrations/043_arrival_alerts_detection_source.sql \
+        supabase/tests/migrations/043_detection_source.test.sql
+git commit -m "chore(mig): Plan 8 Task 1 — detection_source enum + nullable corridor cols (043)"
 ```
 
 ---
 
-## Task 2: Migration 043 — `destination_match_proposals` table + RLS
+## Task 2: Migration 044 — `destination_match_proposals` table + RLS
 
 **Files:**
-- Create: `supabase/migrations/043_destination_match_proposals.sql`
-- Create: `supabase/tests/migrations/043_destination_match_proposals.test.sql`
+- Create: `supabase/migrations/044_destination_match_proposals.sql`
+- Create: `supabase/tests/migrations/044_destination_match_proposals.test.sql`
 
 - [ ] **Step 1: Write the failing test**
 
-`supabase/tests/migrations/043_destination_match_proposals.test.sql`:
+`supabase/tests/migrations/044_destination_match_proposals.test.sql`:
 
 ```sql
 BEGIN;
@@ -311,18 +311,18 @@ ROLLBACK;
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-./supabase/tests/run.sh migrations/043_destination_match_proposals.test.sql
+./supabase/tests/run.sh migrations/044_destination_match_proposals.test.sql
 ```
 
 Expected: FAIL — table does not exist.
 
 - [ ] **Step 3: Write the migration**
 
-`supabase/migrations/043_destination_match_proposals.sql`:
+`supabase/migrations/044_destination_match_proposals.sql`:
 
 ```sql
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 043 — Plan 8: destination_match_proposals
+-- Migration 044 — Plan 8: destination_match_proposals
 --
 -- Holds fuzzy-match candidates from the AIS Destination field that didn't
 -- match the allow-list outright. Reviewed manually by SUPERADMIN/PORT_OFFICER
@@ -378,7 +378,7 @@ CREATE POLICY "officers resolve destination proposals"
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-supabase db reset && ./supabase/tests/run.sh migrations/043_destination_match_proposals.test.sql
+supabase db reset && ./supabase/tests/run.sh migrations/044_destination_match_proposals.test.sql
 ```
 
 Expected: `OK`.
@@ -386,22 +386,22 @@ Expected: `OK`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/043_destination_match_proposals.sql \
-        supabase/tests/migrations/043_destination_match_proposals.test.sql
-git commit -m "chore(mig): Plan 8 Task 2 — destination_match_proposals table + RLS (043)"
+git add supabase/migrations/044_destination_match_proposals.sql \
+        supabase/tests/migrations/044_destination_match_proposals.test.sql
+git commit -m "chore(mig): Plan 8 Task 2 — destination_match_proposals table + RLS (044)"
 ```
 
 ---
 
-## Task 3: Migration 044 — Origin port allow-list seed in `app_config`
+## Task 3: Migration 045 — Origin port allow-list seed in `app_config`
 
 **Files:**
-- Create: `supabase/migrations/044_origin_port_allow_list_config.sql`
-- Create: `supabase/tests/migrations/044_origin_port_allow_list.test.sql`
+- Create: `supabase/migrations/045_origin_port_allow_list_config.sql`
+- Create: `supabase/tests/migrations/045_origin_port_allow_list.test.sql`
 
 - [ ] **Step 1: Write the failing test**
 
-`supabase/tests/migrations/044_origin_port_allow_list.test.sql`:
+`supabase/tests/migrations/045_origin_port_allow_list.test.sql`:
 
 ```sql
 BEGIN;
@@ -446,18 +446,18 @@ ROLLBACK;
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-./supabase/tests/run.sh migrations/044_origin_port_allow_list.test.sql
+./supabase/tests/run.sh migrations/045_origin_port_allow_list.test.sql
 ```
 
 Expected: FAIL — key not in `app_config`.
 
 - [ ] **Step 3: Write the migration**
 
-`supabase/migrations/044_origin_port_allow_list_config.sql`:
+`supabase/migrations/045_origin_port_allow_list_config.sql`:
 
 ```sql
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 044 — Plan 8: origin port allow-list seed
+-- Migration 045 — Plan 8: origin port allow-list seed
 --
 -- Curated AIS-5 Destination variants per port. Read by the Go matcher;
 -- enriched by the admin UI when approving fuzzy proposals. Idempotent via
@@ -478,7 +478,7 @@ ON CONFLICT (key) DO NOTHING;
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-supabase db reset && ./supabase/tests/run.sh migrations/044_origin_port_allow_list.test.sql
+supabase db reset && ./supabase/tests/run.sh migrations/045_origin_port_allow_list.test.sql
 ```
 
 Expected: `OK`.
@@ -486,19 +486,19 @@ Expected: `OK`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/044_origin_port_allow_list_config.sql \
-        supabase/tests/migrations/044_origin_port_allow_list.test.sql
-git commit -m "chore(mig): Plan 8 Task 3 — origin_port_allow_list seed (044)"
+git add supabase/migrations/045_origin_port_allow_list_config.sql \
+        supabase/tests/migrations/045_origin_port_allow_list.test.sql
+git commit -m "chore(mig): Plan 8 Task 3 — origin_port_allow_list seed (045)"
 ```
 
 ---
 
-## Task 4: Migration 045 — `agent-match` cron skip ORIGINPORT
+## Task 4: Migration 046 — `agent-match` cron skip ORIGINPORT
 
 **Files:**
 - Read first: `supabase/migrations/034_agent_match_cron.sql` (to see the function body to replace)
-- Create: `supabase/migrations/045_agent_match_skip_originport.sql`
-- Create: `supabase/tests/migrations/045_agent_match_skip_originport.test.sql`
+- Create: `supabase/migrations/046_agent_match_skip_originport.sql`
+- Create: `supabase/tests/migrations/046_agent_match_skip_originport.test.sql`
 
 - [ ] **Step 1: Inspect the existing function**
 
@@ -508,7 +508,7 @@ This locates the `WHERE` clause(s) that select alerts to match. The replacement 
 
 - [ ] **Step 2: Write the failing test**
 
-`supabase/tests/migrations/045_agent_match_skip_originport.test.sql`:
+`supabase/tests/migrations/046_agent_match_skip_originport.test.sql`:
 
 ```sql
 BEGIN;
@@ -569,11 +569,11 @@ ROLLBACK;
 
 - [ ] **Step 3: Write the migration**
 
-`supabase/migrations/045_agent_match_skip_originport.sql`:
+`supabase/migrations/046_agent_match_skip_originport.sql`:
 
 ```sql
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 045 — Plan 8: agent_match cron skips ORIGINPORT
+-- Migration 046 — Plan 8: agent_match cron skips ORIGINPORT
 --
 -- Replaces the function body from migration 034 so alerts produced by the
 -- new origin-port detector stay UNCLAIMED regardless of any cascade match
@@ -607,7 +607,7 @@ $$;
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-supabase db reset && ./supabase/tests/run.sh migrations/045_agent_match_skip_originport.test.sql
+supabase db reset && ./supabase/tests/run.sh migrations/046_agent_match_skip_originport.test.sql
 ```
 
 Expected: `OK` for both `prosrc` substring assertion and the behavioural assertion.
@@ -615,9 +615,9 @@ Expected: `OK` for both `prosrc` substring assertion and the behavioural asserti
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/045_agent_match_skip_originport.sql \
-        supabase/tests/migrations/045_agent_match_skip_originport.test.sql
-git commit -m "chore(mig): Plan 8 Task 4 — agent_match cron skips ORIGINPORT (045)"
+git add supabase/migrations/046_agent_match_skip_originport.sql \
+        supabase/tests/migrations/046_agent_match_skip_originport.test.sql
+git commit -m "chore(mig): Plan 8 Task 4 — agent_match cron skips ORIGINPORT (046)"
 ```
 
 ---
@@ -3041,7 +3041,7 @@ cd backend && go test -race -count=1 ./...
 
 ```bash
 supabase db reset
-for f in supabase/tests/migrations/04{2,3,4,5}_*.test.sql; do
+for f in supabase/tests/migrations/04{3,4,5,6}_*.test.sql; do
   ./supabase/tests/run.sh "${f#supabase/tests/}" || { echo "FAIL: $f"; exit 1; }
 done
 ```
@@ -3086,7 +3086,7 @@ gh pr create --title "Plan 8 — AIS global origin-port detection (v0)" --body "
 - New `originport` module detects vessels declaring Berbera/Zeila as AIS Destination.
 - Allow-list + fuzzy proposal review at `/admin/origin-port-proposals`.
 - Feature-flagged: `feature.ais_global_enabled`, default false. Toggle in `/admin/tax-settings`.
-- Migrations 042-045: `detection_source` enum, `destination_match_proposals` table, allow-list seed, agent-match guard.
+- Migrations 043-046: `detection_source` enum, `destination_match_proposals` table, allow-list seed, agent-match guard.
 - Zero impact on the existing corridor pipeline.
 
 Spec: [docs/superpowers/specs/2026-04-27-plan-8-ais-global-origin-port-detection.md](docs/superpowers/specs/2026-04-27-plan-8-ais-global-origin-port-detection.md)
@@ -3094,7 +3094,7 @@ Plan: [docs/superpowers/plans/2026-04-27-plan-8-ais-global-origin-port-detection
 
 ## Test plan
 - [ ] All Go tests pass with `-race`
-- [ ] Migration tests 042-045 pass
+- [ ] Migration tests 043-046 pass
 - [ ] Frontend Vitest passes for the two new server actions
 - [ ] Manual: flip flag → true on staging, observe `/admin/origin-port-proposals` populates
 - [ ] Manual: approve a proposal → verify `arrival.origin_port_allow_list` JSON merged

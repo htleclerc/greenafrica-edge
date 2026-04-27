@@ -101,7 +101,7 @@ The existing partial unique index on `arrival_alerts (vessel_id) WHERE status NO
 
 ## 5. Data Model
 
-### 5.1 Migration `042_arrival_alerts_detection_source.sql`
+### 5.1 Migration `043_arrival_alerts_detection_source.sql`
 
 ```sql
 CREATE TYPE public.detection_source AS ENUM (
@@ -128,7 +128,7 @@ CREATE INDEX arrival_alerts_originport_unclaimed_idx
 
 `NOA` is included in the enum now so Plan 9 doesn't have to `ALTER TYPE ... ADD VALUE` later (PostgreSQL forbids that inside a transaction in some configurations).
 
-### 5.2 Migration `043_destination_match_proposals.sql`
+### 5.2 Migration `044_destination_match_proposals.sql`
 
 ```sql
 CREATE TYPE public.destination_proposal_status
@@ -173,7 +173,7 @@ CREATE POLICY destination_proposals_admin_update
 
 Separate from `equasis_scrape_proposals` — different columns (destination text + fuzzy score vs owner email + manager) and different review semantics.
 
-### 5.3 Migration `044_origin_port_allow_list_config.sql`
+### 5.3 Migration `045_origin_port_allow_list_config.sql`
 
 ```sql
 INSERT INTO public.app_config (key, value, description) VALUES
@@ -197,7 +197,7 @@ JSON-in-`app_config` rather than a dedicated table because:
 
 ### 5.4 No new pgmq queues, no new pg_cron jobs
 
-Plan 8 reuses the existing pipeline downstream of `arrival_alerts`. The agent-match cron will see `ORIGINPORT` alerts but the design forces them to `UNCLAIMED` regardless of mapping cascade — the cron should respect `detection_source` and not auto-match. **Implementation note for the plan**: the `agent-match` SQL function in [`supabase/migrations/034_agent_match_cron.sql`](../../../supabase/migrations/034_agent_match_cron.sql) needs a `WHERE detection_source != 'ORIGINPORT'` guard (added via a follow-up migration `045_agent_match_skip_originport.sql`), or the function should be patched directly to skip ORIGINPORT alerts entirely. Alerts with `detection_source='ORIGINPORT'` stay UNCLAIMED indefinitely until a human claims them.
+Plan 8 reuses the existing pipeline downstream of `arrival_alerts`. The agent-match cron will see `ORIGINPORT` alerts but the design forces them to `UNCLAIMED` regardless of mapping cascade — the cron should respect `detection_source` and not auto-match. **Implementation note for the plan**: the `agent-match` SQL function in [`supabase/migrations/034_agent_match_cron.sql`](../../../supabase/migrations/034_agent_match_cron.sql) needs a `WHERE detection_source != 'ORIGINPORT'` guard (added via a follow-up migration `046_agent_match_skip_originport.sql`), or the function should be patched directly to skip ORIGINPORT alerts entirely. Alerts with `detection_source='ORIGINPORT'` stay UNCLAIMED indefinitely until a human claims them.
 
 ---
 
@@ -314,7 +314,7 @@ Go backend reads both via the existing `appconfig.Reader` (cached, refreshed eve
 | Go unit — `originport/matcher_test.go` | Table-driven, ≥30 Destination variants. Includes `BBR > DJB` (PROPOSE multi-port), `DJIBOUTI` (NONE), `BERBARA` (PROPOSE Lev=1), `BERBERA SOMALILAND` (MATCH substring), empty / whitespace / Unicode (NONE). |
 | Go unit — `originport/cache_test.go` | LRU eviction at TTL 24h, concurrent writes under `-race`. |
 | Go unit — `originport/watcher_test.go` | With `sqlmock`: MATCH → INSERT alert; PROPOSE → INSERT proposal; duplicate → silent no-op via unique violation; flag OFF → total no-op. |
-| SQL migration tests — `supabase/tests/migrations/042_*.test.sql`, `043_*.test.sql`, `044_*.test.sql` | RLS read/write per role; `detection_source` default + backfill; unique index on PENDING proposals; idempotent allow-list seed. |
+| SQL migration tests — `supabase/tests/migrations/043_*.test.sql`, `044_*.test.sql`, `045_*.test.sql`, `046_*.test.sql` | RLS read/write per role; `detection_source` default + backfill; unique index on PENDING proposals; idempotent allow-list seed. |
 | Frontend Vitest — server actions | `approveDestinationProposal` allow-list merge idempotent (re-approving an existing variant doesn't duplicate); `rejectDestinationProposal`; concurrent approve race. |
 | Frontend Vitest — page rendering | `/admin/origin-port-proposals`: SUPERADMIN sees Approve/Reject; FINANCE_ADMIN read-only; SHIPPING_AGENT redirected. |
 | Manual integration (post-merge) | With flag true + synthetic ShipStaticData injection: verify alert lands in `/admin/escalations` UNCLAIMED panel. |
@@ -354,10 +354,10 @@ Rollback: flip flag to `false`. WS1 closes, no further originport alerts created
 
 | Mig | Purpose |
 |---|---|
-| `042_arrival_alerts_detection_source.sql` | New enum + nullable corridor-specific columns + index for ORIGINPORT UNCLAIMED |
-| `043_destination_match_proposals.sql` | New table + RLS + unique pending index |
-| `044_origin_port_allow_list_config.sql` | Seed `arrival.origin_port_allow_list` in `app_config` |
-| `045_agent_match_skip_originport.sql` | Replace `agent-match` cron function so it skips `detection_source='ORIGINPORT'` |
+| `043_arrival_alerts_detection_source.sql` | New enum + nullable corridor-specific columns + index for ORIGINPORT UNCLAIMED |
+| `044_destination_match_proposals.sql` | New table + RLS + unique pending index |
+| `045_origin_port_allow_list_config.sql` | Seed `arrival.origin_port_allow_list` in `app_config` |
+| `046_agent_match_skip_originport.sql` | Replace `agent-match` cron function so it skips `detection_source='ORIGINPORT'` |
 
 ---
 
