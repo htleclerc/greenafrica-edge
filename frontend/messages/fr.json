@@ -2556,6 +2556,43 @@
     "active": "Actif",
     "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
   },
+  "AdminOriginPort": {
+    "title": "Propositions de destination port d'origine",
+    "subtitle": "Chaînes de destination AIS correspondant à Berbera ou Zeila avec une confiance de fuzzy matching suffisante. Approuvez pour ajouter à la liste blanche ; rejetez pour écarter.",
+    "count": "{count} en attente",
+    "empty": "Aucune proposition en attente.",
+    "col": {
+      "mmsi": "MMSI",
+      "vessel": "Navire",
+      "raw": "Destination brute",
+      "normalized": "Normalisée",
+      "guess": "Port suggéré",
+      "score": "Score",
+      "created": "Créée",
+      "actions": "Actions"
+    },
+    "actions": {
+      "approve": "Approuver",
+      "reject": "Rejeter"
+    },
+    "approveDialog": {
+      "title": "Approuver la proposition",
+      "portLabel": "Assigner au port",
+      "addToAllowList": "Ajouter la chaîne normalisée à la liste blanche",
+      "createAlert": "Créer une alerte d'arrivée (si MMSI admissible)",
+      "submit": "Approuver",
+      "submitting": "Approbation en cours…",
+      "cancel": "Annuler"
+    },
+    "rejectDialog": {
+      "title": "Rejeter la proposition",
+      "reasonLabel": "Motif (requis)",
+      "reasonPlaceholder": "Pourquoi cette proposition est-elle rejetée ? (visible dans la piste d'audit)",
+      "submit": "Rejeter",
+      "submitting": "Rejet en cours…",
+      "cancel": "Annuler"
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Pipeline de taxe carbone",
     "sectionSubtitle": "Configuration d'exécution pour la détection, la réconciliation, l'escalade et les feature flags. Les secrets ne peuvent être modifiés que par un SUPERADMIN.",
