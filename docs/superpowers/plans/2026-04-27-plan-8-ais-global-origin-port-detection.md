@@ -3034,7 +3034,9 @@ Before opening the PR, run the full verification suite:
 - [ ] **All Go tests pass with `-race`**
 
 ```bash
-cd backend && go test -race -count=1 ./...
+cd backend && go test -p 1 -race -count=1 -buildvcs=false ./...
+# -p 1 serializes packages so integration tests sharing the local DB don't race.
+# -buildvcs=false avoids Git VCS-stamping issues in worktrees.
 ```
 
 - [ ] **All migration tests pass**
