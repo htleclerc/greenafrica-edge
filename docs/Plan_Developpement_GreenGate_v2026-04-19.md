@@ -1,8 +1,22 @@
 # Plan de Développement Green-Gate — Révision Stratégique v1.0
 
+> **⚠️ STATUT : SUPERSEDED — 2026-04-24**
+>
+> Ce plan a servi de cadrage stratégique post-décret mais n'est **plus une directive d'implémentation**. La revue `/autoplan` du 2026-04-24 (voir section finale du document) a constaté qu'aucune des 9 tables proposées en §7.1 n'a été construite et que la décision Polygon blockchain (§15 D2) a été explicitement renversée par eng review 3A en faveur d'un hash-chain local Postgres (mig 022 + mig 018).
+>
+> **Sources de vérité actuelles** :
+> - Implémentation shippée : [`docs/superpowers/ROADMAP.md`](superpowers/ROADMAP.md) (Plans 1-5 → MVP fermé)
+> - Spec d'implémentation : [`docs/superpowers/specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md`](superpowers/specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md)
+> - ADR de l'inversion blockchain : [`docs/adr/ADR-001-immutable-anchor-hash-chain-vs-polygon.md`](adr/ADR-001-immutable-anchor-hash-chain-vs-polygon.md)
+> - Plan Phase 2 : [`docs/Plan_Phase2_GreenGate_v2026-04-24.md`](Plan_Phase2_GreenGate_v2026-04-24.md)
+> - Système de design : [`DESIGN.md`](../DESIGN.md)
+> - Backlog différé : [`TODOS.md`](../TODOS.md)
+>
+> Conserver ce plan pour : analyse du décret (§1), threat model (§9), error/rescue map (§8), et registres des décisions en attente (§15 D1-D8) qui restent valides pour Phase 2.
+
 **Date** : 2026-04-19
 **Auteur** : Analyse CEO Review (mode analytique)
-**Statut** : Document de re-cadrage post-décret ministériel
+**Statut** : ~~Document de re-cadrage post-décret ministériel~~ **SUPERSEDED** (voir bandeau ci-dessus)
 **Référence légale** : Décret MoECC Ref. MOE&CC/mi/36/2026 du 31 mars 2026
 
 ---
@@ -480,3 +494,124 @@ Ces expansions ne doivent **pas** être décidées en lot — chacune mérite un
 **Fin du document — v1.0 — 2026-04-19**
 
 *Ce document est une analyse stratégique pure. Conformément aux instructions du projet, aucune modification de code n'a été effectuée. Il sert de base au PRD v8 à produire.*
+
+---
+
+## /autoplan Review Report — 2026-04-24
+
+**Reviewer**: Claude Opus 4.7 via `/autoplan` (CEO + Design + Eng phases, single-reviewer mode — codex unavailable)
+**Branch au moment du review**: `develop` (commit `d7576b8`) — 196 files / 22,679 insertions vs `main`
+
+### CRITICAL FINDING — Plan/Reality Drift
+
+**Ce plan n'est plus un plan d'implémentation ; il a fait office de boussole stratégique pendant que l'exécution divergeait.** 5 jours après rédaction, la comparaison plan vs. code shippé :
+
+| Promesse du plan (§7.1) | État dans `develop` | Évidence |
+|---|---|---|
+| Table `concession` | **❌ Non construite** | Aucune migration ne correspond |
+| Table `carbon_rate` (versionnée $40/tCO2) | **❌ Non construite** — remplacée par `app_config` carbon_tax + `emission_factors.valid_from/until` | mig 027, 025 |
+| Table `vessel_assessment` | **❌ Non construite** — remplacée par `transactions` + `arrival_alerts` | mig 023, 026 |
+| Table `flight_assessment` (aviation) | **❌ Non construite — différée Phase 2** | ROADMAP.md backlog |
+| Table `blockchain_anchor` | **❌ Rejetée par eng review** | mig 022 explicit : *"No Polygon anchor columns here (eng review 3A: drop on-chain V1, use local hash-chain like audit_logs migration 018)"* |
+| Table `revenue_split` | **❌ Non construite** | Aucune migration ne correspond |
+| Table `moecc_monthly_report` | **❌ Non construite** | Aucune migration ne correspond |
+| Table `sensor_reading` (IoT) | **❌ Non construite — différée** | Aucune migration ne correspond |
+| §15 D2 — choix "Polygon" | **RENVERSÉ** vers hash-chain local | mig 022 + mig 018 |
+| §14.2 — PRD v8 Green-Gate | **❌ Non produit** | Aucun fichier ne correspond |
+| §14.2 — ADR-001 blockchain | **✅ Produit cette session — justifie hash-chain** | `docs/adr/ADR-001-immutable-anchor-hash-chain-vs-polygon.md` |
+| §14.2 — ADR-002 sensor fallback | **❌ Non produit** (Phase 2 backlog) | Aucun ADR-002 |
+| §20.7 — Rebrand i18n Africgreen → Green-Gate | **❌ Non fait** — i18n contient toujours AfricGreen | grep `green.gate` dans `frontend/messages/*` retourne 0 hits |
+
+**Ce qui a shippé à la place** (Plans 1-5 dans `docs/superpowers/ROADMAP.md`) :
+
+- AIS corridor watcher → state machine `arrival_alerts`
+- Pipeline agent matching + claim (`shipowners`, `owner_agent_mappings`)
+- Pro-forma → reconcile (FINAL/COMPLEMENT/REFUND) via `pgmq` + `pg_cron`
+- Cascade tax avec `emission_factors` (EU_MRV → IMO_CATEGORY → FALLBACK), seeds IMO 4th GHG Study
+- Admin escalations + cascade owner (Resend EN/FR cover letters)
+- Hash-chain local (`audit_logs` mig 018) au lieu de blockchain publique
+- État machine NET-30 collections (mig 022, **uncommitted au moment du review**)
+
+**Verdict** : ce plan est un document de re-cadrage stratégique qui a *informé* la direction d'exécution (carbon tax au cœur, polluter-pays, $40/tCO2) mais n'a *pas été suivi* sur l'architecture (concession layer, blockchain, aviation, IoT). L'archi shippée est **plus simple et plus pragmatique** — boring tech (P5 explicit > clever), décisions réversibles (P5), aucun innovation token consommé sur Polygon.
+
+### CEO Phase — Premise Challenge
+
+| Premisse §2.1 | Tient toujours 5 jours plus tard ? | Note |
+|---|---|---|
+| "Le projet change de nature juridique" | **OUI** | Décret en vigueur |
+| "$40 USD/tCO2 figé par décret" | **OUI** | Hardcodé dans `app_config` |
+| "Portée s'étend aux aéroports" | **DIFFÉRÉ** | Aviation = Phase 2 ; pragmatique vu pression décret |
+| "Plan v7 doit être refait, pas patché" | **PARTIELLEMENT RENVERSÉ** | L'équipe a choisi Approach A (refactor progressif) et n'a *pas* refait — construit incrémentalement |
+| "Blockchain obligation contractuelle" | **RENVERSÉ** | Eng review a opté pour hash-chain local. Cf. ADR-001 |
+
+**Premise gate** (la seule question non-auto-décidée) : §1.2 et §6.2 lisent le décret comme rendant la blockchain obligatoire (Article 4). La migration 022 et l'eng review 3A ont sciemment choisi un hash-chain local. Soit l'interprétation du plan est trop forte, soit l'implémentation est en défaut contractuel. L'ADR-001 (livré) pose les arguments mais l'**avis counsel reste à obtenir** avant le 1er rapport MoECC machine-signé.
+
+### Eng Phase — Architecture Score
+
+- **Architecture (boring tech score)**: 9/10. Hash-chain en Postgres (`audit_logs` mig 018) = Layer 1 boring tech, fits le budget innovation tokens. Décision de différer Polygon = token économisé pour ailleurs.
+- **Test coverage** : pgTAP par migration (`supabase/tests/migrations/*.test.sql`), Vitest sur services, Playwright E2E (per ROADMAP §B1 — bloqué par `QUEUE_WORKER_SECRET` env).
+- **Critical gap** (§15 D6 — co-signature MoECC) : non implémenté. Rapports pas encore produits du tout (manuel MVP). Phase 2 M1 doit designer la co-signature avant le premier rapport machine-signé.
+- **Critical gap** (§10 — idempotency facture) : changement uncommitted dans `frontend/src/app/api/transactions/mark-paid/route.ts` — vérifier que l'idempotency-key est enforced. Flag follow-up.
+
+### Design Phase — UI Scope
+
+UI scope detected (mention rebrand §3, refs dashboards). DESIGN.md existe et est mature (V1 emerald theme, primitives `Os*`, motion policy). Les specs design du plan sont sparses — DESIGN.md compense et supersedes toute guidance UI niveau plan. Rebrand string-by-string (§20.7) reste dû mais tactique, pas architectural.
+
+### NOT in scope (additions autoplan à §16)
+
+- ❌ **Refaire ce plan** : il a servi son rôle stratégique ; mieux vaut archiver que ré-écrire.
+- ❌ **Reviewer chaque commit entre 2026-04-19 et 2026-04-24** : hors scope plan review ; couvert par `git log` et ROADMAP.md.
+- ❌ **Tester la migration NET-30 022 uncommitted** : c'est une cible séparée pour `/plan-eng-review`, pas ce plan.
+
+### What already exists (additions autoplan à §3)
+
+- `docs/superpowers/ROADMAP.md` — single source of truth pour état actuel, statut Plans 1-5, P0 backlog (B0 CORS, B1 worker secret, B2 auth approve role bug)
+- `docs/superpowers/specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md` — master spec qui a pris la place de ce plan comme étoile polaire d'implémentation (3 jours *après* ce plan)
+- `DESIGN.md` — système V1 emerald avec catalogue tokens et contrats primitives complet
+- `TODOS.md` — 4 items différés (simulator vessel scoping, Playwright CI wiring, native-speaker review SO/AR, /design-review live audit)
+- `audit_logs` mig 018 — pattern hash-chain qui a remplacé la proposition blockchain
+- `docs/adr/ADR-001-immutable-anchor-hash-chain-vs-polygon.md` — formalisation de l'inversion blockchain
+
+### Decision Audit Trail
+
+| # | Phase | Décision | Principe | Rationale | Rejected option |
+|---|---|---|---|---|---|
+| 1 | Phase 0 | Plan target = `Plan_Developpement_GreenGate_v2026-04-19.md` | User choice | Réponse explicite AskUserQuestion | net30 / startup-package / cancel |
+| 2 | Phase 0 | Codex outside-voice = SKIP | Mécanique | `codex` pas sur PATH | — |
+| 3 | Phase 1 | Mode = META-REVIEW (pas full CEO replay) | P3 + P5 | Plan EST déjà un livrable CEO review ; replay mécanique = cérémonie sans valeur | Full CEO 0A-0F replay |
+| 4 | Phase 1 | Surface plan/reality drift comme finding critique | P1 + P5 | Drift entre plan et code shippé = observation à plus haut levier ; l'ignorer serait de la malpractice | Quiet rubber-stamp |
+| 5 | Phase 1 | Premisse §1.2 (blockchain obligatoire) requiert jugement humain | TASTE | Non résoluble depuis le code — requiert lecture du texte du décret + counsel | — |
+| 6 | Phase 2 | Design phase = passe légère | P3 | DESIGN.md supersedes guidance UI du plan ; contenu design du plan trop high-level pour scoring 7-pass | Full 7-pass sur UI aspirationnelle |
+| 7 | Phase 3 | Verdict architecture = APPROVE delta shippé | P3 + P5 | Hash-chain over Polygon = boring tech win ; aviation/IoT defer = scope discipline | Marquer plan comme not-followed = blocking concern |
+| 8 | Phase 3 | Mig 022 idempotency check = follow-up, pas blocker autoplan | P3 | mark-paid route est dans scope uncommitted, pas ce plan | Bloquer fermeture plan |
+| 9 | Phase 3 | Test plan artifact = NOT séparément écrit | P3 | pgTAP + Vitest + Playwright couvrent déjà ; aucun test gap découvert au niveau plan | Générer artifact pour artifact |
+
+### Taste Decisions (jugement humain requis)
+
+- **T1 — Plan status** : marquer `SUPERSEDED` et archiver, ou garder en "vision document" ? **Décidé** : SUPERSEDED, avec pointeur vers ROADMAP.md + master spec. Raison : laisser le plan live invite les futurs lecteurs à suivre des décisions non-shipping.
+- **T2 — Compliance blockchain** : §1.2 + §6.2 lisent le décret comme rendant la blockchain obligatoire ; eng review 3A l'a lu comme advisory. L'interprétation requiert **counsel**, pas judgment ingénierie. **Décidé** : ADR-001 produit pour justifier le choix hash-chain face au texte du décret. Counsel formel reste à obtenir avant 1er rapport MoECC.
+- **T3 — Backlog Phase 2 comme nouveau plan** : aviation + IoT + concession + MoECC report + rebrand nécessitent un plan post-décret de tenue de registres. **Décidé** : `Plan_Phase2_GreenGate_v2026-04-24.md` produit, structuré en 6 modules (M1 → M6) avec sequencing et 11 décisions ouvertes tracées.
+
+### Completion Summary
+
+```
++========================================================================+
+|              GREEN-GATE PLAN — /autoplan REVIEW SUMMARY                |
++========================================================================+
+| CEO Phase           | meta-review, premise gate raised (T2)            |
+| Design Phase        | passe légère, déféré à DESIGN.md                 |
+| Eng Phase           | architecture validates simpler-than-plan delta   |
+| Codex outside voice | UNAVAILABLE                                      |
+| Plan/reality drift  | 9/9 tables proposées non construites             |
+|                     | 1 décision renversée (Polygon → hash-chain)      |
+| Critical findings   | 1 (premise gate T2 — compliance blockchain)      |
+| Taste decisions     | 3 (T1/T2/T3 — tous résolus dans cette session)   |
+| Auto-decisions      | 9 (audit trail ci-dessus)                        |
+| Mode                | META_REVIEW                                      |
+| Livrables produits  | 3 (banner SUPERSEDED, ADR-001, Plan Phase 2)     |
++========================================================================+
+```
+
+**VERDICT** : Plan historiquement précieux (cadrage premisses, analyse décret, threat model, error/rescue map) mais **fonctionnellement superseded** par Plans 1-5 + master spec. Marqué SUPERSEDED avec pointeurs vers les sources de vérité actuelles.
+
+
