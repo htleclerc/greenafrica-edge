@@ -1143,6 +1143,7 @@
     "cancel": "Annuler",
     "draft_save": "Enregistrer PDF",
     "print_and_send": "Imprimer et envoyer →",
+    "pay_now_short": "Payer {amount} $",
     "demo_generate_disabled": "Mode démo — la génération de proforma est désactivée. Mets NEXT_PUBLIC_DEMO_ALLOWED=false dans frontend/.env.local et connecte-toi avec un vrai compte pour générer.",
     "contest_invoice": "Contester",
     "export_csv": "Exporter CSV",

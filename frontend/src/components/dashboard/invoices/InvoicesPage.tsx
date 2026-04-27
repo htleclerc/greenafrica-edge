@@ -374,7 +374,17 @@ export function InvoicesPage() {
             </div>
 
             {/* Pro-forma modal */}
-            {proForma && <ProFormaModal tx={proForma} onClose={() => setProForma(null)} />}
+            {proForma && (
+                <ProFormaModal
+                    tx={proForma}
+                    onClose={() => setProForma(null)}
+                    onPayNow={() => {
+                        const tx = proForma;
+                        setProForma(null);
+                        handlePayNow(tx);
+                    }}
+                />
+            )}
 
             {/* Wire transfer instructions modal */}
             {wireInstructions && (

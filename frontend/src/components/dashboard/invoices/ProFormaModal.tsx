@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Printer, Ship, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Transaction, TransactionType, JurisdictionZone } from '@/types/secure';
+import { Transaction, TransactionType, JurisdictionZone, UserRole } from '@/types/secure';
 import { OsButton } from '@/components/ui/OsButton';
 import { useVessels } from '@/hooks/useVessels';
 import { useTaxConfigs } from '@/hooks/useTaxConfigs';
@@ -16,13 +16,15 @@ interface ProFormaModalProps {
     tx: Transaction;
     onClose: () => void;
     onSent?: () => void;
+    onPayNow?: () => void;
 }
 
 type SendStatus = 'idle' | 'generating' | 'success' | 'error';
 
-export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
+export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalProps) {
     const t = useTranslations('InvoicesPage');
-    const { isDemo } = useRole();
+    const { isDemo, role } = useRole();
+    const isArmateur = role === UserRole.SHIPPING_AGENT;
     const { data: vessels } = useVessels();
     const { data: taxConfigs } = useTaxConfigs();
 
@@ -209,17 +211,29 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <OsButton
-                            variant="primary"
-                            size="sm"
-                            icon={isBusy && lastAction === 'printSave'
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <Printer className="w-3.5 h-3.5" />}
-                            onClick={handlePrintSave}
-                            disabled={isBusy || isDemo}
-                        >
-                            {isBusy && lastAction === 'printSave' ? t('print_save_pdf') + '…' : t('print_save_pdf')}
-                        </OsButton>
+                        {isArmateur ? (
+                            <OsButton
+                                variant="primary"
+                                size="sm"
+                                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                                onClick={() => onPayNow?.()}
+                                disabled={!onPayNow || isDemo}
+                            >
+                                {t('pay_now_short', { amount: tx.taxAmountUsd.toLocaleString() })}
+                            </OsButton>
+                        ) : (
+                            <OsButton
+                                variant="primary"
+                                size="sm"
+                                icon={isBusy && lastAction === 'sendEmail'
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : <Printer className="w-3.5 h-3.5" />}
+                                onClick={handleSendEmail}
+                                disabled={isBusy || isDemo}
+                            >
+                                {isBusy && lastAction === 'sendEmail' ? 'Sending…' : t('print_and_send')}
+                            </OsButton>
+                        )}
                         <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)] transition-colors">
                             <X className="w-4 h-4" />
                         </button>
@@ -617,11 +631,11 @@ export function ProFormaModal({ tx, onClose, onSent }: ProFormaModalProps) {
                         <OsButton
                             variant="primary"
                             size="sm"
-                            icon={isBusy && lastAction === 'sendEmail' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
-                            onClick={handleSendEmail}
+                            icon={isBusy && lastAction === 'printSave' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                            onClick={handlePrintSave}
                             disabled={isBusy || isDemo}
                         >
-                            {isBusy && lastAction === 'sendEmail' ? 'Sending…' : t('print_and_send')}
+                            {isBusy && lastAction === 'printSave' ? t('print_save_pdf') + '…' : t('print_save_pdf')}
                         </OsButton>
                     </div>
                 </div>
