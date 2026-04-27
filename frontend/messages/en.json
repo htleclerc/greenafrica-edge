@@ -1106,6 +1106,7 @@
     "audit_sent_to_agent": "Sent to Agent",
     "audit_viewed_by_recipient": "Viewed by Recipient",
     "generate_proforma_pdf": "Generate Pro-forma Invoice (PDF)",
+    "view_proforma_pdf": "View Pro-forma (PDF)",
     "view_tax_invoice": "View Tax Invoice (PDF)",
     "proforma_preview_title": "Pro-forma Invoice Preview",
     "print_save_pdf": "Print PDF",
