@@ -10,6 +10,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useRole } from '@/lib/RoleContext';
 import { SecureVessel, VesselComplianceStatus, VesselCategory, UserRole, Transaction, TransactionStatus } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
+import { AddVesselModal } from './AddVesselModal';
 
 // ── Status → Action mapping ──────────────────────────────────────────────────
 // Each compliance status maps to a context-appropriate primary action.
@@ -106,12 +107,13 @@ type FilterStatus = 'ALL' | VesselComplianceStatus;
 export function VesselsPage() {
     const t = useTranslations('VesselsPage');
     const { role } = useRole();
-    const { data: vessels } = useVessels();
+    const { data: vessels, refetch } = useVessels();
     const { data: kpis } = useKpis();
     const { data: transactions } = useTransactions();
     const [search, setSearch]       = React.useState('');
     const [filterStatus, setFilter] = React.useState<FilterStatus>('ALL');
     const [selected, setSelected]   = React.useState<string | null>(null);
+    const [addOpen, setAddOpen]     = React.useState(false);
 
     const isArmateur = isArmateurRole(role);
     const actionMap  = isArmateur ? ARMATEUR_ACTION : STAFF_ACTION;
@@ -194,7 +196,10 @@ export function VesselsPage() {
                         <Download className="w-3.5 h-3.5" />
                         {t('export_csv')}
                     </button>
-                    <button className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors shadow-[0_0_10px_rgba(0,217,126,0.2)]">
+                    <button
+                        onClick={() => setAddOpen(true)}
+                        className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors shadow-[0_0_10px_rgba(0,217,126,0.2)]"
+                    >
                         <Plus className="w-3.5 h-3.5" />
                         {t('manual_entry')}
                     </button>
@@ -279,6 +284,12 @@ export function VesselsPage() {
                     documents={transactions.filter((tx) => tx.vesselId === vessel.id)}
                 />
             )}
+
+            <AddVesselModal
+                open={addOpen}
+                onClose={() => setAddOpen(false)}
+                onCreated={refetch}
+            />
         </div>
     );
 }

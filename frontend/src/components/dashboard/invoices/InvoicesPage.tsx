@@ -604,7 +604,14 @@ function InvoiceDetail({
                 <TransactionAuditTrail transactionId={tx.id} />
             )}
 
-            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status */}
+            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status & role.
+              * Armateurs (SHIPPING_AGENT) ne voient PAS le bouton "Generate Pro-forma":
+              * le pro-forma est émis par l'autorité portuaire et envoyé par email,
+              * l'armateur n'a pas vocation à le re-générer (sinon risque de copies
+              * divergentes hors audit trail). Ils gardent les autres branches:
+              * - PAID + receipt URL → Download Official Receipt
+              * - PAID sans receipt → View tax invoice (lecture seule du doc émis)
+              */}
             {isPaid && tx.receiptPdfUrl ? (
                 // PAID with a real receipt PDF — open the receipt directly
                 <a
@@ -622,8 +629,8 @@ function InvoiceDetail({
                         Download Official Receipt (PDF)
                     </OsButton>
                 </a>
-            ) : (
-                // Unpaid (or paid without a generated receipt yet) — open the modal
+            ) : isPaid ? (
+                // Paid without a generated receipt yet — view tax invoice (tous rôles)
                 <OsButton
                     variant="primary"
                     size="md"
@@ -631,9 +638,20 @@ function InvoiceDetail({
                     onClick={onGenerateProForma}
                     className="w-full"
                 >
-                    {isPaid ? t('view_tax_invoice') : (isArmateur ? t('view_proforma_pdf') : t('generate_proforma_pdf'))}
+                    {t('view_tax_invoice')}
                 </OsButton>
-            )}
+            ) : role !== UserRole.SHIPPING_AGENT ? (
+                // Unpaid + non-armateur (autorité portuaire, admin) — Generate Pro-forma
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {t('generate_proforma_pdf')}
+                </OsButton>
+            ) : null}
         </div>
     );
 }
