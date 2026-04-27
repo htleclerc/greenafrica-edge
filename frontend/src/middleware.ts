@@ -7,6 +7,11 @@ import { updateSession } from '@/lib/supabase/middleware';
 // invitation link is expired or the cookies were cleared; bounce to /login.
 const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/auth/setup-password'];
 
+// Owner portal: same gate, but unauthenticated visits go to /owner/login
+// (NOT /login — staff and owner entry points are deliberately separate).
+const OWNER_PROTECTED_PREFIX = '/owner';
+const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/auth/callback'];
+
 // Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
 const AUTH_ROUTES = ['/login', '/post-login'];
 
@@ -36,9 +41,23 @@ export async function middleware(request: NextRequest) {
     const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
     const isPublicAuth = PUBLIC_AUTH_ROUTES.some((p) => pathname.startsWith(p));
 
+    const isOwnerPublic = OWNER_PUBLIC_PATHS.some(
+        (p) => pathname === p || pathname.startsWith(`${p}/`),
+    );
+    const isOwnerProtected =
+        pathname.startsWith(OWNER_PROTECTED_PREFIX) && !isOwnerPublic;
+
     // Public auth routes — always pass through
-    if (isPublicAuth) {
+    if (isPublicAuth || isOwnerPublic) {
         return supabaseResponse;
+    }
+
+    // Owner portal — unauthenticated visits redirect to /owner/login (not /login)
+    if (isOwnerProtected && !user) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/owner/login';
+        url.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(url);
     }
 
     // Not logged in AND not in demo → redirect to /login
