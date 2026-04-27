@@ -651,7 +651,19 @@ function InvoiceDetail({
                 >
                     {t('generate_proforma_pdf')}
                 </OsButton>
-            ) : null}
+            ) : (
+                // Unpaid + armateur — view the pro-forma the system already
+                // minted (same modal handler, just labeled for the debtor side).
+                <OsButton
+                    variant="secondary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {t('view_proforma_pdf')}
+                </OsButton>
+            )}
         </div>
     );
 }
