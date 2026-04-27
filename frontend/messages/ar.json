@@ -2465,6 +2465,43 @@
     "active": "Active",
     "empty": "No mappings yet. Add one to enable cascade A."
   },
+  "AdminOriginPort": {
+    "title": "Origin port proposals",
+    "subtitle": "AIS destination strings that matched Berbera or Zeila with sufficient fuzzy confidence. Approve to add to the allow-list; reject to discard.",
+    "count": "{count} pending",
+    "empty": "No pending proposals.",
+    "col": {
+      "mmsi": "MMSI",
+      "vessel": "Vessel",
+      "raw": "Raw destination",
+      "normalized": "Normalized",
+      "guess": "Port guess",
+      "score": "Score",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "approveDialog": {
+      "title": "Approve proposal",
+      "portLabel": "Assign to port",
+      "addToAllowList": "Add normalized string to allow-list",
+      "createAlert": "Create arrival alert (if MMSI eligible)",
+      "submit": "Approve",
+      "submitting": "Approving…",
+      "cancel": "Cancel"
+    },
+    "rejectDialog": {
+      "title": "Reject proposal",
+      "reasonLabel": "Reason (required)",
+      "reasonPlaceholder": "Why is this proposal rejected? (visible in audit trail)",
+      "submit": "Reject",
+      "submitting": "Rejecting…",
+      "cancel": "Cancel"
+    }
+  },
   "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into ar",
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",

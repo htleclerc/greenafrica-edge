@@ -111,3 +111,15 @@ func (r *Reader) GetStringSlice(ctx context.Context, key string) ([]string, erro
 	}
 	return v, nil
 }
+
+// GetJSON unmarshals the JSON value at key into out. Uses the 60s TTL cache.
+func (r *Reader) GetJSON(ctx context.Context, key string, out any) error {
+	raw, err := r.getRaw(ctx, key)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(raw, out); err != nil {
+		return fmt.Errorf("appconfig %q: unmarshal: %w", key, err)
+	}
+	return nil
+}
