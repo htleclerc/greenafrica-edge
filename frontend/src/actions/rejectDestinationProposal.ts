@@ -41,6 +41,18 @@ export async function rejectDestinationProposal(
     if (!url || !key) return { ok: false, reason: 'service role not configured' };
     const admin = createServiceRole(url, key, { auth: { persistSession: false } });
 
+    // 1. Load proposal, ensure PENDING
+    const { data: proposal } = await admin
+        .from('destination_match_proposals')
+        .select('id, status')
+        .eq('id', parsed.data.proposalId)
+        .single();
+    if (!proposal) return { ok: false, reason: 'proposal not found' };
+    if (proposal.status !== 'PENDING') {
+        return { ok: false, reason: 'proposal not pending' };
+    }
+
+    // 2. Update proposal to REJECTED
     const { error } = await admin
         .from('destination_match_proposals')
         .update({

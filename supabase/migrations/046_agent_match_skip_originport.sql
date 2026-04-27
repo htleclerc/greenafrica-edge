@@ -2,7 +2,7 @@
 -- Migration 046 — Plan 8: agent-match cron skips ORIGINPORT
 --
 -- Replaces the function body from migration 034 so alerts produced by the
--- new origin-port detector stay DETECTED (unprocessed) regardless of any
+-- new origin-port detector stay UNCLAIMED (unprocessed) regardless of any
 -- cascade match in owner_agent_mappings. Rationale: scenario A has 1-3 weeks
 -- lead time; info can change in transit; humans must confirm before pro-forma
 -- fires.
@@ -66,4 +66,4 @@ $$;
 COMMENT ON FUNCTION public.match_pending_alerts IS
   'Run cascade A for DETECTED arrival_alerts, skipping ORIGINPORT alerts (Plan 8). '
   'Transitions to MATCHED_AUTO + enqueues pgmq.proforma_queue, or UNCLAIMED when no mapping exists. '
-  'ORIGINPORT alerts are skipped entirely and remain DETECTED for human review.';
+  'ORIGINPORT alerts are skipped entirely and remain UNCLAIMED for human review.';

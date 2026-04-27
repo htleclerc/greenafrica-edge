@@ -35,6 +35,35 @@ describe('rejectDestinationProposal', () => {
         expect(r).toEqual({ ok: false, reason: 'insufficient role' });
     });
 
+    it('rejects non-PENDING proposals', async () => {
+        supabaseMock.from.mockReturnValue({
+            select: () => ({
+                eq: () => ({
+                    single: async () => ({ data: { role: 'PORT_OFFICER' } }),
+                }),
+            }),
+        });
+        adminMock.from.mockImplementation((table: string) => {
+            if (table === 'destination_match_proposals') {
+                return {
+                    select: () => ({
+                        eq: () => ({
+                            single: async () => ({
+                                data: { id: 'p1', status: 'APPROVED' },
+                            }),
+                        }),
+                    }),
+                };
+            }
+            return {};
+        });
+        const r = await rejectDestinationProposal({
+            proposalId: '11111111-1111-4111-8111-111111111111',
+            note: 'wrong port',
+        });
+        expect(r).toEqual({ ok: false, reason: 'proposal not pending' });
+    });
+
     it('happy path: marks REJECTED with note', async () => {
         supabaseMock.from.mockReturnValue({
             select: () => ({
@@ -42,14 +71,24 @@ describe('rejectDestinationProposal', () => {
             }),
         });
         let updated = false;
-        adminMock.from.mockImplementation(() => ({
-            update: () => ({
-                eq: async () => {
-                    updated = true;
-                    return { error: null };
-                },
-            }),
-        }));
+        adminMock.from.mockImplementation((table: string) => {
+            if (table === 'destination_match_proposals') {
+                return {
+                    select: () => ({
+                        eq: () => ({
+                            single: async () => ({ data: { id: 'p1', status: 'PENDING' } }),
+                        }),
+                    }),
+                    update: () => ({
+                        eq: async () => {
+                            updated = true;
+                            return { error: null };
+                        },
+                    }),
+                };
+            }
+            return {};
+        });
         const r = await rejectDestinationProposal({
             proposalId: '11111111-1111-4111-8111-111111111111',
             note: 'wrong port',
