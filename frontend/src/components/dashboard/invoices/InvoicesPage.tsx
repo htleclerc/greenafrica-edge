@@ -374,7 +374,17 @@ export function InvoicesPage() {
             </div>
 
             {/* Pro-forma modal */}
-            {proForma && <ProFormaModal tx={proForma} onClose={() => setProForma(null)} />}
+            {proForma && (
+                <ProFormaModal
+                    tx={proForma}
+                    onClose={() => setProForma(null)}
+                    onPayNow={() => {
+                        const tx = proForma;
+                        setProForma(null);
+                        handlePayNow(tx);
+                    }}
+                />
+            )}
 
             {/* Wire transfer instructions modal */}
             {wireInstructions && (
@@ -426,7 +436,8 @@ function InvoiceDetail({
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
-    const canContest = role === UserRole.SHIPPING_AGENT && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
+    const isArmateur = role === UserRole.SHIPPING_AGENT;
+    const canContest = isArmateur && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
@@ -455,10 +466,12 @@ function InvoiceDetail({
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <OsButton variant="secondary" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={onGenerateProForma}>
-                        {t('generate_statement')}
-                    </OsButton>
-                    {!isPaid && (
+                    {!isArmateur && (
+                        <OsButton variant="secondary" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={onGenerateProForma}>
+                            {t('generate_statement')}
+                        </OsButton>
+                    )}
+                    {!isPaid && !isArmateur && (
                         <OsButton
                             variant="primary"
                             size="sm"
@@ -618,7 +631,7 @@ function InvoiceDetail({
                     onClick={onGenerateProForma}
                     className="w-full"
                 >
-                    {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
+                    {isPaid ? t('view_tax_invoice') : (isArmateur ? t('view_proforma_pdf') : t('generate_proforma_pdf'))}
                 </OsButton>
             )}
         </div>
