@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard } from 'lucide-react';
+import { Download, CreditCard, Scale } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { PayProformaDialog } from './PayProformaDialog';
+import { OpenDisputeDialog } from './OpenDisputeDialog';
 
 export interface InvoiceRow {
     id: string;
@@ -54,9 +55,13 @@ interface Props {
 
 export function InvoicesTable({ rows }: Props) {
     const [payTarget, setPayTarget] = React.useState<InvoiceRow | null>(null);
+    const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
 
     const isPayable = (r: InvoiceRow) =>
         r.document_type === 'PROFORMA' && r.status === 'PENDING' && !r.has_pending_intent;
+    const isDisputable = (r: InvoiceRow) =>
+        (r.document_type === 'PROFORMA' || r.document_type === 'FINAL' || r.document_type === 'COMPLEMENT') &&
+        r.status !== 'CANCELLED';
 
     const columns: OsColumn<InvoiceRow>[] = [
         {
@@ -129,6 +134,17 @@ export function InvoicesTable({ rows }: Props) {
                             PDF
                         </a>
                     )}
+                    {isDisputable(r) && (
+                        <button
+                            onClick={() => setDisputeTarget(r)}
+                            className="inline-flex items-center gap-1 text-xs text-[var(--os-text-muted)] hover:text-[#F59E0B] transition-colors"
+                            aria-label={`Dispute ${r.invoice_ref ?? r.id}`}
+                            title="Open a dispute on this charge"
+                        >
+                            <Scale className="w-3.5 h-3.5" />
+                            Dispute
+                        </button>
+                    )}
                     {isPayable(r) && (
                         <OsButton
                             size="sm"
@@ -159,6 +175,14 @@ export function InvoicesTable({ rows }: Props) {
                     transactionId={payTarget.id}
                     invoiceRef={payTarget.invoice_ref ?? payTarget.id.slice(0, 8)}
                     amountUsd={Number(payTarget.tax_amount_usd)}
+                />
+            )}
+            {disputeTarget && (
+                <OpenDisputeDialog
+                    open={true}
+                    onOpenChange={(o) => !o && setDisputeTarget(null)}
+                    transactionId={disputeTarget.id}
+                    invoiceRef={disputeTarget.invoice_ref ?? disputeTarget.id.slice(0, 8)}
                 />
             )}
         </>
