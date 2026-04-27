@@ -55,3 +55,16 @@ func TestGetStringSlice_Languages(t *testing.T) {
 		t.Fatalf("languages = %v, want %v", got, want)
 	}
 }
+
+func TestGetJSON_AllowList(t *testing.T) {
+	r := openTestDB(t)
+	var got map[string]interface{}
+	err := r.GetJSON(context.Background(), "arrival.origin_port_allow_list", &got)
+	if err != nil {
+		t.Fatalf("GetJSON: %v", err)
+	}
+	// Verify the JSON was parsed into a map (allowing for any valid structure)
+	if got == nil {
+		t.Fatalf("GetJSON returned nil map, want populated map")
+	}
+}
