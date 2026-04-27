@@ -1025,6 +1025,7 @@
     "action_adopt_decree": "Adopter le décret CH-8",
     "action_adopt_decree_sub": "Mise à jour de la politique de compensation carbone requise.",
     "action_generate_proforma": "Générer la pro-forma : {name}",
+    "action_pay_proforma_for": "Payer la pro-forma : {name}",
     "action_proforma_sub": "{amount} $ dû — IMO {imo}",
     "project_certification_title": "Certification des projets",
     "project_mangrove": "Restauration des mangroves",

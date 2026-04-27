@@ -1025,6 +1025,7 @@
     "action_adopt_decree": "Adopt Decree CH-8",
     "action_adopt_decree_sub": "Carbon offset policy update required.",
     "action_generate_proforma": "Generate Pro-forma: {name}",
+    "action_pay_proforma_for": "Pay pro-forma: {name}",
     "action_proforma_sub": "${amount} due — IMO {imo}",
     "project_certification_title": "Project Certification",
     "project_mangrove": "Mangrove Restoration",

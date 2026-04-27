@@ -1,20 +1,50 @@
 'use client';
 
 import * as React from 'react';
-import { FileText, Leaf, ArrowRight, AlertTriangle } from 'lucide-react';
+import { FileText, Leaf, ArrowRight, AlertTriangle, CreditCard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useVessels } from '@/hooks/useVessels';
 import { useKpis } from '@/hooks/useKpis';
-import { VesselComplianceStatus } from '@/types/secure';
+import { useRole } from '@/lib/RoleContext';
+import { UserRole, VesselComplianceStatus } from '@/types/secure';
 
 export function PendingActionsPanel() {
     const t = useTranslations('Overview');
+    const { role } = useRole();
     const { data: vessels } = useVessels();
     const { data: kpis } = useKpis();
+    const isArmateur = role === UserRole.SHIPPING_AGENT;
     const unpaid = vessels.filter(
         (v) => v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE ||
                v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT
     );
+
+    // Armateur view: pay-due vessels only. No sovereign protocol/decree work,
+    // no government carbon projects, no staff alert summary — those concern
+    // the authority side. Hide the whole right column when there's nothing
+    // pending so we don't render an empty card.
+    if (isArmateur) {
+        if (unpaid.length === 0) return null;
+        return (
+            <div className="flex flex-col gap-4">
+                <div className="os-card p-3 sm:p-5">
+                    <h3 className="text-sm font-semibold text-[var(--os-text-primary)] mb-4">{t('pending_actions_title')}</h3>
+                    <div className="flex flex-col gap-2">
+                        {unpaid.map((v) => (
+                            <ActionItem
+                                key={v.id}
+                                icon={<CreditCard className="w-4 h-4" />}
+                                title={t('action_pay_proforma_for', { name: v.name })}
+                                sub={t('action_proforma_sub', { amount: v.taxLiabilityUsd.toLocaleString(), imo: v.imoNumber })}
+                                href={`/dashboard/invoices?vessel=${v.imoNumber}`}
+                                color="#EF4444"
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-4">
