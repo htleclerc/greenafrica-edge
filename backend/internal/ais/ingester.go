@@ -17,7 +17,9 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/eez"
 )
 
-// AIS message from aisstream.io
+// AIS message from aisstream.io. Two MessageType values are handled:
+//   - "PositionReport" — Lat/Lng/SOG (existing corridor + EEZ path)
+//   - "ShipStaticData" — IMO/Destination/ETA (Plan 8 origin-port detection)
 type AISMessage struct {
 	MessageType string `json:"MessageType"`
 	MetaData    struct {
@@ -34,7 +36,40 @@ type AISMessage struct {
 			Sog         float64 `json:"Sog"`
 			TrueHeading int     `json:"TrueHeading"`
 		} `json:"PositionReport"`
+		ShipStaticData *struct {
+			ImoNumber            int         `json:"ImoNumber"`
+			Destination          string      `json:"Destination"`
+			Eta                  AISETAField `json:"Eta"`
+			CallSign             string      `json:"CallSign"`
+			Type                 int         `json:"Type"`
+			MaximumStaticDraught float64     `json:"MaximumStaticDraught"`
+		} `json:"ShipStaticData"`
 	} `json:"Message"`
+}
+
+// AISETAField mirrors aisstream.io's ETA payload (4 ints, no year).
+type AISETAField struct {
+	Month  int `json:"Month"`
+	Day    int `json:"Day"`
+	Hour   int `json:"Hour"`
+	Minute int `json:"Minute"`
+}
+
+// DecodeETA turns an AIS-5 ETA (no year) into an absolute UTC time using
+// "if past, roll to next year" heuristic. Returns zero time if any field
+// is sentinel-invalid (Month==0, Day==0, Hour>23, Minute>59).
+func DecodeETA(eta AISETAField, now time.Time) time.Time {
+	if eta.Month == 0 || eta.Day == 0 || eta.Hour > 23 || eta.Minute > 59 ||
+		eta.Month < 1 || eta.Month > 12 || eta.Day < 1 || eta.Day > 31 {
+		return time.Time{}
+	}
+	year := now.UTC().Year()
+	candidate := time.Date(year, time.Month(eta.Month), eta.Day,
+		eta.Hour, eta.Minute, 0, 0, time.UTC)
+	if candidate.Before(now.UTC()) {
+		candidate = candidate.AddDate(1, 0, 0)
+	}
+	return candidate
 }
 
 // Ingester manages the AIS WebSocket connection and writes positions to Supabase.
