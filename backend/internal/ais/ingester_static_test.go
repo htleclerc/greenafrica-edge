@@ -98,3 +98,33 @@ func TestDecodeETA_PreservesPositionReportSchema(t *testing.T) {
 		t.Errorf("Sog = %v", msg.Message.PositionReport.Sog)
 	}
 }
+
+func TestDispatchByMessageType(t *testing.T) {
+	var routedTo string
+	dispatch := func(msg AISMessage,
+		onPosition func(AISMessage),
+		onStatic func(AISMessage)) {
+		switch msg.MessageType {
+		case "PositionReport":
+			onPosition(msg)
+		case "ShipStaticData":
+			onStatic(msg)
+		}
+	}
+	for _, c := range []struct {
+		msgType string
+		want    string
+	}{
+		{"PositionReport", "corridor"},
+		{"ShipStaticData", "originport"},
+		{"unknown", ""},
+	} {
+		routedTo = ""
+		dispatch(AISMessage{MessageType: c.msgType},
+			func(AISMessage) { routedTo = "corridor" },
+			func(AISMessage) { routedTo = "originport" })
+		if routedTo != c.want {
+			t.Errorf("MessageType=%s routed to %q, want %q", c.msgType, routedTo, c.want)
+		}
+	}
+}

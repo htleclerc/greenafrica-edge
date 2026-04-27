@@ -59,8 +59,9 @@ func main() {
 	alertsHandler := alerts.NewHandler(db)
 	mux.HandleFunc("GET /api/v1/alerts/{id}/distance-final", alertsHandler.DistanceFinal)
 
-	// AIS (now with corridor + eez hooks)
-	aisHandler := ais.NewHandler(cfg, db, watcher, tracker)
+	// AIS (corridor + eez + originport hooks).
+	// nil = originport.Watcher not yet wired (Task 10 will replace nil with real watcher).
+	aisHandler := ais.NewHandler(cfg, db, watcher, tracker, nil)
 	mux.HandleFunc("GET /api/v1/ais/status", aisHandler.Status)
 	mux.HandleFunc("POST /api/v1/ais/start", aisHandler.Start)
 	mux.HandleFunc("POST /api/v1/ais/stop", aisHandler.Stop)
