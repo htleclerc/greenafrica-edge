@@ -26,6 +26,7 @@ import { UserRole } from '@/types/secure';
  * │ audit            │ ✓            │ ✗            │ ✗             │ ✓            │ read     │
  * ├──── money rail ──┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
  * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │ ✗        │
+ * │ origin-port-prop │ ✓            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
@@ -57,6 +58,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
 
     // Money rail (MANAGER explicitly excluded — see MONEY_RAIL_KEYS below)
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'origin-port-proposals': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
