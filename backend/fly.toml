@@ -1,5 +1,16 @@
 # Fly.io deployment config for AfricgreenOS Go backend
 # Deploy: fly deploy --config backend/fly.toml
+#
+# Two process groups in one Fly app:
+#   - api      → cmd/api binary, public HTTP on :8080
+#   - scraper  → cmd/scraper binary, no public ports (background worker)
+#
+# Scale independently:
+#   fly scale count api=1 scraper=0   # default — scraper off
+#   fly scale count scraper=1          # turn scraper on (still gated by
+#                                      # feature.equasis_scraper_enabled)
+# Restart one without touching the other:
+#   fly machine restart <id>           # find via `fly machines list`
 
 app = "africgreen-api"
 primary_region = "cdg" # Paris (closest to East Africa with good latency)
@@ -10,12 +21,17 @@ primary_region = "cdg" # Paris (closest to East Africa with good latency)
 [env]
   PORT = "8080"
 
+[processes]
+  api = "/africgreen-api"
+  scraper = "/africgreen-scraper"
+
 [http_service]
   internal_port = 8080
   force_https = true
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
+  processes = ["api"]
 
 [[http_service.checks]]
   grace_period = "10s"
