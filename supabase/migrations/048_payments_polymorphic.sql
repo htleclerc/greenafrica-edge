@@ -67,46 +67,23 @@ CREATE TRIGGER payments_updated_at
   BEFORE UPDATE ON public.payments
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- 3. Migrate existing rows from shipowner_payment_intents (Plan 6 v0)
--- (likely empty in prod, but executed for safety)
-INSERT INTO public.payments (
-  id, transaction_id, shipowner_id, declared_by,
-  amount_minor, currency, amount_usd_minor,
-  rail, rail_details, status, created_at, updated_at
-)
-SELECT
-  pi.id,
-  pi.transaction_id,
-  -- pi.declared_by is the profile that declared the intent; resolve to its shipowner
-  (SELECT s.id FROM public.shipowners s WHERE s.profile_id = pi.declared_by LIMIT 1),
-  pi.declared_by,
-  COALESCE((t.tax_amount_usd * 100)::BIGINT, 0),
-  'USD',
-  COALESCE((t.tax_amount_usd * 100)::BIGINT, 0),
-  'WIRE_TRANSFER'::public.payment_rail,
-  jsonb_build_object('legacy_v0', true, 'reference', pi.reference),
-  CASE pi.status::TEXT
-    WHEN 'DECLARED'  THEN 'INITIATED'::public.payment_status_v7
-    WHEN 'CONFIRMED' THEN 'CONFIRMED'::public.payment_status_v7
-    WHEN 'REJECTED'  THEN 'REJECTED'::public.payment_status_v7
-  END,
-  pi.declared_at,
-  pi.updated_at
-FROM public.shipowner_payment_intents pi
-LEFT JOIN public.transactions t ON t.id = pi.transaction_id
-WHERE EXISTS (SELECT 1 FROM public.shipowners s WHERE s.profile_id = pi.declared_by);
+-- 3. Phase A keeps the legacy table coexisting.
+--    Plan 6 v0 frontend (paymentIntentService, declarePaymentIntent,
+--    resolvePaymentIntent, /owner/invoices) still writes to
+--    shipowner_payment_intents. Phase C of Plan 7 will:
+--      a) cut frontend over to public.payments,
+--      b) backfill legacy → payments,
+--      c) DROP TABLE shipowner_payment_intents.
+--    Until then BOTH tables exist; the new one is empty / used by Phase 7B+.
 
--- 4. Drop legacy table (data migrated above)
-DROP TABLE IF EXISTS public.shipowner_payment_intents CASCADE;
-DROP TYPE IF EXISTS public.shipowner_payment_intent_status;
-
--- 5. Enable RLS (policies added in Phase B/C; Phase A creates structure only)
+-- 4. Enable RLS (policies added in Phase B/C; Phase A creates structure only)
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON TABLE public.payments IS
-  'Plan 7 v1: polymorphic payment row, one row per attempt. Rail-specific data in rail_details JSONB.';
+  'Plan 7 v1: polymorphic payment row, one row per attempt. Rail-specific data in rail_details JSONB. Coexists with shipowner_payment_intents (Plan 6 v0) until Phase C cuts the frontend over.';
 
 -- DOWN:
--- DROP TABLE public.payments CASCADE;
+-- DROP TABLE public.payments CASCADE;       -- cascades to payment_proofs (mig 049)
 -- DROP TYPE public.payment_status_v7;
 -- DROP TYPE public.payment_rail;
+-- NB: legacy public.shipowner_payment_intents is intentionally NOT touched in this migration.

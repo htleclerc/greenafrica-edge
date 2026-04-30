@@ -11,7 +11,7 @@ CREATE TABLE public.fx_rates (
   fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (base_ccy, quote_ccy, fetched_at)
 );
-CREATE INDEX idx_fx_recent ON public.fx_rates(quote_ccy, fetched_at DESC);
+CREATE INDEX idx_fx_recent ON public.fx_rates(base_ccy, quote_ccy, fetched_at DESC);
 
 COMMENT ON TABLE public.fx_rates IS
   'Plan 7 v1: cached FX rates. Multi-row history per (base,quote). Latest = ORDER BY fetched_at DESC LIMIT 1.';

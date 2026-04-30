@@ -69,6 +69,18 @@ CREATE TRIGGER trg_ledger_apply
   AFTER INSERT ON public.wallet_ledger
   FOR EACH ROW EXECUTE FUNCTION public.apply_ledger_to_wallet();
 
+-- Append-only enforcement: financial ledger must not be mutated.
+-- Even service_role is forbidden from UPDATE/DELETE on ledger rows.
+-- Same pattern as audit_logs tamper chain (mig 018).
+CREATE FUNCTION public.prevent_ledger_mutation() RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'wallet_ledger is append-only: % is forbidden', TG_OP;
+END $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_ledger_immutable
+  BEFORE UPDATE OR DELETE ON public.wallet_ledger
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_ledger_mutation();
+
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallet_ledger ENABLE ROW LEVEL SECURITY;
 

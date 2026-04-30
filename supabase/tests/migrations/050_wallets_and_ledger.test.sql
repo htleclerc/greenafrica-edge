@@ -87,6 +87,18 @@ BEGIN
     INSERT INTO public.wallets (shipowner_id) VALUES ('aaaaaaaa-0000-0000-0000-000000000001');
     RAISE EXCEPTION 'TEST FAILED: duplicate wallet for shipowner accepted';
   EXCEPTION WHEN unique_violation THEN NULL; END;
+
+  -- 13. Append-only: UPDATE on wallet_ledger forbidden
+  BEGIN
+    UPDATE public.wallet_ledger SET amount_signed_usd_minor = 0 WHERE wallet_id = wA;
+    RAISE EXCEPTION 'TEST FAILED: wallet_ledger UPDATE accepted';
+  EXCEPTION WHEN raise_exception THEN NULL; END;
+
+  -- 14. Append-only: DELETE on wallet_ledger forbidden
+  BEGIN
+    DELETE FROM public.wallet_ledger WHERE wallet_id = wA;
+    RAISE EXCEPTION 'TEST FAILED: wallet_ledger DELETE accepted';
+  EXCEPTION WHEN raise_exception THEN NULL; END;
 END $$;
 
 ROLLBACK;
