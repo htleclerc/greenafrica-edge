@@ -19,13 +19,15 @@ import { Redis } from '@upstash/redis';
  * failure (recommended in production — prevents silent downgrade to unlimited).
  */
 
-type LimiterKey = 'verify' | 'invoice-download' | 'signup';
+type LimiterKey = 'verify' | 'invoice-download' | 'signup' | 'signup-shipowner';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
     perMinute: number;
     /** Slower envelope — catches slow scrapers. */
     perHour: number;
+    /** Optional 24h cap for self-service signup paths. */
+    perDay?: number;
 }
 
 const LIMITS: Record<LimiterKey, Bucket> = {
@@ -42,6 +44,10 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // both account-creation spam and email-enumeration via the duplicate-email
     // check (returns 409 distinguishable from 200, A2 audit Task 7).
     signup: { perMinute: 5, perHour: 30 },
+
+    // Stricter than 'signup' because shipowner self-service is a higher-value
+    // attack vector (account-takeover via IMO enumeration). Spec §5.1.
+    'signup-shipowner': { perMinute: 2, perHour: 10, perDay: 3 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.
@@ -57,18 +63,24 @@ function getRedis(): Redis | null {
     return cachedRedis;
 }
 
-function getLimiter(key: LimiterKey, window: 'min' | 'hour'): Ratelimit | null {
+function getLimiter(key: LimiterKey, window: 'min' | 'hour' | 'day'): Ratelimit | null {
     const id = `${key}:${window}`;
     const cached = cachedLimiters.get(id);
     if (cached) return cached;
     const redis = getRedis();
     if (!redis) return null;
-    const { perMinute, perHour } = LIMITS[key];
+    const bucket = LIMITS[key];
+
+    // Return null if the requested window is not configured for this bucket.
+    if (window === 'day' && !bucket.perDay) return null;
+
     const limiter = new Ratelimit({
         redis,
         limiter: window === 'min'
-            ? Ratelimit.slidingWindow(perMinute, '1 m')
-            : Ratelimit.slidingWindow(perHour, '1 h'),
+            ? Ratelimit.slidingWindow(bucket.perMinute, '1 m')
+            : window === 'hour'
+            ? Ratelimit.slidingWindow(bucket.perHour, '1 h')
+            : Ratelimit.slidingWindow(bucket.perDay!, '24 h'),
         prefix: `ratelimit:${id}`,
         analytics: false,
     });
@@ -81,7 +93,7 @@ export interface RateLimitResult {
     skipped?: boolean;
     remaining?: number;
     reset?: number;
-    reason?: 'rate_limited_per_minute' | 'rate_limited_per_hour' | 'no_redis_strict';
+    reason?: 'rate_limited_per_minute' | 'rate_limited_per_hour' | 'rate_limited_per_day' | 'no_redis_strict';
 }
 
 function requireEnvInProd(): RateLimitResult | null {
@@ -95,9 +107,10 @@ function requireEnvInProd(): RateLimitResult | null {
 
 /**
  * Check whether an operation is allowed for the given client identifier
- * (typically an IP). Two sliding windows are enforced: per-minute (burst
- * protection) and per-hour (sustained scraper protection). If either is
- * exceeded, the request is rejected.
+ * (typically an IP). Up to three sliding windows are enforced: per-minute
+ * (burst protection), per-hour (sustained scraper protection), and optionally
+ * per-day (self-service signup path cap). If any window is exceeded, the
+ * request is rejected.
  */
 export async function enforceRateLimit(
     key: LimiterKey,
@@ -105,6 +118,7 @@ export async function enforceRateLimit(
 ): Promise<RateLimitResult> {
     const minute = getLimiter(key, 'min');
     const hour = getLimiter(key, 'hour');
+    const day = getLimiter(key, 'day');
 
     if (!minute || !hour) {
         const strict = requireEnvInProd();
@@ -131,6 +145,24 @@ export async function enforceRateLimit(
             reason: 'rate_limited_per_hour',
         };
     }
+
+    // Check per-day window if configured for this key.
+    if (day) {
+        const dayResult = await day.limit(clientId);
+        if (!dayResult.success) {
+            return {
+                allowed: false,
+                remaining: dayResult.remaining,
+                reset: dayResult.reset,
+                reason: 'rate_limited_per_day',
+            };
+        }
+        return {
+            allowed: true,
+            remaining: Math.min(minuteResult.remaining, hourResult.remaining, dayResult.remaining),
+        };
+    }
+
     return {
         allowed: true,
         remaining: Math.min(minuteResult.remaining, hourResult.remaining),
