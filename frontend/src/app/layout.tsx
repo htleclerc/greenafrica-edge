@@ -69,6 +69,14 @@ export default async function RootLayout({
                         __html: `(function(){try{var s=localStorage.getItem('africgreen_skin');s=s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald';document.documentElement.setAttribute('data-skin',s);document.documentElement.setAttribute('data-theme',s==='institutional'?'light':'dark')}catch(e){}})()`,
                     }}
                 />
+                {/* reCAPTCHA for shipowner registration */}
+                {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                    <script
+                        src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+                        async
+                        defer
+                    />
+                )}
             </head>
             <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${spaceGrotesk.variable} ${sora.variable}`} suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>

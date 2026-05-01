@@ -1,7 +1,8 @@
 # Carbon Tax Pro-Forma — Project Roadmap
 
-**Last updated**: 2026-04-27 after Plan 8 v0 merged (feat/ais-global-v0)
-**Master spec**: [`specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md`](specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md)
+**Last updated**: 2026-05-01 after Plan 7 Phase A + B merged + hosted DB push complete
+**Master spec (carbon tax)**: [`specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md`](specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md)
+**Master spec (Plan 7 — shipowner portal v1)**: [`specs/2026-05-01-shipowner-portal-v1-design.md`](specs/2026-05-01-shipowner-portal-v1-design.md)
 
 > Single pane of glass for this project. Start here when resuming in a new session.
 
@@ -9,16 +10,19 @@
 
 ## Current state
 
-### ✅ MVP feature-complete (5 plans, 63 commits on `develop`)
+### ✅ MVP feature-complete + Plan 7 onboarding shipped (Phases A + B)
 
-| Plan | Branch (merged) | Focus | Spec status line |
+| Plan | Branch (merged) | Focus | Status |
 |---|---|---|---|
-| 1 | `feat/carbon-tax-schema-foundation` | Schema foundation (mig 023-031, RLS, seeds, tests) | "Plan 1 status" |
-| 2 | `feat/carbon-tax-go-backend` | Go backend — corridor + EEZ + tax cascade + distance-final | "Plan 2 status" |
-| 3 | `feat/carbon-tax-proforma-pipeline` | Pro-forma pipeline — agent-match, worker, claim UI | "Plan 3 status" |
-| 4 | `feat/carbon-tax-reconciliation` | Reconciliation — DEPARTED_EEZ → FINAL/COMPLEMENT/REFUND | "Plan 4 status" |
-| 5 | `feat/carbon-tax-admin-escalation` | Admin surfaces + owner escalation + A2 audit | "Plan 5 status" |
-| 8 | `feat/ais-global-v0` | AIS global origin-port detection (Phase 2) | "Plan 8 status" |
+| 1 | `feat/carbon-tax-schema-foundation` | Schema foundation (mig 023-031, RLS, seeds, tests) | merged |
+| 2 | `feat/carbon-tax-go-backend` | Go backend — corridor + EEZ + tax cascade + distance-final | merged |
+| 3 | `feat/carbon-tax-proforma-pipeline` | Pro-forma pipeline — agent-match, worker, claim UI | merged |
+| 4 | `feat/carbon-tax-reconciliation` | Reconciliation — DEPARTED_EEZ → FINAL/COMPLEMENT/REFUND | merged |
+| 5 | `feat/carbon-tax-admin-escalation` | Admin surfaces + owner escalation + A2 audit | merged |
+| 6 | `feat/shipowner-portal-v0` | Shipowner Portal v0 — read-only views + payment intent declaration | merged |
+| 7A | `feat/plan-7a-schema-foundation` | Plan 7 schema foundation — 8 mig (047-054): KYC, payments polymorph, wallets+ledger, refunds, notifications, fx_rates | **merged via PR #17 → propagated to develop, hosted pushed 2026-05-01** |
+| 7B | `feat/plan-7b-onboarding` | Plan 7 onboarding — self-service signup + admin review + KYC C wizard | **PR #18 OPEN against develop, hosted pushed 2026-05-01** |
+| 8 | `feat/ais-global-v0` | AIS global origin-port detection (Phase 2) | merged |
 
 ### End-to-end flow that works today
 
@@ -54,7 +58,25 @@ Port Officer at /admin/escalations → EscalateDialog → escalateToOwner action
 - **Admin**: `/admin/escalations` (Unclaimed + Unpaid panels + EscalateDialog)
 - **Admin**: `/admin/owner-agent-mappings` CRUD for cascade A
 - **Admin**: `/admin/tax-settings` extended with pipeline config + feature flags (SUPERADMIN-gated secrets)
+- **Admin (Plan 7B)**: `/admin/registrations` (PENDING_REVIEW filter, approve/reject/request-completion dialog)
+- **Owner (Plan 6 v0)**: `/owner/dashboard`, `/owner/vessels`, `/owner/invoices`, `/owner/alerts`
+- **Owner (Plan 7B)**: `/owner/register` (public self-service signup), `/owner/onboarding/billing` (KYC C wizard 3 steps), `/cgv` placeholder, KycCBanner in OwnerShell
 - **Go API**: `POST /api/v1/tax/calculate`, `GET /api/v1/alerts/:id/distance-final`, existing AIS + health
+
+### Plan 7 progress (Shipowner Portal v1)
+
+8-phase rollout per [`specs/2026-05-01-shipowner-portal-v1-design.md`](specs/2026-05-01-shipowner-portal-v1-design.md):
+
+| Phase | Status | Notes |
+|---|---|---|
+| **A — Schema foundation** | ✅ merged + hosted pushed | 8 migrations 047-054 — KYC, payments polymorph, wallets+ledger, refunds, notifications, fx_rates |
+| **B — Onboarding** | 🟢 PR #18 open against develop, hosted pushed | self-service signup + admin review + KYC C wizard + i18n EN/FR + IBAN Vault encryption + 3 E2E tests |
+| C — Payments core out-of-band | 🚧 next | PayDialog multi-rail (rails 2-9), /admin/payments refonte, cash-desk, reçu PDF, **frontend cutover** from legacy `shipowner_payment_intents` to new `payments` table + DROP legacy |
+| D — Stripe online | 🚧 gated by entité UK confirmation | Stripe Checkout + webhook handler + reconcile cron |
+| E — Wallet UX + top-up | 🚧 deferred | `/owner/wallet` page + prediction widget + auto-apply trigger |
+| F — Notifications | 🚧 deferred | `<NotificationBell>` + 16 templates Resend + reminders cron |
+| G — Refunds | 🚧 deferred | `/admin/refunds` multi-rail flow + Plan 4 hookage |
+| H — i18n AR/PT/SW + final E2E + canary | 🚧 deferred | Translations humaines + Playwright suite + canary 21j |
 
 ---
 
@@ -248,7 +270,7 @@ SUPABASE_SERVICE_ROLE_KEY="$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY'
 
 Paste this into a fresh Claude Code session to get context fast:
 
-> We've completed Plans 1-5 of the AfricGreen carbon tax pro-forma pipeline (63 commits on `develop`, now at `d7576b8`, pushed to origin). Read `docs/superpowers/ROADMAP.md` for the full state. I want to work on **[pick one: B1 dev-server secrets / B2 A2 signup fixes / Phase 2 shipowner portal / etc]**.
+> We've shipped Plans 1-6 (MVP + Shipowner Portal v0) and Plan 7 Phase A + B (PR #18 open). Read `docs/superpowers/ROADMAP.md` for full state. Hosted DB has migrations 001-056 applied. I want to work on **[pick: PR #18 review/merge | Plan 7 Phase C — payments core | other]**.
 
 Claude will read the roadmap + the specific file references and hand you back a scoped plan.
 
@@ -256,12 +278,12 @@ Claude will read the roadmap + the specific file references and hand you back a 
 
 ## Suggested next session picks
 
-Ranked by value × effort (B0 → B2 + all P1s closed 2026-04-26):
+Ranked by value × effort:
 
-1. **Live smoke test** of the signup → `/dashboard/validations` → approve flow on hosted, end-to-end (30 min). Confirms B2 fix works in production-shadow before promoting to prod.
-2. **E2E pgmq round-trip** — set up a local or staging Supabase, then run `npx vitest run proforma-happy-path reconciliation-happy-path` (1 hour). Validates B1 against a real queue, not just the route auth.
-3. **P2 — REFUND badge + AR/PT/SW translations** (2 hours, polish).
-4. **A2 audit P2s** — drop/nullable `registration_requests.password_hash`, reconcile `OPERATIONS_MANAGER` across schema/UI/i18n, resolve `reviewed_by` UUID to a real name in Validations UI (1-2 hours).
-5. **Phase 2 shipowner portal** (multi-session — write Plan 6 first).
+1. **Merge PR #18** (Plan 7B onboarding) — review the final-review fixup commit `8cc5e31`, smoke-test on local, merge to develop, then merge develop → main.
+2. **Plan 7C — Payments core (out-of-band rails)** — multi-session. Spec §7.1-7.5. PayDialog multi-rail (Wire/Cash/Cheque/LC/Netting/Third-party/Mobile Money/Bank Guarantee/Wallet) + `/admin/payments` refonte + cash-desk + reçu PDF + **frontend cutover from legacy `shipowner_payment_intents` to new `payments` table + DROP legacy**. Write Plan 7C document first.
+3. **Plan 7D — Stripe online** (1-2 sessions, gated by UK entity confirmation). Stripe Checkout + webhook + reconcile cron.
+4. **Live smoke test** signup → admin approve → KYC C wizard → first payment intent on hosted (Phase A+B integration test in production-shadow).
+5. **Phase 2 follow-ups**: `feature.equasis_scraper_enabled` UI, `feature.vessel_detention_enabled` workflow.
 
 Each of these is a clean restart target.

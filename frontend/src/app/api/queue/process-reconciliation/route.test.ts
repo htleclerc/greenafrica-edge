@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { POST } from './route';
 
 describe('POST /api/queue/process-reconciliation', () => {
+  beforeEach(() => {
+    process.env.QUEUE_WORKER_SECRET = 'test-secret';
+  });
+
   it('rejects unauthenticated requests', async () => {
     const req = new Request('http://localhost/api/queue/process-reconciliation', {
       method: 'POST',

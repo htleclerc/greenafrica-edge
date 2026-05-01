@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { sendPaymentConfirmationEmail } from '@/services/emailService';
 import {
     generateReceiptPdf,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function processMarkPaid(
-    admin: ReturnType<typeof createClient>,
+    admin: SupabaseClient,
     body: {
         transactionId: string;
         actingUserId: string;
