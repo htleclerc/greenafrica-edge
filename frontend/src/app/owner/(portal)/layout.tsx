@@ -12,7 +12,11 @@ export default async function OwnerPortalLayout({
     const session = await requireOwner();
 
     return (
-        <OwnerShell ownerName={session.shipowner.name} email={session.email}>
+        <OwnerShell
+            ownerName={session.shipowner.name}
+            email={session.email}
+            kycComplete={!!session.shipowner.kyc_level_c_completed_at}
+        >
             {children}
         </OwnerShell>
     );

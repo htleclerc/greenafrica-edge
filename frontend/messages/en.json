@@ -741,7 +741,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOVERNMENT OF SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "ENCRYPTED"
+    "footer_encrypted": "ENCRYPTED",
+    "nav_registrations": "Registrations"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -2814,5 +2815,108 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "OwnerRegister": {
+    "title": "Shipowner Registration",
+    "subtitle": "Tell us about your company. We'll review and email you within 48h.",
+    "email": "Contact email",
+    "company_name": "Company name",
+    "imo_company": "IMO Company Number (7 digits)",
+    "country": "Country (ISO-2)",
+    "address": "Registered address",
+    "vessel_imo": "Vessel IMO (one of your fleet)",
+    "phone_optional": "Phone (optional, E.164)",
+    "submit": "Submit registration",
+    "submitting": "Submitting...",
+    "thanks_title": "Thank you",
+    "doc_types": {
+      "TRADE_REGISTER": "Trade register",
+      "CERT_INCORPORATION": "Certificate of incorporation",
+      "MOA": "Memorandum of association",
+      "OTHER": "Other"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Please upload a proof document",
+      "upload_failed": "File upload failed. Try again."
+    },
+    "proof_document": "Proof document",
+    "doc_type": "Document type",
+    "preferred_language": "Preferred language"
+  },
+  "OwnerOnboarding": {
+    "step1": {
+      "title": "Step 1 — Billing identity"
+    },
+    "step2": {
+      "title": "Step 2 — Bank coordinates",
+      "disclaimer": "These details are used only to refund you in case of overpayment or final reconciliation."
+    },
+    "step3": {
+      "title": "Step 3 — Review and accept"
+    },
+    "legal_name": "Legal billing name",
+    "address_line1": "Address line 1",
+    "address_line2": "Address line 2 (optional)",
+    "city": "City",
+    "postal_code": "Postal code",
+    "country_code": "Country (ISO-2)",
+    "vat_optional": "VAT number (optional)",
+    "bank_name": "Bank name",
+    "cgv_label_prefix": "I accept the",
+    "cgv_link": "Terms & Conditions",
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "banner": {
+      "text": "Complete your billing profile before your first payment.",
+      "cta": "Complete profile"
+    }
+  },
+  "AdminRegistrations": {
+    "title": "Pending registrations",
+    "filters": {
+      "PENDING_REVIEW": "To review",
+      "REJECTED": "Rejected",
+      "ACTIVE": "Approved"
+    },
+    "cols": {
+      "received": "Received",
+      "name": "Company",
+      "imo": "IMO Company",
+      "country": "Country",
+      "email": "Email",
+      "proof": "Proof"
+    },
+    "actions": {
+      "review": "Review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "request_completion": "Request more info"
+    },
+    "placeholders": {
+      "reject": "Explain why this registration is rejected (sent to applicant by email).",
+      "request": "Describe what's missing or unclear (sent to applicant by email)."
+    },
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "empty": "No registrations to review",
+    "back": "Back",
+    "close": "Close",
+    "view_only": "View only — actions require MANAGER role",
+    "submitting": "Submitting..."
+  },
+  "Cgv": {
+    "title": "Terms & Conditions",
+    "placeholder_p1": "These terms govern your use of the Green Gate carbon tax shipowner portal. By accepting, you agree to remit the applicable carbon tax for vessels matching your declared IMO Company Number.",
+    "placeholder_p2": "Detailed terms will be published before public launch. For questions, contact compliance@africgreen.com.",
+    "draft_notice": "Draft document — final terms will be published before launch."
   }
 }

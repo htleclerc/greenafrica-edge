@@ -453,3 +453,108 @@ export async function sendArmateurInviteEmail(p: ArmateurInviteParams): Promise<
         text: `You've been invited to Green Gate as a Shipping Agent by ${p.inviterName}.\n\nActivate your account: ${p.inviteUrl}\n\nThis link expires in ${p.ttlHours} hours.`,
     });
 }
+
+// ── 7. Shipowner registration rejection email ──────────────────────────────
+
+export interface ShipownerRejectionParams {
+    to: string;
+    reason: string;
+    language: string;
+}
+
+export async function sendShipownerRejectionEmail(p: ShipownerRejectionParams): Promise<EmailResult> {
+    const subject = p.language === 'fr'
+        ? "Demande d'inscription rejetée"
+        : 'Registration rejected';
+
+    const content = p.language === 'fr'
+        ? `
+        <h1>Demande d'inscription rejetée</h1>
+        <p>Bonjour,</p>
+        <p>Malheureusement, votre demande d'inscription au portail armateur a été rejetée pour le motif suivant :</p>
+        <div class="alert alert-danger" style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(p.reason)}</div>
+        <p>Vous pouvez soumettre une nouvelle demande à tout moment si vous souhaitez nous fournir des informations supplémentaires ou clarifier les points relevés.</p>
+        <a href="${appUrl()}" class="btn">Revenir au portail →</a>
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Si vous avez des questions, veuillez contacter notre équipe support.</p>
+        `
+        : `
+        <h1>Registration Rejected</h1>
+        <p>Hello,</p>
+        <p>Unfortunately, your shipowner portal registration has been rejected for the following reason:</p>
+        <div class="alert alert-danger" style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(p.reason)}</div>
+        <p>You may submit a new request at any time if you wish to provide additional information or clarify the points raised.</p>
+        <a href="${appUrl()}" class="btn">Return to Portal →</a>
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If you have questions, please contact our support team.</p>
+        `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: p.language === 'fr' ? 'Votre demande a été rejetée' : 'Your request has been rejected' }),
+        text: p.language === 'fr'
+            ? `Votre demande d'inscription au portail armateur a été rejetée.\n\nMotif:\n${p.reason}\n\nVous pouvez soumettre une nouvelle demande à tout moment.`
+            : `Your shipowner portal registration has been rejected.\n\nReason:\n${p.reason}\n\nYou may submit a new request at any time.`,
+    });
+}
+
+// ── 8. Shipowner registration completion request email ────────────────────
+
+export interface ShipownerCompletionRequestParams {
+    shipownerId: string;
+    missingItems: string;
+}
+
+export async function sendShipownerCompletionRequestEmail(p: ShipownerCompletionRequestParams): Promise<void> {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } },
+    );
+
+    const { data: row } = await supabase
+        .from('shipowners')
+        .select('official_email, preferred_language')
+        .eq('id', p.shipownerId)
+        .single();
+
+    if (!row?.official_email) return;
+
+    const language = row.preferred_language ?? 'en';
+    const subject = language === 'fr'
+        ? 'Information complémentaire requise'
+        : 'Additional information required';
+
+    const content = language === 'fr'
+        ? `
+        <h1>Information complémentaire requise</h1>
+        <p>Bonjour,</p>
+        <p>Notre équipe a examiné votre demande d'inscription au portail armateur. Nous avons besoin des éléments suivants pour finaliser votre inscription :</p>
+        <div class="alert alert-warn" style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(p.missingItems)}</div>
+        <p>Veuillez nous transmettre ces documents ou informations en répondant à ce courriel. Notre équipe vous contactera une fois les éléments reçus.</p>
+        <a href="${appUrl()}" class="btn">Accéder au portail →</a>
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">N'hésitez pas à nous contacter si vous avez des questions.</p>
+        `
+        : `
+        <h1>Additional Information Required</h1>
+        <p>Hello,</p>
+        <p>Our team has reviewed your shipowner portal registration request. We need the following items to complete your registration:</p>
+        <div class="alert alert-warn" style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(p.missingItems)}</div>
+        <p>Please send us these documents or information by replying to this email. Our team will contact you once we have received the items.</p>
+        <a href="${appUrl()}" class="btn">Access Portal →</a>
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Feel free to contact us if you have any questions.</p>
+        `;
+
+    const result = await sendEmail({
+        to: row.official_email,
+        subject,
+        html: emailLayout(content, { previewText: language === 'fr' ? 'Information complémentaire requise' : 'Additional information required' }),
+        text: language === 'fr'
+            ? `Information complémentaire requise\n\nÉléments manquants:\n${p.missingItems}\n\nVeuillez nous transmettre ces documents en répondant à ce courriel.`
+            : `Additional information required\n\nMissing items:\n${p.missingItems}\n\nPlease send us these documents by replying to this email.`,
+    });
+
+    if (!result.success) {
+        throw new Error(`Email send failed: ${result.error ?? 'unknown error'}`);
+    }
+}

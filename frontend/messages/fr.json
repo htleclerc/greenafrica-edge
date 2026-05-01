@@ -620,7 +620,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOUVERNEMENT DU SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "CHIFFRÉ"
+    "footer_encrypted": "CHIFFRÉ",
+    "nav_registrations": "Inscriptions"
   },
   "Auth": {
     "system_status_online": "EN LIGNE — NŒUD SÉCURISÉ",
@@ -2784,5 +2785,108 @@
       "submit": "Créer la proposition",
       "cancel": "Annuler"
     }
+  },
+  "OwnerRegister": {
+    "title": "Inscription armateur",
+    "subtitle": "Présentez votre société. Nous validons et vous écrivons sous 48h.",
+    "email": "Email de contact",
+    "company_name": "Nom de la société",
+    "imo_company": "Numéro IMO Société (7 chiffres)",
+    "country": "Pays (ISO-2)",
+    "address": "Adresse du siège",
+    "vessel_imo": "IMO d'un de vos navires",
+    "phone_optional": "Téléphone (optionnel, E.164)",
+    "submit": "Envoyer la demande",
+    "submitting": "Envoi...",
+    "thanks_title": "Merci",
+    "doc_types": {
+      "TRADE_REGISTER": "Registre du commerce",
+      "CERT_INCORPORATION": "Certificat d'incorporation",
+      "MOA": "Statuts",
+      "OTHER": "Autre"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Veuillez joindre un document de preuve",
+      "upload_failed": "Échec de l'envoi du fichier. Réessayez."
+    },
+    "proof_document": "Document de preuve",
+    "doc_type": "Type de document",
+    "preferred_language": "Langue préférée"
+  },
+  "OwnerOnboarding": {
+    "step1": {
+      "title": "Étape 1 — Identité de facturation"
+    },
+    "step2": {
+      "title": "Étape 2 — Coordonnées bancaires",
+      "disclaimer": "Ces informations ne servent qu'à vous rembourser en cas de trop-perçu ou de régularisation finale."
+    },
+    "step3": {
+      "title": "Étape 3 — Vérification et acceptation"
+    },
+    "legal_name": "Raison sociale de facturation",
+    "address_line1": "Adresse ligne 1",
+    "address_line2": "Adresse ligne 2 (optionnel)",
+    "city": "Ville",
+    "postal_code": "Code postal",
+    "country_code": "Pays (ISO-2)",
+    "vat_optional": "Numéro de TVA (optionnel)",
+    "bank_name": "Nom de la banque",
+    "cgv_label_prefix": "J'accepte les",
+    "cgv_link": "Conditions Générales",
+    "next": "Suivant",
+    "back": "Retour",
+    "submit": "Envoyer",
+    "submitting": "Envoi...",
+    "banner": {
+      "text": "Complétez votre profil de facturation avant votre premier paiement.",
+      "cta": "Compléter le profil"
+    }
+  },
+  "AdminRegistrations": {
+    "title": "Demandes d'inscription",
+    "filters": {
+      "PENDING_REVIEW": "À traiter",
+      "REJECTED": "Rejetées",
+      "ACTIVE": "Approuvées"
+    },
+    "cols": {
+      "received": "Reçue",
+      "name": "Société",
+      "imo": "IMO société",
+      "country": "Pays",
+      "email": "Email",
+      "proof": "Preuve"
+    },
+    "actions": {
+      "review": "Examiner",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "request_completion": "Demander un complément"
+    },
+    "placeholders": {
+      "reject": "Expliquez le motif du rejet (envoyé au demandeur par email).",
+      "request": "Décrivez ce qui manque ou n'est pas clair (envoyé au demandeur par email)."
+    },
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "empty": "Aucune inscription à examiner",
+    "back": "Retour",
+    "close": "Fermer",
+    "view_only": "Lecture seule — l'action requiert le rôle MANAGER",
+    "submitting": "Envoi..."
+  },
+  "Cgv": {
+    "title": "Conditions Générales",
+    "placeholder_p1": "Ces conditions régissent l'utilisation du portail armateur de taxe carbone Green Gate. En les acceptant, vous vous engagez à régler la taxe carbone applicable aux navires correspondant à votre IMO Société déclaré.",
+    "placeholder_p2": "Le détail des conditions sera publié avant le lancement public. Pour toute question, contactez compliance@africgreen.com.",
+    "draft_notice": "Document brouillon — la version finale sera publiée avant le lancement."
   }
 }

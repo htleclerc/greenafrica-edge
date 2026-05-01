@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { LayoutDashboard, Ship, FileText, AlertTriangle, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
+import { KycCBanner } from '@/components/owner/KycCBanner';
 
 interface NavItem {
     href: string;
@@ -24,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
 interface OwnerShellProps {
     ownerName: string;
     email: string;
+    kycComplete: boolean;
     children: React.ReactNode;
 }
 
@@ -32,7 +34,7 @@ interface OwnerShellProps {
  * dashboard shell — no role context, no skin provider, no KPI fetcher.
  * The owner sees only their own data; we don't need any of that machinery.
  */
-export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
+export function OwnerShell({ ownerName, email, kycComplete, children }: OwnerShellProps) {
     const pathname = usePathname();
     const router = useRouter();
     const t = useTranslations('OwnerPortal');
@@ -136,7 +138,10 @@ export function OwnerShell({ ownerName, email, children }: OwnerShellProps) {
                 })}
             </nav>
 
-            <main className="flex-1">{children}</main>
+            <main className="flex-1">
+                <KycCBanner kycComplete={kycComplete} />
+                {children}
+            </main>
         </div>
     );
 }
