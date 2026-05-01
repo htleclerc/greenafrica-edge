@@ -620,7 +620,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOUVERNEMENT DU SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "CHIFFRÉ"
+    "footer_encrypted": "CHIFFRÉ",
+    "nav_registrations": "Inscriptions"
   },
   "Auth": {
     "system_status_online": "EN LIGNE — NŒUD SÉCURISÉ",
@@ -2814,7 +2815,10 @@
     "errors": {
       "no_file": "Veuillez joindre un document de preuve",
       "upload_failed": "Échec de l'envoi du fichier. Réessayez."
-    }
+    },
+    "proof_document": "Document de preuve",
+    "doc_type": "Type de document",
+    "preferred_language": "Langue préférée"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -2872,6 +2876,17 @@
       "request": "Décrivez ce qui manque ou n'est pas clair (envoyé au demandeur par email)."
     },
     "confirm": "Confirmer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "empty": "Aucune inscription à examiner",
+    "back": "Retour",
+    "close": "Fermer",
+    "view_only": "Lecture seule — l'action requiert le rôle MANAGER",
+    "submitting": "Envoi..."
+  },
+  "Cgv": {
+    "title": "Conditions Générales",
+    "placeholder_p1": "Ces conditions régissent l'utilisation du portail armateur de taxe carbone Green Gate. En les acceptant, vous vous engagez à régler la taxe carbone applicable aux navires correspondant à votre IMO Société déclaré.",
+    "placeholder_p2": "Le détail des conditions sera publié avant le lancement public. Pour toute question, contactez compliance@africgreen.com.",
+    "draft_notice": "Document brouillon — la version finale sera publiée avant le lancement."
   }
 }

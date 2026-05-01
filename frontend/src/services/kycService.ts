@@ -91,8 +91,17 @@ export async function decryptIban(stored: string): Promise<string> {
 }
 
 /**
+ * True when IBAN storage is NOT real encryption (plaintext or pgsodium-base64-placeholder).
+ * Audit log uses this to flag IBAN_ENCRYPTION_DEBT, surfacing the security gap to ops.
+ */
+export function isInsecureStrategy(): boolean {
+    return strategy === 'plaintext' || strategy === 'pgsodium';
+}
+
+/**
  * Returns true if the current strategy is plaintext (unencrypted).
  * Used for audit logging to flag plaintext storage.
+ * DEPRECATED: use isInsecureStrategy instead.
  */
 export function isPlaintextStrategy(): boolean {
     return strategy === 'plaintext';

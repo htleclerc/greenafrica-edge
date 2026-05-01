@@ -51,7 +51,13 @@ describe('registerShipowner decision tree', () => {
             if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
             if (table === 'shipowners') return {
                 ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '1234567' }),
-                update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
+                update: () => ({
+                    eq: () => ({
+                        eq: () => ({
+                            select: async () => ({ data: [{ id: 'so1' }], error: null })
+                        })
+                    })
+                }),
                 upsert: async () => ({ error: null }),
                 insert: async () => ({ error: null }),
             };
@@ -60,9 +66,9 @@ describe('registerShipowner decision tree', () => {
             }
             return chainableSelect(null);
         });
-        mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({ error: null });
-        mockSupabase.auth.admin.listUsers.mockResolvedValue({
-            data: { users: [{ id: 'uid', email: 'a@example.com' }] },
+        mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({
+            data: { user: { id: 'uid', email: 'a@example.com' } },
+            error: null
         });
 
         const { registerShipowner } = await import('./registerShipowner');

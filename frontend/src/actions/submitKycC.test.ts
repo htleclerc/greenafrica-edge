@@ -15,7 +15,7 @@ vi.mock('@/lib/auth/requireOwner', () => ({
 
 vi.mock('@/services/kycService', () => ({
     encryptIban: vi.fn(async (s: string) => `enc:${s}`),
-    isPlaintextStrategy: vi.fn(() => false),
+    isInsecureStrategy: vi.fn(() => false),
 }));
 
 const mockShipownersChain = {
@@ -270,18 +270,18 @@ describe('submitKycC', () => {
             );
         });
 
-        it('flags plaintext encryption in audit log when applicable', async () => {
+        it('flags insecure encryption in audit log when applicable', async () => {
             const { submitKycC } = await import('./submitKycC');
-            const { isPlaintextStrategy } = await import('@/services/kycService');
+            const { isInsecureStrategy } = await import('@/services/kycService');
 
-            (isPlaintextStrategy as any).mockReturnValue(true);
+            (isInsecureStrategy as any).mockReturnValue(true);
 
             await submitKycC(validInput);
 
             expect(mockAuditLogsTable.insert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     details_json: expect.objectContaining({
-                        iban_encryption: 'PLAINTEXT_DEBT',
+                        iban_encryption: 'INSECURE_DEBT',
                     }),
                 }),
             );
@@ -289,9 +289,9 @@ describe('submitKycC', () => {
 
         it('flags encrypted IBAN in audit log when vault is used', async () => {
             const { submitKycC } = await import('./submitKycC');
-            const { isPlaintextStrategy } = await import('@/services/kycService');
+            const { isInsecureStrategy } = await import('@/services/kycService');
 
-            (isPlaintextStrategy as any).mockReturnValue(false);
+            (isInsecureStrategy as any).mockReturnValue(false);
 
             await submitKycC(validInput);
 

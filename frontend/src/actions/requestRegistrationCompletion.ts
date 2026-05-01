@@ -1,6 +1,9 @@
 'use server';
 
+import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { UserRole } from '@/types/secure';
+import { requireRole } from '@/lib/auth/requireRole';
 import { sendShipownerCompletionRequestEmail } from '@/services/emailService';
 
 const schema = z.object({
@@ -19,23 +22,23 @@ export async function requestRegistrationCompletion(input: unknown) {
     }
     const { shipownerId, missingItems } = parsed.data;
 
-    // 1. Check auth + get current user
-    const supabase = await import('@/lib/supabase/server').then(m => m.createClient());
-    const { data: authUser } = await supabase.auth.getUser();
-    if (!authUser?.user) return { ok: false, message: 'not authenticated' };
+    await requireRole([UserRole.SUPERADMIN, UserRole.MANAGER]);
 
-    // 2. Check role (SUPERADMIN or MANAGER)
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authUser.user.id)
+    const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // Check state before sending email
+    const { data: row } = await admin
+        .from('shipowners')
+        .select('account_state')
+        .eq('id', shipownerId)
         .single();
-    const ALLOWED_ROLES = ['SUPERADMIN', 'MANAGER'];
-    if (!profile || !ALLOWED_ROLES.includes(profile.role)) {
-        return { ok: false, message: 'insufficient role' };
-    }
+    if (!row) return { ok: false, message: 'not_found' };
+    if (row.account_state !== 'PENDING_REVIEW') return { ok: false, message: 'not_pending' };
 
-    // 3. Send email
+    // Send email
     try {
         await sendShipownerCompletionRequestEmail({ shipownerId, missingItems });
         return { ok: true };

@@ -741,7 +741,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOVERNMENT OF SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "ENCRYPTED"
+    "footer_encrypted": "ENCRYPTED",
+    "nav_registrations": "Registrations"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -2844,7 +2845,10 @@
     "errors": {
       "no_file": "Please upload a proof document",
       "upload_failed": "File upload failed. Try again."
-    }
+    },
+    "proof_document": "Proof document",
+    "doc_type": "Document type",
+    "preferred_language": "Preferred language"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -2902,6 +2906,17 @@
       "request": "Describe what's missing or unclear (sent to applicant by email)."
     },
     "confirm": "Confirm",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "empty": "No registrations to review",
+    "back": "Back",
+    "close": "Close",
+    "view_only": "View only — actions require MANAGER role",
+    "submitting": "Submitting..."
+  },
+  "Cgv": {
+    "title": "Terms & Conditions",
+    "placeholder_p1": "These terms govern your use of the Green Gate carbon tax shipowner portal. By accepting, you agree to remit the applicable carbon tax for vessels matching your declared IMO Company Number.",
+    "placeholder_p2": "Detailed terms will be published before public launch. For questions, contact compliance@africgreen.com.",
+    "draft_notice": "Draft document — final terms will be published before launch."
   }
 }

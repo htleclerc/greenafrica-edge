@@ -55,6 +55,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
 
     // Admin (ops side — MANAGER allowed)
     'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'registrations': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
 
     // Money rail (MANAGER explicitly excluded — see MONEY_RAIL_KEYS below)
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
@@ -97,6 +98,7 @@ const READ_ONLY_ROLES: Record<string, UserRole[]> = {
     'invoices':     [UserRole.MANAGER],        // MANAGER reads invoices, no issuance
     'disputes':     [UserRole.MANAGER],        // MANAGER reads disputes; resolve = money action, denied
     'audit':        [UserRole.MANAGER],        // MANAGER reads audit, never writes
+    'registrations': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads registrations, actions require MANAGER role
 };
 
 /**

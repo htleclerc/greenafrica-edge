@@ -108,7 +108,7 @@ async function autoClaim(
     shipownerId: string,
     data: RegisterShipownerInput,
 ): Promise<RegisterShipownerResult> {
-    const { error: upErr } = await supabase
+    const { data: claimed, error: upErr } = await supabase
         .from('shipowners')
         .update({
             name: data.name,
@@ -124,22 +124,29 @@ async function autoClaim(
             account_state: 'ACTIVE',
         })
         .eq('id', shipownerId)
-        .eq('account_state', 'GHOST');                      // race-safe: only flip if still GHOST
+        .eq('account_state', 'GHOST')                       // race-safe: only flip if still GHOST
+        .select('id');
     if (upErr) return { ok: false, message: GENERIC_MESSAGE };
 
-    const { error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(
+    // Lost the race — another concurrent caller already claimed.
+    if (!claimed || claimed.length === 0) {
+        return { ok: true, message: GENERIC_MESSAGE };
+    }
+
+    const inviteResp = await supabase.auth.admin.inviteUserByEmail(
         data.email,
         { redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/owner/auth/callback` },
     );
-    if (inviteErr) {
+    if (inviteResp.error) {
         await supabase.from('shipowners')
             .update({ account_state: 'GHOST' })
-            .eq('id', shipownerId);
+            .eq('id', shipownerId)
+            .eq('account_state', 'ACTIVE');                 // ADD guard: only rollback if still ACTIVE
         return { ok: false, message: 'Email delivery failed. Try again later.' };
     }
 
-    const { data: { users } } = await supabase.auth.admin.listUsers();
-    const newUser = users.find((u: any) => u.email === data.email);
+    // Use the user object from the invite response directly
+    const newUser = inviteResp.data?.user;
     if (newUser) {
         await supabase.from('profiles').upsert({
             id: newUser.id,

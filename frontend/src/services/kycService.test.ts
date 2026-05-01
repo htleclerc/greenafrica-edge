@@ -119,6 +119,49 @@ describe('kycService', () => {
         });
     });
 
+    describe('isInsecureStrategy', () => {
+        it('returns true when strategy is plaintext', async () => {
+            const { isInsecureStrategy, _resetStrategy } = await import('./kycService');
+            _resetStrategy();
+
+            mockSupabase.rpc.mockResolvedValue({ data: [] });
+            // Trigger detection
+            await import('./kycService').then((m) => m.encryptIban('test'));
+
+            expect(isInsecureStrategy()).toBe(true);
+        });
+
+        it('returns true when strategy is pgsodium', async () => {
+            const { isInsecureStrategy, _resetStrategy } = await import('./kycService');
+            _resetStrategy();
+
+            mockSupabase.rpc.mockImplementation(async (fn: string) => {
+                if (fn === 'pg_extension_lookup_kyc') return { data: ['pgsodium'] };
+                if (fn === 'kyc_pgsodium_encrypt') return { data: 'G0I4V0VFJVK0sdsdfQ==' };
+                return { data: null };
+            });
+            // Trigger detection
+            await import('./kycService').then((m) => m.encryptIban('test'));
+
+            expect(isInsecureStrategy()).toBe(true);
+        });
+
+        it('returns false when strategy is vault', async () => {
+            const { isInsecureStrategy, _resetStrategy } = await import('./kycService');
+            _resetStrategy();
+
+            mockSupabase.rpc.mockImplementation(async (fn: string) => {
+                if (fn === 'pg_extension_lookup_kyc') return { data: ['supabase_vault'] };
+                if (fn === 'kyc_vault_store') return { data: 'uuid-123' };
+                return { data: null };
+            });
+            // Trigger detection
+            await import('./kycService').then((m) => m.encryptIban('test'));
+
+            expect(isInsecureStrategy()).toBe(false);
+        });
+    });
+
     describe('isPlaintextStrategy', () => {
         it('returns true when strategy is plaintext', async () => {
             const { isPlaintextStrategy, _resetStrategy } = await import('./kycService');
@@ -138,6 +181,21 @@ describe('kycService', () => {
             mockSupabase.rpc.mockImplementation(async (fn: string) => {
                 if (fn === 'pg_extension_lookup_kyc') return { data: ['supabase_vault'] };
                 if (fn === 'kyc_vault_store') return { data: 'uuid-123' };
+                return { data: null };
+            });
+            // Trigger detection
+            await import('./kycService').then((m) => m.encryptIban('test'));
+
+            expect(isPlaintextStrategy()).toBe(false);
+        });
+
+        it('returns false when strategy is pgsodium', async () => {
+            const { isPlaintextStrategy, _resetStrategy } = await import('./kycService');
+            _resetStrategy();
+
+            mockSupabase.rpc.mockImplementation(async (fn: string) => {
+                if (fn === 'pg_extension_lookup_kyc') return { data: ['pgsodium'] };
+                if (fn === 'kyc_pgsodium_encrypt') return { data: 'G0I4V0VFJVK0sdsdfQ==' };
                 return { data: null };
             });
             // Trigger detection

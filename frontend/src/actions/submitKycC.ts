@@ -8,7 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
-import { encryptIban, isPlaintextStrategy } from '@/services/kycService';
+import { encryptIban, isInsecureStrategy } from '@/services/kycService';
 
 const schema = z.object({
     billing_legal_name: z.string().min(2).max(200),
@@ -66,7 +66,7 @@ export async function submitKycC(input: z.infer<typeof schema>) {
         entity_id: session.shipowner.id,
         details_json: {
             event: 'SHIPOWNER_KYC_C_COMPLETED',
-            iban_encryption: isPlaintextStrategy() ? 'PLAINTEXT_DEBT' : 'ENCRYPTED',
+            iban_encryption: isInsecureStrategy() ? 'INSECURE_DEBT' : 'ENCRYPTED',
             cgv_accepted_at: new Date().toISOString(),
         },
     });
