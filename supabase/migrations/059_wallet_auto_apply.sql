@@ -30,7 +30,17 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- Get system user (SUPERADMIN or FINANCE_ADMIN) to author the ledger entry
+  -- TECH_DEBT (Plan 7C-1): public.payments has constraint payments_confirmed_audit
+  -- requiring confirmed_by NOT NULL when status='CONFIRMED', and public.wallet_ledger
+  -- has created_by NOT NULL. WALLET auto-apply is system-driven (no human actor),
+  -- but the schema doesn't yet model "system" actors. As a stopgap we attribute
+  -- the auto-apply to the oldest active SUPERADMIN/FINANCE_ADMIN. This:
+  --   - makes the audit trail less precise (a human is named for a system action)
+  --   - depends on at least one admin existing (RAISES EXCEPTION otherwise — see below)
+  -- TODO Plan 7C+ follow-up: either (a) relax payments_confirmed_audit to allow
+  -- NULL confirmed_by when rail='WALLET' AND auto_applied=true, or (b) add a
+  -- sentinel SYSTEM profile, or (c) make confirmed_by nullable + add a
+  -- system_actor_kind enum column.
   SELECT id INTO v_system_user FROM public.profiles
     WHERE is_active = true AND role IN ('SUPERADMIN', 'FINANCE_ADMIN')
     ORDER BY created_at ASC LIMIT 1;
@@ -78,41 +88,32 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
   ON CONFLICT (id) DO NOTHING;
 
 -- Bucket RLS: owner can write to own payment subfolder; admins read all
-DO $$
-BEGIN
-  CREATE POLICY payment_proofs_owner_write ON storage.objects FOR INSERT
-    TO authenticated
-    WITH CHECK (
-      bucket_id = 'payment-proofs'
-      AND (storage.foldername(name))[1] = public.current_shipowner_id()::TEXT
-    );
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+DROP POLICY IF EXISTS payment_proofs_owner_write ON storage.objects;
+CREATE POLICY payment_proofs_owner_write ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'payment-proofs'
+    AND (storage.foldername(name))[1] = public.current_shipowner_id()::TEXT
+  );
 
-DO $$
-BEGIN
-  CREATE POLICY payment_proofs_owner_read ON storage.objects FOR SELECT
-    TO authenticated
-    USING (
-      bucket_id = 'payment-proofs'
-      AND (storage.foldername(name))[1] = public.current_shipowner_id()::TEXT
-    );
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+DROP POLICY IF EXISTS payment_proofs_owner_read ON storage.objects;
+CREATE POLICY payment_proofs_owner_read ON storage.objects FOR SELECT
+  TO authenticated
+  USING (
+    bucket_id = 'payment-proofs'
+    AND (storage.foldername(name))[1] = public.current_shipowner_id()::TEXT
+  );
 
-DO $$
-BEGIN
-  CREATE POLICY payment_proofs_admin_read ON storage.objects FOR SELECT
-    TO authenticated
-    USING (
-      bucket_id = 'payment-proofs'
-      AND EXISTS (
-        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true
-           AND p.role IN ('FINANCE_ADMIN', 'SUPERADMIN', 'PORT_OFFICER')
-      )
-    );
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+DROP POLICY IF EXISTS payment_proofs_admin_read ON storage.objects;
+CREATE POLICY payment_proofs_admin_read ON storage.objects FOR SELECT
+  TO authenticated
+  USING (
+    bucket_id = 'payment-proofs'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true
+         AND p.role IN ('FINANCE_ADMIN', 'SUPERADMIN', 'PORT_OFFICER')
+    )
+  );
 
 -- DOWN:
 -- DROP TRIGGER transactions_auto_apply_wallet ON public.transactions;
