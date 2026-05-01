@@ -4,6 +4,10 @@ let canConfirmReturn = true;
 const updateCalls: any[] = [];
 const rpcCalls: { fn: string; args: unknown }[] = [];
 const auditCalls: any[] = [];
+let overpaymentLedger: any = null;
+let transactionsMock: any = null;
+let transactionPaidSummaryMock: any = null;
+let walletsMock: any = null;
 
 const mockSupabase = {
     rpc: vi.fn(async (fn: string, args: unknown) => {
@@ -19,9 +23,60 @@ const mockSupabase = {
                     updateCalls.push(payload);
                     return {
                         eq: () => ({
-                            select: () => ({ single: async () => ({ data: { id: 'pay-1', transaction_id: 't-1' }, error: null }) }),
+                            select: () => ({
+                                single: async () => ({
+                                    data: {
+                                        id: 'pay-1',
+                                        transaction_id: 't-1',
+                                        amount_usd_minor: transactionsMock?.amount_usd_minor ?? 10000,
+                                        shipowner_id: 'so-1',
+                                    },
+                                    error: null,
+                                }),
+                            }),
                         }),
                     };
+                },
+            };
+        }
+        if (table === 'transactions') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        single: async () => ({
+                            data: transactionsMock || { id: 't-1', tax_amount_usd: 100, shipowner_id: 'so-1' },
+                            error: null,
+                        }),
+                    }),
+                }),
+            };
+        }
+        if (table === 'transaction_paid_summary') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        maybeSingle: async () => ({
+                            data: transactionPaidSummaryMock || { transaction_id: 't-1', paid_usd_minor: 0 },
+                            error: null,
+                        }),
+                    }),
+                }),
+            };
+        }
+        if (table === 'wallets') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        maybeSingle: async () => ({ data: walletsMock || { id: 'w-1' }, error: null }),
+                    }),
+                }),
+            };
+        }
+        if (table === 'wallet_ledger') {
+            return {
+                insert: async (row: any) => {
+                    overpaymentLedger = row;
+                    return { error: null };
                 },
             };
         }
@@ -49,6 +104,10 @@ beforeEach(() => {
     updateCalls.length = 0;
     rpcCalls.length = 0;
     auditCalls.length = 0;
+    overpaymentLedger = null;
+    transactionsMock = null;
+    transactionPaidSummaryMock = null;
+    walletsMock = null;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
     vi.clearAllMocks();
@@ -72,6 +131,32 @@ describe('confirmPayment', () => {
             action: 'TRANSACTION_UPDATED',
             entity_type: 'Payment',
             entity_id: '123e4567-e89b-12d3-a456-426614174001',
+        });
+    });
+
+    it('splits overpayment: adjusts payment to remaining_due and credits ledger', async () => {
+        // Set up mocks for overpayment scenario:
+        // dueMinor = 100 * 100 = 10000 cents
+        // paidIncludingThis = 16000 (view returns full amount after CONFIRMED)
+        // paidBefore = 16000 - 10000 = 6000
+        // remaining = 10000 - 6000 = 4000
+        // overpay = 10000 - 4000 = 6000
+        transactionsMock = { id: 't-1', tax_amount_usd: 100, shipowner_id: 'so-1' };
+        transactionPaidSummaryMock = { transaction_id: 't-1', paid_usd_minor: 16000 };
+        walletsMock = { id: 'w-1' };
+
+        const { confirmPayment } = await import('./confirmPayment');
+        await confirmPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174002' });
+
+        // Should adjust payment.amount_usd_minor to 4000
+        const adjust = updateCalls.find(u => u.amount_usd_minor === 4000);
+        expect(adjust).toBeDefined();
+
+        // Should insert overpayment ledger entry with 6000 cents excess
+        expect(overpaymentLedger).toMatchObject({
+            kind: 'OVERPAYMENT_CREDIT',
+            amount_signed_usd_minor: 6000,
+            wallet_id: 'w-1',
         });
     });
 });
