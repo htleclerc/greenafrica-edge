@@ -36,7 +36,7 @@ export async function requireOwner(): Promise<OwnerSession> {
     // truth — RLS ensures we can only see our own row.
     const { data: shipowner, error } = await supabase
         .from('shipowners')
-        .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at')
+        .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at')
         .eq('profile_id', user.id)
         .maybeSingle();
 

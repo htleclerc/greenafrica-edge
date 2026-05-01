@@ -17,6 +17,7 @@ export interface Shipowner {
 export interface ShipownerListRow extends Shipowner {
   imo_company_no: string | null;
   invited_at: string | null;
+  kyc_level_c_completed_at: string | null;
 }
 
 /** List shipowners ordered by name. Used by the admin portal section. */
