@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
@@ -59,7 +59,7 @@ export async function confirmPayment(input: { paymentId: string }) {
 }
 
 async function splitOverpayment(
-    admin: ReturnType<typeof createClient>,
+    admin: SupabaseClient,
     payment: ConfirmedPaymentRow,
     actorUserId: string,
 ): Promise<void> {
