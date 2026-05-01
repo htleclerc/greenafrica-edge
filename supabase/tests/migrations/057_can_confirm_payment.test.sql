@@ -1,87 +1,97 @@
 BEGIN;
 
-DO $$
-DECLARE
-  v_finance1 UUID;
-  v_finance2 UUID;
-  v_superadmin UUID;
-  v_agent UUID;
-  v_shipowner UUID;
-  v_wire_payment UUID := gen_random_uuid();
-  v_cash_payment UUID := gen_random_uuid();
-  v_netting_payment UUID := gen_random_uuid();
-  v_wallet_payment UUID := gen_random_uuid();
-BEGIN
-  -- Activate seeded profiles (they're created with is_active=false)
-  UPDATE public.profiles SET is_active = true
-    WHERE id = '00000000-0000-0000-0000-000000000002' RETURNING id INTO v_finance1;
-  UPDATE public.profiles SET is_active = true
-    WHERE id = '00000000-0000-0000-0000-000000000003' RETURNING id INTO v_agent;
-  UPDATE public.profiles SET is_active = true
-    WHERE id = '00000000-0000-0000-0000-000000000004' RETURNING id INTO v_superadmin;
+-- seed: two finance admins + one superadmin + one shipping agent + one shipowner
+INSERT INTO auth.users (id, email) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'finance1@test'),
+  ('22222222-2222-2222-2222-222222222222', 'finance2@test'),
+  ('33333333-3333-3333-3333-333333333333', 'super@test'),
+  ('44444444-4444-4444-4444-444444444444', 'agent@test');
 
-  -- Create a second FINANCE_ADMIN for 4-eyes testing
-  INSERT INTO auth.users (
-    id, instance_id, aud, role,
-    email, encrypted_password,
-    email_confirmed_at, created_at, updated_at,
-    raw_user_meta_data, raw_app_meta_data,
-    confirmation_token, recovery_token,
-    email_change, email_change_token_new, email_change_token_current
-  ) VALUES (
-    gen_random_uuid(),
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated', 'authenticated',
-    'finance2@test',
-    crypt('Demo@2025!', gen_salt('bf')),
-    NOW(), NOW(), NOW(),
-    jsonb_build_object('full_name', 'Finance Admin 2', 'role', 'FINANCE_ADMIN', 'is_active', true),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
-    '', '', '', '', ''
-  ) RETURNING id INTO v_finance2;
+-- The on_auth_user_created trigger auto-creates profiles, but we need specific values.
+-- Delete the auto-created ones and insert with exact role values.
+DELETE FROM public.profiles WHERE id IN (
+  '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444'
+);
 
-  -- Create a shipowner for payments
-  INSERT INTO public.shipowners (id, name, account_state, preferred_language)
-    VALUES (gen_random_uuid(), 'Test Co', 'ACTIVE', 'en')
-    RETURNING id INTO v_shipowner;
+INSERT INTO public.profiles (id, email, full_name, role, is_active) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'finance1@test', 'F1', 'FINANCE_ADMIN', true),
+  ('22222222-2222-2222-2222-222222222222', 'finance2@test', 'F2', 'FINANCE_ADMIN', true),
+  ('33333333-3333-3333-3333-333333333333', 'super@test', 'S',  'SUPERADMIN',     true),
+  ('44444444-4444-4444-4444-444444444444', 'agent@test', 'A',  'SHIPPING_AGENT', true);
 
-  -- WIRE_TRANSFER initiated by finance1: any FINANCE_ADMIN can confirm
-  INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
-                               amount_usd_minor, rail, status)
-    VALUES (v_wire_payment, v_shipowner, v_finance1, 100000, 'USD', 100000, 'WIRE_TRANSFER', 'INITIATED');
+INSERT INTO public.shipowners (id, name, account_state, preferred_language)
+  VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Test Co', 'ACTIVE', 'en');
 
-  ASSERT public.can_confirm_payment(v_wire_payment, v_finance2) IS TRUE,
-    'WIRE: any FINANCE_ADMIN can confirm';
-  ASSERT public.can_confirm_payment(v_wire_payment, v_agent) IS FALSE,
-    'WIRE: SHIPPING_AGENT cannot confirm';
+-- WIRE_TRANSFER initiated by finance1: any FINANCE_ADMIN can confirm
+INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
+                             amount_usd_minor, rail, status)
+  VALUES ('11111111-aaaa-aaaa-aaaa-111111111111',
+          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          '11111111-1111-1111-1111-111111111111',
+          100000, 'USD', 100000, 'WIRE_TRANSFER', 'INITIATED');
 
-  -- CASH declared by finance1: only finance2 (≠ declarer) can confirm (4-eyes)
-  INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
-                               amount_usd_minor, rail, status)
-    VALUES (v_cash_payment, v_shipowner, v_finance1, 50000, 'USD', 50000, 'CASH', 'INITIATED');
+DO $$ BEGIN
+  ASSERT public.can_confirm_payment(
+    '11111111-aaaa-aaaa-aaaa-111111111111'::uuid,
+    '22222222-2222-2222-2222-222222222222'::uuid
+  ) IS TRUE, 'WIRE: any FINANCE_ADMIN can confirm';
+  ASSERT public.can_confirm_payment(
+    '11111111-aaaa-aaaa-aaaa-111111111111'::uuid,
+    '44444444-4444-4444-4444-444444444444'::uuid
+  ) IS FALSE, 'WIRE: SHIPPING_AGENT cannot confirm';
+END $$;
 
-  ASSERT public.can_confirm_payment(v_cash_payment, v_finance1) IS FALSE,
-    'CASH: same person cannot self-confirm (4-eyes)';
-  ASSERT public.can_confirm_payment(v_cash_payment, v_finance2) IS TRUE,
-    'CASH: different FINANCE_ADMIN can confirm';
+-- CASH declared by finance1: only finance2 (≠ declarer) can confirm (4-eyes)
+INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
+                             amount_usd_minor, rail, status)
+  VALUES ('22222222-aaaa-aaaa-aaaa-222222222222',
+          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          '11111111-1111-1111-1111-111111111111',
+          50000, 'USD', 50000, 'CASH', 'INITIATED');
 
-  -- NETTING: only SUPERADMIN
-  INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
-                               amount_usd_minor, rail, status)
-    VALUES (v_netting_payment, v_shipowner, v_finance1, 200000, 'USD', 200000, 'NETTING', 'INITIATED');
+DO $$ BEGIN
+  ASSERT public.can_confirm_payment(
+    '22222222-aaaa-aaaa-aaaa-222222222222'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid
+  ) IS FALSE, 'CASH: same person cannot self-confirm (4-eyes)';
+  ASSERT public.can_confirm_payment(
+    '22222222-aaaa-aaaa-aaaa-222222222222'::uuid,
+    '22222222-2222-2222-2222-222222222222'::uuid
+  ) IS TRUE, 'CASH: different FINANCE_ADMIN can confirm';
+END $$;
 
-  ASSERT public.can_confirm_payment(v_netting_payment, v_finance1) IS FALSE,
-    'NETTING: FINANCE_ADMIN cannot confirm';
-  ASSERT public.can_confirm_payment(v_netting_payment, v_superadmin) IS TRUE,
-    'NETTING: SUPERADMIN can confirm';
+-- NETTING: only SUPERADMIN
+INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
+                             amount_usd_minor, rail, status)
+  VALUES ('33333333-aaaa-aaaa-aaaa-333333333333',
+          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          '11111111-1111-1111-1111-111111111111',
+          200000, 'USD', 200000, 'NETTING', 'INITIATED');
 
-  -- WALLET + STRIPE: nobody (system-only / auto)
-  INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
-                               amount_usd_minor, rail, status)
-    VALUES (v_wallet_payment, v_shipowner, NULL, 1000, 'USD', 1000, 'WALLET', 'INITIATED');
+DO $$ BEGIN
+  ASSERT public.can_confirm_payment(
+    '33333333-aaaa-aaaa-aaaa-333333333333'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid
+  ) IS FALSE, 'NETTING: FINANCE_ADMIN cannot confirm';
+  ASSERT public.can_confirm_payment(
+    '33333333-aaaa-aaaa-aaaa-333333333333'::uuid,
+    '33333333-3333-3333-3333-333333333333'::uuid
+  ) IS TRUE, 'NETTING: SUPERADMIN can confirm';
+END $$;
 
-  ASSERT public.can_confirm_payment(v_wallet_payment, v_superadmin) IS FALSE,
-    'WALLET: even SUPERADMIN cannot manually confirm';
+-- WALLET + STRIPE: nobody (system-only / auto)
+INSERT INTO public.payments (id, shipowner_id, declared_by, amount_minor, currency,
+                             amount_usd_minor, rail, status)
+  VALUES ('44444444-aaaa-aaaa-aaaa-444444444444',
+          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          NULL, 1000, 'USD', 1000, 'WALLET', 'INITIATED');
+
+DO $$ BEGIN
+  ASSERT public.can_confirm_payment(
+    '44444444-aaaa-aaaa-aaaa-444444444444'::uuid,
+    '33333333-3333-3333-3333-333333333333'::uuid
+  ) IS FALSE, 'WALLET: even SUPERADMIN cannot manually confirm';
 END $$;
 
 ROLLBACK;
