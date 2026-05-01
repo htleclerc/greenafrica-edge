@@ -7,7 +7,7 @@ import { enforceRateLimit } from '@/lib/rateLimit';
 const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
 const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
 
-export const registerShipownerSchema = z.object({
+const registerShipownerSchema = z.object({
     email: z.string().email().max(254),
     name: z.string().min(2).max(200),
     imo_company_no: z.string().regex(/^\d{7}$/, '7 digits required'),
@@ -21,9 +21,9 @@ export const registerShipownerSchema = z.object({
     recaptcha_token: z.string().min(1),
 });
 
-export type RegisterShipownerInput = z.infer<typeof registerShipownerSchema>;
+type RegisterShipownerInput = z.infer<typeof registerShipownerSchema>;
 
-export interface RegisterShipownerResult {
+interface RegisterShipownerResult {
     ok: boolean;
     /** Generic message for ALL non-auto-claim paths (anti-enumeration). */
     message: string;

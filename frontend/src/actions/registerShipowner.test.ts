@@ -43,7 +43,7 @@ describe('registerShipowner decision tree', () => {
         process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
         process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
         process.env.NEXT_PUBLIC_BASE_URL = 'http://test';
-        process.env.NODE_ENV = 'test';
+        vi.stubEnv('NODE_ENV', 'test');
     });
 
     it('AUTO-CLAIM when vessel→GHOST→imo_company match', async () => {

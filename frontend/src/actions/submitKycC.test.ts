@@ -23,11 +23,11 @@ const mockShipownersChain = {
 };
 
 const mockShipownersTable = {
-    update: vi.fn(() => mockShipownersChain),
+    update: vi.fn((_payload: Record<string, any>) => mockShipownersChain),
 };
 
 const mockAuditLogsTable = {
-    insert: vi.fn(async () => ({ error: null })),
+    insert: vi.fn(async (_payload: Record<string, any>) => ({ error: null })),
 };
 
 const mockSupabase = {

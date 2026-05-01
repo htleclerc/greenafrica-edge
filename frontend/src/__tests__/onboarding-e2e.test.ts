@@ -1,12 +1,21 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { createClient } from '@supabase/supabase-js';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+// E2E: requires a live Supabase. Skipped in CI (no env). Run locally with:
+//   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx vitest run
+const ENV_OK = !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-describe('Onboarding E2E', () => {
+describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
+    let supabase: SupabaseClient;
+    beforeAll(() => {
+        supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        );
+    });
+
     const cleanupTestData = async () => {
         // Delete in reverse dependency order: vessels first (FK to shipowners),
         // then wallets (FK to shipowners), then shipowners.
