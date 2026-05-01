@@ -13,6 +13,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  *
  * Admin can switch the active provider from /dashboard/settings without redeploying.
  * The active provider is stored in Supabase `payment_config` table.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Plan 7C: Typed Read Helpers for `payments` Table (mig 047-054)
+ *
+ * New 10-rail polymorphic payment table with double-entry wallets + append-only
+ * ledger. Functions below query and type-safely return payment rows.
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -496,4 +503,113 @@ export async function verifyPayoneerSignature(body: string, signature: string): 
   const { createHmac } = await import('crypto');
   const hash = createHmac('sha256', secret).update(body).digest('hex');
   return hash === signature;
+}
+
+// ── Plan 7C: Typed Read Helpers for `payments` Table ──────────────────────
+
+/**
+ * 10-rail polymorphic payment table (mig 047-054).
+ * Each rail carries its own metadata in `rail_details` JSONB.
+ */
+export type PaymentRail =
+  | 'STRIPE'
+  | 'WIRE_TRANSFER'
+  | 'CASH'
+  | 'CHEQUE'
+  | 'LETTER_OF_CREDIT'
+  | 'NETTING'
+  | 'THIRD_PARTY'
+  | 'MOBILE_MONEY'
+  | 'BANK_GUARANTEE'
+  | 'WALLET';
+
+/**
+ * Status enum for polymorphic payment tracking.
+ * Naming: `payment_status_v7` in schema (avoids future collision).
+ */
+export type PaymentStatusV7 =
+  | 'INITIATED'
+  | 'PROCESSING'
+  | 'CONFIRMED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'REFUNDED';
+
+/**
+ * Typed row for the `payments` table.
+ * Used by shipowner portal, cash desk, admin payments dashboard.
+ */
+export interface PaymentRow {
+  id: string;
+  transaction_id: string | null;
+  shipowner_id: string;
+  declared_by: string | null;
+  amount_minor: number;
+  currency: string;
+  amount_usd_minor: number;
+  fx_rate: number | null;
+  fx_rate_source: string | null;
+  fx_rate_locked_at: string | null;
+  rail: PaymentRail;
+  rail_details: Record<string, unknown>;
+  external_reference: string | null;
+  status: PaymentStatusV7;
+  rejected_reason: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * List payments for a specific shipowner, ordered by creation date (newest first).
+ * Useful for the shipowner portal to show payment history.
+ */
+export async function listPaymentsForShipowner(
+  db: SupabaseClient,
+  shipownerId: string,
+): Promise<PaymentRow[]> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .eq('shipowner_id', shipownerId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []) as PaymentRow[];
+}
+
+/**
+ * List pending payments for admin review (status INITIATED or PROCESSING).
+ * Excludes WALLET and STRIPE rails which have own flows.
+ * Useful for the cash desk / admin payments page.
+ */
+export async function listPendingAdminPayments(
+  db: SupabaseClient,
+): Promise<PaymentRow[]> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .in('status', ['INITIATED', 'PROCESSING'])
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []) as PaymentRow[];
+}
+
+/**
+ * Get a single payment by ID. Returns null if not found.
+ * Useful for detail pages or status checks.
+ */
+export async function getPayment(
+  db: SupabaseClient,
+  id: string,
+): Promise<PaymentRow | null> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as PaymentRow | null) ?? null;
 }
