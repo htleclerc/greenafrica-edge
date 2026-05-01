@@ -724,6 +724,7 @@
     "nav_analytics": "Analytics & Reports",
     "nav_validations": "Agent validation",
     "nav_tax_settings": "Carbon tax",
+    "nav_origin_port_proposals": "Origin-port proposals",
     "nav_revenue": "Revenue dashboard",
     "nav_payments": "Payment providers",
     "nav_tco": "TCO Dashboard",
@@ -1025,6 +1026,7 @@
     "action_adopt_decree": "Adopt Decree CH-8",
     "action_adopt_decree_sub": "Carbon offset policy update required.",
     "action_generate_proforma": "Generate Pro-forma: {name}",
+    "action_pay_proforma_for": "Pay pro-forma: {name}",
     "action_proforma_sub": "${amount} due — IMO {imo}",
     "project_certification_title": "Project Certification",
     "project_mangrove": "Mangrove Restoration",
@@ -1106,6 +1108,7 @@
     "audit_sent_to_agent": "Sent to Agent",
     "audit_viewed_by_recipient": "Viewed by Recipient",
     "generate_proforma_pdf": "Generate Pro-forma Invoice (PDF)",
+    "view_proforma_pdf": "View Pro-forma (PDF)",
     "view_tax_invoice": "View Tax Invoice (PDF)",
     "proforma_preview_title": "Pro-forma Invoice Preview",
     "print_save_pdf": "Print PDF",
@@ -1142,6 +1145,7 @@
     "cancel": "Cancel",
     "draft_save": "Save PDF",
     "print_and_send": "Print & Send →",
+    "pay_now_short": "Pay ${amount}",
     "demo_generate_disabled": "Demo mode — proforma generation is disabled. Set NEXT_PUBLIC_DEMO_ALLOWED=false in frontend/.env.local and sign in with a real account to generate.",
     "contest_invoice": "Contest",
     "export_csv": "Export CSV",
@@ -1229,6 +1233,8 @@
     "action_view_receipt": "View receipt →",
     "action_track_payment": "Track payment →",
     "action_generate_proforma": "Generate Pro-forma →",
+    "action_pay_proforma": "Pay pro-forma →",
+    "action_view_proforma": "View pro-forma →",
     "action_issue_notice": "Issue notice →",
     "action_hail_vessel": "Hail vessel →",
     "action_view_exemption": "View exemption →",
@@ -1240,8 +1246,30 @@
     "drawer_port": "Port",
     "drawer_emissions_tax": "Emissions & Tax",
     "drawer_estimated_emissions": "{value} tCO₂ estimated",
+    "drawer_documents": "Pro-formas & Invoices",
+    "doc_reference": "Reference",
+    "doc_issued": "Issued",
+    "doc_status": "Status",
+    "doc_amount": "Amount",
+    "doc_pay": "Pay",
+    "doc_view_invoice": "View invoice",
+    "doc_view": "View",
     "generate_proforma": "Generate Pro-forma →",
-    "close": "Close"
+    "pay_proforma": "Pay pro-forma →",
+    "close": "Close",
+    "add_vessel_title": "Register a vessel",
+    "add_vessel_subtitle": "Add a vessel to your fleet manually",
+    "add_vessel_imo": "IMO number",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Vessel name",
+    "add_vessel_call_sign": "Call sign",
+    "add_vessel_flag": "Flag (ISO-2)",
+    "add_vessel_type": "Type",
+    "add_vessel_dwt": "DWT (gross tonnage)",
+    "add_vessel_cancel": "Cancel",
+    "add_vessel_submit": "Register vessel",
+    "add_vessel_submitting": "Registering…",
+    "add_vessel_error_dwt": "DWT must be a positive number"
   },
   "GreenLedgerPage": {
     "page_title": "Green Ledger",
@@ -2585,5 +2613,206 @@
     "showSecret": "Show",
     "hideSecret": "Hide",
     "successToast": "Saved"
+  },
+  "AdminOriginPort": {
+    "title": "Origin port proposals",
+    "subtitle": "AIS destination strings that matched Berbera or Zeila with sufficient fuzzy confidence. Approve to add to the allow-list; reject to discard.",
+    "count": "{count} pending",
+    "empty": "No pending proposals.",
+    "col": {
+      "mmsi": "MMSI",
+      "vessel": "Vessel",
+      "raw": "Raw destination",
+      "normalized": "Normalized",
+      "guess": "Port guess",
+      "score": "Score",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "approveDialog": {
+      "title": "Approve proposal",
+      "portLabel": "Assign to port",
+      "addToAllowList": "Add normalized string to allow-list",
+      "createAlert": "Create arrival alert (if MMSI eligible)",
+      "submit": "Approve",
+      "submitting": "Approving…",
+      "cancel": "Cancel"
+    },
+    "rejectDialog": {
+      "title": "Reject proposal",
+      "reasonLabel": "Reason (required)",
+      "reasonPlaceholder": "Why is this proposal rejected? (visible in audit trail)",
+      "submit": "Reject",
+      "submitting": "Rejecting…",
+      "cancel": "Cancel"
+    }
+  },
+  "OwnerPortal": {
+    "brand": "Shipowner Portal",
+    "nav": {
+      "dashboard": "Dashboard",
+      "vessels": "Vessels",
+      "invoices": "Invoices",
+      "alerts": "Alerts",
+      "signOut": "Sign out"
+    },
+    "login": {
+      "title": "Sign in with your email",
+      "subtitle": "We'll send a one-time link to your inbox. No password required.",
+      "footerNote": "Access is invitation-only. If you haven't received an invite, ask the Port Operations team to enrol your account.",
+      "emailLabel": "Email",
+      "submit": "Send sign-in link",
+      "sending": "Sending…",
+      "linkSent": "If <strong>{email}</strong> is registered as a shipowner, a sign-in link is on its way. Check your inbox.",
+      "errors": {
+        "noOwnerRecord": "We couldn't find a shipowner profile for that email.",
+        "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
+        "ghost": "Your account has not been invited to the portal yet.",
+        "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
+        "generic": "Sign-in failed. Try again."
+      }
+    },
+    "dashboard": {
+      "subtitle": "Snapshot of your fleet and obligations.",
+      "stat": {
+        "activeVessels": "Active vessels",
+        "openAlerts": "Open alerts",
+        "unpaidProforma": "Unpaid pro-formas",
+        "paidYtd": "Paid YTD"
+      },
+      "quickActions": "Quick actions",
+      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>."
+    },
+    "vessels": {
+      "title": "Vessels",
+      "countOne": "{count} vessel on file.",
+      "countOther": "{count} vessels on file.",
+      "empty": "No vessels linked to your account yet.",
+      "loadFailed": "Failed to load vessels: {error}",
+      "back": "All vessels",
+      "specifications": "Specifications",
+      "recentAlerts": "Recent alerts",
+      "noAlerts": "No alerts on this vessel yet.",
+      "field": {
+        "flag": "Flag",
+        "category": "Category",
+        "lastZone": "Last zone",
+        "tonnage": "Gross tonnage (DWT)",
+        "enginePower": "Engine power",
+        "designSpeed": "Design speed",
+        "estimatedCo2": "Estimated CO₂",
+        "taxLiability": "Tax liability",
+        "compliance": "Compliance"
+      }
+    },
+    "invoices": {
+      "title": "Invoices",
+      "subtitle": "Pro-formas, final assessments, complements and refunds for your fleet.",
+      "loadFailed": "Failed to load invoices: {error}",
+      "empty": "No invoices on file yet.",
+      "pay": "Pay",
+      "dispute": "Dispute",
+      "paymentDeclared": "Payment declared",
+      "downloadPdf": "PDF",
+      "downloadAria": "Download PDF for {ref}",
+      "payDialog": {
+        "title": "Declare payment",
+        "subtitle": "Enter the bank-transfer reference for pro-forma {ref} ({amount}). Finance will reconcile it against the bank statement and confirm.",
+        "referenceLabel": "Bank reference",
+        "referencePlaceholder": "WIRE-2026-00123",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Sender bank, payer name…",
+        "cancel": "Cancel",
+        "submit": "Submit declaration",
+        "submitting": "Submitting…"
+      },
+      "disputeDialog": {
+        "title": "Dispute charge",
+        "subtitle": "Open a dispute on {ref}. Port Operations will review and respond by email.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Select a reason…",
+        "descriptionLabel": "Description ({count}/10+)",
+        "descriptionPlaceholder": "Explain why you believe this assessment is incorrect…",
+        "evidenceLabel": "Evidence URL (optional)",
+        "evidencePlaceholder": "https://...",
+        "cancel": "Cancel",
+        "submit": "Open dispute",
+        "submitting": "Submitting…",
+        "reason": {
+          "EMISSION_CALCULATION": "Emission calculation",
+          "TAX_RATE": "Tax rate",
+          "ZONE_CLASSIFICATION": "Zone classification",
+          "VESSEL_DATA": "Vessel data",
+          "OTHER": "Other"
+        }
+      }
+    },
+    "alerts": {
+      "title": "Alerts",
+      "subtitle": "Vessels approaching, in zone, or recently reconciled.",
+      "loadFailed": "Failed to load alerts: {error}",
+      "openSection": "Open ({count})",
+      "closedSection": "Closed ({count})",
+      "emptyOpen": "No active alerts."
+    }
+  },
+  "AdminEquasis": {
+    "title": "Equasis proposals",
+    "subtitle": "Owner-email discovery queue. Manual entries and scraper output land here for human validation before any change reaches the shipowners table.",
+    "pendingTitle": "Pending review",
+    "pendingSubtitle": "Owner-email proposals awaiting validation. Apply writes through the trust chain (won't overwrite officer-set emails).",
+    "resolvedTitle": "Recently resolved (last 30 days, {count})",
+    "newProposal": "New proposal",
+    "emptyPending": "No pending proposals.",
+    "col": {
+      "imo": "IMO",
+      "proposedOwner": "Proposed owner",
+      "email": "Email",
+      "country": "Country",
+      "source": "Source",
+      "scraped": "Scraped",
+      "outcome": "Outcome",
+      "reason": "Reason",
+      "reviewed": "Reviewed"
+    },
+    "outcome": {
+      "applied": "Applied",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "apply": "Apply",
+      "reject": "Reject"
+    },
+    "applyDialog": {
+      "title": "Apply this proposal?",
+      "subtitle": "Writes the proposed values into the shipowner row using source EQUASIS_VERIFIED. Officer-set emails are preserved (trust chain prevents downgrade). Name + country fill only if currently empty.",
+      "officerEmailWarning": "Email already set by a port officer (trust 3). The proposed email won't overwrite it — apply will only update name/country if empty.",
+      "submit": "Apply proposal",
+      "cancel": "Cancel"
+    },
+    "rejectDialog": {
+      "title": "Reject proposal",
+      "subtitle": "Reject the proposal for IMO {imo}? The shipowner row stays untouched.",
+      "placeholder": "Why is this proposal rejected? (visible in the audit trail)",
+      "submit": "Reject",
+      "cancel": "Cancel"
+    },
+    "createDialog": {
+      "title": "New manual proposal",
+      "subtitle": "Lands in the review queue with source manual. Same validation gate as scraper proposals — nothing is applied automatically.",
+      "field": {
+        "imo": "IMO number",
+        "owner": "Proposed owner name",
+        "manager": "Manager (optional)",
+        "email": "Email (optional)",
+        "country": "Country code (optional)"
+      },
+      "submit": "Create proposal",
+      "cancel": "Cancel"
+    }
   }
 }

@@ -2,11 +2,15 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, AlertTriangle, Radio, Shield } from 'lucide-react';
+import { Search, Filter, Download, Plus, Ship, CheckCircle2, Clock, FileText, AlertTriangle, Radio, Shield, CreditCard, Eye } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { useVessels } from '@/hooks/useVessels';
 import { useKpis } from '@/hooks/useKpis';
-import { SecureVessel, VesselComplianceStatus, VesselCategory } from '@/types/secure';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useRole } from '@/lib/RoleContext';
+import { SecureVessel, VesselComplianceStatus, VesselCategory, UserRole, Transaction, TransactionStatus } from '@/types/secure';
+import { transactionVariant } from '@/lib/badgeUtils';
+import { AddVesselModal } from './AddVesselModal';
 
 // ── Status → Action mapping ──────────────────────────────────────────────────
 // Each compliance status maps to a context-appropriate primary action.
@@ -19,7 +23,9 @@ interface VesselAction {
     color: string;
 }
 
-const STATUS_ACTION: Record<VesselComplianceStatus, VesselAction> = {
+// Staff (PORT_OFFICER / FINANCE_ADMIN / SUPERADMIN / MANAGER) actions —
+// authority-side language: generate, issue, hail.
+const STAFF_ACTION: Record<VesselComplianceStatus, VesselAction> = {
     [VesselComplianceStatus.COMPLIANT]: {
         labelKey: 'action_view_receipt',
         href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
@@ -58,6 +64,35 @@ const STATUS_ACTION: Record<VesselComplianceStatus, VesselAction> = {
     },
 };
 
+// Armateur (SHIPPING_AGENT / SHIPOWNER) actions — debtor-side language: pay,
+// view. The system mints proformas; the armateur settles them. Same hrefs land
+// on /dashboard/invoices?vessel=… where they can preview + pay the document.
+const ARMATEUR_ACTION: Record<VesselComplianceStatus, VesselAction> = {
+    ...STAFF_ACTION,
+    [VesselComplianceStatus.PAYMENT_DUE]: {
+        labelKey: 'action_pay_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <CreditCard className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.NON_COMPLIANT]: {
+        labelKey: 'action_pay_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <CreditCard className="w-3 h-3" />,
+        color: '#EF4444',
+    },
+    [VesselComplianceStatus.APPROACHING]: {
+        labelKey: 'action_view_proforma',
+        href: (v) => `/dashboard/invoices?vessel=${v.imoNumber}`,
+        icon: <Eye className="w-3 h-3" />,
+        color: '#38BDF8',
+    },
+};
+
+function isArmateurRole(role: UserRole): boolean {
+    return role === UserRole.SHIPPING_AGENT;
+}
+
 const COMPLIANCE_VARIANT: Record<VesselComplianceStatus, Parameters<typeof OsBadge>[0]['variant']> = {
     [VesselComplianceStatus.COMPLIANT]:     'compliant',
     [VesselComplianceStatus.PAYMENT_DUE]:   'payment_due',
@@ -71,11 +106,17 @@ type FilterStatus = 'ALL' | VesselComplianceStatus;
 
 export function VesselsPage() {
     const t = useTranslations('VesselsPage');
-    const { data: vessels } = useVessels();
+    const { role } = useRole();
+    const { data: vessels, refetch } = useVessels();
     const { data: kpis } = useKpis();
+    const { data: transactions } = useTransactions();
     const [search, setSearch]       = React.useState('');
     const [filterStatus, setFilter] = React.useState<FilterStatus>('ALL');
     const [selected, setSelected]   = React.useState<string | null>(null);
+    const [addOpen, setAddOpen]     = React.useState(false);
+
+    const isArmateur = isArmateurRole(role);
+    const actionMap  = isArmateur ? ARMATEUR_ACTION : STAFF_ACTION;
 
     const COMPLIANCE_LABEL: Record<VesselComplianceStatus, string> = {
         [VesselComplianceStatus.COMPLIANT]:     t('status_compliant'),
@@ -155,7 +196,10 @@ export function VesselsPage() {
                         <Download className="w-3.5 h-3.5" />
                         {t('export_csv')}
                     </button>
-                    <button className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors shadow-[0_0_10px_rgba(0,217,126,0.2)]">
+                    <button
+                        onClick={() => setAddOpen(true)}
+                        className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold hover:bg-[#00C070] transition-colors shadow-[0_0_10px_rgba(0,217,126,0.2)]"
+                    >
                         <Plus className="w-3.5 h-3.5" />
                         {t('manual_entry')}
                     </button>
@@ -192,6 +236,7 @@ export function VesselsPage() {
                                 onSelect={() => setSelected(selected === v.id ? null : v.id)}
                                 complianceLabel={COMPLIANCE_LABEL}
                                 categoryLabel={CATEGORY_LABEL}
+                                actionMap={actionMap}
                             />
                         ))}
                     </tbody>
@@ -232,8 +277,19 @@ export function VesselsPage() {
 
             {/* Vessel detail drawer (bottom) */}
             {vessel && (
-                <VesselDetailDrawer vessel={vessel} onClose={() => setSelected(null)} />
+                <VesselDetailDrawer
+                    vessel={vessel}
+                    onClose={() => setSelected(null)}
+                    isArmateur={isArmateur}
+                    documents={transactions.filter((tx) => tx.vesselId === vessel.id)}
+                />
             )}
+
+            <AddVesselModal
+                open={addOpen}
+                onClose={() => setAddOpen(false)}
+                onCreated={refetch}
+            />
         </div>
     );
 }
@@ -252,12 +308,13 @@ function KpiPill({ label, value, color, dot }: { label: string; value: string; c
     );
 }
 
-function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryLabel }: {
+function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryLabel, actionMap }: {
     vessel: SecureVessel;
     isSelected: boolean;
     onSelect: () => void;
     complianceLabel: Record<VesselComplianceStatus, string>;
     categoryLabel: Record<VesselCategory, string>;
+    actionMap: Record<VesselComplianceStatus, VesselAction>;
 }) {
     const t = useTranslations('VesselsPage');
     const lastSeen = new Date(v.position.lastSeenUtc);
@@ -267,7 +324,7 @@ function VesselRow({ vessel: v, isSelected, onSelect, complianceLabel, categoryL
         : t('yesterday');
     const lastSeenSub = minsAgo < 120 ? t('in_eez_ago', { minutes: minsAgo }) : t('departed');
     const isAlert = v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE || v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT;
-    const action = STATUS_ACTION[v.complianceStatus];
+    const action = actionMap[v.complianceStatus];
 
     return (
         <tr
@@ -363,41 +420,132 @@ function VesselCard({ vessel: v, isSelected, onSelect, complianceLabel, category
     );
 }
 
-function VesselDetailDrawer({ vessel: v, onClose }: { vessel: SecureVessel; onClose: () => void }) {
+function VesselDetailDrawer({ vessel: v, onClose, isArmateur, documents }: {
+    vessel: SecureVessel;
+    onClose: () => void;
+    isArmateur: boolean;
+    documents: Transaction[];
+}) {
     const t = useTranslations('VesselsPage');
     return (
-        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-200">
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_identity')}</p>
-                <p className="text-sm font-bold text-[var(--os-text-primary)]">{v.name}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">IMO {v.imoNumber} · MMSI {v.mmsi}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_call_sign')}: {v.callSign} · {t('drawer_flag')}: {v.flagCode}</p>
+        <div className="border-t border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 sm:px-5 py-4 flex flex-col gap-4 animate-in slide-in-from-bottom-2 duration-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_identity')}</p>
+                    <p className="text-sm font-bold text-[var(--os-text-primary)]">{v.name}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">IMO {v.imoNumber} · MMSI {v.mmsi}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_call_sign')}: {v.callSign} · {t('drawer_flag')}: {v.flagCode}</p>
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_position')}</p>
+                    <p className="text-xs text-[var(--os-text-primary)]">{v.position.lat.toFixed(4)}° N, {v.position.lng.toFixed(4)}° E</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_heading')} {v.position.heading}° · {v.position.speedKnots} kn</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_port')}: {v.portCall}</p>
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_emissions_tax')}</p>
+                    <p className="text-xl font-bold text-[#EF4444] tabular-nums">${v.taxLiabilityUsd.toLocaleString()}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_estimated_emissions', { value: v.estimatedEmissionsTco2 })}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">DWT: {v.grossTonnageDwt.toLocaleString()}</p>
+                </div>
+                <div className="flex flex-col gap-2 justify-center">
+                    {!isArmateur && (
+                        <a
+                            href={`/dashboard/invoices?vessel=${v.imoNumber}`}
+                            className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
+                        >
+                            {t('generate_proforma')}
+                        </a>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
+                    >
+                        {t('close')}
+                    </button>
+                </div>
             </div>
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_position')}</p>
-                <p className="text-xs text-[var(--os-text-primary)]">{v.position.lat.toFixed(4)}° N, {v.position.lng.toFixed(4)}° E</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_heading')} {v.position.heading}° · {v.position.speedKnots} kn</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_port')}: {v.portCall}</p>
-            </div>
-            <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_emissions_tax')}</p>
-                <p className="text-xl font-bold text-[#EF4444] tabular-nums">${v.taxLiabilityUsd.toLocaleString()}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">{t('drawer_estimated_emissions', { value: v.estimatedEmissionsTco2 })}</p>
-                <p className="text-xs text-[var(--os-text-muted)]">DWT: {v.grossTonnageDwt.toLocaleString()}</p>
-            </div>
-            <div className="flex flex-col gap-2 justify-center">
-                <a
-                    href={`/dashboard/invoices?vessel=${v.imoNumber}`}
-                    className="w-full py-2 rounded-xl bg-[#00D97E] text-[#060D1A] text-xs font-bold text-center hover:bg-[#00C070] transition-colors"
-                >
-                    {t('generate_proforma')}
-                </a>
-                <button
-                    onClick={onClose}
-                    className="w-full py-2 rounded-xl border border-[var(--os-border)] text-xs text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] hover:border-[var(--os-border-strong)] transition-colors"
-                >
-                    {t('close')}
-                </button>
+
+            {/* Documents (proformas + invoices) — armateur view only */}
+            {isArmateur && documents.length > 0 && (
+                <DrawerDocuments documents={documents} vesselImo={v.imoNumber} />
+            )}
+        </div>
+    );
+}
+
+function DrawerDocuments({ documents, vesselImo }: { documents: Transaction[]; vesselImo: string }) {
+    const t = useTranslations('VesselsPage');
+
+    const STATUS_LABEL: Record<TransactionStatus, string> = {
+        [TransactionStatus.PAID]:     t('status_compliant'),
+        [TransactionStatus.PENDING]:  t('status_payment_due'),
+        [TransactionStatus.OVERDUE]:  t('status_non_compliant'),
+        [TransactionStatus.EXEMPT]:   t('status_exempt'),
+        [TransactionStatus.DISPUTED]: t('status_processing'),
+    };
+
+    const sorted = [...documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return (
+        <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('drawer_documents')}</p>
+            <div className="rounded-xl border border-[var(--os-border)] overflow-hidden">
+                <table className="w-full text-xs">
+                    <thead className="bg-[var(--os-surface-3)]">
+                        <tr className="text-left text-[10px] uppercase tracking-widest text-[var(--os-text-muted)]">
+                            <th className="px-3 py-2 font-bold">{t('doc_reference')}</th>
+                            <th className="px-3 py-2 font-bold">{t('doc_issued')}</th>
+                            <th className="px-3 py-2 font-bold">{t('doc_status')}</th>
+                            <th className="px-3 py-2 font-bold text-right">{t('doc_amount')}</th>
+                            <th className="px-3 py-2 font-bold text-right">{t('col_actions')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sorted.map((tx) => {
+                            const isPaid    = tx.status === TransactionStatus.PAID;
+                            const isPayable = tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE;
+                            const href      = `/dashboard/invoices?vessel=${vesselImo}&txn=${tx.id}`;
+                            return (
+                                <tr key={tx.id} className="border-t border-[var(--os-border)]">
+                                    <td className="px-3 py-2.5">
+                                        <p className="font-mono font-semibold text-[var(--os-text-primary)]">{tx.ref}</p>
+                                        <p className="text-[10px] text-[var(--os-text-muted)]">{tx.transactionType.replace('_', ' ')}</p>
+                                    </td>
+                                    <td className="px-3 py-2.5 text-[var(--os-text-secondary)]">
+                                        {new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                    </td>
+                                    <td className="px-3 py-2.5">
+                                        <OsBadge variant={transactionVariant(tx.status)} label={STATUS_LABEL[tx.status]} />
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono font-bold text-[var(--os-text-primary)] tabular-nums">
+                                        ${tx.taxAmountUsd.toLocaleString()}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right">
+                                        {isPayable && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#EF4444] hover:underline">
+                                                <CreditCard className="w-3 h-3" />
+                                                {t('doc_pay')}
+                                            </a>
+                                        )}
+                                        {isPaid && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#22C55E] hover:underline">
+                                                <Eye className="w-3 h-3" />
+                                                {t('doc_view_invoice')}
+                                            </a>
+                                        )}
+                                        {!isPayable && !isPaid && (
+                                            <a href={href} className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--os-text-secondary)] hover:underline">
+                                                <Eye className="w-3 h-3" />
+                                                {t('doc_view')}
+                                            </a>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

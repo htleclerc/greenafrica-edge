@@ -15,6 +15,7 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/corridor"
 	"github.com/htleclerc/africgreen/backend/internal/eez"
 	"github.com/htleclerc/africgreen/backend/internal/middleware"
+	"github.com/htleclerc/africgreen/backend/internal/originport"
 	"github.com/htleclerc/africgreen/backend/internal/reconcile"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 	"github.com/htleclerc/africgreen/backend/internal/tax"
@@ -59,8 +60,10 @@ func main() {
 	alertsHandler := alerts.NewHandler(db)
 	mux.HandleFunc("GET /api/v1/alerts/{id}/distance-final", alertsHandler.DistanceFinal)
 
-	// AIS (now with corridor + eez hooks)
-	aisHandler := ais.NewHandler(cfg, db, watcher, tracker)
+	// AIS (corridor + eez + originport hooks).
+	opCache := originport.NewCache()
+	opWatcher := originport.NewWatcher(db, appcfg, opCache)
+	aisHandler := ais.NewHandler(cfg, db, watcher, tracker, opWatcher)
 	mux.HandleFunc("GET /api/v1/ais/status", aisHandler.Status)
 	mux.HandleFunc("POST /api/v1/ais/start", aisHandler.Start)
 	mux.HandleFunc("POST /api/v1/ais/stop", aisHandler.Stop)

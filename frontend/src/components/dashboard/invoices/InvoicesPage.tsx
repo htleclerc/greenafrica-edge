@@ -89,9 +89,20 @@ export function InvoicesPage() {
         setPaymentLoading(recordPaymentTx.id);
         setPaymentError(null);
         try {
+            // Idempotency-Key: one UUID per click. If the network drops the
+            // response or the user double-clicks, the server replays the
+            // cached response instead of re-flipping status / re-emitting
+            // audit log / re-generating receipt / re-sending email.
+            // See migration 039 + frontend/src/app/api/lib/idempotency.ts.
+            const idempotencyKey = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+                ? crypto.randomUUID()
+                : `mp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
             const res = await fetch('/api/transactions/mark-paid', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Idempotency-Key': idempotencyKey,
+                },
                 body: JSON.stringify({
                     transactionId: recordPaymentTx.id,
                     actingUserId: user.id,
@@ -374,7 +385,17 @@ export function InvoicesPage() {
             </div>
 
             {/* Pro-forma modal */}
-            {proForma && <ProFormaModal tx={proForma} onClose={() => setProForma(null)} />}
+            {proForma && (
+                <ProFormaModal
+                    tx={proForma}
+                    onClose={() => setProForma(null)}
+                    onPayNow={() => {
+                        const tx = proForma;
+                        setProForma(null);
+                        handlePayNow(tx);
+                    }}
+                />
+            )}
 
             {/* Wire transfer instructions modal */}
             {wireInstructions && (
@@ -426,7 +447,8 @@ function InvoiceDetail({
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
-    const canContest = role === UserRole.SHIPPING_AGENT && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
+    const isArmateur = role === UserRole.SHIPPING_AGENT;
+    const canContest = isArmateur && (tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE);
 
     const STATUS_LABEL: Record<TransactionStatus, string> = {
         [TransactionStatus.PAID]:     t('status_paid'),
@@ -455,10 +477,12 @@ function InvoiceDetail({
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <OsButton variant="secondary" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={onGenerateProForma}>
-                        {t('generate_statement')}
-                    </OsButton>
-                    {!isPaid && (
+                    {!isArmateur && (
+                        <OsButton variant="secondary" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={onGenerateProForma}>
+                            {t('generate_statement')}
+                        </OsButton>
+                    )}
+                    {!isPaid && !isArmateur && (
                         <OsButton
                             variant="primary"
                             size="sm"
@@ -591,7 +615,14 @@ function InvoiceDetail({
                 <TransactionAuditTrail transactionId={tx.id} />
             )}
 
-            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status */}
+            {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status & role.
+              * Armateurs (SHIPPING_AGENT) ne voient PAS le bouton "Generate Pro-forma":
+              * le pro-forma est émis par l'autorité portuaire et envoyé par email,
+              * l'armateur n'a pas vocation à le re-générer (sinon risque de copies
+              * divergentes hors audit trail). Ils gardent les autres branches:
+              * - PAID + receipt URL → Download Official Receipt
+              * - PAID sans receipt → View tax invoice (lecture seule du doc émis)
+              */}
             {isPaid && tx.receiptPdfUrl ? (
                 // PAID with a real receipt PDF — open the receipt directly
                 <a
@@ -609,8 +640,8 @@ function InvoiceDetail({
                         Download Official Receipt (PDF)
                     </OsButton>
                 </a>
-            ) : (
-                // Unpaid (or paid without a generated receipt yet) — open the modal
+            ) : isPaid ? (
+                // Paid without a generated receipt yet — view tax invoice (tous rôles)
                 <OsButton
                     variant="primary"
                     size="md"
@@ -618,7 +649,30 @@ function InvoiceDetail({
                     onClick={onGenerateProForma}
                     className="w-full"
                 >
-                    {isPaid ? t('view_tax_invoice') : t('generate_proforma_pdf')}
+                    {t('view_tax_invoice')}
+                </OsButton>
+            ) : role !== UserRole.SHIPPING_AGENT ? (
+                // Unpaid + non-armateur (autorité portuaire, admin) — Generate Pro-forma
+                <OsButton
+                    variant="primary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {t('generate_proforma_pdf')}
+                </OsButton>
+            ) : (
+                // Unpaid + armateur — view the pro-forma the system already
+                // minted (same modal handler, just labeled for the debtor side).
+                <OsButton
+                    variant="secondary"
+                    size="md"
+                    icon={<FileText className="w-4 h-4" />}
+                    onClick={onGenerateProForma}
+                    className="w-full"
+                >
+                    {t('view_proforma_pdf')}
                 </OsButton>
             )}
         </div>

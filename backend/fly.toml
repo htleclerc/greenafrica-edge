@@ -1,20 +1,33 @@
-# fly.toml app configuration file generated for africgreen on 2026-04-16T23:14:03Z
+# Fly.io deployment config for AfricgreenOS Go backend
+# Deploy: fly deploy --config backend/fly.toml
 #
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+# Two process groups in one Fly app:
+#   - api      → cmd/api binary, public HTTP on :8080
+#   - scraper  → cmd/scraper binary, no public ports (background worker)
 #
+# Scale independently:
+#   fly scale count api=1 scraper=0   # default — scraper off
+#   fly scale count scraper=1          # turn scraper on (still gated by
+#                                      # feature.equasis_scraper_enabled)
+# Restart one without touching the other:
+#   fly machine restart <id>           # find via `fly machines list`
 
 app = 'africgreen'
 primary_region = 'ams'
 
 [build]
 
+[processes]
+  api = "/africgreen-api"
+  scraper = "/africgreen-scraper"
+
 [http_service]
   internal_port = 8080
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+  min_machines_running = 1
+  processes = ["api"]
 
 [[vm]]
   memory = '1gb'

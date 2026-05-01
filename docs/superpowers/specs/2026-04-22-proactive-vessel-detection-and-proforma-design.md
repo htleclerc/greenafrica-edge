@@ -769,7 +769,7 @@ Changes to `app_config` are audit-logged via existing trigger (mig 018).
 
 ### Phase 2 — feature-flagged
 
-- `feature.ais_global_enabled`: detection A (origin port departure) via paid aisstream.io tier, new scenario in `corridor.Watcher` filtering on `Destination` field.
+- ✅ `feature.ais_global_enabled`: detection A (origin port departure) — **Plan 8 v0 merged 2026-04-27**. Module `backend/internal/originport/` (sibling of `corridor.Watcher`, not branch); admin review UI at `/admin/origin-port-proposals`. Free tier aisstream.io with 2 WS connections. See [`docs/superpowers/specs/2026-04-27-plan-8-ais-global-origin-port-detection.md`](2026-04-27-plan-8-ais-global-origin-port-detection.md).
 - `feature.equasis_scraper_enabled`: Go scraper worker writing proposals to `equasis_scrape_proposals`; admin UI to review and apply.
 - `feature.shipowner_portal_enabled`: B2 magic-link invitations; `/owner` routes for shipowners.
 

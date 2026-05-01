@@ -1,6 +1,6 @@
 # Carbon Tax Pro-Forma — Project Roadmap
 
-**Last updated**: 2026-04-26 after B1 + B2 + P1.1-P1.4 fixes (commit `861816d` on `origin/develop`)
+**Last updated**: 2026-04-27 after Plan 8 v0 merged (feat/ais-global-v0)
 **Master spec**: [`specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md`](specs/2026-04-22-proactive-vessel-detection-and-proforma-design.md)
 
 > Single pane of glass for this project. Start here when resuming in a new session.
@@ -18,6 +18,7 @@
 | 3 | `feat/carbon-tax-proforma-pipeline` | Pro-forma pipeline — agent-match, worker, claim UI | "Plan 3 status" |
 | 4 | `feat/carbon-tax-reconciliation` | Reconciliation — DEPARTED_EEZ → FINAL/COMPLEMENT/REFUND | "Plan 4 status" |
 | 5 | `feat/carbon-tax-admin-escalation` | Admin surfaces + owner escalation + A2 audit | "Plan 5 status" |
+| 8 | `feat/ais-global-v0` | AIS global origin-port detection (Phase 2) | "Plan 8 status" |
 
 ### End-to-end flow that works today
 
@@ -148,9 +149,7 @@ Documented in [`docs/dev-setup-queue-worker.md`](../dev-setup-queue-worker.md). 
 
 ### 🔮 Phase 2 — feature-flagged, activate later
 
-All three dormant, gated by `app_config.feature.*`:
-
-- **`feature.ais_global_enabled`**: scenario A in the spec — detection at origin port departure using global AIS coverage. Requires paid aisstream.io tier + robustness against sloppy `Destination` field.
+- ✅ **`feature.ais_global_enabled`**: Plan 8 v0 merged 2026-04-27. Detects vessels declaring Berbera/Zeila as their AIS Destination at origin port (~1-3 weeks before EEZ entry). Module `backend/internal/originport/` (matcher + cache + watcher); admin review at `/admin/origin-port-proposals`. Default `false`; toggle via `/admin/tax-settings`. Free tier aisstream.io with 2 WS connections (regional dynamic + global static). See [`docs/superpowers/specs/2026-04-27-plan-8-ais-global-origin-port-detection.md`](specs/2026-04-27-plan-8-ais-global-origin-port-detection.md). v0+1 backlog: refactor `OriginPortProposalsPanel.tsx` for `useTranslations('AdminOriginPort')` (i18n keys already loaded EN+FR), AR/PT/SW human translations, real backdated alert creation on proposal approval.
 - **`feature.equasis_scraper_enabled`**: Phase 2 owner-email discovery pipeline. Scraper worker + `equasis_scrape_proposals` review UI. Spec §6.7 + mig 030 (schema already in place, dormant).
 - **`feature.shipowner_portal_enabled`**: currently `true` in config but the actual portal UI (shipowner-facing dashboard with their alerts + invoices) hasn't been built. Plan 2 Task 0 mig 033 added the RLS policies. Next step: `/owner/*` routes with magic-link invite flow.
 

@@ -603,6 +603,7 @@
     "nav_analytics": "Analytics & Rapports",
     "nav_validations": "Validation des agents",
     "nav_tax_settings": "Taxe carbone",
+    "nav_origin_port_proposals": "Propositions port d'origine",
     "nav_revenue": "Tableau des recettes",
     "nav_payments": "Fournisseurs de paiement",
     "nav_tco": "Tableau TCO",
@@ -1025,6 +1026,7 @@
     "action_adopt_decree": "Adopter le décret CH-8",
     "action_adopt_decree_sub": "Mise à jour de la politique de compensation carbone requise.",
     "action_generate_proforma": "Générer la pro-forma : {name}",
+    "action_pay_proforma_for": "Payer la pro-forma : {name}",
     "action_proforma_sub": "{amount} $ dû — IMO {imo}",
     "project_certification_title": "Certification des projets",
     "project_mangrove": "Restauration des mangroves",
@@ -1106,6 +1108,7 @@
     "audit_sent_to_agent": "Envoyée à l'agent",
     "audit_viewed_by_recipient": "Vue par le destinataire",
     "generate_proforma_pdf": "Générer la facture pro-forma (PDF)",
+    "view_proforma_pdf": "Voir la pro-forma (PDF)",
     "view_tax_invoice": "Voir la facture fiscale (PDF)",
     "proforma_preview_title": "Aperçu de la facture pro-forma",
     "print_save_pdf": "Imprimer PDF",
@@ -1142,6 +1145,7 @@
     "cancel": "Annuler",
     "draft_save": "Enregistrer PDF",
     "print_and_send": "Imprimer et envoyer →",
+    "pay_now_short": "Payer {amount} $",
     "demo_generate_disabled": "Mode démo — la génération de proforma est désactivée. Mets NEXT_PUBLIC_DEMO_ALLOWED=false dans frontend/.env.local et connecte-toi avec un vrai compte pour générer.",
     "contest_invoice": "Contester",
     "export_csv": "Exporter CSV",
@@ -1283,6 +1287,8 @@
     "action_view_receipt": "Voir le reçu →",
     "action_track_payment": "Suivre paiement →",
     "action_generate_proforma": "Générer Pro-forma →",
+    "action_pay_proforma": "Payer la pro-forma →",
+    "action_view_proforma": "Voir la pro-forma →",
     "action_issue_notice": "Émettre avis →",
     "action_hail_vessel": "Héler navire →",
     "action_view_exemption": "Voir exemption →",
@@ -1294,8 +1300,30 @@
     "drawer_port": "Port",
     "drawer_emissions_tax": "Émissions et taxe",
     "drawer_estimated_emissions": "{value} tCO₂ estimées",
+    "drawer_documents": "Pro-formas et factures",
+    "doc_reference": "Référence",
+    "doc_issued": "Émis le",
+    "doc_status": "Statut",
+    "doc_amount": "Montant",
+    "doc_pay": "Payer",
+    "doc_view_invoice": "Voir la facture",
+    "doc_view": "Voir",
     "generate_proforma": "Générer la pro-forma →",
-    "close": "Fermer"
+    "pay_proforma": "Payer la pro-forma →",
+    "close": "Fermer",
+    "add_vessel_title": "Enregistrer un navire",
+    "add_vessel_subtitle": "Ajouter manuellement un navire à votre flotte",
+    "add_vessel_imo": "Numéro IMO",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Nom du navire",
+    "add_vessel_call_sign": "Indicatif d'appel",
+    "add_vessel_flag": "Pavillon (ISO-2)",
+    "add_vessel_type": "Type",
+    "add_vessel_dwt": "TPL (port en lourd)",
+    "add_vessel_cancel": "Annuler",
+    "add_vessel_submit": "Enregistrer le navire",
+    "add_vessel_submitting": "Enregistrement…",
+    "add_vessel_error_dwt": "Le TPL doit être un nombre positif"
   },
   "GreenLedgerPage": {
     "page_title": "Registre Vert",
@@ -2528,6 +2556,43 @@
     "active": "Actif",
     "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
   },
+  "AdminOriginPort": {
+    "title": "Propositions de destination port d'origine",
+    "subtitle": "Chaînes de destination AIS correspondant à Berbera ou Zeila avec une confiance de fuzzy matching suffisante. Approuvez pour ajouter à la liste blanche ; rejetez pour écarter.",
+    "count": "{count} en attente",
+    "empty": "Aucune proposition en attente.",
+    "col": {
+      "mmsi": "MMSI",
+      "vessel": "Navire",
+      "raw": "Destination brute",
+      "normalized": "Normalisée",
+      "guess": "Port suggéré",
+      "score": "Score",
+      "created": "Créée",
+      "actions": "Actions"
+    },
+    "actions": {
+      "approve": "Approuver",
+      "reject": "Rejeter"
+    },
+    "approveDialog": {
+      "title": "Approuver la proposition",
+      "portLabel": "Assigner au port",
+      "addToAllowList": "Ajouter la chaîne normalisée à la liste blanche",
+      "createAlert": "Créer une alerte d'arrivée (si MMSI admissible)",
+      "submit": "Approuver",
+      "submitting": "Approbation en cours…",
+      "cancel": "Annuler"
+    },
+    "rejectDialog": {
+      "title": "Rejeter la proposition",
+      "reasonLabel": "Motif (requis)",
+      "reasonPlaceholder": "Pourquoi cette proposition est-elle rejetée ? (visible dans la piste d'audit)",
+      "submit": "Rejeter",
+      "submitting": "Rejet en cours…",
+      "cancel": "Annuler"
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Pipeline de taxe carbone",
     "sectionSubtitle": "Configuration d'exécution pour la détection, la réconciliation, l'escalade et les feature flags. Les secrets ne peuvent être modifiés que par un SUPERADMIN.",
@@ -2555,5 +2620,169 @@
     "showSecret": "Afficher",
     "hideSecret": "Masquer",
     "successToast": "Enregistré"
+  },
+  "OwnerPortal": {
+    "brand": "Portail Armateur",
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "vessels": "Navires",
+      "invoices": "Factures",
+      "alerts": "Alertes",
+      "signOut": "Se déconnecter"
+    },
+    "login": {
+      "title": "Connectez-vous avec votre email",
+      "subtitle": "Nous vous enverrons un lien à usage unique. Pas de mot de passe requis.",
+      "footerNote": "L'accès est sur invitation. Si vous n'avez pas reçu d'invitation, contactez l'équipe Operations Portuaires pour activer votre compte.",
+      "emailLabel": "Email",
+      "submit": "Envoyer le lien de connexion",
+      "sending": "Envoi…",
+      "linkSent": "Si <strong>{email}</strong> est enregistré comme armateur, un lien de connexion arrive. Vérifiez votre boîte mail.",
+      "errors": {
+        "noOwnerRecord": "Nous n'avons pas trouvé de profil armateur pour cette adresse.",
+        "invited": "Votre invitation est encore en attente — ouvrez le lien magique depuis votre email d'invitation.",
+        "ghost": "Votre compte n'a pas encore été invité au portail.",
+        "callbackFailed": "Le lien de connexion a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.",
+        "generic": "Échec de la connexion. Réessayez."
+      }
+    },
+    "dashboard": {
+      "subtitle": "Aperçu de votre flotte et de vos obligations.",
+      "stat": {
+        "activeVessels": "Navires actifs",
+        "openAlerts": "Alertes ouvertes",
+        "unpaidProforma": "Pro-formas impayées",
+        "paidYtd": "Payé YTD"
+      },
+      "quickActions": "Actions rapides",
+      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives."
+    },
+    "vessels": {
+      "title": "Navires",
+      "countOne": "{count} navire enregistré.",
+      "countOther": "{count} navires enregistrés.",
+      "empty": "Aucun navire lié à votre compte pour le moment.",
+      "loadFailed": "Échec du chargement des navires : {error}",
+      "back": "Tous les navires",
+      "specifications": "Caractéristiques",
+      "recentAlerts": "Alertes récentes",
+      "noAlerts": "Pas encore d'alertes sur ce navire.",
+      "field": {
+        "flag": "Pavillon",
+        "category": "Catégorie",
+        "lastZone": "Dernière zone",
+        "tonnage": "Tonnage brut (DWT)",
+        "enginePower": "Puissance moteur",
+        "designSpeed": "Vitesse de design",
+        "estimatedCo2": "CO₂ estimé",
+        "taxLiability": "Taxe due",
+        "compliance": "Conformité"
+      }
+    },
+    "invoices": {
+      "title": "Factures",
+      "subtitle": "Pro-formas, taxations finales, compléments et remboursements pour votre flotte.",
+      "loadFailed": "Échec du chargement des factures : {error}",
+      "empty": "Aucune facture pour le moment.",
+      "pay": "Payer",
+      "dispute": "Contester",
+      "paymentDeclared": "Paiement déclaré",
+      "downloadPdf": "PDF",
+      "downloadAria": "Télécharger le PDF pour {ref}",
+      "payDialog": {
+        "title": "Déclarer un paiement",
+        "subtitle": "Saisissez la référence du virement bancaire pour la pro-forma {ref} ({amount}). Le service Finance la rapprochera du relevé bancaire et confirmera.",
+        "referenceLabel": "Référence bancaire",
+        "referencePlaceholder": "WIRE-2026-00123",
+        "notesLabel": "Notes (optionnel)",
+        "notesPlaceholder": "Banque émettrice, nom du payeur…",
+        "cancel": "Annuler",
+        "submit": "Soumettre la déclaration",
+        "submitting": "Envoi…"
+      },
+      "disputeDialog": {
+        "title": "Contester la charge",
+        "subtitle": "Ouvrir une contestation sur {ref}. Operations Portuaires examinera et répondra par email.",
+        "reasonLabel": "Motif",
+        "reasonPlaceholder": "Choisir un motif…",
+        "descriptionLabel": "Description ({count}/10+)",
+        "descriptionPlaceholder": "Expliquez pourquoi vous estimez cette taxation incorrecte…",
+        "evidenceLabel": "URL de preuve (optionnel)",
+        "evidencePlaceholder": "https://...",
+        "cancel": "Annuler",
+        "submit": "Ouvrir la contestation",
+        "submitting": "Envoi…",
+        "reason": {
+          "EMISSION_CALCULATION": "Calcul des émissions",
+          "TAX_RATE": "Taux de taxation",
+          "ZONE_CLASSIFICATION": "Classification de zone",
+          "VESSEL_DATA": "Données du navire",
+          "OTHER": "Autre"
+        }
+      }
+    },
+    "alerts": {
+      "title": "Alertes",
+      "subtitle": "Navires en approche, en zone, ou récemment réconciliés.",
+      "loadFailed": "Échec du chargement des alertes : {error}",
+      "openSection": "Ouvertes ({count})",
+      "closedSection": "Fermées ({count})",
+      "emptyOpen": "Aucune alerte active."
+    }
+  },
+  "AdminEquasis": {
+    "title": "Propositions Equasis",
+    "subtitle": "File de découverte d'emails armateurs. Les saisies manuelles et la sortie du scraper atterrissent ici pour validation humaine avant toute écriture sur shipowners.",
+    "pendingTitle": "À examiner",
+    "pendingSubtitle": "Propositions d'emails armateurs en attente de validation. L'application passe par la chaîne de confiance (n'écrase pas les emails saisis par un officier).",
+    "resolvedTitle": "Récemment résolues (30 derniers jours, {count})",
+    "newProposal": "Nouvelle proposition",
+    "emptyPending": "Aucune proposition en attente.",
+    "col": {
+      "imo": "OMI",
+      "proposedOwner": "Armateur proposé",
+      "email": "Email",
+      "country": "Pays",
+      "source": "Source",
+      "scraped": "Récolte",
+      "outcome": "Résultat",
+      "reason": "Motif",
+      "reviewed": "Examiné"
+    },
+    "outcome": {
+      "applied": "Appliqué",
+      "rejected": "Rejeté"
+    },
+    "actions": {
+      "apply": "Appliquer",
+      "reject": "Rejeter"
+    },
+    "applyDialog": {
+      "title": "Appliquer cette proposition ?",
+      "subtitle": "Écrit les valeurs proposées sur l'armateur avec source EQUASIS_VERIFIED. Les emails saisis par un officier sont préservés (la chaîne de confiance empêche un déclassement). Nom + pays ne remplissent que si actuellement vides.",
+      "officerEmailWarning": "Email déjà saisi par un officier portuaire (confiance 3). L'email proposé ne sera pas écrasé — l'application ne mettra à jour que nom/pays si vides.",
+      "submit": "Appliquer la proposition",
+      "cancel": "Annuler"
+    },
+    "rejectDialog": {
+      "title": "Rejeter la proposition",
+      "subtitle": "Rejeter la proposition pour OMI {imo} ? L'armateur reste intact.",
+      "placeholder": "Pourquoi cette proposition est-elle rejetée ? (visible dans l'audit trail)",
+      "submit": "Rejeter",
+      "cancel": "Annuler"
+    },
+    "createDialog": {
+      "title": "Nouvelle proposition manuelle",
+      "subtitle": "Atterrit dans la file de revue avec source manual. Même validation que les propositions du scraper — rien n'est appliqué automatiquement.",
+      "field": {
+        "imo": "Numéro OMI",
+        "owner": "Nom de l'armateur proposé",
+        "manager": "Manager (optionnel)",
+        "email": "Email (optionnel)",
+        "country": "Code pays (optionnel)"
+      },
+      "submit": "Créer la proposition",
+      "cancel": "Annuler"
+    }
   }
 }

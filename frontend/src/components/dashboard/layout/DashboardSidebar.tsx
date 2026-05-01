@@ -40,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },
     { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', labelKey: 'nav_validations',  section: 'admin' },
     { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
+    { key: 'origin-port-proposals', icon: <Anchor className="w-5 h-5" />, href: '/admin/origin-port-proposals', labelKey: 'nav_origin_port_proposals', section: 'admin' },
     { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         labelKey: 'nav_revenue',      section: 'admin' },
     { key: 'payments',     icon: <CreditCard className="w-5 h-5" />,    href: '/admin/payments',        labelKey: 'nav_payments',     section: 'admin' },
 ];
