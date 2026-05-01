@@ -49,6 +49,34 @@ BEGIN
   ASSERT v_count = 0, 'owner_a should not see owner_b payment';
 END $$;
 
+-- Owner A cannot flip status to CONFIRMED (only CANCELLED is allowed by WITH CHECK)
+DO $$
+DECLARE v_status TEXT;
+  v_error_msg TEXT := '';
+BEGIN
+  -- Try to flip to CONFIRMED — should be blocked by WITH CHECK policy
+  BEGIN
+    UPDATE public.payments SET status='CONFIRMED'
+      WHERE id = 'a0000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN OTHERS THEN
+    v_error_msg := SQLERRM;
+  END;
+  ASSERT v_error_msg LIKE '%row-level security policy%',
+    format('expected RLS policy error, got: %s', v_error_msg);
+
+  -- Verify status is still INITIATED
+  SELECT status INTO v_status FROM public.payments
+    WHERE id = 'a0000000-0000-0000-0000-000000000001';
+  ASSERT v_status = 'INITIATED', format('owner cannot flip to CONFIRMED, got %s', v_status);
+
+  -- But CAN flip to CANCELLED
+  UPDATE public.payments SET status='CANCELLED'
+    WHERE id = 'a0000000-0000-0000-0000-000000000001';
+  SELECT status INTO v_status FROM public.payments
+    WHERE id = 'a0000000-0000-0000-0000-000000000001';
+  ASSERT v_status = 'CANCELLED', format('owner can flip to CANCELLED, got %s', v_status);
+END $$;
+
 -- FINANCE_ADMIN reads everything
 SET LOCAL "request.jwt.claims" = '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}';
 

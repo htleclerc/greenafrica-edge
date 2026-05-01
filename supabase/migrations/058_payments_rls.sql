@@ -11,7 +11,7 @@ CREATE OR REPLACE FUNCTION public.current_shipowner_id() RETURNS UUID AS $$
    WHERE profile_id = auth.uid() LIMIT 1;
 $$ LANGUAGE SQL STABLE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION public.current_shipowner_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_shipowner_id() TO authenticated, service_role;
 
 -- ── public.payments ─────────────────────────────────────────────────────────
 
@@ -50,11 +50,17 @@ CREATE POLICY payments_owner_cancel ON public.payments FOR UPDATE
   )
   WITH CHECK (
     shipowner_id = public.current_shipowner_id()
-    AND status IN ('INITIATED', 'CANCELLED')
+    AND status = 'CANCELLED'
   );
 
 -- Admin UPDATE — server actions enforce can_confirm_payment; RLS just gates
 -- which roles can issue UPDATE at all
+-- Note: this policy gates which roles can issue UPDATE; it does NOT validate
+-- the resulting status transition. Server actions (confirmPayment, rejectPayment)
+-- call public.can_confirm_payment() (mig 057) to enforce the authorization
+-- matrix from spec §7.2 before issuing the UPDATE. Direct PostgREST UPDATE
+-- calls would bypass that gate — keep all admin status transitions behind a
+-- server action.
 CREATE POLICY payments_admin_update ON public.payments FOR UPDATE
   TO authenticated
   USING (EXISTS (
