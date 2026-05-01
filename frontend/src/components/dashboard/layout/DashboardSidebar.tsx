@@ -6,7 +6,7 @@ import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
-    Scale, Anchor, ClipboardCheck, CreditCard,
+    Scale, Anchor, ClipboardCheck, CreditCard, Users,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -39,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      labelKey: 'nav_alerts',       section: 'ops' },
     { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },
     { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', labelKey: 'nav_validations',  section: 'admin' },
+    { key: 'registrations', icon: <Users className="w-5 h-5" />,         href: '/admin/registrations',   labelKey: 'nav_registrations', section: 'admin' },
     { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
     { key: 'origin-port-proposals', icon: <Anchor className="w-5 h-5" />, href: '/admin/origin-port-proposals', labelKey: 'nav_origin_port_proposals', section: 'admin' },
     { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         labelKey: 'nav_revenue',      section: 'admin' },
