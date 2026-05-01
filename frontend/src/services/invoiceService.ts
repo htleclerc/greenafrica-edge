@@ -607,10 +607,11 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
-  doc.text('Authorized Signatory', margin, y + 4);
+  doc.text('Signataire Autorisé', margin, y + 4);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 31, 24);
-  doc.text('Director, Solid Technology', margin, y + 8);
+  doc.text('Directeur', margin, y + 8);
+  doc.text('Solide Technology', margin, y + 11);
 
   // Center: QR code for verification
   const qrSize = 26;
@@ -974,13 +975,13 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
-  doc.text('Authorized Signatory', margin, y + 4);
+  doc.text('Signataire Autorisé', margin, y + 4);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 31, 24);
   doc.text(data.confirmedBy, margin, y + 8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
-  doc.text('Director, Solid Technology', margin, y + 11);
+  doc.text('Directeur — Solide Technology', margin, y + 11);
 
   // Center: QR code
   const qrSize = 26;

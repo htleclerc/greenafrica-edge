@@ -4,11 +4,13 @@ BEGIN;
 DO $$ BEGIN
   ASSERT EXISTS (SELECT 1 FROM pg_type WHERE typname='shipowner_account_state'),
     'shipowner_account_state enum missing';
+  -- Original mig 024 values must be present. Mig 047 (Plan 7A) added
+  -- PENDING_REVIEW, REJECTED, SUSPENDED — so we assert SUPERSET, not equality.
   ASSERT (SELECT array_agg(enumlabel::text ORDER BY enumsortorder)
             FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
            WHERE t.typname='shipowner_account_state')
-         = ARRAY['GHOST','INVITED','ACTIVE'],
-    'shipowner_account_state values wrong';
+         @> ARRAY['GHOST','INVITED','ACTIVE'],
+    'shipowner_account_state values wrong (missing original GHOST/INVITED/ACTIVE)';
 END $$;
 
 -- shipowners table
