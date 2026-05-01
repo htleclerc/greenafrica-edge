@@ -21,6 +21,9 @@ describe('Onboarding E2E', () => {
             await supabase.from('wallets').delete().in('shipowner_id', testIds);
         }
 
+        // Also delete orphan vessels (no shipowner)
+        await supabase.from('vessels').delete().like('imo_number', '999%');
+        // Finally delete the shipowners
         await supabase.from('shipowners').delete().like('imo_company_no', '999%');
     };
 
