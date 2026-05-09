@@ -28,7 +28,7 @@ function buildDownloadUrl(ref: string, contentHash: string): string {
 export default async function OwnerInvoicesPage() {
     const session = await requireOwner();
 
-    const [txnRes, intentRes] = await Promise.all([
+    const [txnRes, intentRes, walletRes] = await Promise.all([
         session.supabase
             .from('transactions')
             .select(
@@ -42,7 +42,16 @@ export default async function OwnerInvoicesPage() {
             .from('shipowner_payment_intents')
             .select('transaction_id, status')
             .eq('status', 'DECLARED'),
+        // Wallet balance for this shipowner (may not exist yet → maybeSingle).
+        session.supabase
+            .from('wallets')
+            .select('balance_usd_minor')
+            .eq('shipowner_id', session.shipowner.id)
+            .maybeSingle(),
     ]);
+
+    const walletBalanceUsdMinor =
+        (walletRes.data?.balance_usd_minor as number | null) ?? 0;
 
     const txns: RawTxn[] = (txnRes.data ?? []) as RawTxn[];
     const pendingByTxn = new Set(
@@ -76,7 +85,10 @@ export default async function OwnerInvoicesPage() {
                     Failed to load invoices: {txnRes.error.message}
                 </div>
             ) : (
-                <InvoicesTable rows={rows} />
+                <InvoicesTable
+                    rows={rows}
+                    walletBalanceUsdMinor={walletBalanceUsdMinor}
+                />
             )}
         </div>
     );

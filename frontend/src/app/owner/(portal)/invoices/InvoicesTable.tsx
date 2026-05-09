@@ -5,7 +5,7 @@ import { Download, CreditCard, Scale } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
-import { PayProformaDialog } from './PayProformaDialog';
+import { PayDialog } from '@/components/owner/PayDialog';
 import { OpenDisputeDialog } from './OpenDisputeDialog';
 
 export interface InvoiceRow {
@@ -51,9 +51,10 @@ function formatUsd(amount: number): string {
 
 interface Props {
     rows: InvoiceRow[];
+    walletBalanceUsdMinor: number;
 }
 
-export function InvoicesTable({ rows }: Props) {
+export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
     const [payTarget, setPayTarget] = React.useState<InvoiceRow | null>(null);
     const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
 
@@ -169,12 +170,14 @@ export function InvoicesTable({ rows }: Props) {
                 emptyMessage="No invoices on file yet."
             />
             {payTarget && (
-                <PayProformaDialog
+                <PayDialog
                     open={true}
                     onOpenChange={(o) => !o && setPayTarget(null)}
                     transactionId={payTarget.id}
                     invoiceRef={payTarget.invoice_ref ?? payTarget.id.slice(0, 8)}
                     amountUsd={Number(payTarget.tax_amount_usd)}
+                    currency="USD"
+                    walletBalanceUsdMinor={walletBalanceUsdMinor}
                 />
             )}
             {disputeTarget && (
