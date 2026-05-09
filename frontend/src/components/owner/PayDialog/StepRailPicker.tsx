@@ -38,6 +38,7 @@ export function StepRailPicker() {
                 const url = new URL('/api/owner/payment-availability', window.location.origin);
                 url.searchParams.set('currency', ctx.currency);
                 url.searchParams.set('walletBalanceUsdMinor', String(ctx.walletBalanceUsdMinor));
+                url.searchParams.set('amountUsdMinor', String(Math.round(ctx.amountUsd * 100)));
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data: AvailabilityResponse = await res.json();
@@ -50,7 +51,7 @@ export function StepRailPicker() {
         }
         load();
         return () => { cancelled = true; };
-    }, [ctx.currency, ctx.walletBalanceUsdMinor]);
+    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd]);
 
     function pickRail(r: RailEligibility) {
         ctx.setRail(r.rail);
@@ -92,7 +93,7 @@ export function StepRailPicker() {
                             <p className="text-[11px] text-[var(--os-text-muted)] mt-0.5">
                                 {r.eligible
                                     ? t(`rail.${meta.key}.hint`, { provider: r.providers[0]?.provider ?? '' })
-                                    : (r.reason ?? t('railNotAvailable'))}
+                                    : t(r.reason ? `reason.${r.reason}` : 'railNotAvailable')}
                             </p>
                         </div>
                     </button>

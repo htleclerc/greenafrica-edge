@@ -2790,6 +2790,11 @@
         "phoneRequired": "Le numéro de téléphone est requis.",
         "payerNameRequired": "Le nom du payeur est requis.",
         "noRail": "Veuillez d'abord choisir un moyen de paiement."
+      },
+      "reason": {
+        "wallet_empty": "Votre wallet ne dispose d’aucun solde.",
+        "wallet_insufficient": "Votre solde wallet ne couvre pas le montant total de la facture.",
+        "no_active_provider": "Aucun prestataire actif ne prend en charge ce rail."
       }
     }
   },

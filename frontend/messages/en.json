@@ -2820,6 +2820,11 @@
         "phoneRequired": "Phone number is required.",
         "payerNameRequired": "Payer name is required.",
         "noRail": "Please pick a payment method first."
+      },
+      "reason": {
+        "wallet_empty": "Your wallet has no balance to apply.",
+        "wallet_insufficient": "Your wallet balance does not cover the full invoice amount.",
+        "no_active_provider": "No active provider supports this rail right now."
       }
     }
   },

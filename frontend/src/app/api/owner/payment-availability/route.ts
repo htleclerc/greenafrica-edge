@@ -18,17 +18,23 @@ export async function GET(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const url = new URL(req.url);
+    // Informational only — applyWallet/initiatePayment re-verify everything
+    // server-side. Used here purely to drive UI eligibility filtering.
     const walletBalanceUsdMinor = Number(url.searchParams.get('walletBalanceUsdMinor') ?? '0');
+    const amountUsdMinor = Number(url.searchParams.get('amountUsdMinor') ?? '0');
 
     const rails: RailEligibility[] = [];
     for (const rail of OWNER_RAILS) {
         if (rail === 'WALLET') {
-            rails.push({
-                rail,
-                eligible: walletBalanceUsdMinor > 0,
-                providers: [],
-                reason: walletBalanceUsdMinor > 0 ? undefined : 'wallet_empty',
-            });
+            // Owner can only apply wallet if balance covers the FULL invoice
+            // amount. Partial-wallet-against-invoice is out of scope until 7E.
+            const eligible = walletBalanceUsdMinor > 0 && walletBalanceUsdMinor >= amountUsdMinor;
+            const reason = walletBalanceUsdMinor === 0
+                ? 'wallet_empty'
+                : walletBalanceUsdMinor < amountUsdMinor
+                    ? 'wallet_insufficient'
+                    : undefined;
+            rails.push({ rail, eligible, providers: [], reason });
             continue;
         }
         const providers = await selectProvidersForRail(supabase, rail);
