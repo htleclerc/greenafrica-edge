@@ -77,6 +77,7 @@ export interface PaymentProviderConfig {
   isDefault: boolean;
   supportedCurrencies: Currency[];
   testMode: boolean;
+  routesRail?: string[];
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
@@ -397,6 +398,7 @@ export async function getAllProviderConfigs(client: SupabaseClient): Promise<Pay
       isDefault: dbRow?.is_active ?? (key === 'wire_transfer'),
       supportedCurrencies: meta.currencies,
       testMode: dbRow?.test_mode ?? false,
+      routesRail: (dbRow?.routes_rail as string[] | undefined) ?? [],
     };
   });
 }
