@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Banknote, Smartphone, Briefcase, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { OsButton } from '@/components/ui/OsButton';
 import { usePayDialog, type Rail } from './usePayDialogContext';
 
 interface RailEligibility {

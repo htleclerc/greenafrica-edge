@@ -2759,6 +2759,68 @@
       "openSection": "Open ({count})",
       "closedSection": "Closed ({count})",
       "emptyOpen": "No active alerts."
+    },
+    "payDialog": {
+      "title": "Pay invoice",
+      "subtitle": "Choose how you want to pay this pro-forma. Finance will reconcile it before marking your vessel compliant.",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit payment",
+      "submitting": "Submitting…",
+      "loadingRails": "Checking available payment methods…",
+      "chooseRail": "Pick a payment method for {currency}:",
+      "railNotAvailable": "No active provider supports this rail right now.",
+      "noRailEligible": "No payment method is currently available for this currency. Please contact finance.",
+      "rail": {
+        "wire": {
+          "label": "Bank wire (SWIFT)",
+          "hint": "Manual reconciliation"
+        },
+        "momo": {
+          "label": "Mobile money",
+          "hint": "via {provider}"
+        },
+        "third": {
+          "label": "Third-party payer",
+          "hint": "via {provider}"
+        },
+        "wallet": {
+          "label": "Apply wallet credit",
+          "hint": "Use existing balance"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "Send the wire and enter the bank reference below.",
+        "mobile_money": "Enter the phone number used for the {provider} transfer.",
+        "third_party": "Identify the third party paying on your behalf.",
+        "wallet": "Apply your wallet balance to this invoice."
+      },
+      "field": {
+        "bankReference": "Bank reference",
+        "bankName": "Bank name",
+        "notes": "Notes",
+        "phoneNumber": "Phone number",
+        "operatorReference": "Operator reference",
+        "viaProvider": "Routed via {provider}",
+        "payerName": "Payer name",
+        "payerRelationship": "Relationship to your company",
+        "externalReference": "External reference",
+        "walletConfirm": "Apply ${balance} from your wallet to this invoice."
+      },
+      "summary": {
+        "invoice": "Invoice",
+        "amount": "Amount",
+        "rail": "Method",
+        "provider": "Provider",
+        "details": "Details",
+        "disclaimer": "Submitting registers your payment as INITIATED. Finance reviews and confirms it within 24h."
+      },
+      "errors": {
+        "bankReferenceRequired": "Bank reference is required.",
+        "phoneRequired": "Phone number is required.",
+        "payerNameRequired": "Payer name is required.",
+        "noRail": "Please pick a payment method first."
+      }
     }
   },
   "AdminEquasis": {
