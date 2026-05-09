@@ -3,6 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
     createPaymentRequest,
     getActiveProvider,
+    getActiveProviders,
+    selectProvidersForRail,
+    setProviderActive,
     verifyPaystackSignature,
     verifyFlutterwaveSignature,
     verifyPayoneerSignature,
@@ -65,6 +68,67 @@ describe('getActiveProvider', () => {
         const client = makeFakeClient('payoneer');
         await getActiveProvider(client);
         expect((client.from as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('payment_config');
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan 7C-2: multi-active providers + rail routing
+// ─────────────────────────────────────────────────────────────────────────────
+
+function makeMultiClient(rows: Array<{ provider: string; is_active: boolean; routes_rail: string[]; display_order: number }>) {
+    return {
+        from: vi.fn(() => ({
+            select: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({ data: rows, error: null })),
+            })),
+            update: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ error: null })),
+            })),
+        })),
+    } as unknown as SupabaseClient;
+}
+
+describe('getActiveProviders', () => {
+    it('returns all active rows ordered by display_order', async () => {
+        const client = makeMultiClient([
+            { provider: 'wire_transfer', is_active: true, routes_rail: ['WIRE_TRANSFER'], display_order: 5 },
+            { provider: 'flutterwave',   is_active: true, routes_rail: ['STRIPE','MOBILE_MONEY'], display_order: 3 },
+        ]);
+        const list = await getActiveProviders(client);
+        expect(list.map((p) => p.provider)).toEqual(['wire_transfer', 'flutterwave']);
+    });
+
+    it('returns empty array when no provider active', async () => {
+        const client = makeMultiClient([]);
+        expect(await getActiveProviders(client)).toEqual([]);
+    });
+});
+
+describe('selectProvidersForRail', () => {
+    it('returns providers whose routes_rail contains the rail', async () => {
+        const client = makeMultiClient([
+            { provider: 'wave',          is_active: true, routes_rail: ['MOBILE_MONEY'],            display_order: 4 },
+            { provider: 'flutterwave',   is_active: true, routes_rail: ['STRIPE','MOBILE_MONEY'],   display_order: 3 },
+            { provider: 'wire_transfer', is_active: true, routes_rail: ['WIRE_TRANSFER'],           display_order: 5 },
+        ]);
+        const result = await selectProvidersForRail(client, 'MOBILE_MONEY');
+        expect(result.map((p) => p.provider)).toEqual(['flutterwave', 'wave']); // ordered by display_order asc
+    });
+
+    it('returns empty when no active provider serves the rail', async () => {
+        const client = makeMultiClient([
+            { provider: 'wire_transfer', is_active: true, routes_rail: ['WIRE_TRANSFER'], display_order: 5 },
+        ]);
+        expect(await selectProvidersForRail(client, 'NETTING')).toEqual([]);
+    });
+});
+
+describe('setProviderActive', () => {
+    it('sends update with is_active=true to the matching provider only', async () => {
+        const update = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) }));
+        const client = { from: vi.fn(() => ({ update })) } as unknown as SupabaseClient;
+        await setProviderActive(client, 'flutterwave', true);
+        expect(update).toHaveBeenCalledWith({ is_active: true });
     });
 });
 
