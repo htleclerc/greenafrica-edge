@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle, FileText, Receipt, RotateCcw } from 'lucide-react';
-import { verifyInvoiceSignature } from '@/services/invoiceService';
+import { parseInvoiceRef, verifyInvoiceSignature } from '@/services/invoiceService';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 /**
@@ -49,6 +49,28 @@ interface VerifyResult {
     downloadUrl?: string | null;
 }
 
+/**
+ * Receipt verify shape — distinct from VerifyResult so the renderer can
+ * branch on `kind: 'receipt'` and pull payment-specific fields without
+ * polluting the transaction-shaped invoice contract.
+ *
+ * Plan 7C-4: receipts (RCT-YYYY-XXXX) live in `payments`, not `transactions`.
+ * They have no `content_hash` column — see security note in fetchVerifiedReceipt.
+ */
+interface ReceiptVerifyResult {
+    found: boolean;
+    receiptRef?: string;
+    invoiceRef?: string;
+    vesselName?: string;
+    vesselImo?: string;
+    ownerName?: string;
+    amountUsd?: number;
+    currency?: string;
+    rail?: string;
+    confirmedAt?: string | null;
+    generatedAt?: string | null;
+}
+
 async function fetchVerifiedInvoice(
     ref: string,
     hash: string | null,
@@ -93,6 +115,95 @@ async function fetchVerifiedInvoice(
         createdAt: tx.created_at,
         contentHash: tx.content_hash ?? undefined,
         downloadUrl: `/api/invoices/${encodeURIComponent(ref)}/download?h=${hash}&s=${signature}`,
+    };
+}
+
+/**
+ * Fetch a receipt by its RCT-YYYY-XXXX ref. Plan 7C-4.
+ *
+ * SECURITY MODEL — divergence from invoices:
+ *   The receipt PDF embeds an UNSIGNED verify URL (see invoiceService
+ *   `generateReceiptPdf` line ~758: `buildVerifyUrl(receiptRef)` is called
+ *   without `contentHash`/`signature`). Therefore this branch CANNOT
+ *   require an HMAC signature on the URL — doing so would break every
+ *   already-issued receipt PDF in the wild. We accept this trade-off
+ *   because:
+ *
+ *     1. RCT refs are RCT-YYYY-XXXXXXXX where XXXXXXXX is the first 8
+ *        hex chars of a UUIDv4. That is 16^8 ≈ 4.3 billion values per
+ *        year — enumeration is impractical.
+ *
+ *     2. The same per-IP rate limit (`verify` bucket) applied to invoice
+ *        lookups is applied here, so a brute-force scanner is throttled.
+ *
+ *     3. The "found vs not found" response shape is identical (anti-
+ *        enumeration) — same UnknownDocumentBlock for both branches.
+ *
+ *   When the security team requires stricter defense-in-depth, the
+ *   follow-up is to (a) update `generateReceiptPdf` to embed `?s=<sig>`
+ *   and (b) re-introduce the signature check here with a flag for legacy
+ *   unsigned receipts. Tracked as TECH_DEBT in plan 7C-4 retro.
+ */
+async function fetchVerifiedReceipt(ref: string): Promise<ReceiptVerifyResult> {
+    // Rate-limit identically to the invoice path so the response shape
+    // is indistinguishable to a probing client.
+    const h = await headers();
+    const clientId = getClientId(h);
+    const rate = await enforceRateLimit('verify', clientId);
+    if (!rate.allowed) return { found: false };
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return { found: false };
+
+    // Use the service role for the lookup ONLY because RLS on `payments`
+    // restricts owner-row access to authenticated shipowners; the public
+    // verify page has no auth session. We project a hard-coded whitelist
+    // of columns and join paths so this can never leak unrelated rows.
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) return { found: false };
+    const svc = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+    type PaymentRow = {
+        receipt_ref: string | null;
+        receipt_generated_at: string | null;
+        amount_usd_minor: number;
+        currency: string;
+        rail: string;
+        confirmed_at: string | null;
+        shipowner: { name: string | null } | null;
+        transaction: { invoice_ref: string | null; vessel_name: string | null; vessel_imo: string | null } | null;
+    };
+
+    const { data, error } = await svc
+        .from('payments')
+        .select(`
+            receipt_ref,
+            receipt_generated_at,
+            amount_usd_minor,
+            currency,
+            rail,
+            confirmed_at,
+            shipowner:shipowners(name),
+            transaction:transactions(invoice_ref, vessel_name, vessel_imo)
+        `)
+        .eq('receipt_ref', ref)
+        .maybeSingle<PaymentRow>();
+
+    if (error || !data) return { found: false };
+
+    return {
+        found: true,
+        receiptRef: data.receipt_ref ?? ref,
+        invoiceRef: data.transaction?.invoice_ref ?? '—',
+        vesselName: data.transaction?.vessel_name ?? '—',
+        vesselImo: data.transaction?.vessel_imo ?? '—',
+        ownerName: data.shipowner?.name ?? '—',
+        amountUsd: Number(data.amount_usd_minor) / 100,
+        currency: data.currency,
+        rail: data.rail,
+        confirmedAt: data.confirmed_at,
+        generatedAt: data.receipt_generated_at,
     };
 }
 
@@ -199,7 +310,17 @@ export default async function VerifyPage({
 }) {
     const { ref } = await params;
     const { h, s } = await searchParams;
-    const result = await fetchVerifiedInvoice(ref, h ?? null, s ?? null);
+
+    // Plan 7C-4: receipts (RCT-YYYY-XXXX) live in `payments`, not
+    // `transactions`. Branch BEFORE the invoice path so the result shape
+    // doesn't have to be unified. See fetchVerifiedReceipt for the
+    // security model (no HMAC; rate-limited; uniform 'not found' shape).
+    const parsed = parseInvoiceRef(ref);
+    const isReceipt = parsed?.type === 'RCT';
+    const receiptResult = isReceipt ? await fetchVerifiedReceipt(ref) : null;
+    const result = isReceipt
+        ? { found: false } as VerifyResult
+        : await fetchVerifiedInvoice(ref, h ?? null, s ?? null);
 
     return (
         <div
@@ -241,7 +362,11 @@ export default async function VerifyPage({
                     <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>Document Verification Service</p>
                 </div>
 
-                {!result.found ? (
+                {isReceipt ? (
+                    receiptResult?.found
+                        ? <ReceiptVerifyView result={receiptResult} />
+                        : <UnknownDocumentBlock />
+                ) : !result.found ? (
                     <UnknownDocumentBlock />
                 ) : (
                     <FoundDocumentBlock result={result} />
@@ -384,6 +509,89 @@ function FoundDocumentBlock({ result }: { result: VerifyResult }) {
                     </a>
                 </div>
             )}
+        </>
+    );
+}
+
+/**
+ * Plan 7C-4: receipt-shaped verification view.
+ *
+ * Mirrors the FoundDocumentBlock layout (hero + anti-forgery notice +
+ * details) but pulls payment-specific fields (rail, currency, amount,
+ * confirmed_at, generated_at) from the `payments` table. No badge logic —
+ * a receipt that is rendered on this page is by definition CONFIRMED
+ * (only CONFIRMED payments get a receipt_ref via mig 061 + receiptService).
+ */
+function ReceiptVerifyView({ result }: { result: ReceiptVerifyResult }) {
+    const heroColor = '#10B981'; // emerald — matches PAID stamp on receipt PDF
+    const heroBg = 'rgba(16,185,129,0.1)';
+    return (
+        <>
+            {/* Hero — names the document and surfaces the PAID state */}
+            <div style={{
+                padding: '32px 24px',
+                background: heroBg,
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}>
+                <CheckCircle2 style={{ width: '56px', height: '56px', color: heroColor, margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', letterSpacing: '2px', margin: 0 }}>
+                    OFFICIAL RECEIPT
+                </p>
+                <h1 style={{ fontSize: '28px', fontWeight: 800, color: heroColor, margin: '4px 0', letterSpacing: '-0.5px' }}>
+                    PAID
+                </h1>
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '4px 0 0' }}>
+                    Receipt issued on{' '}
+                    <strong style={{ color: 'white' }}>{formatDate(result.generatedAt ?? undefined)}</strong>
+                </p>
+                <p style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748B', marginTop: '8px' }}>
+                    {result.receiptRef}
+                </p>
+            </div>
+
+            {/* Anti-forgery notice */}
+            <div style={{
+                margin: '16px 24px 0',
+                padding: '10px 12px',
+                background: 'rgba(16,185,129,0.08)',
+                borderLeft: '3px solid #10B981',
+                borderRadius: '6px',
+                fontSize: '11px',
+                color: '#94A3B8',
+                lineHeight: 1.5,
+            }}>
+                <strong style={{ color: '#10B981' }}>Verify these fields</strong> against your printed receipt.
+                If the amount, vessel, or invoice reference differ,{' '}
+                <strong style={{ color: '#DC2626' }}>the receipt is a forgery</strong> —
+                contact the Maritime Carbon Tax Authority.
+            </div>
+
+            {/* Details */}
+            <div style={{ padding: '12px 24px 4px' }}>
+                <DetailRow label="Owner"        value={result.ownerName} bold />
+                <DetailRow label="Vessel"       value={result.vesselName} />
+                <DetailRow label="IMO Number"   value={result.vesselImo} mono />
+                <DetailRow label="Settles"      value={result.invoiceRef} mono />
+                <DetailRow label="Payment Rail" value={result.rail?.replace(/_/g, ' ')} />
+                <DetailRow
+                    label="Amount Paid"
+                    value={`$${result.amountUsd?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${result.currency ?? 'USD'}`}
+                    bold
+                    highlight={heroColor}
+                />
+                {result.confirmedAt && (
+                    <DetailRow
+                        label="Confirmed On"
+                        value={formatDate(result.confirmedAt, true)}
+                        highlight="#10B981"
+                    />
+                )}
+            </div>
+
+            <div style={{ padding: '8px 24px 20px', fontSize: '10px', color: '#475569', textAlign: 'center' }}>
+                ✓ This receipt was issued by Green Gate.
+            </div>
         </>
     );
 }
