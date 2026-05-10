@@ -1767,7 +1767,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - [ ] `GET /api/receipts/[ref]/download` returns 302 redirect to 5-min signed Storage URL
 - [ ] Download endpoint blocks unauthorized callers (not the shipowner, not admin) with 403
 - [ ] `/verify/[ref]` resolves RCT refs by querying `payments` and shows payment-specific fields
-- [ ] HMAC verification still required on `/verify` for RCT refs (reuses `signInvoiceRef`)
+- [x] `/verify/[ref]` for RCT uses rate-limit + anti-enumeration response (HMAC signing of receipt QRs deferred to next-phase hardening per Plan 7C-4 review note)
 - [ ] `/admin/cash-desk` page renders for FINANCE_ADMIN/SUPERADMIN
 - [ ] `/admin/cash-desk` page renders for PORT_OFFICER **only when** `can_record_cash=true`
 - [ ] `<CashDeskForm>` auto-generates `CASH-YYYY-MM-DD-NNN` ref + lets cashier override

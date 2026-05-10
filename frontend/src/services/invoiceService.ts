@@ -744,10 +744,13 @@ const PAYMENT_METHOD_DISPLAY: Record<string, string> = {
 
 /**
  * Build a receipt reference from the transaction id.
- * Format: RCT-{YEAR}-{first segment of tx UUID}
+ * Format: RCT-{YEAR}-{first 8 hex chars of tx UUID}
+ *
+ * The first segment of a UUIDv4 is 8 hex chars (16^8 ≈ 4.3 billion values),
+ * making birthday-paradox collisions impractical at our receipt volumes.
  */
 export function buildReceiptRef(transactionId: string, paidAt: Date): string {
-  return `RCT-${paidAt.getFullYear()}-${transactionId.split('-')[1].toUpperCase()}`;
+  return `RCT-${paidAt.getFullYear()}-${transactionId.split('-')[0].toUpperCase()}`;
 }
 
 /**

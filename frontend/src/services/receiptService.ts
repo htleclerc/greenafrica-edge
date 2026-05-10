@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
     buildReceiptRef,
-    generateAndStoreReceipt,
     generateReceiptPdf,
     type ReceiptData,
 } from '@/services/invoiceService';
@@ -23,7 +22,6 @@ export interface PaymentReceiptResult {
     receiptRef: string;
     storagePath?: string;
     pdfBuffer?: Uint8Array;
-    publicUrl?: string;
     alreadyGenerated?: boolean;
 }
 
@@ -36,7 +34,9 @@ export interface PaymentReceiptResult {
  *   1. Load payment + transaction + shipowner + confirmer profile.
  *   2. Build `ReceiptData` shape expected by invoiceService.generateReceiptPdf.
  *   3. Build `receipt_ref` via buildReceiptRef(transaction_id, paid_at).
- *   4. Call generateAndStoreReceipt to upload PDF to Storage `documents` bucket.
+ *   4. Generate PDF buffer ONCE and upload directly to Storage `documents`
+ *      bucket (avoids the double-PDF-generation cost of going through
+ *      invoiceService.generateAndStoreReceipt).
  *   5. UPDATE payments with receipt_ref + storage_path + generated_at.
  *   6. Return ref + PDF buffer (caller may attach to email).
  */
@@ -96,10 +96,20 @@ export async function generatePaymentReceipt(
         confirmedBy: (confirmer?.full_name as string | null) ?? 'Solid Technology Finance',
     };
 
-    // 5. Generate PDF buffer + upload
+    // 5. Generate PDF buffer + upload to Storage directly (no double-PDF)
     const pdfBuffer = await generateReceiptPdf(data);
-    const publicUrl = await generateAndStoreReceipt(client, data);
     const storagePath = `receipts/${receiptRef}.pdf`;
+    const { error: uploadError } = await client.storage
+        .from('documents')
+        .upload(storagePath, pdfBuffer, {
+            contentType: 'application/pdf',
+            upsert: true,
+        });
+    if (uploadError) {
+        console.error(`[receiptService] Storage upload failed for ${receiptRef}: ${uploadError.message}`);
+        // Fail-hard here — no point UPDATEing the row with no PDF behind it.
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
+    }
 
     // 6. UPDATE payments idempotently
     const { error: updErr } = await client
@@ -115,5 +125,5 @@ export async function generatePaymentReceipt(
         console.error(`[receiptService] payments UPDATE failed for ${paymentId}: ${updErr.message}`);
     }
 
-    return { receiptRef, storagePath, pdfBuffer, publicUrl: publicUrl ?? undefined };
+    return { receiptRef, storagePath, pdfBuffer };
 }
