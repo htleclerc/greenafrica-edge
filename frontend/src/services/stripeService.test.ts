@@ -1,0 +1,113 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+const { checkoutSessionsCreate, paymentIntentsRetrieve, webhooksConstructEvent } = vi.hoisted(
+    () => ({
+        checkoutSessionsCreate: vi.fn(),
+        paymentIntentsRetrieve: vi.fn(),
+        webhooksConstructEvent: vi.fn(),
+    }),
+);
+
+vi.mock('stripe', () => {
+    function StripeMock(this: unknown) {
+        Object.assign(this as Record<string, unknown>, {
+            checkout: { sessions: { create: checkoutSessionsCreate } },
+            paymentIntents: { retrieve: paymentIntentsRetrieve },
+            webhooks: { constructEvent: webhooksConstructEvent },
+        });
+    }
+    return { default: StripeMock };
+});
+
+describe('stripeService', () => {
+    beforeEach(async () => {
+        checkoutSessionsCreate.mockReset();
+        paymentIntentsRetrieve.mockReset();
+        webhooksConstructEvent.mockReset();
+        vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_dummy');
+        vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_dummy');
+        const { __resetStripeClientForTests } = await import('./stripeService');
+        __resetStripeClientForTests();
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    describe('createCheckoutSession', () => {
+        it('returns checkoutUrl, stripePaymentIntentId, stripeSessionId on happy path', async () => {
+            checkoutSessionsCreate.mockResolvedValueOnce({
+                id: 'cs_test_123',
+                url: 'https://checkout.stripe.com/c/pay/cs_test_123',
+                payment_intent: 'pi_test_456',
+            });
+            const { createCheckoutSession } = await import('./stripeService');
+            const result = await createCheckoutSession({
+                amountUsdMinor: 12345,
+                paymentId: 'pay-1',
+                invoiceId: 'inv-1',
+                shipownerId: 'so-1',
+                successUrl: 'https://app.example.com/owner/payment/success',
+                cancelUrl: 'https://app.example.com/owner/payment/cancel',
+            });
+            expect(result).toEqual({
+                checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_123',
+                stripePaymentIntentId: 'pi_test_456',
+                stripeSessionId: 'cs_test_123',
+            });
+            expect(checkoutSessionsCreate).toHaveBeenCalledTimes(1);
+        });
+
+        it('throws when STRIPE_SECRET_KEY is missing', async () => {
+            vi.stubEnv('STRIPE_SECRET_KEY', '');
+            const { createCheckoutSession } = await import('./stripeService');
+            await expect(
+                createCheckoutSession({
+                    amountUsdMinor: 100,
+                    paymentId: 'pay-1',
+                    invoiceId: 'inv-1',
+                    shipownerId: 'so-1',
+                    successUrl: 'https://x/y',
+                    cancelUrl: 'https://x/z',
+                }),
+            ).rejects.toThrow(/STRIPE_SECRET_KEY/);
+        });
+    });
+
+    describe('retrievePaymentIntent', () => {
+        it('returns the PaymentIntent', async () => {
+            paymentIntentsRetrieve.mockResolvedValueOnce({
+                id: 'pi_test_456',
+                status: 'succeeded',
+                amount: 12345,
+            });
+            const { retrievePaymentIntent } = await import('./stripeService');
+            const pi = await retrievePaymentIntent('pi_test_456');
+            expect(pi.id).toBe('pi_test_456');
+            expect(paymentIntentsRetrieve).toHaveBeenCalledWith('pi_test_456');
+        });
+    });
+
+    describe('verifyWebhookSignature', () => {
+        it('returns parsed event when signature is valid', async () => {
+            const event = { id: 'evt_1', type: 'payment_intent.succeeded' };
+            webhooksConstructEvent.mockReturnValueOnce(event);
+            const { verifyWebhookSignature } = await import('./stripeService');
+            const result = verifyWebhookSignature('payload-bytes', 'sig-header');
+            expect(result).toEqual(event);
+            expect(webhooksConstructEvent).toHaveBeenCalledWith(
+                'payload-bytes',
+                'sig-header',
+                'whsec_dummy',
+            );
+        });
+
+        it('throws when STRIPE_WEBHOOK_SECRET is missing', async () => {
+            vi.stubEnv('STRIPE_WEBHOOK_SECRET', '');
+            const { verifyWebhookSignature } = await import('./stripeService');
+            expect(() => verifyWebhookSignature('payload', 'sig')).toThrow(
+                /STRIPE_WEBHOOK_SECRET/,
+            );
+        });
+    });
+});
