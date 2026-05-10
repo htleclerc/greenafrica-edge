@@ -28,7 +28,7 @@ function buildDownloadUrl(ref: string, contentHash: string): string {
 export default async function OwnerInvoicesPage() {
     const session = await requireOwner();
 
-    const [txnRes, intentRes, walletRes] = await Promise.all([
+    const [txnRes, intentRes, walletRes, receiptRes] = await Promise.all([
         session.supabase
             .from('transactions')
             .select(
@@ -48,6 +48,16 @@ export default async function OwnerInvoicesPage() {
             .select('balance_usd_minor')
             .eq('shipowner_id', session.shipowner.id)
             .maybeSingle(),
+        // Confirmed payments with receipts, scoped to this shipowner via RLS
+        // (mig 058 payments_owner_select). Order ascending so latest wins when
+        // we build the per-transaction map below.
+        session.supabase
+            .from('payments')
+            .select('transaction_id, receipt_ref, confirmed_at')
+            .eq('shipowner_id', session.shipowner.id)
+            .eq('status', 'CONFIRMED')
+            .not('receipt_ref', 'is', null)
+            .order('confirmed_at', { ascending: true }),
     ]);
 
     const walletBalanceUsdMinor =
@@ -60,6 +70,18 @@ export default async function OwnerInvoicesPage() {
         ),
     );
 
+    // Map transaction_id → receipt_ref (latest wins because the query is
+    // ordered ascending by confirmed_at, so subsequent assignments overwrite).
+    const receiptByTxn = new Map<string, string>();
+    for (const p of (receiptRes.data ?? []) as {
+        transaction_id: string;
+        receipt_ref: string | null;
+    }[]) {
+        if (p.receipt_ref) {
+            receiptByTxn.set(p.transaction_id, p.receipt_ref);
+        }
+    }
+
     const rows: InvoiceRow[] = txns.map((t) => ({
         ...t,
         download_url:
@@ -67,6 +89,7 @@ export default async function OwnerInvoicesPage() {
                 ? buildDownloadUrl(t.invoice_ref, t.content_hash)
                 : null,
         has_pending_intent: pendingByTxn.has(t.id),
+        receipt_ref: receiptByTxn.get(t.id) ?? null,
     }));
 
     return (
