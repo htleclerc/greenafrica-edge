@@ -636,8 +636,9 @@ export interface ActiveProviderRow {
 /**
  * Get ALL currently-active providers, ordered by display_order.
  * Plan 7C-2: replaces the single-active getActiveProvider() for new callers.
- * Legacy getActiveProvider() kept for the v0 paymentIntentService path until
- * Plan 7C-5 cutover.
+ * Legacy getActiveProvider() kept for the v0 createPaymentRequest path
+ * (paymentIntentService dropped in Plan 7C-5; a future Plan 7D / cleanup
+ * sweep can drop the v0 outbound API helpers if confirmed unused).
  */
 export async function getActiveProviders(client: SupabaseClient): Promise<ActiveProviderRow[]> {
   const { data, error } = await client
