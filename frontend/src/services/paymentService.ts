@@ -77,6 +77,7 @@ export interface PaymentProviderConfig {
   isDefault: boolean;
   supportedCurrencies: Currency[];
   testMode: boolean;
+  routesRail?: string[];
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
@@ -397,6 +398,7 @@ export async function getAllProviderConfigs(client: SupabaseClient): Promise<Pay
       isDefault: dbRow?.is_active ?? (key === 'wire_transfer'),
       supportedCurrencies: meta.currencies,
       testMode: dbRow?.test_mode ?? false,
+      routesRail: (dbRow?.routes_rail as string[] | undefined) ?? [],
     };
   });
 }
@@ -612,4 +614,69 @@ export async function getPayment(
     .maybeSingle();
   if (error) throw error;
   return (data as PaymentRow | null) ?? null;
+}
+
+// ── Plan 7C-2: Multi-active provider routing ───────────────────────────────
+
+/**
+ * Active provider row enriched with rail routing metadata.
+ */
+export interface ActiveProviderRow {
+  provider: PaymentProvider;
+  routes_rail: string[];
+  display_order: number;
+}
+
+/**
+ * Get ALL currently-active providers, ordered by display_order.
+ * Plan 7C-2: replaces the single-active getActiveProvider() for new callers.
+ * Legacy getActiveProvider() kept for the v0 paymentIntentService path until
+ * Plan 7C-5 cutover.
+ */
+export async function getActiveProviders(client: SupabaseClient): Promise<ActiveProviderRow[]> {
+  const { data, error } = await client
+    .from('payment_config')
+    .select('provider, routes_rail, display_order, is_active')
+    .order('display_order');
+  if (error) return [];
+  return (data ?? [])
+    .filter((r: { is_active: boolean }) => r.is_active)
+    .map((r: { provider: string; routes_rail: string[] | null; display_order: number | null }) => ({
+      provider: r.provider as PaymentProvider,
+      routes_rail: r.routes_rail ?? [],
+      display_order: r.display_order ?? 0,
+    }));
+}
+
+/**
+ * Filter active providers to those declaring support for a given v7 rail.
+ * Result is ordered by display_order ascending — the first element is the
+ * default routing pick. Caller may surface alternatives in a sub-picker.
+ *
+ * @param rail - v7 payment_method enum value (STRIPE, WIRE_TRANSFER, …)
+ */
+export async function selectProvidersForRail(
+  client: SupabaseClient,
+  rail: string,
+): Promise<ActiveProviderRow[]> {
+  const all = await getActiveProviders(client);
+  return all
+    .filter((p) => p.routes_rail.includes(rail))
+    .sort((a, b) => a.display_order - b.display_order);
+}
+
+/**
+ * Toggle a single provider's is_active flag. Replaces the old
+ * setActiveProvider() semantics where activating one deactivated all others.
+ */
+export async function setProviderActive(
+  client: SupabaseClient,
+  provider: PaymentProvider,
+  isActive: boolean,
+): Promise<boolean> {
+  const { error } = await client
+    .from('payment_config')
+    .update({ is_active: isActive })
+    .eq('provider', provider);
+  return !error;
 }

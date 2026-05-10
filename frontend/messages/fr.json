@@ -2729,6 +2729,73 @@
       "openSection": "Ouvertes ({count})",
       "closedSection": "Fermées ({count})",
       "emptyOpen": "Aucune alerte active."
+    },
+    "payDialog": {
+      "title": "Payer la facture",
+      "subtitle": "Choisissez comment régler cette pro-forma. Le service finance la rapprochera avant de marquer votre navire conforme.",
+      "back": "Retour",
+      "next": "Suivant",
+      "submit": "Envoyer le paiement",
+      "submitting": "Envoi…",
+      "loadingRails": "Vérification des moyens de paiement disponibles…",
+      "chooseRail": "Choisissez un moyen de paiement pour {currency} :",
+      "railNotAvailable": "Aucun prestataire actif ne prend en charge ce rail.",
+      "noRailEligible": "Aucun moyen de paiement n'est disponible pour cette devise. Contactez le service finance.",
+      "rail": {
+        "wire": {
+          "label": "Virement bancaire (SWIFT)",
+          "hint": "Rapprochement manuel"
+        },
+        "momo": {
+          "label": "Mobile money",
+          "hint": "via {provider}"
+        },
+        "third": {
+          "label": "Tiers payeur",
+          "hint": "via {provider}"
+        },
+        "wallet": {
+          "label": "Appliquer le crédit wallet",
+          "hint": "Utiliser le solde existant"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "Effectuez le virement et saisissez la référence bancaire ci-dessous.",
+        "mobile_money": "Saisissez le numéro de téléphone utilisé pour le transfert {provider}.",
+        "third_party": "Identifiez le tiers qui paie pour votre compte.",
+        "wallet": "Appliquez votre solde wallet à cette facture."
+      },
+      "field": {
+        "bankReference": "Référence bancaire",
+        "bankName": "Banque",
+        "notes": "Notes",
+        "phoneNumber": "Numéro de téléphone",
+        "operatorReference": "Référence opérateur",
+        "viaProvider": "Routé via {provider}",
+        "payerName": "Nom du payeur",
+        "payerRelationship": "Relation avec votre société",
+        "externalReference": "Référence externe",
+        "walletConfirm": "Appliquer ${balance} de votre wallet à cette facture."
+      },
+      "summary": {
+        "invoice": "Facture",
+        "amount": "Montant",
+        "rail": "Méthode",
+        "provider": "Prestataire",
+        "details": "Détails",
+        "disclaimer": "L'envoi enregistre votre paiement comme INITIATED. Le service finance vérifie et confirme sous 24h."
+      },
+      "errors": {
+        "bankReferenceRequired": "La référence bancaire est requise.",
+        "phoneRequired": "Le numéro de téléphone est requis.",
+        "payerNameRequired": "Le nom du payeur est requis.",
+        "noRail": "Veuillez d'abord choisir un moyen de paiement."
+      },
+      "reason": {
+        "wallet_empty": "Votre wallet ne dispose d’aucun solde.",
+        "wallet_insufficient": "Votre solde wallet ne couvre pas le montant total de la facture.",
+        "no_active_provider": "Aucun prestataire actif ne prend en charge ce rail."
+      }
     }
   },
   "AdminEquasis": {
