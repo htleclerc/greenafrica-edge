@@ -20,8 +20,6 @@ export interface InvoiceRow {
     created_at: string;
     /** Server-side pre-computed signed URL or null if no PDF available. */
     download_url: string | null;
-    /** Whether the owner already declared a payment for this txn. */
-    has_pending_intent: boolean;
     /** Receipt reference of the latest CONFIRMED payment, or null if none. */
     receipt_ref: string | null;
 }
@@ -61,7 +59,7 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
     const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
 
     const isPayable = (r: InvoiceRow) =>
-        r.document_type === 'PROFORMA' && r.status === 'PENDING' && !r.has_pending_intent;
+        r.document_type === 'PROFORMA' && r.status === 'PENDING';
     const isDisputable = (r: InvoiceRow) =>
         (r.document_type === 'PROFORMA' || r.document_type === 'FINAL' || r.document_type === 'COMPLEMENT') &&
         r.status !== 'CANCELLED';
@@ -101,12 +99,9 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
         {
             key: 'status',
             header: 'Status',
-            render: (r) =>
-                r.has_pending_intent && r.status === 'PENDING' ? (
-                    <OsBadge variant="info" label="Payment declared" />
-                ) : (
-                    <OsBadge variant={statusVariant(r.status)} label={r.status} />
-                ),
+            render: (r) => (
+                <OsBadge variant={statusVariant(r.status)} label={r.status} />
+            ),
         },
         {
             key: 'date',

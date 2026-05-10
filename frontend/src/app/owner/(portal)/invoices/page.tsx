@@ -28,7 +28,7 @@ function buildDownloadUrl(ref: string, contentHash: string): string {
 export default async function OwnerInvoicesPage() {
     const session = await requireOwner();
 
-    const [txnRes, intentRes, walletRes, receiptRes] = await Promise.all([
+    const [txnRes, walletRes, receiptRes] = await Promise.all([
         session.supabase
             .from('transactions')
             .select(
@@ -36,12 +36,6 @@ export default async function OwnerInvoicesPage() {
             )
             .order('created_at', { ascending: false })
             .limit(200),
-        // Latest pending intent per transaction. RLS scopes to declared_by=auth.uid()
-        // so we only see our own.
-        session.supabase
-            .from('shipowner_payment_intents')
-            .select('transaction_id, status')
-            .eq('status', 'DECLARED'),
         // Wallet balance for this shipowner (may not exist yet → maybeSingle).
         session.supabase
             .from('wallets')
@@ -64,11 +58,6 @@ export default async function OwnerInvoicesPage() {
         (walletRes.data?.balance_usd_minor as number | null) ?? 0;
 
     const txns: RawTxn[] = (txnRes.data ?? []) as RawTxn[];
-    const pendingByTxn = new Set(
-        ((intentRes.data ?? []) as { transaction_id: string }[]).map(
-            (i) => i.transaction_id,
-        ),
-    );
 
     // Map transaction_id → receipt_ref (latest wins because the query is
     // ordered ascending by confirmed_at, so subsequent assignments overwrite).
@@ -88,7 +77,6 @@ export default async function OwnerInvoicesPage() {
             t.invoice_ref && t.content_hash
                 ? buildDownloadUrl(t.invoice_ref, t.content_hash)
                 : null,
-        has_pending_intent: pendingByTxn.has(t.id),
         receipt_ref: receiptByTxn.get(t.id) ?? null,
     }));
 
