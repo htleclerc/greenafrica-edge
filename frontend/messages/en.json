@@ -3102,7 +3102,42 @@
       "rejectReasonPlaceholder": "Required — explain why this payment is rejected.",
       "errors": {
         "reasonRequired": "Reason must be at least 3 characters."
-      }
+      },
+      "downloadReceipt": "Download receipt"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "Cash desk",
+    "subtitle": "Record an in-person cash payment. A second admin must confirm it from /admin/payments (4-eyes).",
+    "field": {
+      "shipowner": "Shipowner",
+      "shipownerPlaceholder": "Search by name…",
+      "transaction": "Invoice (optional)",
+      "transactionNone": "— No specific invoice —",
+      "amount": "Amount",
+      "currency": "Currency",
+      "receiptNumber": "Receipt number",
+      "regen": "Regenerate",
+      "proof": "Photo / receipt scan",
+      "proofCta": "Click to attach (PDF or image, ≤ 5MB)",
+      "proofRemove": "Remove"
+    },
+    "reset": "Clear",
+    "submit": "Record cash payment",
+    "submitting": "Recording…",
+    "fourEyesNote": "Recorded as INITIATED — a second admin must confirm via /admin/payments (4-eyes rule).",
+    "success": {
+      "title": "Cash payment recorded",
+      "body": "Reference {ref}. Awaiting second-admin confirmation.",
+      "dismiss": "Dismiss"
+    },
+    "errors": {
+      "shipownerRequired": "Pick a shipowner.",
+      "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+      "receiptRequired": "Receipt number is required.",
+      "fileTooBig": "File exceeds the 5MB limit.",
+      "fileMime": "File type not supported (use PDF or image).",
+      "submitFailed": "Could not record the cash payment."
     }
   }
 }
