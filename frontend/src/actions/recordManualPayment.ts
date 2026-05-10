@@ -61,8 +61,18 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
         ? amountMinor
         : Math.round(amountMinor / fx.rate);
 
-    // Force INITIATED for CASH (4-eyes rule encoded in can_confirm_payment, mig 057)
-    const status = (parsed.rail === 'CASH' || !parsed.confirmImmediately)
+    // 4-eyes / role-based forcing rules:
+    // - CASH always INITIATED (4-eyes rule encoded in can_confirm_payment mig 057)
+    // - NETTING / BANK_GUARANTEE require SUPERADMIN to confirm (spec §7.2 + mig 057);
+    //   FINANCE_ADMIN inserting one with confirmImmediately=true is forced INITIATED
+    //   so a SUPERADMIN must subsequently UPDATE to CONFIRMED via confirmPayment.
+    //   Without this gate, the can_confirm_payment trigger fires only on UPDATE,
+    //   so a direct INSERT with status=CONFIRMED would bypass the rule.
+    const role = auth.user?.role;
+    const requiresSuperadminConfirm =
+        (parsed.rail === 'NETTING' || parsed.rail === 'BANK_GUARANTEE') && role !== UserRole.SUPERADMIN;
+    const forceInitiated = parsed.rail === 'CASH' || requiresSuperadminConfirm;
+    const status = forceInitiated || !parsed.confirmImmediately
         ? 'INITIATED'
         : 'CONFIRMED';
 

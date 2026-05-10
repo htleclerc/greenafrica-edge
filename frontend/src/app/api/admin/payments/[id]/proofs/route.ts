@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { uploadProof } from '@/services/paymentProofService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
@@ -22,8 +23,22 @@ export async function POST(
     const { data: { user } } = await auth.supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
+    // Use a service-role client for the Storage upload + metadata insert.
+    //
+    // Mig 059 added an owner-write Storage RLS policy on `payment-proofs`
+    // (`current_shipowner_id() IS NOT NULL`) but no admin-on-behalf-of-owner
+    // policy. A session-scoped client here would be REJECTED by RLS because
+    // `current_shipowner_id()` returns NULL for an admin user.
+    //
+    // The auth gate is `requireRole(ADMIN_ROLES)` above — service-role here
+    // only bypasses Storage RLS, not the route's authorization. Same pattern
+    // Plan 7C-1's `initiatePayment` uses for the owner-side payments insert.
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const serviceClient = createServiceClient(url, serviceKey);
+
     try {
-        const result = await uploadProof(auth.supabase, {
+        const result = await uploadProof(serviceClient, {
             paymentId,
             shipownerId,
             uploadedBy: user.id,

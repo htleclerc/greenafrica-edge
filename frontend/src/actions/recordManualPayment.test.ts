@@ -23,7 +23,12 @@ function makeAdminCtx(role: 'FINANCE_ADMIN' | 'SUPERADMIN' = 'FINANCE_ADMIN', us
         from: vi.fn(() => ({ insert })),
     };
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
-    (requireRole as ReturnType<typeof vi.fn>).mockResolvedValue({ supabase, profile: { role, id: userId }, error: null });
+    (requireRole as ReturnType<typeof vi.fn>).mockResolvedValue({
+        supabase,
+        user: { id: userId, role },
+        profile: { role, id: userId },
+        error: null,
+    });
     return { supabase, insert };
 }
 
@@ -91,6 +96,38 @@ describe('recordManualPayment', () => {
             railDetails: {},
             confirmImmediately: false,
         })).rejects.toThrow();
+    });
+
+    it('FORCES INITIATED for NETTING when caller is FINANCE_ADMIN (SUPERADMIN-only rule)', async () => {
+        const { insert } = makeAdminCtx('FINANCE_ADMIN');
+        await recordManualPayment({
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            transactionId: '123e4567-e89b-42d3-a456-426614174111',
+            rail: 'NETTING',
+            amount: '1000.00',
+            currency: 'USD',
+            railDetails: { counterparty: 'X', net_settlement_ref: 'Y' },
+            confirmImmediately: true, // forced ignored — FINANCE_ADMIN can't confirm NETTING
+        });
+        const row = (insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(row.status).toBe('INITIATED');
+        expect(row.confirmed_by).toBeNull();
+    });
+
+    it('allows CONFIRMED for NETTING when caller is SUPERADMIN', async () => {
+        const { insert } = makeAdminCtx('SUPERADMIN');
+        await recordManualPayment({
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            transactionId: '123e4567-e89b-42d3-a456-426614174111',
+            rail: 'NETTING',
+            amount: '1000.00',
+            currency: 'USD',
+            railDetails: { counterparty: 'X', net_settlement_ref: 'Y' },
+            confirmImmediately: true,
+        });
+        const row = (insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(row.status).toBe('CONFIRMED');
+        expect(row.confirmed_by).toBeTruthy();
     });
 
     it('rejects when caller is not FINANCE_ADMIN/SUPERADMIN', async () => {
