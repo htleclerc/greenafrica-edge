@@ -2750,6 +2750,10 @@
           "VESSEL_DATA": "Vessel data",
           "OTHER": "Other"
         }
+      },
+      "stripeReturn": {
+        "success": "Payment received — receipt is on its way to your inbox.",
+        "cancel": "Payment cancelled. Your invoice is still pending; you can try again anytime."
       }
     },
     "alerts": {
@@ -2787,13 +2791,18 @@
         "wallet": {
           "label": "Apply wallet credit",
           "hint": "Use existing balance"
+        },
+        "stripe": {
+          "label": "Pay by card (Stripe)",
+          "hint": "Instant — Visa, Mastercard, Apple Pay, Google Pay"
         }
       },
       "paramsHint": {
         "wire_transfer": "Send the wire and enter the bank reference below.",
         "mobile_money": "Enter the phone number used for the {provider} transfer.",
         "third_party": "Identify the third party paying on your behalf.",
-        "wallet": "Apply your wallet balance to this invoice."
+        "wallet": "Apply your wallet balance to this invoice.",
+        "stripe": "You will be redirected to Stripe Checkout to enter your card details."
       },
       "field": {
         "bankReference": "Bank reference",

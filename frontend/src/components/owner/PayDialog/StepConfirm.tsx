@@ -41,9 +41,7 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                 // Plan 7D: STRIPE flow returns checkoutUrl — redirect the browser there.
                 // The webhook will flip the payment to CONFIRMED + generate receipt + email
                 // when the owner completes Checkout (or CANCELLED via cron reconcile if abandoned).
-                // The PayDialog Rail type is widened to include 'STRIPE' in Plan 7D Task 9
-                // (StepRailPicker RAIL_META); for now compare via string-cast.
-                if ((ctx.rail as string) === 'STRIPE' && 'checkoutUrl' in result && result.checkoutUrl) {
+                if (ctx.rail === 'STRIPE' && 'checkoutUrl' in result && result.checkoutUrl) {
                     window.location.href = result.checkoutUrl as string;
                     return; // do NOT call onClose / router.refresh — page is about to unload
                 }

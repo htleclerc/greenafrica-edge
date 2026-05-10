@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 export type Step = 'rail' | 'params' | 'confirm';
-export type Rail = 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
+export type Rail = 'STRIPE' | 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
 
 export interface PayDialogState {
     step: Step;

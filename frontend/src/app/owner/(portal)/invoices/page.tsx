@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { signInvoiceRef } from '@/services/invoiceService';
 import { InvoicesTable, type InvoiceRow } from './InvoicesTable';
@@ -25,8 +26,20 @@ function buildDownloadUrl(ref: string, contentHash: string): string {
     return `/api/invoices/${encodeURIComponent(ref)}/download?h=${contentHash}&s=${sig}`;
 }
 
-export default async function OwnerInvoicesPage() {
+export default async function OwnerInvoicesPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ stripe?: string }>;
+}) {
     const session = await requireOwner();
+    const t = await getTranslations('OwnerPortal.invoices');
+    const params = await searchParams;
+    const stripeReturn =
+        params.stripe === 'success'
+            ? 'success'
+            : params.stripe === 'cancel'
+              ? 'cancel'
+              : null;
 
     const [txnRes, walletRes, receiptRes] = await Promise.all([
         session.supabase
@@ -90,6 +103,17 @@ export default async function OwnerInvoicesPage() {
                     Pro-formas, final assessments, complements and refunds for your fleet.
                 </p>
             </header>
+
+            {stripeReturn === 'success' && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 mb-4 text-sm text-emerald-200">
+                    {t('stripeReturn.success')}
+                </div>
+            )}
+            {stripeReturn === 'cancel' && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 mb-4 text-sm text-amber-200">
+                    {t('stripeReturn.cancel')}
+                </div>
+            )}
 
             {txnRes.error ? (
                 <div className="os-card p-4 text-sm" style={{ color: '#FCA5A5' }}>
