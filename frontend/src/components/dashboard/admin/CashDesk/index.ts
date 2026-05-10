@@ -1,0 +1,1 @@
+export { CashDeskForm } from './CashDeskForm';
