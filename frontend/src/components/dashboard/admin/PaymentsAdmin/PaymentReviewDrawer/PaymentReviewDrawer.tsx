@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { X, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { X, CheckCircle2, XCircle, RefreshCw, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
@@ -190,6 +190,18 @@ export function PaymentReviewDrawer({ paymentId, onClose }: Props) {
 
                         {/* Action buttons */}
                         <div className="mt-5 flex flex-col gap-2">
+                            {/* Plan 7C-4: receipt download for CONFIRMED payments */}
+                            {payment.status === 'CONFIRMED' && payment.receipt_ref && (
+                                <a
+                                    href={`/api/receipts/${encodeURIComponent(payment.receipt_ref)}/download`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--os-border)] bg-[var(--os-surface-2)] px-3 py-1.5 text-xs font-medium text-[var(--os-text-primary)] hover:bg-[var(--os-surface-3)] transition-colors"
+                                >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    {t('downloadReceipt')}
+                                </a>
+                            )}
                             {canConfirm && !showRejectReason && (
                                 <OsButton
                                     variant="primary"
