@@ -2688,7 +2688,6 @@
       "empty": "Aucune facture pour le moment.",
       "pay": "Payer",
       "dispute": "Contester",
-      "paymentDeclared": "Paiement déclaré",
       "downloadPdf": "PDF",
       "downloadAria": "Télécharger le PDF pour {ref}",
       "payDialog": {

@@ -2593,7 +2593,6 @@
       "empty": "No invoices on file yet.",
       "pay": "Pay",
       "dispute": "Dispute",
-      "paymentDeclared": "Payment declared",
       "downloadPdf": "PDF",
       "downloadAria": "Download PDF for {ref}",
       "payDialog": {
