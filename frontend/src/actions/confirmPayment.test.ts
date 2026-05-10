@@ -8,6 +8,7 @@ let overpaymentLedger: any = null;
 let transactionsMock: any = null;
 let transactionPaidSummaryMock: any = null;
 let walletsMock: any = null;
+let shipownerMock: any = null;
 
 const mockSupabase = {
     rpc: vi.fn(async (fn: string, args: unknown) => {
@@ -83,6 +84,18 @@ const mockSupabase = {
         if (table === 'audit_logs') {
             return { insert: async (row: any) => { auditCalls.push(row); return { error: null }; } };
         }
+        if (table === 'shipowners') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        single: async () => ({
+                            data: shipownerMock || { name: 'Acme Shipping', official_email: 'owner@acme.test' },
+                            error: null,
+                        }),
+                    }),
+                }),
+            };
+        }
         return {} as any;
     }),
 };
@@ -99,6 +112,17 @@ vi.mock('@/lib/auth/requireRole', () => ({
     })),
 }));
 
+vi.mock('@/services/receiptService', () => ({
+    generatePaymentReceipt: vi.fn().mockResolvedValue({
+        receiptRef: 'RCT-2026-TEST',
+        pdfBuffer: new Uint8Array([0x25, 0x50, 0x44, 0x46]),
+    }),
+}));
+
+vi.mock('@/services/emailService', () => ({
+    sendPaymentConfirmationEmail: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
 beforeEach(() => {
     canConfirmReturn = true;
     updateCalls.length = 0;
@@ -108,6 +132,7 @@ beforeEach(() => {
     transactionsMock = null;
     transactionPaidSummaryMock = null;
     walletsMock = null;
+    shipownerMock = null;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
     vi.clearAllMocks();
@@ -158,5 +183,37 @@ describe('confirmPayment', () => {
             amount_signed_usd_minor: 6000,
             wallet_id: 'w-1',
         });
+    });
+
+    it('generates a receipt and sends confirmation email after CONFIRMED', async () => {
+        const { confirmPayment } = await import('./confirmPayment');
+        await confirmPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174003' });
+
+        const { generatePaymentReceipt } = await import('@/services/receiptService');
+        const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
+        expect(generatePaymentReceipt).toHaveBeenCalledWith(
+            expect.anything(),
+            '123e4567-e89b-12d3-a456-426614174003',
+        );
+        expect(sendPaymentConfirmationEmail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                receiptRef: 'RCT-2026-TEST',
+                to: 'owner@acme.test',
+            }),
+        );
+    });
+
+    it('confirmPayment succeeds even when receipt generation fails', async () => {
+        const { generatePaymentReceipt } = await import('@/services/receiptService');
+        (generatePaymentReceipt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('PDF crash'));
+
+        const { confirmPayment } = await import('./confirmPayment');
+        await expect(
+            confirmPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174004' }),
+        ).resolves.toMatchObject({ ok: true });
+
+        // Email is still attempted (without receipt attachment) — fail-soft both ways
+        const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
+        expect(sendPaymentConfirmationEmail).toHaveBeenCalled();
     });
 });

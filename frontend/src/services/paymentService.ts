@@ -561,6 +561,12 @@ export interface PaymentRow {
   confirmed_at: string | null;
   created_at: string;
   updated_at: string;
+  // Plan 7C-4: receipt PDF fields (mig 061). Populated when a receipt is generated
+  // for a CONFIRMED payment (e.g., cash desk receipts). Nullable for legacy rows
+  // and rails that don't generate receipts.
+  receipt_ref: string | null;
+  receipt_storage_path: string | null;
+  receipt_generated_at: string | null;
 }
 
 /**

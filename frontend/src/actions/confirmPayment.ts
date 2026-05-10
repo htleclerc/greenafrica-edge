@@ -55,6 +55,50 @@ export async function confirmPayment(input: { paymentId: string }) {
         details_json: { event: 'PAYMENT_CONFIRMED', confirmed_at: confirmedAt },
     });
 
+    // Plan 7C-4: generate receipt PDF + send confirmation email
+    // Both fail-soft — log on error, don't roll back the confirmation.
+    let receiptResult: { receiptRef: string; pdfBuffer?: Uint8Array } | null = null;
+    try {
+        const { generatePaymentReceipt } = await import('@/services/receiptService');
+        receiptResult = await generatePaymentReceipt(admin, parsed.paymentId);
+    } catch (e) {
+        console.error(`[confirmPayment] receipt generation failed for ${parsed.paymentId}:`, e);
+    }
+
+    try {
+        const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
+
+        // Lookup recipient (shipowner contact)
+        const { data: ownerRow } = await admin
+            .from('shipowners')
+            .select('name, official_email')
+            .eq('id', updated.shipowner_id)
+            .single();
+
+        if (ownerRow?.official_email) {
+            const { data: tx } = updated.transaction_id
+                ? await admin
+                    .from('transactions')
+                    .select('invoice_ref, vessel_name, tax_amount_usd')
+                    .eq('id', updated.transaction_id)
+                    .single()
+                : { data: null as { invoice_ref: string | null; vessel_name: string | null; tax_amount_usd: number | null } | null };
+
+            await sendPaymentConfirmationEmail({
+                to: ownerRow.official_email as string,
+                recipientName: (ownerRow.name as string) ?? 'Shipowner',
+                vesselName: (tx?.vessel_name as string) ?? '—',
+                invoiceRef: (tx?.invoice_ref as string) ?? '—',
+                amountUsd: (updated.amount_usd_minor ?? 0) / 100,
+                paidAt: new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }),
+                receiptRef: receiptResult?.receiptRef,
+                receiptPdfBuffer: receiptResult?.pdfBuffer,
+            });
+        }
+    } catch (e) {
+        console.error(`[confirmPayment] email send failed for ${parsed.paymentId}:`, e);
+    }
+
     return { ok: true, paymentId: parsed.paymentId };
 }
 

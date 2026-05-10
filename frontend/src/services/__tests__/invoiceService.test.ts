@@ -193,28 +193,28 @@ describe('buildVerifyUrl', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildReceiptRef — composes RCT-{year}-{first segment of UUID}
+// buildReceiptRef — composes RCT-{year}-{first 8 hex chars of UUID}
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('buildReceiptRef', () => {
     it('builds a receipt ref from a UUID + a paid date', () => {
         const txId = '20000000-0000-0000-0000-000000000005';
         const paidAt = new Date('2026-04-12T18:42:31Z');
-        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2026-0000');
+        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2026-20000000');
     });
 
-    it('uses the FIRST segment of the UUID after the dash, uppercased', () => {
+    it('uses the FIRST segment of the UUID (8 hex chars), uppercased', () => {
         const txId = 'abcd1234-5678-90ab-cdef-1234567890ab';
         const paidAt = new Date('2025-01-01T00:00:00Z');
-        // First segment after the first dash → '5678'
-        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2025-5678');
+        // First segment of the UUID → 'abcd1234' → uppercased
+        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2025-ABCD1234');
     });
 
     it('reflects the paidAt year (not the current year)', () => {
         const txId = '11111111-2222-3333-4444-555555555555';
         // Mid-year date avoids timezone rollover ambiguity
         const paidAt = new Date('2030-06-15T12:00:00Z');
-        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2030-2222');
+        expect(buildReceiptRef(txId, paidAt)).toBe('RCT-2030-11111111');
     });
 });
 

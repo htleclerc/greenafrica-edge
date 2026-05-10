@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard, Scale } from 'lucide-react';
+import { Download, CreditCard, Scale, Receipt } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
@@ -22,6 +22,8 @@ export interface InvoiceRow {
     download_url: string | null;
     /** Whether the owner already declared a payment for this txn. */
     has_pending_intent: boolean;
+    /** Receipt reference of the latest CONFIRMED payment, or null if none. */
+    receipt_ref: string | null;
 }
 
 const docVariant = (docType: InvoiceRow['document_type']): BadgeVariant => {
@@ -133,6 +135,18 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                         >
                             <Download className="w-3.5 h-3.5" />
                             PDF
+                        </a>
+                    )}
+                    {r.receipt_ref && (
+                        <a
+                            href={`/api/receipts/${encodeURIComponent(r.receipt_ref)}/download`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline"
+                            aria-label={`Download receipt ${r.receipt_ref}`}
+                        >
+                            <Receipt className="w-3.5 h-3.5" />
+                            Receipt
                         </a>
                     )}
                     {isDisputable(r) && (

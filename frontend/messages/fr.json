@@ -606,6 +606,7 @@
     "nav_origin_port_proposals": "Propositions port d'origine",
     "nav_revenue": "Tableau des recettes",
     "nav_payments": "Fournisseurs de paiement",
+    "nav_cash_desk": "Caisse",
     "nav_tco": "Tableau TCO",
     "nav_inspector": "Inspecteur",
     "nav_settings": "Paramètres",
@@ -3071,7 +3072,42 @@
       "rejectReasonPlaceholder": "Obligatoire — expliquez pourquoi ce paiement est rejeté.",
       "errors": {
         "reasonRequired": "Le motif doit comporter au moins 3 caractères."
-      }
+      },
+      "downloadReceipt": "Télécharger le reçu"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "Caisse",
+    "subtitle": "Enregistrez un paiement en espèces en personne. Un second admin doit confirmer depuis /admin/payments (4-eyes).",
+    "field": {
+      "shipowner": "Armateur",
+      "shipownerPlaceholder": "Rechercher par nom…",
+      "transaction": "Facture (optionnel)",
+      "transactionNone": "— Aucune facture spécifique —",
+      "amount": "Montant",
+      "currency": "Devise",
+      "receiptNumber": "Numéro de reçu",
+      "regen": "Régénérer",
+      "proof": "Photo / scan du reçu",
+      "proofCta": "Cliquez pour joindre (PDF ou image, ≤ 5 Mo)",
+      "proofRemove": "Retirer"
+    },
+    "reset": "Réinitialiser",
+    "submit": "Enregistrer le paiement",
+    "submitting": "Enregistrement…",
+    "fourEyesNote": "Enregistré comme INITIATED — un second admin doit confirmer via /admin/payments (règle 4-eyes).",
+    "success": {
+      "title": "Paiement espèces enregistré",
+      "body": "Référence {ref}. En attente de confirmation par un second admin.",
+      "dismiss": "Fermer"
+    },
+    "errors": {
+      "shipownerRequired": "Sélectionnez un armateur.",
+      "amountInvalid": "Le montant doit être un décimal positif avec au plus 2 chiffres après la virgule.",
+      "receiptRequired": "Le numéro de reçu est requis.",
+      "fileTooBig": "Le fichier dépasse la limite de 5 Mo.",
+      "fileMime": "Type de fichier non supporté (PDF ou image uniquement).",
+      "submitFailed": "Impossible d'enregistrer le paiement espèces."
     }
   }
 }
