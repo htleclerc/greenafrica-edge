@@ -62,6 +62,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'origin-port-proposals': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'cash-desk':    [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.PORT_OFFICER],
 
     // Settings — everyone
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
@@ -80,6 +81,7 @@ export const MONEY_RAIL_KEYS = new Set<string>([
     'tax-settings',
     'revenue',
     'payments',
+    'cash-desk',
     'wallet-topups',
     'wallet-audit',
     'mark-paid',
@@ -137,4 +139,23 @@ export function canEdit(navKey: string, role: UserRole): boolean {
  */
 export function filterNavItems<T extends { key: string }>(items: T[], role: UserRole): T[] {
     return items.filter((item) => canAccess(item.key, role));
+}
+
+/**
+ * Cash Desk access — two-layer gate (Plan 7C-4):
+ *   1. Role: FINANCE_ADMIN, SUPERADMIN always allowed.
+ *   2. PORT_OFFICER allowed iff `profiles.can_record_cash = true` (mig 061).
+ *
+ * Used by `/admin/cash-desk` page-level redirect AND (where the profile flag
+ * is in scope) sidebar visibility. The sidebar without profile context can
+ * fall back to {@link canAccess}('cash-desk', role) — PORT_OFFICERs without
+ * the flag will then see the link and be redirected by the page guard.
+ */
+export function canAccessCashDesk(
+    role: UserRole | string | null | undefined,
+    canRecordCashFlag: boolean,
+): boolean {
+    if (role === UserRole.SUPERADMIN || role === UserRole.FINANCE_ADMIN) return true;
+    if (role === UserRole.PORT_OFFICER) return canRecordCashFlag === true;
+    return false;
 }
