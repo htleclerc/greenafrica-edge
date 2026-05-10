@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { verifyWebhookSignature } from '@/services/stripeService';
+import { resolveSystemActor } from '@/lib/system-actor';
 
 /**
  * POST /api/webhooks/stripe
@@ -60,22 +61,6 @@ async function findStripePayment(
         .maybeSingle();
     if (error) throw error;
     return data as PaymentRow | null;
-}
-
-/**
- * Resolve a system actor profile id to satisfy `payments_confirmed_audit`.
- * Mirrors mig 059's stopgap (oldest active SUPERADMIN/FINANCE_ADMIN).
- */
-async function resolveSystemActor(admin: SupabaseClient): Promise<string | null> {
-    const { data } = await admin
-        .from('profiles')
-        .select('id')
-        .eq('is_active', true)
-        .in('role', ['SUPERADMIN', 'FINANCE_ADMIN'])
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-    return (data?.id as string | undefined) ?? null;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
