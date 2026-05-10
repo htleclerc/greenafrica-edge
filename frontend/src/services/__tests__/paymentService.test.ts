@@ -426,3 +426,52 @@ describe('createPaymentRequest', () => {
         expect(result.wireInstructions).toBeDefined();
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan 7C-3: listAdminPayments
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { listAdminPayments, type AdminPaymentFilters } from '../paymentService';
+
+describe('listAdminPayments', () => {
+    function makeFilterClient(rows: Array<Record<string, unknown>>) {
+        // Chain: from(...).select(...).in?(...).eq?(...).gte?(...).lte?(...).ilike?(...).order(...).limit(...) → resolved
+        const limitFn = vi.fn().mockResolvedValue({ data: rows, error: null });
+        const order = vi.fn(() => ({ limit: limitFn }));
+        // Every chainable filter returns an object with all chainable filters + order
+        const chainable = (): Record<string, unknown> => {
+            const obj: Record<string, unknown> = {};
+            obj.in = vi.fn(() => chainable());
+            obj.eq = vi.fn(() => chainable());
+            obj.gte = vi.fn(() => chainable());
+            obj.lte = vi.fn(() => chainable());
+            obj.ilike = vi.fn(() => chainable());
+            obj.order = order;
+            return obj;
+        };
+        const select = vi.fn(() => chainable());
+        return { from: vi.fn(() => ({ select })) } as unknown as SupabaseClient;
+    }
+
+    it('returns rows mapped to PaymentRow[]', async () => {
+        const client = makeFilterClient([
+            { id: 'p1', status: 'INITIATED', rail: 'CHEQUE', amount_usd_minor: 50000, currency: 'USD',
+              shipowner_id: 's1', transaction_id: 't1', declared_by: 'a1',
+              amount_minor: 50000, fx_rate: null, fx_rate_source: null, fx_rate_locked_at: null,
+              rail_details: {}, external_reference: null, rejected_reason: null,
+              confirmed_by: null, confirmed_at: null,
+              created_at: '2026-05-10T00:00:00Z', updated_at: '2026-05-10T00:00:00Z' },
+        ]);
+        const filters: AdminPaymentFilters = { status: ['INITIATED'], rail: [], from: null, to: null, q: null };
+        const rows = await listAdminPayments(client, filters);
+        expect(rows).toHaveLength(1);
+        expect(rows[0].id).toBe('p1');
+        expect(rows[0].rail).toBe('CHEQUE');
+    });
+
+    it('handles empty filter gracefully', async () => {
+        const client = makeFilterClient([]);
+        const rows = await listAdminPayments(client, { status: [], rail: [], from: null, to: null, q: null });
+        expect(rows).toEqual([]);
+    });
+});

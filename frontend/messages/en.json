@@ -2985,5 +2985,123 @@
     "placeholder_p1": "These terms govern your use of the Green Gate carbon tax shipowner portal. By accepting, you agree to remit the applicable carbon tax for vessels matching your declared IMO Company Number.",
     "placeholder_p2": "Detailed terms will be published before public launch. For questions, contact compliance@africgreen.com.",
     "draft_notice": "Draft document — final terms will be published before launch."
+  },
+  "AdminPayments": {
+    "title": "Payments",
+    "subtitle": "Review owner-initiated payments and record manual entries.",
+    "refresh": "Refresh",
+    "recordManual": "Record manual",
+    "filterStatus": "Status",
+    "filterRail": "Rail",
+    "loading": "Loading payments…",
+    "empty": "No payments match the current filters.",
+    "col": {
+      "id": "ID",
+      "rail": "Rail",
+      "amount": "Amount",
+      "status": "Status",
+      "created": "Created",
+      "ref": "Ext. ref"
+    },
+    "recordDialog": {
+      "title": "Record manual payment",
+      "subtitle": "Insert a payment row on behalf of a shipowner. CASH always requires a second admin to confirm (4-eyes).",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Record payment",
+      "submitting": "Recording…",
+      "step1": {
+        "intro": "Choose the rail and identify the shipowner + transaction.",
+        "rail": "Rail",
+        "shipowner": "Shipowner",
+        "shipownerPlaceholder": "Search by name…",
+        "transaction": "Transaction (optional)",
+        "transactionNone": "— No specific transaction —"
+      },
+      "step2": {
+        "amount": "Amount",
+        "currency": "Currency",
+        "proofs": "Proof files",
+        "proofsCta": "Click to upload (PDF / image, ≤ 5MB)",
+        "hint": {
+          "cash": "Issue the cash receipt and record the cashier's name.",
+          "cheque": "Capture the cheque number, bank, and date.",
+          "letter_of_credit": "Record the LC reference and issuing bank.",
+          "netting": "Identify the counterparty and the net settlement reference.",
+          "third_party": "Identify the third-party payer.",
+          "bank_guarantee": "Record the guarantee number and issuing bank."
+        },
+        "field": {
+          "receiptNumber": "Receipt number",
+          "cashier": "Cashier name",
+          "chequeNumber": "Cheque number",
+          "bankName": "Bank name",
+          "chequeDate": "Cheque date",
+          "lcNumber": "LC number",
+          "issuingBank": "Issuing bank",
+          "expiryDate": "Expiry date",
+          "counterparty": "Counterparty",
+          "netSettlementRef": "Net settlement ref",
+          "payerName": "Payer name",
+          "payerRelationship": "Relationship",
+          "externalReference": "External reference",
+          "guaranteeNumber": "Guarantee number"
+        }
+      },
+      "summary": {
+        "rail": "Rail",
+        "shipowner": "Shipowner",
+        "transaction": "Transaction",
+        "noTransaction": "(none)",
+        "amount": "Amount",
+        "proofs": "Proofs",
+        "details": "Details",
+        "confirmImmediately": "Confirm immediately (mark as CONFIRMED — admin signs off as confirmer)",
+        "fourEyesRequired": "CASH requires 4-eyes — second admin must confirm"
+      },
+      "errors": {
+        "railRequired": "Pick a rail first.",
+        "shipownerRequired": "Pick a shipowner.",
+        "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+        "fileTooBig": "{name} exceeds the 5MB limit.",
+        "fileMime": "{name} has an unsupported file type.",
+        "invalidState": "Wizard state is incomplete.",
+        "required": {
+          "receipt_number": "Receipt number is required.",
+          "cashier": "Cashier name is required.",
+          "cheque_number": "Cheque number is required.",
+          "bank_name": "Bank name is required.",
+          "lc_number": "LC number is required.",
+          "issuing_bank": "Issuing bank is required.",
+          "counterparty": "Counterparty is required.",
+          "net_settlement_ref": "Settlement reference is required.",
+          "payer_name": "Payer name is required.",
+          "guarantee_number": "Guarantee number is required."
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "Payment review",
+      "loading": "Loading payment…",
+      "status": "Status",
+      "rail": "Rail",
+      "amount": "Amount",
+      "transaction": "Transaction",
+      "declaredBy": "Declared by",
+      "createdAt": "Created",
+      "details": "Rail details",
+      "proofs": "Proofs",
+      "confirm": "Confirm",
+      "confirming": "Confirming…",
+      "reject": "Reject",
+      "rejecting": "Rejecting…",
+      "confirmReject": "Submit rejection",
+      "cancelReject": "Back",
+      "rejectReason": "Reason for rejection",
+      "rejectReasonPlaceholder": "Required — explain why this payment is rejected.",
+      "errors": {
+        "reasonRequired": "Reason must be at least 3 characters."
+      }
+    }
   }
 }

@@ -680,3 +680,40 @@ export async function setProviderActive(
     .eq('provider', provider);
   return !error;
 }
+
+// ── Plan 7C-3: Admin payment list with filters ─────────────────────────────
+
+export interface AdminPaymentFilters {
+    status: PaymentStatusV7[];
+    rail: PaymentRail[];
+    from: string | null;     // ISO date inclusive
+    to: string | null;       // ISO date inclusive
+    q: string | null;        // ILIKE on external_reference
+}
+
+/**
+ * List up to 200 payments matching the filters, newest first.
+ * Used by /admin/payments PaymentsAdminPanel.
+ */
+export async function listAdminPayments(
+    client: SupabaseClient,
+    filters: AdminPaymentFilters,
+    limit = 200,
+): Promise<PaymentRow[]> {
+    let query = client
+        .from('payments')
+        .select('*');
+
+    if (filters.status.length > 0) query = query.in('status', filters.status);
+    if (filters.rail.length > 0)   query = query.in('rail', filters.rail);
+    if (filters.from)              query = query.gte('created_at', filters.from);
+    if (filters.to)                query = query.lte('created_at', filters.to);
+    if (filters.q)                 query = query.ilike('external_reference', `%${filters.q}%`);
+
+    const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as PaymentRow[];
+}

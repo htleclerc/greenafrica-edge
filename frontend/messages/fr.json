@@ -2955,5 +2955,123 @@
     "placeholder_p1": "Ces conditions régissent l'utilisation du portail armateur de taxe carbone Green Gate. En les acceptant, vous vous engagez à régler la taxe carbone applicable aux navires correspondant à votre IMO Société déclaré.",
     "placeholder_p2": "Le détail des conditions sera publié avant le lancement public. Pour toute question, contactez compliance@africgreen.com.",
     "draft_notice": "Document brouillon — la version finale sera publiée avant le lancement."
+  },
+  "AdminPayments": {
+    "title": "Paiements",
+    "subtitle": "Examinez les paiements initiés par l'armateur et enregistrez les entrées manuelles.",
+    "refresh": "Actualiser",
+    "recordManual": "Enregistrer un paiement",
+    "filterStatus": "Statut",
+    "filterRail": "Mode",
+    "loading": "Chargement des paiements…",
+    "empty": "Aucun paiement ne correspond aux filtres en cours.",
+    "col": {
+      "id": "ID",
+      "rail": "Mode",
+      "amount": "Montant",
+      "status": "Statut",
+      "created": "Créé",
+      "ref": "Réf. ext."
+    },
+    "recordDialog": {
+      "title": "Enregistrer un paiement manuel",
+      "subtitle": "Insérez une ligne de paiement pour le compte d'un armateur. Le règlement CASH exige toujours un second admin pour la confirmation (contrôle 4-eyes).",
+      "back": "Retour",
+      "next": "Suivant",
+      "submit": "Enregistrer le paiement",
+      "submitting": "Enregistrement…",
+      "step1": {
+        "intro": "Choisissez le mode de règlement et identifiez l'armateur ainsi que la transaction.",
+        "rail": "Mode",
+        "shipowner": "Armateur",
+        "shipownerPlaceholder": "Rechercher par nom…",
+        "transaction": "Transaction (facultatif)",
+        "transactionNone": "— Aucune transaction spécifique —"
+      },
+      "step2": {
+        "amount": "Montant",
+        "currency": "Devise",
+        "proofs": "Justificatifs",
+        "proofsCta": "Cliquez pour téléverser (PDF / image, ≤ 5 Mo)",
+        "hint": {
+          "cash": "Émettez le reçu de caisse et notez le nom du caissier.",
+          "cheque": "Saisissez le numéro de chèque, la banque et la date.",
+          "letter_of_credit": "Enregistrez la référence de la lettre de crédit et la banque émettrice.",
+          "netting": "Identifiez la contrepartie et la référence du règlement net.",
+          "third_party": "Identifiez le tiers payeur.",
+          "bank_guarantee": "Enregistrez le numéro de garantie et la banque émettrice."
+        },
+        "field": {
+          "receiptNumber": "Numéro de reçu",
+          "cashier": "Nom du caissier",
+          "chequeNumber": "Numéro de chèque",
+          "bankName": "Nom de la banque",
+          "chequeDate": "Date du chèque",
+          "lcNumber": "Numéro de lettre de crédit",
+          "issuingBank": "Banque émettrice",
+          "expiryDate": "Date d'expiration",
+          "counterparty": "Contrepartie",
+          "netSettlementRef": "Réf. du règlement net",
+          "payerName": "Nom du payeur",
+          "payerRelationship": "Lien avec l'armateur",
+          "externalReference": "Référence externe",
+          "guaranteeNumber": "Numéro de garantie"
+        }
+      },
+      "summary": {
+        "rail": "Mode",
+        "shipowner": "Armateur",
+        "transaction": "Transaction",
+        "noTransaction": "(aucune)",
+        "amount": "Montant",
+        "proofs": "Justificatifs",
+        "details": "Détails",
+        "confirmImmediately": "Confirmer immédiatement (marqué CONFIRMED — l'admin se déclare confirmateur)",
+        "fourEyesRequired": "Le règlement CASH exige le contrôle 4-eyes — un second admin doit confirmer"
+      },
+      "errors": {
+        "railRequired": "Choisissez d'abord un mode.",
+        "shipownerRequired": "Sélectionnez un armateur.",
+        "amountInvalid": "Le montant doit être un décimal positif avec au maximum 2 décimales.",
+        "fileTooBig": "{name} dépasse la limite de 5 Mo.",
+        "fileMime": "{name} n'est pas dans un format de fichier accepté.",
+        "invalidState": "L'assistant est incomplet.",
+        "required": {
+          "receipt_number": "Le numéro de reçu est obligatoire.",
+          "cashier": "Le nom du caissier est obligatoire.",
+          "cheque_number": "Le numéro de chèque est obligatoire.",
+          "bank_name": "Le nom de la banque est obligatoire.",
+          "lc_number": "Le numéro de lettre de crédit est obligatoire.",
+          "issuing_bank": "La banque émettrice est obligatoire.",
+          "counterparty": "La contrepartie est obligatoire.",
+          "net_settlement_ref": "La référence de règlement est obligatoire.",
+          "payer_name": "Le nom du payeur est obligatoire.",
+          "guarantee_number": "Le numéro de garantie est obligatoire."
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "Examen du paiement",
+      "loading": "Chargement du paiement…",
+      "status": "Statut",
+      "rail": "Mode",
+      "amount": "Montant",
+      "transaction": "Transaction",
+      "declaredBy": "Déclaré par",
+      "createdAt": "Créé",
+      "details": "Détails du mode",
+      "proofs": "Justificatifs",
+      "confirm": "Confirmer",
+      "confirming": "Confirmation…",
+      "reject": "Rejeter",
+      "rejecting": "Rejet…",
+      "confirmReject": "Confirmer le rejet",
+      "cancelReject": "Retour",
+      "rejectReason": "Motif du rejet",
+      "rejectReasonPlaceholder": "Obligatoire — expliquez pourquoi ce paiement est rejeté.",
+      "errors": {
+        "reasonRequired": "Le motif doit comporter au moins 3 caractères."
+      }
+    }
   }
 }
