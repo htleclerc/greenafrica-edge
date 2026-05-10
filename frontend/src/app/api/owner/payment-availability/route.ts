@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { selectProvidersForRail } from '@/services/paymentService';
 
-const OWNER_RAILS = ['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET'] as const;
+const OWNER_RAILS = ['STRIPE', 'WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET'] as const;
 type Rail = typeof OWNER_RAILS[number];
 
 interface RailEligibility {
@@ -35,6 +35,21 @@ export async function GET(req: NextRequest) {
                     ? 'wallet_insufficient'
                     : undefined;
             rails.push({ rail, eligible, providers: [], reason });
+            continue;
+        }
+        if (rail === 'STRIPE') {
+            // Stripe is its own provider — no row in payment_config.
+            // Eligibility is solely determined by whether STRIPE_SECRET_KEY
+            // is configured in the environment.
+            const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+            rails.push({
+                rail,
+                eligible: stripeConfigured,
+                providers: stripeConfigured
+                    ? [{ provider: 'stripe', routes_rail: ['STRIPE'], display_order: 0 }]
+                    : [],
+                reason: stripeConfigured ? undefined : 'no_active_provider',
+            });
             continue;
         }
         const providers = await selectProvidersForRail(supabase, rail);

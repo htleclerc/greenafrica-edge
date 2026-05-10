@@ -100,7 +100,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                         confirmed_at: new Date().toISOString(),
                         confirmed_by: systemActorId,
                     })
-                    .eq('id', row.id);
+                    .eq('id', row.id)
+                    .eq('status', 'PROCESSING');
                 if (updErr) throw updErr;
 
                 if (row.transaction_id) {
@@ -117,7 +118,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 const { error: updErr } = await admin
                     .from('payments')
                     .update({ status: 'CANCELLED' })
-                    .eq('id', row.id);
+                    .eq('id', row.id)
+                    .eq('status', 'PROCESSING');
                 if (updErr) throw updErr;
                 console.log(
                     `[stripe-reconcile] payment ${row.id} (PI ${piId}) → CANCELLED`,
@@ -130,7 +132,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                         status: 'CANCELLED',
                         rejected_reason: 'Timeout: Stripe Checkout not completed within 1h',
                     })
-                    .eq('id', row.id);
+                    .eq('id', row.id)
+                    .eq('status', 'PROCESSING');
                 if (updErr) throw updErr;
                 console.log(
                     `[stripe-reconcile] payment ${row.id} (PI ${piId}) → CANCELLED (timeout)`,
