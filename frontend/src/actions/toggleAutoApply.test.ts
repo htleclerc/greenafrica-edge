@@ -1,15 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const updates: { table: string; values: any; eqCol: string; eqVal: any }[] = [];
+interface UpsertCall {
+    table: string;
+    values: Record<string, unknown>;
+    options: Record<string, unknown> | undefined;
+}
+
+const upserts: UpsertCall[] = [];
 
 const mockSupabase = {
     from: vi.fn((table: string) => ({
-        update: (values: any) => ({
-            eq: async (col: string, val: any) => {
-                updates.push({ table, values, eqCol: col, eqVal: val });
-                return { error: null };
-            },
-        }),
+        upsert: async (values: Record<string, unknown>, options?: Record<string, unknown>) => {
+            upserts.push({ table, values, options });
+            return { error: null };
+        },
     })),
 };
 
@@ -27,7 +31,7 @@ vi.mock('@/lib/auth/requireOwner', () => ({
 }));
 
 beforeEach(() => {
-    updates.length = 0;
+    upserts.length = 0;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
     vi.clearAllMocks();
@@ -40,15 +44,25 @@ beforeEach(() => {
 });
 
 describe('toggleAutoApply', () => {
-    it('updates wallets.auto_apply_to_proforma for the caller shipowner', async () => {
+    it('upserts wallets.auto_apply_to_proforma for the caller shipowner', async () => {
         const { toggleAutoApply } = await import('./toggleAutoApply');
         await toggleAutoApply({ enabled: false });
 
-        const upd = updates.find(u => u.table === 'wallets');
-        expect(upd).toBeDefined();
-        expect(upd?.values).toEqual({ auto_apply_to_proforma: false });
-        expect(upd?.eqCol).toBe('shipowner_id');
-        expect(upd?.eqVal).toBe('so-1');
+        const up = upserts.find(u => u.table === 'wallets');
+        expect(up).toBeDefined();
+        expect(up?.values).toEqual({ shipowner_id: 'so-1', auto_apply_to_proforma: false });
+        expect(up?.options).toEqual({ onConflict: 'shipowner_id' });
+    });
+
+    it('upserts a wallet row for a fresh shipowner with no prior wallet', async () => {
+        // UPSERT covers the create-on-first-toggle case — the same call works
+        // whether the row exists or not. Asserting the call shape is identical.
+        const { toggleAutoApply } = await import('./toggleAutoApply');
+        await toggleAutoApply({ enabled: true });
+
+        const up = upserts.find(u => u.table === 'wallets');
+        expect(up?.values).toEqual({ shipowner_id: 'so-1', auto_apply_to_proforma: true });
+        expect(up?.options).toEqual({ onConflict: 'shipowner_id' });
     });
 
     it('throws when requireOwner rejects', async () => {

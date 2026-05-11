@@ -126,7 +126,10 @@ export async function predictNextTax(
     // Frequency: alerts/day over the actual window (first → last alert)
     const firstAt = new Date(rows[0].created_at).getTime();
     const lastAt = new Date(rows[rows.length - 1].created_at).getTime();
-    const windowDays = Math.max(1, (lastAt - firstAt) / 86400000);
+    // Floor at 7 days (not 1) to bound the cluster-burst case: if 30 alerts arrive
+    // within 12 hours, a 1-day floor would project 900 events for the next 30 days.
+    // 1-week minimum keeps the projection aggressive-but-bounded for bursty traffic.
+    const windowDays = Math.max(7, (lastAt - firstAt) / 86400000);
     const alertsPerDay = rows.length / windowDays;
     const estimatedCount30d = Math.round(alertsPerDay * 30);
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { AdminWalletsPanel, type AdminWalletRow } from '@/components/dashboard/admin/AdminWallets';
 
@@ -40,8 +41,15 @@ export default async function AdminWalletsRoute() {
         redirect('/dashboard');
     }
 
+    // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger with no policies.
+    // RBAC gate above (SUPERADMIN / FINANCE_ADMIN / MANAGER) controls WHO; the
+    // service-role client just lets the queries see the rows.
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const admin = createServiceClient(url, key);
+
     // Query 1: wallets + shipowner name (top 200 by balance)
-    const { data: walletsData, error: walletsError } = await supabase
+    const { data: walletsData, error: walletsError } = await admin
         .from('wallets')
         .select('id, shipowner_id, balance_usd_minor, auto_apply_to_proforma, shipowner:shipowners(name)')
         .order('balance_usd_minor', { ascending: false })
@@ -57,7 +65,7 @@ export default async function AdminWalletsRoute() {
     // Query 2: latest wallet_ledger entry per wallet (build a Map<wallet_id, created_at>)
     const lastActivityByWallet = new Map<string, string>();
     if (walletIds.length > 0) {
-        const { data: ledgerData, error: ledgerError } = await supabase
+        const { data: ledgerData, error: ledgerError } = await admin
             .from('wallet_ledger')
             .select('wallet_id, created_at')
             .in('wallet_id', walletIds)

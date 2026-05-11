@@ -14,10 +14,15 @@ export async function toggleAutoApply(input: { enabled: boolean }): Promise<void
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const admin = createClient(url, key);
 
+    // UPSERT (not UPDATE) — a fresh shipowner with no ledger entries yet won't have
+    // a wallet row, so plain UPDATE silently no-ops. wallets.shipowner_id is UNIQUE
+    // (mig 050), so onConflict resolves cleanly.
     const { error } = await admin
         .from('wallets')
-        .update({ auto_apply_to_proforma: parsed.enabled })
-        .eq('shipowner_id', ctx.shipowner.id);
+        .upsert(
+            { shipowner_id: ctx.shipowner.id, auto_apply_to_proforma: parsed.enabled },
+            { onConflict: 'shipowner_id' },
+        );
 
     if (error) throw new Error(error.message);
 }

@@ -1,3 +1,4 @@
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { getWalletForOwner, listLedgerEntries, predictNextTax } from '@/services/walletService';
 import { WalletPageClient } from './WalletPageClient';
@@ -11,7 +12,15 @@ export const dynamic = 'force-dynamic';
 export default async function OwnerWalletPage() {
     const session = await requireOwner();
 
-    const wallet = await getWalletForOwner(session.supabase, session.shipowner.id);
+    // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger but adds no policies.
+    // requireOwner() above is the auth gate (validates session + ACTIVE shipowner);
+    // queries below are scoped by `session.shipowner.id` so a service-role client is
+    // safe to use for the reads. Mirrors the pattern in actions/applyWallet.ts.
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const admin = createServiceClient(url, key);
+
+    const wallet = await getWalletForOwner(admin, session.shipowner.id);
 
     if (!wallet) {
         // Wallet auto-creates on first ledger entry (per mig 064 fallback). If it's still missing here,
@@ -36,8 +45,8 @@ export default async function OwnerWalletPage() {
     }
 
     const [ledger, prediction] = await Promise.all([
-        listLedgerEntries(session.supabase, wallet.id, { kinds: [], offset: 0, limit: 100 }),
-        predictNextTax(session.supabase, session.shipowner.id),
+        listLedgerEntries(admin, wallet.id, { kinds: [], offset: 0, limit: 100 }),
+        predictNextTax(admin, session.shipowner.id),
     ]);
 
     return (
