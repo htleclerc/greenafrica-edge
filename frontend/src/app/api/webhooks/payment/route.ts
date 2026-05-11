@@ -13,9 +13,12 @@ import { parseInvoiceRef } from '@/services/invoiceService';
  * Provider detection:
  * - Paystack:    x-paystack-signature header
  * - Flutterwave: verif-hash header
- * - Stripe:      stripe-signature header
  * - Wave:        x-wave-signature header
  * - Payoneer:    payoneer-signature header
+ *
+ * Note: Stripe webhooks are handled by the dedicated
+ * /api/webhooks/stripe route (Plan 7D) with proper HMAC
+ * signature verification + idempotency.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +33,6 @@ export async function POST(request: NextRequest) {
     // ── Detect provider from headers ────────────────────────────────────
     const paystackSig = request.headers.get('x-paystack-signature');
     const flutterwaveSig = request.headers.get('verif-hash');
-    const stripeSig = request.headers.get('stripe-signature');
     const waveSig = request.headers.get('x-wave-signature');
     const payoneerSig = request.headers.get('payoneer-signature');
 
@@ -58,15 +60,6 @@ export async function POST(request: NextRequest) {
       reference = body.data?.tx_ref || '';
       providerRef = body.data?.id?.toString() || '';
       isSuccess = body.event === 'charge.completed' && body.data?.status === 'successful';
-
-    } else if (stripeSig) {
-      // ── Stripe ────────────────────────────────────────────────────────
-      // Note: full Stripe signature verification requires the raw body + webhook secret
-      // For now, check the secret matches
-      provider = 'stripe';
-      reference = body.data?.object?.client_reference_id || body.data?.object?.metadata?.transaction_id || '';
-      providerRef = body.data?.object?.id || '';
-      isSuccess = body.type === 'checkout.session.completed';
 
     } else if (waveSig) {
       // ── Wave ──────────────────────────────────────────────────────────

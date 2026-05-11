@@ -30,13 +30,21 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                     amountMinor: Math.round(ctx.amountUsd * 100),
                 });
             } else {
-                await initiatePayment({
+                const result = await initiatePayment({
                     transactionId: ctx.transactionId,
                     amount: ctx.amountUsd.toFixed(2),
                     currency: ctx.currency,
                     rail: ctx.rail,
                     railDetails: ctx.railDetails,
                 });
+
+                // Plan 7D: STRIPE flow returns checkoutUrl — redirect the browser there.
+                // The webhook will flip the payment to CONFIRMED + generate receipt + email
+                // when the owner completes Checkout (or CANCELLED via cron reconcile if abandoned).
+                if (ctx.rail === 'STRIPE' && 'checkoutUrl' in result && result.checkoutUrl) {
+                    window.location.href = result.checkoutUrl as string;
+                    return; // do NOT call onClose / router.refresh — page is about to unload
+                }
             }
             ctx.reset();
             onClose();

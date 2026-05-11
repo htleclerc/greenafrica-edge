@@ -42,6 +42,14 @@ vi.mock('@/lib/auth/requireOwner', () => ({
     })),
 }));
 
+vi.mock('@/services/stripeService', () => ({
+    createCheckoutSession: vi.fn().mockResolvedValue({
+        checkoutUrl: 'https://checkout.stripe.com/c/cs_test_123',
+        stripePaymentIntentId: 'pi_test_123',
+        stripeSessionId: 'cs_test_123',
+    }),
+}));
+
 beforeEach(() => {
     inserted.length = 0;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
@@ -92,5 +100,49 @@ describe('initiatePayment', () => {
             fx_rate: 0.92,
             fx_rate_source: 'OPENEXCHANGERATES',
         });
+    });
+});
+
+describe('initiatePayment — STRIPE rail', () => {
+    it('creates Checkout session, inserts PROCESSING, returns checkoutUrl', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        const result = await initiatePayment({
+            transactionId: '123e4567-e89b-42d3-a456-426614174000',
+            amount: '100.00',
+            currency: 'USD',
+            rail: 'STRIPE',
+            railDetails: {},
+        });
+
+        const { createCheckoutSession } = await import('@/services/stripeService');
+        expect(createCheckoutSession).toHaveBeenCalledWith(expect.objectContaining({
+            amountUsdMinor: 10000,
+            shipownerId: 'so-1',
+            invoiceId: '123e4567-e89b-42d3-a456-426614174000',
+        }));
+        expect(result).toEqual(expect.objectContaining({
+            status: 'PROCESSING',
+            checkoutUrl: 'https://checkout.stripe.com/c/cs_test_123',
+        }));
+
+        expect(inserted[0]).toMatchObject({
+            rail: 'STRIPE',
+            status: 'PROCESSING',
+            external_reference: 'pi_test_123',
+            rail_details: {
+                stripe_session_id: 'cs_test_123',
+                stripe_payment_intent_id: 'pi_test_123',
+            },
+        });
+    });
+
+    it('throws if Stripe SDK throws', async () => {
+        const { createCheckoutSession } = await import('@/services/stripeService');
+        (createCheckoutSession as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Stripe API error'));
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: '123e4567-e89b-42d3-a456-426614174000',
+            amount: '100.00', currency: 'USD', rail: 'STRIPE', railDetails: {},
+        })).rejects.toThrow(/Stripe API error/);
     });
 });

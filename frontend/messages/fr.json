@@ -2720,6 +2720,10 @@
           "VESSEL_DATA": "Données du navire",
           "OTHER": "Autre"
         }
+      },
+      "stripeReturn": {
+        "success": "Paiement reçu — le reçu vous parvient par e-mail.",
+        "cancel": "Paiement annulé. Votre facture reste en attente ; vous pouvez réessayer."
       }
     },
     "alerts": {
@@ -2757,13 +2761,18 @@
         "wallet": {
           "label": "Appliquer le crédit wallet",
           "hint": "Utiliser le solde existant"
+        },
+        "stripe": {
+          "label": "Payer par carte (Stripe)",
+          "hint": "Instantané — Visa, Mastercard, Apple Pay, Google Pay"
         }
       },
       "paramsHint": {
         "wire_transfer": "Effectuez le virement et saisissez la référence bancaire ci-dessous.",
         "mobile_money": "Saisissez le numéro de téléphone utilisé pour le transfert {provider}.",
         "third_party": "Identifiez le tiers qui paie pour votre compte.",
-        "wallet": "Appliquez votre solde wallet à cette facture."
+        "wallet": "Appliquez votre solde wallet à cette facture.",
+        "stripe": "Vous serez redirigé vers Stripe Checkout pour saisir votre carte."
       },
       "field": {
         "bankReference": "Référence bancaire",
