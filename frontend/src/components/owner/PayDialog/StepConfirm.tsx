@@ -25,6 +25,11 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
         ctx.setError(null);
         try {
             if (ctx.rail === 'WALLET') {
+                // WALLET rail is hidden in topup mode (filtered in StepRailPicker), so
+                // transactionId is guaranteed non-null here. Guard anyway for type safety.
+                if (!ctx.transactionId) {
+                    throw new Error(t('errors.noTransactionForWallet'));
+                }
                 await applyWallet({
                     transactionId: ctx.transactionId,
                     amountMinor: Math.round(ctx.amountUsd * 100),
@@ -60,9 +65,11 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col gap-3">
             <div className="rounded-xl border border-[var(--os-border)] p-4 bg-[var(--os-surface-2)]">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
-                    {t('summary.invoice')}
+                    {ctx.mode === 'topup' ? t('mode.topup.summaryLabel') : t('summary.invoice')}
                 </p>
-                <p className="text-sm font-mono text-[var(--os-text-primary)]">{ctx.invoiceRef}</p>
+                <p className="text-sm font-mono text-[var(--os-text-primary)]">
+                    {ctx.invoiceRef ?? (ctx.mode === 'topup' ? t('mode.topup.summaryValue') : '—')}
+                </p>
 
                 <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>

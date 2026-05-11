@@ -4,6 +4,7 @@ import * as React from 'react';
 
 export type Step = 'rail' | 'params' | 'confirm';
 export type Rail = 'STRIPE' | 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
+export type PayDialogMode = 'invoice' | 'topup';
 
 export interface PayDialogState {
     step: Step;
@@ -15,8 +16,9 @@ export interface PayDialogState {
 }
 
 export interface PayDialogContextValue extends PayDialogState {
-    transactionId: string;
-    invoiceRef: string;
+    mode: PayDialogMode;
+    transactionId: string | null;
+    invoiceRef: string | null;
     amountUsd: number;
     currency: string;
     walletBalanceUsdMinor: number;
@@ -26,6 +28,7 @@ export interface PayDialogContextValue extends PayDialogState {
     setChosenProvider: (p: string | null) => void;
     setSubmitting: (b: boolean) => void;
     setError: (e: string | null) => void;
+    setAmountUsd: (n: number) => void;
     reset: () => void;
 }
 
@@ -33,19 +36,27 @@ const Ctx = React.createContext<PayDialogContextValue | null>(null);
 
 export function PayDialogProvider(
     props: React.PropsWithChildren<{
-        transactionId: string;
-        invoiceRef: string;
+        mode?: PayDialogMode;
+        transactionId: string | null;
+        invoiceRef: string | null;
         amountUsd: number;
         currency: string;
         walletBalanceUsdMinor: number;
     }>,
 ) {
+    const mode: PayDialogMode = props.mode ?? 'invoice';
     const [step, setStep] = React.useState<Step>('rail');
     const [rail, setRail] = React.useState<Rail | null>(null);
     const [railDetails, setRailDetails] = React.useState<Record<string, unknown>>({});
     const [chosenProvider, setChosenProvider] = React.useState<string | null>(null);
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const [amountUsd, setAmountUsd] = React.useState<number>(props.amountUsd);
+
+    // Keep amountUsd in sync if the parent updates the prop (e.g. invoice mode re-renders).
+    React.useEffect(() => {
+        setAmountUsd(props.amountUsd);
+    }, [props.amountUsd]);
 
     const reset = React.useCallback(() => {
         setStep('rail');
@@ -58,12 +69,13 @@ export function PayDialogProvider(
 
     const value: PayDialogContextValue = {
         step, rail, railDetails, chosenProvider, submitting, error,
+        mode,
         transactionId: props.transactionId,
         invoiceRef: props.invoiceRef,
-        amountUsd: props.amountUsd,
+        amountUsd,
         currency: props.currency,
         walletBalanceUsdMinor: props.walletBalanceUsdMinor,
-        setStep, setRail, setRailDetails, setChosenProvider, setSubmitting, setError, reset,
+        setStep, setRail, setRailDetails, setChosenProvider, setSubmitting, setError, setAmountUsd, reset,
     };
 
     return <Ctx.Provider value={value}>{props.children}</Ctx.Provider>;

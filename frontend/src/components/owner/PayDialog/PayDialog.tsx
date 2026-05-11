@@ -3,7 +3,7 @@
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslations } from 'next-intl';
-import { PayDialogProvider, usePayDialog } from './usePayDialogContext';
+import { PayDialogProvider, usePayDialog, type PayDialogMode } from './usePayDialogContext';
 import { StepRailPicker } from './StepRailPicker';
 import { StepRailParams } from './StepRailParams';
 import { StepConfirm } from './StepConfirm';
@@ -11,8 +11,9 @@ import { StepConfirm } from './StepConfirm';
 interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    transactionId: string;
-    invoiceRef: string;
+    mode?: PayDialogMode;
+    transactionId: string | null;
+    invoiceRef: string | null;
     amountUsd: number;
     currency: string;
     walletBalanceUsdMinor: number;
@@ -51,15 +52,17 @@ function StepIndicator() {
 }
 
 function PayDialogBody({ onClose }: { onClose: () => void }) {
-    const { step } = usePayDialog();
+    const { step, mode } = usePayDialog();
     const t = useTranslations('OwnerPortal.payDialog');
+    const titleKey = mode === 'topup' ? 'mode.topup.title' : 'title';
+    const subtitleKey = mode === 'topup' ? 'mode.topup.subtitle' : 'subtitle';
     return (
         <>
             <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-1">
-                {t('title')}
+                {t(titleKey)}
             </Dialog.Title>
             <Dialog.Description className="text-xs text-[var(--os-text-muted)] mb-4">
-                {t('subtitle')}
+                {t(subtitleKey)}
             </Dialog.Description>
             <StepIndicator />
             {step === 'rail'    && <StepRailPicker />}
@@ -87,6 +90,7 @@ export function PayDialog(props: Props) {
                     }}
                 >
                     <PayDialogProvider
+                        mode={props.mode ?? 'invoice'}
                         transactionId={props.transactionId}
                         invoiceRef={props.invoiceRef}
                         amountUsd={props.amountUsd}
