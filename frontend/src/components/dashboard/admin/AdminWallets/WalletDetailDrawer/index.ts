@@ -1,0 +1,1 @@
+export { WalletDetailDrawer } from './WalletDetailDrawer';
