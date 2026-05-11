@@ -2786,7 +2786,8 @@
         "payerName": "Nom du payeur",
         "payerRelationship": "Relation avec votre société",
         "externalReference": "Référence externe",
-        "walletConfirm": "Appliquer ${balance} de votre wallet à cette facture."
+        "walletConfirm": "Appliquer ${balance} de votre wallet à cette facture.",
+        "topupAmount": "Montant de recharge (USD)"
       },
       "summary": {
         "invoice": "Facture",
@@ -2800,12 +2801,63 @@
         "bankReferenceRequired": "La référence bancaire est requise.",
         "phoneRequired": "Le numéro de téléphone est requis.",
         "payerNameRequired": "Le nom du payeur est requis.",
-        "noRail": "Veuillez d'abord choisir un moyen de paiement."
+        "noRail": "Veuillez d'abord choisir un moyen de paiement.",
+        "amountRequired": "Le montant doit être supérieur à 0.",
+        "noTransactionForWallet": "Le rail WALLET nécessite une facture."
       },
       "reason": {
         "wallet_empty": "Votre wallet ne dispose d’aucun solde.",
         "wallet_insufficient": "Votre solde wallet ne couvre pas le montant total de la facture.",
         "no_active_provider": "Aucun prestataire actif ne prend en charge ce rail."
+      },
+      "mode": {
+        "topup": {
+          "title": "Recharger le wallet",
+          "subtitle": "Préfinancez votre wallet pour couvrir les futures factures.",
+          "amountLabel": "Montant de recharge",
+          "success": "Wallet crédité — votre solde est à jour.",
+          "summaryLabel": "Montant de recharge",
+          "summaryValue": "sera crédité sur votre wallet"
+        }
+      }
+    },
+    "wallet": {
+      "balanceCard": {
+        "title": "Solde actuel",
+        "autoApply": "Imputation auto aux factures",
+        "autoApplyOn": "Activé",
+        "autoApplyOff": "Désactivé",
+        "topupCta": "Recharger le wallet"
+      },
+      "predictionCard": {
+        "title": "30 prochains jours",
+        "estimate30d": "~{count} passages → ~${amount} USD",
+        "confidence": "Confiance : {level}",
+        "confidenceLevel": {
+          "low": "faible",
+          "medium": "moyenne",
+          "high": "élevée"
+        },
+        "notEnoughData": "Pas assez d'activité sur les 90 derniers jours pour prédire (< 5 alertes).",
+        "insufficientWarning": "Le besoin estimé dépasse le solde actuel — recharge recommandée : ${amount}"
+      },
+      "ledger": {
+        "title": "Mouvements",
+        "empty": "Aucun mouvement.",
+        "col": {
+          "date": "Date",
+          "amount": "Montant",
+          "kind": "Type",
+          "note": "Note"
+        },
+        "kind": {
+          "TOPUP": "Recharge",
+          "OVERPAYMENT_CREDIT": "Sur-paiement",
+          "REFUND_CREDIT": "Crédit de remboursement",
+          "PROFORMA_APPLY": "Imputé à une facture",
+          "ADMIN_ADJUSTMENT": "Ajustement admin",
+          "FX_DIFFERENCE": "Écart de change"
+        }
       }
     }
   },
@@ -3118,6 +3170,50 @@
       "fileTooBig": "Le fichier dépasse la limite de 5 Mo.",
       "fileMime": "Type de fichier non supporté (PDF ou image uniquement).",
       "submitFailed": "Impossible d'enregistrer le paiement espèces."
+    }
+  },
+  "AdminWallets": {
+    "title": "Wallets",
+    "subtitle": "Tous les wallets armateurs — solde, imputation auto, ledger.",
+    "refresh": "Actualiser",
+    "empty": "Aucun wallet.",
+    "autoApply": {
+      "on": "Auto",
+      "off": "Manuel"
+    },
+    "col": {
+      "owner": "Armateur",
+      "balance": "Solde",
+      "autoApply": "Imputation auto",
+      "lastActivity": "Dernière activité"
+    },
+    "drawer": {
+      "title": "Détails du wallet",
+      "loading": "Chargement…",
+      "owner": "Armateur",
+      "balance": "Solde",
+      "adjustNotice": "Un SUPERADMIN peut enregistrer un ajustement manuel sur ce wallet. À utiliser pour corrections ops, gestes commerciaux ou fusion de doublons. Tous les ajustements sont tracés au ledger.",
+      "adjustCta": "Ajustement manuel",
+      "ledgerTitle": "Ledger ({count} entrées)"
+    },
+    "adjust": {
+      "title": "Ajustement manuel — {owner}",
+      "subtitle": "Créditez ou débitez ce wallet. Tous les ajustements sont append-only et nécessitent une justification.",
+      "warning": "Cette action est irréversible. L'ajustement apparaîtra au ledger comme ADMIN_ADJUSTMENT.",
+      "credit": "Crédit",
+      "debit": "Débit",
+      "amount": "Montant",
+      "justification": "Justification",
+      "justificationPlaceholder": "ex : Geste commercial suite à retard de traitement 2026-05 ; ticket ops #1234",
+      "cancel": "Annuler",
+      "submit": "Enregistrer",
+      "submitting": "Enregistrement…",
+      "errors": {
+        "amountInvalid": "Le montant doit être un décimal positif avec au plus 2 chiffres après la virgule.",
+        "justificationRequired": "La justification doit comporter au moins 5 caractères.",
+        "wouldGoNegative": "Le débit dépasse le solde actuel — le wallet deviendrait négatif.",
+        "failed": "Échec de l'ajustement."
+      }
     }
   }
 }
