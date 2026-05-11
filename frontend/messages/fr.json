@@ -622,7 +622,8 @@
     "footer_government": "GOUVERNEMENT DU SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CHIFFRÉ",
-    "nav_registrations": "Inscriptions"
+    "nav_registrations": "Inscriptions",
+    "nav_wallets": "Portefeuilles"
   },
   "Auth": {
     "system_status_online": "EN LIGNE — NŒUD SÉCURISÉ",
@@ -2630,7 +2631,8 @@
       "vessels": "Navires",
       "invoices": "Factures",
       "alerts": "Alertes",
-      "signOut": "Se déconnecter"
+      "signOut": "Se déconnecter",
+      "wallet": "Portefeuille"
     },
     "login": {
       "title": "Connectez-vous avec votre email",
