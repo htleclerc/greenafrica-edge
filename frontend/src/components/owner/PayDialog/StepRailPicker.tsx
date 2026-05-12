@@ -43,7 +43,13 @@ export function StepRailPicker() {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data: AvailabilityResponse = await res.json();
-                if (!cancelled) setRails(data.rails);
+                if (!cancelled) {
+                    // Topup mode: hide WALLET — can't top-up wallet from itself.
+                    const filtered = data.rails.filter(
+                        (r) => !(ctx.mode === 'topup' && r.rail === 'WALLET'),
+                    );
+                    setRails(filtered);
+                }
             } catch (e) {
                 if (!cancelled) setFetchError(e instanceof Error ? e.message : 'Failed');
             } finally {
@@ -52,7 +58,7 @@ export function StepRailPicker() {
         }
         load();
         return () => { cancelled = true; };
-    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd]);
+    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode]);
 
     function pickRail(r: RailEligibility) {
         ctx.setRail(r.rail);

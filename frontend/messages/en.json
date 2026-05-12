@@ -743,7 +743,8 @@
     "footer_government": "GOVERNMENT OF SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "ENCRYPTED",
-    "nav_registrations": "Registrations"
+    "nav_registrations": "Registrations",
+    "nav_wallets": "Wallets"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -2660,7 +2661,8 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Wallet"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2814,7 +2816,8 @@
         "payerName": "Payer name",
         "payerRelationship": "Relationship to your company",
         "externalReference": "External reference",
-        "walletConfirm": "Apply ${balance} from your wallet to this invoice."
+        "walletConfirm": "Apply ${balance} from your wallet to this invoice.",
+        "topupAmount": "Top-up amount (USD)"
       },
       "summary": {
         "invoice": "Invoice",
@@ -2828,12 +2831,63 @@
         "bankReferenceRequired": "Bank reference is required.",
         "phoneRequired": "Phone number is required.",
         "payerNameRequired": "Payer name is required.",
-        "noRail": "Please pick a payment method first."
+        "noRail": "Please pick a payment method first.",
+        "amountRequired": "Amount must be greater than 0.",
+        "noTransactionForWallet": "WALLET rail requires an invoice."
       },
       "reason": {
         "wallet_empty": "Your wallet has no balance to apply.",
         "wallet_insufficient": "Your wallet balance does not cover the full invoice amount.",
         "no_active_provider": "No active provider supports this rail right now."
+      },
+      "mode": {
+        "topup": {
+          "title": "Top up wallet",
+          "subtitle": "Pre-fund your wallet to cover future carbon tax invoices.",
+          "amountLabel": "Top-up amount",
+          "success": "Wallet credited — your balance is up to date.",
+          "summaryLabel": "Top-up amount",
+          "summaryValue": "will be credited to your wallet"
+        }
+      }
+    },
+    "wallet": {
+      "balanceCard": {
+        "title": "Current balance",
+        "autoApply": "Auto-apply to invoices",
+        "autoApplyOn": "Enabled",
+        "autoApplyOff": "Disabled",
+        "topupCta": "Top up wallet"
+      },
+      "predictionCard": {
+        "title": "Next 30 days",
+        "estimate30d": "~{count} vessel passages → ~${amount} USD",
+        "confidence": "Confidence: {level}",
+        "confidenceLevel": {
+          "low": "low",
+          "medium": "medium",
+          "high": "high"
+        },
+        "notEnoughData": "Not enough activity in the last 90 days to predict (< 5 alerts).",
+        "insufficientWarning": "Estimated need exceeds current balance — recommended top-up: ${amount}"
+      },
+      "ledger": {
+        "title": "Movements",
+        "empty": "No movements yet.",
+        "col": {
+          "date": "Date",
+          "amount": "Amount",
+          "kind": "Kind",
+          "note": "Note"
+        },
+        "kind": {
+          "TOPUP": "Top-up",
+          "OVERPAYMENT_CREDIT": "Overpayment credit",
+          "REFUND_CREDIT": "Refund credit",
+          "PROFORMA_APPLY": "Applied to invoice",
+          "ADMIN_ADJUSTMENT": "Admin adjustment",
+          "FX_DIFFERENCE": "FX difference"
+        }
       }
     }
   },
@@ -3146,6 +3200,50 @@
       "fileTooBig": "File exceeds the 5MB limit.",
       "fileMime": "File type not supported (use PDF or image).",
       "submitFailed": "Could not record the cash payment."
+    }
+  },
+  "AdminWallets": {
+    "title": "Wallets",
+    "subtitle": "All shipowner wallets — balance, auto-apply, ledger.",
+    "refresh": "Refresh",
+    "empty": "No wallets yet.",
+    "autoApply": {
+      "on": "Auto",
+      "off": "Manual"
+    },
+    "col": {
+      "owner": "Shipowner",
+      "balance": "Balance",
+      "autoApply": "Auto-apply",
+      "lastActivity": "Last activity"
+    },
+    "drawer": {
+      "title": "Wallet details",
+      "loading": "Loading wallet…",
+      "owner": "Shipowner",
+      "balance": "Balance",
+      "adjustNotice": "SUPERADMIN can post a manual adjustment to this wallet. Use for ops corrections, goodwill credits, or merging duplicate accounts. All adjustments are logged in the ledger.",
+      "adjustCta": "Manual adjustment",
+      "ledgerTitle": "Ledger ({count} entries)"
+    },
+    "adjust": {
+      "title": "Manual adjustment — {owner}",
+      "subtitle": "Credit or debit this wallet. All adjustments are append-only and require justification.",
+      "warning": "This action is irreversible. The adjustment will appear in the ledger as ADMIN_ADJUSTMENT.",
+      "credit": "Credit",
+      "debit": "Debit",
+      "amount": "Amount",
+      "justification": "Justification",
+      "justificationPlaceholder": "e.g. Goodwill credit for delayed processing 2026-05; ops ticket #1234",
+      "cancel": "Cancel",
+      "submit": "Post adjustment",
+      "submitting": "Posting…",
+      "errors": {
+        "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+        "justificationRequired": "Justification must be at least 5 characters.",
+        "wouldGoNegative": "Debit exceeds current balance — would make the wallet negative.",
+        "failed": "Adjustment failed."
+      }
     }
   }
 }

@@ -17,6 +17,11 @@ export function StepRailParams() {
     }
 
     function next() {
+        // Topup mode: validate the owner-entered amount before per-rail checks
+        if (ctx.mode === 'topup' && !(ctx.amountUsd > 0)) {
+            ctx.setError(t('errors.amountRequired'));
+            return;
+        }
         // Validate per rail
         if (ctx.rail === 'WIRE_TRANSFER') {
             if (!local.bankReference) { ctx.setError(t('errors.bankReferenceRequired')); return; }
@@ -56,6 +61,22 @@ export function StepRailParams() {
             <p className="text-xs text-[var(--os-text-muted)]">
                 {t(`paramsHint.${ctx.rail?.toLowerCase()}`, { provider: ctx.chosenProvider ?? '' })}
             </p>
+
+            {ctx.mode === 'topup' && (
+                <Field label={t('field.topupAmount')} required>
+                    <OsInput
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={ctx.amountUsd > 0 ? String(ctx.amountUsd) : ''}
+                        onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            ctx.setAmountUsd(Number.isFinite(v) ? v : 0);
+                        }}
+                        placeholder="0.00"
+                    />
+                </Field>
+            )}
 
             {ctx.rail === 'WIRE_TRANSFER' && (
                 <>

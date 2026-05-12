@@ -6,7 +6,7 @@ import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
-    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote,
+    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         labelKey: 'nav_revenue',      section: 'admin' },
     { key: 'payments',     icon: <CreditCard className="w-5 h-5" />,    href: '/admin/payments',        labelKey: 'nav_payments',     section: 'admin' },
     { key: 'cash-desk',    icon: <Banknote className="w-5 h-5" />,      href: '/admin/cash-desk',       labelKey: 'nav_cash_desk',    section: 'admin' },
+    { key: 'wallets',      icon: <Wallet className="w-5 h-5" />,        href: '/admin/wallets',         labelKey: 'nav_wallets',      section: 'admin' },
 ];
 
 interface DashboardSidebarProps {
