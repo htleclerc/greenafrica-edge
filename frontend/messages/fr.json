@@ -2867,7 +2867,7 @@
       "viewAll": "Voir toutes les notifications",
       "empty": "Aucune notification pour le moment",
       "pageTitle": "Notifications",
-      "unreadLabel": "{count} non lue(s)",
+      "unreadLabel": "non lue(s)",
       "filterAria": "Filtrer les notifications",
       "filterAll": "Toutes",
       "filterUnread": "Non lues uniquement",

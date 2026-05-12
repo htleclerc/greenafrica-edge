@@ -286,6 +286,38 @@ async function handlePaymentFailed(
         })
         .eq('id', payment.id);
     if (error) throw error;
+
+    // Notify owner of the failed payment (fail-soft). Closes the UX gap
+    // where admin-rejected payments produce a notification but Stripe-
+    // failed payments did not.
+    try {
+        const { notifyOwner } = await import('@/services/notificationService');
+        let invoiceRef: string | undefined;
+        if (payment.transaction_id) {
+            const { data: tx } = await admin
+                .from('transactions')
+                .select('invoice_ref')
+                .eq('id', payment.transaction_id)
+                .single();
+            invoiceRef = (tx as { invoice_ref?: string } | null)?.invoice_ref;
+        }
+        await notifyOwner(admin, {
+            shipownerId: payment.shipowner_id,
+            kind: 'PAYMENT_REJECTED',
+            params: {
+                invoice_ref: invoiceRef ?? '—',
+                reason: `Stripe: ${reason}`,
+            },
+            deepLink: invoiceRef
+                ? `/owner/invoices?ref=${encodeURIComponent(invoiceRef)}`
+                : '/owner/invoices',
+        });
+    } catch (notifyErr) {
+        console.error(
+            `[stripe-webhook] notifyOwner failed for failed payment ${payment.id}:`,
+            notifyErr,
+        );
+    }
 }
 
 async function handleCheckoutExpired(

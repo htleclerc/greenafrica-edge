@@ -19,9 +19,15 @@ export type NotificationKind =
 /**
  * Set of kinds that ALSO dispatch an email (besides the in-app row).
  * Subset of NotificationKind. Per spec §6.2.
+ *
+ * NOTE: KYC_APPROVED is intentionally NOT in this set — the activation
+ * email is dispatched at the call site (approveShipownerRegistration)
+ * which has the full activation context (role/operationalSite/activationUrl).
+ * Callers passing KYC_APPROVED should still set skipEmail: true defensively,
+ * but its absence from EMAIL_KINDS prevents a silent-failure trap if forgotten.
  */
 export const EMAIL_KINDS: ReadonlySet<NotificationKind> = new Set<NotificationKind>([
-    'KYC_APPROVED', 'KYC_REJECTED', 'KYC_C_REQUIRED',
+    'KYC_REJECTED', 'KYC_C_REQUIRED',
     'ALERT_DETECTED', 'PROFORMA_ISSUED', 'PROFORMA_REMINDER',
     'PAYMENT_RECEIVED', 'PAYMENT_REJECTED',
     'FINAL_ISSUED', 'COMPLEMENT_ISSUED', 'REFUND_ISSUED',

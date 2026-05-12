@@ -2897,7 +2897,7 @@
       "viewAll": "View all notifications",
       "empty": "No notifications yet",
       "pageTitle": "Notifications",
-      "unreadLabel": "{count} unread",
+      "unreadLabel": "unread",
       "filterAria": "Filter notifications",
       "filterAll": "All",
       "filterUnread": "Unread only",
