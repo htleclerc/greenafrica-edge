@@ -171,9 +171,14 @@ async function handlePaymentSucceeded(
     }
 
     // Plan 7C-4 receipt + email hook (fail-soft — payment stays CONFIRMED on error)
+    let receiptRefForNotif: string | undefined;
+    let receiptBufferForNotif: Uint8Array | undefined;
+    let txForNotif: { invoice_ref: string | null; vessel_name: string | null } | null = null;
     try {
         const { generatePaymentReceipt } = await import('@/services/receiptService');
         const receipt = await generatePaymentReceipt(admin, payment.id);
+        receiptRefForNotif = receipt.receiptRef;
+        receiptBufferForNotif = receipt.pdfBuffer;
 
         const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
 
@@ -190,6 +195,9 @@ async function handlePaymentSucceeded(
                 .eq('id', payment.transaction_id)
                 .single()
             : { data: null as { invoice_ref: string | null; vessel_name: string | null } | null };
+        txForNotif = tx
+            ? { invoice_ref: tx.invoice_ref as string | null, vessel_name: tx.vessel_name as string | null }
+            : null;
 
         const ownerEmail = (owner as { official_email?: string } | null)?.official_email;
         if (ownerEmail) {
@@ -208,6 +216,52 @@ async function handlePaymentSucceeded(
         console.error(
             `[stripe-webhook] receipt/email hook failed for payment ${payment.id}:`,
             e,
+        );
+    }
+
+    // Plan 7F: in-app notification (email already sent above for PAYMENT_RECEIVED;
+    // WALLET_TOPPED_UP — Stripe top-ups have transaction_id=null — dispatches its own
+    // topup email via notifyOwner). Fail-soft.
+    try {
+        const { notifyOwner } = await import('@/services/notificationService');
+        const isTopup = payment.transaction_id === null;
+        if (isTopup) {
+            const { data: wallet } = await admin
+                .from('wallets')
+                .select('balance_usd_minor')
+                .eq('shipowner_id', payment.shipowner_id)
+                .maybeSingle();
+            await notifyOwner(admin, {
+                shipownerId: payment.shipowner_id,
+                kind: 'WALLET_TOPPED_UP',
+                params: {
+                    amount_usd: (payment.amount_usd_minor ?? 0) / 100,
+                    new_balance_usd: ((wallet?.balance_usd_minor as number | undefined) ?? 0) / 100,
+                },
+                deepLink: '/owner/wallet',
+            });
+        } else {
+            await notifyOwner(admin, {
+                shipownerId: payment.shipowner_id,
+                kind: 'PAYMENT_RECEIVED',
+                params: {
+                    vessel_name: txForNotif?.vessel_name ?? '—',
+                    invoice_ref: txForNotif?.invoice_ref ?? '—',
+                    amount_usd: (payment.amount_usd_minor ?? 0) / 100,
+                    paid_at: confirmedAt,
+                    receipt_ref: receiptRefForNotif,
+                },
+                deepLink: `/owner/invoices?ref=${encodeURIComponent(txForNotif?.invoice_ref ?? '')}`,
+                skipEmail: true,
+                ...(receiptBufferForNotif
+                    ? { attachments: { pdfBuffer: receiptBufferForNotif, filename: `${receiptRefForNotif}.pdf` } }
+                    : {}),
+            });
+        }
+    } catch (notifyErr) {
+        console.error(
+            `[stripe-webhook] notifyOwner failed for payment ${payment.id}:`,
+            notifyErr,
         );
     }
 }

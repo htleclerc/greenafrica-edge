@@ -65,6 +65,7 @@ export async function confirmPayment(input: { paymentId: string }) {
         console.error(`[confirmPayment] receipt generation failed for ${parsed.paymentId}:`, e);
     }
 
+    let txForNotif: { invoice_ref: string | null; vessel_name: string | null } | null = null;
     try {
         const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
 
@@ -83,6 +84,9 @@ export async function confirmPayment(input: { paymentId: string }) {
                     .eq('id', updated.transaction_id)
                     .single()
                 : { data: null as { invoice_ref: string | null; vessel_name: string | null; tax_amount_usd: number | null } | null };
+            txForNotif = tx
+                ? { invoice_ref: tx.invoice_ref as string | null, vessel_name: tx.vessel_name as string | null }
+                : null;
 
             await sendPaymentConfirmationEmail({
                 to: ownerRow.official_email as string,
@@ -97,6 +101,48 @@ export async function confirmPayment(input: { paymentId: string }) {
         }
     } catch (e) {
         console.error(`[confirmPayment] email send failed for ${parsed.paymentId}:`, e);
+    }
+
+    // Plan 7F: in-app notification (email already dispatched above for PAYMENT_RECEIVED;
+    // WALLET_TOPPED_UP path lets notifyOwner send its own topup email). Fail-soft.
+    try {
+        const { notifyOwner } = await import('@/services/notificationService');
+        const isTopup = updated.transaction_id === null;
+        if (isTopup) {
+            const { data: wallet } = await admin
+                .from('wallets')
+                .select('balance_usd_minor')
+                .eq('shipowner_id', updated.shipowner_id)
+                .maybeSingle();
+            await notifyOwner(admin, {
+                shipownerId: updated.shipowner_id,
+                kind: 'WALLET_TOPPED_UP',
+                params: {
+                    amount_usd: (updated.amount_usd_minor ?? 0) / 100,
+                    new_balance_usd: ((wallet?.balance_usd_minor as number | undefined) ?? 0) / 100,
+                },
+                deepLink: '/owner/wallet',
+            });
+        } else {
+            await notifyOwner(admin, {
+                shipownerId: updated.shipowner_id,
+                kind: 'PAYMENT_RECEIVED',
+                params: {
+                    vessel_name: txForNotif?.vessel_name ?? '—',
+                    invoice_ref: txForNotif?.invoice_ref ?? '—',
+                    amount_usd: (updated.amount_usd_minor ?? 0) / 100,
+                    paid_at: confirmedAt,
+                    receipt_ref: receiptResult?.receiptRef,
+                },
+                deepLink: `/owner/invoices?ref=${encodeURIComponent(txForNotif?.invoice_ref ?? '')}`,
+                skipEmail: true,
+                ...(receiptResult?.pdfBuffer
+                    ? { attachments: { pdfBuffer: receiptResult.pdfBuffer, filename: `${receiptResult.receiptRef}.pdf` } }
+                    : {}),
+            });
+        }
+    } catch (notifyErr) {
+        console.error(`[confirmPayment] notifyOwner failed for ${parsed.paymentId}:`, notifyErr);
     }
 
     return { ok: true, paymentId: parsed.paymentId };

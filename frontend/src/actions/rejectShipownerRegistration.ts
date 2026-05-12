@@ -100,5 +100,20 @@ export async function rejectShipownerRegistration(input: unknown) {
         // Non-fatal, continue
     }
 
+    // Plan 7F: in-app notification — rejection email already dispatched above
+    // by sendShipownerRejectionEmail, so pass skipEmail to avoid duplicates. Fail-soft.
+    try {
+        const { notifyOwner } = await import('@/services/notificationService');
+        await notifyOwner(admin, {
+            shipownerId,
+            kind: 'KYC_REJECTED',
+            params: { reason },
+            deepLink: '/owner/onboarding/billing',
+            skipEmail: true,
+        });
+    } catch (notifyErr) {
+        console.error('[rejectShipownerRegistration] notifyOwner failed:', notifyErr);
+    }
+
     return { ok: true };
 }

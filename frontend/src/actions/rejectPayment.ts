@@ -27,11 +27,11 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
     if (gateErr) throw gateErr;
     if (!ok) throw new Error('Not authorized to reject this payment');
 
-    const { error: updErr } = await admin
+    const { data: updated, error: updErr } = await admin
         .from('payments')
         .update({ status: 'REJECTED', rejected_reason: parsed.reason })
         .eq('id', parsed.paymentId)
-        .select('id')
+        .select('id, shipowner_id, transaction_id')
         .single();
     if (updErr) throw updErr;
 
@@ -44,6 +44,35 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
         entity_id: parsed.paymentId,
         details_json: { event: 'PAYMENT_REJECTED', reason: parsed.reason },
     });
+
+    // Plan 7F: in-app notification + rejection email (fail-soft)
+    try {
+        const shipownerId = (updated as { shipowner_id?: string } | null)?.shipowner_id;
+        const transactionId = (updated as { transaction_id?: string | null } | null)?.transaction_id;
+        if (shipownerId) {
+            let invoiceRef: string | null = null;
+            if (transactionId) {
+                const { data: tx } = await admin
+                    .from('transactions')
+                    .select('invoice_ref')
+                    .eq('id', transactionId)
+                    .single();
+                invoiceRef = (tx as { invoice_ref?: string | null } | null)?.invoice_ref ?? null;
+            }
+            const { notifyOwner } = await import('@/services/notificationService');
+            await notifyOwner(admin, {
+                shipownerId,
+                kind: 'PAYMENT_REJECTED',
+                params: {
+                    invoice_ref: invoiceRef ?? '—',
+                    reason: parsed.reason,
+                },
+                deepLink: `/owner/invoices?ref=${encodeURIComponent(invoiceRef ?? '')}`,
+            });
+        }
+    } catch (notifyErr) {
+        console.error(`[rejectPayment] notifyOwner failed for ${parsed.paymentId}:`, notifyErr);
+    }
 
     return { ok: true };
 }

@@ -130,5 +130,20 @@ export async function approveShipownerRegistration(input: unknown) {
         // Non-fatal, continue
     }
 
+    // Plan 7F: in-app notification (activation email already dispatched above
+    // by the invite flow with full activation context). Fail-soft.
+    try {
+        const { notifyOwner } = await import('@/services/notificationService');
+        await notifyOwner(admin, {
+            shipownerId,
+            kind: 'KYC_APPROVED',
+            params: { shipowner_name: row.name ?? 'Shipowner' },
+            deepLink: '/owner',
+            skipEmail: true,
+        });
+    } catch (notifyErr) {
+        console.error('[approveShipownerRegistration] notifyOwner failed:', notifyErr);
+    }
+
     return { ok: true };
 }
