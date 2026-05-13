@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { verifyWebhookSignature } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('stripe-webhook');
 
 /**
  * POST /api/webhooks/stripe
@@ -74,11 +77,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
         event = verifyWebhookSignature(rawBody, sig);
     } catch (e) {
+        log.warn('webhook_signature_invalid', {
+            error: e instanceof Error ? e.message : 'invalid signature',
+        });
         return NextResponse.json(
             { error: e instanceof Error ? e.message : 'invalid signature' },
             { status: 400 },
         );
     }
+
+    log.info('webhook_event_received', { eventId: event.id, eventType: event.type });
 
     const admin = serviceClient();
 
@@ -106,14 +114,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 break;
             }
             default:
-                console.log(`[stripe-webhook] unhandled event type: ${event.type} (id=${event.id})`);
+                log.warn('webhook_unhandled_event', { eventId: event.id, eventType: event.type });
         }
         return NextResponse.json({ received: true });
     } catch (e) {
-        console.error(
-            `[stripe-webhook] handler error for event ${event.id} (${event.type}):`,
-            e,
-        );
+        log.error('webhook_handler_error', {
+            eventId: event.id,
+            eventType: event.type,
+            error: e instanceof Error ? e.message : String(e),
+        });
         // 200 to acknowledge — avoid retry storms on persistent bugs. Errors are logged.
         return NextResponse.json({ received: true, error: true });
     }
@@ -126,13 +135,15 @@ async function handlePaymentSucceeded(
     const piId = pi.id as string;
     const payment = await findStripePayment(admin, piId);
     if (!payment) {
-        console.warn(`[stripe-webhook] no payments row found for PI ${piId}`);
+        log.warn('webhook_payment_not_found', { stripePiId: piId });
         return;
     }
     if (TERMINAL_STATUSES.has(payment.status)) {
-        console.log(
-            `[stripe-webhook] PI ${piId} already in terminal state ${payment.status} — idempotent skip`,
-        );
+        log.info('webhook_idempotent_skip', {
+            stripePiId: piId,
+            paymentId: payment.id,
+            currentStatus: payment.status,
+        });
         return;
     }
 
@@ -169,6 +180,13 @@ async function handlePaymentSucceeded(
             p_transaction_id: payment.transaction_id,
         });
     }
+
+    log.info('webhook_payment_succeeded', {
+        stripePiId: piId,
+        paymentId: payment.id,
+        transactionId: payment.transaction_id,
+        amountUsdMinor: payment.amount_usd_minor,
+    });
 
     // Plan 7C-4 receipt + email hook (fail-soft — payment stays CONFIRMED on error)
     let receiptRefForNotif: string | undefined;
@@ -213,10 +231,10 @@ async function handlePaymentSucceeded(
             });
         }
     } catch (e) {
-        console.error(
-            `[stripe-webhook] receipt/email hook failed for payment ${payment.id}:`,
-            e,
-        );
+        log.warn('receipt_email_failed', {
+            paymentId: payment.id,
+            error: e instanceof Error ? e.message : String(e),
+        });
     }
 
     // Plan 7F: in-app notification (email already sent above for PAYMENT_RECEIVED;
@@ -259,10 +277,10 @@ async function handlePaymentSucceeded(
             });
         }
     } catch (notifyErr) {
-        console.error(
-            `[stripe-webhook] notifyOwner failed for payment ${payment.id}:`,
-            notifyErr,
-        );
+        log.warn('notification_dispatch_failed', {
+            paymentId: payment.id,
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
     }
 }
 
@@ -286,6 +304,13 @@ async function handlePaymentFailed(
         })
         .eq('id', payment.id);
     if (error) throw error;
+
+    log.info('webhook_payment_failed', {
+        stripePiId: piId,
+        paymentId: payment.id,
+        transactionId: payment.transaction_id,
+        reason,
+    });
 
     // Notify owner of the failed payment (fail-soft). Closes the UX gap
     // where admin-rejected payments produce a notification but Stripe-
@@ -313,10 +338,11 @@ async function handlePaymentFailed(
                 : '/owner/invoices',
         });
     } catch (notifyErr) {
-        console.error(
-            `[stripe-webhook] notifyOwner failed for failed payment ${payment.id}:`,
-            notifyErr,
-        );
+        log.warn('notification_dispatch_failed', {
+            paymentId: payment.id,
+            stage: 'payment_failed',
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
     }
 }
 
@@ -336,4 +362,9 @@ async function handleCheckoutExpired(
         .update({ status: 'CANCELLED' })
         .eq('id', payment.id);
     if (error) throw error;
+
+    log.info('webhook_checkout_expired', {
+        stripePiId: piId,
+        paymentId: payment.id,
+    });
 }

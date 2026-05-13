@@ -280,6 +280,31 @@ describe('POST /api/webhooks/stripe', () => {
         logSpy.mockRestore();
     });
 
+    it('emits a structured webhook_payment_succeeded log event (Plan 7H-3)', async () => {
+        const { verifyWebhookSignature } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_log_1',
+            type: 'payment_intent.succeeded',
+            data: {
+                object: {
+                    id: 'pi_log',
+                    latest_charge: 'ch_log',
+                    amount_received: 50000,
+                    currency: 'usd',
+                    payment_method_types: ['card'],
+                },
+            },
+        });
+
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const { POST } = await import('./route');
+        await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"webhook_event_received"'))).toBe(true);
+        expect(calls.some((c) => c.includes('"event":"webhook_payment_succeeded"'))).toBe(true);
+        consoleSpy.mockRestore();
+    });
+
     it('does not fail when receipt generation throws — payment stays CONFIRMED', async () => {
         const { verifyWebhookSignature } = await import('@/services/stripeService');
         (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({

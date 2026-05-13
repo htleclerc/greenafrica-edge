@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { EMAIL_KINDS, type NotificationKind } from '@/services/notificationService';
 import { dispatchNotificationEmail } from '@/services/notificationEmailDispatch';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('cron.notification-email-loop');
 
 /**
  * GET /api/cron/notification-email-loop
@@ -74,6 +77,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
+    log.info('cron_run_start', {});
+
     const admin = serviceClient();
     const lookback = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
     const emailKindsList = Array.from(EMAIL_KINDS);
@@ -87,7 +92,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         .limit(ROW_LIMIT);
 
     if (selErr) {
-        console.error('[notification-email-loop] select error:', selErr);
+        log.error('select_failed', { error: selErr.message });
         return NextResponse.json({ error: 'select_failed' }, { status: 500 });
     }
 
@@ -95,6 +100,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const counts: Counts = { processed: 0, succeeded: 0, failed: 0, skipped: 0 };
 
     if (pending.length === 0) {
+        log.info('cron_run_complete', { ...counts });
         return NextResponse.json(counts);
     }
 
@@ -118,18 +124,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         );
 
         if (attempts >= MAX_ATTEMPTS) {
-            console.warn(
-                `[notification-email-loop] notif ${row.id} (${row.kind}) at max attempts (${attempts}); skipping`,
-            );
+            log.warn('email_dispatch_max_attempts', {
+                notifId: row.id,
+                kind: row.kind,
+                attempts,
+            });
             counts.skipped += 1;
             continue;
         }
 
         const owner = ownersById.get(row.shipowner_id);
         if (!owner || !owner.official_email) {
-            console.warn(
-                `[notification-email-loop] notif ${row.id} (${row.kind}): no official_email on shipowner ${row.shipowner_id}; skipping`,
-            );
+            log.warn('email_skipped_no_recipient', {
+                notifId: row.id,
+                kind: row.kind,
+                shipownerId: row.shipowner_id,
+            });
             counts.skipped += 1;
             continue;
         }
@@ -150,17 +160,21 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 bodyParams,
             });
             succeeded = result?.success === true;
-            if (!succeeded) {
-                console.warn(
-                    `[notification-email-loop] notif ${row.id} (${row.kind}) dispatch returned non-success:`,
-                    result,
-                );
+            if (succeeded) {
+                log.debug('email_dispatched', { notifId: row.id, kind: row.kind });
+            } else {
+                log.warn('email_dispatch_failed', {
+                    notifId: row.id,
+                    kind: row.kind,
+                    error: (result as { error?: string } | undefined)?.error ?? 'non_success',
+                });
             }
         } catch (e) {
-            console.error(
-                `[notification-email-loop] notif ${row.id} (${row.kind}) dispatch threw:`,
-                e,
-            );
+            log.warn('email_dispatch_failed', {
+                notifId: row.id,
+                kind: row.kind,
+                error: e instanceof Error ? e.message : String(e),
+            });
             succeeded = false;
         }
 
@@ -178,10 +192,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 .eq('id', row.id)
                 .is('emailed_at', null);
             if (updErr) {
-                console.error(
-                    `[notification-email-loop] notif ${row.id}: emailed_at UPDATE failed:`,
-                    updErr,
-                );
+                log.error('emailed_at_update_failed', { notifId: row.id, error: updErr.message });
             }
             counts.succeeded += 1;
         } else {
@@ -196,14 +207,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 .update({ body_params: newBodyParams })
                 .eq('id', row.id);
             if (bumpErr) {
-                console.error(
-                    `[notification-email-loop] notif ${row.id}: attempts UPDATE failed:`,
-                    bumpErr,
-                );
+                log.error('attempts_bump_failed', { notifId: row.id, error: bumpErr.message });
             }
             counts.failed += 1;
         }
     }
 
+    log.info('cron_run_complete', { ...counts });
     return NextResponse.json(counts);
 }
