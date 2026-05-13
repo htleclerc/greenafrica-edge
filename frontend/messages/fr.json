@@ -2986,7 +2986,7 @@
         },
         "REFUND_ISSUED": {
           "title": "Remboursement émis",
-          "body": "Un remboursement de {amount_usd} USD a été émis pour {invoice_ref}."
+          "body": "Un remboursement de {amount_usd} USD a été émis pour {invoice_ref} par {refund_rail}."
         },
         "WALLET_TOPPED_UP": {
           "title": "Portefeuille rechargé",

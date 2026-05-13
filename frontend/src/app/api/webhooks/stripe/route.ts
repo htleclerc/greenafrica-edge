@@ -373,6 +373,7 @@ interface RefundReconcileRow {
     transaction_id: string;
     amount_usd_minor: number;
     rail_details: Record<string, unknown> | null;
+    refund_rail: string | null;
 }
 
 async function handleChargeRefunded(
@@ -407,7 +408,7 @@ async function handleChargeRefunded(
         // 1. Primary lookup: refunds row whose rail_details->>stripe_refund_id matches.
         const { data: primaryHit, error: primaryErr } = await admin
             .from('refunds')
-            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details')
+            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
             .eq('rail_details->>stripe_refund_id', stripeRefundId)
             .limit(1)
             .maybeSingle();
@@ -430,7 +431,7 @@ async function handleChargeRefunded(
             if (origPayment?.transaction_id) {
                 const { data: fallbackList, error: fbErr } = await admin
                     .from('refunds')
-                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details')
+                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
                     .eq('transaction_id', origPayment.transaction_id)
                     .eq('refund_rail', 'STRIPE')
                     .in('status', ['APPROVED', 'REQUESTED'])
@@ -489,15 +490,31 @@ async function handleChargeRefunded(
             webhook_reconciled: true,
         };
         const nowIso = new Date().toISOString();
+        // mig 052's refunds_approved_audit CHECK requires approved_by NOT NULL
+        // when status='EXECUTED'. If the refund was REQUESTED (no human approver
+        // — e.g. the action threw between createRefund() success and the DB
+        // UPDATE, leaving the trigger-inserted row at REQUESTED), set the
+        // system actor as approved_by alongside the EXECUTED transition.
+        const updatePayload: Record<string, unknown> = {
+            status: 'EXECUTED',
+            executed_by: systemActorId,
+            executed_at: nowIso,
+            rail_details: mergedRailDetails,
+            updated_at: nowIso,
+        };
+        if (refundRow.status === 'REQUESTED') {
+            updatePayload.approved_by = systemActorId;
+            // CHECK refunds_rail_required_after_request also requires non-NULL
+            // refund_rail once status leaves REQUESTED/REJECTED. If the row
+            // hasn't picked a rail yet, set STRIPE (we know it's a Stripe
+            // refund — that's how we got here).
+            if (!refundRow.refund_rail) {
+                updatePayload.refund_rail = 'STRIPE';
+            }
+        }
         const { data: updated, error: updErr } = await admin
             .from('refunds')
-            .update({
-                status: 'EXECUTED',
-                executed_by: systemActorId,
-                executed_at: nowIso,
-                rail_details: mergedRailDetails,
-                updated_at: nowIso,
-            })
+            .update(updatePayload)
             .eq('id', refundRow.id)
             .in('status', ['APPROVED', 'REQUESTED'])
             .select('id');

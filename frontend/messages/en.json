@@ -3016,7 +3016,7 @@
         },
         "REFUND_ISSUED": {
           "title": "Refund issued",
-          "body": "A refund of {amount_usd} USD has been issued for {invoice_ref}."
+          "body": "A refund of {amount_usd} USD has been issued for {invoice_ref} via {refund_rail}."
         },
         "WALLET_TOPPED_UP": {
           "title": "Wallet topped up",
