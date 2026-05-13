@@ -65,8 +65,12 @@ interface Counts {
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+    // Guard against unset CRON_SECRET: an undefined env yields the literal
+    // "Bearer undefined" check which is trivially guessable. Match the
+    // overdue-alerts/route.ts pattern that already does this correctly.
+    const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
@@ -163,8 +167,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         if (succeeded) {
             // Race-guarded: only set emailed_at if it's still null. Concurrent
             // runs that processed this row first will leave us with 0 rows
-            // updated — which is fine, the email has been dispatched at least
-            // once (Resend handles dedup on idempotency-key if needed).
+            // updated — that's fine for the DB invariant. The email itself may
+            // have been sent twice if two runs overlapped (we do NOT pass an
+            // idempotency-key to Resend), but Vercel Cron is single-instance so
+            // overlap is rare in practice. v1 acceptable; revisit in Plan 7H-3
+            // if the canary surfaces duplicate-delivery complaints.
             const { error: updErr } = await admin
                 .from('owner_notifications')
                 .update({ emailed_at: new Date().toISOString() })

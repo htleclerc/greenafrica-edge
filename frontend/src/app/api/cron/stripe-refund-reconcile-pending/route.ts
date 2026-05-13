@@ -117,8 +117,10 @@ async function bumpReconcileAttempts(
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+    // Guard against unset CRON_SECRET — see overdue-alerts/route.ts precedent.
+    const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
