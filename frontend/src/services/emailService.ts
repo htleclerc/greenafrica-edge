@@ -697,3 +697,81 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
         text: `Registration not approved\n\nReason: ${p.reason}\n\nYou may submit a new request at any time.`,
     });
 }
+
+// ── 13. Refund issued email (Plan 7G) ──────────────────────────────────────
+
+export interface RefundIssuedParams {
+    to: string;
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    refundRail:
+        | 'WALLET'
+        | 'WIRE_TRANSFER'
+        | 'STRIPE'
+        | 'CASH'
+        | 'CHEQUE'
+        | 'MOBILE_MONEY'
+        | 'THIRD_PARTY'
+        | 'BANK_GUARANTEE'
+        | 'NETTING'
+        | 'LETTER_OF_CREDIT';
+    executedAt: string; // ISO timestamp or pre-formatted display string
+}
+
+const REFUND_RAIL_LABELS: Record<RefundIssuedParams['refundRail'], string> = {
+    WALLET: 'Owner wallet',
+    WIRE_TRANSFER: 'Wire transfer',
+    STRIPE: 'Stripe refund',
+    CASH: 'Cash',
+    CHEQUE: 'Cheque',
+    MOBILE_MONEY: 'Mobile money',
+    THIRD_PARTY: 'Third-party settlement',
+    BANK_GUARANTEE: 'Bank guarantee release',
+    NETTING: 'Netting',
+    LETTER_OF_CREDIT: 'Letter of credit',
+};
+
+export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<EmailResult> {
+    const subject = `Refund issued for ${p.invoiceRef}`;
+    const railLabel = REFUND_RAIL_LABELS[p.refundRail] ?? p.refundRail;
+
+    // Rail-specific guidance text (kept short; full ledger view is in the portal)
+    let railGuidance = '';
+    if (p.refundRail === 'WALLET') {
+        railGuidance = `<p>The refunded amount has been credited to your Green Gate wallet. It will be applied automatically to future pro-forma invoices, or you can use it manually from the portal.</p>`;
+    } else if (p.refundRail === 'WIRE_TRANSFER') {
+        railGuidance = `<p>The wire transfer has been initiated to your registered bank account. Please allow 2–5 business days for the funds to settle.</p>`;
+    } else if (p.refundRail === 'STRIPE') {
+        railGuidance = `<p>The refund has been submitted to Stripe and will appear on your original card statement within 5–10 business days, depending on your issuing bank.</p>`;
+    } else {
+        railGuidance = `<p>Settlement details for this refund method have been recorded by our finance team. Please contact support if you have any questions.</p>`;
+    }
+
+    const content = `
+        <h1>Refund Issued ✓</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>A refund of <strong>$${p.amountUsd.toLocaleString()}</strong> has been issued for invoice <strong>${escapeHtml(p.invoiceRef)}</strong>.</p>
+
+        <div class="alert alert-success">Refund amount: <strong>$${p.amountUsd.toLocaleString()}</strong></div>
+
+        <h2>Refund Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">Method</span><span class="meta-value">${escapeHtml(railLabel)}</span></div>
+        <div class="meta-row"><span class="meta-label">Executed</span><span class="meta-value">${escapeHtml(p.executedAt)}</span></div>
+
+        ${railGuidance}
+
+        <a href="${appUrl()}/owner/invoices" class="btn">View Invoices →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">— Solid Technology</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Refund of $${p.amountUsd.toLocaleString()} issued for ${p.invoiceRef}` }),
+        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}/owner/invoices`,
+    });
+}
