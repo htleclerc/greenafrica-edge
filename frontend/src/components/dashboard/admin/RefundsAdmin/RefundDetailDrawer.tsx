@@ -279,7 +279,7 @@ export function RefundDetailDrawer({ refundId, onClose, onUpdated }: Props) {
                                             />
                                             <span className="font-mono">{r}</span>
                                             <span className="text-[10px] text-[var(--os-text-muted)]">
-                                                {safeTranslate(t, `AdminRefunds.drawer.rail.${r}`)}
+                                                {safeTranslate(t, `AdminRefunds.drawer.railLabels.${r}`)}
                                             </span>
                                         </label>
                                     ))}

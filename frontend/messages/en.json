@@ -1,4 +1,71 @@
 {
+  "AdminRefunds": {
+    "pageTitle": "Refunds",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "empty": "No refunds in this category",
+    "tabs": {
+      "requested": "To arbitrate",
+      "approved": "Approved",
+      "executed": "Executed",
+      "rejected": "Rejected"
+    },
+    "table": {
+      "invoice": "Invoice",
+      "owner": "Shipowner",
+      "amount": "Amount",
+      "requestedAt": "Requested",
+      "rail": "Rail",
+      "status": "Status"
+    },
+    "drawer": {
+      "title": "Refund details",
+      "status": "Status",
+      "invoice": "Invoice",
+      "vessel": "Vessel",
+      "owner": "Shipowner",
+      "amount": "Amount",
+      "requestedAt": "Requested at",
+      "rail": "Rail",
+      "railPicker": "Refund method",
+      "railLabels": {
+        "WALLET": "Owner wallet (instant)",
+        "WIRE_TRANSFER": "Wire transfer",
+        "STRIPE": "Stripe refund",
+        "CASH": "Cash",
+        "CHEQUE": "Cheque",
+        "MOBILE_MONEY": "Mobile money",
+        "THIRD_PARTY": "Third party",
+        "BANK_GUARANTEE": "Bank guarantee",
+        "NETTING": "Netting",
+        "LETTER_OF_CREDIT": "Letter of credit"
+      },
+      "ibanReveal": "Reveal IBAN",
+      "revealing": "Revealing…",
+      "ibanRevealed": "IBAN: {iban}",
+      "proofUpload": "Bank slip path (optional)",
+      "rejectReason": "Rejection reason (min 5 chars)",
+      "rejectReasonPlaceholder": "Why is this refund being rejected?",
+      "executedAt": "Executed at",
+      "details": "Details",
+      "rejectedReason": "Rejection reason",
+      "previouslyApprovedBy": "Approved by",
+      "executing": "Executing…",
+      "approving": "Approving…",
+      "rejecting": "Rejecting…",
+      "actions": {
+        "approve": "Approve",
+        "execute": "Execute refund",
+        "executeWallet": "Refund to wallet",
+        "reject": "Reject",
+        "confirmReject": "Confirm reject",
+        "cancelReject": "Cancel"
+      }
+    },
+    "error": {
+      "reasonTooShort": "Reason must be at least 5 characters"
+    }
+  },
   "Common": {
     "title": "AIS Portal",
     "description": "Securing Africa's Maritime Climate Wealth",
@@ -744,7 +811,8 @@
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "ENCRYPTED",
     "nav_registrations": "Registrations",
-    "nav_wallets": "Wallets"
+    "nav_wallets": "Wallets",
+    "nav_refunds": "Refunds"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
