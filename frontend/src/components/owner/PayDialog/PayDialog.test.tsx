@@ -87,6 +87,13 @@ describe('PayDialog', () => {
         })));
     });
 
+    it('renders disabled message when mode=topup and topupEnabled=false (Plan 7H-1 Task 5.3)', async () => {
+        setup({ mode: 'topup', topupEnabled: false, transactionId: null, invoiceRef: null, amountUsd: 0 });
+        expect(await screen.findByText(/Wallet top-ups unavailable/i)).toBeInTheDocument();
+        // Wizard should NOT have rendered any rail card.
+        expect(screen.queryByText(/Bank wire/i)).not.toBeInTheDocument();
+    });
+
     it('blocks Step 2 → 3 if WIRE_TRANSFER bank reference missing', async () => {
         (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
             ok: true,

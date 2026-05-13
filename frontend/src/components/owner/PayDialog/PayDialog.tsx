@@ -17,6 +17,10 @@ interface Props {
     amountUsd: number;
     currency: string;
     walletBalanceUsdMinor: number;
+    /** Plan 7H-1 Task 5.3 — defense-in-depth for topup mode. When false
+     *  and `mode='topup'`, the dialog renders a disabled message instead
+     *  of the wizard. Default true preserves prior behavior. */
+    topupEnabled?: boolean;
 }
 
 function StepIndicator() {
@@ -51,9 +55,36 @@ function StepIndicator() {
     );
 }
 
-function PayDialogBody({ onClose }: { onClose: () => void }) {
+function PayDialogBody({ onClose, topupEnabled }: { onClose: () => void; topupEnabled: boolean }) {
     const { step, mode } = usePayDialog();
     const t = useTranslations('OwnerPortal.payDialog');
+
+    // Plan 7H-1 Task 5.3 — defense-in-depth: if a caller forces topup mode
+    // while the wallet_topup_enabled flag is off (e.g. stale client state),
+    // render a disabled message instead of the wizard.
+    if (mode === 'topup' && !topupEnabled) {
+        return (
+            <>
+                <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-1">
+                    {t('mode.topup.disabledTitle')}
+                </Dialog.Title>
+                <Dialog.Description className="text-xs text-[var(--os-text-muted)] mb-4">
+                    {t('mode.topup.disabledBody')}
+                </Dialog.Description>
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-sm font-medium px-3 py-1.5 rounded-md border"
+                        style={{ borderColor: 'var(--os-border)' }}
+                    >
+                        Close
+                    </button>
+                </div>
+            </>
+        );
+    }
+
     const titleKey = mode === 'topup' ? 'mode.topup.title' : 'title';
     const subtitleKey = mode === 'topup' ? 'mode.topup.subtitle' : 'subtitle';
     return (
@@ -97,7 +128,10 @@ export function PayDialog(props: Props) {
                         currency={props.currency}
                         walletBalanceUsdMinor={props.walletBalanceUsdMinor}
                     >
-                        <PayDialogBody onClose={() => props.onOpenChange(false)} />
+                        <PayDialogBody
+                            onClose={() => props.onOpenChange(false)}
+                            topupEnabled={props.topupEnabled ?? true}
+                        />
                     </PayDialogProvider>
                 </Dialog.Content>
             </Dialog.Portal>

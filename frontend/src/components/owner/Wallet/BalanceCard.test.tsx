@@ -25,6 +25,22 @@ describe('BalanceCard', () => {
         expect(onTopup).toHaveBeenCalled();
     });
 
+    it('hides the Top up CTA when topupEnabled=false (Plan 7H-1 Task 5.3)', () => {
+        render(
+            <NextIntlClientProvider locale="en" messages={en}>
+                <BalanceCard
+                    balanceUsd={500}
+                    autoApplyEnabled={true}
+                    onToggleAutoApply={() => {}}
+                    onOpenTopup={() => {}}
+                    togglePending={false}
+                    topupEnabled={false}
+                />
+            </NextIntlClientProvider>,
+        );
+        expect(screen.queryByText('Top up wallet')).not.toBeInTheDocument();
+    });
+
     it('shows Disabled when autoApplyEnabled is false', () => {
         render(
             <NextIntlClientProvider locale="en" messages={en}>
