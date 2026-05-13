@@ -15,6 +15,10 @@ import { resolveSystemActor } from '@/lib/system-actor';
  *     into rail_details; trigger Plan 7C-4 receipt + email hook.
  *   - payment_intent.payment_failed → UPDATE payments → REJECTED + reason.
  *   - checkout.session.expired      → UPDATE payments → CANCELLED.
+ *   - charge.refunded               → idempotent safety net for Plan 7G
+ *     `executeRefund`: reconciles refunds rows in APPROVED|REQUESTED state
+ *     to EXECUTED if their `rail_details.stripe_refund_id` matches one of
+ *     the refund objects in the event payload. Already-EXECUTED rows no-op.
  *
  * Status codes:
  *   - 400 on missing / invalid signature (Stripe retries briefly then stops)
@@ -100,6 +104,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             }
             case 'checkout.session.expired': {
                 await handleCheckoutExpired(
+                    admin,
+                    event.data.object as unknown as Record<string, unknown>,
+                );
+                break;
+            }
+            case 'charge.refunded': {
+                await handleChargeRefunded(
                     admin,
                     event.data.object as unknown as Record<string, unknown>,
                 );
@@ -336,4 +347,227 @@ async function handleCheckoutExpired(
         .update({ status: 'CANCELLED' })
         .eq('id', payment.id);
     if (error) throw error;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan 7G — Task 8: charge.refunded handler
+//
+// Idempotent safety net for executeRefund's synchronous Stripe refund path.
+// The canonical path is the action (Task 6): it calls stripe.refunds.create,
+// then UPDATEs the refunds row to EXECUTED. If the API call succeeded but the
+// DB UPDATE failed (network blip, process killed, race), Stripe still fires
+// charge.refunded — we reconcile here.
+//
+// Stripe semantics — partial refunds: a single charge can be refunded multiple
+// times (each partial below the captured amount). Each refund emits its own
+// `charge.refunded` event, but `charge.refunds.data[]` carries the FULL list
+// of refunds for that charge at that point in time. We loop through them all,
+// tolerate already-EXECUTED rows as no-op, and only transition APPROVED|
+// REQUESTED rows.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface RefundReconcileRow {
+    id: string;
+    status: string;
+    shipowner_id: string;
+    transaction_id: string;
+    amount_usd_minor: number;
+    rail_details: Record<string, unknown> | null;
+}
+
+async function handleChargeRefunded(
+    admin: SupabaseClient,
+    charge: Record<string, unknown>,
+): Promise<void> {
+    const chargeId = (charge.id as string | undefined) ?? '(unknown)';
+    const paymentIntentId = charge.payment_intent as string | null;
+
+    // Defensive: Stripe always sets these but unknown shapes shouldn't crash.
+    const refundsContainer = charge.refunds as { data?: unknown[] } | undefined;
+    const refundObjects = (refundsContainer?.data ?? []) as Array<{ id?: string }>;
+    if (!Array.isArray(refundObjects) || refundObjects.length === 0) {
+        console.warn(
+            `[stripe-webhook] charge.refunded ${chargeId} carried no refund objects — skipping`,
+        );
+        return;
+    }
+
+    // Resolve system actor once for the whole event (audit + executed_by).
+    const systemActorId = await resolveSystemActor(admin);
+    if (!systemActorId) {
+        throw new Error(
+            'No active system actor (SUPERADMIN/FINANCE_ADMIN) found to reconcile charge.refunded',
+        );
+    }
+
+    for (const r of refundObjects) {
+        const stripeRefundId = r?.id;
+        if (!stripeRefundId) continue;
+
+        // 1. Primary lookup: refunds row whose rail_details->>stripe_refund_id matches.
+        const { data: primaryHit, error: primaryErr } = await admin
+            .from('refunds')
+            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details')
+            .eq('rail_details->>stripe_refund_id', stripeRefundId)
+            .limit(1)
+            .maybeSingle();
+        if (primaryErr) {
+            console.error(
+                `[stripe-webhook] refunds primary lookup failed for ${stripeRefundId}:`,
+                primaryErr,
+            );
+            continue;
+        }
+
+        let refundRow = primaryHit as RefundReconcileRow | null;
+
+        // 2. Fallback lookup: action threw between Stripe API success and DB UPDATE.
+        //    Find original payment by external_reference, then look up refunds
+        //    for that transaction in rail=STRIPE + APPROVED|REQUESTED. Exactly
+        //    one match = use it; multiple/none = log and skip.
+        if (!refundRow && paymentIntentId) {
+            const origPayment = await findStripePayment(admin, paymentIntentId);
+            if (origPayment?.transaction_id) {
+                const { data: fallbackList, error: fbErr } = await admin
+                    .from('refunds')
+                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details')
+                    .eq('transaction_id', origPayment.transaction_id)
+                    .eq('refund_rail', 'STRIPE')
+                    .in('status', ['APPROVED', 'REQUESTED'])
+                    .limit(2);
+                if (fbErr) {
+                    console.error(
+                        `[stripe-webhook] refunds fallback lookup failed for ${stripeRefundId}:`,
+                        fbErr,
+                    );
+                    continue;
+                }
+                const arr = (fallbackList as RefundReconcileRow[] | null) ?? [];
+                if (arr.length === 1) {
+                    refundRow = arr[0];
+                } else if (arr.length > 1) {
+                    console.warn(
+                        `[stripe-webhook] charge.refunded ${chargeId} refund ${stripeRefundId}: ` +
+                            `fallback found ${arr.length} candidate refunds for tx ` +
+                            `${origPayment.transaction_id} — cannot disambiguate; skipping`,
+                    );
+                    continue;
+                }
+            }
+        }
+
+        if (!refundRow) {
+            console.warn(
+                `[stripe-webhook] charge.refunded ${chargeId}: no refunds row matches ` +
+                    `stripe_refund_id=${stripeRefundId} (PI=${paymentIntentId ?? 'n/a'}). ` +
+                    `Could be a Stripe-side manual refund we don't track. Skipping.`,
+            );
+            continue;
+        }
+
+        // 3. Idempotent no-op for already-EXECUTED
+        if (refundRow.status === 'EXECUTED') {
+            console.log(
+                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
+                    `already EXECUTED — idempotent skip`,
+            );
+            continue;
+        }
+
+        if (refundRow.status !== 'APPROVED' && refundRow.status !== 'REQUESTED') {
+            console.warn(
+                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
+                    `in unexpected status=${refundRow.status} — skipping`,
+            );
+            continue;
+        }
+
+        // 4. Race-guarded UPDATE to EXECUTED
+        const mergedRailDetails: Record<string, unknown> = {
+            ...(refundRow.rail_details ?? {}),
+            stripe_refund_id: stripeRefundId,
+            webhook_reconciled: true,
+        };
+        const nowIso = new Date().toISOString();
+        const { data: updated, error: updErr } = await admin
+            .from('refunds')
+            .update({
+                status: 'EXECUTED',
+                executed_by: systemActorId,
+                executed_at: nowIso,
+                rail_details: mergedRailDetails,
+                updated_at: nowIso,
+            })
+            .eq('id', refundRow.id)
+            .in('status', ['APPROVED', 'REQUESTED'])
+            .select('id');
+        if (updErr) {
+            console.error(
+                `[stripe-webhook] refunds UPDATE failed for ${refundRow.id}:`,
+                updErr,
+            );
+            continue;
+        }
+        if (!updated || (updated as unknown[]).length === 0) {
+            // Race: another path beat us. Treat as idempotent — log and move on.
+            console.log(
+                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
+                    `race-guard tripped (status changed concurrently) — idempotent`,
+            );
+            continue;
+        }
+
+        // 5. Fail-soft notification
+        try {
+            const { data: tx } = await admin
+                .from('transactions')
+                .select('invoice_ref')
+                .eq('id', refundRow.transaction_id)
+                .single();
+            const invoiceRef = (tx as { invoice_ref?: string } | null)?.invoice_ref ?? null;
+
+            const { notifyOwner } = await import('@/services/notificationService');
+            await notifyOwner(admin, {
+                shipownerId: refundRow.shipowner_id,
+                kind: 'REFUND_ISSUED',
+                params: {
+                    invoice_ref: invoiceRef ?? '—',
+                    amount_usd: refundRow.amount_usd_minor / 100,
+                    refund_rail: 'STRIPE',
+                    executed_at: nowIso,
+                },
+                deepLink: invoiceRef
+                    ? `/owner/invoices?ref=${encodeURIComponent(invoiceRef)}`
+                    : '/owner/invoices',
+            });
+        } catch (notifyErr) {
+            console.error(
+                `[stripe-webhook] notifyOwner failed for refund ${refundRow.id}:`,
+                notifyErr,
+            );
+        }
+
+        // 6. Audit log (best-effort)
+        try {
+            await admin.from('audit_logs').insert({
+                user_id: systemActorId,
+                user_full_name: 'System (Stripe webhook)',
+                action: 'TRANSACTION_UPDATED',
+                severity: 'INFO',
+                entity_type: 'Refund',
+                entity_id: refundRow.id,
+                details_json: {
+                    event: 'REFUND_RECONCILED_BY_WEBHOOK',
+                    stripe_refund_id: stripeRefundId,
+                    charge_id: chargeId,
+                    payment_intent_id: paymentIntentId,
+                },
+            });
+        } catch (auditErr) {
+            console.error(
+                `[stripe-webhook] audit_logs insert failed for refund ${refundRow.id}:`,
+                auditErr,
+            );
+        }
+    }
 }
