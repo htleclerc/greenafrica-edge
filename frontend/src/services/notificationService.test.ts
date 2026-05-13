@@ -8,6 +8,7 @@ vi.mock('@/services/emailService', () => ({
     sendWalletTopupEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendRegistrationApprovalEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendKycRejectedEmail: vi.fn().mockResolvedValue({ ok: true }),
+    sendRefundIssuedEmail: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 import { notifyOwner, EMAIL_KINDS } from './notificationService';
@@ -81,6 +82,42 @@ describe('notifyOwner', () => {
         });
         const { sendPaymentRejectedEmail } = await import('@/services/emailService');
         expect(sendPaymentRejectedEmail).not.toHaveBeenCalled();
+    });
+
+    it('dispatches sendRefundIssuedEmail for REFUND_ISSUED kind', async () => {
+        const client = makeClient({ ownerEmail: 'owner@test' });
+        await notifyOwner(client, {
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            kind: 'REFUND_ISSUED',
+            params: {
+                invoice_ref: 'INV-R-1',
+                amount_usd: 250,
+                refund_rail: 'WALLET',
+                executed_at: '2026-05-12T10:00:00Z',
+            },
+        });
+        const { sendRefundIssuedEmail } = await import('@/services/emailService');
+        expect(sendRefundIssuedEmail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                to: 'owner@test',
+                invoiceRef: 'INV-R-1',
+                amountUsd: 250,
+                refundRail: 'WALLET',
+                executedAt: '2026-05-12T10:00:00Z',
+            }),
+        );
+    });
+
+    it('respects skipEmail for REFUND_ISSUED', async () => {
+        const client = makeClient({ ownerEmail: 'owner@test' });
+        await notifyOwner(client, {
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            kind: 'REFUND_ISSUED',
+            params: { invoice_ref: 'INV-R-1', amount_usd: 250, refund_rail: 'WALLET', executed_at: 'x' },
+            skipEmail: true,
+        });
+        const { sendRefundIssuedEmail } = await import('@/services/emailService');
+        expect(sendRefundIssuedEmail).not.toHaveBeenCalled();
     });
 
     it('does not throw when email dispatch fails (fail-soft)', async () => {

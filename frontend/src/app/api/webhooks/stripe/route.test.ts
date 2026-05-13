@@ -9,9 +9,16 @@ interface UpdateCall {
     table: string;
     payload: Record<string, unknown>;
     matcher?: { column: string; value: unknown };
+    matchers?: { column: string; value: unknown }[];
+}
+
+interface InsertCall {
+    table: string;
+    payload: Record<string, unknown>;
 }
 
 const updateCalls: UpdateCall[] = [];
+const insertCalls: InsertCall[] = [];
 const rpcCalls: { fn: string; args: unknown }[] = [];
 
 // Scriptable mocks (per-test)
@@ -19,9 +26,14 @@ let paymentRow: Record<string, unknown> | null = null;
 let shipownerRow: Record<string, unknown> | null = null;
 let transactionRow: Record<string, unknown> | null = null;
 let systemActorRow: Record<string, unknown> | null = null;
+// Plan 7G Task 8 — charge.refunded reconciliation mocks
+let refundRowByStripeId: Record<string, unknown> | null = null;
+let refundRowFallback: Record<string, unknown> | null = null;
+let refundUpdateRaceTrip = false; // when true, refunds UPDATE .select() returns []
 
 function resetMocks() {
     updateCalls.length = 0;
+    insertCalls.length = 0;
     rpcCalls.length = 0;
     paymentRow = {
         id: 'pay-1',
@@ -35,6 +47,9 @@ function resetMocks() {
     shipownerRow = { name: 'Acme Shipping', official_email: 'owner@acme.test' };
     transactionRow = { invoice_ref: 'INV-2026-001', vessel_name: 'MV Test' };
     systemActorRow = { id: 'sys-admin-1' };
+    refundRowByStripeId = null;
+    refundRowFallback = null;
+    refundUpdateRaceTrip = false;
 }
 
 const fromBuilder = (table: string) => {
@@ -88,6 +103,79 @@ const fromBuilder = (table: string) => {
             }),
         };
     }
+    if (table === 'refunds') {
+        // Primary lookup: select().eq('rail_details->>stripe_refund_id', X).limit(1).maybeSingle()
+        //   → returns refundRowByStripeId
+        // Fallback lookup: select().eq('transaction_id', X).eq('rail', 'STRIPE').in('status', [...]).limit(2)
+        //   → returns refundRowFallback as an array (so dedup logic can verify single match)
+        // UPDATE race-guarded: update(payload).eq('id', X).eq('status', expected).select('id, shipowner_id, transaction_id')
+        //   → returns [{id}] unless refundUpdateRaceTrip
+        return {
+            select: () => {
+                const chain = {
+                    eq: (column: string, value: unknown) => {
+                        // Track filter chain
+                        const filters: { column: string; value: unknown }[] = [{ column, value }];
+                        const innerChain: Record<string, unknown> = {};
+                        innerChain.eq = (c2: string, v2: unknown) => {
+                            filters.push({ column: c2, value: v2 });
+                            return innerChain;
+                        };
+                        innerChain.in = (_c: string, _vs: unknown) => innerChain;
+                        innerChain.limit = (_n: number) => innerChain;
+                        innerChain.maybeSingle = async () => {
+                            // Primary path: only filter is rail_details->>stripe_refund_id
+                            const hasJsonFilter = filters.some((f) =>
+                                f.column.includes('stripe_refund_id'),
+                            );
+                            if (hasJsonFilter) {
+                                return { data: refundRowByStripeId, error: null };
+                            }
+                            return { data: null, error: null };
+                        };
+                        // Fallback path resolves as a thenable returning array
+                        // (when .limit() is the terminal chain in fallback path)
+                        Object.defineProperty(innerChain, 'then', {
+                            value: (resolve: (v: unknown) => void) => {
+                                const arr = refundRowFallback ? [refundRowFallback] : [];
+                                resolve({ data: arr, error: null });
+                            },
+                        });
+                        return innerChain;
+                    },
+                };
+                return chain;
+            },
+            update: (payload: Record<string, unknown>) => {
+                const matchers: { column: string; value: unknown }[] = [];
+                const chain: Record<string, unknown> = {};
+                chain.eq = (column: string, value: unknown) => {
+                    matchers.push({ column, value });
+                    return chain;
+                };
+                chain.in = (column: string, values: unknown) => {
+                    matchers.push({ column, value: values });
+                    return chain;
+                };
+                chain.select = (_cols: string) => {
+                    updateCalls.push({ table, payload, matchers, matcher: matchers[0] });
+                    return Promise.resolve({
+                        data: refundUpdateRaceTrip ? [] : [{ id: 'refund-1' }],
+                        error: null,
+                    });
+                };
+                return chain;
+            },
+        };
+    }
+    if (table === 'audit_logs') {
+        return {
+            insert: (payload: Record<string, unknown>) => {
+                insertCalls.push({ table, payload });
+                return Promise.resolve({ data: null, error: null });
+            },
+        };
+    }
     return {} as unknown as Record<string, unknown>;
 };
 
@@ -116,6 +204,10 @@ vi.mock('@/services/receiptService', () => ({
 
 vi.mock('@/services/emailService', () => ({
     sendPaymentConfirmationEmail: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
+vi.mock('@/services/notificationService', () => ({
+    notifyOwner: vi.fn().mockResolvedValue({ id: 'notif-1' }),
 }));
 
 function buildReq(body: string, headers: Record<string, string> = {}): NextRequest {
@@ -303,6 +395,140 @@ describe('POST /api/webhooks/stripe', () => {
         expect(calls.some((c) => c.includes('"event":"webhook_event_received"'))).toBe(true);
         expect(calls.some((c) => c.includes('"event":"webhook_payment_succeeded"'))).toBe(true);
         consoleSpy.mockRestore();
+    // ─────────────────────────────────────────────────────────────────────────
+    // Plan 7G — Task 8: charge.refunded handler tests
+    // ─────────────────────────────────────────────────────────────────────────
+
+    it('on charge.refunded with APPROVED match: marks EXECUTED + notify + audit', async () => {
+        refundRowByStripeId = {
+            id: 'refund-1',
+            status: 'APPROVED',
+            shipowner_id: 'so-1',
+            transaction_id: 't-1',
+            amount_usd_minor: 25000,
+            refund_rail: 'STRIPE',
+            rail_details: { stripe_refund_id: 're_abc' },
+        };
+        transactionRow = { invoice_ref: 'INV-2026-009', vessel_name: 'MV Match' };
+
+        const { verifyWebhookSignature } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_refund_1',
+            type: 'charge.refunded',
+            data: {
+                object: {
+                    id: 'ch_abc',
+                    payment_intent: 'pi_orig',
+                    refunds: { data: [{ id: 're_abc' }] },
+                },
+            },
+        });
+
+        const { POST } = await import('./route');
+        const res = await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+
+        expect(res.status).toBe(200);
+        const upd = updateCalls.find(
+            (c) => c.table === 'refunds' && c.payload.status === 'EXECUTED',
+        );
+        expect(upd).toBeDefined();
+        expect(upd?.payload).toMatchObject({
+            status: 'EXECUTED',
+            executed_by: 'sys-admin-1',
+        });
+        const railDetails = upd?.payload.rail_details as Record<string, unknown>;
+        expect(railDetails).toMatchObject({
+            stripe_refund_id: 're_abc',
+            webhook_reconciled: true,
+        });
+        // Race guard: matcher includes ('status', expected pre-state) — APPROVED OR REQUESTED
+        const statusMatcher = upd?.matchers?.find((m) => m.column === 'status');
+        expect(statusMatcher).toBeDefined();
+
+        // Notification dispatched
+        const { notifyOwner } = await import('@/services/notificationService');
+        expect(notifyOwner).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                shipownerId: 'so-1',
+                kind: 'REFUND_ISSUED',
+            }),
+        );
+
+        // Audit log written
+        const auditInsert = insertCalls.find(
+            (c) =>
+                c.table === 'audit_logs' &&
+                (c.payload.details_json as Record<string, unknown>)?.event ===
+                    'REFUND_RECONCILED_BY_WEBHOOK',
+        );
+        expect(auditInsert).toBeDefined();
+        expect(auditInsert?.payload).toMatchObject({
+            action: 'TRANSACTION_UPDATED',
+            entity_type: 'Refund',
+            entity_id: 'refund-1',
+        });
+    });
+
+    it('on charge.refunded with EXECUTED match: idempotent no-op (no UPDATE, no notify)', async () => {
+        refundRowByStripeId = {
+            id: 'refund-1',
+            status: 'EXECUTED',
+            shipowner_id: 'so-1',
+            transaction_id: 't-1',
+            amount_usd_minor: 25000,
+            refund_rail: 'STRIPE',
+            rail_details: { stripe_refund_id: 're_abc' },
+        };
+
+        const { verifyWebhookSignature } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_refund_2',
+            type: 'charge.refunded',
+            data: {
+                object: {
+                    id: 'ch_abc',
+                    payment_intent: 'pi_orig',
+                    refunds: { data: [{ id: 're_abc' }] },
+                },
+            },
+        });
+
+        const { POST } = await import('./route');
+        const res = await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+
+        expect(res.status).toBe(200);
+        expect(updateCalls.filter((c) => c.table === 'refunds')).toHaveLength(0);
+        const { notifyOwner } = await import('@/services/notificationService');
+        expect(notifyOwner).not.toHaveBeenCalled();
+    });
+
+    it('on charge.refunded with no matching refund: logs warning + 200', async () => {
+        // refundRowByStripeId and refundRowFallback both null
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const { verifyWebhookSignature } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_refund_3',
+            type: 'charge.refunded',
+            data: {
+                object: {
+                    id: 'ch_xyz',
+                    payment_intent: 'pi_unknown',
+                    refunds: { data: [{ id: 're_unknown' }] },
+                },
+            },
+        });
+
+        const { POST } = await import('./route');
+        const res = await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+
+        expect(res.status).toBe(200);
+        expect(updateCalls.filter((c) => c.table === 'refunds')).toHaveLength(0);
+        expect(warnSpy).toHaveBeenCalled();
+        const { notifyOwner } = await import('@/services/notificationService');
+        expect(notifyOwner).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('does not fail when receipt generation throws — payment stays CONFIRMED', async () => {

@@ -136,29 +136,28 @@ export async function retrievePaymentIntent(
 }
 
 /**
- * Retrieves a Refund by id. Used by the refund-reconcile cron (Plan 7H-1)
- * to verify the authoritative status of a refund against Stripe when the
- * `charge.refunded` webhook may have been missed.
+ * Creates a refund against an existing Stripe PaymentIntent. Used by
+ * Plan 7G executeRefund for the STRIPE rail.
  *
- * Returned shape is a narrow projection — we only care about status +
- * failure_reason. Callers must not assume any other field is present.
+ * @param params.paymentIntent The PaymentIntent id (pi_xxx) to refund against.
+ * @param params.amountMinor Amount to refund in USD minor units (cents). Stripe
+ * caps this at the original charge amount; passing the full amount = full refund.
+ * @returns The Stripe Refund id (re_xxx) + reported status (typically 'succeeded'
+ * for instant rails, 'pending' for ACH-style sources).
+ * @throws StripeError on API failure (invalid PI, amount exceeds charge, etc.).
+ * Callers MUST treat any throw as "refund not placed" — do not advance the
+ * local refund row state to EXECUTED in that case.
  */
-export interface RetrievedRefund {
-    id: string;
-    /** Stripe refund status: 'succeeded' | 'pending' | 'failed' | 'canceled' | 'requires_action' | string. */
-    status: string;
-    /** Stripe failure_reason string (or null if not failed / not provided). */
-    failure_reason: string | null;
-}
-
-export async function retrieveRefund(stripeRefundId: string): Promise<RetrievedRefund> {
+export async function createRefund(params: {
+    paymentIntent: string;
+    amountMinor: number;
+}): Promise<{ id: string; status: string }> {
     const stripe = stripeClient();
-    const refund = await stripe.refunds.retrieve(stripeRefundId);
-    return {
-        id: refund.id,
-        status: refund.status ?? 'unknown',
-        failure_reason: refund.failure_reason ?? null,
-    };
+    const refund = await stripe.refunds.create({
+        payment_intent: params.paymentIntent,
+        amount: params.amountMinor,
+    });
+    return { id: refund.id, status: refund.status ?? 'unknown' };
 }
 
 /**

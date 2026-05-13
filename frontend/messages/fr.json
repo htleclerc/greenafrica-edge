@@ -1,4 +1,71 @@
 {
+  "AdminRefunds": {
+    "pageTitle": "Remboursements",
+    "refresh": "Actualiser",
+    "loading": "Chargement…",
+    "empty": "Aucun remboursement dans cette catégorie",
+    "tabs": {
+      "requested": "À arbitrer",
+      "approved": "Approuvés",
+      "executed": "Exécutés",
+      "rejected": "Rejetés"
+    },
+    "table": {
+      "invoice": "Facture",
+      "owner": "Armateur",
+      "amount": "Montant",
+      "requestedAt": "Demandé",
+      "rail": "Méthode",
+      "status": "Statut"
+    },
+    "drawer": {
+      "title": "Détails du remboursement",
+      "status": "Statut",
+      "invoice": "Facture",
+      "vessel": "Navire",
+      "owner": "Armateur",
+      "amount": "Montant",
+      "requestedAt": "Demandé le",
+      "rail": "Méthode",
+      "railPicker": "Méthode de remboursement",
+      "railLabels": {
+        "WALLET": "Portefeuille armateur (instantané)",
+        "WIRE_TRANSFER": "Virement bancaire",
+        "STRIPE": "Remboursement Stripe",
+        "CASH": "Espèces",
+        "CHEQUE": "Chèque",
+        "MOBILE_MONEY": "Mobile money",
+        "THIRD_PARTY": "Tiers payeur",
+        "BANK_GUARANTEE": "Garantie bancaire",
+        "NETTING": "Compensation",
+        "LETTER_OF_CREDIT": "Lettre de crédit"
+      },
+      "ibanReveal": "Révéler l'IBAN",
+      "revealing": "Révélation…",
+      "ibanRevealed": "IBAN : {iban}",
+      "proofUpload": "Chemin du justificatif bancaire (optionnel)",
+      "rejectReason": "Raison du rejet (min. 5 caractères)",
+      "rejectReasonPlaceholder": "Pourquoi ce remboursement est-il rejeté ?",
+      "executedAt": "Exécuté le",
+      "details": "Détails",
+      "rejectedReason": "Raison du rejet",
+      "previouslyApprovedBy": "Approuvé par",
+      "executing": "Exécution…",
+      "approving": "Approbation…",
+      "rejecting": "Rejet…",
+      "actions": {
+        "approve": "Approuver",
+        "execute": "Exécuter le remboursement",
+        "executeWallet": "Rembourser au portefeuille",
+        "reject": "Rejeter",
+        "confirmReject": "Confirmer le rejet",
+        "cancelReject": "Annuler"
+      }
+    },
+    "error": {
+      "reasonTooShort": "La raison doit faire au moins 5 caractères"
+    }
+  },
   "Common": {
     "title": "AIS Portal",
     "description": "Sécuriser la Richesse Climatique Maritime de l'Afrique",
@@ -623,7 +690,8 @@
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CHIFFRÉ",
     "nav_registrations": "Inscriptions",
-    "nav_wallets": "Portefeuilles"
+    "nav_wallets": "Portefeuilles",
+    "nav_refunds": "Remboursements"
   },
   "Auth": {
     "system_status_online": "EN LIGNE — NŒUD SÉCURISÉ",
@@ -2925,7 +2993,7 @@
         },
         "REFUND_ISSUED": {
           "title": "Remboursement émis",
-          "body": "Un remboursement de {amount_usd} USD a été émis pour {invoice_ref}."
+          "body": "Un remboursement de {amount_usd} USD a été émis pour {invoice_ref} par {refund_rail}."
         },
         "WALLET_TOPPED_UP": {
           "title": "Portefeuille rechargé",
