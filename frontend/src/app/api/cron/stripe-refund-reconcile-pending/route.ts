@@ -3,6 +3,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { retrieveRefund } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 import { notifyOwner } from '@/services/notificationService';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('cron.stripe-refund-reconcile');
 
 /**
  * GET /api/cron/stripe-refund-reconcile-pending
@@ -87,10 +90,7 @@ async function writeAuditLog(
         details_json: { event: params.event, ...params.details },
     });
     if (error) {
-        console.error(
-            `[stripe-refund-reconcile] audit log failed for refund ${params.refundId}:`,
-            error,
-        );
+        log.warn('audit_log_failed', { refundId: params.refundId, error: error.message });
     }
 }
 
@@ -109,10 +109,7 @@ async function bumpReconcileAttempts(
         .eq('id', row.id)
         .eq('status', 'APPROVED');
     if (error) {
-        console.error(
-            `[stripe-refund-reconcile] failed to bump attempts on refund ${row.id}:`,
-            error,
-        );
+        log.warn('bump_attempts_failed', { refundId: row.id, error: error.message });
     }
 }
 
@@ -123,6 +120,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
+
+    log.info('cron_run_start', {});
 
     const admin = serviceClient();
     const cutoff = new Date(Date.now() - STALE_MINUTES * 60 * 1000).toISOString();
@@ -136,7 +135,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         .limit(ROW_LIMIT);
 
     if (selErr) {
-        console.error('[stripe-refund-reconcile] select error:', selErr);
+        log.error('select_failed', { error: selErr.message });
         return NextResponse.json({ error: 'select_failed' }, { status: 500 });
     }
 
@@ -144,6 +143,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const counts: Counts = { checked: 0, reconciled: 0, skipped: 0, errored: 0 };
 
     if (pending.length === 0) {
+        log.info('cron_run_complete', { ...counts });
         return NextResponse.json(counts);
     }
 
@@ -161,17 +161,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         );
 
         if (reconcileAttempts >= MAX_RECONCILE_ATTEMPTS) {
-            console.warn(
-                `[stripe-refund-reconcile] refund ${row.id} at max attempts (${reconcileAttempts}); skipping`,
-            );
+            log.warn('refund_reconcile_max_attempts', {
+                refundId: row.id,
+                attempts: reconcileAttempts,
+            });
             counts.skipped += 1;
             continue;
         }
 
         if (typeof stripeRefundId !== 'string' || stripeRefundId.length === 0) {
-            console.warn(
-                `[stripe-refund-reconcile] refund ${row.id}: rail_details.stripe_refund_id missing; skipping (manual review required)`,
-            );
+            log.warn('refund_missing_stripe_id', { refundId: row.id });
             counts.skipped += 1;
             continue;
         }
@@ -180,10 +179,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         try {
             stripeResult = await retrieveRefund(stripeRefundId);
         } catch (e) {
-            console.error(
-                `[stripe-refund-reconcile] retrieveRefund(${stripeRefundId}) threw:`,
-                e,
-            );
+            log.warn('stripe_api_failed', {
+                refundId: row.id,
+                stripeRefundId,
+                error: e instanceof Error ? e.message : String(e),
+            });
             await bumpReconcileAttempts(admin, row);
             counts.errored += 1;
             continue;
@@ -205,9 +205,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 }
             }
             if (!systemActorId) {
-                console.error(
-                    `[stripe-refund-reconcile] no active system actor for refund ${row.id}; cannot satisfy refunds_executed_audit`,
-                );
+                log.error('no_system_actor', { refundId: row.id });
                 counts.errored += 1;
                 continue;
             }
@@ -231,22 +229,27 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 .eq('status', 'APPROVED');
 
             if (updErr) {
-                console.error(
-                    `[stripe-refund-reconcile] EXECUTED UPDATE failed for refund ${row.id}:`,
-                    updErr,
-                );
+                log.error('refund_executed_update_failed', {
+                    refundId: row.id,
+                    error: updErr.message,
+                });
                 counts.errored += 1;
                 continue;
             }
 
             // Race-guard: another path (webhook, manual admin) won. Idempotent no-op.
             if (count === 0) {
-                console.log(
-                    `[stripe-refund-reconcile] refund ${row.id}: race lost — already non-APPROVED, no-op`,
-                );
+                log.info('refund_race_lost', { refundId: row.id });
                 counts.skipped += 1;
                 continue;
             }
+
+            log.info('refund_reconciled', {
+                refundId: row.id,
+                stripeRefundId,
+                newStatus: 'EXECUTED',
+                amountUsdMinor: row.amount_usd_minor,
+            });
 
             // Owner notification — fail-soft per memory convention.
             try {
@@ -261,10 +264,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                     },
                 });
             } catch (e) {
-                console.error(
-                    `[stripe-refund-reconcile] notifyOwner failed for refund ${row.id}:`,
-                    e,
-                );
+                log.warn('notify_owner_failed', {
+                    refundId: row.id,
+                    error: e instanceof Error ? e.message : String(e),
+                });
             }
 
             await writeAuditLog(admin, {
@@ -312,10 +315,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 .eq('status', 'APPROVED');
 
             if (updErr) {
-                console.error(
-                    `[stripe-refund-reconcile] REJECTED UPDATE failed for refund ${row.id}:`,
-                    updErr,
-                );
+                log.error('refund_rejected_update_failed', {
+                    refundId: row.id,
+                    error: updErr.message,
+                });
                 counts.errored += 1;
                 continue;
             }
@@ -324,6 +327,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 counts.skipped += 1;
                 continue;
             }
+
+            log.info('refund_marked_rejected', {
+                refundId: row.id,
+                stripeRefundId,
+                stripeStatus: stripeResult.status,
+            });
 
             if (systemActorId) {
                 await writeAuditLog(admin, {
@@ -344,11 +353,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         }
 
         // pending / requires_action / unknown — still in flight.
-        console.log(
-            `[stripe-refund-reconcile] refund ${row.id} stripe status=${stripeResult.status}; skipping`,
-        );
+        log.debug('refund_still_pending', {
+            refundId: row.id,
+            stripeStatus: stripeResult.status,
+        });
         counts.skipped += 1;
     }
 
+    log.info('cron_run_complete', { ...counts });
     return NextResponse.json(counts);
 }

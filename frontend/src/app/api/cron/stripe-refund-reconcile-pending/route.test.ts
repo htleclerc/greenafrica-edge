@@ -336,4 +336,16 @@ describe('GET /api/cron/stripe-refund-reconcile-pending', () => {
         expect(json).toEqual({ checked: 1, reconciled: 0, skipped: 1, errored: 0 });
         expect(retrieveRefund).not.toHaveBeenCalled();
     });
+
+    it('emits a structured cron_run_complete log event (Plan 7H-3)', async () => {
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const req = new Request('http://x/api/cron/stripe-refund-reconcile-pending', {
+            method: 'GET',
+            headers: { authorization: 'Bearer topsecret' },
+        });
+        await GET(req as never);
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"cron_run_complete"'))).toBe(true);
+        consoleSpy.mockRestore();
+    });
 });

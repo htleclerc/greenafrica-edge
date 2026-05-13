@@ -2,8 +2,11 @@
 
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { requireRole } from '@/lib/auth/requireRole';
+import { scopedLogger } from '@/lib/logger';
 import { UserRole } from '@/types/secure';
 import { z } from 'zod';
+
+const log = scopedLogger('adjustWalletManually');
 
 const SUPERADMIN_ONLY = [UserRole.SUPERADMIN];
 
@@ -42,6 +45,11 @@ export async function adjustWalletManually(input: {
 
     const parsed = schema.parse(input);
 
+    log.info('action_invoked', {
+        walletId: parsed.walletId,
+        userId: auth.user.id,
+    });
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const admin = createServiceClient(url, key);
@@ -53,5 +61,18 @@ export async function adjustWalletManually(input: {
         created_by: auth.user.id,
         justification: parsed.justification,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+        log.error('wallet_manual_adjust_db_error', {
+            walletId: parsed.walletId,
+            error: error.message,
+        });
+        throw new Error(error.message);
+    }
+
+    log.info('wallet_manually_adjusted', {
+        walletId: parsed.walletId,
+        deltaUsdMinor: parsed.amountSignedMinor,
+        justificationLen: parsed.justification.length,
+        userId: auth.user.id,
+    });
 }
