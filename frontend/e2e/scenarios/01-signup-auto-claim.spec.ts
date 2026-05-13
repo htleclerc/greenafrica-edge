@@ -79,10 +79,26 @@ test('signup auto-claim: matching IMO company flips GHOST shipowner to ACTIVE', 
     registerCleanup(async () => {
         const userId = await findUserIdByEmail(testEmail);
         if (userId) {
-            // wallets and audit_logs reference the shipowner row, not the
-            // user directly — the shipowner deleteCleanup above takes them.
-            // The profile cascades from the auth user deletion.
             await deleteTestUser(userId);
+        }
+    });
+
+    // Final-review fix: wallets.shipowner_id FK has NO ON DELETE CASCADE
+    // (mig 050). The auto-claim path inserts a wallets row; without an
+    // explicit DELETE before deleteShipowner runs (LIFO last), the FK
+    // blocks the shipowner delete and orphans both rows. wallet_ledger
+    // is empty at this point (no ledger entries from auto-claim itself),
+    // so the prevent_ledger_mutation trigger isn't a concern here.
+    // Registered LAST → runs FIRST in LIFO order.
+    registerCleanup(async () => {
+        const adminClient = getAdminClient();
+        const { error } = await adminClient
+            .from('wallets')
+            .delete()
+            .eq('shipowner_id', shipowner.id);
+        if (error) {
+            // eslint-disable-next-line no-console
+            console.warn(`[e2e/scenario-01] wallet cleanup failed for ${shipowner.id}:`, error.message);
         }
     });
 

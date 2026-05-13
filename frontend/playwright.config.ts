@@ -1,4 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
+import path from 'node:path';
+
+// Load .env.local for the Playwright test runner process. Next.js' built-in
+// dotenv only applies to the dev server subprocess (started by webServer); the
+// test runner itself is a separate Node process that inherits only the shell
+// environment. Without this, e2e/helpers/{auth,fixtures}.ts throw at import
+// when NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY aren't exported.
+// `override: false` keeps an explicit `export` from the shell winning.
+loadEnv({ path: path.resolve(__dirname, '.env.local'), override: false });
 
 /**
  * Playwright E2E config for the AfricGreen frontend.
