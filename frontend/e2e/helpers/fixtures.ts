@@ -237,3 +237,30 @@ export async function readFlag(key: string): Promise<unknown> {
     if (error) throw new Error(`[e2e/fixtures] readFlag(${key}) failed: ${error.message}`);
     return data?.value ?? null;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Direct DB access for side-effect assertions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Service-role Supabase client. Exposed so tests can read tables directly
+ * to assert DB side-effects (e.g. `shipowners.account_state` flipped to
+ * ACTIVE after an auto-claim, or a `payments` row got CONFIRMED).
+ *
+ * Use sparingly — prefer the seed/delete factories when possible. Bypasses
+ * RLS, so writes here can corrupt the DB if misused.
+ */
+export function getAdminClient() {
+    return admin;
+}
+
+/** Best-effort cleanup of any auth user with a matching email. */
+export async function findUserIdByEmail(email: string): Promise<string | null> {
+    // listUsers is paginated; the hosted project has many real users so we
+    // filter server-side by passing a high perPage and matching exactly.
+    // For the e2e suite we know the email is `e2e-*@e2e.test`, which the
+    // real users will never collide with.
+    const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) return null;
+    return data.users.find((u) => u.email === email)?.id ?? null;
+}
