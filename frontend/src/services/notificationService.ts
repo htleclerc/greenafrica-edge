@@ -1,12 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-    sendPaymentConfirmationEmail,
-    sendPaymentRejectedEmail,
-    sendProformaReminderEmail,
-    sendWalletTopupEmail,
-    sendKycRejectedEmail,
-    type EmailResult,
-} from '@/services/emailService';
+import { dispatchNotificationEmail } from '@/services/notificationEmailDispatch';
 
 export type NotificationKind =
     | 'KYC_APPROVED' | 'KYC_REJECTED' | 'KYC_C_REQUIRED'
@@ -94,61 +87,13 @@ export async function notifyOwner(
                 const ownerEmail = (owner as { official_email: string }).official_email;
                 const ownerName = (owner as { name: string | null }).name ?? 'Shipowner';
 
-                let result: EmailResult | null = null;
-                switch (input.kind) {
-                    case 'PAYMENT_RECEIVED':
-                        result = await sendPaymentConfirmationEmail({
-                            to: ownerEmail,
-                            recipientName: ownerName,
-                            vesselName: String(input.params.vessel_name ?? '—'),
-                            invoiceRef: String(input.params.invoice_ref ?? '—'),
-                            amountUsd: Number(input.params.amount_usd ?? 0),
-                            paidAt: String(input.params.paid_at ?? new Date().toLocaleString()),
-                            receiptRef: input.params.receipt_ref as string | undefined,
-                            receiptPdfBuffer: input.attachments?.pdfBuffer,
-                        });
-                        break;
-                    case 'PAYMENT_REJECTED':
-                        result = await sendPaymentRejectedEmail({
-                            to: ownerEmail,
-                            recipientName: ownerName,
-                            invoiceRef: String(input.params.invoice_ref ?? '—'),
-                            reason: String(input.params.reason ?? 'unspecified'),
-                        });
-                        break;
-                    case 'PROFORMA_REMINDER':
-                        result = await sendProformaReminderEmail({
-                            to: ownerEmail,
-                            recipientName: ownerName,
-                            invoiceRef: String(input.params.invoice_ref ?? '—'),
-                            amountUsd: Number(input.params.amount_usd ?? 0),
-                            ageDays: Number(input.params.age_days ?? 3),
-                        });
-                        break;
-                    case 'WALLET_TOPPED_UP':
-                        result = await sendWalletTopupEmail({
-                            to: ownerEmail,
-                            recipientName: ownerName,
-                            amountUsd: Number(input.params.amount_usd ?? 0),
-                            newBalanceUsd: Number(input.params.new_balance_usd ?? 0),
-                        });
-                        break;
-                    // KYC_APPROVED: email is dispatched at the call site
-                    // (approveShipownerRegistration) which has the activation
-                    // context. notifyOwner only handles the in-app row; callers
-                    // must pass skipEmail: true. If they forget, fall through
-                    // here and skip silently.
-                    case 'KYC_REJECTED':
-                        result = await sendKycRejectedEmail({
-                            to: ownerEmail,
-                            recipientName: ownerName,
-                            reason: String(input.params.reason ?? 'See email for details'),
-                        });
-                        break;
-                    default:
-                        // Other EMAIL_KINDS not yet wired (deferred to 7G/7H)
-                        result = null;
-                }
+                const result = await dispatchNotificationEmail({
+                    kind: input.kind,
+                    ownerEmail,
+                    ownerName,
+                    bodyParams: input.params,
+                    attachments: input.attachments,
+                });
 
                 if (result?.success) {
                     // Mark emailed_at
