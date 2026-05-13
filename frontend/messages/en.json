@@ -2607,7 +2607,12 @@
       "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
       "feature_shipowner_portal_enabled": "Shipowner portal",
       "queue_worker_url": "Queue worker URL",
-      "queue_worker_secret": "Queue worker secret"
+      "queue_worker_secret": "Queue worker secret",
+      "feature_shipowner_portal_v1_enabled": "Shipowner Portal v1 (master)",
+      "feature_shipowner_self_service_enabled": "Self-service signup",
+      "feature_online_payment_stripe_enabled": "Online payment (Stripe)",
+      "feature_wallet_topup_enabled": "Wallet top-up",
+      "feature_notification_sms_enabled": "SMS notifications (dormant)"
     },
     "save": "Save",
     "saving": "Saving…",

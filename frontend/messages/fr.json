@@ -2614,7 +2614,12 @@
       "feature_vessel_detention_enabled": "Immobilisation des navires (post-MVP)",
       "feature_shipowner_portal_enabled": "Portail armateur",
       "queue_worker_url": "URL du worker de file d'attente",
-      "queue_worker_secret": "Secret du worker de file d'attente"
+      "queue_worker_secret": "Secret du worker de file d'attente",
+      "feature_shipowner_portal_v1_enabled": "Portail Armateur v1 (master)",
+      "feature_shipowner_self_service_enabled": "Inscription en libre-service",
+      "feature_online_payment_stripe_enabled": "Paiement en ligne (Stripe)",
+      "feature_wallet_topup_enabled": "Recharge du portefeuille",
+      "feature_notification_sms_enabled": "Notifications SMS (en veille)"
     },
     "save": "Enregistrer",
     "saving": "Enregistrement…",
