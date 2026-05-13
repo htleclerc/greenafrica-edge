@@ -136,6 +136,32 @@ export async function retrievePaymentIntent(
 }
 
 /**
+ * Retrieves a Refund by id. Used by the refund-reconcile cron (Plan 7H-1)
+ * to verify the authoritative status of a refund against Stripe when the
+ * `charge.refunded` webhook may have been missed.
+ *
+ * Returned shape is a narrow projection — we only care about status +
+ * failure_reason. Callers must not assume any other field is present.
+ */
+export interface RetrievedRefund {
+    id: string;
+    /** Stripe refund status: 'succeeded' | 'pending' | 'failed' | 'canceled' | 'requires_action' | string. */
+    status: string;
+    /** Stripe failure_reason string (or null if not failed / not provided). */
+    failure_reason: string | null;
+}
+
+export async function retrieveRefund(stripeRefundId: string): Promise<RetrievedRefund> {
+    const stripe = stripeClient();
+    const refund = await stripe.refunds.retrieve(stripeRefundId);
+    return {
+        id: refund.id,
+        status: refund.status ?? 'unknown',
+        failure_reason: refund.failure_reason ?? null,
+    };
+}
+
+/**
  * Verifies a Stripe webhook signature and returns the parsed event. Throws
  * if STRIPE_WEBHOOK_SECRET is missing or if the signature is invalid (the
  * SDK throws `Stripe.errors.StripeSignatureVerificationError` in that case).
