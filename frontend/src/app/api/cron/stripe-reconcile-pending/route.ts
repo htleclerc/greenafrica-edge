@@ -49,8 +49,13 @@ interface PendingRow {
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+    // Guard against unset CRON_SECRET — match the overdue-alerts/route.ts pattern.
+    // Without this guard, an undefined env yields "Bearer undefined" check
+    // which is trivially guessable (Plan 7H-1 final-review fix; carried back
+    // to this Plan 7D route for consistency).
+    const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 

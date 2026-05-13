@@ -1,6 +1,7 @@
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { getWalletForOwner, listLedgerEntries, predictNextTax } from '@/services/walletService';
+import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { WalletPageClient } from './WalletPageClient';
 
 export const metadata = {
@@ -11,6 +12,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function OwnerWalletPage() {
     const session = await requireOwner();
+
+    // Plan 7H-1 Task 5.3 — gate the "Top up" surface behind
+    // `feature.wallet_topup_enabled`. The wallet page itself stays visible
+    // (so the owner can see balance + ledger), only the topup CTA is hidden.
+    const flags = await readPortalFeatureFlags();
+    const topupEnabled = flags.walletTopupEnabled;
 
     // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger but adds no policies.
     // requireOwner() above is the auth gate (validates session + ACTIVE shipowner);
@@ -39,6 +46,7 @@ export default async function OwnerWalletPage() {
                     initialAutoApply={true}
                     initialLedger={[]}
                     prediction={{ estimated_count_30d: 0, estimated_amount_30d_usd: 0, confidence: 'low' }}
+                    topupEnabled={topupEnabled}
                 />
             </div>
         );
@@ -60,6 +68,7 @@ export default async function OwnerWalletPage() {
                 initialAutoApply={wallet.auto_apply_to_proforma}
                 initialLedger={ledger}
                 prediction={prediction}
+                topupEnabled={topupEnabled}
             />
         </div>
     );

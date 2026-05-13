@@ -22,6 +22,14 @@
     {
       "path": "/api/cron/stripe-reconcile-pending",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/notification-email-loop",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/stripe-refund-reconcile-pending",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
