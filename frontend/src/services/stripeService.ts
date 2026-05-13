@@ -136,6 +136,31 @@ export async function retrievePaymentIntent(
 }
 
 /**
+ * Creates a refund against an existing Stripe PaymentIntent. Used by
+ * Plan 7G executeRefund for the STRIPE rail.
+ *
+ * @param params.paymentIntent The PaymentIntent id (pi_xxx) to refund against.
+ * @param params.amountMinor Amount to refund in USD minor units (cents). Stripe
+ * caps this at the original charge amount; passing the full amount = full refund.
+ * @returns The Stripe Refund id (re_xxx) + reported status (typically 'succeeded'
+ * for instant rails, 'pending' for ACH-style sources).
+ * @throws StripeError on API failure (invalid PI, amount exceeds charge, etc.).
+ * Callers MUST treat any throw as "refund not placed" — do not advance the
+ * local refund row state to EXECUTED in that case.
+ */
+export async function createRefund(params: {
+    paymentIntent: string;
+    amountMinor: number;
+}): Promise<{ id: string; status: string }> {
+    const stripe = stripeClient();
+    const refund = await stripe.refunds.create({
+        payment_intent: params.paymentIntent,
+        amount: params.amountMinor,
+    });
+    return { id: refund.id, status: refund.status ?? 'unknown' };
+}
+
+/**
  * Verifies a Stripe webhook signature and returns the parsed event. Throws
  * if STRIPE_WEBHOOK_SECRET is missing or if the signature is invalid (the
  * SDK throws `Stripe.errors.StripeSignatureVerificationError` in that case).
