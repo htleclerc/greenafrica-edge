@@ -11,9 +11,11 @@ interface Props {
     onToggleAutoApply: () => void;
     onOpenTopup: () => void;
     togglePending: boolean;
+    /** Plan 7H-1 Task 5.3 — when false, hides the "Top up" CTA. */
+    topupEnabled?: boolean;
 }
 
-export function BalanceCard({ balanceUsd, autoApplyEnabled, onToggleAutoApply, onOpenTopup, togglePending }: Props) {
+export function BalanceCard({ balanceUsd, autoApplyEnabled, onToggleAutoApply, onOpenTopup, togglePending, topupEnabled = true }: Props) {
     const t = useTranslations('OwnerPortal.wallet');
     return (
         <section className="os-card p-5">
@@ -39,9 +41,11 @@ export function BalanceCard({ balanceUsd, autoApplyEnabled, onToggleAutoApply, o
                     {autoApplyEnabled ? t('balanceCard.autoApplyOn') : t('balanceCard.autoApplyOff')}
                 </button>
             </div>
-            <OsButton variant="primary" size="md" icon={<Plus className="w-4 h-4" />} onClick={onOpenTopup}>
-                {t('balanceCard.topupCta')}
-            </OsButton>
+            {topupEnabled && (
+                <OsButton variant="primary" size="md" icon={<Plus className="w-4 h-4" />} onClick={onOpenTopup}>
+                    {t('balanceCard.topupCta')}
+                </OsButton>
+            )}
         </section>
     );
 }

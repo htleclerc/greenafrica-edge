@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { selectProvidersForRail } from '@/services/paymentService';
+import { readPortalFeatureFlags } from '@/lib/feature-flags';
 
 const OWNER_RAILS = ['STRIPE', 'WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET'] as const;
 type Rail = typeof OWNER_RAILS[number];
@@ -23,6 +24,11 @@ export async function GET(req: NextRequest) {
     const walletBalanceUsdMinor = Number(url.searchParams.get('walletBalanceUsdMinor') ?? '0');
     const amountUsdMinor = Number(url.searchParams.get('amountUsdMinor') ?? '0');
 
+    // Plan 7H-1 Task 5.2 — STRIPE rail visibility is gated by both the
+    // env-key check (Plan 7E) AND the `feature.online_payment_stripe_enabled`
+    // app_config flag. Either being absent suppresses STRIPE.
+    const flags = await readPortalFeatureFlags();
+
     const rails: RailEligibility[] = [];
     for (const rail of OWNER_RAILS) {
         if (rail === 'WALLET') {
@@ -41,7 +47,8 @@ export async function GET(req: NextRequest) {
             // Stripe is its own provider — no row in payment_config.
             // Eligibility is solely determined by whether STRIPE_SECRET_KEY
             // is configured in the environment.
-            const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+            const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY)
+                && flags.onlinePaymentStripeEnabled;
             rails.push({
                 rail,
                 eligible: stripeConfigured,

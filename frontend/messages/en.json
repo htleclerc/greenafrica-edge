@@ -2852,7 +2852,9 @@
           "amountLabel": "Top-up amount",
           "success": "Wallet credited — your balance is up to date.",
           "summaryLabel": "Top-up amount",
-          "summaryValue": "will be credited to your wallet"
+          "summaryValue": "will be credited to your wallet",
+          "disabledTitle": "Wallet top-ups unavailable",
+          "disabledBody": "Wallet top-ups are currently unavailable. Please try again later or contact support."
         }
       }
     },

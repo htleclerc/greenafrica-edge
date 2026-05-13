@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { enforceRateLimit } from '@/lib/rateLimit';
+import { readPortalFeatureFlags } from '@/lib/feature-flags';
 
 const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
 const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
@@ -53,6 +54,13 @@ export async function registerShipowner(
     input: RegisterShipownerInput,
     clientIp: string,
 ): Promise<RegisterShipownerResult> {
+    // Plan 7H-1 Task 5.1 — defense-in-depth flag check.
+    // Even if the UI redirect is bypassed (direct POST), refuse to write.
+    const flags = await readPortalFeatureFlags();
+    if (!flags.selfServiceEnabled) {
+        return { ok: false, message: 'Self-service signup is not currently enabled.' };
+    }
+
     const rl = await enforceRateLimit('signup-shipowner', clientIp);
     if (!rl.allowed) return { ok: false, message: 'Too many attempts. Try again later.' };
 

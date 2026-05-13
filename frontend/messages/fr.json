@@ -2822,7 +2822,9 @@
           "amountLabel": "Montant de recharge",
           "success": "Wallet crédité — votre solde est à jour.",
           "summaryLabel": "Montant de recharge",
-          "summaryValue": "sera crédité sur votre wallet"
+          "summaryValue": "sera crédité sur votre wallet",
+          "disabledTitle": "Recharges wallet indisponibles",
+          "disabledBody": "Les recharges du wallet sont indisponibles. Réessayez plus tard ou contactez le support."
         }
       }
     },

@@ -15,6 +15,8 @@ interface Props {
     initialAutoApply: boolean;
     initialLedger: LedgerRow[];
     prediction: NextTaxPrediction;
+    /** Plan 7H-1 Task 5.3 — gates the "Top up" CTA + PayDialog topup mode. */
+    topupEnabled?: boolean;
 }
 
 export function WalletPageClient({
@@ -23,6 +25,7 @@ export function WalletPageClient({
     initialAutoApply,
     initialLedger,
     prediction,
+    topupEnabled = true,
 }: Props) {
     const router = useRouter();
     const [autoApply, setAutoApply] = React.useState(initialAutoApply);
@@ -59,6 +62,7 @@ export function WalletPageClient({
                     onToggleAutoApply={handleToggleAutoApply}
                     onOpenTopup={() => setTopupOpen(true)}
                     togglePending={togglePending}
+                    topupEnabled={topupEnabled}
                 />
                 <PredictionCard prediction={prediction} currentBalanceUsd={balanceUsd} />
             </div>
@@ -80,6 +84,7 @@ export function WalletPageClient({
                     amountUsd={0}
                     currency="USD"
                     walletBalanceUsdMinor={initialBalanceUsdMinor}
+                    topupEnabled={topupEnabled}
                 />
             )}
         </>
