@@ -5,7 +5,9 @@ import {
     sendProformaReminderEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
+    sendRefundIssuedEmail,
     type EmailResult,
+    type RefundIssuedParams,
 } from '@/services/emailService';
 
 export type NotificationKind =
@@ -143,6 +145,16 @@ export async function notifyOwner(
                             to: ownerEmail,
                             recipientName: ownerName,
                             reason: String(input.params.reason ?? 'See email for details'),
+                        });
+                        break;
+                    case 'REFUND_ISSUED':
+                        result = await sendRefundIssuedEmail({
+                            to: ownerEmail,
+                            recipientName: ownerName,
+                            invoiceRef: String(input.params.invoice_ref ?? '—'),
+                            amountUsd: Number(input.params.amount_usd ?? 0),
+                            refundRail: input.params.refund_rail as RefundIssuedParams['refundRail'],
+                            executedAt: String(input.params.executed_at ?? new Date().toLocaleString()),
                         });
                         break;
                     default:
