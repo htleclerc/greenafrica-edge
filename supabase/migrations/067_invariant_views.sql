@@ -94,7 +94,7 @@ COMMENT ON VIEW public.v_wallet_balance_drift IS
 -- Note: payments.amount_usd_minor is BIGINT minor units; transactions.partial_paid_usd
 -- is NUMERIC dollars (memory gotcha — schema diverges from a single unit). Convert
 -- payments to dollars via /100.0 (numeric domain — no integer truncation).
--- Tolerance of 0.01 cents absorbs FP rounding from the divide.
+-- Tolerance of $0.01 (one cent in dollars) absorbs FP rounding from the /100.0 divide.
 CREATE OR REPLACE VIEW public.v_transaction_payment_drift AS
 SELECT
     t.id AS transaction_id,

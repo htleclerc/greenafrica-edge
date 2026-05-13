@@ -305,11 +305,13 @@ async function handlePaymentFailed(
         .eq('id', payment.id);
     if (error) throw error;
 
+    // Match rejectPayment convention: log reason LENGTH, not the text. The
+    // text is already persisted in payments.rejected_reason. Final-review fix.
     log.info('webhook_payment_failed', {
         stripePiId: piId,
         paymentId: payment.id,
         transactionId: payment.transaction_id,
-        reason,
+        reasonLen: reason.length,
     });
 
     // Notify owner of the failed payment (fail-soft). Closes the UX gap

@@ -18,7 +18,7 @@ This document is the **single source of truth** for portal rollout. Read top-to-
 supabase migration list --linked
 ```
 
-Expected: local == hosted up through `067_invariant_monitoring_views.sql`.
+Expected: local == hosted up through `067_invariant_views.sql`.
 
 At time of writing (2026-05-13), the following are **pending push to hosted** and must be pushed as a batch:
 
@@ -321,8 +321,8 @@ Each mig 060-067 has a `-- DOWN:` block in comments. Apply via direct `psql` (NO
 Run daily during canary (J+0 → J+21); weekly post-J+21.
 
 ```sql
--- (1) Stuck payments — INITIATED for > 7 days with no terminal state.
--- THRESHOLD: alarm if COUNT > 5. Investigate any row > 14 days old.
+-- (1) Stuck payments — INITIATED for > 24 hours with no terminal state.
+-- THRESHOLD: alarm if COUNT > 5. Investigate any row > 7 days old (admin review SLA).
 SELECT * FROM v_payments_initiated_overdue;
 
 -- (2) Stripe webhook failures — failed signature checks or unhandled events in last 7 days.
@@ -340,7 +340,7 @@ SELECT * FROM v_transaction_payment_drift;
 
 | View | Source | Alarm threshold | Severity |
 |---|---|---|---|
-| `v_payments_initiated_overdue` | `payments WHERE status='INITIATED' AND created_at < now()-'7d'` | > 5 | WARN — operational |
+| `v_payments_initiated_overdue` | `payments WHERE status='INITIATED' AND created_at < now() - INTERVAL '24 hours'` | > 5 | WARN — operational |
 | `v_stripe_webhook_failures` | webhook audit rows last 7d, status=failed | > 0 | WARN — integration |
 | `v_wallet_balance_drift` | `wallets.balance_usd_minor ≠ SUM(wallet_ledger.amount_signed_usd_minor)` | > 0 | **CRITICAL — page Loïc** |
 | `v_transaction_payment_drift` | confirmed payments SUM ≠ `transactions.partial_paid_usd` | > 0 | **CRITICAL — page Loïc** |
