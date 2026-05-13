@@ -81,4 +81,13 @@ describe('rejectPayment', () => {
             details_json: { event: 'PAYMENT_REJECTED', reason: 'Wrong amount' },
         });
     });
+
+    it('emits a structured payment_rejected log event (Plan 7H-3)', async () => {
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const { rejectPayment } = await import('./rejectPayment');
+        await rejectPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174005', reason: 'Wrong amount' });
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"payment_rejected"'))).toBe(true);
+        consoleSpy.mockRestore();
+    });
 });

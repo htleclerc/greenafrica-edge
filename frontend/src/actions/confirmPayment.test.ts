@@ -203,6 +203,15 @@ describe('confirmPayment', () => {
         );
     });
 
+    it('emits a structured payment_confirmed log event (Plan 7H-3)', async () => {
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const { confirmPayment } = await import('./confirmPayment');
+        await confirmPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174099' });
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"payment_confirmed"'))).toBe(true);
+        consoleSpy.mockRestore();
+    });
+
     it('confirmPayment succeeds even when receipt generation fails', async () => {
         const { generatePaymentReceipt } = await import('@/services/receiptService');
         (generatePaymentReceipt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('PDF crash'));

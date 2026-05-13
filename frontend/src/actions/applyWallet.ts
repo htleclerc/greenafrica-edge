@@ -3,6 +3,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('applyWallet');
 
 const schema = z.object({
     transactionId: z.string().uuid(),
@@ -13,6 +16,13 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
     const parsed = schema.parse(input);
 
     const ctx = await requireOwner();
+
+    log.info('action_invoked', {
+        transactionId: parsed.transactionId,
+        userId: ctx.userId,
+        shipownerId: ctx.shipowner.id,
+        amountUsdMinor: parsed.amountMinor,
+    });
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -34,9 +44,24 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
         .eq('shipowner_id', ctx.shipowner.id)
         .maybeSingle();
     if (wErr) throw wErr;
-    if (!wallet) throw new Error('Insufficient wallet balance');
+    if (!wallet) {
+        log.warn('wallet_insufficient_funds', {
+            transactionId: parsed.transactionId,
+            shipownerId: ctx.shipowner.id,
+            reason: 'no_wallet',
+            requestedUsdMinor: parsed.amountMinor,
+        });
+        throw new Error('Insufficient wallet balance');
+    }
     const balance = wallet.balance_usd_minor ?? 0;
     if (balance < parsed.amountMinor) {
+        log.warn('wallet_insufficient_funds', {
+            transactionId: parsed.transactionId,
+            shipownerId: ctx.shipowner.id,
+            walletId: wallet.id,
+            balanceUsdMinor: balance,
+            requestedUsdMinor: parsed.amountMinor,
+        });
         throw new Error('Insufficient wallet balance');
     }
 
@@ -59,7 +84,15 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
         })
         .select('id')
         .single();
-    if (payErr) throw payErr;
+    if (payErr) {
+        log.error('wallet_apply_db_error', {
+            transactionId: parsed.transactionId,
+            walletId: wallet.id,
+            stage: 'payments_insert',
+            error: payErr.message,
+        });
+        throw payErr;
+    }
 
     // Ledger debit (negative signed) — wallet trigger syncs balance
     const { error: ledgErr } = await admin.from('wallet_ledger').insert({
@@ -68,10 +101,24 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
         amount_signed_usd_minor: -parsed.amountMinor,
         created_by: ctx.userId,
     });
-    if (ledgErr) throw ledgErr;
+    if (ledgErr) {
+        log.error('wallet_apply_db_error', {
+            transactionId: parsed.transactionId,
+            walletId: wallet.id,
+            stage: 'wallet_ledger_insert',
+            error: ledgErr.message,
+        });
+        throw ledgErr;
+    }
 
     // Recompute transaction status
     await admin.rpc('recompute_transaction_status', { p_transaction_id: parsed.transactionId });
+
+    log.info('wallet_applied', {
+        transactionId: parsed.transactionId,
+        walletId: wallet.id,
+        amountUsdMinor: parsed.amountMinor,
+    });
 
     return { ok: true };
 }

@@ -3,7 +3,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
+import { scopedLogger } from '@/lib/logger';
 import { UserRole } from '@/types/secure';
+
+const log = scopedLogger('rejectPayment');
 
 const schema = z.object({
     paymentId: z.string().uuid(),
@@ -15,6 +18,12 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
 
     const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
     if (auth.error) throw new Error('Not authorized');
+
+    log.info('action_invoked', {
+        paymentId: parsed.paymentId,
+        userId: auth.user.id,
+        reasonLen: parsed.reason.length,
+    });
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -45,6 +54,12 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
         details_json: { event: 'PAYMENT_REJECTED', reason: parsed.reason },
     });
 
+    log.info('payment_rejected', {
+        paymentId: parsed.paymentId,
+        transactionId: (updated as { transaction_id?: string | null } | null)?.transaction_id ?? null,
+        shipownerId: (updated as { shipowner_id?: string } | null)?.shipowner_id ?? null,
+    });
+
     // Plan 7F: in-app notification + rejection email (fail-soft)
     try {
         const shipownerId = (updated as { shipowner_id?: string } | null)?.shipowner_id;
@@ -71,7 +86,10 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
             });
         }
     } catch (notifyErr) {
-        console.error(`[rejectPayment] notifyOwner failed for ${parsed.paymentId}:`, notifyErr);
+        log.warn('notification_dispatch_failed', {
+            paymentId: parsed.paymentId,
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
     }
 
     return { ok: true };

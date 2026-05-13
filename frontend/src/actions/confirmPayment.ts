@@ -3,7 +3,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
+import { scopedLogger } from '@/lib/logger';
 import { UserRole } from '@/types/secure';
+
+const log = scopedLogger('confirmPayment');
 
 const schema = z.object({ paymentId: z.string().uuid() });
 
@@ -19,6 +22,8 @@ export async function confirmPayment(input: { paymentId: string }) {
 
     const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
     if (auth.error) throw new Error('Not authorized');
+
+    log.info('action_invoked', { paymentId: parsed.paymentId, userId: auth.user.id });
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -45,6 +50,13 @@ export async function confirmPayment(input: { paymentId: string }) {
         await admin.rpc('recompute_transaction_status', { p_transaction_id: updated.transaction_id });
     }
 
+    log.info('payment_confirmed', {
+        paymentId: updated.id,
+        amountUsdMinor: updated.amount_usd_minor,
+        transactionId: updated.transaction_id,
+        shipownerId: updated.shipowner_id,
+    });
+
     await admin.from('audit_logs').insert({
         user_id: auth.user.id,
         user_full_name: auth.user.fullName,
@@ -62,7 +74,10 @@ export async function confirmPayment(input: { paymentId: string }) {
         const { generatePaymentReceipt } = await import('@/services/receiptService');
         receiptResult = await generatePaymentReceipt(admin, parsed.paymentId);
     } catch (e) {
-        console.error(`[confirmPayment] receipt generation failed for ${parsed.paymentId}:`, e);
+        log.warn('receipt_generation_failed', {
+            paymentId: parsed.paymentId,
+            error: e instanceof Error ? e.message : String(e),
+        });
     }
 
     let txForNotif: { invoice_ref: string | null; vessel_name: string | null } | null = null;
@@ -100,7 +115,10 @@ export async function confirmPayment(input: { paymentId: string }) {
             });
         }
     } catch (e) {
-        console.error(`[confirmPayment] email send failed for ${parsed.paymentId}:`, e);
+        log.warn('email_send_failed', {
+            paymentId: parsed.paymentId,
+            error: e instanceof Error ? e.message : String(e),
+        });
     }
 
     // Plan 7F: in-app notification (email already dispatched above for PAYMENT_RECEIVED;
@@ -142,7 +160,10 @@ export async function confirmPayment(input: { paymentId: string }) {
             });
         }
     } catch (notifyErr) {
-        console.error(`[confirmPayment] notifyOwner failed for ${parsed.paymentId}:`, notifyErr);
+        log.warn('notification_dispatch_failed', {
+            paymentId: parsed.paymentId,
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
     }
 
     return { ok: true, paymentId: parsed.paymentId };
@@ -197,10 +218,25 @@ async function splitOverpayment(
         .maybeSingle();
     if (!wallet) return;
 
-    await admin.from('wallet_ledger').insert({
+    const { error: ledgErr } = await admin.from('wallet_ledger').insert({
         wallet_id: wallet.id,
         kind: 'OVERPAYMENT_CREDIT',
         amount_signed_usd_minor: excess,
         created_by: actorUserId,
+    });
+    if (ledgErr) {
+        log.warn('wallet_ledger_insert_failed', {
+            paymentId: payment.id,
+            walletId: wallet.id,
+            error: ledgErr.message,
+        });
+        return;
+    }
+
+    log.info('payment_overpayment_to_wallet', {
+        paymentId: payment.id,
+        walletId: wallet.id,
+        overpaymentUsdMinor: excess,
+        adjustedUsdMinor: adjusted,
     });
 }

@@ -95,4 +95,16 @@ describe('applyWallet', () => {
             kind: 'PROFORMA_APPLY', amount_signed_usd_minor: -50000, wallet_id: 'w-1',
         });
     });
+
+    it('emits a structured wallet_applied log event (Plan 7H-3)', async () => {
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const { applyWallet } = await import('./applyWallet');
+        await applyWallet({
+            transactionId: '550e8400-e29b-41d4-a716-446655440000',
+            amountMinor: 50000,
+        });
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"wallet_applied"'))).toBe(true);
+        consoleSpy.mockRestore();
+    });
 });

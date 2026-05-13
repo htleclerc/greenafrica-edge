@@ -72,4 +72,19 @@ describe('adjustWalletManually', () => {
             justification: '',
         })).rejects.toThrow();
     });
+
+    it('emits a structured wallet_manually_adjusted log event (Plan 7H-3)', async () => {
+        setupAdminCtx('SUPERADMIN');
+        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        await adjustWalletManually({
+            walletId: '123e4567-e89b-42d3-a456-426614174000',
+            amountSignedMinor: 50000,
+            justification: 'Compensation for ops error 2026-05',
+        });
+        const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+        expect(calls.some((c) => c.includes('"event":"wallet_manually_adjusted"'))).toBe(true);
+        // Sensitive justification text MUST NOT appear in logs (only length is logged).
+        expect(calls.some((c) => c.includes('Compensation for ops error'))).toBe(false);
+        consoleSpy.mockRestore();
+    });
 });
