@@ -191,5 +191,39 @@ BEGIN
     WHERE transaction_id = 'ffffffff-0000-0000-0000-000000000001';
 END $$;
 
+-- ─── Test 7: REJECTED with NULL rail succeeds (relaxed CHECK allows it) ────
+-- An admin rejecting a REQUESTED refund should not be forced to pick a rail.
+-- The CHECK was relaxed to: status IN ('REQUESTED','REJECTED') OR rail IS NOT NULL.
+DO $$
+DECLARE
+  prof UUID;
+BEGIN
+  SELECT id INTO prof FROM public.profiles OFFSET 1 LIMIT 1;
+  IF prof IS NULL THEN
+    SELECT id INTO prof FROM public.profiles LIMIT 1;
+  END IF;
+
+  -- Re-create a REQUESTED refunds row (test 6 mutated tx ...0001's refund).
+  -- Use tx ...0004 from test 5 (already exists with status=REQUESTED, rail=WALLET).
+  -- Reset it back to NULL rail for this test:
+  UPDATE public.refunds
+    SET refund_rail = NULL, status = 'REQUESTED'
+    WHERE transaction_id = 'ffffffff-0000-0000-0000-000000000004';
+
+  -- Now reject it without setting rail — should succeed.
+  UPDATE public.refunds
+    SET status = 'REJECTED', rejection_reason = 'duplicate request'
+    WHERE transaction_id = 'ffffffff-0000-0000-0000-000000000004';
+
+  -- Verify the row landed in REJECTED with NULL rail
+  PERFORM 1 FROM public.refunds
+    WHERE transaction_id = 'ffffffff-0000-0000-0000-000000000004'
+      AND status = 'REJECTED'
+      AND refund_rail IS NULL;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'TEST 7 FAILED: REJECTED with NULL rail did not persist';
+  END IF;
+END $$;
+
 ROLLBACK;
 SELECT '066 refund enqueue trigger: PASS' AS test_result;

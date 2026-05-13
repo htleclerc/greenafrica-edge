@@ -6,10 +6,13 @@
 ALTER TABLE public.refunds
   ALTER COLUMN refund_rail DROP NOT NULL;
 
--- Add a partial CHECK so non-REQUESTED rows still require a rail (defensive)
+-- Add a partial CHECK so paid-out rows require a rail (defensive).
+-- REQUESTED and REJECTED can have NULL rail: a rail is only meaningful when
+-- a refund is being or has been paid out. Rejecting a REQUESTED refund must
+-- not force the admin to pick a rail they're refusing to use.
 ALTER TABLE public.refunds
   ADD CONSTRAINT refunds_rail_required_after_request CHECK (
-    status = 'REQUESTED' OR refund_rail IS NOT NULL
+    status IN ('REQUESTED', 'REJECTED') OR refund_rail IS NOT NULL
   );
 
 CREATE OR REPLACE FUNCTION public.enqueue_refund_on_transaction()
