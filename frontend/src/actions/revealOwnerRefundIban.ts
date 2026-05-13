@@ -23,7 +23,11 @@ const schema = z.object({
     shipownerId: z.string().uuid(),
 });
 
-export type RevealOwnerRefundIbanResult =
+// NOTE: type kept un-exported — 'use server' files can only export async
+// functions (memory gotcha: even `export type` makes next build fail at
+// page-data collection on some Next.js versions). Callers infer via
+// `Awaited<ReturnType<typeof revealOwnerRefundIban>>`.
+type RevealOwnerRefundIbanResult =
     | { ok: true; iban: string }
     | { ok: false; error: string };
 
