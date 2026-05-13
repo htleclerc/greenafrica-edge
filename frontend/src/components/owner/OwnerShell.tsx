@@ -8,6 +8,7 @@ import { LayoutDashboard, Ship, FileText, AlertTriangle, Wallet, LogOut } from '
 import { createClient } from '@/lib/supabase/client';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { KycCBanner } from '@/components/owner/KycCBanner';
+import { NotificationBell } from '@/components/owner/NotificationBell';
 
 interface NavItem {
     href: string;
@@ -91,6 +92,7 @@ export function OwnerShell({ ownerName, email, kycComplete, children }: OwnerShe
                 </nav>
 
                 <div className="flex items-center gap-3">
+                    <NotificationBell />
                     <div className="hidden sm:flex flex-col items-end leading-tight">
                         <span className="text-xs font-medium text-[var(--os-text-primary)]">
                             {ownerName}

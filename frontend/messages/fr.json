@@ -2859,6 +2859,88 @@
           "FX_DIFFERENCE": "Écart de change"
         }
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "bellAria": "Notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "viewAll": "Voir toutes les notifications",
+      "empty": "Aucune notification pour le moment",
+      "pageTitle": "Notifications",
+      "unreadLabel": "non lue(s)",
+      "filterAria": "Filtrer les notifications",
+      "filterAll": "Toutes",
+      "filterUnread": "Non lues uniquement",
+      "loading": "Chargement…",
+      "emptyUnread": "Aucune notification non lue",
+      "loadMore": "Charger plus",
+      "loadingMore": "Chargement…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "Compte activé",
+          "body": "Bienvenue {shipowner_name}. Votre compte est maintenant actif."
+        },
+        "KYC_REJECTED": {
+          "title": "Inscription rejetée",
+          "body": "Votre inscription a été rejetée. Motif : {reason}"
+        },
+        "KYC_C_REQUIRED": {
+          "title": "KYC complémentaire requis",
+          "body": "Veuillez compléter l’assistant de facturation KYC-C pour activer les paiements."
+        },
+        "ALERT_DETECTED": {
+          "title": "Navire détecté",
+          "body": "{vessel_name} ({imo}) a été détecté à l’approche de {port}."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "Proforma émise",
+          "body": "Proforma {invoice_ref} pour {vessel_name} ({amount_usd} USD)."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "Rappel de proforma",
+          "body": "La proforma {invoice_ref} ({amount_usd} USD) a {age_days} jours et reste impayée."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "Paiement reçu",
+          "body": "Le paiement de {amount_usd} USD pour {invoice_ref} a été confirmé."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "Paiement refusé",
+          "body": "Le paiement pour {invoice_ref} a été refusé. Motif : {reason}"
+        },
+        "FINAL_ISSUED": {
+          "title": "Facture finale émise",
+          "body": "La facture finale {invoice_ref} est disponible."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "Facture complémentaire émise",
+          "body": "La facture complémentaire {invoice_ref} ({amount_usd} USD) est disponible."
+        },
+        "REFUND_ISSUED": {
+          "title": "Remboursement émis",
+          "body": "Un remboursement de {amount_usd} USD a été émis pour {invoice_ref}."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "Portefeuille rechargé",
+          "body": "Votre portefeuille a été crédité de {amount_usd} USD. Nouveau solde : {new_balance_usd} USD."
+        },
+        "WALLET_APPLIED": {
+          "title": "Portefeuille appliqué",
+          "body": "{amount_usd} USD de votre portefeuille ont été appliqués à {invoice_ref}."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "Solde du portefeuille faible",
+          "body": "Le solde de votre portefeuille est de {balance_usd} USD — pensez à le recharger."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "Litige mis à jour",
+          "body": "Le litige sur {invoice_ref} a été mis à jour."
+        },
+        "OWNER_ESCALATION": {
+          "title": "Avis d’escalade",
+          "body": "Une action est requise sur {invoice_ref}."
+        }
+      }
     }
   },
   "AdminEquasis": {

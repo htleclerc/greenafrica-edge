@@ -2889,6 +2889,88 @@
           "FX_DIFFERENCE": "FX difference"
         }
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "bellAria": "Notifications",
+      "markAllRead": "Mark all as read",
+      "viewAll": "View all notifications",
+      "empty": "No notifications yet",
+      "pageTitle": "Notifications",
+      "unreadLabel": "unread",
+      "filterAria": "Filter notifications",
+      "filterAll": "All",
+      "filterUnread": "Unread only",
+      "loading": "Loading…",
+      "emptyUnread": "No unread notifications",
+      "loadMore": "Load more",
+      "loadingMore": "Loading…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "Account activated",
+          "body": "Welcome {shipowner_name}. Your account is now active."
+        },
+        "KYC_REJECTED": {
+          "title": "Registration rejected",
+          "body": "Your registration was rejected. Reason: {reason}"
+        },
+        "KYC_C_REQUIRED": {
+          "title": "Additional KYC required",
+          "body": "Please complete the KYC-C billing wizard to activate payments."
+        },
+        "ALERT_DETECTED": {
+          "title": "Vessel detected",
+          "body": "{vessel_name} ({imo}) was detected approaching {port}."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "Proforma issued",
+          "body": "Proforma {invoice_ref} for {vessel_name} ({amount_usd} USD)."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "Proforma reminder",
+          "body": "Proforma {invoice_ref} ({amount_usd} USD) is {age_days} days old and still unpaid."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "Payment received",
+          "body": "Payment of {amount_usd} USD for {invoice_ref} was confirmed."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "Payment declined",
+          "body": "Payment for {invoice_ref} was declined. Reason: {reason}"
+        },
+        "FINAL_ISSUED": {
+          "title": "Final invoice issued",
+          "body": "Final invoice {invoice_ref} is available."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "Complement invoice issued",
+          "body": "Complement invoice {invoice_ref} ({amount_usd} USD) is available."
+        },
+        "REFUND_ISSUED": {
+          "title": "Refund issued",
+          "body": "A refund of {amount_usd} USD has been issued for {invoice_ref}."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "Wallet topped up",
+          "body": "Your wallet was credited with {amount_usd} USD. New balance: {new_balance_usd} USD."
+        },
+        "WALLET_APPLIED": {
+          "title": "Wallet applied",
+          "body": "{amount_usd} USD from your wallet was applied to {invoice_ref}."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "Wallet balance low",
+          "body": "Your wallet balance is {balance_usd} USD — consider a top-up."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "Dispute updated",
+          "body": "Dispute on {invoice_ref} has been updated."
+        },
+        "OWNER_ESCALATION": {
+          "title": "Escalation notice",
+          "body": "An action is required on {invoice_ref}."
+        }
+      }
     }
   },
   "AdminEquasis": {
