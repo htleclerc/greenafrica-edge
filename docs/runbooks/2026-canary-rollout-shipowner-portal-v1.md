@@ -30,7 +30,7 @@ At time of writing (2026-05-13), the following are **pending push to hosted** an
 | 063 | 7D | Partial idx `idx_payments_stripe_pi` on `external_reference WHERE rail='STRIPE'` |
 | 064 | 7E | Trigger `apply_topup_credit_on_confirm` (auto TOPUP ledger) |
 | 065 | 7F | pg_cron `proforma-reminders-daily` |
-| 066 | 7G (PR #28) | Refunds — pending merge of Plan 7G |
+| 066 | 7G | Refunds — auto-enqueue trigger + `refund_rail` nullable |
 | 067 | 7H-3 | 4 invariant monitoring views |
 
 Push command:
@@ -111,7 +111,7 @@ ON CONFLICT (key) DO UPDATE SET value = excluded.value;
 - [ ] Receipt PDF emailed via Resend (check inbox + `payments.receipt_ref`)
 - [ ] `/owner/wallet` — balance reflects any TOPUP credit
 - [ ] `/owner/notifications` — bell shows unread, list page loads
-- [ ] `/admin/refunds` — **DEFERRED: requires Plan 7G merge** (currently PR #28)
+- [ ] `/admin/refunds` — REQUESTED tab lists a reconcile-generated refund; pick WALLET rail → "Refund to wallet" → row goes EXECUTED, `wallet_ledger` REFUND_CREDIT appears, owner gets REFUND_ISSUED notification + email
 
 ### 2.3 Run Playwright smoke
 
@@ -285,8 +285,11 @@ Each mig 060-067 has a `-- DOWN:` block in comments. Apply via direct `psql` (NO
 ```text
 1. 067 → DROP VIEW v_payments_initiated_overdue, v_stripe_webhook_failures,
                    v_wallet_balance_drift, v_transaction_payment_drift
-2. 066 → DROP TRIGGER refund_audit_t; DROP CONSTRAINT refund_audit_ck;
-         ALTER refunds ALTER COLUMN refund_rail SET NOT NULL   -- (post-7G merge only)
+2. 066 → DROP TRIGGER trg_refund_enqueue ON transactions;
+         DROP FUNCTION enqueue_refund_on_transaction();
+         ALTER refunds DROP CONSTRAINT refunds_rail_required_after_request;
+         ALTER refunds ALTER COLUMN refund_rail SET NOT NULL   -- ⚠ fails if any
+         REQUESTED/REJECTED refund row has a NULL rail — null those rows first
 3. 065 → SELECT cron.unschedule('proforma-reminders-daily');
          DROP FUNCTION proforma_reminders_run()
 4. 064 → DROP TRIGGER apply_topup_credit_on_confirm ON payments
@@ -353,13 +356,19 @@ All log events emit via Plan 7H-3 Task 2 structured logger (`frontend/src/lib/lo
 
 ### Tail money flow (info)
 ```text
-level:info AND (event:payment_confirmed OR event:payment_rejected OR event:wallet_applied OR event:wallet_manually_adjusted OR event:payment_overpayment_to_wallet)
+level:info AND (event:payment_confirmed OR event:payment_rejected OR event:wallet_applied OR event:wallet_manually_adjusted OR event:payment_overpayment_to_wallet OR event:refund_executed OR event:refund_reconciled_by_webhook)
 ```
 
 ### Tail failures (warn + error)
 ```text
-level:error OR (level:warn AND (event:wallet_insufficient_funds OR event:receipt_generation_failed OR event:email_send_failed OR event:notification_dispatch_failed OR event:stripe_api_failed OR event:email_dispatch_failed))
+level:error OR (level:warn AND (event:wallet_insufficient_funds OR event:receipt_generation_failed OR event:email_send_failed OR event:notification_dispatch_failed OR event:stripe_api_failed OR event:email_dispatch_failed OR event:refund_stripe_api_failed OR event:refund_race_lost_after_ledger_insert OR event:refund_notification_failed))
 ```
+
+### Tail refund flow (scope: executeRefund + stripe-webhook)
+```text
+scope:executeRefund OR (scope:stripe-webhook AND event:webhook_charge_refunded)
+```
+Watch for `refund_race_lost_after_ledger_insert` (error) — that means a wallet_ledger REFUND_CREDIT landed but the refund row didn't advance; needs manual reconciliation.
 
 ### Tail cron health
 ```text
@@ -462,7 +471,6 @@ The following items are **explicitly NOT in v1** — flag them when planning pos
 - **Sentry / structured-log aggregation** — Vercel raw logs only. Acceptable for v1 volume; revisit at scale.
 - **Playwright in CI** — Plan 7H-2 set up the suite but it runs **locally only** at canary time. CI integration deferred.
 - **pg tests for migs 060-067** — Docker is broken on the dev machine; all 8 migs verified via SQL on hosted post-push, not via the `supabase/tests/run.sh` runner. Carries 7E/7F/7G precedent.
-- **Refunds runbook entries** — Plan 7G (PR #28) is not yet on develop at time of writing. Smoke step §2.2 line 10 (`/admin/refunds`) + Vercel filter event `refund_stripe_api_failed` + mig 066 DOWN block become live once 7G merges.
 - **SMS notification rail** — `feature.notification_sms_enabled` flag exists but the dispatcher does not. Dormant flag, never toggled in v1.
 - **CAPTCHA / advanced anti-abuse** — only rate-limit 3/day/IP on `signup-shipowner`. If spam wave hits, see §12.
 

@@ -416,13 +416,13 @@ async function handleChargeRefunded(
     const chargeId = (charge.id as string | undefined) ?? '(unknown)';
     const paymentIntentId = charge.payment_intent as string | null;
 
+    log.info('webhook_charge_refunded', { chargeId, paymentIntentId });
+
     // Defensive: Stripe always sets these but unknown shapes shouldn't crash.
     const refundsContainer = charge.refunds as { data?: unknown[] } | undefined;
     const refundObjects = (refundsContainer?.data ?? []) as Array<{ id?: string }>;
     if (!Array.isArray(refundObjects) || refundObjects.length === 0) {
-        console.warn(
-            `[stripe-webhook] charge.refunded ${chargeId} carried no refund objects — skipping`,
-        );
+        log.warn('charge_refunded_no_refund_objects', { chargeId });
         return;
     }
 
@@ -446,10 +446,11 @@ async function handleChargeRefunded(
             .limit(1)
             .maybeSingle();
         if (primaryErr) {
-            console.error(
-                `[stripe-webhook] refunds primary lookup failed for ${stripeRefundId}:`,
-                primaryErr,
-            );
+            log.error('refund_primary_lookup_failed', {
+                chargeId,
+                stripeRefundId,
+                error: primaryErr.message,
+            });
             continue;
         }
 
@@ -470,49 +471,50 @@ async function handleChargeRefunded(
                     .in('status', ['APPROVED', 'REQUESTED'])
                     .limit(2);
                 if (fbErr) {
-                    console.error(
-                        `[stripe-webhook] refunds fallback lookup failed for ${stripeRefundId}:`,
-                        fbErr,
-                    );
+                    log.error('refund_fallback_lookup_failed', {
+                        chargeId,
+                        stripeRefundId,
+                        error: fbErr.message,
+                    });
                     continue;
                 }
                 const arr = (fallbackList as RefundReconcileRow[] | null) ?? [];
                 if (arr.length === 1) {
                     refundRow = arr[0];
                 } else if (arr.length > 1) {
-                    console.warn(
-                        `[stripe-webhook] charge.refunded ${chargeId} refund ${stripeRefundId}: ` +
-                            `fallback found ${arr.length} candidate refunds for tx ` +
-                            `${origPayment.transaction_id} — cannot disambiguate; skipping`,
-                    );
+                    log.warn('refund_fallback_ambiguous', {
+                        chargeId,
+                        stripeRefundId,
+                        transactionId: origPayment.transaction_id,
+                        candidateCount: arr.length,
+                    });
                     continue;
                 }
             }
         }
 
         if (!refundRow) {
-            console.warn(
-                `[stripe-webhook] charge.refunded ${chargeId}: no refunds row matches ` +
-                    `stripe_refund_id=${stripeRefundId} (PI=${paymentIntentId ?? 'n/a'}). ` +
-                    `Could be a Stripe-side manual refund we don't track. Skipping.`,
-            );
+            log.warn('refund_no_match', {
+                chargeId,
+                stripeRefundId,
+                paymentIntentId,
+                note: 'possibly a Stripe-side manual refund not tracked locally',
+            });
             continue;
         }
 
         // 3. Idempotent no-op for already-EXECUTED
         if (refundRow.status === 'EXECUTED') {
-            console.log(
-                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
-                    `already EXECUTED — idempotent skip`,
-            );
+            log.info('refund_already_executed', { chargeId, refundId: refundRow.id });
             continue;
         }
 
         if (refundRow.status !== 'APPROVED' && refundRow.status !== 'REQUESTED') {
-            console.warn(
-                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
-                    `in unexpected status=${refundRow.status} — skipping`,
-            );
+            log.warn('refund_unexpected_status', {
+                chargeId,
+                refundId: refundRow.id,
+                status: refundRow.status,
+            });
             continue;
         }
 
@@ -552,20 +554,28 @@ async function handleChargeRefunded(
             .in('status', ['APPROVED', 'REQUESTED'])
             .select('id');
         if (updErr) {
-            console.error(
-                `[stripe-webhook] refunds UPDATE failed for ${refundRow.id}:`,
-                updErr,
-            );
+            log.error('refund_update_failed', {
+                chargeId,
+                refundId: refundRow.id,
+                error: updErr.message,
+            });
             continue;
         }
         if (!updated || (updated as unknown[]).length === 0) {
             // Race: another path beat us. Treat as idempotent — log and move on.
-            console.log(
-                `[stripe-webhook] charge.refunded ${chargeId}: refund ${refundRow.id} ` +
-                    `race-guard tripped (status changed concurrently) — idempotent`,
-            );
+            log.info('refund_reconcile_race_idempotent', {
+                chargeId,
+                refundId: refundRow.id,
+            });
             continue;
         }
+
+        log.info('refund_reconciled_by_webhook', {
+            chargeId,
+            refundId: refundRow.id,
+            stripeRefundId,
+            priorStatus: refundRow.status,
+        });
 
         // 5. Fail-soft notification
         try {
@@ -591,10 +601,10 @@ async function handleChargeRefunded(
                     : '/owner/invoices',
             });
         } catch (notifyErr) {
-            console.error(
-                `[stripe-webhook] notifyOwner failed for refund ${refundRow.id}:`,
-                notifyErr,
-            );
+            log.warn('refund_notification_failed', {
+                refundId: refundRow.id,
+                error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+            });
         }
 
         // 6. Audit log (best-effort)
@@ -614,10 +624,10 @@ async function handleChargeRefunded(
                 },
             });
         } catch (auditErr) {
-            console.error(
-                `[stripe-webhook] audit_logs insert failed for refund ${refundRow.id}:`,
-                auditErr,
-            );
+            log.warn('refund_audit_log_failed', {
+                refundId: refundRow.id,
+                error: auditErr instanceof Error ? auditErr.message : String(auditErr),
+            });
         }
     }
 }

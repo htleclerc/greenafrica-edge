@@ -7,6 +7,9 @@ import { UserRole } from '@/types/secure';
 import { getRefundById } from '@/services/refundService';
 import { createRefund as stripeCreateRefund } from '@/services/stripeService';
 import { notifyOwner } from '@/services/notificationService';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('executeRefund');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Plan 7G — Task 6: executeRefund
@@ -82,6 +85,12 @@ export async function executeRefund(input: {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const admin = createClient(url, key);
 
+    log.info('action_invoked', {
+        refundId: parsed.refundId,
+        userId: actorId,
+        refundRail: parsed.refundRail ?? null,
+    });
+
     // 1. Fetch refund with joined transaction + shipowner
     const refund = await getRefundById(admin, parsed.refundId);
     if (!refund) return { ok: false, error: `Refund not found: ${parsed.refundId}` };
@@ -133,8 +142,18 @@ export async function executeRefund(input: {
             justification: 'REFUND_EXECUTED',
         });
         if (ledgerErr) {
+            log.error('refund_wallet_ledger_insert_failed', {
+                refundId: refund.id,
+                walletId: (wallet as { id: string }).id,
+                error: ledgerErr.message,
+            });
             return { ok: false, error: `Wallet ledger insert failed: ${ledgerErr.message}` };
         }
+        log.info('refund_wallet_ledger_inserted', {
+            refundId: refund.id,
+            walletId: (wallet as { id: string }).id,
+            amountUsdMinor: refund.amount_usd_minor,
+        });
     } else if (finalRail === 'WIRE_TRANSFER') {
         if (parsed.proofPath) {
             mergedRailDetails.proof_storage_path = parsed.proofPath;
@@ -169,6 +188,11 @@ export async function executeRefund(input: {
             mergedRailDetails.stripe_refund_status = stripeResult.status;
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
+            log.error('refund_stripe_api_failed', {
+                refundId: refund.id,
+                transactionId: refund.transaction_id,
+                error: msg,
+            });
             // Refund stays in APPROVED — admin can retry once Stripe is reachable.
             return { ok: false, error: `Stripe refund failed: ${msg}` };
         }
@@ -203,17 +227,26 @@ export async function executeRefund(input: {
         // Race: someone changed the status mid-flight. For WALLET, the ledger
         // INSERT already landed — log loudly. Manual reconciliation needed.
         if (finalRail === 'WALLET') {
-            console.error(
-                `[executeRefund] CRITICAL: wallet_ledger REFUND_CREDIT inserted but ` +
-                    `refunds UPDATE race-guard tripped for refund ${refund.id}. ` +
-                    `Manual reconciliation required.`,
-            );
+            log.error('refund_race_lost_after_ledger_insert', {
+                refundId: refund.id,
+                note: 'wallet_ledger REFUND_CREDIT inserted but refunds UPDATE race-guard tripped — manual reconciliation required',
+            });
+        } else {
+            log.warn('refund_race_lost', { refundId: refund.id, rail: finalRail });
         }
         return {
             ok: false,
             error: `Refund ${refund.id} status changed concurrently; refresh and retry`,
         };
     }
+
+    log.info('refund_executed', {
+        refundId: refund.id,
+        rail: finalRail,
+        executedBy: actorId,
+        amountUsdMinor: refund.amount_usd_minor,
+        oneClick: isOneClick,
+    });
 
     // 5. Notify owner (fail-soft)
     try {
@@ -232,7 +265,10 @@ export async function executeRefund(input: {
                 : '/owner/invoices',
         });
     } catch (notifyErr) {
-        console.error(`[executeRefund] notifyOwner failed for refund ${refund.id}:`, notifyErr);
+        log.warn('refund_notification_failed', {
+            refundId: refund.id,
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
     }
 
     // 6. Audit log
