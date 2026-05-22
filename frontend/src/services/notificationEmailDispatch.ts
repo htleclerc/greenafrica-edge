@@ -18,7 +18,7 @@
  *   - KYC_APPROVED: activation email lives at the call site (full role /
  *     operationalSite / activationUrl context).
  *   - WALLET_APPLIED, ALERT_DETECTED, KYC_C_REQUIRED, PROFORMA_ISSUED,
- *     FINAL_ISSUED, COMPLEMENT_ISSUED, REFUND_ISSUED, WALLET_LOW_BALANCE,
+ *     FINAL_ISSUED, COMPLEMENT_ISSUED, WALLET_LOW_BALANCE,
  *     DISPUTE_UPDATED, OWNER_ESCALATION: not yet wired to a templated
  *     email — Plan 7H-2+ scope.
  */
@@ -29,7 +29,9 @@ import {
     sendProformaReminderEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
+    sendRefundIssuedEmail,
     type EmailResult,
+    type RefundIssuedParams,
 } from '@/services/emailService';
 import type { NotificationKind } from '@/services/notificationService';
 
@@ -91,6 +93,16 @@ export async function dispatchNotificationEmail(
                 reason: String(bodyParams.reason ?? 'See email for details'),
             });
 
+        case 'REFUND_ISSUED':
+            return sendRefundIssuedEmail({
+                to: ownerEmail,
+                recipientName: ownerName,
+                invoiceRef: String(bodyParams.invoice_ref ?? '—'),
+                amountUsd: Number(bodyParams.amount_usd ?? 0),
+                refundRail: (bodyParams.refund_rail ?? 'WALLET') as RefundIssuedParams['refundRail'],
+                executedAt: String(bodyParams.executed_at ?? new Date().toLocaleString()),
+            });
+
         // Intentionally not wired — see file header.
         case 'KYC_APPROVED':
         case 'KYC_C_REQUIRED':
@@ -98,7 +110,6 @@ export async function dispatchNotificationEmail(
         case 'PROFORMA_ISSUED':
         case 'FINAL_ISSUED':
         case 'COMPLEMENT_ISSUED':
-        case 'REFUND_ISSUED':
         case 'WALLET_APPLIED':
         case 'WALLET_LOW_BALANCE':
         case 'DISPUTE_UPDATED':

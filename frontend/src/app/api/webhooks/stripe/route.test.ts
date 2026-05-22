@@ -395,6 +395,8 @@ describe('POST /api/webhooks/stripe', () => {
         expect(calls.some((c) => c.includes('"event":"webhook_event_received"'))).toBe(true);
         expect(calls.some((c) => c.includes('"event":"webhook_payment_succeeded"'))).toBe(true);
         consoleSpy.mockRestore();
+    });
+
     // ─────────────────────────────────────────────────────────────────────────
     // Plan 7G — Task 8: charge.refunded handler tests
     // ─────────────────────────────────────────────────────────────────────────

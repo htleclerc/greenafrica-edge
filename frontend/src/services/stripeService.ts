@@ -161,6 +161,31 @@ export async function createRefund(params: {
 }
 
 /**
+ * Retrieves a Stripe Refund by id for reconciliation. Used by the
+ * `/api/cron/stripe-refund-reconcile-pending` cron (Plan 7H-1) to catch
+ * refunds whose webhook delivery was missed.
+ *
+ * NOTE: this function was lost in the Plan 7G ↔ 7H-1 merge into develop
+ * (both plans touched stripeService.ts; the 7H-1 addition was dropped) and
+ * restored as part of the post-merge develop-integrity sweep.
+ *
+ * @returns The refund id, reported status ('succeeded' | 'pending' |
+ *   'failed' | 'canceled'), and `failure_reason` when Stripe rejected it.
+ * @throws StripeError on API failure (unknown refund id, network, etc.).
+ */
+export async function retrieveRefund(
+    stripeRefundId: string,
+): Promise<{ id: string; status: string; failure_reason: string | null }> {
+    const stripe = stripeClient();
+    const refund = await stripe.refunds.retrieve(stripeRefundId);
+    return {
+        id: refund.id,
+        status: refund.status ?? 'unknown',
+        failure_reason: refund.failure_reason ?? null,
+    };
+}
+
+/**
  * Verifies a Stripe webhook signature and returns the parsed event. Throws
  * if STRIPE_WEBHOOK_SECRET is missing or if the signature is invalid (the
  * SDK throws `Stripe.errors.StripeSignatureVerificationError` in that case).
