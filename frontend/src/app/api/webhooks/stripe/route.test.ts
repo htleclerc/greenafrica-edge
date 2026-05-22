@@ -506,8 +506,10 @@ describe('POST /api/webhooks/stripe', () => {
     });
 
     it('on charge.refunded with no matching refund: logs warning + 200', async () => {
-        // refundRowByStripeId and refundRowFallback both null
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        // refundRowByStripeId and refundRowFallback both null. The handler now
+        // emits a structured warn event via the logger (console.log JSON line)
+        // rather than a raw console.warn — assert on the structured output.
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
         const { verifyWebhookSignature } = await import('@/services/stripeService');
         (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
@@ -527,10 +529,11 @@ describe('POST /api/webhooks/stripe', () => {
 
         expect(res.status).toBe(200);
         expect(updateCalls.filter((c) => c.table === 'refunds')).toHaveLength(0);
-        expect(warnSpy).toHaveBeenCalled();
+        const logLines = logSpy.mock.calls.map((c) => String(c[0]));
+        expect(logLines.some((l) => l.includes('"event":"refund_no_match"'))).toBe(true);
         const { notifyOwner } = await import('@/services/notificationService');
         expect(notifyOwner).not.toHaveBeenCalled();
-        warnSpy.mockRestore();
+        logSpy.mockRestore();
     });
 
     it('does not fail when receipt generation throws — payment stays CONFIRMED', async () => {
