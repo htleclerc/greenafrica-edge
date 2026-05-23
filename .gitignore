@@ -8,3 +8,34 @@ build/
 .ostack/
 frontend/.qa-screenshots/
 .claude/scheduled_tasks.lock
+
+# docs/ — ignore everything new at the top level by default. Existing tracked
+# files and subdirectories are whitelisted below. To track a NEW top-level
+# file under docs/, add an explicit `!docs/<name>` line here AND `git add -f`.
+# Subdirectories already whitelisted (adr/, algo_calcul_simu/, audits/, olds/,
+# qa-reports/, runbooks/, superpowers/) accept new files freely.
+docs/*
+!docs/AFRICGREEN_COMPREHENSIVE_REQUIREMENTS.md
+!docs/AfricGreen_Analyse_5Perspectives.docx
+!docs/AfricGreen_PRD_Complet_V7.docx
+!docs/AfricGreen_PRD_MVP_v1.docx
+!docs/AfricGreen_Roadmap_MVP.docx
+!docs/Decisions_Tranchees_GreenGate_v2026-04-19.md
+!docs/Plan_Developpement_GreenGate_v2026-04-19.md
+!docs/Plan_Phase2_GreenGate_v2026-04-24.md
+!docs/adr/
+!docs/algo_calcul_simu/
+!docs/audits/
+!docs/dev-setup-equasis-worker.md
+!docs/dev-setup-queue-worker.md
+!docs/legal-equasis-scraping.md
+!docs/olds/
+!docs/prd_afrigreen.md
+!docs/prd_afrigreen_v2.md
+!docs/prd_mvp_challenge.md
+!docs/qa-reports/
+!docs/recap.md
+!docs/reference doc.txt
+!docs/runbooks/
+!docs/superpowers/
+!docs/user_stories.md
