@@ -65,6 +65,65 @@ async function getPortalV1FlagCached(): Promise<boolean> {
     }
 }
 
+// Active-shipowner detection cache (module-scoped, per Edge instance).
+//
+// Staff console (/dashboard/*) is the LEGACY v6 surface; the v7 PayDialog and
+// the rest of Plan 7 live under /owner/*. A shipowner who lands on
+// /dashboard/invoices hits paymentService.createPaymentRequest() — which
+// silently returns {status:'failed'} when no provider API key is set, ending
+// with the client error "No checkout URL or wire instructions returned".
+// Block the entire legacy shell for active shipowners and bounce them to the
+// owner portal.
+//
+// Detection: shipowners.profile_id = user.id AND account_state = 'ACTIVE'.
+// Cache: 5 min TTL keyed by userId, bounded by Edge instance lifetime.
+// Failure mode: fail-CLOSED (assume NOT shipowner). Staff retain access on
+// transient DB errors; a legit shipowner gets one bad page-load and retries.
+const _shipownerCache = new Map<string, { isActive: boolean; expiresAt: number }>();
+const SHIPOWNER_CACHE_TTL_MS = 5 * 60_000;
+
+async function isActiveShipowner(userId: string): Promise<boolean> {
+    const now = Date.now();
+    const cached = _shipownerCache.get(userId);
+    if (cached && cached.expiresAt > now) return cached.isActive;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return false;
+
+    try {
+        const res = await fetch(
+            `${url}/rest/v1/shipowners?profile_id=eq.${encodeURIComponent(userId)}&account_state=eq.ACTIVE&select=id&limit=1`,
+            { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+        );
+        if (!res.ok) return false;
+        const rows = (await res.json()) as Array<{ id: string }>;
+        const isActive = rows.length > 0;
+        _shipownerCache.set(userId, { isActive, expiresAt: now + SHIPOWNER_CACHE_TTL_MS });
+        return isActive;
+    } catch {
+        return false;
+    }
+}
+
+// Legacy /dashboard/* → owner portal mapping for active shipowners.
+// Routes without a direct equivalent (simulator, tco, disputes, reports,
+// inspector, projects, audit, validations, settings) fall through to
+// /owner/dashboard. Order-sensitive: longer prefixes first.
+const LEGACY_TO_OWNER_MAP: Array<[string, string]> = [
+    ['/dashboard/invoices', '/owner/invoices'],
+    ['/dashboard/vessels', '/owner/vessels'],
+    ['/dashboard/my-fleet', '/owner/vessels'],
+    ['/dashboard/alerts', '/owner/alerts'],
+];
+
+function mapLegacyToOwner(pathname: string): string {
+    for (const [from, to] of LEGACY_TO_OWNER_MAP) {
+        if (pathname === from || pathname.startsWith(`${from}/`)) return to;
+    }
+    return '/owner/dashboard';
+}
+
 // Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
 const AUTH_ROUTES = ['/login', '/post-login'];
 
@@ -137,6 +196,20 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/login';
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
+    }
+
+    // Active shipowner on legacy /dashboard/* → bounce to /owner/*. Skip demo
+    // sessions (mock data, no DB shipowner row) and any user already inside
+    // the owner portal. /admin/* is left alone — those pages have their own
+    // role gates and shipowners shouldn't pass them anyway.
+    if (user && !isDemo && pathname.startsWith('/dashboard')) {
+        const isShipowner = await isActiveShipowner(user.id);
+        if (isShipowner) {
+            const url = request.nextUrl.clone();
+            url.pathname = mapLegacyToOwner(pathname);
+            url.search = '';
+            return NextResponse.redirect(url);
+        }
     }
 
     // Already logged in → skip auth pages, go to dashboard
