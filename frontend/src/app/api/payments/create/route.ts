@@ -122,14 +122,38 @@ export async function POST(request: NextRequest) {
 
     // 5. Create the payment via paymentService (uses active provider from DB)
     try {
-        const result = await createPaymentRequest(admin, paymentRequest, body.overrideProvider);
+        let result = await createPaymentRequest(admin, paymentRequest, body.overrideProvider);
+        let fellBackToWire = false;
+        let originalProvider: string | null = null;
+
+        // ── Fallback to wire on degenerate result ──────────────────────────
+        // paymentService.createPaymentRequest renvoie `{ status: 'failed' }`
+        // (sans checkoutUrl ni wireInstructions) quand la clé API du provider
+        // actif manque ou que l'API tierce répond non-OK. Sans fallback ici,
+        // le frontend reçoit un payload inutilisable et throw
+        // "No checkout URL or wire instructions returned" — payment cassé.
+        // On retry explicitement en wire_transfer (toujours dispo, pas d'API
+        // externe) et on signale `fallback: true` pour que le frontend puisse
+        // afficher un message d'info. L'admin voit la cause dans les logs.
+        const isUnusable =
+            result.status === 'failed' ||
+            (!result.checkoutUrl && !result.wireInstructions);
+
+        if (isUnusable && result.provider !== 'wire_transfer') {
+            console.warn(
+                `[Payment Create] Provider ${result.provider} returned unusable result (status=${result.status}). Falling back to wire_transfer.`,
+            );
+            originalProvider = result.provider;
+            result = await createPaymentRequest(admin, paymentRequest, 'wire_transfer');
+            fellBackToWire = true;
+        }
 
         // 6. Audit log
         await admin.from('audit_logs').insert({
             user_id: '00000000-0000-0000-0000-000000000000',
             user_full_name: 'Payment System',
             action: 'TRANSACTION_UPDATED',
-            severity: 'INFO',
+            severity: fellBackToWire ? 'WARNING' : 'INFO',
             entity_type: 'Transaction',
             entity_id: tx.id,
             details_json: {
@@ -138,12 +162,14 @@ export async function POST(request: NextRequest) {
                 paymentId: result.paymentId,
                 amount: paymentRequest.amount,
                 invoiceRef,
+                ...(fellBackToWire && { fellBackToWire: true, originalProvider }),
             },
         });
 
         return NextResponse.json({
             success: true,
             ...result,
+            ...(fellBackToWire && { fallback: true, originalProvider }),
         });
     } catch (err) {
         console.error('[Payment Create] Failed:', err);

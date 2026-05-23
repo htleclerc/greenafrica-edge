@@ -59,6 +59,15 @@ export function InvoicesPage() {
             }
             // Wire transfer → show modal with instructions
             if (result.provider === 'wire_transfer' && result.wireInstructions) {
+                // Fallback case (online provider failed → wire) : on signale au user
+                // pour qu'il comprenne pourquoi il voit du wire alors qu'un autre
+                // provider est configuré côté admin. `result.fallback` est ajouté
+                // côté serveur (route /api/payments/create) quand on retry en wire.
+                if (result.fallback && result.originalProvider) {
+                    setPaymentError(
+                        `${result.originalProvider} is temporarily unavailable — falling back to wire transfer.`,
+                    );
+                }
                 setWireInstructions({
                     instructions: result.wireInstructions,
                     invoiceRef: result.wireInstructions.reference.split('/')[1] || tx.ref,
