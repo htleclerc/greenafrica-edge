@@ -32,6 +32,7 @@ At time of writing (2026-05-13), the following are **pending push to hosted** an
 | 065 | 7F | pg_cron `proforma-reminders-daily` |
 | 066 | 7G | Refunds — auto-enqueue trigger + `refund_rail` nullable |
 | 067 | 7H-3 | 4 invariant monitoring views |
+| 068 | follow-up | `v_transaction_payment_drift` v7-cutover filter (excludes pre-2026-05-01 legacy) |
 
 Push command:
 ```bash
@@ -280,24 +281,26 @@ Toggle a single sub-flag false. Portal stays up; only the affected rail/feature 
 
 ### 7.3 Hard rollback — migration DOWN (LIFO order)
 
-Each mig 060-067 has a `-- DOWN:` block in comments. Apply via direct `psql` (NOT `supabase db reset`). Order matters:
+Each mig 060-068 has a `-- DOWN:` block in comments. Apply via direct `psql` (NOT `supabase db reset`). Order matters:
 
 ```text
-1. 067 → DROP VIEW v_payments_initiated_overdue, v_stripe_webhook_failures,
+1. 068 → CREATE OR REPLACE VIEW v_transaction_payment_drift (restore mig 067 body
+                                  without the v7 cutover filter)
+2. 067 → DROP VIEW v_payments_initiated_overdue, v_stripe_webhook_failures,
                    v_wallet_balance_drift, v_transaction_payment_drift
-2. 066 → DROP TRIGGER trg_refund_enqueue ON transactions;
+3. 066 → DROP TRIGGER trg_refund_enqueue ON transactions;
          DROP FUNCTION enqueue_refund_on_transaction();
          ALTER refunds DROP CONSTRAINT refunds_rail_required_after_request;
          ALTER refunds ALTER COLUMN refund_rail SET NOT NULL   -- ⚠ fails if any
          REQUESTED/REJECTED refund row has a NULL rail — null those rows first
-3. 065 → SELECT cron.unschedule('proforma-reminders-daily');
+4. 065 → SELECT cron.unschedule('proforma-reminders-daily');
          DROP FUNCTION proforma_reminders_run()
-4. 064 → DROP TRIGGER apply_topup_credit_on_confirm ON payments
-5. 063 → DROP INDEX idx_payments_stripe_pi
-6. 062 → re-CREATE shipowner_payment_intents     -- ⚠ DATA LOSS — AVOID
-7. 061 → ALTER payments DROP COLUMN receipt_ref, receipt_storage_path, receipt_generated_at;
+5. 064 → DROP TRIGGER apply_topup_credit_on_confirm ON payments
+6. 063 → DROP INDEX idx_payments_stripe_pi
+7. 062 → re-CREATE shipowner_payment_intents     -- ⚠ DATA LOSS — AVOID
+8. 061 → ALTER payments DROP COLUMN receipt_ref, receipt_storage_path, receipt_generated_at;
          ALTER profiles DROP COLUMN can_record_cash
-8. 060 → CREATE UNIQUE INDEX payment_config_single_active …;
+9. 060 → CREATE UNIQUE INDEX payment_config_single_active …;
          ALTER payment_config DROP COLUMN routes_rail
 ```
 
@@ -338,6 +341,8 @@ SELECT * FROM v_wallet_balance_drift;
 
 -- (4) Transaction payment drift — confirmed-payments SUM ≠ transactions.partial_paid_usd.
 -- THRESHOLD: alarm if COUNT > 0. IMMEDIATE — invoice/payment accounting drift.
+-- NOTE: mig 068 added a v7 cutover (created_at >= 2026-05-01) so pre-Plan-7
+-- legacy `PAID` transactions paid under the old v0 flow don't trigger the alarm.
 SELECT * FROM v_transaction_payment_drift;
 ```
 
@@ -346,7 +351,7 @@ SELECT * FROM v_transaction_payment_drift;
 | `v_payments_initiated_overdue` | `payments WHERE status='INITIATED' AND created_at < now() - INTERVAL '24 hours'` | > 5 | WARN — operational |
 | `v_stripe_webhook_failures` | webhook audit rows last 7d, status=failed | > 0 | WARN — integration |
 | `v_wallet_balance_drift` | `wallets.balance_usd_minor ≠ SUM(wallet_ledger.amount_signed_usd_minor)` | > 0 | **CRITICAL — page Loïc** |
-| `v_transaction_payment_drift` | confirmed payments SUM ≠ `transactions.partial_paid_usd` | > 0 | **CRITICAL — page Loïc** |
+| `v_transaction_payment_drift` | confirmed payments SUM ≠ `transactions.partial_paid_usd` (v7-era only, created_at >= 2026-05-01) | > 0 | **CRITICAL — page Loïc** |
 
 ---
 
