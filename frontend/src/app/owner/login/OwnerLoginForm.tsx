@@ -54,9 +54,11 @@ export function OwnerLoginForm() {
                 email: cleanEmail(),
                 options: { emailRedirectTo: `${appUrl}/owner/auth/callback`, shouldCreateUser: false },
             });
-            if (err && !/Signups not allowed/i.test(err.message)) {
-                setError(err.message);
-                return;
+            // Anti-enumeration: never surface whether the email exists or any provider
+            // error to the UI. Always show the generic "link sent" confirmation. Log
+            // real errors server-side-style for debugging only.
+            if (err) {
+                console.warn('[owner login] magic-link request error (suppressed for anti-enumeration):', err.message);
             }
             setSentTo(email);
         } catch {
