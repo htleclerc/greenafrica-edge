@@ -6,9 +6,13 @@ import { OsButton } from '@/components/ui/OsButton';
 
 export interface WireTransferInstructions {
     beneficiary: string;
+    accountNumber: string;
+    beneficiaryAddress: string;
     bank: string;
     swiftCode: string;
     iban: string;
+    intermediaryBank: string;
+    intermediarySwift: string;
     reference: string;
     amount: string;
     currency: string;
@@ -32,12 +36,16 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, onClos
     }
 
     const fields = [
-        { key: 'beneficiary', label: 'Beneficiary', value: instructions.beneficiary, icon: Building2 },
-        { key: 'bank',        label: 'Bank',        value: instructions.bank,        icon: Building2 },
-        { key: 'swift',       label: 'SWIFT/BIC',   value: instructions.swiftCode,   icon: Hash },
-        { key: 'iban',        label: 'IBAN',        value: instructions.iban,        icon: CreditCard },
-        { key: 'reference',   label: 'Reference',   value: instructions.reference,   icon: FileText },
-        { key: 'amount',      label: 'Amount',      value: instructions.amount,      icon: CreditCard },
+        { key: 'beneficiary',      label: 'Beneficiary',         value: instructions.beneficiary,        icon: Building2 },
+        { key: 'accountNumber',    label: 'Account No.',         value: instructions.accountNumber,      icon: CreditCard },
+        { key: 'beneficiaryAddr',  label: 'Beneficiary Address', value: instructions.beneficiaryAddress, icon: Building2 },
+        { key: 'bank',             label: 'Beneficiary Bank',    value: instructions.bank,               icon: Building2 },
+        { key: 'swift',            label: 'SWIFT/BIC',           value: instructions.swiftCode,          icon: Hash },
+        { key: 'iban',             label: 'IBAN',                value: instructions.iban,               icon: CreditCard },
+        { key: 'intermediaryBank', label: 'Intermediary Bank',   value: instructions.intermediaryBank,   icon: Building2 },
+        { key: 'intermediarySwift',label: 'Intermediary SWIFT',  value: instructions.intermediarySwift,  icon: Hash },
+        { key: 'reference',        label: 'Mandatory Reference', value: instructions.reference,          icon: FileText },
+        { key: 'amount',           label: 'Amount',              value: instructions.amount,             icon: CreditCard },
     ];
 
     return (
@@ -139,6 +147,9 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, onClos
                         </p>
                         <p style={{ margin: '6px 0 0' }}>
                             ▸ Once funds are received, your vessel&apos;s compliance status will be updated to <strong style={{ color: '#10B981' }}>COMPLIANT</strong> automatically and you will receive a payment confirmation email.
+                        </p>
+                        <p style={{ margin: '6px 0 0' }}>
+                            ▸ <strong style={{ color: '#EAB308' }}>Proof of payment required</strong> — reply to the issuing email with the SWIFT <strong style={{ color: 'var(--os-text-primary)' }}>MT103</strong> confirmation once the transfer is initiated.
                         </p>
                         <p style={{ margin: '6px 0 0' }}>
                             ▸ For status inquiries, reference: <span style={{ fontFamily: 'monospace', color: '#10B981' }}>{invoiceRef}</span>

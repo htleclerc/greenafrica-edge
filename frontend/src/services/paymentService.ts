@@ -62,9 +62,13 @@ export interface PaymentResult {
 
 export interface WireTransferInstructions {
   beneficiary: string;
+  accountNumber: string;
+  beneficiaryAddress: string;
   bank: string;
   swiftCode: string;
   iban: string;
+  intermediaryBank: string;
+  intermediarySwift: string;
   reference: string;
   amount: string;
   currency: Currency;
@@ -330,10 +334,14 @@ function createWireTransfer(payment: PaymentRequest): PaymentResult {
     provider: 'wire_transfer',
     status: 'pending',
     wireInstructions: {
-      beneficiary: 'Green Gate Maritime Carbon Tax Authority',
-      bank: 'International Bank of Somaliland',
-      swiftCode: 'IBSLSLMG',
-      iban: 'SL00 0000 0000 0000 0000 00',
+      beneficiary: 'SOLIDE TECHNOLOGY',
+      accountNumber: '100613310001',
+      beneficiaryAddress: 'Masalaha Street, M.Haybe District, Hargeisa, Somaliland',
+      bank: 'Premier Bank Limited — Durdur Branch, Hargeisa, Somaliland',
+      swiftCode: 'PBSMSOSM',
+      iban: 'SO9500051001100613310001',
+      intermediaryBank: 'Premier Bank Kenya Limited, Nairobi',
+      intermediarySwift: 'IFCBKENA',
       reference: ref,
       amount: `${payment.currency} ${payment.amount.toFixed(2)}`,
       currency: payment.currency,
