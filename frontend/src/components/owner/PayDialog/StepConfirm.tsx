@@ -7,12 +7,15 @@ import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { initiatePayment } from '@/actions/initiatePayment';
 import { applyWallet } from '@/actions/applyWallet';
+import { ProofUploader } from '@/components/payments/ProofUploader';
+import { ownerProofAdapter } from '@/components/owner/ownerProofAdapter';
 import { usePayDialog } from './usePayDialogContext';
 
 export function StepConfirm({ onClose }: { onClose: () => void }) {
     const t = useTranslations('OwnerPortal.payDialog');
     const ctx = usePayDialog();
     const router = useRouter();
+    const [wireProofPaymentId, setWireProofPaymentId] = React.useState<string | null>(null);
 
     function back() {
         ctx.setError(null);
@@ -50,6 +53,13 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                     window.location.href = result.checkoutUrl as string;
                     return; // do NOT call onClose / router.refresh — page is about to unload
                 }
+
+                // WIRE_TRANSFER: keep the dialog open and let the owner attach the MT103.
+                if (ctx.rail === 'WIRE_TRANSFER' && 'id' in result && typeof result.id === 'string') {
+                    setWireProofPaymentId(result.id);
+                    ctx.setSubmitting(false);
+                    return;
+                }
             }
             ctx.reset();
             onClose();
@@ -59,6 +69,24 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
         } finally {
             ctx.setSubmitting(false);
         }
+    }
+
+    if (wireProofPaymentId) {
+        const adapter = ownerProofAdapter(wireProofPaymentId);
+        return (
+            <div className="flex flex-col gap-3">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                    {t('proofStep.created')}
+                </div>
+                <p className="text-[11px] text-[var(--os-text-muted)] leading-relaxed">{t('proofStep.intro')}</p>
+                <ProofUploader list={adapter.list} upload={adapter.upload} remove={adapter.remove} />
+                <div className="flex justify-end mt-2">
+                    <OsButton variant="primary" size="sm" onClick={() => { ctx.reset(); onClose(); router.refresh(); }}>
+                        {t('proofStep.done')}
+                    </OsButton>
+                </div>
+            </div>
+        );
     }
 
     return (
