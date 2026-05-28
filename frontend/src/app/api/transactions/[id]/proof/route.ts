@@ -90,8 +90,14 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     const path = new URL(req.url).searchParams.get('path');
     if (!path) return NextResponse.json({ error: 'path required' }, { status: 400 });
 
-    await a.admin.storage.from(BUCKET).remove([path]);
-    const next = (a.txn.payment_proof_files ?? []).filter((p) => p.path !== path);
+    // IDOR guard: only allow removing a path that belongs to THIS transaction's
+    // own proof list (the route uses a service-role client that bypasses Storage
+    // RLS, so an unchecked path would let an owner delete arbitrary bucket objects).
+    const existing = (a.txn.payment_proof_files ?? []).find((p) => p.path === path);
+    if (!existing) return NextResponse.json({ error: 'Proof not found on this transaction' }, { status: 404 });
+
+    await a.admin.storage.from(BUCKET).remove([existing.path]);
+    const next = (a.txn.payment_proof_files ?? []).filter((p) => p.path !== existing.path);
     const { error } = await a.admin.from('transactions').update({ payment_proof_files: next }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
