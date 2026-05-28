@@ -593,7 +593,7 @@ function InvoiceDetail({
                     {tx.paymentProofFiles && tx.paymentProofFiles.length > 0 && (
                         <div className="mt-3">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
-                                Payment proofs ({tx.paymentProofFiles.length})
+                                {t('proof_submitted_label', { count: tx.paymentProofFiles.length })}
                             </p>
                             <div className="flex flex-col gap-1">
                                 {tx.paymentProofFiles.map((f, i) => (

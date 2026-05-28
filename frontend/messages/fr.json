@@ -1156,6 +1156,8 @@
     "issued_to": "Émise à {vessel}",
     "generate_statement": "Générer un relevé",
     "record_payment": "Enregistrer un paiement",
+    "proof_section_title": "Preuve de paiement (MT103)",
+    "proof_submitted_label": "Preuves de paiement ({count})",
     "port_gate_locked": "Porte du port verrouillée",
     "payment_clearance_required": "Autorisation de paiement requise pour le départ.",
     "override": "Outrepasser",

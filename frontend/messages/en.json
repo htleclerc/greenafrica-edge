@@ -1156,6 +1156,8 @@
     "issued_to": "Issued to {vessel}",
     "generate_statement": "Generate Statement",
     "record_payment": "Record Payment",
+    "proof_section_title": "Proof of payment (MT103)",
+    "proof_submitted_label": "Payment proofs ({count})",
     "port_gate_locked": "Port Gate Locked",
     "payment_clearance_required": "Payment clearance required for departure.",
     "override": "Override",

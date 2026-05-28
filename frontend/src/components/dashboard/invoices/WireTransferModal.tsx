@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Copy, CheckCircle2, Building2, Hash, CreditCard, FileText } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { ProofUploader } from '@/components/payments/ProofUploader';
@@ -29,6 +30,7 @@ interface WireTransferModalProps {
 }
 
 export function WireTransferModal({ instructions, invoiceRef, vesselName, transactionId, onClose }: WireTransferModalProps) {
+    const t = useTranslations('InvoicesPage');
     const [copiedField, setCopiedField] = React.useState<string | null>(null);
     const proofAdapter = React.useMemo(() => legacyProofAdapter(transactionId), [transactionId]);
 
@@ -140,7 +142,7 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, transa
 
                     <div className="mt-4 rounded-lg p-3" style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
-                            Proof of payment (MT103)
+                            {t('proof_section_title')}
                         </p>
                         <ProofUploader {...proofAdapter} />
                     </div>
