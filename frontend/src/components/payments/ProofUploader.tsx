@@ -21,7 +21,7 @@ interface Props {
 }
 
 const DEFAULT_MAX = 5 * 1024 * 1024;
-const DEFAULT_ACCEPT = 'application/pdf,image/png,image/jpeg,image/webp';
+const DEFAULT_ACCEPT = 'application/pdf,image/png,image/jpeg,image/webp,image/heic';
 
 export function ProofUploader({ list, upload, remove, maxSizeBytes = DEFAULT_MAX, accept = DEFAULT_ACCEPT, disabled }: Props) {
     const t = useTranslations('OwnerPortal.proofUpload');

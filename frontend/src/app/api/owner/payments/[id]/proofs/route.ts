@@ -69,6 +69,21 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
             const { error: flipErr } = await a.admin.from('payments').update({ status: 'PROCESSING' }).eq('id', id);
             if (flipErr) console.warn('[owner proofs] status flip INITIATED->PROCESSING failed', flipErr.message);
         }
+        // Best-effort audit log (parity with the legacy proof route). The proof is
+        // already saved, so an audit failure must never fail the request.
+        try {
+            await a.admin.from('audit_logs').insert({
+                user_id: a.userId,
+                user_full_name: 'Shipowner',
+                action: 'TRANSACTION_UPDATED',
+                severity: 'INFO',
+                entity_type: 'Payment',
+                entity_id: id,
+                details_json: { event: 'PAYMENT_PROOF_UPLOADED', proofId: proof.id },
+            });
+        } catch (auditErr) {
+            console.warn('[owner proofs] audit log failed', auditErr instanceof Error ? auditErr.message : auditErr);
+        }
         return NextResponse.json({ proof });
     } catch (e) {
         return NextResponse.json({ error: e instanceof Error ? e.message : 'upload failed' }, { status: 400 });
