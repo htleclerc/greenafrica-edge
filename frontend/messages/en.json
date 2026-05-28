@@ -1156,6 +1156,8 @@
     "issued_to": "Issued to {vessel}",
     "generate_statement": "Generate Statement",
     "record_payment": "Record Payment",
+    "proof_section_title": "Proof of payment (MT103)",
+    "proof_submitted_label": "Payment proofs ({count})",
     "port_gate_locked": "Port Gate Locked",
     "payment_clearance_required": "Payment clearance required for departure.",
     "override": "Override",
@@ -2924,6 +2926,23 @@
           "disabledTitle": "Wallet top-ups unavailable",
           "disabledBody": "Wallet top-ups are currently unavailable. Please try again later or contact support."
         }
+      },
+      "proofStep": {
+        "created": "Wire payment recorded. Awaiting your proof + admin verification.",
+        "intro": "Attach your SWIFT MT103 confirmation now (optional — you can also do it later from the invoice list).",
+        "done": "Done"
+      }
+    },
+    "proofUpload": {
+      "addButton": "Add proof of payment",
+      "hint": "PDF or image, up to {max} MB. You can add several files.",
+      "dialogTitle": "Proof of payment — {ref}",
+      "intro": "Upload your SWIFT MT103 confirmation. An administrator will verify it before the invoice is marked paid.",
+      "removeAria": "Remove {name}",
+      "errors": {
+        "tooLarge": "File is too large (max {max} MB).",
+        "uploadFailed": "Upload failed. Please try again.",
+        "deleteFailed": "Could not remove the file."
       }
     },
     "wallet": {

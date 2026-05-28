@@ -1,12 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard, Scale, Receipt } from 'lucide-react';
+import { Download, CreditCard, Scale, Receipt, Paperclip } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { PayDialog } from '@/components/owner/PayDialog';
 import { OpenDisputeDialog } from './OpenDisputeDialog';
+import { AttachProofDialog } from './AttachProofDialog';
 
 export interface InvoiceRow {
     id: string;
@@ -22,6 +23,8 @@ export interface InvoiceRow {
     download_url: string | null;
     /** Receipt reference of the latest CONFIRMED payment, or null if none. */
     receipt_ref: string | null;
+    /** Payment id of an INITIATED/PROCESSING wire payment for this invoice, or null. */
+    pending_wire_payment_id: string | null;
 }
 
 const docVariant = (docType: InvoiceRow['document_type']): BadgeVariant => {
@@ -57,6 +60,7 @@ interface Props {
 export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
     const [payTarget, setPayTarget] = React.useState<InvoiceRow | null>(null);
     const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
+    const [proofTarget, setProofTarget] = React.useState<InvoiceRow | null>(null);
 
     const isPayable = (r: InvoiceRow) =>
         r.document_type === 'PROFORMA' && r.status === 'PENDING';
@@ -155,6 +159,17 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                             Dispute
                         </button>
                     )}
+                    {r.pending_wire_payment_id && (
+                        <button
+                            onClick={() => setProofTarget(r)}
+                            className="inline-flex items-center gap-1 text-xs text-[var(--os-text-muted)] hover:text-[#10B981] transition-colors"
+                            aria-label={`Attach proof for ${r.invoice_ref ?? r.id}`}
+                            title="Attach proof of payment"
+                        >
+                            <Paperclip className="w-3.5 h-3.5" />
+                            Proof
+                        </button>
+                    )}
                     {isPayable(r) && (
                         <OsButton
                             size="sm"
@@ -195,6 +210,14 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                     onOpenChange={(o) => !o && setDisputeTarget(null)}
                     transactionId={disputeTarget.id}
                     invoiceRef={disputeTarget.invoice_ref ?? disputeTarget.id.slice(0, 8)}
+                />
+            )}
+            {proofTarget?.pending_wire_payment_id && (
+                <AttachProofDialog
+                    open={true}
+                    onOpenChange={(o) => !o && setProofTarget(null)}
+                    paymentId={proofTarget.pending_wire_payment_id}
+                    invoiceRef={proofTarget.invoice_ref ?? proofTarget.id.slice(0, 8)}
                 />
             )}
         </>

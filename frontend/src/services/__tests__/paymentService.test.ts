@@ -271,7 +271,7 @@ describe('createPaymentRequest', () => {
         expect(result.provider).toBe('wire_transfer');
         expect(result.status).toBe('pending');
         expect(result.wireInstructions).toBeDefined();
-        expect(result.wireInstructions?.beneficiary).toMatch(/Green Gate/);
+        expect(result.wireInstructions?.beneficiary).toMatch(/SOLIDE TECHNOLOGY/);
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

@@ -38,6 +38,7 @@ export function InvoicesPage() {
         instructions: WireTransferInstructions;
         invoiceRef: string;
         vesselName: string;
+        transactionId: string;
     } | null>(null);
     const [recordPaymentTx, setRecordPaymentTx] = React.useState<Transaction | null>(null);
     const [paymentLoading, setPaymentLoading] = React.useState<string | null>(null);
@@ -59,10 +60,20 @@ export function InvoicesPage() {
             }
             // Wire transfer → show modal with instructions
             if (result.provider === 'wire_transfer' && result.wireInstructions) {
+                // Fallback case (online provider failed → wire) : on signale au user
+                // pour qu'il comprenne pourquoi il voit du wire alors qu'un autre
+                // provider est configuré côté admin. `result.fallback` est ajouté
+                // côté serveur (route /api/payments/create) quand on retry en wire.
+                if (result.fallback && result.originalProvider) {
+                    setPaymentError(
+                        `${result.originalProvider} is temporarily unavailable — falling back to wire transfer.`,
+                    );
+                }
                 setWireInstructions({
                     instructions: result.wireInstructions,
                     invoiceRef: result.wireInstructions.reference.split('/')[1] || tx.ref,
                     vesselName: tx.vesselName,
+                    transactionId: tx.id,
                 });
             } else if (result.checkoutUrl) {
                 // Online provider → redirect to checkout
@@ -403,6 +414,7 @@ export function InvoicesPage() {
                     instructions={wireInstructions.instructions}
                     invoiceRef={wireInstructions.invoiceRef}
                     vesselName={wireInstructions.vesselName}
+                    transactionId={wireInstructions.transactionId}
                     onClose={() => setWireInstructions(null)}
                 />
             )}
@@ -417,6 +429,8 @@ export function InvoicesPage() {
                     error={paymentError}
                     onConfirm={handleConfirmPayment}
                     onClose={() => setRecordPaymentTx(null)}
+                    transactionId={recordPaymentTx.id}
+                    proofFiles={recordPaymentTx.paymentProofFiles}
                 />
             )}
         </div>
@@ -575,6 +589,28 @@ function InvoiceDetail({
                         <span className="text-sm font-bold text-[var(--os-text-primary)]">{t('total_due')}</span>
                         <span className="text-xl font-bold text-[#00D97E] tabular-nums">${tx.taxAmountUsd.toLocaleString()}.00</span>
                     </div>
+
+                    {tx.paymentProofFiles && tx.paymentProofFiles.length > 0 && (
+                        <div className="mt-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
+                                {t('proof_submitted_label', { count: tx.paymentProofFiles.length })}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {tx.paymentProofFiles.map((f, i) => (
+                                    <button
+                                        key={f.path}
+                                        onClick={async () => {
+                                            const res = await fetch(`/api/transactions/${tx.id}/proof/${i}`);
+                                            if (res.ok) window.open((await res.json()).url, '_blank', 'noopener');
+                                        }}
+                                        className="text-left text-xs text-emerald-400 hover:underline"
+                                    >
+                                        {f.path.split('/').pop()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

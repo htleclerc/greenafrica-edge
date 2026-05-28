@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { X, CheckCircle2, Building2, CreditCard, Smartphone, Banknote, MoreHorizontal, Briefcase } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 
@@ -83,6 +84,8 @@ interface RecordPaymentModalProps {
     error: string | null;
     onConfirm: (input: RecordPaymentInput) => void;
     onClose: () => void;
+    transactionId?: string;
+    proofFiles?: { path: string }[];
 }
 
 export function RecordPaymentModal({
@@ -93,7 +96,10 @@ export function RecordPaymentModal({
     error,
     onConfirm,
     onClose,
+    transactionId,
+    proofFiles,
 }: RecordPaymentModalProps) {
+    const t = useTranslations('InvoicesPage');
     const [method, setMethod]       = React.useState<PaymentMethod>('wire_transfer');
     const [reference, setReference] = React.useState('');
     const [notes, setNotes]         = React.useState('');
@@ -141,6 +147,29 @@ export function RecordPaymentModal({
 
                 {/* Body */}
                 <div className="overflow-y-auto flex-1 p-5">
+                    {/* Legacy payment proofs — review before validating the wire */}
+                    {transactionId && proofFiles && proofFiles.length > 0 && (
+                        <div className="mb-4 p-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)]">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
+                                {t('proof_submitted_label', { count: proofFiles.length })}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {proofFiles.map((f, i) => (
+                                    <button
+                                        key={f.path}
+                                        onClick={async () => {
+                                            const res = await fetch(`/api/transactions/${transactionId}/proof/${i}`);
+                                            if (res.ok) window.open((await res.json()).url, '_blank', 'noopener');
+                                        }}
+                                        className="text-left text-xs text-emerald-400 hover:underline"
+                                    >
+                                        {f.path.split('/').pop()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Method picker */}
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
                         Payment Method

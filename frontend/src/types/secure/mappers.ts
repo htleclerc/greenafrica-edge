@@ -110,6 +110,7 @@ export function rowToTransaction(row: TransactionRow): Transaction {
         invoiceRef: (r.invoice_ref as string | null) ?? null,
         contentHash: (r.content_hash as string | null) ?? null,
         verifySignature: (r.verify_signature as string | null) ?? null,
+        paymentProofFiles: (r.payment_proof_files as Transaction['paymentProofFiles']) ?? undefined,
     };
 }
 
