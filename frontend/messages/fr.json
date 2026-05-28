@@ -2894,6 +2894,23 @@
           "disabledTitle": "Recharges wallet indisponibles",
           "disabledBody": "Les recharges du wallet sont indisponibles. Réessayez plus tard ou contactez le support."
         }
+      },
+      "proofStep": {
+        "created": "Virement enregistré. En attente de votre preuve + vérification admin.",
+        "intro": "Joignez votre confirmation SWIFT MT103 maintenant (facultatif — possible aussi plus tard depuis la liste des factures).",
+        "done": "Terminé"
+      }
+    },
+    "proofUpload": {
+      "addButton": "Ajouter une preuve de paiement",
+      "hint": "PDF ou image, jusqu'à {max} Mo. Vous pouvez ajouter plusieurs fichiers.",
+      "dialogTitle": "Preuve de paiement — {ref}",
+      "intro": "Téléversez votre confirmation SWIFT MT103. Un administrateur la vérifiera avant que la facture soit marquée payée.",
+      "removeAria": "Supprimer {name}",
+      "errors": {
+        "tooLarge": "Fichier trop volumineux (max {max} Mo).",
+        "uploadFailed": "Échec du téléversement. Réessayez.",
+        "deleteFailed": "Suppression du fichier impossible."
       }
     },
     "wallet": {
