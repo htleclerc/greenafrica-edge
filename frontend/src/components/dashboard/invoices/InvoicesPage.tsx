@@ -38,6 +38,7 @@ export function InvoicesPage() {
         instructions: WireTransferInstructions;
         invoiceRef: string;
         vesselName: string;
+        transactionId: string;
     } | null>(null);
     const [recordPaymentTx, setRecordPaymentTx] = React.useState<Transaction | null>(null);
     const [paymentLoading, setPaymentLoading] = React.useState<string | null>(null);
@@ -72,6 +73,7 @@ export function InvoicesPage() {
                     instructions: result.wireInstructions,
                     invoiceRef: result.wireInstructions.reference.split('/')[1] || tx.ref,
                     vesselName: tx.vesselName,
+                    transactionId: tx.id,
                 });
             } else if (result.checkoutUrl) {
                 // Online provider → redirect to checkout
@@ -412,6 +414,7 @@ export function InvoicesPage() {
                     instructions={wireInstructions.instructions}
                     invoiceRef={wireInstructions.invoiceRef}
                     vesselName={wireInstructions.vesselName}
+                    transactionId={wireInstructions.transactionId}
                     onClose={() => setWireInstructions(null)}
                 />
             )}

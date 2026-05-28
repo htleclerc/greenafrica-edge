@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { X, Copy, CheckCircle2, Building2, Hash, CreditCard, FileText } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
+import { ProofUploader } from '@/components/payments/ProofUploader';
+import { legacyProofAdapter } from './legacyProofAdapter';
 
 export interface WireTransferInstructions {
     beneficiary: string;
@@ -22,10 +24,11 @@ interface WireTransferModalProps {
     instructions: WireTransferInstructions;
     invoiceRef: string;
     vesselName: string;
+    transactionId: string;
     onClose: () => void;
 }
 
-export function WireTransferModal({ instructions, invoiceRef, vesselName, onClose }: WireTransferModalProps) {
+export function WireTransferModal({ instructions, invoiceRef, vesselName, transactionId, onClose }: WireTransferModalProps) {
     const [copiedField, setCopiedField] = React.useState<string | null>(null);
 
     function copyToClipboard(value: string, field: string) {
@@ -132,6 +135,13 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, onClos
                                 </button>
                             </div>
                         ))}
+                    </div>
+
+                    <div className="mt-4 rounded-lg p-3" style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
+                            Proof of payment (MT103)
+                        </p>
+                        <ProofUploader {...legacyProofAdapter(transactionId)} />
                     </div>
 
                     <div
