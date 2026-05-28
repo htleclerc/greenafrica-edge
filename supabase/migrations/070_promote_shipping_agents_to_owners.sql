@@ -57,7 +57,16 @@ BEGIN
 END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- DOWN (precise revert via recorded markers):
+-- DOWN (precise revert via recorded markers) — REVIEW BEFORE RUNNING.
+--
+-- WARNING: payments (048), wallets (050) and refunds (052) FK shipowners(id) with
+-- no ON DELETE clause (= RESTRICT): if a migrated owner accrued any of those rows,
+-- the DELETE below will ERROR and abort the whole DOWN (fail-safe, nothing lost).
+-- owner_notifications (053) is ON DELETE CASCADE and WILL be silently removed for
+-- the deleted owners. The guarded DELETE below only removes created owners that have
+-- NO payment/wallet/refund rows; owners that accrued financial rows are left intact
+-- (revert those manually after review).
+--
 -- DO $$
 -- DECLARE v_created uuid[]; v_backfilled uuid[];
 -- BEGIN
@@ -66,7 +75,11 @@ END $$;
 --   SELECT array(SELECT jsonb_array_elements_text(value)::uuid) INTO v_backfilled
 --     FROM public.app_config WHERE key='migration_070_backfilled_transactions';
 --   UPDATE public.transactions SET shipowner_id = NULL WHERE id = ANY(v_backfilled);
---   DELETE FROM public.shipowners WHERE id = ANY(v_created);
+--   DELETE FROM public.shipowners s
+--    WHERE s.id = ANY(v_created)
+--      AND NOT EXISTS (SELECT 1 FROM public.payments  p WHERE p.shipowner_id = s.id)
+--      AND NOT EXISTS (SELECT 1 FROM public.wallets   w WHERE w.shipowner_id = s.id)
+--      AND NOT EXISTS (SELECT 1 FROM public.refunds   r WHERE r.shipowner_id = s.id);
 --   DELETE FROM public.app_config
 --     WHERE key IN ('migration_070_created_shipowners','migration_070_backfilled_transactions');
 -- END $$;
