@@ -40,7 +40,7 @@ function PasswordStrength({ password }: { password: string }) {
     );
 }
 
-export function ResetPasswordPage() {
+export function ResetPasswordPage({ redirectTo = '/login' }: { redirectTo?: string }) {
     const t = useTranslations('Auth');
     const [password, setPassword] = React.useState('');
     const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -135,7 +135,7 @@ export function ResetPasswordPage() {
                                     size="lg"
                                     className="w-full"
                                     iconRight={<ArrowRight className="w-4 h-4" />}
-                                    onClick={() => { window.location.href = '/login'; }}
+                                    onClick={() => { window.location.href = redirectTo; }}
                                 >
                                     {t('reset_btn_go_login')}
                                 </OsButton>
