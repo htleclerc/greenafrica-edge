@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { UserRole } from '@/types/secure';
+
+// Staff roles that may view ANY transaction's payment proof via the legacy
+// staff-facing /dashboard/invoices view. The UserRole enum has no SHIPOWNER
+// value — shipowners are external actors tracked via vessels.owner_id and never
+// have one of these roles in profiles.role. SHIPPING_AGENT is intentionally
+// EXCLUDED: it is "own fleet" scoped (see rbac.ts) so an agent must not read a
+// foreign owner's proof; only genuinely-internal staff get the cross-owner view.
+const STAFF_ROLES = new Set<string>([
+    UserRole.SUPERADMIN,
+    UserRole.FINANCE_ADMIN,
+    UserRole.PORT_OFFICER,
+    UserRole.MANAGER,
+]);
 
 // GET → { url } : short-lived signed URL for proof file #idx of a transaction.
-// Any authenticated user may view (the legacy /dashboard page is staff-facing;
-// shipowners only ever see their own transactions there). idx is bounds-checked
-// against the transaction's own payment_proof_files array.
+// Authorization (IDOR guard): the caller must EITHER own the transaction's
+// vessel (vessels.owner_id === user.id) OR be a staff user. The service-role
+// client is used only AFTER this gate, for storage signing — storage RLS would
+// otherwise block staff who aren't the owner (same reason the sibling routes
+// use a service-role client post-authorization).
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string; idx: string }> }) {
     const { id, idx } = await ctx.params;
     const session = await createServerClient();
@@ -13,8 +29,19 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const admin = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { data: txn } = await admin.from('transactions').select('payment_proof_files').eq('id', id).maybeSingle();
+    const { data: txn } = await admin.from('transactions').select('payment_proof_files, vessel_id').eq('id', id).maybeSingle();
     if (!txn) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const { data: vessel } = await admin.from('vessels').select('owner_id').eq('id', txn.vessel_id).maybeSingle();
+    const isOwner = !!vessel && vessel.owner_id === user.id;
+
+    let isStaff = false;
+    if (!isOwner) {
+        const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle();
+        isStaff = !!profile && STAFF_ROLES.has(profile.role as string);
+    }
+
+    if (!isOwner && !isStaff) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const files = (txn.payment_proof_files ?? []) as { path: string }[];
     const n = Number(idx);
