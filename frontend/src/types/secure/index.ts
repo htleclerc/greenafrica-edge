@@ -141,6 +141,10 @@ export interface Transaction {
     invoiceRef?: string | null;
     contentHash?: string | null;
     verifySignature?: string | null;
+    // Legacy wire-payment proofs uploaded by the shipowner (stored in
+    // transactions.payment_proof_files). Surfaced to staff so they can review
+    // before validating a wire payment. Absent until the proof column exists.
+    paymentProofFiles?: { path: string; mime_type: string; size_bytes: number; uploaded_at: string }[];
 }
 
 // ── Exemptions ────────────────────────────────────────────────────────────────

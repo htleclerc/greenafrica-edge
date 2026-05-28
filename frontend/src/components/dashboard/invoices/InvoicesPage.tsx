@@ -429,6 +429,8 @@ export function InvoicesPage() {
                     error={paymentError}
                     onConfirm={handleConfirmPayment}
                     onClose={() => setRecordPaymentTx(null)}
+                    transactionId={recordPaymentTx.id}
+                    proofFiles={recordPaymentTx.paymentProofFiles}
                 />
             )}
         </div>
@@ -587,6 +589,28 @@ function InvoiceDetail({
                         <span className="text-sm font-bold text-[var(--os-text-primary)]">{t('total_due')}</span>
                         <span className="text-xl font-bold text-[#00D97E] tabular-nums">${tx.taxAmountUsd.toLocaleString()}.00</span>
                     </div>
+
+                    {tx.paymentProofFiles && tx.paymentProofFiles.length > 0 && (
+                        <div className="mt-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
+                                Payment proofs ({tx.paymentProofFiles.length})
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {tx.paymentProofFiles.map((f, i) => (
+                                    <button
+                                        key={f.path}
+                                        onClick={async () => {
+                                            const res = await fetch(`/api/transactions/${tx.id}/proof/${i}`);
+                                            if (res.ok) window.open((await res.json()).url, '_blank', 'noopener');
+                                        }}
+                                        className="text-left text-xs text-emerald-400 hover:underline"
+                                    >
+                                        {f.path.split('/').pop()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
