@@ -16,8 +16,8 @@ interface Props {
 
 export function AttachProofDialog({ open, onOpenChange, paymentId, invoiceRef }: Props) {
     const t = useTranslations('OwnerPortal.proofUpload');
+    const adapter = React.useMemo(() => ownerProofAdapter(paymentId), [paymentId]);
     if (!open) return null;
-    const adapter = ownerProofAdapter(paymentId);
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
             <div className="relative w-full max-w-md mx-4 rounded-2xl border p-5" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>

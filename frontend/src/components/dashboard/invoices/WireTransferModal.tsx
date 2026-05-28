@@ -30,6 +30,7 @@ interface WireTransferModalProps {
 
 export function WireTransferModal({ instructions, invoiceRef, vesselName, transactionId, onClose }: WireTransferModalProps) {
     const [copiedField, setCopiedField] = React.useState<string | null>(null);
+    const proofAdapter = React.useMemo(() => legacyProofAdapter(transactionId), [transactionId]);
 
     function copyToClipboard(value: string, field: string) {
         navigator.clipboard.writeText(value).then(() => {
@@ -141,7 +142,7 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, transa
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
                             Proof of payment (MT103)
                         </p>
-                        <ProofUploader {...legacyProofAdapter(transactionId)} />
+                        <ProofUploader {...proofAdapter} />
                     </div>
 
                     <div
