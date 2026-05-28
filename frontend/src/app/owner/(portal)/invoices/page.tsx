@@ -41,7 +41,7 @@ export default async function OwnerInvoicesPage({
               ? 'cancel'
               : null;
 
-    const [txnRes, walletRes, receiptRes] = await Promise.all([
+    const [txnRes, walletRes, receiptRes, pendingWireRes] = await Promise.all([
         session.supabase
             .from('transactions')
             .select(
@@ -65,6 +65,14 @@ export default async function OwnerInvoicesPage({
             .eq('status', 'CONFIRMED')
             .not('receipt_ref', 'is', null)
             .order('confirmed_at', { ascending: true }),
+        // Pending WIRE payments — owner can still attach/replace proofs.
+        session.supabase
+            .from('payments')
+            .select('id, transaction_id')
+            .eq('shipowner_id', session.shipowner.id)
+            .eq('rail', 'WIRE_TRANSFER')
+            .in('status', ['INITIATED', 'PROCESSING'])
+            .not('transaction_id', 'is', null),
     ]);
 
     const walletBalanceUsdMinor =
@@ -84,6 +92,14 @@ export default async function OwnerInvoicesPage({
         }
     }
 
+    const pendingWireByTxn = new Map<string, string>(); // transaction_id → payment_id
+    for (const p of (pendingWireRes.data ?? []) as {
+        id: string;
+        transaction_id: string;
+    }[]) {
+        pendingWireByTxn.set(p.transaction_id, p.id);
+    }
+
     const rows: InvoiceRow[] = txns.map((t) => ({
         ...t,
         download_url:
@@ -91,6 +107,7 @@ export default async function OwnerInvoicesPage({
                 ? buildDownloadUrl(t.invoice_ref, t.content_hash)
                 : null,
         receipt_ref: receiptByTxn.get(t.id) ?? null,
+        pending_wire_payment_id: pendingWireByTxn.get(t.id) ?? null,
     }));
 
     return (
