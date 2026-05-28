@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale, Download } from 'lucide-react';
+import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale, Download, X } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -13,6 +13,8 @@ import { transactionVariant } from '@/lib/badgeUtils';
 import { ProFormaModal } from './ProFormaModal';
 import { WireTransferModal, type WireTransferInstructions } from './WireTransferModal';
 import { RecordPaymentModal, type RecordPaymentInput } from './RecordPaymentModal';
+import { ProofUploader } from '@/components/payments/ProofUploader';
+import { legacyProofAdapter } from './legacyProofAdapter';
 import { createClient } from '@/lib/supabase/client';
 
 const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
@@ -458,6 +460,8 @@ function InvoiceDetail({
 }) {
     const t = useTranslations('InvoicesPage');
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
+    const [proofOpen, setProofOpen] = React.useState(false);
+    const proofAdapter = React.useMemo(() => legacyProofAdapter(tx.id), [tx.id]);
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
@@ -619,11 +623,16 @@ function InvoiceDetail({
                     <div className="os-card p-4">
                         <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">{t('payment_capture')}</h4>
                         {[
-                            { label: t('payment_bank'), sub: t('payment_bank_sub'), badge: 'LIVE', badgeColor: '#00D97E' },
-                            { label: t('payment_swift'), sub: t('payment_swift_sub'), badge: null, badgeColor: '' },
-                            { label: t('payment_manual'), sub: t('payment_manual_sub'), badge: 'ADV. PREF+', badgeColor: '#F59E0B' },
-                        ].map(({ label, sub, badge, badgeColor }) => (
-                            <button key={label} className="w-full flex items-center justify-between p-3 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] transition-all mb-2 last:mb-0">
+                            { label: t('payment_bank'), sub: t('payment_bank_sub'), badge: 'LIVE', badgeColor: '#00D97E', action: undefined as undefined | (() => void) },
+                            { label: t('payment_swift'), sub: t('payment_swift_sub'), badge: null, badgeColor: '', action: isArmateur ? () => setProofOpen(true) : undefined },
+                            { label: t('payment_manual'), sub: t('payment_manual_sub'), badge: 'ADV. PREF+', badgeColor: '#F59E0B', action: undefined as undefined | (() => void) },
+                        ].map(({ label, sub, badge, badgeColor, action }) => (
+                            <button
+                                key={label}
+                                onClick={action}
+                                disabled={!action}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl border border-[var(--os-border)] transition-all mb-2 last:mb-0 ${action ? 'hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] cursor-pointer' : 'opacity-60 cursor-default'}`}
+                            >
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg bg-[var(--os-surface-3)] flex items-center justify-center">
                                         <FileText className="w-4 h-4 text-[var(--os-text-muted)]" />
@@ -649,6 +658,21 @@ function InvoiceDetail({
 
             {activeTab === 'audit' && (
                 <TransactionAuditTrail transactionId={tx.id} />
+            )}
+
+            {proofOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+                    <div className="relative w-full max-w-md mx-4 rounded-2xl border p-5" style={{ backgroundColor: 'var(--os-surface)', borderColor: 'var(--os-border-strong)' }}>
+                        <div className="flex items-start justify-between mb-3">
+                            <h2 className="text-base font-semibold text-[var(--os-text-primary)]">{t('proof_section_title')}</h2>
+                            <button onClick={() => setProofOpen(false)} aria-label="Close" className="text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <p className="text-[11px] text-[var(--os-text-muted)] mb-3">{t('payment_swift_sub')}</p>
+                        <ProofUploader {...proofAdapter} />
+                    </div>
+                </div>
             )}
 
             {/* Pro-forma / Invoice / Receipt CTA — adapts to transaction status & role.
