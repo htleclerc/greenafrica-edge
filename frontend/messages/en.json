@@ -1176,6 +1176,7 @@
     "payment_swift_sub": "External wire verification",
     "payment_manual": "Manual Clearance",
     "payment_manual_sub": "Dual-Approval Protocol",
+    "payment_setup_required": "Setup required",
     "audit_invoice_created": "Invoice Created",
     "audit_by_system": "by System Automation",
     "audit_sent_to_agent": "Sent to Agent",

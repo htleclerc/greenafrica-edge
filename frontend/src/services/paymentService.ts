@@ -412,6 +412,34 @@ export async function getAllProviderConfigs(client: SupabaseClient): Promise<Pay
 }
 
 /**
+ * Legacy /dashboard/invoices "Payment Capture" availability, derived from
+ * payment_config (not hardcoded). `online` = the first active non-wire provider
+ * and whether its API key is present (`ready`); `wire` = whether wire_transfer
+ * is active. Drives which capture rows are clickable on the legacy invoice view.
+ */
+export interface LegacyPaymentMethods {
+  online: { active: boolean; provider: PaymentProvider | null; ready: boolean };
+  wire: { active: boolean };
+}
+
+export async function getLegacyPaymentMethods(client: SupabaseClient): Promise<LegacyPaymentMethods> {
+  const { data } = await client
+    .from('payment_config')
+    .select('provider, display_order, is_active')
+    .eq('is_active', true)
+    .order('display_order');
+
+  const active = (data ?? []) as { provider: PaymentProvider }[];
+  const online = active.find((a) => a.provider !== 'wire_transfer') ?? null;
+  const ready = online ? !!process.env[PROVIDERS[online.provider].envKey] : false;
+
+  return {
+    online: { active: !!online, provider: online?.provider ?? null, ready },
+    wire: { active: active.some((a) => a.provider === 'wire_transfer') },
+  };
+}
+
+/**
  * Set the active payment provider (admin action).
  */
 export async function setActiveProvider(

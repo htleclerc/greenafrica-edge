@@ -1176,6 +1176,7 @@
     "payment_swift_sub": "Vérification de virement externe",
     "payment_manual": "Dédouanement manuel",
     "payment_manual_sub": "Protocole de double approbation",
+    "payment_setup_required": "Config requise",
     "audit_invoice_created": "Facture créée",
     "audit_by_system": "par automatisation système",
     "audit_sent_to_agent": "Envoyée à l'agent",

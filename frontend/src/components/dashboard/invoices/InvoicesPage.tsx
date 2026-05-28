@@ -462,6 +462,18 @@ function InvoiceDetail({
     const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
     const [proofOpen, setProofOpen] = React.useState(false);
     const proofAdapter = React.useMemo(() => legacyProofAdapter(tx.id), [tx.id]);
+    const [methods, setMethods] = React.useState<{
+        online: { active: boolean; ready: boolean };
+        wire: { active: boolean };
+    } | null>(null);
+    React.useEffect(() => {
+        let cancelled = false;
+        fetch('/api/payments/methods')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => { if (!cancelled && d) setMethods(d); })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, []);
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
@@ -623,9 +635,27 @@ function InvoiceDetail({
                     <div className="os-card p-4">
                         <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">{t('payment_capture')}</h4>
                         {[
-                            { label: t('payment_bank'), sub: t('payment_bank_sub'), badge: 'LIVE', badgeColor: '#00D97E', action: undefined as undefined | (() => void) },
-                            { label: t('payment_swift'), sub: t('payment_swift_sub'), badge: null, badgeColor: '', action: isArmateur ? () => setProofOpen(true) : undefined },
-                            { label: t('payment_manual'), sub: t('payment_manual_sub'), badge: 'ADV. PREF+', badgeColor: '#F59E0B', action: undefined as undefined | (() => void) },
+                            {
+                                label: t('payment_bank'),
+                                sub: t('payment_bank_sub'),
+                                badge: methods?.online.ready ? 'LIVE' : methods?.online.active ? t('payment_setup_required') : null,
+                                badgeColor: methods?.online.ready ? '#00D97E' : '#F59E0B',
+                                action: isArmateur && !isPaid && methods?.online.ready ? onPayNow : undefined,
+                            },
+                            {
+                                label: t('payment_swift'),
+                                sub: t('payment_swift_sub'),
+                                badge: methods?.wire.active ? 'LIVE' : null,
+                                badgeColor: '#00D97E',
+                                action: isArmateur && methods?.wire.active ? () => setProofOpen(true) : undefined,
+                            },
+                            {
+                                label: t('payment_manual'),
+                                sub: t('payment_manual_sub'),
+                                badge: 'ADV. PREF+',
+                                badgeColor: '#F59E0B',
+                                action: !isArmateur && !isPaid ? onRecordPayment : undefined,
+                            },
                         ].map(({ label, sub, badge, badgeColor, action }) => (
                             <button
                                 key={label}
