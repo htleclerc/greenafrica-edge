@@ -228,6 +228,9 @@ export function LoginPage() {
                             {t('no_account')}{' '}
                             <a href="/signup" className="text-emerald-400 hover:underline font-semibold">{t('request_access')}</a>
                         </p>
+                        <p className="text-center text-xs mt-2" style={{ color: 'var(--os-text-muted)' }}>
+                            <a href="/owner/login" className="text-emerald-400 hover:underline font-semibold">{t('owner_portal_link')}</a>
+                        </p>
                     </div>
 
                     {/* Quick Demo Access (Conditional) */}
