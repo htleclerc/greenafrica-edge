@@ -19,12 +19,14 @@ async function authorize(paymentId: string): Promise<AuthResult> {
 
     const admin = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-    const { data: shipowner } = await admin
+    const { data: shipowner, error: shipownerErr } = await admin
         .from('shipowners').select('id').eq('profile_id', user.id).maybeSingle();
+    if (shipownerErr) return { error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
     if (!shipowner) return { error: NextResponse.json({ error: 'No shipowner record' }, { status: 403 }) };
 
-    const { data: payment } = await admin
+    const { data: payment, error: paymentErr } = await admin
         .from('payments').select('id, shipowner_id, status').eq('id', paymentId).maybeSingle();
+    if (paymentErr) return { error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
     if (!payment) return { error: NextResponse.json({ error: 'Payment not found' }, { status: 404 }) };
     if ((payment as OwnedPayment).shipowner_id !== shipowner.id) {
         return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
@@ -51,7 +53,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     const form = await req.formData();
     const file = form.get('file');
     if (!(file instanceof File)) return NextResponse.json({ error: 'file required' }, { status: 400 });
-    const description = typeof form.get('description') === 'string' ? (form.get('description') as string) : undefined;
+    const rawDescription = form.get('description');
+    const description = typeof rawDescription === 'string' ? rawDescription : undefined;
 
     try {
         const proof = await uploadProof(a.admin, {
@@ -62,7 +65,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
             description,
         });
         if (a.payment.status === 'INITIATED') {
-            await a.admin.from('payments').update({ status: 'PROCESSING' }).eq('id', id);
+            // Best-effort: the proof is already uploaded, so a failed status flip must not fail the request.
+            const { error: flipErr } = await a.admin.from('payments').update({ status: 'PROCESSING' }).eq('id', id);
+            if (flipErr) console.warn('[owner proofs] status flip INITIATED->PROCESSING failed', flipErr.message);
         }
         return NextResponse.json({ proof });
     } catch (e) {
