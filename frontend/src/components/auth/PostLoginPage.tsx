@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
     Anchor, CheckCircle, ArrowRight, Rocket,
-    MapPin, Eye, Building2, Ship, SkipForward,
+    MapPin, Eye, Building2, SkipForward,
 } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { UserRole, OperationalSite } from '@/types/secure';
@@ -31,14 +31,6 @@ const IMPERSONATION_ROLES: RoleOption[] = [
         color: '#10B981',
     },
     {
-        key: UserRole.SHIPPING_AGENT,
-        icon: <Ship className="w-5 h-5" />,
-        titleKey: 'role_shipping_agent',
-        descriptionKey: 'role_shipping_agent_desc',
-        accessLevel: 'LEVEL 2',
-        color: '#3B82F6',
-    },
-    {
         key: UserRole.FINANCE_ADMIN,
         icon: <Building2 className="w-5 h-5" />,
         titleKey: 'role_finance_admin',
@@ -47,6 +39,9 @@ const IMPERSONATION_ROLES: RoleOption[] = [
         color: '#EAB308',
     },
 ];
+
+// Exported for tests only — asserts the impersonation tile set.
+export const __IMPERSONATION_ROLES_FOR_TEST = IMPERSONATION_ROLES;
 
 // ── Sites ────────────────────────────────────────────────────────────────────
 
