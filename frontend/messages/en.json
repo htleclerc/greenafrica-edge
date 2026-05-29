@@ -2742,6 +2742,9 @@
       "tco": "TCO Dashboard",
       "disputes": "Disputes"
     },
+    "disputes": {
+      "empty": "You haven't opened any disputes yet."
+    },
     "login": {
       "title": "Sign in with your email",
       "subtitle": "We'll send a one-time link to your inbox. No password required.",

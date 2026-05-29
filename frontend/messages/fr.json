@@ -2712,6 +2712,9 @@
       "tco": "Tableau TCO",
       "disputes": "Litiges"
     },
+    "disputes": {
+      "empty": "Vous n'avez ouvert aucun litige pour le moment."
+    },
     "login": {
       "title": "Connectez-vous avec votre email",
       "subtitle": "Nous vous enverrons un lien à usage unique. Pas de mot de passe requis.",
