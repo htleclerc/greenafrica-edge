@@ -585,6 +585,7 @@
     "btn_close": "Close"
   },
   "Auth": {
+    "owner_portal_link": "Shipowner? Sign in to the owner portal",
     "system_status_online": "ONLINE — SECURE NODE",
     "sovereign_portal": "SOVEREIGN ACCESS PORTAL",
     "official_gov_system": "Official Government System",
@@ -2746,9 +2747,17 @@
       "emailLabel": "Email",
       "submit": "Send sign-in link",
       "sending": "Sending…",
+      "passwordLabel": "Password",
+      "passwordSubmit": "Sign in",
+      "signingIn": "Signing in…",
+      "useMagicLink": "Email me a sign-in link instead",
+      "setPassword": "Set or reset my password",
+      "resetSent": "If that email is registered, a password-reset link is on its way. Check your inbox.",
+      "noPasswordHint": "No password yet? Use the email link, or set one below.",
       "linkSent": "If <strong>{email}</strong> is registered as a shipowner, a sign-in link is on its way. Check your inbox.",
       "errors": {
         "noOwnerRecord": "We couldn't find a shipowner profile for that email.",
+        "invalidCredentials": "Invalid email or password.",
         "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
         "ghost": "Your account has not been invited to the portal yet.",
         "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",

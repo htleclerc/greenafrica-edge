@@ -694,6 +694,7 @@
     "nav_refunds": "Remboursements"
   },
   "Auth": {
+    "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",
     "system_status_online": "EN LIGNE — NŒUD SÉCURISÉ",
     "sovereign_portal": "PORTAIL D'ACCÈS SOUVERAIN",
     "official_gov_system": "Système Gouvernemental Officiel",
@@ -2716,9 +2717,17 @@
       "emailLabel": "Email",
       "submit": "Envoyer le lien de connexion",
       "sending": "Envoi…",
+      "passwordLabel": "Mot de passe",
+      "passwordSubmit": "Se connecter",
+      "signingIn": "Connexion…",
+      "useMagicLink": "Recevoir plutôt un lien par email",
+      "setPassword": "Définir ou réinitialiser mon mot de passe",
+      "resetSent": "Si cet email est enregistré, un lien de réinitialisation est en route. Vérifiez votre boîte mail.",
+      "noPasswordHint": "Pas encore de mot de passe ? Utilisez le lien par email, ou définissez-en un ci-dessous.",
       "linkSent": "Si <strong>{email}</strong> est enregistré comme armateur, un lien de connexion arrive. Vérifiez votre boîte mail.",
       "errors": {
         "noOwnerRecord": "Nous n'avons pas trouvé de profil armateur pour cette adresse.",
+        "invalidCredentials": "Email ou mot de passe invalide.",
         "invited": "Votre invitation est encore en attente — ouvrez le lien magique depuis votre email d'invitation.",
         "ghost": "Votre compte n'a pas encore été invité au portail.",
         "callbackFailed": "Le lien de connexion a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.",

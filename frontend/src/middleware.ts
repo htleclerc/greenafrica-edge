@@ -10,7 +10,7 @@ const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/auth/setup-password'];
 // Owner portal: same gate, but unauthenticated visits go to /owner/login
 // (NOT /login — staff and owner entry points are deliberately separate).
 const OWNER_PROTECTED_PREFIX = '/owner';
-const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/auth/callback'];
+const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/auth/callback', '/owner/reset-password'];
 
 // Plan 7H-1 Task 5.4 — master switch for the owner portal.
 //
