@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { LayoutDashboard, Ship, FileText, AlertTriangle, Wallet, LogOut } from 'lucide-react';
+import { LayoutDashboard, Ship, FileText, AlertTriangle, Wallet, LogOut, Calculator, BarChart3, Scale } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { KycCBanner } from '@/components/owner/KycCBanner';
@@ -12,7 +12,7 @@ import { NotificationBell } from '@/components/owner/NotificationBell';
 
 interface NavItem {
     href: string;
-    labelKey: 'dashboard' | 'vessels' | 'invoices' | 'wallet' | 'alerts';
+    labelKey: 'dashboard' | 'vessels' | 'invoices' | 'wallet' | 'alerts' | 'simulator' | 'tco' | 'disputes';
     icon: React.ReactNode;
 }
 
@@ -20,9 +20,15 @@ const NAV_ITEMS: NavItem[] = [
     { href: '/owner/dashboard', labelKey: 'dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { href: '/owner/vessels',   labelKey: 'vessels',   icon: <Ship className="w-4 h-4" /> },
     { href: '/owner/invoices',  labelKey: 'invoices',  icon: <FileText className="w-4 h-4" /> },
+    { href: '/owner/simulator', labelKey: 'simulator', icon: <Calculator className="w-4 h-4" /> },
+    { href: '/owner/tco',       labelKey: 'tco',       icon: <BarChart3 className="w-4 h-4" /> },
+    { href: '/owner/disputes',  labelKey: 'disputes',  icon: <Scale className="w-4 h-4" /> },
     { href: '/owner/wallet',    labelKey: 'wallet',    icon: <Wallet className="w-4 h-4" /> },
     { href: '/owner/alerts',    labelKey: 'alerts',    icon: <AlertTriangle className="w-4 h-4" /> },
 ];
+
+// Exported for tests only.
+export const __OWNER_NAV_ITEMS_FOR_TEST = NAV_ITEMS;
 
 interface OwnerShellProps {
     ownerName: string;

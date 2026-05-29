@@ -2708,7 +2708,13 @@
       "invoices": "Factures",
       "alerts": "Alertes",
       "signOut": "Se déconnecter",
-      "wallet": "Portefeuille"
+      "wallet": "Portefeuille",
+      "simulator": "Simulateur de taxe",
+      "tco": "Tableau TCO",
+      "disputes": "Litiges"
+    },
+    "disputes": {
+      "empty": "Vous n'avez ouvert aucun litige pour le moment."
     },
     "login": {
       "title": "Connectez-vous avec votre email",

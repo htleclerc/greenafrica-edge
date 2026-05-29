@@ -2738,7 +2738,13 @@
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",
-      "wallet": "Wallet"
+      "wallet": "Wallet",
+      "simulator": "Tax Simulator",
+      "tco": "TCO Dashboard",
+      "disputes": "Disputes"
+    },
+    "disputes": {
+      "empty": "You haven't opened any disputes yet."
     },
     "login": {
       "title": "Sign in with your email",
