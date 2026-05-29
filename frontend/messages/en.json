@@ -2737,7 +2737,10 @@
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",
-      "wallet": "Wallet"
+      "wallet": "Wallet",
+      "simulator": "Tax Simulator",
+      "tco": "TCO Dashboard",
+      "disputes": "Disputes"
     },
     "login": {
       "title": "Sign in with your email",
