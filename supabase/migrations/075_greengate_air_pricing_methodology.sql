@@ -24,5 +24,5 @@ SELECT 'carbon_tax.air_rate_usd_per_tco2', value, NOW()
  WHERE key = 'carbon_tax.rate_usd_per_tco2'
 ON CONFLICT (key) DO NOTHING;
 
--- DOWN: UPDATE public.methodologies SET params = NULL WHERE mode='AIR' AND code='ICAO_LTO';
+-- DOWN: UPDATE public.methodologies SET params = '{}'::jsonb WHERE mode='AIR' AND code='ICAO_LTO';
 --       DELETE FROM public.app_config WHERE key = 'carbon_tax.air_rate_usd_per_tco2';
