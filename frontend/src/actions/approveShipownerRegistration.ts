@@ -1,7 +1,8 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 
 const schema = z.object({ shipownerId: z.string().uuid() });
 
@@ -36,25 +37,28 @@ export async function approveShipownerRegistration(input: unknown) {
         return { ok: false, message: 'insufficient role' };
     }
 
-    // 3. Create service role client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
-        return { ok: false, message: 'service role not configured' };
-    }
-    const admin = createClient(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
-
-    // 4. Load shipowner
-    const { data: row } = await admin
+    // 3. Load the shipowner (regardless of tenant) to resolve its jurisdiction.
+    const platform = createPlatformClient();
+    const { data: row } = await platform
         .from('shipowners')
-        .select('id, official_email, account_state, name, preferred_language')
+        .select('id, official_email, account_state, name, preferred_language, jurisdiction_id')
         .eq('id', shipownerId)
         .single();
     if (!row) return { ok: false, message: 'not_found' };
     if (row.account_state !== 'PENDING_REVIEW') return { ok: false, message: 'not_pending' };
     if (!row.official_email) return { ok: false, message: 'no_email' };
+
+    // 4. Staff isolation: a non-SUPERADMIN admin may only approve registrations in their
+    //    own jurisdiction. All writes then run through a client scoped to the operator's
+    //    jurisdiction so the wallet + notification are stamped correctly.
+    const jurisdictionId = (row as { jurisdiction_id: string }).jurisdiction_id;
+    if (profile.role !== 'SUPERADMIN') {
+        const adminJurisdictionId = await getServerJurisdictionId();
+        if (adminJurisdictionId !== jurisdictionId) {
+            return { ok: false, message: 'forbidden_jurisdiction' };
+        }
+    }
+    const admin = createTenantClient(jurisdictionId);
 
     // 5. Update account_state to ACTIVE
     const { error: updateErr } = await admin

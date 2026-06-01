@@ -1,9 +1,10 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { enforceRateLimit } from '@/lib/rateLimit';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
 const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
@@ -71,11 +72,11 @@ export async function registerShipowner(
     const captchaOk = await verifyRecaptcha(data.recaptcha_token);
     if (!captchaOk) return { ok: false, message: GENERIC_MESSAGE };
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } },
-    );
+    // Anonymous signup — no tenant context yet. Sanctioned unscoped client; new operator
+    // rows inherit jurisdiction via the column DEFAULT (Somaliland) while signup is
+    // single-country. Multi-country signup (subdomain -> jurisdiction) is a follow-up
+    // tied to dropping that DEFAULT.
+    const supabase = createPlatformClient();
 
     const { data: vessel } = await supabase
         .from('vessels')
@@ -93,11 +94,11 @@ export async function registerShipowner(
 
         if (shipowner?.account_state === 'GHOST'
             && shipowner.imo_company_no === data.imo_company_no) {
-            return await autoClaim(supabase as any, shipowner.id, data);
+            return await autoClaim(supabase, shipowner.id, data);
         }
         if (shipowner?.account_state === 'GHOST') {
             // GHOST mismatch — insert PENDING_REVIEW for admin to investigate
-            await insertPendingReview(supabase as any, data);
+            await insertPendingReview(supabase, data);
             return { ok: true, message: GENERIC_MESSAGE };
         }
         // Non-GHOST (ACTIVE/INVITED/SUSPENDED/REJECTED) → no insert (anti-takeover)
@@ -107,12 +108,12 @@ export async function registerShipowner(
 
     // Branch B: vessel found but no shipowner
     // Branch C: vessel not found
-    await insertPendingReview(supabase as any, data);
+    await insertPendingReview(supabase, data);
     return { ok: true, message: GENERIC_MESSAGE };
 }
 
 async function autoClaim(
-    supabase: any,
+    supabase: SupabaseClient,
     shipownerId: string,
     data: RegisterShipownerInput,
 ): Promise<RegisterShipownerResult> {
@@ -189,7 +190,7 @@ async function autoClaim(
 }
 
 async function insertPendingReview(
-    supabase: any,
+    supabase: SupabaseClient,
     data: RegisterShipownerInput,
 ): Promise<void> {
     await supabase.from('shipowners').insert({
