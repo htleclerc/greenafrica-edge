@@ -1,10 +1,10 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { lockRate } from '@/services/fxRateService';
 import { createCheckoutSession } from '@/services/stripeService';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 const OWNER_RAILS = ['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET', 'STRIPE'] as const;
 const ALL_RAILS = [
@@ -36,9 +36,10 @@ export async function initiatePayment(input: InitiatePaymentInput) {
         throw new Error(`owner cannot initiate rail=${parsed.rail}`);
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    // Owner-initiated payment → scope to the operator's home jurisdiction so the
+    // payments INSERT below is auto-stamped jurisdiction_id (matches ctx.shipowner).
+    // fx_rates is global and passes through unchanged.
+    const admin = createTenantClient(ctx.jurisdictionId);
 
     const fx = await lockRate(admin, parsed.currency);
 

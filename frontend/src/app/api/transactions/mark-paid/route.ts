@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 import { sendPaymentConfirmationEmail } from '@/services/emailService';
 import {
     generateReceiptPdf,
@@ -38,12 +40,6 @@ export async function POST(request: NextRequest) {
     const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
     if (auth.error) return auth.error;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
-    }
-
     let body: {
         transactionId: string;
         actingUserId: string;
@@ -72,7 +68,25 @@ export async function POST(request: NextRequest) {
     const paymentReference = body.paymentReference?.trim() || null;
     const paymentNotes = body.paymentNotes?.trim() || null;
 
-    const admin = createClient(supabaseUrl, supabaseKey);
+    // Resolve the transaction's jurisdiction (find regardless of tenant), confine
+    // the acting admin to it (SUPERADMIN may act on any), and scope all writes —
+    // transactions/vessels are auto-filtered by jurisdiction_id below.
+    let platform: SupabaseClient;
+    try {
+        platform = createPlatformClient();
+    } catch {
+        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    }
+    const { data: txJur, error: txJurErr } = await platform
+        .from('transactions').select('jurisdiction_id').eq('id', body.transactionId).maybeSingle();
+    if (txJurErr) return NextResponse.json({ error: txJurErr.message }, { status: 500 });
+    if (!txJur) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+    let admin: SupabaseClient;
+    try {
+        admin = createTenantClient(await assertAdminCanActOn(auth.user, (txJur as { jurisdiction_id: string }).jurisdiction_id));
+    } catch {
+        return NextResponse.json({ error: 'Forbidden: transaction belongs to another jurisdiction' }, { status: 403 });
+    }
 
     // Idempotency: clients SHOULD send `Idempotency-Key: <uuid>` for retry
     // safety. If absent, we fall back to a domain state guard below
