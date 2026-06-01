@@ -1,8 +1,8 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 const schema = z.object({ enabled: z.boolean() });
 
@@ -10,9 +10,7 @@ export async function toggleAutoApply(input: { enabled: boolean }): Promise<void
     const parsed = schema.parse(input);
     const ctx = await requireOwner();
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    const admin = createTenantClient(ctx.jurisdictionId);
 
     // UPSERT (not UPDATE) — a fresh shipowner with no ledger entries yet won't have
     // a wallet row, so plain UPDATE silently no-ops. wallets.shipowner_id is UNIQUE

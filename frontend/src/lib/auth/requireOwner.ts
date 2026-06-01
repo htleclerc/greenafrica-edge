@@ -23,6 +23,8 @@ export interface OwnerSession {
     userId: string;
     email: string;
     shipowner: ShipownerListRow;
+    /** The operator's home jurisdiction (GreenGate v8, Model B). Pass to createTenantClient(). */
+    jurisdictionId: string;
     supabase: SupabaseClient;
 }
 
@@ -36,7 +38,7 @@ export async function requireOwner(): Promise<OwnerSession> {
     // truth — RLS ensures we can only see our own row.
     const { data: shipowner, error } = await supabase
         .from('shipowners')
-        .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at')
+        .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, jurisdiction_id')
         .eq('profile_id', user.id)
         .maybeSingle();
 
@@ -58,6 +60,7 @@ export async function requireOwner(): Promise<OwnerSession> {
         userId: user.id,
         email: user.email ?? shipowner.official_email ?? '',
         shipowner: shipowner as ShipownerListRow,
+        jurisdictionId: (shipowner as unknown as { jurisdiction_id: string }).jurisdiction_id,
         supabase,
     };
 }

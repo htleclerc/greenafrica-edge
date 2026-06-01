@@ -1,5 +1,5 @@
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { createTenantClient } from '@/lib/supabase/tenant';
 import { getWalletForOwner, listLedgerEntries, predictNextTax } from '@/services/walletService';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { WalletPageClient } from './WalletPageClient';
@@ -21,11 +21,9 @@ export default async function OwnerWalletPage() {
 
     // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger but adds no policies.
     // requireOwner() above is the auth gate (validates session + ACTIVE shipowner);
-    // queries below are scoped by `session.shipowner.id` so a service-role client is
-    // safe to use for the reads. Mirrors the pattern in actions/applyWallet.ts.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createServiceClient(url, key);
+    // queries below are scoped by `session.shipowner.id`. The tenant-scoped factory
+    // adds an automatic jurisdiction_id filter (defense in depth, GreenGate v8).
+    const admin = createTenantClient(session.jurisdictionId);
 
     const wallet = await getWalletForOwner(admin, session.shipowner.id);
 

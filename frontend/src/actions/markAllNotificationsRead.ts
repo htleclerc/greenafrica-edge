@@ -1,14 +1,12 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 export async function markAllNotificationsRead(): Promise<{ count: number }> {
     const ctx = await requireOwner();
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    const admin = createTenantClient(ctx.jurisdictionId);
 
     // count: 'exact' lets us return how many rows were flipped so the UI can
     // surface a "marked N as read" toast.
