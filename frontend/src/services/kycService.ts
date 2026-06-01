@@ -3,7 +3,7 @@
 // Detects encryption strategy (vault → pgsodium → plaintext) and encrypts/decrypts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { createClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 let strategy: 'vault' | 'pgsodium' | 'plaintext' | null = null;
 
@@ -19,10 +19,10 @@ let strategy: 'vault' | 'pgsodium' | 'plaintext' | null = null;
 async function detectStrategy(): Promise<'vault' | 'pgsodium' | 'plaintext'> {
     if (strategy) return strategy;
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Vault/extension RPCs operate on global encryption infrastructure, not a
+    // tenant table — the UNSCOPED platform client is correct (.rpc() is never
+    // auto-scoped regardless).
+    const supabase = createPlatformClient();
 
     const { data } = await supabase.rpc('pg_extension_lookup_kyc' as never);
     const exts = (data as string[] | null) ?? [];
@@ -43,10 +43,10 @@ async function detectStrategy(): Promise<'vault' | 'pgsodium' | 'plaintext'> {
  */
 export async function encryptIban(plain: string): Promise<string> {
     const s = await detectStrategy();
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Vault/extension RPCs operate on global encryption infrastructure, not a
+    // tenant table — the UNSCOPED platform client is correct (.rpc() is never
+    // auto-scoped regardless).
+    const supabase = createPlatformClient();
 
     if (s === 'vault') {
         const { data } = await supabase.rpc('kyc_vault_store' as never, { p_value: plain });
@@ -71,10 +71,10 @@ export async function encryptIban(plain: string): Promise<string> {
  */
 export async function decryptIban(stored: string): Promise<string> {
     const s = await detectStrategy();
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Vault/extension RPCs operate on global encryption infrastructure, not a
+    // tenant table — the UNSCOPED platform client is correct (.rpc() is never
+    // auto-scoped regardless).
+    const supabase = createPlatformClient();
 
     if (s === 'vault') {
         const { data } = await supabase.rpc('kyc_vault_retrieve' as never, { p_id: stored });
