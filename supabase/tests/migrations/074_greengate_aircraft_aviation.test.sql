@@ -76,5 +76,51 @@ BEGIN
   RESET ROLE;
 END $$;
 
+-- ── Part 3: owner SELECT clause — an operator sees ONLY its own aircraft via
+--           shipowners.profile_id; an unrelated user (no operator link, no
+--           jurisdiction membership) sees nothing. ──────────────────────────────
+DO $$
+DECLARE
+  so_jid    UUID := '00000000-0000-4000-8000-00000000534f';
+  owner_usr UUID := '33333333-3333-4333-8333-333333333333';
+  other_usr UUID := '44444444-4444-4444-8444-444444444444';
+  so_id     UUID;
+BEGIN
+  -- owner_usr + other_usr: non-staff, NO user_jurisdictions membership, so the staff
+  -- clause is definitively FALSE (current_jurisdiction_ids() = '{}') — visibility can
+  -- ONLY come from the owner clause. Created BEFORE the shipowner so the
+  -- shipowners.profile_id FK (→ profiles.id) is satisfied.
+  INSERT INTO auth.users (id, email) VALUES (owner_usr, 'owner@air-isolation.test') ON CONFLICT DO NOTHING;
+  INSERT INTO public.profiles (id, email, full_name, role, is_active)
+    VALUES (owner_usr, 'owner@air-isolation.test', 'Air Operator', 'SHIPOWNER', true) ON CONFLICT (id) DO NOTHING;
+  INSERT INTO auth.users (id, email) VALUES (other_usr, 'other@air-isolation.test') ON CONFLICT DO NOTHING;
+  INSERT INTO public.profiles (id, email, full_name, role, is_active)
+    VALUES (other_usr, 'other@air-isolation.test', 'Other Operator', 'SHIPOWNER', true) ON CONFLICT (id) DO NOTHING;
+
+  -- Operator shipowner owned by owner_usr; one aircraft linked to it.
+  INSERT INTO public.shipowners (name, jurisdiction_id, profile_id)
+    VALUES ('Air Operator SO', so_jid, owner_usr) RETURNING id INTO so_id;
+  INSERT INTO public.aircraft (registration, icao_type, operator_id, jurisdiction_id)
+    VALUES ('6O-OWN', 'A320', so_id, so_jid);
+
+  -- The operator sees its own aircraft via the owner clause.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', owner_usr::text)::text, true);
+  SET LOCAL ROLE authenticated;
+  IF NOT EXISTS (SELECT 1 FROM public.aircraft WHERE operator_id = so_id) THEN
+    RESET ROLE;
+    RAISE EXCEPTION 'TEST FAILED: an operator cannot see its own aircraft via the owner clause';
+  END IF;
+  RESET ROLE;
+
+  -- An unrelated user (not the operator, no membership) sees nothing.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', other_usr::text)::text, true);
+  SET LOCAL ROLE authenticated;
+  IF EXISTS (SELECT 1 FROM public.aircraft WHERE operator_id = so_id) THEN
+    RESET ROLE;
+    RAISE EXCEPTION 'TEST FAILED: an unrelated user can see another operator''s aircraft (owner-clause leak)';
+  END IF;
+  RESET ROLE;
+END $$;
+
 ROLLBACK;
 SELECT '074 GreenGate aviation data foundation: PASS' AS test_result;
