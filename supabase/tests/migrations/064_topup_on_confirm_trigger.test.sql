@@ -26,15 +26,17 @@ INSERT INTO public.shipowners (id, name, account_state, preferred_language) VALU
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Case 1: INSERT a CONFIRMED payment with NULL transaction → TOPUP created
 -- ─────────────────────────────────────────────────────────────────────────────
+-- STRIPE + CONFIRMED requires a non-null external_reference
+-- (payments_stripe_external_ref CHECK, mig 048) — supply one here.
 INSERT INTO public.payments (
   id, transaction_id, shipowner_id, amount_minor, currency, amount_usd_minor,
-  rail, status, confirmed_by, confirmed_at
+  rail, status, external_reference, confirmed_by, confirmed_at
 ) VALUES (
   'b0000001-0000-0000-0000-000000000001',
   NULL,
   'a0000001-0000-0000-0000-000000000001',
   100000, 'USD', 100000,
-  'STRIPE', 'CONFIRMED',
+  'STRIPE', 'CONFIRMED', 'pi_topup_064_case1',
   '99999999-9999-9999-9999-999999999999',
   NOW()
 );

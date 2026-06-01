@@ -39,57 +39,26 @@ BEGIN
   END LOOP;
 END $$;
 
--- 4. shipowner_payment_intents table + enum + indexes
+-- 4. shipowner_payment_intents was dropped by mig 062 (Plan 7C-5 cutover to the
+--    polymorphic public.payments table). Against the full-chain schema the table
+--    no longer exists, and `DROP TABLE ... CASCADE` removed everything that
+--    depended on it (RLS policies, the amount_usd CHECK, the updated_at trigger).
+--    Mig 039's original Tests 4-7 asserted those objects existed; against the
+--    final schema that is no longer true. The live payment path is now covered by
+--    048_payments_polymorphic.test.sql — here we only assert the drop took effect.
+--    (Note: the standalone `shipowner_payment_intent_status` enum type is NOT a
+--    table dependency, so CASCADE leaves it in place — we don't assert on it.)
 DO $$
 BEGIN
-  ASSERT EXISTS (
+  ASSERT NOT EXISTS (
     SELECT 1 FROM information_schema.tables
      WHERE table_schema='public' AND table_name='shipowner_payment_intents'
-  ), 'shipowner_payment_intents table missing';
+  ), 'shipowner_payment_intents should have been dropped by mig 062';
 
-  ASSERT EXISTS (
-    SELECT 1 FROM pg_type WHERE typname = 'shipowner_payment_intent_status'
-  ), 'shipowner_payment_intent_status enum missing';
-
-  ASSERT (SELECT COUNT(*) FROM pg_enum e
-            JOIN pg_type t ON t.oid=e.enumtypid
-           WHERE t.typname='shipowner_payment_intent_status') = 3,
-    'shipowner_payment_intent_status should have exactly 3 values (DECLARED, CONFIRMED, REJECTED)';
-END $$;
-
--- 5. RLS enabled + at least one policy of each kind on payment_intents
-DO $$
-DECLARE n INT;
-BEGIN
-  ASSERT (SELECT relrowsecurity FROM pg_class
-           WHERE oid='public.shipowner_payment_intents'::regclass),
-    'RLS not enabled on shipowner_payment_intents';
-
-  -- 4 policies expected: 2 SELECT (shipowner own + finance all),
-  -- 1 INSERT (shipowner own), 1 UPDATE (finance resolve)
-  SELECT COUNT(*) INTO n FROM pg_policies
-   WHERE tablename='shipowner_payment_intents' AND schemaname='public';
-  ASSERT n = 4, format('expected 4 policies on shipowner_payment_intents, got %s', n);
-END $$;
-
--- 6. CHECK constraint amount_usd >= 0 enforced
-DO $$
-BEGIN
-  ASSERT EXISTS (
-    SELECT 1 FROM information_schema.check_constraints
-     WHERE constraint_schema='public'
-       AND check_clause LIKE '%amount_usd%>=%0%'
-  ), 'amount_usd >= 0 CHECK constraint missing on shipowner_payment_intents';
-END $$;
-
--- 7. updated_at trigger wired
-DO $$
-BEGIN
-  ASSERT EXISTS (
-    SELECT 1 FROM pg_trigger
-     WHERE tgname='shipowner_payment_intents_updated_at'
-       AND tgrelid='public.shipowner_payment_intents'::regclass
-  ), 'updated_at trigger missing on shipowner_payment_intents';
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE tablename='shipowner_payment_intents' AND schemaname='public'
+  ), 'no policies should remain after the table is dropped';
 END $$;
 
 ROLLBACK;
