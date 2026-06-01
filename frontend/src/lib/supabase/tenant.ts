@@ -37,7 +37,7 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-/** Tables carrying a `jurisdiction_id` column (migrations 071 + 072). */
+/** Tables carrying a `jurisdiction_id` column (migrations 071 + 072; aircraft from 074). */
 export const TENANT_SCOPED_TABLES: ReadonlySet<string> = new Set([
     'transactions',
     'arrival_alerts',
