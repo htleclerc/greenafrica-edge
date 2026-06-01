@@ -17,6 +17,13 @@ INSERT INTO public.profiles (id, email, full_name, role, is_active) VALUES
   ('22222222-2222-2222-2222-222222222222', 'owner-b@test', 'B', 'SHIPOWNER',     true),
   ('33333333-3333-3333-3333-333333333333', 'fin@test',     'F', 'FINANCE_ADMIN', true);
 
+-- GreenGate v8 (mig 073): the staff "see all" payment clause is now jurisdiction-filtered
+-- via current_jurisdiction_ids(). The mig 071 backfill only covered profiles existing at
+-- migration time, so grant this test's FINANCE_ADMIN a membership in the seeded Somaliland
+-- jurisdiction (mig 071) — the jurisdiction the payments below carry via the mig 072 DEFAULT.
+INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id) VALUES
+  ('33333333-3333-3333-3333-333333333333', '00000000-0000-4000-8000-00000000534f');
+
 INSERT INTO public.shipowners (id, name, account_state, official_email, preferred_language, profile_id) VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'OwnerA', 'ACTIVE', 'owner-a@test', 'en', '11111111-1111-1111-1111-111111111111'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'OwnerB', 'ACTIVE', 'owner-b@test', 'en', '22222222-2222-2222-2222-222222222222');
