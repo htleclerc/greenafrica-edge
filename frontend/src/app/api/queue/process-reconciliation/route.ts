@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { runReconcilePipeline } from '@/services/reconcilePipelineService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 export const runtime = 'nodejs';
 
@@ -40,12 +41,16 @@ export async function POST(req: NextRequest) {
   const got = req.headers.get('X-Queue-Secret');
   if (got !== expected) return json(401, { error: 'unauthorized' });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const apiUrl = process.env.AFRICGREEN_API_URL ?? 'http://127.0.0.1:8080';
-  if (!supabaseUrl || !supabaseKey) return json(500, { error: 'supabase not configured' });
 
-  const admin = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+  // Queue worker draining reconciliation_queue across ALL jurisdictions →
+  // UNSCOPED platform client (pipeline resolves per-alert jurisdiction).
+  let admin: SupabaseClient;
+  try {
+    admin = createPlatformClient();
+  } catch {
+    return json(500, { error: 'supabase not configured' });
+  }
 
   // Pop one message with 60s visibility timeout. If no message, return 204.
   const { data: popped, error: popErr } = await admin.rpc('pgmq_pop_message', {

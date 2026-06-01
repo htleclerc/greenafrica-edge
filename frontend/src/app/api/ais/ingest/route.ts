@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * POST /api/ais/ingest
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No positions provided' }, { status: 400 });
     }
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Cross-tenant AIS ingest feed (keyed by AIS_INGEST_SECRET, no tenant
+    // context). UNSCOPED platform client; vessel rows inherit jurisdiction via
+    // the column DEFAULT until geofence→jurisdiction lands in Wedge 1.
+    const adminClient = createPlatformClient();
 
     let inserted = 0;
     let upserted = 0;
