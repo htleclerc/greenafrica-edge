@@ -1,8 +1,8 @@
 'use server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
 import { createMapping } from '@/services/ownerAgentMappingService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const inputSchema = z.object({
     shipownerId: z.string().uuid(),
@@ -33,14 +33,14 @@ export async function createOwnerAgentMapping(
         return { ok: false, reason: 'insufficient role' };
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
+    // owner_agent_mappings is a global config table (not tenant-scoped in the v8
+    // foundation) → UNSCOPED platform client.
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return { ok: false, reason: 'service role not configured' };
     }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
 
     try {
         const m = await createMapping(admin, parsed.data);

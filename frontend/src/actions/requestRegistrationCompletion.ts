@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { UserRole } from '@/types/secure';
 import { requireRole } from '@/lib/auth/requireRole';
 import { sendShipownerCompletionRequestEmail } from '@/services/emailService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 const schema = z.object({
     shipownerId: z.string().uuid(),
@@ -22,21 +23,24 @@ export async function requestRegistrationCompletion(input: unknown) {
     }
     const { shipownerId, missingItems } = parsed.data;
 
-    await requireRole([UserRole.SUPERADMIN, UserRole.MANAGER]);
+    const auth = await requireRole([UserRole.SUPERADMIN, UserRole.MANAGER]);
+    if (auth.error) return { ok: false, message: 'insufficient role' };
 
-    const admin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
-
-    // Check state before sending email
-    const { data: row } = await admin
+    // Load the shipowner (regardless of tenant) + confine the acting admin to its
+    // jurisdiction before sending the completion-request email.
+    const platform = createPlatformClient();
+    const { data: row } = await platform
         .from('shipowners')
-        .select('account_state')
+        .select('account_state, jurisdiction_id')
         .eq('id', shipownerId)
         .single();
     if (!row) return { ok: false, message: 'not_found' };
     if (row.account_state !== 'PENDING_REVIEW') return { ok: false, message: 'not_pending' };
+    try {
+        await assertAdminCanActOn(auth.user, (row as { jurisdiction_id: string }).jurisdiction_id);
+    } catch {
+        return { ok: false, message: 'forbidden_jurisdiction' };
+    }
 
     // Send email
     try {

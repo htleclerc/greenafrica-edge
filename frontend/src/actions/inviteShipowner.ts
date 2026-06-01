@@ -2,7 +2,8 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 
 const schema = z.object({
     shipownerId: z.string().uuid(),
@@ -51,27 +52,30 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
         return { ok: false, reason: 'insufficient role' };
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
-        return { ok: false, reason: 'service role not configured' };
-    }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
-
     const email = parsed.data.email.trim().toLowerCase();
 
-    // 1. Load + validate shipowner
-    const { data: owner, error: ownerErr } = await admin
+    // 1. Load + validate shipowner (regardless of tenant) to resolve its jurisdiction.
+    const platform = createPlatformClient();
+    const { data: owner, error: ownerErr } = await platform
         .from('shipowners')
-        .select('id, name, account_state, profile_id, official_email, official_email_source')
+        .select('id, name, account_state, profile_id, official_email, official_email_source, jurisdiction_id')
         .eq('id', parsed.data.shipownerId)
         .single();
     if (ownerErr || !owner) return { ok: false, reason: 'shipowner not found' };
     if (owner.account_state === 'ACTIVE') {
         return { ok: false, reason: 'shipowner is already active in the portal' };
     }
+
+    // Staff isolation: a non-SUPERADMIN inviter is confined to their own jurisdiction.
+    // All writes then run through a jurisdiction-scoped client.
+    const jurisdictionId = (owner as { jurisdiction_id: string }).jurisdiction_id;
+    if (profile.role !== 'SUPERADMIN') {
+        const adminJurisdictionId = await getServerJurisdictionId();
+        if (adminJurisdictionId !== jurisdictionId) {
+            return { ok: false, reason: 'forbidden: shipowner belongs to another jurisdiction' };
+        }
+    }
+    const admin = createTenantClient(jurisdictionId);
 
     // 2. Issue invite (or look up existing user)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
