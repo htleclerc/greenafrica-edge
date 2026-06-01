@@ -13,6 +13,7 @@ export interface RefundRow {
     id: string;
     transaction_id: string;
     shipowner_id: string;
+    jurisdiction_id: string;
     amount_usd_minor: number;
     refund_rail: PaymentRail | null;
     rail_details: Record<string, unknown>;

@@ -4,8 +4,20 @@ const insertCall = vi.fn().mockResolvedValue({ data: [{ id: 'ledger-new' }], err
 const mockAdmin = {
     from: vi.fn(() => ({ insert: insertCall })),
 };
+const mockPlatform = {
+    from: vi.fn(() => ({
+        select: () => ({
+            eq: () => ({
+                maybeSingle: async () => ({ data: { jurisdiction_id: 'so-juris' }, error: null }),
+            }),
+        }),
+    })),
+};
 
-vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => mockAdmin) }));
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockPlatform),
+    createTenantClient: vi.fn(() => mockAdmin),
+}));
 vi.mock('@/lib/auth/requireRole', () => ({ requireRole: vi.fn() }));
 
 import { adjustWalletManually } from './adjustWalletManually';

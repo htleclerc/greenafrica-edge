@@ -17,8 +17,8 @@ let refundRow: Record<string, unknown> | null = {
 let updatedRows: Record<string, unknown>[] = [{ id: 'refund-1' }];
 const updateCalls: UpdateCall[] = [];
 const auditCalls: Record<string, unknown>[] = [];
-let requireRoleResult: { user: { id: string; fullName: string } | null; supabase: unknown; error: unknown } = {
-    user: { id: 'admin-1', fullName: 'Admin One' },
+let requireRoleResult: { user: { id: string; fullName: string; role: string } | null; supabase: unknown; error: unknown } = {
+    user: { id: 'admin-1', fullName: 'Admin One', role: 'SUPERADMIN' },
     supabase: null,
     error: null,
 };
@@ -63,8 +63,9 @@ const mockSupabase = {
     }),
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
+    createTenantClient: vi.fn(() => mockSupabase),
 }));
 
 vi.mock('@/lib/auth/requireRole', () => ({
@@ -85,7 +86,7 @@ beforeEach(() => {
     updateCalls.length = 0;
     auditCalls.length = 0;
     requireRoleResult = {
-        user: { id: 'admin-1', fullName: 'Admin One' },
+        user: { id: 'admin-1', fullName: 'Admin One', role: 'SUPERADMIN' },
         supabase: null,
         error: null,
     };
