@@ -33,12 +33,12 @@ func (a *airCalculator) Calculate(ctx context.Context, req CalculateRequest) (Re
 	if req.ICAOType == "" {
 		return Result{}, fmt.Errorf("air: icao_type required")
 	}
-	cycles := req.LTOCycles
-	if cycles == 0 {
-		cycles = 1
+	cycles := 1
+	if req.LTOCycles != nil {
+		cycles = *req.LTOCycles
 	}
-	if cycles < 0 {
-		return Result{}, fmt.Errorf("air: lto_cycles must be non-negative")
+	if cycles <= 0 {
+		return Result{}, fmt.Errorf("air: lto_cycles must be positive")
 	}
 
 	co2PerLTO := 0.0

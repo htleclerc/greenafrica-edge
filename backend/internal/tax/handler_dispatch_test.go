@@ -31,7 +31,7 @@ func TestModeRegistry_DispatchesAndDefaults(t *testing.T) {
 	}
 
 	ares, err := reg["AIR"].Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: 1,
+		Mode: "AIR", ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(1),
 	})
 	if err != nil {
 		t.Fatalf("air dispatch: %v", err)

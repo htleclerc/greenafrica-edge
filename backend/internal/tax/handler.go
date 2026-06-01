@@ -35,7 +35,7 @@ type CalculateRequest struct {
 	ICAOType     string   `json:"icao_type,omitempty"`
 	EngineType   string   `json:"engine_type,omitempty"`
 	MTOWKg       int      `json:"mtow_kg,omitempty"`
-	LTOCycles    int      `json:"lto_cycles,omitempty"`
+	LTOCycles    *int     `json:"lto_cycles,omitempty"`
 	RateOverride *float64 `json:"rate_override,omitempty"`
 }
 
@@ -73,8 +73,8 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error":"icao_type is required"}`, http.StatusBadRequest)
 			return
 		}
-		if req.LTOCycles < 0 {
-			http.Error(w, `{"error":"lto_cycles must be non-negative"}`, http.StatusBadRequest)
+		if req.LTOCycles != nil && *req.LTOCycles <= 0 {
+			http.Error(w, `{"error":"lto_cycles must be positive"}`, http.StatusBadRequest)
 			return
 		}
 	}
