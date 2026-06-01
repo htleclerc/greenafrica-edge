@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { verifyWebhookSignature } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 import { scopedLogger } from '@/lib/logger';
@@ -41,9 +42,8 @@ export const dynamic = 'force-dynamic';
 const TERMINAL_STATUSES = new Set(['CONFIRMED', 'REJECTED', 'CANCELLED', 'REFUNDED']);
 
 function serviceClient(): SupabaseClient {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    return createClient(url, key);
+    // Platform-level webhook (Stripe events keyed by external id; idempotent reconciler).
+    return createPlatformClient();
 }
 
 interface PaymentRow {

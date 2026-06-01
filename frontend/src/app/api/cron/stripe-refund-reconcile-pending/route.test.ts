@@ -25,9 +25,9 @@ const mocks = vi.hoisted(() => ({
     updateRowsAffected: 1, // override per-test for race-guard idempotency case
 }));
 
-vi.mock('@supabase/supabase-js', () => {
+vi.mock('@/lib/supabase/tenant', () => {
     return {
-        createClient: vi.fn(() => ({
+        createPlatformClient: vi.fn(() => ({
             from: vi.fn((table: string) => {
                 if (table === 'refunds') {
                     return {

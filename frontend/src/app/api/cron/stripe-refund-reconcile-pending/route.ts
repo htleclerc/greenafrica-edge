@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { retrieveRefund } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 import { notifyOwner } from '@/services/notificationService';
@@ -48,9 +49,8 @@ const ROW_LIMIT = 50;
 const MAX_RECONCILE_ATTEMPTS = 10;
 
 function serviceClient(): SupabaseClient {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    return createClient(url, key);
+    // Platform-level cron (reconciles refunds keyed by external Stripe id).
+    return createPlatformClient();
 }
 
 interface RefundRow {

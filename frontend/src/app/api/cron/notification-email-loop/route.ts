@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { EMAIL_KINDS, type NotificationKind } from '@/services/notificationService';
 import { dispatchNotificationEmail } from '@/services/notificationEmailDispatch';
 import { scopedLogger } from '@/lib/logger';
@@ -42,9 +43,8 @@ const ROW_LIMIT = 100;
 const MAX_ATTEMPTS = 5;
 
 function serviceClient(): SupabaseClient {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    return createClient(url, key);
+    // Platform-level cron (iterates all jurisdictions' pending notifications).
+    return createPlatformClient();
 }
 
 interface PendingNotifRow {
