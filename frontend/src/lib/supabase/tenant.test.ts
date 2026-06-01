@@ -107,7 +107,7 @@ describe('createTenantClient — tenant-scoped tables auto-filter', () => {
         expect(jidEq(rec)).toBe(true);
     });
 
-    it('covers all 9 tenant-scoped tables in the allowlist', () => {
+    it('covers all 10 tenant-scoped tables in the allowlist', () => {
         for (const t of TENANT_SCOPED_TABLES) {
             records = [];
             createTenantClient(JID).from(t).select('*');
