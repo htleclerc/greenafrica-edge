@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { timingSafeEqual } from 'crypto';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const setupAdminSchema = z.object({
     email: z.email(),
@@ -39,11 +39,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid setup secret' }, { status: 403 });
         }
 
-        // Use service_role for admin operations
-        const adminClient = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+        // Use service_role for admin operations. Bootstrap writes the global
+        // profiles table → sanctioned UNSCOPED platform client.
+        const adminClient = createPlatformClient();
 
         // Check if a SUPERADMIN already exists
         const { data: existingAdmin } = await adminClient

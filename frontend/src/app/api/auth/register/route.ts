@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 // Accepts 8 form roles, maps them to the 5 DB roles (PORT_OFFICER,
 // FINANCE_ADMIN, SHIPPING_AGENT, MANAGER) — see ROLE_MAP below. SUPERADMIN is
@@ -98,11 +98,10 @@ export async function POST(request: NextRequest) {
         // Map the form role to a DB role (4 actual roles in the system).
         const role = ROLE_MAP[submittedRole];
 
-        // ── Admin client (service_role — bypasses RLS) ──────────────────────
-        const adminClient = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+        // ── Admin client: anonymous signup writes global tables (profiles,
+        // registration_requests). No tenant context → sanctioned UNSCOPED
+        // platform client (bypasses RLS). ──────────────────────────────────
+        const adminClient = createPlatformClient();
 
         // ── Check for duplicate email ───────────────────────────────────────
         const { data: existing } = await adminClient
