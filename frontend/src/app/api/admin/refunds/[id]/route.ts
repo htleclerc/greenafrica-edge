@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { getRefundById } from '@/services/refundService';
 import { requireRole } from '@/lib/auth/requireRole';
+import { adminScopedClient } from '@/lib/auth/adminTenant';
 import { UserRole } from '@/types/secure';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,9 +23,7 @@ export async function GET(
     const { id } = await ctx.params;
 
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-        const admin = createClient(supabaseUrl, serviceKey);
+        const admin = await adminScopedClient(auth.user);
         const refund = await getRefundById(admin, id);
         if (!refund) return NextResponse.json({ error: 'Not found' }, { status: 404 });
         return NextResponse.json({ refund });

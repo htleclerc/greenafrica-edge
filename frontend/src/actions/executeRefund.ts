@@ -1,6 +1,5 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
@@ -8,6 +7,8 @@ import { getRefundById } from '@/services/refundService';
 import { createRefund as stripeCreateRefund } from '@/services/stripeService';
 import { notifyOwner } from '@/services/notificationService';
 import { scopedLogger } from '@/lib/logger';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 const log = scopedLogger('executeRefund');
 
@@ -81,9 +82,7 @@ export async function executeRefund(input: {
     const actorId = auth.user.id;
     const actorName = auth.user.fullName;
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    const platform = createPlatformClient();
 
     log.info('action_invoked', {
         refundId: parsed.refundId,
@@ -91,9 +90,13 @@ export async function executeRefund(input: {
         refundRail: parsed.refundRail ?? null,
     });
 
-    // 1. Fetch refund with joined transaction + shipowner
-    const refund = await getRefundById(admin, parsed.refundId);
+    // 1. Fetch refund (regardless of tenant), then confine the acting admin to its
+    //    jurisdiction (SUPERADMIN may act on any) and scope all writes to it. Every
+    //    downstream side effect (wallet ledger, payments lookup, refunds UPDATE,
+    //    owner notification) runs through this tenant-scoped client.
+    const refund = await getRefundById(platform, parsed.refundId);
     if (!refund) return { ok: false, error: `Refund not found: ${parsed.refundId}` };
+    const admin = createTenantClient(await assertAdminCanActOn(auth.user, refund.jurisdiction_id));
 
     // 2. Determine execution path
     //    - REQUESTED + WALLET → 1-click combo (approve+execute)

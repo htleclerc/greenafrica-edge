@@ -28,8 +28,8 @@ let refundFixture: Record<string, unknown> | null = null;
 let originalStripePayment: Record<string, unknown> | null = null;
 let walletRow: Record<string, unknown> | null = null;
 let updatedRefundRows: Record<string, unknown>[] = [{ id: 'refund-1' }];
-let requireRoleResult: { user: { id: string; fullName: string } | null; supabase: unknown; error: unknown } = {
-    user: { id: 'admin-1', fullName: 'Admin One' },
+let requireRoleResult: { user: { id: string; fullName: string; role: string } | null; supabase: unknown; error: unknown } = {
+    user: { id: 'admin-1', fullName: 'Admin One', role: 'SUPERADMIN' },
     supabase: null,
     error: null,
 };
@@ -116,8 +116,9 @@ const mockSupabase = {
     }),
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
+    createTenantClient: vi.fn(() => mockSupabase),
 }));
 
 vi.mock('@/lib/auth/requireRole', () => ({
@@ -142,6 +143,7 @@ beforeEach(() => {
         status: 'REQUESTED',
         transaction_id: 'tx-1',
         shipowner_id: 'so-1',
+        jurisdiction_id: 'so-juris',
         amount_usd_minor: 100000,
         refund_rail: null,
         rail_details: {},
@@ -152,7 +154,7 @@ beforeEach(() => {
     walletRow = { id: 'wallet-1' };
     updatedRefundRows = [{ id: 'refund-1' }];
     requireRoleResult = {
-        user: { id: 'admin-1', fullName: 'Admin One' },
+        user: { id: 'admin-1', fullName: 'Admin One', role: 'SUPERADMIN' },
         supabase: null,
         error: null,
     };

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { assertAdminCanActOn } from './adminTenant';
+import { assertAdminCanActOn, adminScopedClient } from './adminTenant';
 import { UserRole, type SecureUser } from '@/types/secure';
 
 const SO = '00000000-0000-4000-8000-00000000534f';
@@ -8,6 +8,10 @@ const SN = '11111111-1111-4111-8111-111111111111';
 const getJidMock = vi.fn();
 vi.mock('@/lib/auth/tenantContext', () => ({
     getServerJurisdictionId: () => getJidMock(),
+}));
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: () => ({ tag: 'platform' }),
+    createTenantClient: (jid: string) => ({ tag: 'tenant', jid }),
 }));
 
 function admin(role: UserRole): SecureUser {
@@ -34,5 +38,22 @@ describe('assertAdminCanActOn', () => {
         await expect(assertAdminCanActOn(admin(UserRole.FINANCE_ADMIN), SN)).rejects.toThrow(
             /another jurisdiction/,
         );
+    });
+});
+
+describe('adminScopedClient', () => {
+    it('SUPERADMIN → unscoped platform client', async () => {
+        const client = (await adminScopedClient(admin(UserRole.SUPERADMIN))) as unknown as { tag: string };
+        expect(client.tag).toBe('platform');
+        expect(getJidMock).not.toHaveBeenCalled();
+    });
+
+    it('other admin → tenant client scoped to their jurisdiction', async () => {
+        getJidMock.mockResolvedValue(SO);
+        const client = (await adminScopedClient(admin(UserRole.FINANCE_ADMIN))) as unknown as {
+            tag: string;
+            jid: string;
+        };
+        expect(client).toMatchObject({ tag: 'tenant', jid: SO });
     });
 });

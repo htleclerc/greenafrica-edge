@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { listLedgerEntries } from '@/services/walletService';
 import { requireRole } from '@/lib/auth/requireRole';
+import { adminScopedClient } from '@/lib/auth/adminTenant';
 import { UserRole } from '@/types/secure';
 
 const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.MANAGER];
@@ -16,11 +16,9 @@ export async function GET(
     const { id } = await ctx.params;
 
     // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger with no policies.
-    // The requireRole gate above is the actual access control; we just need a
-    // client that can see the rows.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createServiceClient(url, key);
+    // requireRole gates access; adminScopedClient confines non-SUPERADMIN admins to
+    // their own jurisdiction (a wallet in another jurisdiction reads as not-found).
+    const admin = await adminScopedClient(auth.user);
 
     try {
         const { data: wallet, error } = await admin

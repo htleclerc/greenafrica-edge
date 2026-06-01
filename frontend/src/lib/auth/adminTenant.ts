@@ -16,8 +16,21 @@
  *   const jid = await assertAdminCanActOn(auth.user, refund.jurisdiction_id);
  *   const admin = createTenantClient(jid);                     // scoped + correct stamp
  */
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { UserRole, type SecureUser } from '@/types/secure';
+
+/**
+ * Service-role client for an admin LIST/read context (no single target entity):
+ * SUPERADMIN sees all jurisdictions (platform); any other admin is scoped to their own.
+ */
+export async function adminScopedClient(user: SecureUser): Promise<SupabaseClient> {
+    if (user.role === UserRole.SUPERADMIN) {
+        return createPlatformClient();
+    }
+    return createTenantClient(await getServerJurisdictionId());
+}
 
 export async function assertAdminCanActOn(
     user: SecureUser,

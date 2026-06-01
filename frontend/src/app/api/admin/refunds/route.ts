@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { listRefundsForAdmin, type RefundStatus } from '@/services/refundService';
 import { requireRole } from '@/lib/auth/requireRole';
+import { adminScopedClient } from '@/lib/auth/adminTenant';
 import { UserRole } from '@/types/secure';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,9 +28,7 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Number.parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 200);
 
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-        const admin = createClient(supabaseUrl, serviceKey);
+        const admin = await adminScopedClient(auth.user);
         const refunds = await listRefundsForAdmin(admin, { status, offset, limit });
         return NextResponse.json({ refunds });
     } catch {
