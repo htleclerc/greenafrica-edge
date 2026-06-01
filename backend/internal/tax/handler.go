@@ -28,10 +28,15 @@ func NewHandler(cfg *config.Config, db *sql.DB, appcfg *appconfig.Reader) *Handl
 }
 
 type CalculateRequest struct {
-	IMO          string   `json:"imo"`
-	Category     string   `json:"category"`
-	GrossTonnage int      `json:"gross_tonnage"`
-	DistanceNM   float64  `json:"distance_nm"`
+	Mode         string   `json:"mode,omitempty"` // "MARITIME" (default) | "AIR"
+	IMO          string   `json:"imo,omitempty"`
+	Category     string   `json:"category,omitempty"`
+	GrossTonnage int      `json:"gross_tonnage,omitempty"`
+	DistanceNM   float64  `json:"distance_nm,omitempty"`
+	ICAOType     string   `json:"icao_type,omitempty"`
+	EngineType   string   `json:"engine_type,omitempty"`
+	MTOWKg       int      `json:"mtow_kg,omitempty"`
+	LTOCycles    int      `json:"lto_cycles,omitempty"`
 	RateOverride *float64 `json:"rate_override,omitempty"`
 }
 
