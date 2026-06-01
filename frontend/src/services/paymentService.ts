@@ -13,6 +13,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  *
  * Admin can switch the active provider from /dashboard/settings without redeploying.
  * The active provider is stored in Supabase `payment_config` table.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Plan 7C: Typed Read Helpers for `payments` Table (mig 047-054)
+ *
+ * New 10-rail polymorphic payment table with double-entry wallets + append-only
+ * ledger. Functions below query and type-safely return payment rows.
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -55,9 +62,13 @@ export interface PaymentResult {
 
 export interface WireTransferInstructions {
   beneficiary: string;
+  accountNumber: string;
+  beneficiaryAddress: string;
   bank: string;
   swiftCode: string;
   iban: string;
+  intermediaryBank: string;
+  intermediarySwift: string;
   reference: string;
   amount: string;
   currency: Currency;
@@ -70,6 +81,7 @@ export interface PaymentProviderConfig {
   isDefault: boolean;
   supportedCurrencies: Currency[];
   testMode: boolean;
+  routesRail?: string[];
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
@@ -322,10 +334,14 @@ function createWireTransfer(payment: PaymentRequest): PaymentResult {
     provider: 'wire_transfer',
     status: 'pending',
     wireInstructions: {
-      beneficiary: 'Green Gate Maritime Carbon Tax Authority',
-      bank: 'International Bank of Somaliland',
-      swiftCode: 'IBSLSLMG',
-      iban: 'SL00 0000 0000 0000 0000 00',
+      beneficiary: 'SOLIDE TECHNOLOGY',
+      accountNumber: '100613310001',
+      beneficiaryAddress: 'Masalaha Street, M.Haybe District, Hargeisa, Somaliland',
+      bank: 'Premier Bank Limited — Durdur Branch, Hargeisa, Somaliland',
+      swiftCode: 'PBSMSOSM',
+      iban: 'SO9500051001100613310001',
+      intermediaryBank: 'Premier Bank Kenya Limited, Nairobi',
+      intermediarySwift: 'IFCBKENA',
       reference: ref,
       amount: `${payment.currency} ${payment.amount.toFixed(2)}`,
       currency: payment.currency,
@@ -390,6 +406,7 @@ export async function getAllProviderConfigs(client: SupabaseClient): Promise<Pay
       isDefault: dbRow?.is_active ?? (key === 'wire_transfer'),
       supportedCurrencies: meta.currencies,
       testMode: dbRow?.test_mode ?? false,
+      routesRail: (dbRow?.routes_rail as string[] | undefined) ?? [],
     };
   });
 }
@@ -496,4 +513,222 @@ export async function verifyPayoneerSignature(body: string, signature: string): 
   const { createHmac } = await import('crypto');
   const hash = createHmac('sha256', secret).update(body).digest('hex');
   return hash === signature;
+}
+
+// ── Plan 7C: Typed Read Helpers for `payments` Table ──────────────────────
+
+/**
+ * 10-rail polymorphic payment table (mig 047-054).
+ * Each rail carries its own metadata in `rail_details` JSONB.
+ */
+export type PaymentRail =
+  | 'STRIPE'
+  | 'WIRE_TRANSFER'
+  | 'CASH'
+  | 'CHEQUE'
+  | 'LETTER_OF_CREDIT'
+  | 'NETTING'
+  | 'THIRD_PARTY'
+  | 'MOBILE_MONEY'
+  | 'BANK_GUARANTEE'
+  | 'WALLET';
+
+/**
+ * Status enum for polymorphic payment tracking.
+ * Naming: `payment_status_v7` in schema (avoids future collision).
+ */
+export type PaymentStatusV7 =
+  | 'INITIATED'
+  | 'PROCESSING'
+  | 'CONFIRMED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'REFUNDED';
+
+/**
+ * Typed row for the `payments` table.
+ * Used by shipowner portal, cash desk, admin payments dashboard.
+ */
+export interface PaymentRow {
+  id: string;
+  transaction_id: string | null;
+  shipowner_id: string;
+  declared_by: string | null;
+  amount_minor: number;
+  currency: string;
+  amount_usd_minor: number;
+  fx_rate: number | null;
+  fx_rate_source: string | null;
+  fx_rate_locked_at: string | null;
+  rail: PaymentRail;
+  rail_details: Record<string, unknown>;
+  external_reference: string | null;
+  status: PaymentStatusV7;
+  rejected_reason: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Plan 7C-4: receipt PDF fields (mig 061). Populated when a receipt is generated
+  // for a CONFIRMED payment (e.g., cash desk receipts). Nullable for legacy rows
+  // and rails that don't generate receipts.
+  receipt_ref: string | null;
+  receipt_storage_path: string | null;
+  receipt_generated_at: string | null;
+}
+
+/**
+ * List payments for a specific shipowner, ordered by creation date (newest first).
+ * Useful for the shipowner portal to show payment history.
+ */
+export async function listPaymentsForShipowner(
+  db: SupabaseClient,
+  shipownerId: string,
+): Promise<PaymentRow[]> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .eq('shipowner_id', shipownerId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []) as PaymentRow[];
+}
+
+/**
+ * List pending payments for admin review (status INITIATED or PROCESSING).
+ * Excludes WALLET and STRIPE rails which have own flows.
+ * Useful for the cash desk / admin payments page.
+ */
+export async function listPendingAdminPayments(
+  db: SupabaseClient,
+): Promise<PaymentRow[]> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .in('status', ['INITIATED', 'PROCESSING'])
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []) as PaymentRow[];
+}
+
+/**
+ * Get a single payment by ID. Returns null if not found.
+ * Useful for detail pages or status checks.
+ */
+export async function getPayment(
+  db: SupabaseClient,
+  id: string,
+): Promise<PaymentRow | null> {
+  const { data, error } = await db
+    .from('payments')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as PaymentRow | null) ?? null;
+}
+
+// ── Plan 7C-2: Multi-active provider routing ───────────────────────────────
+
+/**
+ * Active provider row enriched with rail routing metadata.
+ */
+export interface ActiveProviderRow {
+  provider: PaymentProvider;
+  routes_rail: string[];
+  display_order: number;
+}
+
+/**
+ * Get ALL currently-active providers, ordered by display_order.
+ * Plan 7C-2: replaces the single-active getActiveProvider() for new callers.
+ * Legacy getActiveProvider() kept for the v0 createPaymentRequest path
+ * (paymentIntentService dropped in Plan 7C-5; a future Plan 7D / cleanup
+ * sweep can drop the v0 outbound API helpers if confirmed unused).
+ */
+export async function getActiveProviders(client: SupabaseClient): Promise<ActiveProviderRow[]> {
+  const { data, error } = await client
+    .from('payment_config')
+    .select('provider, routes_rail, display_order, is_active')
+    .order('display_order');
+  if (error) return [];
+  return (data ?? [])
+    .filter((r: { is_active: boolean }) => r.is_active)
+    .map((r: { provider: string; routes_rail: string[] | null; display_order: number | null }) => ({
+      provider: r.provider as PaymentProvider,
+      routes_rail: r.routes_rail ?? [],
+      display_order: r.display_order ?? 0,
+    }));
+}
+
+/**
+ * Filter active providers to those declaring support for a given v7 rail.
+ * Result is ordered by display_order ascending — the first element is the
+ * default routing pick. Caller may surface alternatives in a sub-picker.
+ *
+ * @param rail - v7 payment_method enum value (STRIPE, WIRE_TRANSFER, …)
+ */
+export async function selectProvidersForRail(
+  client: SupabaseClient,
+  rail: string,
+): Promise<ActiveProviderRow[]> {
+  const all = await getActiveProviders(client);
+  return all
+    .filter((p) => p.routes_rail.includes(rail))
+    .sort((a, b) => a.display_order - b.display_order);
+}
+
+/**
+ * Toggle a single provider's is_active flag. Replaces the old
+ * setActiveProvider() semantics where activating one deactivated all others.
+ */
+export async function setProviderActive(
+  client: SupabaseClient,
+  provider: PaymentProvider,
+  isActive: boolean,
+): Promise<boolean> {
+  const { error } = await client
+    .from('payment_config')
+    .update({ is_active: isActive })
+    .eq('provider', provider);
+  return !error;
+}
+
+// ── Plan 7C-3: Admin payment list with filters ─────────────────────────────
+
+export interface AdminPaymentFilters {
+    status: PaymentStatusV7[];
+    rail: PaymentRail[];
+    from: string | null;     // ISO date inclusive
+    to: string | null;       // ISO date inclusive
+    q: string | null;        // ILIKE on external_reference
+}
+
+/**
+ * List up to 200 payments matching the filters, newest first.
+ * Used by /admin/payments PaymentsAdminPanel.
+ */
+export async function listAdminPayments(
+    client: SupabaseClient,
+    filters: AdminPaymentFilters,
+    limit = 200,
+): Promise<PaymentRow[]> {
+    let query = client
+        .from('payments')
+        .select('*');
+
+    if (filters.status.length > 0) query = query.in('status', filters.status);
+    if (filters.rail.length > 0)   query = query.in('rail', filters.rail);
+    if (filters.from)              query = query.gte('created_at', filters.from);
+    if (filters.to)                query = query.lte('created_at', filters.to);
+    if (filters.q)                 query = query.ilike('external_reference', `%${filters.q}%`);
+
+    const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as PaymentRow[];
 }

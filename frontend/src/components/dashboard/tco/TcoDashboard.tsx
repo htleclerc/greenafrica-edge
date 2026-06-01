@@ -44,7 +44,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 // ── Shipping Agent View ──────────────────────────────────────────────────────
 
-function ShippingAgentView() {
+export function ShippingAgentView() {
     const t = useTranslations('TCO');
     const { data } = useTco();
     const [period, setPeriod] = React.useState<Period>('month');

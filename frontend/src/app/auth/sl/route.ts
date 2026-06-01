@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * GET /auth/sl?t=<signed-jwt>[&r=<same-origin-path>]
@@ -59,10 +60,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Mint a fresh Supabase OTP for this email and exchange it server-side.
-    const admin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Platform auth operation (no tenant context) → sanctioned UNSCOPED client.
+    let admin: SupabaseClient;
+    try {
+        admin = createPlatformClient();
+    } catch {
+        return NextResponse.json({ error: 'Not configured' }, { status: 500 });
+    }
 
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'magiclink',

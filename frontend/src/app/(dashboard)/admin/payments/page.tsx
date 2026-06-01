@@ -2,13 +2,11 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { PaymentProvidersPanel } from '@/components/dashboard/admin/PaymentProvidersPanel';
-import { PendingIntentsPanel } from '@/components/dashboard/admin/PendingIntentsPanel';
-import { listPendingPaymentIntents } from '@/services/paymentIntentService';
+import { PaymentsAdminPanel } from '@/components/dashboard/admin/PaymentsAdmin/PaymentsAdminPanel';
 
 export const metadata: Metadata = {
     title: 'Payments | Green Gate',
-    description:
-        'Resolve owner-declared payment intents and configure the active payment provider.',
+    description: 'Resolve payments (v7) and configure the active payment provider.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -29,11 +27,11 @@ export default async function PaymentsAdminRoute() {
         redirect('/dashboard');
     }
 
-    const intents = await listPendingPaymentIntents(supabase);
-
     return (
         <div className="px-6 py-4">
-            <PendingIntentsPanel intents={intents} />
+            {/* Plan 7C-3: v7 payments table — primary admin surface */}
+            <PaymentsAdminPanel />
+
             <PaymentProvidersPanel />
         </div>
     );

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { sendOverdueAlertEmail } from '@/services/emailService';
 import { buildVerifyUrl } from '@/services/invoiceService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * GET /api/cron/overdue-alerts
@@ -30,13 +31,14 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
+    // Daily cron iterating OVERDUE transactions across ALL jurisdictions —
+    // legitimately cross-tenant, so the UNSCOPED platform client is correct.
+    let admin: SupabaseClient;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
-
-    const admin = createClient(supabaseUrl, supabaseKey);
 
     // ── Find all OVERDUE transactions ──
     const { data: overdueTxs, error: txErr } = await admin

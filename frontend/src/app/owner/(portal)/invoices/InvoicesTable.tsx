@@ -1,12 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard, Scale } from 'lucide-react';
+import { Download, CreditCard, Scale, Receipt, Paperclip } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
-import { PayProformaDialog } from './PayProformaDialog';
+import { PayDialog } from '@/components/owner/PayDialog';
 import { OpenDisputeDialog } from './OpenDisputeDialog';
+import { AttachProofDialog } from './AttachProofDialog';
 
 export interface InvoiceRow {
     id: string;
@@ -20,8 +21,10 @@ export interface InvoiceRow {
     created_at: string;
     /** Server-side pre-computed signed URL or null if no PDF available. */
     download_url: string | null;
-    /** Whether the owner already declared a payment for this txn. */
-    has_pending_intent: boolean;
+    /** Receipt reference of the latest CONFIRMED payment, or null if none. */
+    receipt_ref: string | null;
+    /** Payment id of an INITIATED/PROCESSING wire payment for this invoice, or null. */
+    pending_wire_payment_id: string | null;
 }
 
 const docVariant = (docType: InvoiceRow['document_type']): BadgeVariant => {
@@ -51,14 +54,16 @@ function formatUsd(amount: number): string {
 
 interface Props {
     rows: InvoiceRow[];
+    walletBalanceUsdMinor: number;
 }
 
-export function InvoicesTable({ rows }: Props) {
+export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
     const [payTarget, setPayTarget] = React.useState<InvoiceRow | null>(null);
     const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
+    const [proofTarget, setProofTarget] = React.useState<InvoiceRow | null>(null);
 
     const isPayable = (r: InvoiceRow) =>
-        r.document_type === 'PROFORMA' && r.status === 'PENDING' && !r.has_pending_intent;
+        r.document_type === 'PROFORMA' && r.status === 'PENDING';
     const isDisputable = (r: InvoiceRow) =>
         (r.document_type === 'PROFORMA' || r.document_type === 'FINAL' || r.document_type === 'COMPLEMENT') &&
         r.status !== 'CANCELLED';
@@ -98,12 +103,9 @@ export function InvoicesTable({ rows }: Props) {
         {
             key: 'status',
             header: 'Status',
-            render: (r) =>
-                r.has_pending_intent && r.status === 'PENDING' ? (
-                    <OsBadge variant="info" label="Payment declared" />
-                ) : (
-                    <OsBadge variant={statusVariant(r.status)} label={r.status} />
-                ),
+            render: (r) => (
+                <OsBadge variant={statusVariant(r.status)} label={r.status} />
+            ),
         },
         {
             key: 'date',
@@ -134,6 +136,18 @@ export function InvoicesTable({ rows }: Props) {
                             PDF
                         </a>
                     )}
+                    {r.receipt_ref && (
+                        <a
+                            href={`/api/receipts/${encodeURIComponent(r.receipt_ref)}/download`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline"
+                            aria-label={`Download receipt ${r.receipt_ref}`}
+                        >
+                            <Receipt className="w-3.5 h-3.5" />
+                            Receipt
+                        </a>
+                    )}
                     {isDisputable(r) && (
                         <button
                             onClick={() => setDisputeTarget(r)}
@@ -143,6 +157,17 @@ export function InvoicesTable({ rows }: Props) {
                         >
                             <Scale className="w-3.5 h-3.5" />
                             Dispute
+                        </button>
+                    )}
+                    {r.pending_wire_payment_id && (
+                        <button
+                            onClick={() => setProofTarget(r)}
+                            className="inline-flex items-center gap-1 text-xs text-[var(--os-text-muted)] hover:text-[#10B981] transition-colors"
+                            aria-label={`Attach proof for ${r.invoice_ref ?? r.id}`}
+                            title="Attach proof of payment"
+                        >
+                            <Paperclip className="w-3.5 h-3.5" />
+                            Proof
                         </button>
                     )}
                     {isPayable(r) && (
@@ -169,12 +194,14 @@ export function InvoicesTable({ rows }: Props) {
                 emptyMessage="No invoices on file yet."
             />
             {payTarget && (
-                <PayProformaDialog
+                <PayDialog
                     open={true}
                     onOpenChange={(o) => !o && setPayTarget(null)}
                     transactionId={payTarget.id}
                     invoiceRef={payTarget.invoice_ref ?? payTarget.id.slice(0, 8)}
                     amountUsd={Number(payTarget.tax_amount_usd)}
+                    currency="USD"
+                    walletBalanceUsdMinor={walletBalanceUsdMinor}
                 />
             )}
             {disputeTarget && (
@@ -183,6 +210,14 @@ export function InvoicesTable({ rows }: Props) {
                     onOpenChange={(o) => !o && setDisputeTarget(null)}
                     transactionId={disputeTarget.id}
                     invoiceRef={disputeTarget.invoice_ref ?? disputeTarget.id.slice(0, 8)}
+                />
+            )}
+            {proofTarget?.pending_wire_payment_id && (
+                <AttachProofDialog
+                    open={true}
+                    onOpenChange={(o) => !o && setProofTarget(null)}
+                    paymentId={proofTarget.pending_wire_payment_id}
+                    invoiceRef={proofTarget.invoice_ref ?? proofTarget.id.slice(0, 8)}
                 />
             )}
         </>

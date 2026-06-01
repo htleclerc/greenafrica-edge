@@ -36,6 +36,7 @@ let mockOwner: {
     profile_id: string | null;
     official_email: string | null;
     official_email_source: string | null;
+    jurisdiction_id: string;
 } | null = {
     id: 'owner-uuid',
     name: 'Acme Maritime',
@@ -43,6 +44,7 @@ let mockOwner: {
     profile_id: null,
     official_email: null,
     official_email_source: null,
+    jurisdiction_id: '00000000-0000-4000-8000-00000000534f',
 };
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -67,8 +69,11 @@ vi.mock('@/lib/supabase/server', () => ({
         }),
 }));
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: () => ({
+// The admin client is now minted via the sanctioned factories. Mock both to return
+// the same mock (bypassing the real createTenantClient Proxy) so the existing
+// single-.eq() chain assertions hold.
+function buildAdminMock() {
+    return {
         auth: {
             admin: {
                 inviteUserByEmail: inviteSpy,
@@ -102,7 +107,17 @@ vi.mock('@supabase/supabase-js', () => ({
             }
             throw new Error(`unexpected table on admin client: ${table}`);
         },
-    }),
+    };
+}
+
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: () => buildAdminMock(),
+    createTenantClient: () => buildAdminMock(),
+}));
+
+// Non-SUPERADMIN (MANAGER) staff-isolation resolves the acting admin's jurisdiction here.
+vi.mock('@/lib/auth/tenantContext', () => ({
+    getServerJurisdictionId: vi.fn(async () => '00000000-0000-4000-8000-00000000534f'),
 }));
 
 const { inviteShipowner } = await import('./inviteShipowner');
@@ -123,6 +138,7 @@ beforeEach(() => {
         profile_id: null,
         official_email: null,
         official_email_source: null,
+        jurisdiction_id: '00000000-0000-4000-8000-00000000534f',
     };
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test.local';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk_test';

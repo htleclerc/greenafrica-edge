@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { upsertShipownerEmail, getOrCreateGhost } from '@/services/shipownerService';
 
 const schema = z.object({
@@ -54,14 +54,15 @@ export async function applyEquasisProposal(
         return { ok: false, reason: 'insufficient role' };
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
+    // equasis_scrape_proposals is a global review queue (not tenant-scoped); shipowner
+    // writes in single-country mode inherit the DEFAULT jurisdiction (multi-country
+    // proposal-review scoping deferred to Wedge 2). UNSCOPED platform client.
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return { ok: false, reason: 'service role not configured' };
     }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
 
     // 1. Load the proposal
     const { data: proposal, error: pErr } = await admin

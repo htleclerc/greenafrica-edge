@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const schema = z.object({
     proposalId: z.string().uuid(),
@@ -39,10 +39,14 @@ export async function approveDestinationProposal(
         return { ok: false, reason: 'insufficient role' };
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return { ok: false, reason: 'service role not configured' };
-    const admin = createServiceRole(url, key, { auth: { persistSession: false } });
+    // destination_match_proposals + app_config are global tables (not tenant-scoped)
+    // → UNSCOPED platform client.
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
+        return { ok: false, reason: 'service role not configured' };
+    }
 
     // 1. Load proposal, ensure PENDING
     const { data: proposal } = await admin

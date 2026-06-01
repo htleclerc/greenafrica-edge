@@ -23,9 +23,9 @@ interface ProfileUpdatePayload {
 const profileUpdateSpy = vi.fn((_payload: ProfileUpdatePayload) => ({ error: null }));
 const regUpdateSpy = vi.fn((_payload: Record<string, unknown>) => ({ error: null }));
 
-vi.mock('@supabase/supabase-js', () => {
+vi.mock('@/lib/supabase/tenant', () => {
     return {
-        createClient: () => buildAdminClientMock(),
+        createPlatformClient: () => buildAdminClientMock(),
     };
 });
 

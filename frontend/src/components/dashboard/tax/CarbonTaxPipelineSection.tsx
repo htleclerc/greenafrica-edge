@@ -24,6 +24,12 @@ const BOOLEAN_KEYS = new Set([
     'feature.equasis_scraper_enabled',
     'feature.vessel_detention_enabled',
     'feature.shipowner_portal_enabled',
+    // Plan 7H-1: shipowner portal v1 feature flags (master spec §12.2).
+    'feature.shipowner_portal_v1_enabled',
+    'feature.shipowner_self_service_enabled',
+    'feature.online_payment_stripe_enabled',
+    'feature.wallet_topup_enabled',
+    'feature.notification_sms_enabled',
 ]);
 
 const STRING_KEYS = new Set([
@@ -54,6 +60,12 @@ const KEY_ORDER: string[] = [
     'feature.equasis_scraper_enabled',
     'feature.vessel_detention_enabled',
     'feature.shipowner_portal_enabled',
+    // Plan 7H-1: grouped with the other feature.* toggles.
+    'feature.shipowner_portal_v1_enabled',
+    'feature.shipowner_self_service_enabled',
+    'feature.online_payment_stripe_enabled',
+    'feature.wallet_topup_enabled',
+    'feature.notification_sms_enabled',
     'queue.worker_url',
     'queue.worker_secret',
 ];

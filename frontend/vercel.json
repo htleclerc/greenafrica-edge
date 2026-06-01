@@ -18,6 +18,14 @@
     {
       "path": "/api/cron/overdue-alerts",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/notification-email-loop",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/stripe-reconcile-all",
+      "schedule": "0 9 * * *"
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { sendPartnershipConfirmationEmail } from '@/services/emailService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const partnershipSchema = z.object({
     partnershipType: z.enum([
@@ -28,10 +28,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
         }
 
-        const adminClient = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+        // Public partnership form → global partnership_requests table. No
+        // tenant context; sanctioned UNSCOPED platform client.
+        const adminClient = createPlatformClient();
 
         const { data: inserted, error } = await adminClient
             .from('partnership_requests')

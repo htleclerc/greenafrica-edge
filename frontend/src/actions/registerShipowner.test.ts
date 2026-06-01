@@ -5,11 +5,22 @@ const mockSupabase = {
     auth: { admin: { inviteUserByEmail: vi.fn(), listUsers: vi.fn() } },
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
 }));
 vi.mock('@/lib/rateLimit', () => ({
     enforceRateLimit: vi.fn(async () => ({ allowed: true })),
+}));
+vi.mock('@/lib/feature-flags', () => ({
+    readPortalFeatureFlags: vi.fn(async () => ({
+        portalV1Enabled: true,
+        selfServiceEnabled: true,
+        onlinePaymentStripeEnabled: true,
+        walletTopupEnabled: true,
+        notificationSmsEnabled: false,
+    })),
+    _readPortalFeatureFlagsImpl: vi.fn(),
+    isFeatureEnabled: vi.fn(),
 }));
 
 function chainableSelect(value: unknown) {
@@ -142,6 +153,24 @@ describe('registerShipowner decision tree', () => {
         const r = await registerShipowner(validInput, '127.0.0.1');
         expect(r.ok).toBe(true);
         expect(inserted).toBe(true);
+    });
+
+    it('rejects when self-service flag is OFF (Plan 7H-1 Task 5.1)', async () => {
+        const { readPortalFeatureFlags } = await import('@/lib/feature-flags');
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            portalV1Enabled: true,
+            selfServiceEnabled: false,
+            onlinePaymentStripeEnabled: true,
+            walletTopupEnabled: true,
+            notificationSmsEnabled: false,
+        });
+
+        const { registerShipowner } = await import('./registerShipowner');
+        const r = await registerShipowner(validInput, '127.0.0.1');
+        expect(r.ok).toBe(false);
+        expect(r.message).toMatch(/not currently enabled/i);
+        // No DB writes should have happened.
+        expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
     it('rejects when rate limit hit', async () => {

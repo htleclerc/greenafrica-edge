@@ -1,4 +1,4 @@
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 export type DestinationProposal = {
     id: string;
@@ -14,10 +14,9 @@ export type DestinationProposal = {
 };
 
 export async function listPendingDestinationProposals(): Promise<DestinationProposal[]> {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) throw new Error('supabase service role not configured');
-    const admin = createServiceRole(url, key, { auth: { persistSession: false } });
+    // Admin review queue. destination_match_proposals is a global table (not
+    // tenant-scoped in the v8 foundation) → UNSCOPED platform client.
+    const admin = createPlatformClient();
     const { data, error } = await admin
         .from('destination_match_proposals')
         .select(

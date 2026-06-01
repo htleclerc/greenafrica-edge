@@ -505,12 +505,10 @@ export interface ShipownerCompletionRequestParams {
 }
 
 export async function sendShipownerCompletionRequestEmail(p: ShipownerCompletionRequestParams): Promise<void> {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } },
-    );
+    const { createPlatformClient } = await import('@/lib/supabase/tenant');
+    // Reads one shipowner by id to populate the email; the calling action already
+    // enforced the jurisdiction gate. Global helper → UNSCOPED platform client.
+    const supabase = createPlatformClient();
 
     const { data: row } = await supabase
         .from('shipowners')
@@ -557,4 +555,221 @@ export async function sendShipownerCompletionRequestEmail(p: ShipownerCompletion
     if (!result.success) {
         throw new Error(`Email send failed: ${result.error ?? 'unknown error'}`);
     }
+}
+
+// ── 9. Payment rejected email (Plan 7F) ────────────────────────────────────
+
+export interface PaymentRejectedParams {
+    to: string;
+    recipientName: string;
+    invoiceRef: string;
+    reason: string;
+}
+
+export async function sendPaymentRejectedEmail(p: PaymentRejectedParams): Promise<EmailResult> {
+    const subject = `Payment declined — ${p.invoiceRef}`;
+    const content = `
+        <h1 style="color:#EF4444">Payment Declined</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>We were unable to confirm your payment for invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong>.</p>
+
+        <div class="alert alert-danger" style="white-space: pre-wrap; word-wrap: break-word;"><strong>Reason:</strong> ${escapeHtml(p.reason)}</div>
+
+        <h2>Next Steps</h2>
+        <p>Please review the reason above and submit a new payment via your portal. If you believe this is an error, contact our support team.</p>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">Review Invoice →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Payment declined for ${p.invoiceRef}` }),
+        text: `Payment declined for ${p.invoiceRef}\n\nReason: ${p.reason}\n\nPlease submit a new payment via your portal.`,
+    });
+}
+
+// ── 10. Pro-forma reminder email (Plan 7F) ─────────────────────────────────
+
+export interface ProformaReminderParams {
+    to: string;
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    ageDays: number;
+}
+
+export async function sendProformaReminderEmail(p: ProformaReminderParams): Promise<EmailResult> {
+    const subject = `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)`;
+    const content = `
+        <h1>Payment Reminder</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>This is a friendly reminder that pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been pending for <strong>${p.ageDays} days</strong>.</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
+
+        <div class="alert alert-warn">Please settle this invoice at your earliest convenience to avoid port-clearance delays and late-payment interest.</div>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">Pay Invoice →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} pending — $${p.amountUsd.toLocaleString()}` }),
+        text: `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+    });
+}
+
+// ── 11. Wallet top-up email (Plan 7F) ──────────────────────────────────────
+
+export interface WalletTopupParams {
+    to: string;
+    recipientName: string;
+    amountUsd: number;
+    newBalanceUsd: number;
+}
+
+export async function sendWalletTopupEmail(p: WalletTopupParams): Promise<EmailResult> {
+    const subject = `Wallet topped up — +$${p.amountUsd.toLocaleString()}`;
+    const content = `
+        <h1>Wallet Topped Up ✓</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Your Green Gate wallet has been credited successfully.</p>
+
+        <div class="alert alert-success">Credit applied: <strong>+$${p.amountUsd.toLocaleString()}</strong></div>
+
+        <h2>Wallet Summary</h2>
+        <div class="meta-row"><span class="meta-label">Top-up Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">+$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">New Balance</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.newBalanceUsd.toLocaleString()}</span></div>
+
+        <p>Your wallet balance can be applied automatically to future pro-forma invoices, or manually from the portal.</p>
+
+        <a href="${appUrl()}/owner/wallet" class="btn">View Wallet →</a>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Wallet credited: +$${p.amountUsd.toLocaleString()}` }),
+        text: `Wallet topped up: +$${p.amountUsd.toLocaleString()}\nNew balance: $${p.newBalanceUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/wallet`,
+    });
+}
+
+// ── 12. KYC / registration rejection email (Plan 7F) ───────────────────────
+
+export interface KycRejectedParams {
+    to: string;
+    recipientName: string;
+    reason: string;
+}
+
+export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailResult> {
+    const subject = `Registration not approved`;
+    const content = `
+        <h1 style="color:#EF4444">Registration Not Approved</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Thank you for your interest in the Green Gate Sovereign Carbon Platform. After review, we are unable to approve your registration at this time.</p>
+
+        <div class="alert alert-danger" style="white-space: pre-wrap; word-wrap: break-word;"><strong>Reason:</strong> ${escapeHtml(p.reason)}</div>
+
+        <h2>Next Steps</h2>
+        <p>You may submit a new registration request at any time with additional information or clarifications. If you have questions, please contact our support team.</p>
+
+        <a href="${appUrl()}" class="btn">Return to Portal →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If you believe this decision was made in error, please reply to this email.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Your registration was not approved` }),
+        text: `Registration not approved\n\nReason: ${p.reason}\n\nYou may submit a new request at any time.`,
+    });
+}
+
+// ── 13. Refund issued email (Plan 7G) ──────────────────────────────────────
+
+export interface RefundIssuedParams {
+    to: string;
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    refundRail:
+        | 'WALLET'
+        | 'WIRE_TRANSFER'
+        | 'STRIPE'
+        | 'CASH'
+        | 'CHEQUE'
+        | 'MOBILE_MONEY'
+        | 'THIRD_PARTY'
+        | 'BANK_GUARANTEE'
+        | 'NETTING'
+        | 'LETTER_OF_CREDIT';
+    executedAt: string; // ISO timestamp or pre-formatted display string
+}
+
+const REFUND_RAIL_LABELS: Record<RefundIssuedParams['refundRail'], string> = {
+    WALLET: 'Owner wallet',
+    WIRE_TRANSFER: 'Wire transfer',
+    STRIPE: 'Stripe refund',
+    CASH: 'Cash',
+    CHEQUE: 'Cheque',
+    MOBILE_MONEY: 'Mobile money',
+    THIRD_PARTY: 'Third-party settlement',
+    BANK_GUARANTEE: 'Bank guarantee release',
+    NETTING: 'Netting',
+    LETTER_OF_CREDIT: 'Letter of credit',
+};
+
+export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<EmailResult> {
+    const subject = `Refund issued for ${p.invoiceRef}`;
+    const railLabel = REFUND_RAIL_LABELS[p.refundRail] ?? p.refundRail;
+
+    // Rail-specific guidance text (kept short; full ledger view is in the portal)
+    let railGuidance = '';
+    if (p.refundRail === 'WALLET') {
+        railGuidance = `<p>The refunded amount has been credited to your Green Gate wallet. It will be applied automatically to future pro-forma invoices, or you can use it manually from the portal.</p>`;
+    } else if (p.refundRail === 'WIRE_TRANSFER') {
+        railGuidance = `<p>The wire transfer has been initiated to your registered bank account. Please allow 2–5 business days for the funds to settle.</p>`;
+    } else if (p.refundRail === 'STRIPE') {
+        railGuidance = `<p>The refund has been submitted to Stripe and will appear on your original card statement within 5–10 business days, depending on your issuing bank.</p>`;
+    } else {
+        railGuidance = `<p>Settlement details for this refund method have been recorded by our finance team. Please contact support if you have any questions.</p>`;
+    }
+
+    const content = `
+        <h1>Refund Issued ✓</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>A refund of <strong>$${p.amountUsd.toLocaleString()}</strong> has been issued for invoice <strong>${escapeHtml(p.invoiceRef)}</strong>.</p>
+
+        <div class="alert alert-success">Refund amount: <strong>$${p.amountUsd.toLocaleString()}</strong></div>
+
+        <h2>Refund Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">Method</span><span class="meta-value">${escapeHtml(railLabel)}</span></div>
+        <div class="meta-row"><span class="meta-label">Executed</span><span class="meta-value">${escapeHtml(p.executedAt)}</span></div>
+
+        ${railGuidance}
+
+        <a href="${appUrl()}/owner/invoices" class="btn">View Invoices →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">— Solid Technology</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Refund of $${p.amountUsd.toLocaleString()} issued for ${p.invoiceRef}` }),
+        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}/owner/invoices`,
+    });
 }

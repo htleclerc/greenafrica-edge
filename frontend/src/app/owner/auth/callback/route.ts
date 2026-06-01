@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * Owner-portal magic-link callback.
@@ -75,19 +76,23 @@ export async function GET(request: NextRequest) {
     // Flip INVITED → ACTIVE on first successful redeem. Use the service role:
     // the user's own session would be denied by RLS for the UPDATE because
     // mig 024 + 033 only grant SELECT on shipowners to owners.
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (supabaseUrl && serviceKey) {
-        const admin = createServiceRole(supabaseUrl, serviceKey, {
-            auth: { persistSession: false },
-        });
+    // First-redeem flip on the user's OWN shipowner row, keyed by the
+    // globally-unique profile_id. There is no tenant context at callback time
+    // (the session was just minted) and we cannot resolve a jurisdiction before
+    // the row is ACTIVE — so the UNSCOPED platform client is correct here.
+    // Non-fatal if env is missing: the next requireOwner() call surfaces it.
+    let admin: SupabaseClient | null = null;
+    try {
+        admin = createPlatformClient();
+    } catch {
+        admin = null;
+    }
+    if (admin) {
         await admin
             .from('shipowners')
             .update({ account_state: 'ACTIVE' })
             .eq('profile_id', userId)
             .eq('account_state', 'INVITED');
-        // Failure here is non-fatal — the next requireOwner() call will surface
-        // the issue. Logging keeps it traceable.
     }
 
     // Redirect into the portal with the cookies set on `response`.

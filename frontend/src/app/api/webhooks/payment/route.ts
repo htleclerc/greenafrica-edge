@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature, verifyPayoneerSignature } from '@/services/paymentService';
 import { writeAuditLog } from '@/services/auditService';
 import { parseInvoiceRef } from '@/services/invoiceService';
@@ -13,24 +13,25 @@ import { parseInvoiceRef } from '@/services/invoiceService';
  * Provider detection:
  * - Paystack:    x-paystack-signature header
  * - Flutterwave: verif-hash header
- * - Stripe:      stripe-signature header
  * - Wave:        x-wave-signature header
  * - Payoneer:    payoneer-signature header
+ *
+ * Note: Stripe webhooks are handled by the dedicated
+ * /api/webhooks/stripe route (Plan 7D) with proper HMAC
+ * signature verification + idempotency.
  */
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
     const body = JSON.parse(rawBody);
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Platform-level webhook (no tenant context at entry; payments are keyed by
+    // external provider ref). Unscoped service-role via the sanctioned factory.
+    const adminClient = createPlatformClient();
 
     // ── Detect provider from headers ────────────────────────────────────
     const paystackSig = request.headers.get('x-paystack-signature');
     const flutterwaveSig = request.headers.get('verif-hash');
-    const stripeSig = request.headers.get('stripe-signature');
     const waveSig = request.headers.get('x-wave-signature');
     const payoneerSig = request.headers.get('payoneer-signature');
 
@@ -58,15 +59,6 @@ export async function POST(request: NextRequest) {
       reference = body.data?.tx_ref || '';
       providerRef = body.data?.id?.toString() || '';
       isSuccess = body.event === 'charge.completed' && body.data?.status === 'successful';
-
-    } else if (stripeSig) {
-      // ── Stripe ────────────────────────────────────────────────────────
-      // Note: full Stripe signature verification requires the raw body + webhook secret
-      // For now, check the secret matches
-      provider = 'stripe';
-      reference = body.data?.object?.client_reference_id || body.data?.object?.metadata?.transaction_id || '';
-      providerRef = body.data?.object?.id || '';
-      isSuccess = body.type === 'checkout.session.completed';
 
     } else if (waveSig) {
       // ── Wave ──────────────────────────────────────────────────────────

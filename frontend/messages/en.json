@@ -1,4 +1,71 @@
 {
+  "AdminRefunds": {
+    "pageTitle": "Refunds",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "empty": "No refunds in this category",
+    "tabs": {
+      "requested": "To arbitrate",
+      "approved": "Approved",
+      "executed": "Executed",
+      "rejected": "Rejected"
+    },
+    "table": {
+      "invoice": "Invoice",
+      "owner": "Shipowner",
+      "amount": "Amount",
+      "requestedAt": "Requested",
+      "rail": "Rail",
+      "status": "Status"
+    },
+    "drawer": {
+      "title": "Refund details",
+      "status": "Status",
+      "invoice": "Invoice",
+      "vessel": "Vessel",
+      "owner": "Shipowner",
+      "amount": "Amount",
+      "requestedAt": "Requested at",
+      "rail": "Rail",
+      "railPicker": "Refund method",
+      "railLabels": {
+        "WALLET": "Owner wallet (instant)",
+        "WIRE_TRANSFER": "Wire transfer",
+        "STRIPE": "Stripe refund",
+        "CASH": "Cash",
+        "CHEQUE": "Cheque",
+        "MOBILE_MONEY": "Mobile money",
+        "THIRD_PARTY": "Third party",
+        "BANK_GUARANTEE": "Bank guarantee",
+        "NETTING": "Netting",
+        "LETTER_OF_CREDIT": "Letter of credit"
+      },
+      "ibanReveal": "Reveal IBAN",
+      "revealing": "Revealing…",
+      "ibanRevealed": "IBAN: {iban}",
+      "proofUpload": "Bank slip path (optional)",
+      "rejectReason": "Rejection reason (min 5 chars)",
+      "rejectReasonPlaceholder": "Why is this refund being rejected?",
+      "executedAt": "Executed at",
+      "details": "Details",
+      "rejectedReason": "Rejection reason",
+      "previouslyApprovedBy": "Approved by",
+      "executing": "Executing…",
+      "approving": "Approving…",
+      "rejecting": "Rejecting…",
+      "actions": {
+        "approve": "Approve",
+        "execute": "Execute refund",
+        "executeWallet": "Refund to wallet",
+        "reject": "Reject",
+        "confirmReject": "Confirm reject",
+        "cancelReject": "Cancel"
+      }
+    },
+    "error": {
+      "reasonTooShort": "Reason must be at least 5 characters"
+    }
+  },
   "Common": {
     "title": "AIS Portal",
     "description": "Securing Africa's Maritime Climate Wealth",
@@ -518,6 +585,7 @@
     "btn_close": "Close"
   },
   "Auth": {
+    "owner_portal_link": "Shipowner? Sign in to the owner portal",
     "system_status_online": "ONLINE — SECURE NODE",
     "sovereign_portal": "SOVEREIGN ACCESS PORTAL",
     "official_gov_system": "Official Government System",
@@ -727,6 +795,7 @@
     "nav_origin_port_proposals": "Origin-port proposals",
     "nav_revenue": "Revenue dashboard",
     "nav_payments": "Payment providers",
+    "nav_cash_desk": "Cash Desk",
     "nav_tco": "TCO Dashboard",
     "nav_inspector": "Inspector",
     "nav_settings": "Settings",
@@ -742,7 +811,9 @@
     "footer_government": "GOVERNMENT OF SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "ENCRYPTED",
-    "nav_registrations": "Registrations"
+    "nav_registrations": "Registrations",
+    "nav_wallets": "Wallets",
+    "nav_refunds": "Refunds"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -1086,6 +1157,8 @@
     "issued_to": "Issued to {vessel}",
     "generate_statement": "Generate Statement",
     "record_payment": "Record Payment",
+    "proof_section_title": "Proof of payment (MT103)",
+    "proof_submitted_label": "Payment proofs ({count})",
     "port_gate_locked": "Port Gate Locked",
     "payment_clearance_required": "Payment clearance required for departure.",
     "override": "Override",
@@ -2605,7 +2678,12 @@
       "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
       "feature_shipowner_portal_enabled": "Shipowner portal",
       "queue_worker_url": "Queue worker URL",
-      "queue_worker_secret": "Queue worker secret"
+      "queue_worker_secret": "Queue worker secret",
+      "feature_shipowner_portal_v1_enabled": "Shipowner Portal v1 (master)",
+      "feature_shipowner_self_service_enabled": "Self-service signup",
+      "feature_online_payment_stripe_enabled": "Online payment (Stripe)",
+      "feature_wallet_topup_enabled": "Wallet top-up",
+      "feature_notification_sms_enabled": "SMS notifications (dormant)"
     },
     "save": "Save",
     "saving": "Saving…",
@@ -2659,7 +2737,14 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Wallet",
+      "simulator": "Tax Simulator",
+      "tco": "TCO Dashboard",
+      "disputes": "Disputes"
+    },
+    "disputes": {
+      "empty": "You haven't opened any disputes yet."
     },
     "login": {
       "title": "Sign in with your email",
@@ -2668,9 +2753,17 @@
       "emailLabel": "Email",
       "submit": "Send sign-in link",
       "sending": "Sending…",
+      "passwordLabel": "Password",
+      "passwordSubmit": "Sign in",
+      "signingIn": "Signing in…",
+      "useMagicLink": "Email me a sign-in link instead",
+      "setPassword": "Set or reset my password",
+      "resetSent": "If that email is registered, a password-reset link is on its way. Check your inbox.",
+      "noPasswordHint": "No password yet? Use the email link, or set one below.",
       "linkSent": "If <strong>{email}</strong> is registered as a shipowner, a sign-in link is on its way. Check your inbox.",
       "errors": {
         "noOwnerRecord": "We couldn't find a shipowner profile for that email.",
+        "invalidCredentials": "Invalid email or password.",
         "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
         "ghost": "Your account has not been invited to the portal yet.",
         "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
@@ -2717,7 +2810,6 @@
       "empty": "No invoices on file yet.",
       "pay": "Pay",
       "dispute": "Dispute",
-      "paymentDeclared": "Payment declared",
       "downloadPdf": "PDF",
       "downloadAria": "Download PDF for {ref}",
       "payDialog": {
@@ -2750,6 +2842,10 @@
           "VESSEL_DATA": "Vessel data",
           "OTHER": "Other"
         }
+      },
+      "stripeReturn": {
+        "success": "Payment received — receipt is on its way to your inbox.",
+        "cancel": "Payment cancelled. Your invoice is still pending; you can try again anytime."
       }
     },
     "alerts": {
@@ -2759,6 +2855,231 @@
       "openSection": "Open ({count})",
       "closedSection": "Closed ({count})",
       "emptyOpen": "No active alerts."
+    },
+    "payDialog": {
+      "title": "Pay invoice",
+      "subtitle": "Choose how you want to pay this pro-forma. Finance will reconcile it before marking your vessel compliant.",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit payment",
+      "submitting": "Submitting…",
+      "loadingRails": "Checking available payment methods…",
+      "chooseRail": "Pick a payment method for {currency}:",
+      "railNotAvailable": "No active provider supports this rail right now.",
+      "noRailEligible": "No payment method is currently available for this currency. Please contact finance.",
+      "rail": {
+        "wire": {
+          "label": "Bank wire (SWIFT)",
+          "hint": "Manual reconciliation"
+        },
+        "momo": {
+          "label": "Mobile money",
+          "hint": "via {provider}"
+        },
+        "third": {
+          "label": "Third-party payer",
+          "hint": "via {provider}"
+        },
+        "wallet": {
+          "label": "Apply wallet credit",
+          "hint": "Use existing balance"
+        },
+        "stripe": {
+          "label": "Pay by card (Stripe)",
+          "hint": "Instant — Visa, Mastercard, Apple Pay, Google Pay"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "Send the wire and enter the bank reference below.",
+        "mobile_money": "Enter the phone number used for the {provider} transfer.",
+        "third_party": "Identify the third party paying on your behalf.",
+        "wallet": "Apply your wallet balance to this invoice.",
+        "stripe": "You will be redirected to Stripe Checkout to enter your card details."
+      },
+      "field": {
+        "bankReference": "Bank reference",
+        "bankName": "Bank name",
+        "notes": "Notes",
+        "phoneNumber": "Phone number",
+        "operatorReference": "Operator reference",
+        "viaProvider": "Routed via {provider}",
+        "payerName": "Payer name",
+        "payerRelationship": "Relationship to your company",
+        "externalReference": "External reference",
+        "walletConfirm": "Apply ${balance} from your wallet to this invoice.",
+        "topupAmount": "Top-up amount (USD)"
+      },
+      "summary": {
+        "invoice": "Invoice",
+        "amount": "Amount",
+        "rail": "Method",
+        "provider": "Provider",
+        "details": "Details",
+        "disclaimer": "Submitting registers your payment as INITIATED. Finance reviews and confirms it within 24h."
+      },
+      "errors": {
+        "bankReferenceRequired": "Bank reference is required.",
+        "phoneRequired": "Phone number is required.",
+        "payerNameRequired": "Payer name is required.",
+        "noRail": "Please pick a payment method first.",
+        "amountRequired": "Amount must be greater than 0.",
+        "noTransactionForWallet": "WALLET rail requires an invoice."
+      },
+      "reason": {
+        "wallet_empty": "Your wallet has no balance to apply.",
+        "wallet_insufficient": "Your wallet balance does not cover the full invoice amount.",
+        "no_active_provider": "No active provider supports this rail right now."
+      },
+      "mode": {
+        "topup": {
+          "title": "Top up wallet",
+          "subtitle": "Pre-fund your wallet to cover future carbon tax invoices.",
+          "amountLabel": "Top-up amount",
+          "success": "Wallet credited — your balance is up to date.",
+          "summaryLabel": "Top-up amount",
+          "summaryValue": "will be credited to your wallet",
+          "disabledTitle": "Wallet top-ups unavailable",
+          "disabledBody": "Wallet top-ups are currently unavailable. Please try again later or contact support."
+        }
+      },
+      "proofStep": {
+        "created": "Wire payment recorded. Awaiting your proof + admin verification.",
+        "intro": "Attach your SWIFT MT103 confirmation now (optional — you can also do it later from the invoice list).",
+        "done": "Done"
+      }
+    },
+    "proofUpload": {
+      "addButton": "Add proof of payment",
+      "hint": "PDF or image, up to {max} MB. You can add several files.",
+      "dialogTitle": "Proof of payment — {ref}",
+      "intro": "Upload your SWIFT MT103 confirmation. An administrator will verify it before the invoice is marked paid.",
+      "removeAria": "Remove {name}",
+      "errors": {
+        "tooLarge": "File is too large (max {max} MB).",
+        "uploadFailed": "Upload failed. Please try again.",
+        "deleteFailed": "Could not remove the file."
+      }
+    },
+    "wallet": {
+      "balanceCard": {
+        "title": "Current balance",
+        "autoApply": "Auto-apply to invoices",
+        "autoApplyOn": "Enabled",
+        "autoApplyOff": "Disabled",
+        "topupCta": "Top up wallet"
+      },
+      "predictionCard": {
+        "title": "Next 30 days",
+        "estimate30d": "~{count} vessel passages → ~${amount} USD",
+        "confidence": "Confidence: {level}",
+        "confidenceLevel": {
+          "low": "low",
+          "medium": "medium",
+          "high": "high"
+        },
+        "notEnoughData": "Not enough activity in the last 90 days to predict (< 5 alerts).",
+        "insufficientWarning": "Estimated need exceeds current balance — recommended top-up: ${amount}"
+      },
+      "ledger": {
+        "title": "Movements",
+        "empty": "No movements yet.",
+        "col": {
+          "date": "Date",
+          "amount": "Amount",
+          "kind": "Kind",
+          "note": "Note"
+        },
+        "kind": {
+          "TOPUP": "Top-up",
+          "OVERPAYMENT_CREDIT": "Overpayment credit",
+          "REFUND_CREDIT": "Refund credit",
+          "PROFORMA_APPLY": "Applied to invoice",
+          "ADMIN_ADJUSTMENT": "Admin adjustment",
+          "FX_DIFFERENCE": "FX difference"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "bellAria": "Notifications",
+      "markAllRead": "Mark all as read",
+      "viewAll": "View all notifications",
+      "empty": "No notifications yet",
+      "pageTitle": "Notifications",
+      "unreadLabel": "unread",
+      "filterAria": "Filter notifications",
+      "filterAll": "All",
+      "filterUnread": "Unread only",
+      "loading": "Loading…",
+      "emptyUnread": "No unread notifications",
+      "loadMore": "Load more",
+      "loadingMore": "Loading…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "Account activated",
+          "body": "Welcome {shipowner_name}. Your account is now active."
+        },
+        "KYC_REJECTED": {
+          "title": "Registration rejected",
+          "body": "Your registration was rejected. Reason: {reason}"
+        },
+        "KYC_C_REQUIRED": {
+          "title": "Additional KYC required",
+          "body": "Please complete the KYC-C billing wizard to activate payments."
+        },
+        "ALERT_DETECTED": {
+          "title": "Vessel detected",
+          "body": "{vessel_name} ({imo}) was detected approaching {port}."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "Proforma issued",
+          "body": "Proforma {invoice_ref} for {vessel_name} ({amount_usd} USD)."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "Proforma reminder",
+          "body": "Proforma {invoice_ref} ({amount_usd} USD) is {age_days} days old and still unpaid."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "Payment received",
+          "body": "Payment of {amount_usd} USD for {invoice_ref} was confirmed."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "Payment declined",
+          "body": "Payment for {invoice_ref} was declined. Reason: {reason}"
+        },
+        "FINAL_ISSUED": {
+          "title": "Final invoice issued",
+          "body": "Final invoice {invoice_ref} is available."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "Complement invoice issued",
+          "body": "Complement invoice {invoice_ref} ({amount_usd} USD) is available."
+        },
+        "REFUND_ISSUED": {
+          "title": "Refund issued",
+          "body": "A refund of {amount_usd} USD has been issued for {invoice_ref} via {refund_rail}."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "Wallet topped up",
+          "body": "Your wallet was credited with {amount_usd} USD. New balance: {new_balance_usd} USD."
+        },
+        "WALLET_APPLIED": {
+          "title": "Wallet applied",
+          "body": "{amount_usd} USD from your wallet was applied to {invoice_ref}."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "Wallet balance low",
+          "body": "Your wallet balance is {balance_usd} USD — consider a top-up."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "Dispute updated",
+          "body": "Dispute on {invoice_ref} has been updated."
+        },
+        "OWNER_ESCALATION": {
+          "title": "Escalation notice",
+          "body": "An action is required on {invoice_ref}."
+        }
+      }
     }
   },
   "AdminEquasis": {
@@ -2918,5 +3239,202 @@
     "placeholder_p1": "These terms govern your use of the Green Gate carbon tax shipowner portal. By accepting, you agree to remit the applicable carbon tax for vessels matching your declared IMO Company Number.",
     "placeholder_p2": "Detailed terms will be published before public launch. For questions, contact compliance@africgreen.com.",
     "draft_notice": "Draft document — final terms will be published before launch."
+  },
+  "AdminPayments": {
+    "title": "Payments",
+    "subtitle": "Review owner-initiated payments and record manual entries.",
+    "refresh": "Refresh",
+    "recordManual": "Record manual",
+    "filterStatus": "Status",
+    "filterRail": "Rail",
+    "loading": "Loading payments…",
+    "empty": "No payments match the current filters.",
+    "col": {
+      "id": "ID",
+      "rail": "Rail",
+      "amount": "Amount",
+      "status": "Status",
+      "created": "Created",
+      "ref": "Ext. ref"
+    },
+    "recordDialog": {
+      "title": "Record manual payment",
+      "subtitle": "Insert a payment row on behalf of a shipowner. CASH always requires a second admin to confirm (4-eyes).",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Record payment",
+      "submitting": "Recording…",
+      "step1": {
+        "intro": "Choose the rail and identify the shipowner + transaction.",
+        "rail": "Rail",
+        "shipowner": "Shipowner",
+        "shipownerPlaceholder": "Search by name…",
+        "transaction": "Transaction (optional)",
+        "transactionNone": "— No specific transaction —"
+      },
+      "step2": {
+        "amount": "Amount",
+        "currency": "Currency",
+        "proofs": "Proof files",
+        "proofsCta": "Click to upload (PDF / image, ≤ 5MB)",
+        "hint": {
+          "cash": "Issue the cash receipt and record the cashier's name.",
+          "cheque": "Capture the cheque number, bank, and date.",
+          "letter_of_credit": "Record the LC reference and issuing bank.",
+          "netting": "Identify the counterparty and the net settlement reference.",
+          "third_party": "Identify the third-party payer.",
+          "bank_guarantee": "Record the guarantee number and issuing bank."
+        },
+        "field": {
+          "receiptNumber": "Receipt number",
+          "cashier": "Cashier name",
+          "chequeNumber": "Cheque number",
+          "bankName": "Bank name",
+          "chequeDate": "Cheque date",
+          "lcNumber": "LC number",
+          "issuingBank": "Issuing bank",
+          "expiryDate": "Expiry date",
+          "counterparty": "Counterparty",
+          "netSettlementRef": "Net settlement ref",
+          "payerName": "Payer name",
+          "payerRelationship": "Relationship",
+          "externalReference": "External reference",
+          "guaranteeNumber": "Guarantee number"
+        }
+      },
+      "summary": {
+        "rail": "Rail",
+        "shipowner": "Shipowner",
+        "transaction": "Transaction",
+        "noTransaction": "(none)",
+        "amount": "Amount",
+        "proofs": "Proofs",
+        "details": "Details",
+        "confirmImmediately": "Confirm immediately (mark as CONFIRMED — admin signs off as confirmer)",
+        "fourEyesRequired": "CASH requires 4-eyes — second admin must confirm"
+      },
+      "errors": {
+        "railRequired": "Pick a rail first.",
+        "shipownerRequired": "Pick a shipowner.",
+        "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+        "fileTooBig": "{name} exceeds the 5MB limit.",
+        "fileMime": "{name} has an unsupported file type.",
+        "invalidState": "Wizard state is incomplete.",
+        "required": {
+          "receipt_number": "Receipt number is required.",
+          "cashier": "Cashier name is required.",
+          "cheque_number": "Cheque number is required.",
+          "bank_name": "Bank name is required.",
+          "lc_number": "LC number is required.",
+          "issuing_bank": "Issuing bank is required.",
+          "counterparty": "Counterparty is required.",
+          "net_settlement_ref": "Settlement reference is required.",
+          "payer_name": "Payer name is required.",
+          "guarantee_number": "Guarantee number is required."
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "Payment review",
+      "loading": "Loading payment…",
+      "status": "Status",
+      "rail": "Rail",
+      "amount": "Amount",
+      "transaction": "Transaction",
+      "declaredBy": "Declared by",
+      "createdAt": "Created",
+      "details": "Rail details",
+      "proofs": "Proofs",
+      "confirm": "Confirm",
+      "confirming": "Confirming…",
+      "reject": "Reject",
+      "rejecting": "Rejecting…",
+      "confirmReject": "Submit rejection",
+      "cancelReject": "Back",
+      "rejectReason": "Reason for rejection",
+      "rejectReasonPlaceholder": "Required — explain why this payment is rejected.",
+      "errors": {
+        "reasonRequired": "Reason must be at least 3 characters."
+      },
+      "downloadReceipt": "Download receipt"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "Cash desk",
+    "subtitle": "Record an in-person cash payment. A second admin must confirm it from /admin/payments (4-eyes).",
+    "field": {
+      "shipowner": "Shipowner",
+      "shipownerPlaceholder": "Search by name…",
+      "transaction": "Invoice (optional)",
+      "transactionNone": "— No specific invoice —",
+      "amount": "Amount",
+      "currency": "Currency",
+      "receiptNumber": "Receipt number",
+      "regen": "Regenerate",
+      "proof": "Photo / receipt scan",
+      "proofCta": "Click to attach (PDF or image, ≤ 5MB)",
+      "proofRemove": "Remove"
+    },
+    "reset": "Clear",
+    "submit": "Record cash payment",
+    "submitting": "Recording…",
+    "fourEyesNote": "Recorded as INITIATED — a second admin must confirm via /admin/payments (4-eyes rule).",
+    "success": {
+      "title": "Cash payment recorded",
+      "body": "Reference {ref}. Awaiting second-admin confirmation.",
+      "dismiss": "Dismiss"
+    },
+    "errors": {
+      "shipownerRequired": "Pick a shipowner.",
+      "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+      "receiptRequired": "Receipt number is required.",
+      "fileTooBig": "File exceeds the 5MB limit.",
+      "fileMime": "File type not supported (use PDF or image).",
+      "submitFailed": "Could not record the cash payment."
+    }
+  },
+  "AdminWallets": {
+    "title": "Wallets",
+    "subtitle": "All shipowner wallets — balance, auto-apply, ledger.",
+    "refresh": "Refresh",
+    "empty": "No wallets yet.",
+    "autoApply": {
+      "on": "Auto",
+      "off": "Manual"
+    },
+    "col": {
+      "owner": "Shipowner",
+      "balance": "Balance",
+      "autoApply": "Auto-apply",
+      "lastActivity": "Last activity"
+    },
+    "drawer": {
+      "title": "Wallet details",
+      "loading": "Loading wallet…",
+      "owner": "Shipowner",
+      "balance": "Balance",
+      "adjustNotice": "SUPERADMIN can post a manual adjustment to this wallet. Use for ops corrections, goodwill credits, or merging duplicate accounts. All adjustments are logged in the ledger.",
+      "adjustCta": "Manual adjustment",
+      "ledgerTitle": "Ledger ({count} entries)"
+    },
+    "adjust": {
+      "title": "Manual adjustment — {owner}",
+      "subtitle": "Credit or debit this wallet. All adjustments are append-only and require justification.",
+      "warning": "This action is irreversible. The adjustment will appear in the ledger as ADMIN_ADJUSTMENT.",
+      "credit": "Credit",
+      "debit": "Debit",
+      "amount": "Amount",
+      "justification": "Justification",
+      "justificationPlaceholder": "e.g. Goodwill credit for delayed processing 2026-05; ops ticket #1234",
+      "cancel": "Cancel",
+      "submit": "Post adjustment",
+      "submitting": "Posting…",
+      "errors": {
+        "amountInvalid": "Amount must be a positive decimal with up to 2 fraction digits.",
+        "justificationRequired": "Justification must be at least 5 characters.",
+        "wouldGoNegative": "Debit exceeds current balance — would make the wallet negative.",
+        "failed": "Adjustment failed."
+      }
+    }
   }
 }
