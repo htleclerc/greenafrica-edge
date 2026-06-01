@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 // Routes that require authentication
 // /auth/setup-password is here because it's reached AFTER /auth/sl has
@@ -34,29 +35,22 @@ async function getPortalV1FlagCached(): Promise<boolean> {
         return _flagCache.portalV1Enabled;
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-        // Env missing → fail-open. Cache the answer to avoid hammering on
-        // every request in a misconfigured environment.
-        _flagCache = { portalV1Enabled: true, expiresAt: now + FLAG_CACHE_TTL_MS };
-        return true;
-    }
-
+    // `app_config` is a global control-plane table — the UNSCOPED platform
+    // factory is correct. It throws when the service-role env is missing; that
+    // and any read error fall through to fail-OPEN (see module comment).
+    // supabase-js runs in the Edge runtime here (updateSession already does).
     try {
-        const res = await fetch(
-            `${url}/rest/v1/app_config?key=eq.feature.shipowner_portal_v1_enabled&select=value`,
-            {
-                headers: { apikey: key, Authorization: `Bearer ${key}` },
-                // Edge fetch — no Node-specific options.
-            },
-        );
-        if (!res.ok) {
+        const admin = createPlatformClient();
+        const { data, error } = await admin
+            .from('app_config')
+            .select('value')
+            .eq('key', 'feature.shipowner_portal_v1_enabled')
+            .maybeSingle<{ value: unknown }>();
+        if (error) {
             _flagCache = { portalV1Enabled: true, expiresAt: now + FLAG_CACHE_TTL_MS };
             return true;
         }
-        const rows = (await res.json()) as Array<{ value: unknown }>;
-        const enabled = rows.length > 0 && rows[0]?.value === true;
+        const enabled = data?.value === true;
         _flagCache = { portalV1Enabled: enabled, expiresAt: now + FLAG_CACHE_TTL_MS };
         return enabled;
     } catch {
@@ -87,18 +81,20 @@ async function isActiveShipowner(userId: string): Promise<boolean> {
     const cached = _shipownerCache.get(userId);
     if (cached && cached.expiresAt > now) return cached.isActive;
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return false;
-
+    // Routing lookup by globally-unique profile_id, with no jurisdiction context
+    // in middleware — the UNSCOPED platform factory is correct (a shipowner is
+    // detected regardless of which State they belong to). It throws on missing
+    // env; that and any read error fail-CLOSED (assume NOT a shipowner).
     try {
-        const res = await fetch(
-            `${url}/rest/v1/shipowners?profile_id=eq.${encodeURIComponent(userId)}&account_state=eq.ACTIVE&select=id&limit=1`,
-            { headers: { apikey: key, Authorization: `Bearer ${key}` } },
-        );
-        if (!res.ok) return false;
-        const rows = (await res.json()) as Array<{ id: string }>;
-        const isActive = rows.length > 0;
+        const admin = createPlatformClient();
+        const { data, error } = await admin
+            .from('shipowners')
+            .select('id')
+            .eq('profile_id', userId)
+            .eq('account_state', 'ACTIVE')
+            .limit(1);
+        if (error) return false;
+        const isActive = (data?.length ?? 0) > 0;
         _shipownerCache.set(userId, { isActive, expiresAt: now + SHIPOWNER_CACHE_TTL_MS });
         return isActive;
     } catch {

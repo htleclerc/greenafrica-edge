@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle, FileText, Receipt, RotateCcw } from 'lucide-react';
 import { parseInvoiceRef, verifyInvoiceSignature } from '@/services/invoiceService';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
@@ -152,17 +153,20 @@ async function fetchVerifiedReceipt(ref: string): Promise<ReceiptVerifyResult> {
     const rate = await enforceRateLimit('verify', clientId);
     if (!rate.allowed) return { found: false };
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey) return { found: false };
-
     // Use the service role for the lookup ONLY because RLS on `payments`
     // restricts owner-row access to authenticated shipowners; the public
     // verify page has no auth session. We project a hard-coded whitelist
     // of columns and join paths so this can never leak unrelated rows.
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) return { found: false };
-    const svc = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+    // receipt_ref is globally unique and this public page carries no tenant
+    // context, so the UNSCOPED platform factory is correct (verifying any
+    // jurisdiction's receipt by QR is by design). It throws on missing env;
+    // swallow that and return the uniform "not found" shape.
+    let svc: SupabaseClient;
+    try {
+        svc = createPlatformClient();
+    } catch {
+        return { found: false };
+    }
 
     type PaymentRow = {
         receipt_ref: string | null;
