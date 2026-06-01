@@ -1,7 +1,8 @@
 // frontend/src/app/api/transactions/[id]/proof/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createServiceClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { MAX_PROOF_SIZE_BYTES, ALLOWED_PROOF_MIME_TYPES } from '@/services/paymentProofService';
 
 const BUCKET = 'payment-proofs';
@@ -25,7 +26,10 @@ async function authorizeTxn(transactionId: string): Promise<AuthorizeResult> {
     const { data: { user } } = await session.auth.getUser();
     if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
 
-    const admin = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    // Legacy vessel-owner proof flow (vessels.owner_id = profile). Single-country
+    // foundation → UNSCOPED platform client; the owner_id gate below is the guard
+    // (agent jurisdiction scoping deferred to Wedge 2).
+    const admin = createPlatformClient();
 
     const { data: txn } = await admin
         .from('transactions').select('id, vessel_id, payment_proof_files, status').eq('id', transactionId).maybeSingle();
