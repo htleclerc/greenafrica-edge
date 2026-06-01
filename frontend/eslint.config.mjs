@@ -16,8 +16,9 @@ const eslintConfig = defineConfig([
   // GreenGate v8 tenant isolation: service-role clients bypass RLS, so a query that
   // forgets the jurisdiction filter leaks one State's data to another. Force all
   // service-role access through the sanctioned factories in lib/supabase/tenant.ts.
-  // `warn` for now (surfaces the ~40 legacy call sites to migrate); flip to `error`
-  // once they are all routed through createTenantClient / createPlatformClient.
+  // `error`: the full S3 sweep is complete — every production call site is routed
+  // through createTenantClient / createPlatformClient, so any new raw read is a
+  // regression and must fail CI.
   {
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
@@ -28,7 +29,7 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "no-restricted-syntax": [
-        "warn",
+        "error",
         {
           selector:
             "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='SUPABASE_SERVICE_ROLE_KEY']",
