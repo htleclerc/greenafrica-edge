@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature, verifyPayoneerSignature } from '@/services/paymentService';
 import { writeAuditLog } from '@/services/auditService';
 import { parseInvoiceRef } from '@/services/invoiceService';
@@ -25,10 +25,9 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     const body = JSON.parse(rawBody);
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Platform-level webhook (no tenant context at entry; payments are keyed by
+    // external provider ref). Unscoped service-role via the sanctioned factory.
+    const adminClient = createPlatformClient();
 
     // ── Detect provider from headers ────────────────────────────────────
     const paystackSig = request.headers.get('x-paystack-signature');

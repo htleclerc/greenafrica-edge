@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * GET /api/ais/poll
@@ -58,13 +59,14 @@ export async function GET() {
         return NextResponse.json({ error: 'AISSTREAM_API_KEY not configured' }, { status: 500 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
+    // Cross-tenant AIS poller (dev/demo). UNSCOPED platform client; vessel rows
+    // inherit jurisdiction via the column DEFAULT until Wedge 1 geofencing.
+    let admin: SupabaseClient;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
     }
-
-    const admin = createClient(supabaseUrl, supabaseKey);
 
     const collected: Array<{ mmsi: string; name: string; lat: number; lng: number; speed: number }> = [];
 

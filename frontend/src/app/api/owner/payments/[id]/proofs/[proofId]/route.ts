@@ -1,7 +1,7 @@
 // frontend/src/app/api/owner/payments/[id]/proofs/[proofId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 const ATTACHABLE = new Set(['INITIATED', 'PROCESSING']);
 
@@ -12,11 +12,14 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     const { data: { user } } = await session.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const admin = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-    const { data: shipowner, error: ownerErr } = await admin.from('shipowners').select('id').eq('profile_id', user.id).maybeSingle();
+    // Resolve the caller's own shipowner row (id + home jurisdiction) via the RLS
+    // session client, then scope the privileged payment/proof ops to that
+    // jurisdiction (a payment in another State is simply not found).
+    const { data: shipowner, error: ownerErr } = await session.from('shipowners').select('id, jurisdiction_id').eq('profile_id', user.id).maybeSingle();
     if (ownerErr) return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     if (!shipowner) return NextResponse.json({ error: 'No shipowner record' }, { status: 403 });
+
+    const admin = createTenantClient(shipowner.jurisdiction_id as string);
 
     const { data: payment, error: payErr } = await admin.from('payments').select('id, shipowner_id, status').eq('id', paymentId).maybeSingle();
     if (payErr) return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

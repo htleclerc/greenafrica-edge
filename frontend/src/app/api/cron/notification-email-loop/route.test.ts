@@ -15,13 +15,13 @@ const mocks = vi.hoisted(() => ({
     }>,
 }));
 
-vi.mock('@supabase/supabase-js', () => {
+vi.mock('@/lib/supabase/tenant', () => {
     // Thenable helper — returns the data when awaited at the end of a chain.
     const thenable = <T>(value: T) =>
         ({ then: (resolve: (v: T) => void) => resolve(value) }) as PromiseLike<T>;
 
     return {
-        createClient: vi.fn(() => ({
+        createPlatformClient: vi.fn(() => ({
             from: vi.fn((table: string) => {
                 if (table === 'owner_notifications') {
                     return {

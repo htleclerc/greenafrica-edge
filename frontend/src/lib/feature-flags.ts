@@ -14,7 +14,8 @@
 // the gate wiring.
 
 import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 export interface PortalFeatureFlags {
     portalV1Enabled: boolean;
@@ -55,15 +56,16 @@ function defaultFlags(): PortalFeatureFlags {
  * @internal
  */
 export async function _readPortalFeatureFlagsImpl(): Promise<PortalFeatureFlags> {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
-        // Defensive: a misconfigured environment shouldn't open the gates.
+    // `app_config` is a global control-plane table (not tenant-scoped), so the
+    // UNSCOPED platform factory is correct. It throws when the service-role env
+    // is missing — swallow that and fail-SECURE (everything off) rather than
+    // open the gates on a misconfigured deploy.
+    let admin: SupabaseClient;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return defaultFlags();
     }
-    const admin = createClient(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
 
     const { data, error } = await admin
         .from('app_config')

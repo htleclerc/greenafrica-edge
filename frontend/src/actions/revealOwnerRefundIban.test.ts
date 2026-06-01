@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 interface InsertCall { table: string; payload: Record<string, unknown> }
 
-let shipownerRow: { iban: string | null } | null = null;
+let shipownerRow: { iban: string | null; jurisdiction_id?: string } | null = null;
 let requireRoleResult: { user: { id: string; fullName: string } | null; supabase: unknown; error: unknown } = {
     user: { id: 'admin-1', fullName: 'Admin One' },
     supabase: null,
@@ -40,8 +40,13 @@ const mockSupabase = {
     }),
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
+    createTenantClient: vi.fn(() => mockSupabase),
+}));
+
+vi.mock('@/lib/auth/adminTenant', () => ({
+    assertAdminCanActOn: vi.fn(async (_user: unknown, jid: string) => jid),
 }));
 
 vi.mock('@/lib/auth/requireRole', () => ({
@@ -53,7 +58,7 @@ vi.mock('@/services/kycService', () => ({
 }));
 
 beforeEach(() => {
-    shipownerRow = { iban: 'encrypted-iban-token' };
+    shipownerRow = { iban: 'encrypted-iban-token', jurisdiction_id: '00000000-0000-4000-8000-00000000534f' };
     requireRoleResult = {
         user: { id: 'admin-1', fullName: 'Admin One' },
         supabase: null,

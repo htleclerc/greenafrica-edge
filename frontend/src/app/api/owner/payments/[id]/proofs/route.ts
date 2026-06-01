@@ -1,7 +1,8 @@
 // frontend/src/app/api/owner/payments/[id]/proofs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createServiceClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createTenantClient } from '@/lib/supabase/tenant';
 import { uploadProof, listProofs } from '@/services/paymentProofService';
 
 const ATTACHABLE = new Set(['INITIATED', 'PROCESSING']);
@@ -17,12 +18,16 @@ async function authorize(paymentId: string): Promise<AuthResult> {
     const { data: { user } } = await session.auth.getUser();
     if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
 
-    const admin = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-    const { data: shipowner, error: shipownerErr } = await admin
-        .from('shipowners').select('id').eq('profile_id', user.id).maybeSingle();
+    // Resolve the caller's own shipowner row (id + home jurisdiction) via the RLS
+    // session client — owners may SELECT their own row (mig 024/033). Then scope
+    // all privileged ops to that jurisdiction: a payment in another State is
+    // simply not found (defense in depth on top of the shipowner_id check below).
+    const { data: shipowner, error: shipownerErr } = await session
+        .from('shipowners').select('id, jurisdiction_id').eq('profile_id', user.id).maybeSingle();
     if (shipownerErr) return { error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
     if (!shipowner) return { error: NextResponse.json({ error: 'No shipowner record' }, { status: 403 }) };
+
+    const admin = createTenantClient(shipowner.jurisdiction_id as string);
 
     const { data: payment, error: paymentErr } = await admin
         .from('payments').select('id, shipowner_id, status').eq('id', paymentId).maybeSingle();

@@ -5,8 +5,8 @@ vi.mock('@/services/stripeService', () => ({
     retrievePaymentIntent: vi.fn(),
 }));
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => ({
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => ({
         from: vi.fn(() => ({
             select: vi.fn(() => ({
                 eq: vi.fn(() => ({

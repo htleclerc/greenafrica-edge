@@ -41,7 +41,7 @@ const mockSupabase = {
     rpc: vi.fn(async () => ({ data: null, error: null })),
 };
 
-vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => mockSupabase) }));
+vi.mock('@/lib/supabase/tenant', () => ({ createTenantClient: vi.fn(() => mockSupabase) }));
 vi.mock('@/lib/auth/requireOwner', () => ({
     requireOwner: vi.fn(async () => ({
         userId: 'u-1',

@@ -1,7 +1,7 @@
 'use server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { claimAlert } from '@/services/arrivalAlertService';
 import { getOrCreateGhost, upsertShipownerEmail } from '@/services/shipownerService';
 
@@ -32,15 +32,15 @@ export async function claimArrivalAlert(
         return { ok: false, reason: 'only shipping agents can claim alerts' };
     }
 
-    // Service_role for the conditional UPDATE + shipowner mutation.
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
+    // Service_role for the conditional claim UPDATE + shipowner mutation. Single-country
+    // foundation: the alert / vessel / GHOST shipowner all carry the DEFAULT jurisdiction
+    // (agent jurisdiction scoping deferred to Wedge 2). UNSCOPED platform client.
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return { ok: false, reason: 'supabase service role not configured' };
     }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
 
     const claim = await claimAlert(admin, alertId, auth.user.id);
     if (!claim.ok) return { ok: false, reason: claim.reason };

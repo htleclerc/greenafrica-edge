@@ -39,7 +39,7 @@ const mockSupabase = {
     })),
 };
 
-vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => mockSupabase) }));
+vi.mock('@/lib/supabase/tenant', () => ({ createTenantClient: vi.fn(() => mockSupabase) }));
 
 const requireOwnerMock = vi.fn(async () => ({
     userId: 'u-1',

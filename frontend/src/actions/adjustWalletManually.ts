@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { requireRole } from '@/lib/auth/requireRole';
 import { scopedLogger } from '@/lib/logger';
 import { UserRole } from '@/types/secure';
 import { z } from 'zod';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 const log = scopedLogger('adjustWalletManually');
 
@@ -50,9 +51,26 @@ export async function adjustWalletManually(input: {
         userId: auth.user.id,
     });
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createServiceClient(url, key);
+    // Resolve the wallet's jurisdiction (Model B: wallet inherits the operator's),
+    // confine the admin to it (SUPERADMIN may act on any), and stamp the ledger row
+    // with that jurisdiction via the scoped client.
+    const platform = createPlatformClient();
+    const { data: wallet, error: wErr } = await platform
+        .from('wallets')
+        .select('jurisdiction_id')
+        .eq('id', parsed.walletId)
+        .maybeSingle();
+    if (wErr) throw new Error(wErr.message);
+    if (!wallet) {
+        log.error('wallet_manual_adjust_db_error', {
+            walletId: parsed.walletId,
+            error: 'wallet not found',
+        });
+        throw new Error('Wallet not found');
+    }
+    const admin = createTenantClient(
+        await assertAdminCanActOn(auth.user, (wallet as { jurisdiction_id: string }).jurisdiction_id),
+    );
 
     const { error } = await admin.from('wallet_ledger').insert({
         wallet_id: parsed.walletId,

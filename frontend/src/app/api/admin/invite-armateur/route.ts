@@ -17,12 +17,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { createSignedLoginUrl } from '@/lib/auth/signedLink';
 import { UserRole } from '@/types/secure';
 import { sendArmateurInviteEmail } from '@/services/emailService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const INVITER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER];
 
@@ -52,10 +52,9 @@ export async function POST(request: NextRequest) {
     const fullName = parsed.data.fullName.trim();
     const { orgName, jurisdiction } = parsed.data;
 
-    const adminClient = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Creates a global staff (SHIPPING_AGENT) profile — profiles is not tenant-scoped
+    // (jurisdiction membership lives in user_jurisdictions) → UNSCOPED platform client.
+    const adminClient = createPlatformClient();
 
     // 1. Check duplicate
     const { data: existing } = await adminClient

@@ -9,6 +9,7 @@ vi.mock('@/lib/auth/requireOwner', () => ({
         userId: 'u-1',
         email: 'owner@test.com',
         shipowner: { id: 'so-1', name: 'Test Owner', account_state: 'ACTIVE' },
+        jurisdictionId: '00000000-0000-4000-8000-00000000534f',
         supabase: {},
     })),
 }));
@@ -38,8 +39,8 @@ const mockSupabase = {
     }),
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createTenantClient: vi.fn(() => mockSupabase),
 }));
 
 beforeEach(() => {

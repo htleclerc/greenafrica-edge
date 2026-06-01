@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { uploadProof } from '@/services/paymentProofService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN];
 
@@ -23,19 +24,24 @@ export async function POST(
     const { data: { user } } = await auth.supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // Use a service-role client for the Storage upload + metadata insert.
+    // Service-role for the Storage upload + metadata insert. Mig 059 added an
+    // owner-write Storage RLS policy on `payment-proofs` but no admin-on-behalf-of
+    // policy, so a session client would be rejected (current_shipowner_id() is NULL
+    // for an admin). The auth gate is requireRole(ADMIN_ROLES) above.
     //
-    // Mig 059 added an owner-write Storage RLS policy on `payment-proofs`
-    // (`current_shipowner_id() IS NOT NULL`) but no admin-on-behalf-of-owner
-    // policy. A session-scoped client here would be REJECTED by RLS because
-    // `current_shipowner_id()` returns NULL for an admin user.
-    //
-    // The auth gate is `requireRole(ADMIN_ROLES)` above — service-role here
-    // only bypasses Storage RLS, not the route's authorization. Same pattern
-    // Plan 7C-1's `initiatePayment` uses for the owner-side payments insert.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const serviceClient = createServiceClient(url, serviceKey);
+    // GreenGate v8: confine the acting admin to the payment's jurisdiction
+    // (SUPERADMIN may act on any) before minting the scoped service-role client.
+    const platform = createPlatformClient();
+    const { data: pmt, error: pmtErr } = await platform
+        .from('payments').select('jurisdiction_id').eq('id', paymentId).maybeSingle();
+    if (pmtErr) return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (!pmt) return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+    let serviceClient;
+    try {
+        serviceClient = createTenantClient(await assertAdminCanActOn(auth.user, (pmt as { jurisdiction_id: string }).jurisdiction_id));
+    } catch {
+        return NextResponse.json({ error: 'Forbidden: payment belongs to another jurisdiction' }, { status: 403 });
+    }
 
     try {
         const result = await uploadProof(serviceClient, {

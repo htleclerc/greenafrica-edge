@@ -1,8 +1,8 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { createTenantClient } from '@/lib/supabase/tenant';
 import { scopedLogger } from '@/lib/logger';
 
 const log = scopedLogger('applyWallet');
@@ -24,9 +24,7 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
         amountUsdMinor: parsed.amountMinor,
     });
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    const admin = createTenantClient(ctx.jurisdictionId);
 
     // Verify transaction belongs to this shipowner and fetch due amount
     const { data: tx, error: txErr } = await admin

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServiceRoleClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { verifyInvoiceSignature } from '@/services/invoiceService';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
@@ -29,12 +30,6 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ ref: string }> },
 ) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-        return new NextResponse('Not configured', { status: 500 });
-    }
-
     // Throttle BEFORE anything else — per-IP sliding window. Returns 429
     // with a generic body so scraping attempts can't distinguish rate-limit
     // from not-found based on response shape.
@@ -62,7 +57,14 @@ export async function GET(
         return new NextResponse('Not found', { status: 404 });
     }
 
-    const admin = createServiceRoleClient(supabaseUrl, supabaseKey);
+    // Public download by globally-unique invoice_ref (HMAC-gated, no tenant context)
+    // → UNSCOPED platform client.
+    let admin: SupabaseClient;
+    try {
+        admin = createPlatformClient();
+    } catch {
+        return new NextResponse('Not configured', { status: 500 });
+    }
 
     const { data: tx, error: txErr } = await admin
         .from('transactions')

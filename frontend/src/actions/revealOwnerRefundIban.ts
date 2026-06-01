@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { decryptIban } from '@/services/kycService';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Plan 7G — Task 9: revealOwnerRefundIban
@@ -41,18 +42,23 @@ export async function revealOwnerRefundIban(input: {
         return { ok: false, error: 'Not authorized' };
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
-
-    // 1. Look up the shipowner's encrypted IBAN.
-    const { data: row, error: rowErr } = await admin
+    // 1. Look up the shipowner's encrypted IBAN + jurisdiction (find regardless of
+    //    tenant), then confine the acting admin to that jurisdiction.
+    const platform = createPlatformClient();
+    const { data: row, error: rowErr } = await platform
         .from('shipowners')
-        .select('iban')
+        .select('iban, jurisdiction_id')
         .eq('id', parsed.shipownerId)
         .maybeSingle();
     if (rowErr) return { ok: false, error: rowErr.message };
     if (!row) return { ok: false, error: 'Shipowner not found' };
+    let jid: string;
+    try {
+        jid = await assertAdminCanActOn(auth.user, (row as { jurisdiction_id: string }).jurisdiction_id);
+    } catch {
+        return { ok: false, error: 'Not authorized for this jurisdiction' };
+    }
+    const admin = createTenantClient(jid);
     const encrypted = (row as { iban: string | null }).iban;
     if (!encrypted) return { ok: false, error: 'No IBAN on file for this shipowner' };
 

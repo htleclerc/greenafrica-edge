@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { getRefundById } from '@/services/refundService';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Plan 7G — Task 5: approveRefund
@@ -59,20 +60,17 @@ export async function approveRefund(input: {
     const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
     if (auth.error) throw new Error('Not authorized');
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
-
-    // 1. Verify the refund exists and is in the REQUESTED state.
-    //    (We still race-guard the UPDATE below — this check is for clean
-    //     error messages and to fail fast on EXECUTED/REJECTED rows.)
-    const refund = await getRefundById(admin, parsed.refundId);
+    // 1. Find the refund regardless of tenant, then confine the acting admin to its
+    //    jurisdiction (SUPERADMIN may act on any) and scope all writes to it.
+    const platform = createPlatformClient();
+    const refund = await getRefundById(platform, parsed.refundId);
     if (!refund) throw new Error(`Refund not found: ${parsed.refundId}`);
     if (refund.status !== 'REQUESTED') {
         throw new Error(
             `Refund ${parsed.refundId} has status ${refund.status}; can only approve from REQUESTED`,
         );
     }
+    const admin = createTenantClient(await assertAdminCanActOn(auth.user, refund.jurisdiction_id));
 
     // 2. UPDATE with status='REQUESTED' race guard so concurrent approve/reject
     //    calls can't both succeed.

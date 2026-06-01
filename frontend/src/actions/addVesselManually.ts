@@ -1,7 +1,7 @@
 'use server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 // Manual vessel entry: armateurs register a vessel they own (e.g. before AIS
 // detection); staff can register on behalf without an owner. Auth role decides
@@ -48,14 +48,15 @@ export async function addVesselManually(
         return { ok: false, reason: 'role not allowed to register vessels' };
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
+    // Single-country foundation: the vessels INSERT inherits jurisdiction via the
+    // column DEFAULT (agent/staff vessel→jurisdiction scoping deferred to Wedge 2).
+    // UNSCOPED platform client — conspicuous by name, audited.
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
         return { ok: false, reason: 'supabase service role not configured' };
     }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
 
     const { data: existing } = await admin
         .from('vessels')

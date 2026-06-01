@@ -505,12 +505,10 @@ export interface ShipownerCompletionRequestParams {
 }
 
 export async function sendShipownerCompletionRequestEmail(p: ShipownerCompletionRequestParams): Promise<void> {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } },
-    );
+    const { createPlatformClient } = await import('@/lib/supabase/tenant');
+    // Reads one shipowner by id to populate the email; the calling action already
+    // enforced the jurisdiction gate. Global helper → UNSCOPED platform client.
+    const supabase = createPlatformClient();
 
     const { data: row } = await supabase
         .from('shipowners')

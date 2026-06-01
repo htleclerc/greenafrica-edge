@@ -5,8 +5,8 @@ const mockSupabase = {
     auth: { admin: { inviteUserByEmail: vi.fn(), listUsers: vi.fn() } },
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
 }));
 vi.mock('@/lib/rateLimit', () => ({
     enforceRateLimit: vi.fn(async () => ({ allowed: true })),

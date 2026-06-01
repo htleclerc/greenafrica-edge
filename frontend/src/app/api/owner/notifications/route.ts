@@ -22,7 +22,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -39,20 +39,20 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await session.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // 2. Service-role client for the actual reads (mig 053 has RLS enabled
-    //    with zero policies — session client would see nothing).
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createServiceClient(url, key);
-
-    // 3. Resolve shipowner_id for this user.
-    const { data: shipowner, error: ownerErr } = await admin
+    // 2. Resolve the caller's shipowner + jurisdiction via the session client.
+    //    RLS (mig 031/033) lets a SHIPOWNER read their own shipowners row, so this
+    //    needs no service-role bypass.
+    const { data: shipowner, error: ownerErr } = await session
         .from('shipowners')
-        .select('id')
+        .select('id, jurisdiction_id')
         .eq('profile_id', user.id)
         .maybeSingle();
     if (ownerErr) return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     if (!shipowner) return NextResponse.json({ error: 'No shipowner record' }, { status: 403 });
+
+    // 3. Tenant-scoped service-role client for the notification reads (mig 053 has
+    //    RLS enabled with zero policies — the session client would see nothing).
+    const admin = createTenantClient(shipowner.jurisdiction_id as string);
 
     // 4. Parse pagination params.
     const reqUrl = new URL(req.url);

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { AdminWalletsPanel, type AdminWalletRow } from '@/components/dashboard/admin/AdminWallets';
 
 export const metadata: Metadata = {
@@ -42,11 +43,12 @@ export default async function AdminWalletsRoute() {
     }
 
     // RLS bypass: mig 050 enables RLS on wallets + wallet_ledger with no policies.
-    // RBAC gate above (SUPERADMIN / FINANCE_ADMIN / MANAGER) controls WHO; the
-    // service-role client just lets the queries see the rows.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createServiceClient(url, key);
+    // RBAC gate above controls WHO; the tenant-scoped factory confines non-SUPERADMIN
+    // admins to their own jurisdiction's wallets (GreenGate v8).
+    const admin =
+        profile.role === 'SUPERADMIN'
+            ? createPlatformClient()
+            : createTenantClient(await getServerJurisdictionId());
 
     // Query 1: wallets + shipowner name (top 200 by balance)
     const { data: walletsData, error: walletsError } = await admin

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServiceRoleClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import {
     generateInvoicePdf,
     statusToMode,
@@ -59,12 +61,6 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 export async function POST(request: NextRequest) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-        return json(500, { error: 'Supabase not configured' });
-    }
-
     // ── 1. Authenticate ─────────────────────────────────────────────────
     const requestSupabase = await createRequestClient();
     const { data: authData, error: authError } = await requestSupabase.auth.getUser();
@@ -86,10 +82,17 @@ export async function POST(request: NextRequest) {
         return json(400, { error: 'transactionId is required' });
     }
 
-    const admin = createServiceRoleClient(supabaseUrl, supabaseKey);
+    // Resolve the transaction's jurisdiction first (find regardless of tenant),
+    // confine the acting staff to it, then scope all reads/writes to it.
+    let platform: SupabaseClient;
+    try {
+        platform = createPlatformClient();
+    } catch {
+        return json(500, { error: 'Supabase not configured' });
+    }
 
     // ── 2. Load caller profile (for authz + audit) ──────────────────────
-    const { data: callerProfile, error: callerProfileErr } = await admin
+    const { data: callerProfile, error: callerProfileErr } = await platform
         .from('profiles')
         .select('id, role, full_name, email')
         .eq('id', callerId)
@@ -98,7 +101,30 @@ export async function POST(request: NextRequest) {
         return json(403, { error: 'Profile not found' });
     }
 
-    // ── 3. Reload the authoritative transaction (ignore client fields) ──
+    // ── 3. Authorize — staff only. Armateurs consume proformas via
+    //       /api/invoices/[ref]/download; they do not issue them.
+    if (!canGenerateInvoice(callerProfile.role)) {
+        return json(403, { error: 'Forbidden' });
+    }
+
+    // ── 3b. Staff isolation: confine non-SUPERADMIN staff to the transaction's
+    //        jurisdiction, then scope all writes to it (transactions + vessels are
+    //        auto-filtered by jurisdiction_id by the tenant client).
+    const { data: txJur } = await platform
+        .from('transactions').select('jurisdiction_id').eq('id', transactionId).maybeSingle();
+    if (!txJur) {
+        return json(404, { error: 'Transaction not found' });
+    }
+    const jurisdictionId = (txJur as { jurisdiction_id: string }).jurisdiction_id;
+    if (callerProfile.role !== 'SUPERADMIN') {
+        const adminJurisdictionId = await getServerJurisdictionId();
+        if (adminJurisdictionId !== jurisdictionId) {
+            return json(403, { error: 'Forbidden: transaction belongs to another jurisdiction' });
+        }
+    }
+    const admin = createTenantClient(jurisdictionId);
+
+    // ── 4. Reload the authoritative transaction (ignore client fields) ──
     const { data: tx, error: txErr } = await admin
         .from('transactions')
         .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at')
@@ -106,12 +132,6 @@ export async function POST(request: NextRequest) {
         .single();
     if (txErr || !tx) {
         return json(404, { error: 'Transaction not found' });
-    }
-
-    // ── 4. Authorize — staff only. Armateurs consume proformas via
-    //       /api/invoices/[ref]/download; they do not issue them.
-    if (!canGenerateInvoice(callerProfile.role)) {
-        return json(403, { error: 'Forbidden' });
     }
 
     let vesselOwnerId: string | null = null;

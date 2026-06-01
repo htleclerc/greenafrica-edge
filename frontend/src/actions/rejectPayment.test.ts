@@ -14,6 +14,7 @@ const mockSupabase = {
     from: vi.fn((table: string) => {
         if (table === 'payments') {
             return {
+                select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { jurisdiction_id: '00000000-0000-4000-8000-00000000534f' }, error: null }) }) }),
                 update: (payload: any) => {
                     updateCalls.push(payload);
                     return {
@@ -31,8 +32,13 @@ const mockSupabase = {
     }),
 };
 
-vi.mock('@supabase/supabase-js', () => ({
-    createClient: vi.fn(() => mockSupabase),
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: vi.fn(() => mockSupabase),
+    createTenantClient: vi.fn(() => mockSupabase),
+}));
+
+vi.mock('@/lib/auth/adminTenant', () => ({
+    assertAdminCanActOn: vi.fn(async (_user: unknown, jid: string) => jid),
 }));
 
 vi.mock('@/lib/auth/requireRole', () => ({

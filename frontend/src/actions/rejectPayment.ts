@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
 import { scopedLogger } from '@/lib/logger';
 import { UserRole } from '@/types/secure';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
 const log = scopedLogger('rejectPayment');
 
@@ -25,9 +26,19 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
         reasonLen: parsed.reason.length,
     });
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient(url, key);
+    // Resolve the payment's jurisdiction (find regardless of tenant), confine the
+    // acting admin to it (SUPERADMIN may act on any), and scope all writes to it.
+    const platform = createPlatformClient();
+    const { data: pmtRow, error: pmtErr } = await platform
+        .from('payments')
+        .select('jurisdiction_id')
+        .eq('id', parsed.paymentId)
+        .maybeSingle();
+    if (pmtErr) throw pmtErr;
+    if (!pmtRow) throw new Error(`Payment not found: ${parsed.paymentId}`);
+    const admin = createTenantClient(
+        await assertAdminCanActOn(auth.user, (pmtRow as { jurisdiction_id: string }).jurisdiction_id),
+    );
 
     const { data: ok, error: gateErr } = await admin.rpc('can_confirm_payment', {
         p_payment_id: parsed.paymentId,

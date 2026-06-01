@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { sendRegistrationApprovalEmail } from '@/services/emailService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 /**
  * POST /api/auth/approve
@@ -35,11 +35,9 @@ export async function POST(request: NextRequest) {
 
         // Use service_role client for admin operations (bypasses RLS).
         // requireRole already validated the caller — the admin client is only
-        // used to perform privileged writes after that gate.
-        const adminClient = createAdminClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+        // used to perform privileged writes after that gate. Targets global
+        // tables (profiles, registration_requests) → UNSCOPED platform client.
+        const adminClient = createPlatformClient();
 
         const { data: regRequest, error: regError } = await adminClient
             .from('registration_requests')

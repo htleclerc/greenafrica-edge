@@ -1,8 +1,9 @@
 'use server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createServiceRole } from '@supabase/supabase-js';
 import { upsertShipownerEmail } from '@/services/shipownerService';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { sendOwnerCascadeEmail } from '@/services/ownerCascadeEmailService';
 
 const inputSchema = z.object({
@@ -37,21 +38,13 @@ export async function escalateToOwner(
         return { ok: false, reason: 'insufficient role' };
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
-        return { ok: false, reason: 'service role not configured' };
-    }
-    const admin = createServiceRole(supabaseUrl, serviceKey, {
-        auth: { persistSession: false },
-    });
-
-    // Load transaction + related. FK alias disambiguation required because
-    // arrival_alerts has 3 FKs into transactions.
-    const { data: txn, error: txnErr } = await admin
+    // Load transaction + related (regardless of tenant) to resolve its jurisdiction.
+    // FK alias disambiguation required because arrival_alerts has 3 FKs into transactions.
+    const platform = createPlatformClient();
+    const { data: txn, error: txnErr } = await platform
         .from('transactions')
         .select(`
-            id, ref, tax_amount_usd, shipowner_id, agent_profile_id, arrival_alert_id,
+            id, jurisdiction_id, ref, tax_amount_usd, shipowner_id, agent_profile_id, arrival_alert_id,
             invoice_pdf_url,
             vessel:vessels (name, imo_number),
             alert:arrival_alerts!transactions_arrival_alert_id_fkey (arrived_at),
@@ -63,6 +56,17 @@ export async function escalateToOwner(
     if (txnErr || !txn) {
         return { ok: false, reason: `transaction not found: ${txnErr?.message ?? 'nil'}` };
     }
+
+    // Staff isolation: a non-SUPERADMIN admin may only escalate transactions in their
+    // own jurisdiction. All writes then run through a jurisdiction-scoped client.
+    const jurisdictionId = (txn as { jurisdiction_id: string }).jurisdiction_id;
+    if (profile.role !== 'SUPERADMIN') {
+        const adminJurisdictionId = await getServerJurisdictionId();
+        if (adminJurisdictionId !== jurisdictionId) {
+            return { ok: false, reason: 'forbidden: transaction belongs to another jurisdiction' };
+        }
+    }
+    const admin = createTenantClient(jurisdictionId);
 
     if (ownerEmailIsNew && txn.shipowner_id) {
         await upsertShipownerEmail(admin, txn.shipowner_id, ownerEmail, 'PORT_OFFICER');

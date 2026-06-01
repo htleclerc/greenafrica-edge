@@ -5,10 +5,10 @@
 
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { encryptIban, isInsecureStrategy } from '@/services/kycService';
+import { createTenantClient } from '@/lib/supabase/tenant';
 
 const schema = z.object({
     billing_legal_name: z.string().min(2).max(200),
@@ -31,10 +31,10 @@ export async function submitKycC(input: z.infer<typeof schema>) {
     // Encrypt IBAN before persisting.
     const ibanStored = await encryptIban(data.iban);
 
-    const admin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // Owner-context: scope to the operator's home jurisdiction so the shipowners
+    // UPDATE is auto-filtered by jurisdiction_id (defense in depth on top of the
+    // explicit .eq('id', …) below). audit_logs is global → passes through.
+    const admin = createTenantClient(session.jurisdictionId);
 
     // Update shipowner with KYC Level C details.
     const { error: updateError } = await admin

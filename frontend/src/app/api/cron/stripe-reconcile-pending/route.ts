@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 import { retrievePaymentIntent } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 
@@ -34,9 +35,8 @@ const TIMEOUT_MS = 60 * 60 * 1000;             // 1 h — give up + cancel
 const RECONCILE_THRESHOLD_MS = 10 * 60 * 1000; // 10 min — eligible to reconcile
 
 function serviceClient(): SupabaseClient {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    return createClient(url, key);
+    // Platform-level cron (reconciles payments keyed by external Stripe id).
+    return createPlatformClient();
 }
 
 interface PendingRow {

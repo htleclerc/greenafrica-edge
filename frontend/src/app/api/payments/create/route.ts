@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import {
     createPaymentRequest,
     type PaymentProvider,
@@ -28,12 +29,6 @@ import {
  * }
  */
 export async function POST(request: NextRequest) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
-    }
-
     let body: { transactionId: string; overrideProvider?: PaymentProvider };
     try {
         body = await request.json();
@@ -45,13 +40,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'transactionId is required' }, { status: 400 });
     }
 
-    const admin = createClient(supabaseUrl, supabaseKey);
+    // Find the transaction regardless of tenant, then scope all reads/writes to ITS
+    // jurisdiction — the payments row created below is auto-stamped jurisdiction_id.
+    let platform: SupabaseClient;
+    try {
+        platform = createPlatformClient();
+    } catch {
+        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    }
 
     // 1. Fetch the transaction with vessel + owner context
-    const { data: tx, error: txErr } = await admin
+    const { data: tx, error: txErr } = await platform
         .from('transactions')
         .select(`
             id,
+            jurisdiction_id,
             vessel_id,
             vessel_name,
             vessel_imo,
@@ -67,6 +70,8 @@ export async function POST(request: NextRequest) {
     if (txErr || !tx) {
         return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
+
+    const admin = createTenantClient((tx as { jurisdiction_id: string }).jurisdiction_id);
 
     // Already paid? short-circuit
     if (tx.status === 'PAID') {
