@@ -42,6 +42,7 @@ export const TENANT_SCOPED_TABLES: ReadonlySet<string> = new Set([
     'transactions',
     'arrival_alerts',
     'vessels',
+    'aircraft',
     'shipowners',
     'payments',
     'wallets',
