@@ -28,9 +28,9 @@ type Breakdown struct {
 }
 
 type Result struct {
-	TCO2      float64   `json:"tco2"`
-	USDAmount float64   `json:"usd_amount"`
-	Breakdown Breakdown `json:"breakdown"`
+	TCO2      float64 `json:"tco2"`
+	USDAmount float64 `json:"usd_amount"`
+	Breakdown any     `json:"breakdown"`
 }
 
 type Calculator struct {

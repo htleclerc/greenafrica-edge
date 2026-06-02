@@ -34,29 +34,38 @@ END $$;
 -- 4. UNIQUE constraint enforced — inserting two payments with the same receipt_ref fails
 INSERT INTO auth.users (id, email) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'unique-test@local');
+-- Auto-trigger (on_auth_user_created) already inserted a default profile; drop it
+-- so we can re-insert with the explicit FINANCE_ADMIN role this test needs.
+DELETE FROM public.profiles WHERE id = '11111111-aaaa-aaaa-aaaa-111111111111';
 INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES ('11111111-aaaa-aaaa-aaaa-111111111111', 'unique-test@local', 'Tester', 'FINANCE_ADMIN', true);
 INSERT INTO public.shipowners (id, name, account_state, preferred_language)
   VALUES ('22222222-bbbb-bbbb-bbbb-222222222222', 'TestCo', 'ACTIVE', 'en');
+-- CONFIRMED rows require confirmed_by + confirmed_at (payments_confirmed_audit CHECK, mig 048).
 INSERT INTO public.payments
   (shipowner_id, declared_by, amount_minor, currency, amount_usd_minor, rail, status,
+   confirmed_by, confirmed_at,
    receipt_ref, receipt_storage_path, receipt_generated_at)
   VALUES
   ('22222222-bbbb-bbbb-bbbb-222222222222', '11111111-aaaa-aaaa-aaaa-111111111111',
    10000, 'USD', 10000, 'WIRE_TRANSFER', 'CONFIRMED',
+   '11111111-aaaa-aaaa-aaaa-111111111111', NOW(),
    'RCT-2026-DUPE', 'documents/receipts/RCT-2026-DUPE.pdf', NOW()),
   ('22222222-bbbb-bbbb-bbbb-222222222222', '11111111-aaaa-aaaa-aaaa-111111111111',
    20000, 'USD', 20000, 'WIRE_TRANSFER', 'CONFIRMED',
+   '11111111-aaaa-aaaa-aaaa-111111111111', NOW(),
    'RCT-2026-OTHER', 'documents/receipts/RCT-2026-OTHER.pdf', NOW());
 
 DO $$
 BEGIN
   BEGIN
     INSERT INTO public.payments
-      (shipowner_id, declared_by, amount_minor, currency, amount_usd_minor, rail, status, receipt_ref)
+      (shipowner_id, declared_by, amount_minor, currency, amount_usd_minor, rail, status,
+       confirmed_by, confirmed_at, receipt_ref)
       VALUES
       ('22222222-bbbb-bbbb-bbbb-222222222222', '11111111-aaaa-aaaa-aaaa-111111111111',
-       30000, 'USD', 30000, 'WIRE_TRANSFER', 'CONFIRMED', 'RCT-2026-DUPE');
+       30000, 'USD', 30000, 'WIRE_TRANSFER', 'CONFIRMED',
+       '11111111-aaaa-aaaa-aaaa-111111111111', NOW(), 'RCT-2026-DUPE');
     RAISE EXCEPTION 'expected unique violation, got success';
   EXCEPTION WHEN unique_violation THEN
     -- expected

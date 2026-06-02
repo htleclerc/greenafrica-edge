@@ -61,13 +61,23 @@ END $$;
 -- ─────────────────────────────────────────────────────────────────────────
 INSERT INTO auth.users (id, email)
   VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a@local');
+-- Auto-trigger (on_auth_user_created) already inserted a default profile; drop it
+-- so we can re-insert with the explicit FINANCE_ADMIN role this test needs.
+DELETE FROM public.profiles WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a@local', 'A', 'FINANCE_ADMIN', true);
 INSERT INTO public.shipowners (id, name, account_state, preferred_language)
   VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'TestCo', 'ACTIVE', 'en');
-INSERT INTO public.vessels (id, imo_number, name, jurisdiction_country, shipowner_id)
-  VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', '9999999', 'TEST', 'KE',
-          'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+-- vessels has no `jurisdiction_country` column (jurisdiction_id, added by mig 071/072,
+-- carries a DEFAULT so it can be omitted). Supply the NOT NULL columns the real schema
+-- requires (mirrors the 064 fixture).
+INSERT INTO public.vessels (
+  id, imo_number, mmsi, name, call_sign, flag_code, category,
+  gross_tonnage_dwt, engine_power_kw, design_speed_knots, shipowner_id
+) VALUES (
+  'cccccccc-cccc-cccc-cccc-cccccccccccc',
+  '9999999', '999999999', 'TEST', 'TST', 'SO', 'CONTAINER',
+  1000, 500, 10, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- Test 3: INITIATED payment older than 24h → surfaces in overdue view

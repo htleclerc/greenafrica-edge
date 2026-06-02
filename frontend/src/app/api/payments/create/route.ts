@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
+import { requireRole } from '@/lib/auth/requireRole';
+import { UserRole } from '@/types/secure';
 import {
     createPaymentRequest,
     type PaymentProvider,
@@ -29,6 +31,26 @@ import {
  * }
  */
 export async function POST(request: NextRequest) {
+    // Money-rail action: authenticate + authorize BEFORE touching any data or
+    // the payment provider. Without this gate, any unauthenticated caller could
+    // enumerate transaction IDs and mint checkout sessions (the response echoes
+    // the provider + checkout URL). This route backs the LEGACY /dashboard "Pay
+    // Now" flow, whose only caller (InvoicesPage) exposes the button to the
+    // debtor SHIPPING_AGENT; FINANCE_ADMIN/SUPERADMIN may also create a session
+    // on a customer's behalf (mirrors the sibling /api/transactions/mark-paid
+    // gate). The v7 owner portal pays via the `initiatePayment` server action,
+    // not this route, so requireOwner (which redirects rather than returning
+    // JSON, and keys off the v7 `shipowners` table) is the wrong tool here.
+    // NB: this is authN/authZ. The jurisdiction scoping below is data isolation;
+    // per-transaction ownership is intentionally not enforced — the legacy flow
+    // never did, and a session only yields a checkout link for that invoice.
+    const auth = await requireRole([
+        UserRole.SHIPPING_AGENT,
+        UserRole.SUPERADMIN,
+        UserRole.FINANCE_ADMIN,
+    ]);
+    if (auth.error) return auth.error;
+
     let body: { transactionId: string; overrideProvider?: PaymentProvider };
     try {
         body = await request.json();

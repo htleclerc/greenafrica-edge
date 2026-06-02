@@ -25,13 +25,14 @@ BEGIN
   INSERT INTO public.transactions (
     id, vessel_id, vessel_name, vessel_imo, shipowner_id,
     document_type, transaction_type,
-    emissions_tco2, tax_amount_usd, partial_paid_usd, status, created_at
+    emissions_tco2, tax_amount_usd, partial_paid_usd, status, collections_status, created_at
   ) VALUES (
     'aaaa0001-0000-0000-0000-000000000068',
     'eeeeeeee-0000-0000-0000-000000000068', 'DriftVes068', '6800001',
     'cccccccc-0000-0000-0000-000000000068',
     'FINAL', 'ENTRY_TAX',
-    100.00, 500.00, 500.00, 'PAID',
+    -- status=PAID requires collections_status=PAID (enforce_status_collections_invariant, mig 022).
+    100.00, 500.00, 500.00, 'PAID', 'PAID',
     -- Pre-v7 cutover date — should be filtered out by mig 068.
     TIMESTAMPTZ '2025-08-15 10:00:00+00'
   );
@@ -53,13 +54,13 @@ BEGIN
   INSERT INTO public.transactions (
     id, vessel_id, vessel_name, vessel_imo, shipowner_id,
     document_type, transaction_type,
-    emissions_tco2, tax_amount_usd, partial_paid_usd, status, created_at
+    emissions_tco2, tax_amount_usd, partial_paid_usd, status, collections_status, created_at
   ) VALUES (
     'aaaa0002-0000-0000-0000-000000000068',
     'eeeeeeee-0000-0000-0000-000000000068', 'DriftVes068', '6800001',
     'cccccccc-0000-0000-0000-000000000068',
     'FINAL', 'ENTRY_TAX',
-    100.00, 800.00, 800.00, 'PAID',
+    100.00, 800.00, 800.00, 'PAID', 'PAID',
     -- v7-era date (post-cutover).
     TIMESTAMPTZ '2026-06-01 10:00:00+00'
   );
@@ -80,13 +81,13 @@ BEGIN
   INSERT INTO public.transactions (
     id, vessel_id, vessel_name, vessel_imo, shipowner_id,
     document_type, transaction_type,
-    emissions_tco2, tax_amount_usd, partial_paid_usd, status, created_at
+    emissions_tco2, tax_amount_usd, partial_paid_usd, status, collections_status, created_at
   ) VALUES (
     'aaaa0003-0000-0000-0000-000000000068',
     'eeeeeeee-0000-0000-0000-000000000068', 'DriftVes068', '6800001',
     'cccccccc-0000-0000-0000-000000000068',
     'FINAL', 'ENTRY_TAX',
-    100.00, 100.00, 100.00, 'PAID',
+    100.00, 100.00, 100.00, 'PAID', 'PAID',
     TIMESTAMPTZ '2026-05-01 00:00:00+00'  -- exact boundary, inclusive (>=)
   );
 
@@ -103,13 +104,13 @@ BEGIN
   INSERT INTO public.transactions (
     id, vessel_id, vessel_name, vessel_imo, shipowner_id,
     document_type, transaction_type,
-    emissions_tco2, tax_amount_usd, partial_paid_usd, status, created_at
+    emissions_tco2, tax_amount_usd, partial_paid_usd, status, collections_status, created_at
   ) VALUES (
     'aaaa0004-0000-0000-0000-000000000068',
     'eeeeeeee-0000-0000-0000-000000000068', 'DriftVes068', '6800001',
     'cccccccc-0000-0000-0000-000000000068',
     'FINAL', 'ENTRY_TAX',
-    100.00, 100.00, 100.00, 'PAID',
+    100.00, 100.00, 100.00, 'PAID', 'PAID',
     TIMESTAMPTZ '2026-04-30 23:59:59.999999+00'
   );
 

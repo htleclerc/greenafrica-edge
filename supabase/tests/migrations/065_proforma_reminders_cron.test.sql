@@ -21,12 +21,23 @@ END $$;
 -- 3. Function inserts notifications for PROFORMA aged 3 days
 -- Seed: shipowner + vessel + 3-day-old PROFORMA + 7-day-old PROFORMA + 1-day-old PROFORMA
 INSERT INTO auth.users (id, email) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a@local');
+-- Auto-trigger (on_auth_user_created) already inserted a default profile; drop it
+-- so we can re-insert with the explicit FINANCE_ADMIN role this test needs.
+DELETE FROM public.profiles WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a@local', 'A', 'FINANCE_ADMIN', true);
 INSERT INTO public.shipowners (id, name, account_state, preferred_language)
   VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'TestCo', 'ACTIVE', 'en');
-INSERT INTO public.vessels (id, imo_number, name, jurisdiction_country, shipowner_id)
-  VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', '9999999', 'TEST', 'KE', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+-- vessels has no `jurisdiction_country` column (jurisdiction_id, added by mig 071/072,
+-- carries a DEFAULT so it can be omitted). Supply the NOT NULL columns the real schema
+-- requires (mirrors the 064 fixture).
+INSERT INTO public.vessels (
+  id, imo_number, mmsi, name, call_sign, flag_code, category,
+  gross_tonnage_dwt, engine_power_kw, design_speed_knots, shipowner_id
+) VALUES (
+  'cccccccc-cccc-cccc-cccc-cccccccccccc',
+  '9999999', '999999999', 'TEST', 'TST', 'SO', 'CONTAINER',
+  1000, 500, 10, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
 
 INSERT INTO public.transactions
   (id, vessel_id, vessel_name, vessel_imo, emissions_tco2, tax_amount_usd, status,
@@ -68,13 +79,14 @@ BEGIN
 END $$;
 
 -- 5. PAID transactions are NOT reminded
-UPDATE public.transactions SET status='PAID' WHERE id='d0000003-0000-0000-0000-000000000003';
+-- collections_status must mirror status=PAID (enforce_status_collections_invariant, mig 022).
+UPDATE public.transactions SET status='PAID', collections_status='PAID' WHERE id='d0000003-0000-0000-0000-000000000003';
 INSERT INTO public.transactions
-  (id, vessel_id, vessel_name, vessel_imo, emissions_tco2, tax_amount_usd, status,
+  (id, vessel_id, vessel_name, vessel_imo, emissions_tco2, tax_amount_usd, status, collections_status,
    document_type, transaction_type, shipowner_id, invoice_ref, created_at)
   VALUES
   ('d0000300-0000-0000-0000-000000000003', 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-   'TEST', '9999999', 1.0, 100.00, 'PAID',  -- already paid
+   'TEST', '9999999', 1.0, 100.00, 'PAID', 'PAID',  -- already paid (status⇔collections_status invariant)
    'PROFORMA', 'ENTRY_TAX', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'INV-PAID-3D',
    NOW() - INTERVAL '3 days' - INTERVAL '3 hours');
 
