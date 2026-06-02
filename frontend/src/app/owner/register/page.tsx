@@ -1,14 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
-import { RegisterForm } from './RegisterForm';
+import { RegisterModeSwitcher } from './RegisterModeSwitcher';
 
 export default async function OwnerRegisterPage() {
-    // Plan 7H-1 Task 5.1 — gate self-service signup behind the
-    // `feature.shipowner_self_service_enabled` flag. When OFF, the form
-    // is not rendered at all and the user is bounced back to /login.
     const flags = await readPortalFeatureFlags();
-    if (!flags.selfServiceEnabled) {
+    // Self-service is available if EITHER mode is enabled. When both are off,
+    // bounce back to login (same behaviour as before).
+    if (!flags.selfServiceEnabled && !flags.airSelfServiceEnabled) {
         redirect('/login?signup_disabled=1');
     }
     const t = await getTranslations('OwnerRegister');
@@ -17,8 +16,10 @@ export default async function OwnerRegisterPage() {
             <div className="os-card max-w-2xl w-full p-8">
                 <h1 className="text-2xl font-semibold mb-2">{t('title')}</h1>
                 <p className="text-sm opacity-80 mb-6">{t('subtitle')}</p>
-                <RegisterForm
+                <RegisterModeSwitcher
                     recaptchaSiteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? ''}
+                    maritimeEnabled={flags.selfServiceEnabled}
+                    airEnabled={flags.airSelfServiceEnabled}
                 />
             </div>
         </div>

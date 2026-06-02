@@ -3406,5 +3406,34 @@
         "failed": "Échec de l'ajustement."
       }
     }
+  },
+  "AirRegister": {
+    "title": "Inscription opérateur aérien",
+    "subtitle": "Réclamez votre compte opérateur avec votre numéro AOC et l'un de vos aéronefs.",
+    "tab_maritime": "Maritime",
+    "tab_air": "Aérien",
+    "email": "Email officiel",
+    "company_name": "Raison sociale de l'exploitant",
+    "aoc_number": "Numéro AOC",
+    "aircraft_ident": "Immatriculation ou code icao24",
+    "country": "Pays (ISO-2)",
+    "address": "Adresse du siège",
+    "proof_document": "Certificat AOC (PDF/image)",
+    "phone_optional": "Téléphone (optionnel)",
+    "preferred_language": "Langue préférée",
+    "submit": "Envoyer la demande",
+    "submitting": "Envoi…",
+    "thanks_title": "Demande reçue",
+    "errors": {
+      "no_file": "Veuillez joindre votre certificat AOC.",
+      "upload_failed": "Échec de l'envoi, réessayez."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
   }
 }

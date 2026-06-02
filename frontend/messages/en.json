@@ -3436,5 +3436,34 @@
         "failed": "Adjustment failed."
       }
     }
+  },
+  "AirRegister": {
+    "title": "Air operator sign-up",
+    "subtitle": "Claim your operator account with your AOC number and one of your aircraft.",
+    "tab_maritime": "Maritime",
+    "tab_air": "Air",
+    "email": "Official email",
+    "company_name": "Operating company name",
+    "aoc_number": "AOC number",
+    "aircraft_ident": "Aircraft registration or icao24",
+    "country": "Country (ISO-2)",
+    "address": "Registered address",
+    "proof_document": "AOC certificate (PDF/image)",
+    "phone_optional": "Phone (optional)",
+    "preferred_language": "Preferred language",
+    "submit": "Submit request",
+    "submitting": "Submitting…",
+    "thanks_title": "Request received",
+    "errors": {
+      "no_file": "Please attach your AOC certificate.",
+      "upload_failed": "Upload failed, please retry."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
   }
 }
