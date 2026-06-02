@@ -69,5 +69,23 @@ CREATE POLICY "Officers can insert aircraft positions"
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.aircraft_positions TO service_role;
 
+-- ── icao24 upsert arbiter fix ─────────────────────────────────────────────────
+-- The mig-074 partial unique index on icao24 cannot serve as an ON CONFLICT arbiter
+-- (Postgres rejects a partial index as a conflict target), so /api/adsb/ingest's
+-- upsert-by-icao24 silently failed. Replace it with a plain UNIQUE constraint — plain
+-- UNIQUE still treats NULLs as distinct, so unclaimed aircraft (NULL icao24) are
+-- unaffected. Mirrors vessels.mmsi (which /api/ais/ingest upserts on).
+DROP INDEX IF EXISTS public.idx_aircraft_icao24;
+ALTER TABLE public.aircraft DROP CONSTRAINT IF EXISTS aircraft_icao24_key;
+ALTER TABLE public.aircraft ADD CONSTRAINT aircraft_icao24_key UNIQUE (icao24);
+
+-- ── one OPEN air alert per aircraft ───────────────────────────────────────────
+-- One OPEN air alert per aircraft (mirrors maritime idx_alert_active_per_vessel, mig 023).
+-- Makes the DB the source of truth so concurrent ingests / provider resends can't create
+-- duplicate alerts → duplicate proformas. Terminal statuses match the maritime guard.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_active_per_aircraft
+  ON public.arrival_alerts(aircraft_id)
+  WHERE aircraft_id IS NOT NULL AND status NOT IN ('RECONCILED','CANCELLED');
+
 -- DOWN: DROP TABLE aircraft_positions; ALTER arrival_alerts DROP CONSTRAINT arrival_alerts_asset_per_mode,
 --       DROP COLUMN aircraft_id; (NOT NULLs intentionally left dropped — harmless).

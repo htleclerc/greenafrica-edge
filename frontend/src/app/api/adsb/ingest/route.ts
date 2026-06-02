@@ -89,6 +89,8 @@ export async function POST(request: NextRequest) {
 
     for (const pos of positions) {
       if (!pos.icao24 || pos.lat == null || pos.lng == null) continue;
+      // Range guard: drop obviously bogus coordinates before any DB write.
+      if (pos.lat < -90 || pos.lat > 90 || pos.lng < -180 || pos.lng > 180) continue;
 
       // Upsert the aircraft by icao24. Only set columns that were provided so a
       // sparse feed never overwrites prior enrichment with NULLs. jurisdiction_id
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
         .select('id, operator_id')
         .eq('icao24', pos.icao24)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!aircraft) continue;
 
