@@ -47,6 +47,7 @@ describe('feature-flags', () => {
             onlinePaymentStripeEnabled: true,
             walletTopupEnabled: true,
             notificationSmsEnabled: true,
+            airSelfServiceEnabled: false,
         });
     });
 
@@ -60,6 +61,7 @@ describe('feature-flags', () => {
             onlinePaymentStripeEnabled: false,
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
+            airSelfServiceEnabled: false,
         });
     });
 
@@ -78,6 +80,7 @@ describe('feature-flags', () => {
             onlinePaymentStripeEnabled: true,
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
+            airSelfServiceEnabled: false,
         });
     });
 
@@ -115,6 +118,7 @@ describe('feature-flags', () => {
             onlinePaymentStripeEnabled: false,
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
+            airSelfServiceEnabled: false,
         });
     });
 
@@ -123,6 +127,13 @@ describe('feature-flags', () => {
         const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
         const flags = await _readPortalFeatureFlagsImpl();
         expect(flags.portalV1Enabled).toBe(false);
+    });
+
+    it('reads air_self_service_enabled (defaults false when absent)', async () => {
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        const flags = await _readPortalFeatureFlagsImpl();
+        expect(flags).toHaveProperty('airSelfServiceEnabled');
+        expect(typeof flags.airSelfServiceEnabled).toBe('boolean');
     });
 
     it('isFeatureEnabled returns the right typed value', async () => {

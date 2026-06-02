@@ -31,6 +31,7 @@ const ALLOWED_KEYS = new Set<string>([
     'feature.online_payment_stripe_enabled',
     'feature.wallet_topup_enabled',
     'feature.notification_sms_enabled',
+    'feature.air_self_service_enabled',
     'queue.worker_url',
     'queue.worker_secret',
 ]);

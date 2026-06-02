@@ -1,6 +1,6 @@
 // server-only — uses the Supabase service-role key.
 //
-// Plan 7H-1 — Task 4. Typed reader for the 5 shipowner portal feature flags
+// Plan 7H-1 — Task 4 (+ W1-E). Typed reader for the 6 shipowner portal feature flags
 // defined in master spec §12.2. Reads `app_config` in a single SELECT and
 // returns a strongly-typed struct. Missing rows default to `false`
 // (defensive: a deploy with no seed migration is still safe).
@@ -23,6 +23,7 @@ export interface PortalFeatureFlags {
     onlinePaymentStripeEnabled: boolean;
     walletTopupEnabled: boolean;
     notificationSmsEnabled: boolean;
+    airSelfServiceEnabled: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ const FLAG_KEYS: Record<keyof PortalFeatureFlags, string> = {
     onlinePaymentStripeEnabled: 'feature.online_payment_stripe_enabled',
     walletTopupEnabled: 'feature.wallet_topup_enabled',
     notificationSmsEnabled: 'feature.notification_sms_enabled',
+    airSelfServiceEnabled: 'feature.air_self_service_enabled',
 };
 
 const ALL_KEYS = Object.values(FLAG_KEYS);
@@ -46,6 +48,7 @@ function defaultFlags(): PortalFeatureFlags {
         onlinePaymentStripeEnabled: false,
         walletTopupEnabled: false,
         notificationSmsEnabled: false,
+        airSelfServiceEnabled: false,
     };
 }
 
@@ -91,7 +94,7 @@ export async function _readPortalFeatureFlagsImpl(): Promise<PortalFeatureFlags>
 }
 
 /**
- * Read all 5 portal feature flags in a single SELECT.
+ * Read all 6 portal feature flags in a single SELECT.
  *
  * Memoized per-request via React 19 `cache()`. Safe to call from multiple
  * server components / server actions in the same request — the SELECT runs
