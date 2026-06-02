@@ -18,13 +18,14 @@ export interface ShipownerListRow extends Shipowner {
   imo_company_no: string | null;
   invited_at: string | null;
   kyc_level_c_completed_at: string | null;
+  aoc_number: string | null;
 }
 
 /** List shipowners ordered by name. Used by the admin portal section. */
 export async function listShipowners(db: SupabaseClient): Promise<ShipownerListRow[]> {
   const { data, error } = await db
     .from('shipowners')
-    .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at')
+    .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, aoc_number')
     .order('name');
   if (error) throw error;
   return (data ?? []) as ShipownerListRow[];

@@ -38,7 +38,9 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'TEST FAILED: ICAO LTO methodology not seeded'; END IF;
 END $$;
 
--- 4. activation matrix: Somaliland MARITIME enabled, AIR present-but-disabled
+-- 4. activation matrix: Somaliland MARITIME enabled, AIR enabled (mig 078 / W1-D activated it).
+--    NB: pg tests run against the full migration chain, so the AIR row reflects its
+--    post-078 state, not mig 071's initial enabled=FALSE seed.
 DO $$
 DECLARE maritime_on BOOLEAN; air_on BOOLEAN;
 BEGIN
@@ -49,8 +51,8 @@ BEGIN
   IF maritime_on IS DISTINCT FROM TRUE THEN
     RAISE EXCEPTION 'TEST FAILED: Somaliland MARITIME should be enabled, got %', maritime_on;
   END IF;
-  IF air_on IS DISTINCT FROM FALSE THEN
-    RAISE EXCEPTION 'TEST FAILED: Somaliland AIR should be present-but-disabled, got %', air_on;
+  IF air_on IS DISTINCT FROM TRUE THEN
+    RAISE EXCEPTION 'TEST FAILED: Somaliland AIR should be enabled (mig 078 activated it), got %', air_on;
   END IF;
 END $$;
 
