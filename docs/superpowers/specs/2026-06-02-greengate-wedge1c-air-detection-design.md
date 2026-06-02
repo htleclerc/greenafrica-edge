@@ -35,8 +35,14 @@ CREATE TABLE public.aircraft_positions (
   in_fir BOOLEAN NOT NULL DEFAULT FALSE,
   recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );  -- index (aircraft_id, recorded_at DESC)
-ALTER TABLE public.arrival_alerts ADD COLUMN IF NOT EXISTS aircraft_id UUID REFERENCES public.aircraft(id);
--- vessel_id becomes nullable for air rows; a CHECK ensures exactly one of (vessel_id, aircraft_id) per mode.
+-- arrival_alerts is the SHARED alert table (design §3) → make it polymorphic:
+ALTER TABLE public.arrival_alerts
+  ADD COLUMN IF NOT EXISTS aircraft_id UUID REFERENCES public.aircraft(id),
+  ALTER COLUMN vessel_id DROP NOT NULL,
+  ALTER COLUMN imo_number DROP NOT NULL,
+  ALTER COLUMN distance_to_port_nm DROP NOT NULL;
+-- mode-discriminated asset CHECK (existing maritime rows all have vessel_id, so VALID passes):
+--   (mode='AIR' AND aircraft_id IS NOT NULL) OR (mode<>'AIR' AND vessel_id IS NOT NULL)
 ```
 RLS: `aircraft_positions` mirrors `vessel_positions` (admin/owner read via aircraft→operator; service‑role writes). `arrival_alerts` policies already carry the mig‑073 staff jurisdiction filter; the air rows ride the same `jurisdiction_id`.
 
