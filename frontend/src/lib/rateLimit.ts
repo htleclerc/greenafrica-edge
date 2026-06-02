@@ -19,7 +19,7 @@ import { Redis } from '@upstash/redis';
  * failure (recommended in production — prevents silent downgrade to unlimited).
  */
 
-type LimiterKey = 'verify' | 'invoice-download' | 'signup' | 'signup-shipowner';
+type LimiterKey = 'verify' | 'invoice-download' | 'signup' | 'signup-shipowner' | 'signup-air-operator';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -48,6 +48,10 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // Stricter than 'signup' because shipowner self-service is a higher-value
     // attack vector (account-takeover via IMO enumeration). Spec §5.1.
     'signup-shipowner': { perMinute: 2, perHour: 10, perDay: 3 },
+
+    // Same caps as signup-shipowner — air operator self-service shares the same
+    // account-takeover risk profile (AOC enumeration). W1-E spec §4.2.
+    'signup-air-operator': { perMinute: 2, perHour: 10, perDay: 3 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.
