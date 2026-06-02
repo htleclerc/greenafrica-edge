@@ -33,14 +33,16 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
 2. Valider les inputs avec Zod
 3. Écrire des tests pour le nouveau code
 4. Utiliser `TodoWrite` pour les tâches complexes (> 3 étapes)
-5. Faire des commits atomiques avec messages conventionnels
+5. Faire des commits atomiques avec messages conventionnels **humanisés** (rédigés comme par un humain, sans signature d'outil)
 6. Lire le code existant avant de créer du nouveau
+7. Attribuer **tous** les commits à **Loic Leclerc <leclerc@drwintech.com>**
 
 ### JAMAIS ❌
 1. Utiliser `any` en TypeScript
 2. Committer des secrets
 3. Ignorer les erreurs TypeScript ou ESLint
 4. Push sur main/master directement
+5. Ajouter Claude / une IA comme co-auteur (`Co-Authored-By: Claude …`) ou toute mention « Generated with Claude Code » dans les commits **ou** les descriptions de PR
 
 ---
 
@@ -60,6 +62,9 @@ type(scope): description
 
 Types: feat, fix, docs, style, refactor, test, chore
 ```
+
+- **Auteur** : toujours `Loic Leclerc <leclerc@drwintech.com>` (jamais l'email GitHub noreply).
+- **Pas de co-auteur Claude** : ne JAMAIS ajouter `Co-Authored-By: Claude …` ni de ligne « 🤖 Generated with Claude Code » dans le message du commit ou la description de la PR. Les messages doivent rester humanisés.
 
 ---
 
@@ -82,5 +87,5 @@ npm run test     # Tests
 
 ---
 
-**Dernière mise à jour** : 2026-01-18
-**Version** : 1.0
+**Dernière mise à jour** : 2026-06-02
+**Version** : 1.1
