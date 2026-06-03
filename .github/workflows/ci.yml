@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_call: {} # callable as the CI gate from deploy-production.yml
 
 concurrency:
   group: ci-${{ github.ref }}
