@@ -2613,7 +2613,9 @@
       "validFrom": "Valide à partir du",
       "validUntil": "Valide jusqu'au",
       "active": "Actif",
-      "actions": "Actions"
+      "actions": "Actions",
+      "email": "Email",
+      "portalState": "Accès portail"
     },
     "form": {
       "shipowner": "Armateur",
@@ -2628,7 +2630,24 @@
     "deactivating": "Désactivation…",
     "deactivated": "Désactivé",
     "active": "Actif",
-    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A."
+    "empty": "Aucun mappage pour le moment. Ajoutez-en un pour activer la cascade A.",
+    "mappingsSectionTitle": "Mappages existants",
+    "shipownersSectionTitle": "Armateurs",
+    "shipownersSectionSubtitle": "Donner accès au portail à un armateur pour qu'il suive sa flotte, ses factures et ses litiges. Seuls SUPERADMIN et MANAGER peuvent inviter.",
+    "emptyShipowners": "Aucun armateur enregistré pour le moment.",
+    "state": {
+      "ghost": "Non invité",
+      "invited": "Invité",
+      "active": "Actif"
+    },
+    "invite": "Inviter",
+    "reinvite": "Renvoyer l'invitation",
+    "inviteDialogTitle": "Inviter un armateur au portail",
+    "inviteDialogSubtitle": "Envoyer un email d'accès au portail à {name}. Il recevra un lien magique pour configurer son compte.",
+    "sendInvite": "Envoyer l'invitation",
+    "sending": "Envoi…",
+    "cancel": "Annuler",
+    "aoc": { "col": "N° AOC", "set": "Définir AOC", "dialogTitle": "Définir le numéro AOC", "dialogSubtitle": "Pré-renseigner l'AOC attendu pour {name}. L'inscription aérienne self-service le compare.", "placeholder": "SO-AOC-001", "save": "Enregistrer", "saving": "Enregistrement…" }
   },
   "AdminOriginPort": {
     "title": "Propositions de destination port d'origine",
@@ -3405,6 +3424,35 @@
         "wouldGoNegative": "Le débit dépasse le solde actuel — le wallet deviendrait négatif.",
         "failed": "Échec de l'ajustement."
       }
+    }
+  },
+  "AirRegister": {
+    "title": "Inscription opérateur aérien",
+    "subtitle": "Réclamez votre compte opérateur avec votre numéro AOC et l'un de vos aéronefs.",
+    "tab_maritime": "Maritime",
+    "tab_air": "Aérien",
+    "email": "Email officiel",
+    "company_name": "Raison sociale de l'exploitant",
+    "aoc_number": "Numéro AOC",
+    "aircraft_ident": "Immatriculation ou code icao24",
+    "country": "Pays (ISO-2)",
+    "address": "Adresse du siège",
+    "proof_document": "Certificat AOC (PDF/image)",
+    "phone_optional": "Téléphone (optionnel)",
+    "preferred_language": "Langue préférée",
+    "submit": "Envoyer la demande",
+    "submitting": "Envoi…",
+    "thanks_title": "Demande reçue",
+    "errors": {
+      "no_file": "Veuillez joindre votre certificat AOC.",
+      "upload_failed": "Échec de l'envoi, réessayez."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
     }
   }
 }

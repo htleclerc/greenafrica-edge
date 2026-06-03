@@ -38,10 +38,14 @@ func TestCalculate_UsesCascadeAndRate(t *testing.T) {
 	if res.USDAmount < 531 || res.USDAmount > 533 {
 		t.Fatalf("USD = %v, want ~532", res.USDAmount)
 	}
-	if res.Breakdown.EmissionsFactorSource != "IMO_CATEGORY" {
-		t.Fatalf("source = %q, want IMO_CATEGORY", res.Breakdown.EmissionsFactorSource)
+	bd, ok := res.Breakdown.(Breakdown)
+	if !ok {
+		t.Fatalf("breakdown type = %T, want tax.Breakdown", res.Breakdown)
 	}
-	if res.Breakdown.RateUSDPerTCO2 != 40 {
-		t.Fatalf("rate = %v, want 40", res.Breakdown.RateUSDPerTCO2)
+	if bd.EmissionsFactorSource != "IMO_CATEGORY" {
+		t.Fatalf("source = %q, want IMO_CATEGORY", bd.EmissionsFactorSource)
+	}
+	if bd.RateUSDPerTCO2 != 40 {
+		t.Fatalf("rate = %v, want 40", bd.RateUSDPerTCO2)
 	}
 }

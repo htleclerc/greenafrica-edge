@@ -12,33 +12,37 @@ import (
 
 // Handler exposes tax calculation endpoints.
 type Handler struct {
-	cfg  *config.Config
-	calc *Calculator
+	cfg      *config.Config
+	registry map[string]ModeCalculator
 }
 
-// NewHandler builds a tax HTTP handler. db + appcfg may be nil during a
-// transition period (pre-Task-10 wiring); the handler will return 503 in
-// that case rather than panicking.
+// NewHandler builds a tax HTTP handler. db + appcfg may be nil during early wiring;
+// the handler returns 503 in that case rather than panicking.
 func NewHandler(cfg *config.Config, db *sql.DB, appcfg *appconfig.Reader) *Handler {
 	h := &Handler{cfg: cfg}
 	if db != nil && appcfg != nil {
-		h.calc = NewCalculator(db, appcfg)
+		h.registry = NewModeRegistry(db, appcfg)
 	}
 	return h
 }
 
 type CalculateRequest struct {
-	IMO          string   `json:"imo"`
-	Category     string   `json:"category"`
-	GrossTonnage int      `json:"gross_tonnage"`
-	DistanceNM   float64  `json:"distance_nm"`
+	Mode         string   `json:"mode,omitempty"` // "MARITIME" (default) | "AIR"
+	IMO          string   `json:"imo,omitempty"`
+	Category     string   `json:"category,omitempty"`
+	GrossTonnage int      `json:"gross_tonnage,omitempty"`
+	DistanceNM   float64  `json:"distance_nm,omitempty"`
+	ICAOType     string   `json:"icao_type,omitempty"`
+	EngineType   string   `json:"engine_type,omitempty"`
+	MTOWKg       int      `json:"mtow_kg,omitempty"`
+	LTOCycles    *int     `json:"lto_cycles,omitempty"`
 	RateOverride *float64 `json:"rate_override,omitempty"`
 }
 
-// Calculate handles single vessel tax calculation.
+// Calculate handles single-asset tax calculation, dispatched by mode.
 // POST /api/v1/tax/calculate
 func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
-	if h.calc == nil {
+	if h.registry == nil {
 		http.Error(w, `{"error":"tax calculator not wired (db/appcfg missing)"}`, http.StatusServiceUnavailable)
 		return
 	}
@@ -47,20 +51,37 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Category == "" || req.DistanceNM < 0 {
-		http.Error(w, `{"error":"category and distance_nm are required"}`, http.StatusBadRequest)
+
+	mode := req.Mode
+	if mode == "" {
+		mode = "MARITIME"
+	}
+	calc, ok := h.registry[mode]
+	if !ok {
+		http.Error(w, `{"error":"unknown mode"}`, http.StatusBadRequest)
 		return
 	}
-	res, err := h.calc.Calculate(r.Context(), Input{
-		IMO:          req.IMO,
-		Category:     req.Category,
-		GrossTonnage: req.GrossTonnage,
-		DistanceNM:   req.DistanceNM,
-		RateOverride: req.RateOverride,
-	})
+
+	switch mode {
+	case "MARITIME":
+		if req.Category == "" || req.DistanceNM < 0 {
+			http.Error(w, `{"error":"category and distance_nm are required"}`, http.StatusBadRequest)
+			return
+		}
+	case "AIR":
+		if req.ICAOType == "" {
+			http.Error(w, `{"error":"icao_type is required"}`, http.StatusBadRequest)
+			return
+		}
+		if req.LTOCycles != nil && *req.LTOCycles <= 0 {
+			http.Error(w, `{"error":"lto_cycles must be positive"}`, http.StatusBadRequest)
+			return
+		}
+	}
+
+	res, err := calc.Calculate(r.Context(), req)
 	if err != nil {
-		log.Printf("[tax] calculate imo=%s cat=%s gt=%d dist=%.1f: %v",
-			req.IMO, req.Category, req.GrossTonnage, req.DistanceNM, err)
+		log.Printf("[tax] calculate mode=%s imo=%s icao=%s: %v", mode, req.IMO, req.ICAOType, err)
 		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return
 	}
