@@ -909,7 +909,8 @@
     "simulator_cat_bulk": "سفينة صب",
     "simulator_cat_ferry": "عبّارة ركاب",
     "simulator_unit_knots": "عقدة",
-    "simulator_unit_hours": "ساعات"
+    "simulator_unit_hours": "ساعات",
+    "simulator_legacy_rates_notice": "محاكاة استرشادية — جدول معدلات قديم؛ التعريفات الرسمية متاحة في الإدارة ← الولايات القضائية."
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",
@@ -2716,7 +2717,9 @@
       "sectionTitle": "الأنماط",
       "activatedAt": "تم التفعيل",
       "confirm": "تأكيد",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "errorNotFound": "لم يتم العثور على إعداد النمط لهذه الولاية القضائية.",
+      "error": "حدث خطأ. يرجى المحاولة مجدداً."
     },
     "tariff": {
       "sectionTitle": "التعريفات",
@@ -2738,14 +2741,18 @@
       "errorInvalidRate": "يجب أن يكون المعدل رقماً موجباً.",
       "errorDecreeRequired": "مرجع المرسوم مطلوب.",
       "errorOverlap": "نافذة نشطة متداخلة — أغلق الإصدار الحالي أو اختر تاريخاً لاحقاً.",
-      "errorPastDate": "يجب أن يكون تاريخ السريان اليوم أو في المستقبل.",
-      "errorForbidden": "ليس لديك صلاحية إدارة تعريفات هذه الولاية."
+      "errorPastDate": "يجب أن يكون تاريخ السريان غداً أو لاحقاً — التغييرات في اليوم نفسه ستعيد تسعير الفواتير المبدئية الصادرة اليوم.",
+      "errorForbidden": "ليس لديك صلاحية إدارة تعريفات هذه الولاية.",
+      "scheduled": "مجدول",
+      "scheduledFrom": "ساري من",
+      "currentlyBilling": "مفوتر حالياً"
     },
     "split": {
       "sectionTitle": "توزيع الإيرادات",
       "noRule": "لا توجد قاعدة توزيع مسجلة.",
       "concessionairePct": "الامتياز {pct}%",
       "sovereignPct": "السيادة {pct}%"
-    }
+    },
+    "modesDisclosure": "علامة السجل — لا تتحكم بعد في الكشف أو الفوترة."
   }
 }

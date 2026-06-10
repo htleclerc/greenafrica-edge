@@ -84,6 +84,10 @@ function today(): string {
     return new Date().toISOString().slice(0, 10);
 }
 
+function tomorrow(): string {
+    return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mode pill with two-step confirm
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,7 +116,11 @@ function ModePill({ jid, mode, config, canToggle, onRefresh }: ModePillProps) {
         setLoading(false);
         setConfirming(false);
         if (!res.ok) {
-            setErr(res.error);
+            // M6: map raw error messages to i18n'd text; never render verbatim.
+            const errMsg = res.error === 'not_found'
+                ? t('mode.errorNotFound')
+                : t('mode.error');
+            setErr(errMsg);
         } else {
             onRefresh();
         }
@@ -134,41 +142,43 @@ function ModePill({ jid, mode, config, canToggle, onRefresh }: ModePillProps) {
         );
     }
 
-    if (confirming) {
-        return (
-            <span className="inline-flex items-center gap-1">
-                <OsBadge variant={enabled ? 'paid' : 'exempt'} label={mode} dot />
-                <button
-                    onClick={handleToggle}
-                    disabled={loading}
-                    className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] border border-[#00D97E]/30 text-[#00D97E] hover:bg-[rgba(0,217,126,0.08)] transition-colors disabled:opacity-50"
-                >
-                    {loading ? '…' : t('mode.confirm')}
-                </button>
-                <button
-                    onClick={() => setConfirming(false)}
-                    className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] border border-[var(--os-border)] text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
-                >
-                    {t('mode.cancel')}
-                </button>
-                {err && <span className="text-[10px] text-[#EF4444]">{err}</span>}
-            </span>
-        );
-    }
-
+    // M1: trigger button is ALWAYS mounted — confirm/cancel appear adjacent rather than replacing it.
     return (
-        <button
-            onClick={() => setConfirming(true)}
-            title={title}
-            className="inline-flex items-center cursor-pointer"
-        >
-            <OsBadge
-                variant={enabled ? 'paid' : 'exempt'}
-                label={mode}
-                dot
-                className="hover:opacity-80 transition-opacity"
-            />
-        </button>
+        <span className="inline-flex items-center gap-1">
+            <button
+                onClick={() => !confirming && setConfirming(true)}
+                title={title}
+                aria-label={`${mode} ${enabled ? 'enabled' : 'disabled'}`}
+                className="inline-flex items-center cursor-pointer"
+            >
+                <OsBadge
+                    variant={enabled ? 'paid' : 'exempt'}
+                    label={mode}
+                    dot
+                    className="hover:opacity-80 transition-opacity"
+                />
+            </button>
+            {confirming && (
+                <>
+                    <button
+                        onClick={handleToggle}
+                        disabled={loading}
+                        className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] border border-[#00D97E]/30 text-[#00D97E] hover:bg-[rgba(0,217,126,0.08)] transition-colors disabled:opacity-50"
+                    >
+                        {loading ? '…' : t('mode.confirm')}
+                    </button>
+                    <button
+                        onClick={() => setConfirming(false)}
+                        className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] border border-[var(--os-border)] text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
+                    >
+                        {t('mode.cancel')}
+                    </button>
+                    {err && (
+                        <span role="alert" className="text-[10px] text-[#EF4444]">{err}</span>
+                    )}
+                </>
+            )}
+        </span>
     );
 }
 
@@ -187,7 +197,7 @@ function NewTariffForm({ jid, defaultMode, onSuccess, onCancel }: NewTariffFormP
     const t = useTranslations('AdminJurisdictions');
     const [mode, setMode] = React.useState<'MARITIME' | 'AIR'>(defaultMode);
     const [rate, setRate] = React.useState('');
-    const [effectiveFrom, setEffectiveFrom] = React.useState(today());
+    const [effectiveFrom, setEffectiveFrom] = React.useState(tomorrow());
     const [decreeRef, setDecreeRef] = React.useState('');
     const [assetCategory, setAssetCategory] = React.useState('');
     const [saving, setSaving] = React.useState(false);
@@ -273,7 +283,7 @@ function NewTariffForm({ jid, defaultMode, onSuccess, onCancel }: NewTariffFormP
                     label={t('tariff.fieldEffectiveFrom')}
                     type="date"
                     value={effectiveFrom}
-                    min={today()}
+                    min={tomorrow()}
                     onChange={(e) => setEffectiveFrom(e.target.value)}
                     className="h-9 text-xs rounded-xl"
                 />
@@ -326,7 +336,9 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
     const [showForm, setShowForm] = React.useState<'MARITIME' | 'AIR' | null>(null);
     const [historyOpen, setHistoryOpen] = React.useState(false);
 
-    // Active null-category tariffs per mode
+    // Active null-category tariffs per mode.
+    // M2: if the open row's effective_from is in the future (scheduled), also surface the
+    // currently-billing row (the closed row whose window contains today).
     const activeTariffs = React.useMemo(() => {
         const map: Partial<Record<'MARITIME' | 'AIR', TariffRow>> = {};
         for (const mode of TRANSPORT_MODES) {
@@ -342,6 +354,28 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
         }
         return map;
     }, [jid, tariffs]);
+
+    // M2: currently-billing row for each mode (closed row whose [from, to) contains today).
+    const billingTariffs = React.useMemo(() => {
+        const todayStr = today();
+        const map: Partial<Record<'MARITIME' | 'AIR', TariffRow>> = {};
+        for (const mode of TRANSPORT_MODES) {
+            const open = activeTariffs[mode];
+            // Only relevant when the open row is scheduled (future effective_from)
+            if (!open || open.effective_from <= todayStr) continue;
+            const billing = tariffs.find(
+                (r) =>
+                    r.jurisdiction_id === jid &&
+                    r.mode === mode &&
+                    r.asset_category === null &&
+                    r.effective_to !== null &&
+                    r.effective_from <= todayStr &&
+                    r.effective_to > todayStr,
+            );
+            if (billing) map[mode] = billing;
+        }
+        return map;
+    }, [jid, tariffs, activeTariffs]);
 
     // Category-specific active count per mode
     const categoryActiveCounts = React.useMemo(() => {
@@ -374,22 +408,58 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
             <div className="flex flex-col gap-3">
                 {modes.map((mode) => {
                     const active = activeTariffs[mode];
+                    const billing = billingTariffs[mode];
                     const catCount = categoryActiveCounts[mode] ?? 0;
+                    const isScheduled = active && active.effective_from > today();
                     return (
                         <div key={mode} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[var(--os-surface-2)] border border-[var(--os-border)]">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">{mode}</span>
                                     {active ? (
-                                        <OsBadge variant="active" label="ACTIVE" size="sm" />
+                                        isScheduled ? (
+                                            <OsBadge variant="pending" label={t('tariff.scheduled')} size="sm" />
+                                        ) : (
+                                            <OsBadge variant="active" label="ACTIVE" size="sm" />
+                                        )
                                     ) : (
                                         <OsBadge variant="archived" label={t('tariff.noActive')} size="sm" />
                                     )}
                                 </div>
-                                {active ? (
+                                {/* M2: show the scheduled upcoming version */}
+                                {active && isScheduled && (
+                                    <div className="flex flex-wrap items-center gap-3 text-xs mb-1">
+                                        <span className="font-mono font-bold text-[#F59E0B]">
+                                            {Number(active.rate_per_tco2).toFixed(2)} {active.currency}/tCO₂
+                                        </span>
+                                        <span className="text-[var(--os-text-muted)]">
+                                            {t('tariff.scheduledFrom')} {formatDate(active.effective_from)}
+                                        </span>
+                                        {active.decree_ref && (
+                                            <span className="text-[var(--os-text-muted)] font-mono text-[10px]">
+                                                {active.decree_ref}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                {/* M2: currently-billing row when a version is scheduled */}
+                                {billing && isScheduled && (
                                     <div className="flex flex-wrap items-center gap-3 text-xs">
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">{t('tariff.currentlyBilling')}</span>
                                         <span className="font-mono font-bold text-[#00D97E]">
-                                            ${Number(active.rate_per_tco2).toFixed(2)} / tCO₂
+                                            {Number(billing.rate_per_tco2).toFixed(2)} {billing.currency}/tCO₂
+                                        </span>
+                                        <span className="text-[var(--os-text-muted)]">
+                                            {t('tariff.since')} {formatDate(billing.effective_from)}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Normal active (non-scheduled) display */}
+                                {active && !isScheduled && (
+                                    <div className="flex flex-wrap items-center gap-3 text-xs">
+                                        {/* M3: use row's currency instead of hardcoded '$' */}
+                                        <span className="font-mono font-bold text-[#00D97E]">
+                                            {Number(active.rate_per_tco2).toFixed(2)} {active.currency}/tCO₂
                                         </span>
                                         <span className="text-[var(--os-text-muted)]">
                                             {t('tariff.since')} {formatDate(active.effective_from)}
@@ -405,7 +475,8 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
                                             </span>
                                         )}
                                     </div>
-                                ) : (
+                                )}
+                                {!active && (
                                     <p className="text-[11px] text-[var(--os-text-muted)]">{t('tariff.noActiveLong')}</p>
                                 )}
                             </div>
@@ -447,7 +518,8 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
                             {closedTariffs.map((r) => (
                                 <div key={r.id} className="flex items-center gap-3 text-[11px] text-[var(--os-text-muted)] px-2">
                                     <span className="font-mono text-[10px]">{r.mode}</span>
-                                    <span className="font-mono">${Number(r.rate_per_tco2).toFixed(2)}</span>
+                                    {/* M3: currency from row */}
+                                    <span className="font-mono">{Number(r.rate_per_tco2).toFixed(2)} {r.currency}</span>
                                     <span>{formatDate(r.effective_from)} → {formatDate(r.effective_to)}</span>
                                     {r.decree_ref && <span className="font-mono text-[10px]">{r.decree_ref}</span>}
                                 </div>
@@ -558,6 +630,10 @@ function JurisdictionCard({
                     );
                 })}
             </div>
+            {/* I1: modes disclosure */}
+            <p className="text-[10px] text-[var(--os-text-muted)] mt-1 opacity-70">
+                {t('modesDisclosure')}
+            </p>
 
             {/* Tariffs */}
             <TariffSection

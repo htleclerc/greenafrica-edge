@@ -55,6 +55,15 @@ export default async function AdminJurisdictionsRoute() {
     if (jurisdictionsRes.error) {
         throw new Error(`Failed to load jurisdictions: ${jurisdictionsRes.error.message}`);
     }
+    if (modeConfigsRes.error) {
+        throw new Error(`Failed to load mode configs: ${modeConfigsRes.error.message}`);
+    }
+    if (tariffsRes.error) {
+        throw new Error(`Failed to load tariffs: ${tariffsRes.error.message}`);
+    }
+    if (splitRulesRes.error) {
+        throw new Error(`Failed to load split rules: ${splitRulesRes.error.message}`);
+    }
 
     return (
         <div className="px-6 py-4">

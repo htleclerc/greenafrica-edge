@@ -906,7 +906,8 @@
     "simulator_cat_bulk": "Graneleiro (Bulk)",
     "simulator_cat_ferry": "Balsa de Passageiros",
     "simulator_unit_knots": "nós",
-    "simulator_unit_hours": "horas"
+    "simulator_unit_hours": "horas",
+    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições."
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",
@@ -2713,7 +2714,9 @@
       "sectionTitle": "Modos",
       "activatedAt": "Ativado em",
       "confirm": "Confirmar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "errorNotFound": "Configuração de modo não encontrada para esta jurisdição.",
+      "error": "Ocorreu um erro. Por favor, tente novamente."
     },
     "tariff": {
       "sectionTitle": "Tarifas",
@@ -2735,14 +2738,18 @@
       "errorInvalidRate": "A taxa deve ser um número positivo.",
       "errorDecreeRequired": "A referência do decreto é obrigatória.",
       "errorOverlap": "Janela ativa sobreposta — encerre a versão atual ou escolha uma data posterior.",
-      "errorPastDate": "A data de vigência deve ser hoje ou no futuro.",
-      "errorForbidden": "Não tem permissão para gerir tarifas nesta jurisdição."
+      "errorPastDate": "A data de vigência deve ser amanhã ou posterior — alterações no próprio dia recalculariam as proformas já emitidas hoje.",
+      "errorForbidden": "Não tem permissão para gerir tarifas nesta jurisdição.",
+      "scheduled": "AGENDADO",
+      "scheduledFrom": "vigente a partir de",
+      "currentlyBilling": "Atualmente a faturar"
     },
     "split": {
       "sectionTitle": "Repartição de receitas",
       "noRule": "Nenhuma regra de repartição registada.",
       "concessionairePct": "Concessionária {pct}%",
       "sovereignPct": "Soberano {pct}%"
-    }
+    },
+    "modesDisclosure": "Indicador de registo — ainda não condiciona a deteção nem a faturação."
   }
 }

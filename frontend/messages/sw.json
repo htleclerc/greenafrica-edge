@@ -906,7 +906,8 @@
     "simulator_cat_bulk": "Meli ya Mizigo (Bulk)",
     "simulator_cat_ferry": "Feri ya Abiria",
     "simulator_unit_knots": "noti",
-    "simulator_unit_hours": "masaa"
+    "simulator_unit_hours": "masaa",
+    "simulator_legacy_rates_notice": "Uigaji wa dalili — jedwali la viwango vya zamani ; viwango rasmi vipo katika Admin → Mamlaka."
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
@@ -2713,7 +2714,9 @@
       "sectionTitle": "Hali",
       "activatedAt": "Ilianzishwa",
       "confirm": "Thibitisha",
-      "cancel": "Ghairi"
+      "cancel": "Ghairi",
+      "errorNotFound": "Usanidi wa hali haukupatikana kwa mamlaka hii.",
+      "error": "Hitilafu imetokea. Tafadhali jaribu tena."
     },
     "tariff": {
       "sectionTitle": "Viwango",
@@ -2735,14 +2738,18 @@
       "errorInvalidRate": "Kiwango lazima kiwe nambari chanya.",
       "errorDecreeRequired": "Marejeo ya amri yanahitajika.",
       "errorOverlap": "Kipindi kinachoingiliana — funga toleo la sasa au chagua tarehe ya baadaye.",
-      "errorPastDate": "Tarehe ya kutumika lazima iwe leo au baadaye.",
-      "errorForbidden": "Huna ruhusa ya kusimamia viwango vya mamlaka hii."
+      "errorPastDate": "Tarehe ya kutumika lazima iwe kesho au baadaye — mabadiliko ya siku hiyo hiyo yangerekebisha proformas zilizotolewa leo.",
+      "errorForbidden": "Huna ruhusa ya kusimamia viwango vya mamlaka hii.",
+      "scheduled": "ILIOPANGWA",
+      "scheduledFrom": "inatumika kuanzia",
+      "currentlyBilling": "Inayotumika sasa"
     },
     "split": {
       "sectionTitle": "Mgawanyo wa mapato",
       "noRule": "Hakuna kanuni ya mgawanyo iliyoandikwa.",
       "concessionairePct": "Msimamizi {pct}%",
       "sovereignPct": "Serikali {pct}%"
-    }
+    },
+    "modesDisclosure": "Alama ya sajili — bado haizuii ugunduzi wala utozaji wa bili."
   }
 }

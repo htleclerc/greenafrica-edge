@@ -1046,7 +1046,8 @@
     "simulator_cat_bulk": "Bulk Carrier",
     "simulator_cat_ferry": "Passenger Ferry",
     "simulator_unit_knots": "knots",
-    "simulator_unit_hours": "hours"
+    "simulator_unit_hours": "hours",
+    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions."
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",
@@ -3518,7 +3519,9 @@
       "sectionTitle": "Modes",
       "activatedAt": "Activated",
       "confirm": "Confirm",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "errorNotFound": "Mode configuration not found for this jurisdiction.",
+      "error": "An error occurred. Please try again."
     },
     "tariff": {
       "sectionTitle": "Tariffs",
@@ -3540,14 +3543,18 @@
       "errorInvalidRate": "Rate must be a positive number.",
       "errorDecreeRequired": "Decree reference is required.",
       "errorOverlap": "Overlapping active window — close the current version first or choose a later date.",
-      "errorPastDate": "Effective date must be today or in the future.",
-      "errorForbidden": "You don't have permission to manage tariffs for this jurisdiction."
+      "errorPastDate": "Effective date must be tomorrow or later — same-day changes would re-price proformas already issued today.",
+      "errorForbidden": "You don't have permission to manage tariffs for this jurisdiction.",
+      "scheduled": "SCHEDULED",
+      "scheduledFrom": "effective from",
+      "currentlyBilling": "Currently billing"
     },
     "split": {
       "sectionTitle": "Revenue split",
       "noRule": "No split rule on record.",
       "concessionairePct": "Concessionaire {pct}%",
       "sovereignPct": "Sovereign {pct}%"
-    }
+    },
+    "modesDisclosure": "Registry flag — does not yet gate detection or billing."
   }
 }

@@ -322,6 +322,10 @@ export function TaxSimulatorPage() {
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
                         {t('simulator_subtitle')}
                     </p>
+                    {/* I3b: legacy rate surfaces notice */}
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--os-text-muted)', opacity: 0.7 }}>
+                        {t('simulator_legacy_rates_notice')}
+                    </p>
                 </div>
                 <div
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"

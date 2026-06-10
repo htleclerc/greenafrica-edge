@@ -7,16 +7,15 @@ import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Wedge 2 — Task 10: createTariffVersion
+// Wedge 2 — createTariffVersion
 //
-// Appends a new ACTIVE tariff row and closes the previous open version.
-// SUPERADMIN: may act on any jurisdiction.
-// FINANCE_ADMIN: confined to their own jurisdiction (assertAdminCanActOn).
+// Closes the current open version and inserts its successor ATOMICALLY via the
+// create_tariff_version RPC (mig 084). Two separate PostgREST calls leave a
+// real corruption surface; the SECURITY DEFINER RPC serialises concurrent
+// versioning per logical key with SELECT … FOR UPDATE.
 //
-// Sequence:
-//   1. Validate effectiveFrom is TODAY or FUTURE (past dates retro-reprice).
-//   2. Close current ACTIVE NULL-effective_to row for (jurisdiction, mode, category).
-//   3. INSERT the new ACTIVE row.
+// Auth-first convention (M7): requireRole / assertAdminCanActOn are called
+// BEFORE any DB work beyond Zod parse.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const schema = z.object({
@@ -24,7 +23,14 @@ const schema = z.object({
     mode: z.enum(['MARITIME', 'AIR']),
     ratePerTco2: z.number().positive(),
     assetCategory: z.string().min(1).optional(),
-    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD'),
+    effectiveFrom: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')
+        .refine((v) => {
+            // Kills impossible dates like 2026-02-31
+            const d = new Date(v + 'T00:00:00Z');
+            return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+        }, 'invalid calendar date'),
     decreeRef: z.string().min(1),
 });
 
@@ -43,12 +49,7 @@ export async function createTariffVersion(
     const { jurisdictionId, mode, ratePerTco2, assetCategory, effectiveFrom, decreeRef } =
         parsed.data;
 
-    // Validate effectiveFrom is today or in the future.
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    if (effectiveFrom < today) {
-        return { ok: false, error: 'past_date' };
-    }
-
+    // Auth-first: role check before any DB work.
     const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
     if (auth.error) return { ok: false, error: 'forbidden' };
 
@@ -63,51 +64,42 @@ export async function createTariffVersion(
 
     const platform = createPlatformClient();
 
-    // 1. Close the current open version.
-    //    ACTIVE-row immutability trigger ALLOWS setting effective_to on ACTIVE rows.
-    //    asset_category comparison: IS NOT DISTINCT FROM handles NULL correctly.
-    const categoryFilter = assetCategory ?? null;
-    await platform
-        .from('tariffs')
-        .update({ effective_to: effectiveFrom })
-        .eq('jurisdiction_id', jurisdictionId)
-        .eq('mode', mode)
-        .eq('status', 'ACTIVE')
-        .is('effective_to', null)
-        // PostgREST: filter NULL-safe using .is() for null, or .eq() for non-null
-        .filter(
-            'asset_category',
-            categoryFilter === null ? 'is' : 'eq',
-            categoryFilter === null ? null : categoryFilter,
-        );
-
-    // 2. INSERT the new ACTIVE version.
-    const { error: insertError } = await platform.from('tariffs').insert({
-        jurisdiction_id: jurisdictionId,
-        mode,
-        asset_category: assetCategory ?? null,
-        zone: null,
-        rate_per_tco2: ratePerTco2,
-        currency: 'USD',
-        effective_from: effectiveFrom,
-        effective_to: null,
-        status: 'ACTIVE',
-        decree_ref: decreeRef,
-        created_by: auth.user.id,
+    // Single atomic RPC call — close + insert in one transaction.
+    const { data, error: rpcError } = await platform.rpc('create_tariff_version', {
+        p_jurisdiction_id: jurisdictionId,
+        p_mode: mode,
+        p_asset_category: assetCategory ?? null,
+        p_rate: ratePerTco2,
+        p_effective_from: effectiveFrom,
+        p_decree_ref: decreeRef,
+        p_actor: auth.user.id,
     });
 
-    if (insertError) {
-        // Exclusion constraint violation (overlapping active window).
+    if (rpcError) {
+        const msg = rpcError.message ?? '';
+        const code = rpcError.code ?? '';
+        // SECURITY DEFINER role check failed
+        if (code === 'insufficient_privilege' || msg.includes('forbidden')) {
+            return { ok: false, error: 'forbidden' };
+        }
+        // Overlapping active window
         if (
-            insertError.code === '23P01' ||
-            insertError.message?.includes('tariffs_no_overlap')
+            code === '23P01' ||
+            code === 'exclusion_violation' ||
+            msg.includes('already exists at/after') ||
+            msg.includes('tariffs_no_overlap')
         ) {
             return { ok: false, error: 'overlap' };
         }
-        return { ok: false, error: insertError.message };
+        // Same-day or past date
+        if (msg.includes('strictly future') || code === 'check_violation') {
+            return { ok: false, error: 'past_date' };
+        }
+        return { ok: false, error: msg };
     }
 
-    // Best-effort audit log.
+    // Best-effort audit log — includes both IDs from RPC result.
+    const row = Array.isArray(data) ? data[0] : data;
     try {
         await platform.from('audit_logs').insert({
             user_id: auth.user.id,
@@ -118,9 +110,11 @@ export async function createTariffVersion(
             entity_id: jurisdictionId,
             details_json: {
                 event: 'TARIFF_VERSION_CREATED',
+                new_id: row?.new_id ?? null,
+                closed_id: row?.closed_id ?? null,
                 mode,
-                ratePerTco2,
-                effectiveFrom,
+                rate: ratePerTco2,
+                effective_from: effectiveFrom,
             },
         });
     } catch {

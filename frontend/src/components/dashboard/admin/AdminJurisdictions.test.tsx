@@ -82,9 +82,10 @@ describe('AdminJurisdictions', () => {
         expect(screen.getAllByText(/ACTIVE/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('shows tariff rate', () => {
+    it('shows tariff rate with currency', () => {
         renderPanel();
-        expect(screen.getByText(/\$40\.00/)).toBeInTheDocument();
+        // M3: rate displays as "40.00 USD/tCO₂" (currency from row, no hardcoded '$')
+        expect(screen.getByText(/40\.00 USD/)).toBeInTheDocument();
     });
 
     it('displays decree_ref', () => {

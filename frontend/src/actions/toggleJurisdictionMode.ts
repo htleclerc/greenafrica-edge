@@ -66,7 +66,13 @@ export async function toggleJurisdictionMode(
         .single();
 
     if (error || !data) {
-        return { ok: false, error: error?.message ?? 'not_found' };
+        // M6: return structured error keys; never leak raw DB messages.
+        const code = error?.code ?? '';
+        const msg = error?.message ?? '';
+        if (code === 'PGRST116' || msg.includes('no rows') || !data) {
+            return { ok: false, error: 'not_found' };
+        }
+        return { ok: false, error: 'unknown' };
     }
 
     // Best-effort audit log — never fail the action if this errors.

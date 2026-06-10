@@ -235,13 +235,17 @@ BEGIN
     (officer_auth_id, 'test-officer-082@test.invalid'),
     (agent_auth_id,   'test-agent-082@test.invalid');
 
-  -- Create profiles
+  -- Create/update profiles.
+  -- handle_new_user() trigger fires on auth.users INSERT and auto-creates a profile row,
+  -- so use ON CONFLICT DO UPDATE to set the role and is_active we need for the test.
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES (officer_auth_id, 'test-officer-082@test.invalid', 'Test Officer', 'PORT_OFFICER', TRUE)
+  ON CONFLICT (id) DO UPDATE SET role = 'PORT_OFFICER', is_active = TRUE, full_name = 'Test Officer'
   RETURNING id INTO officer_id;
 
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES (agent_auth_id, 'test-agent-082@test.invalid', 'Test Agent', 'SHIPPING_AGENT', TRUE)
+  ON CONFLICT (id) DO UPDATE SET role = 'SHIPPING_AGENT', is_active = TRUE, full_name = 'Test Agent'
   RETURNING id INTO agent_id;
 
   -- Re-run the migration's backfill INSERT (mirrors the exact WHERE clause)
