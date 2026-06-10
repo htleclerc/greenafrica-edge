@@ -13,18 +13,8 @@ import (
 
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/geo"
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 )
-
-// Destination ports (lat, lng) to check proximity against.
-// Kept in code for now; migration to GeoJSON/DB happens in a later plan.
-var destinations = []struct {
-	Name string
-	Lat  float64
-	Lng  float64
-}{
-	{"Berbera", 10.43, 45.02},
-	{"Zeila", 11.35, 43.48},
-}
 
 type Position struct {
 	VesselID   string
@@ -38,10 +28,11 @@ type Position struct {
 type Watcher struct {
 	db  *sql.DB
 	cfg *appconfig.Reader
+	gfs *geofence.Store
 }
 
-func New(db *sql.DB, cfg *appconfig.Reader) *Watcher {
-	return &Watcher{db: db, cfg: cfg}
+func New(db *sql.DB, cfg *appconfig.Reader, gfs *geofence.Store) *Watcher {
+	return &Watcher{db: db, cfg: cfg, gfs: gfs}
 }
 
 // Evaluate reports whether the position triggered a new alert. If the vessel
@@ -57,10 +48,17 @@ func (w *Watcher) Evaluate(ctx context.Context, p Position) (string, error) {
 		return "", fmt.Errorf("corridor: read radius: %w", err)
 	}
 
+	ports, err := w.gfs.Ports(ctx)
+	if err != nil {
+		return "", fmt.Errorf("corridor: load ports: %w", err)
+	}
+
 	bestDist := math.MaxFloat64
-	for _, d := range destinations {
-		if dist := geo.HaversineNM(p.Lat, p.Lng, d.Lat, d.Lng); dist < bestDist {
+	bestJID := ""
+	for _, d := range ports {
+		if dist := geo.HaversineNM(p.Lat, p.Lng, d.Point.Lat, d.Point.Lng); dist < bestDist {
 			bestDist = dist
+			bestJID = d.JurisdictionID
 		}
 	}
 	if bestDist > radiusNM {
@@ -81,10 +79,14 @@ func (w *Watcher) Evaluate(ctx context.Context, p Position) (string, error) {
 	err = w.db.QueryRowContext(ctx, `
 		INSERT INTO public.arrival_alerts
 		  (vessel_id, imo_number, detected_lat, detected_lng,
-		   distance_to_port_nm, estimated_eta, estimated_route_nm, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'DETECTED')
+		   distance_to_port_nm, estimated_eta, estimated_route_nm, status,
+		   jurisdiction_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'DETECTED', $8::uuid)
+		-- PROVISIONAL stamp: nearest-port at first detection (up to 500nm out) is not a
+		-- reliable jurisdiction signal (Zeila↔Djibouti = 25nm); destination matching
+		-- re-resolves downstream.
 		RETURNING id
-	`, p.VesselID, p.IMO, p.Lat, p.Lng, bestDist, eta, estRoute).Scan(&alertID)
+	`, p.VesselID, p.IMO, p.Lat, p.Lng, bestDist, eta, estRoute, bestJID).Scan(&alertID)
 	if err != nil {
 		// Unique partial index on (vessel_id) WHERE status NOT IN (RECONCILED, CANCELLED)
 		// will reject a second active alert. That is the intended deduplication path.

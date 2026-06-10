@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 )
 
 type Position struct {
@@ -25,17 +27,29 @@ type Event struct {
 }
 
 type Tracker struct {
-	db *sql.DB
+	db  *sql.DB
+	gfs *geofence.Store
 }
 
-func NewTracker(db *sql.DB) *Tracker {
-	return &Tracker{db: db}
+// NewTracker creates a Tracker that resolves zones from the DB-driven geofence store.
+func NewTracker(db *sql.DB, gfs *geofence.Store) *Tracker {
+	return &Tracker{db: db, gfs: gfs}
 }
 
 // OnPosition evaluates the zone and updates arrival_alerts if an edge crossed.
 // Returns the event (with From/To zones) so callers can log/observe.
 func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
-	now := Detect(p.Lat, p.Lng)
+	zoneStr, jid, matched, err := t.gfs.MaritimeMatch(ctx, p.Lat, p.Lng)
+	if err != nil {
+		return Event{}, fmt.Errorf("eez tracker: maritime match: %w", err)
+	}
+	var now Zone
+	if matched {
+		now = Zone(zoneStr)
+	} else {
+		now = ZoneInternational
+		jid = ""
+	}
 
 	// Read previous zone from vessels.last_zone
 	var prev sql.NullString
@@ -92,9 +106,9 @@ func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
 			if _, ierr := t.db.ExecContext(ctx,
 				`INSERT INTO public.arrival_alerts
 				   (vessel_id, imo_number, detected_lat, detected_lng,
-				    distance_to_port_nm, status, arrived_at)
-				 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5)`,
-				p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt,
+				    distance_to_port_nm, status, arrived_at, jurisdiction_id)
+				 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5, $6::uuid)`,
+				p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt, jid,
 			); ierr != nil {
 				log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
 			}

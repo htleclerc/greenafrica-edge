@@ -11,14 +11,16 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/eez"
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 )
 
 type Sweeper struct {
-	db *sql.DB
+	db  *sql.DB
+	gfs *geofence.Store
 }
 
-func NewSweeper(db *sql.DB) *Sweeper {
-	return &Sweeper{db: db}
+func NewSweeper(db *sql.DB, gfs *geofence.Store) *Sweeper {
+	return &Sweeper{db: db, gfs: gfs}
 }
 
 // RunOnce scans and returns the number of alerts transitioned to DEPARTED_EEZ.
@@ -57,10 +59,18 @@ func (s *Sweeper) RunOnce(ctx context.Context) (int, error) {
 
 	n := 0
 	for _, p := range all {
-		zone := eez.Detect(p.lat, p.lng)
-		if zone == eez.ZoneEEZ || zone == eez.ZonePortVicinity {
-			continue
+		zoneStr, _, matched, merr := s.gfs.MaritimeMatch(ctx, p.lat, p.lng)
+		if merr != nil {
+			return n, fmt.Errorf("sweeper: maritime match: %w", merr)
 		}
+		// Still inside EEZ or port vicinity — skip.
+		if matched {
+			zone := eez.Zone(zoneStr)
+			if zone == eez.ZoneEEZ || zone == eez.ZonePortVicinity {
+				continue
+			}
+		}
+		// No match (international waters) or matched a transit lane — mark departed.
 		_, err := s.db.ExecContext(ctx,
 			`UPDATE public.arrival_alerts
 			    SET status='DEPARTED_EEZ', departed_eez_at=$1

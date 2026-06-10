@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 )
 
@@ -36,7 +37,8 @@ func TestEvaluate_WithinCorridor_CreatesAlert(t *testing.T) {
 		`DELETE FROM public.vessels WHERE id=$1`, vesselID)
 
 	cfg := appconfig.New(db)
-	w := New(db, cfg)
+	gfs := geofence.NewStore(db)
+	w := New(db, cfg, gfs)
 
 	_, err = w.Evaluate(context.Background(), Position{
 		VesselID:   vesselID,
@@ -86,7 +88,8 @@ func TestEvaluate_Duplicate_NoSecondAlert(t *testing.T) {
 		`DELETE FROM public.vessels WHERE id=$1`, vesselID)
 
 	cfg := appconfig.New(db)
-	w := New(db, cfg)
+	gfs := geofence.NewStore(db)
+	w := New(db, cfg, gfs)
 	pos := Position{VesselID: vesselID, IMO: "TEST-CORR-2", Lat: 11.0, Lng: 45.0, SpeedKnots: 12, RecordedAt: time.Now()}
 	_, _ = w.Evaluate(context.Background(), pos)
 	_, _ = w.Evaluate(context.Background(), pos) // second call

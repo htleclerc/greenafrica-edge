@@ -28,6 +28,8 @@ type ZoneDefinition struct {
 
 // SomalilandZones returns the predefined EEZ zone boundaries.
 // Mirrors the GeoJSON in public/geo/somaliland-eez.geojson.
+//
+// Deprecated: production paths read public.geofences via internal/geofence.
 func SomalilandZones() []ZoneDefinition {
 	return []ZoneDefinition{
 		{
@@ -68,6 +70,8 @@ func SomalilandZones() []ZoneDefinition {
 
 // Detect returns the highest-priority zone containing the given point.
 // Priority: PORT_VICINITY > EEZ > TRANSIT_LANE > INTERNATIONAL.
+//
+// Deprecated: production paths read public.geofences via internal/geofence.
 func Detect(lat, lng float64) Zone {
 	zones := SomalilandZones()
 	priorities := []Zone{ZonePortVicinity, ZoneEEZ, ZoneTransitLane}

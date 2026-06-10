@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 )
 
@@ -40,7 +41,8 @@ func TestOnPosition_EntryMovesAlertToArrived(t *testing.T) {
 		    distance_to_port_nm, status)
 		 VALUES ($1, 'TEST-EEZ-E', 11.5, 46, 300, 'PROFORMA_SENT')`, vID)
 
-	tr := NewTracker(db)
+	gfs := geofence.NewStore(db)
+	tr := NewTracker(db, gfs)
 	// Position inside EEZ (matches mig 003 polygon around 10.5, 45)
 	_, err := tr.OnPosition(context.Background(), Position{
 		VesselID: vID, Lat: 10.5, Lng: 45.0, RecordedAt: time.Now(),

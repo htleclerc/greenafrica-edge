@@ -214,3 +214,67 @@ CREATE POLICY "stub_all_app_config" ON public.app_config USING (TRUE);
 INSERT INTO public.app_config (key, value) VALUES
   ('carbon_tax.rate_usd_per_tco2', to_jsonb(40))
 ON CONFLICT (key) DO NOTHING;
+
+-- ── Extensions for arrival_alerts / vessels / positions (mig 023 + 024 back-fill) ─
+-- These are the columns the tracker / corridor / sweeper tests need that the minimal
+-- stub above omits. Added as ALTER TABLE IF NOT EXISTS so applying the real mig 023/024
+-- over this stub is idempotent.
+
+ALTER TABLE public.arrival_alerts
+  ADD COLUMN IF NOT EXISTS estimated_eta       TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS estimated_route_nm  NUMERIC(10,2),
+  ADD COLUMN IF NOT EXISTS arrived_at          TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS departed_eez_at     TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS cancelled_reason    TEXT;
+
+-- Unique partial index on (vessel_id) WHERE status NOT IN (RECONCILED, CANCELLED).
+-- Backs the corridor deduplication path (INSERT → unique violation → no second alert).
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+     WHERE schemaname = 'public'
+       AND tablename  = 'arrival_alerts'
+       AND indexname  = 'idx_alert_active_per_vessel'
+  ) THEN
+    EXECUTE 'CREATE UNIQUE INDEX idx_alert_active_per_vessel
+               ON public.arrival_alerts(vessel_id)
+              WHERE status NOT IN (''RECONCILED'', ''CANCELLED'')';
+  END IF;
+END $$;
+
+-- last_zone on vessels (mig 024)
+ALTER TABLE public.vessels
+  ADD COLUMN IF NOT EXISTS last_zone TEXT;
+
+-- ── vessel_positions (mig 003 subset — used by sweeper RunOnce query) ────────
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'jurisdiction_zone') THEN
+    CREATE TYPE public.jurisdiction_zone AS ENUM (
+      'EEZ','PORT_VICINITY','TRANSIT_LANE','INTERNATIONAL'
+    );
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.vessel_positions (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vessel_id   UUID NOT NULL REFERENCES public.vessels(id) ON DELETE CASCADE,
+  lat         NUMERIC(9,6) NOT NULL,
+  lng         NUMERIC(9,6) NOT NULL,
+  heading     NUMERIC(5,1) NOT NULL DEFAULT 0,
+  speed_knots NUMERIC(5,1) NOT NULL DEFAULT 0,
+  zone        public.jurisdiction_zone,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.vessel_positions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "stub_all_vessel_positions" ON public.vessel_positions USING (TRUE);
+
+-- AIR key seed (mig 075 value — needed by tariff/tax tests that check AIR mode)
+INSERT INTO public.app_config (key, value) VALUES
+  ('carbon_tax.air_rate_usd_per_tco2', to_jsonb(40))
+ON CONFLICT (key) DO NOTHING;
+
+-- arrival.corridor_radius_nm seed (needed by corridor watcher tests)
+INSERT INTO public.app_config (key, value) VALUES
+  ('arrival.corridor_radius_nm', to_jsonb(500))
+ON CONFLICT (key) DO NOTHING;
