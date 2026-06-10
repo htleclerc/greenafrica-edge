@@ -180,5 +180,31 @@ BEGIN
   END;
 END $$;
 
+-- 7. Immutability guard: updating rate_per_tco2 on an ACTIVE row must raise insufficient_privilege.
+--    Closing effective_to on the same row (allowed) is exercised in the same block.
+DO $$
+DECLARE mar_id UUID;
+BEGIN
+  SELECT id INTO mar_id
+    FROM public.tariffs
+   WHERE jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+     AND mode = 'MARITIME' AND status = 'ACTIVE' AND effective_to IS NULL;
+  IF mar_id IS NULL THEN
+    RAISE EXCEPTION 'TEST FAILED: MARITIME seed row not found for immutability test';
+  END IF;
+
+  -- Mutating rate_per_tco2 must be rejected
+  BEGIN
+    UPDATE public.tariffs SET rate_per_tco2 = 999 WHERE id = mar_id;
+    RAISE EXCEPTION 'TEST FAILED: expected insufficient_privilege for rate_per_tco2 mutation but update succeeded';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      NULL; -- expected
+  END;
+
+  -- Closing effective_to must succeed (ROLLBACK will undo it)
+  UPDATE public.tariffs SET effective_to = CURRENT_DATE + 60 WHERE id = mar_id;
+END $$;
+
 ROLLBACK;
 SELECT '080 versioned tariffs: PASS' AS test_result;

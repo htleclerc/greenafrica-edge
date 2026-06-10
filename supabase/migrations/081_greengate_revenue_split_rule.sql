@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS public.revenue_split_rule (
   )
 );
 
+COMMENT ON TABLE public.revenue_split_rule IS
+  'Versioned D3 contractual concessionaire/sovereign revenue split per jurisdiction — append-only.';
+
 -- Append-only guard: a change is an INSERT of a new row + closing previous effective_to.
 -- DELETE is always forbidden.
 -- UPDATE is allowed ONLY when:
@@ -40,14 +43,17 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    RAISE EXCEPTION 'revenue_split_rule append-only: DELETE forbidden';
+    RAISE EXCEPTION 'revenue_split_rule append-only: DELETE forbidden'
+      USING ERRCODE = 'insufficient_privilege';
   END IF;
 
   -- UPDATE path
   IF OLD.effective_to IS NOT NULL THEN
-    RAISE EXCEPTION 'revenue_split_rule append-only: only closing effective_to (NULL -> value) is allowed';
+    RAISE EXCEPTION 'revenue_split_rule append-only: only closing effective_to (NULL -> value) is allowed'
+      USING ERRCODE = 'insufficient_privilege';
   END IF;
 
+  -- keep this enumeration in sync when adding columns (new columns are otherwise mutable on open rules)
   IF (
     NEW.id                 IS DISTINCT FROM OLD.id                 OR
     NEW.jurisdiction_id    IS DISTINCT FROM OLD.jurisdiction_id    OR
@@ -59,16 +65,31 @@ BEGIN
     NEW.signed_by          IS DISTINCT FROM OLD.signed_by          OR
     NEW.created_at         IS DISTINCT FROM OLD.created_at
   ) THEN
-    RAISE EXCEPTION 'revenue_split_rule append-only: only closing effective_to (NULL -> value) is allowed';
+    RAISE EXCEPTION 'revenue_split_rule append-only: only closing effective_to (NULL -> value) is allowed'
+      USING ERRCODE = 'insufficient_privilege';
   END IF;
 
   RETURN NEW;
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.revenue_split_rule_truncate_guard()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'revenue_split_rule append-only: TRUNCATE forbidden'
+    USING ERRCODE = 'insufficient_privilege';
+END;
+$$;
+
 CREATE TRIGGER revenue_split_rule_append_only
   BEFORE UPDATE OR DELETE ON public.revenue_split_rule
   FOR EACH ROW EXECUTE FUNCTION public.revenue_split_rule_guard();
+
+CREATE TRIGGER revenue_split_rule_no_truncate
+  BEFORE TRUNCATE ON public.revenue_split_rule
+  FOR EACH STATEMENT EXECUTE FUNCTION public.revenue_split_rule_truncate_guard();
 
 ALTER TABLE public.revenue_split_rule ENABLE ROW LEVEL SECURITY;
 
@@ -84,15 +105,20 @@ CREATE POLICY "superadmin writes split rules" ON public.revenue_split_rule FOR A
 
 -- Seed Somaliland: 100% escrowed to sovereign until Ministry of Finance agreement is formalised.
 -- Prevents any premature settlement split from taking effect.
+-- pinned to the decree date: invoices issued before mig-apply must still resolve a rule (as-of lookup)
 INSERT INTO public.revenue_split_rule
   (jurisdiction_id, effective_from, concessionaire_pct, sovereign_pct,
    contract_ref, signature_hash, signed_by)
-VALUES
-  ('00000000-0000-4000-8000-00000000534f', NOW(), 0, 100,
-   'ESCROW_PENDING_MINFIN', 'PENDING', 'solide')
-ON CONFLICT DO NOTHING;
+SELECT '00000000-0000-4000-8000-00000000534f', TIMESTAMPTZ '2026-03-31T00:00:00Z', 0, 100,
+       'ESCROW_PENDING_MINFIN', 'PENDING', 'solide'
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.revenue_split_rule
+   WHERE jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+);
 
--- DOWN (DESTRUCTIVE: drops the contractual split history — revert all invoice FK references first):
+-- DOWN (DESTRUCTIVE: drops the contractual split history — no FK references exist yet — settlement deferred):
+-- DROP TRIGGER IF EXISTS revenue_split_rule_no_truncate ON public.revenue_split_rule;
 -- DROP TRIGGER IF EXISTS revenue_split_rule_append_only ON public.revenue_split_rule;
+-- DROP FUNCTION IF EXISTS public.revenue_split_rule_truncate_guard();
 -- DROP FUNCTION IF EXISTS public.revenue_split_rule_guard();
 -- DROP TABLE IF EXISTS public.revenue_split_rule;

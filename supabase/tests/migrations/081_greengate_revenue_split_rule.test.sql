@@ -63,11 +63,8 @@ BEGIN
      WHERE id = seed_id;
     RAISE EXCEPTION 'TEST FAILED: expected append-only rejection for concessionaire_pct update but update succeeded';
   EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLERRM NOT LIKE '%append-only%' THEN
-        RAISE EXCEPTION 'TEST FAILED: wrong exception message: %', SQLERRM;
-      END IF;
-      -- expected
+    WHEN insufficient_privilege THEN
+      NULL; -- expected
   END;
 END $$;
 
@@ -82,11 +79,8 @@ BEGIN
     DELETE FROM public.revenue_split_rule WHERE id = seed_id;
     RAISE EXCEPTION 'TEST FAILED: expected append-only rejection for DELETE but delete succeeded';
   EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLERRM NOT LIKE '%append-only%' THEN
-        RAISE EXCEPTION 'TEST FAILED: wrong exception message on DELETE: %', SQLERRM;
-      END IF;
-      -- expected
+    WHEN insufficient_privilege THEN
+      NULL; -- expected
   END;
 END $$;
 
@@ -131,11 +125,70 @@ BEGIN
      WHERE id = seed_id;
     RAISE EXCEPTION 'TEST FAILED: expected append-only rejection for re-touching a closed row but update succeeded';
   EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLERRM NOT LIKE '%append-only%' THEN
-        RAISE EXCEPTION 'TEST FAILED: wrong exception message on closed-row re-touch: %', SQLERRM;
-      END IF;
-      -- expected
+    WHEN insufficient_privilege THEN
+      NULL; -- expected
+  END;
+END $$;
+
+-- 7. Cross-jurisdiction independence: inserting an open split rule for a second jurisdiction
+--    while SO's open rule exists → must succeed (no cross-jurisdiction overlap).
+DO $$
+DECLARE zz_jur_id UUID; zz_rule_id UUID;
+BEGIN
+  INSERT INTO public.jurisdictions (code, name, status)
+  VALUES ('ZZ', 'Test Z', 'ACTIVE')
+  RETURNING id INTO zz_jur_id;
+
+  INSERT INTO public.revenue_split_rule
+    (jurisdiction_id, effective_from, concessionaire_pct, sovereign_pct,
+     contract_ref, signature_hash, signed_by)
+  VALUES
+    (zz_jur_id, TIMESTAMPTZ '2026-03-31T00:00:00Z', 50, 50,
+     'TEST_ZZ_CONTRACT', 'PENDING', 'tester')
+  RETURNING id INTO zz_rule_id;
+
+  IF zz_rule_id IS NULL THEN
+    RAISE EXCEPTION 'TEST FAILED: cross-jurisdiction insert should succeed but returned NULL id';
+  END IF;
+END $$;
+
+-- 8. effective_to <= effective_from is rejected by the CHECK constraint (check_violation).
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO public.revenue_split_rule
+      (jurisdiction_id, effective_from, effective_to, concessionaire_pct, sovereign_pct,
+       contract_ref, signature_hash, signed_by)
+    VALUES
+      ('00000000-0000-4000-8000-00000000534f',
+       TIMESTAMPTZ '2026-03-31T00:00:00Z',
+       TIMESTAMPTZ '2026-03-31T00:00:00Z',  -- equal: not > effective_from
+       0, 100, 'BAD_RANGE', 'PENDING', 'tester');
+    RAISE EXCEPTION 'TEST FAILED: expected check_violation for effective_to <= effective_from but insert succeeded';
+  EXCEPTION
+    WHEN check_violation THEN
+      NULL; -- expected
+  END;
+END $$;
+
+-- 9. Combined close+mutate UPDATE on an OPEN row → insufficient_privilege.
+--    Attempting to set both effective_to AND change contract_ref in one UPDATE
+--    must be rejected because contract_ref is immutable.
+DO $$
+DECLARE seed_id UUID;
+BEGIN
+  SELECT id INTO seed_id FROM public.revenue_split_rule
+   WHERE jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+     AND effective_to IS NULL;
+  BEGIN
+    UPDATE public.revenue_split_rule
+       SET effective_to = NOW() + INTERVAL '1 day',
+           contract_ref = 'SNEAKY'
+     WHERE id = seed_id;
+    RAISE EXCEPTION 'TEST FAILED: expected append-only rejection for combined close+mutate but update succeeded';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      NULL; -- expected
   END;
 END $$;
 

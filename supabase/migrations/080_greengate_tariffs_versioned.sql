@@ -81,7 +81,8 @@ BEGIN
       NEW.currency         IS DISTINCT FROM OLD.currency         OR
       NEW.effective_from   IS DISTINCT FROM OLD.effective_from
     ) THEN
-      RAISE EXCEPTION 'tariffs: ACTIVE fiscal rows are immutable except closing effective_to / status / decree_ref / signature_hash';
+      RAISE EXCEPTION 'tariffs: ACTIVE fiscal rows are immutable except closing effective_to / status / decree_ref / signature_hash'
+        USING ERRCODE = 'insufficient_privilege';
     END IF;
   END IF;
   RETURN NEW;
