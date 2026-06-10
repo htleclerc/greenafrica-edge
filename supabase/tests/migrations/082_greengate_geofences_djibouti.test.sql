@@ -104,9 +104,10 @@ BEGIN
   END IF;
 END $$;
 
--- 5. Geofences: exactly 11 active rows; somaliland-fir and djibouti-fir both present;
---    every non-PORT ring is CLOSED (geometry[0] = geometry[last]);
---    every PORT geometry has lat + lng keys.
+-- 5. Geofences: exactly 11 active rows (scoped to the 11 seeded refs);
+--    somaliland-fir and djibouti-fir both present;
+--    every non-PORT ring (among seeded refs) is CLOSED (geometry[0] = geometry[last]);
+--    every PORT geometry (among seeded refs) has lat + lng keys.
 DO $$
 DECLARE
   cnt       INT;
@@ -114,11 +115,27 @@ DECLARE
   first_pt  JSONB;
   last_pt   JSONB;
   arr_len   INT;
+  seeded_refs TEXT[] := ARRAY[
+    'somaliland-port-berbera',
+    'somaliland-port-zeila',
+    'somaliland-eez',
+    'somaliland-transit-aden',
+    'somaliland-fir',
+    'somaliland-dest-berbera',
+    'somaliland-dest-zeila',
+    'djibouti-eez',
+    'djibouti-port-djibouti',
+    'djibouti-fir',
+    'djibouti-dest-djibouti'
+  ];
 BEGIN
-  -- 5a. Row count
-  SELECT COUNT(*) INTO cnt FROM public.geofences WHERE active = TRUE;
+  -- 5a. Row count — scoped to the 11 seeded refs
+  SELECT COUNT(*) INTO cnt
+    FROM public.geofences
+   WHERE active = TRUE
+     AND ref = ANY(seeded_refs);
   IF cnt <> 11 THEN
-    RAISE EXCEPTION 'TEST FAILED: expected 11 active geofence rows, got %', cnt;
+    RAISE EXCEPTION 'TEST FAILED: expected 11 active geofence rows (seeded refs), got %', cnt;
   END IF;
 
   -- 5b. Required FIR refs present
@@ -131,9 +148,12 @@ BEGIN
     RAISE EXCEPTION 'TEST FAILED: djibouti-fir geofence row missing';
   END IF;
 
-  -- 5c. Every non-PORT ring is closed (first element = last element)
+  -- 5c. Every non-PORT ring (seeded refs) is closed (first element = last element)
   FOR r IN
-    SELECT ref, geometry FROM public.geofences WHERE kind <> 'PORT' AND active = TRUE
+    SELECT ref, geometry FROM public.geofences
+     WHERE kind <> 'PORT'
+       AND active = TRUE
+       AND (ref LIKE 'somaliland-%' OR ref LIKE 'djibouti-%')
   LOOP
     arr_len  := jsonb_array_length(r.geometry);
     first_pt := r.geometry -> 0;
@@ -143,9 +163,12 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- 5d. Every PORT geometry has lat + lng keys
+  -- 5d. Every PORT geometry (seeded refs) has lat + lng keys
   FOR r IN
-    SELECT ref, geometry FROM public.geofences WHERE kind = 'PORT' AND active = TRUE
+    SELECT ref, geometry FROM public.geofences
+     WHERE kind = 'PORT'
+       AND active = TRUE
+       AND (ref LIKE 'somaliland-%' OR ref LIKE 'djibouti-%')
   LOOP
     IF (r.geometry ->> 'lat') IS NULL OR (r.geometry ->> 'lng') IS NULL THEN
       RAISE EXCEPTION 'TEST FAILED: PORT geofence % missing lat or lng key', r.ref;
@@ -153,13 +176,15 @@ BEGIN
   END LOOP;
 END $$;
 
--- 6. SO FIR de-overlap:
+-- 6. SO FIR de-overlap + transit corridor west edge:
 --    somaliland-fir min lng (across all ring points) = 43.45
 --    djibouti-fir   max lng (across all ring points) = 43.45
+--    somaliland-transit-aden min lng = 43.45 (W1→W2 narrowing)
 DO $$
 DECLARE
-  so_min_lng NUMERIC;
-  dj_max_lng NUMERIC;
+  so_min_lng      NUMERIC;
+  dj_max_lng      NUMERIC;
+  transit_min_lng NUMERIC;
 BEGIN
   -- Extract all lng values from the SO FIR ring and find the minimum
   SELECT MIN((pt->>'lng')::numeric) INTO so_min_lng
@@ -179,6 +204,16 @@ BEGIN
 
   IF dj_max_lng IS DISTINCT FROM 43.45 THEN
     RAISE EXCEPTION 'TEST FAILED: djibouti-fir max lng expected 43.45, got %', dj_max_lng;
+  END IF;
+
+  -- Transit corridor west edge: W1→W2 narrowing moved it from 43.00 to 43.45
+  SELECT MIN((pt->>'lng')::numeric) INTO transit_min_lng
+    FROM public.geofences g,
+         jsonb_array_elements(g.geometry) AS pt
+   WHERE g.ref = 'somaliland-transit-aden';
+
+  IF transit_min_lng IS DISTINCT FROM 43.45 THEN
+    RAISE EXCEPTION 'TEST FAILED: somaliland-transit-aden min lng expected 43.45 (W2 narrowing), got %', transit_min_lng;
   END IF;
 END $$;
 
@@ -233,6 +268,61 @@ BEGIN
      AND jurisdiction_id = '00000000-0000-4000-8000-00000000444a';
   IF cnt <> 0 THEN
     RAISE EXCEPTION 'TEST FAILED: SHIPPING_AGENT stub must NOT get DJ membership, got % rows', cnt;
+  END IF;
+END $$;
+
+-- 8. Disjointness: no two same-kind ACTIVE geofences (among the 11 seeded refs)
+--    have overlapping bounding boxes.  Abutting edges (shared boundary value) pass
+--    because the comparisons are strict (<).  PORT kind is skipped (point geometry).
+--    EEZ kind is skipped: the DJ EEZ ring is concave (10-point shape extending east
+--    past 43.20 only above lat 11.55), so its bbox legitimately overlaps the SO EEZ
+--    bbox even though the polygons themselves abut.  Polygon-level disjointness for
+--    EEZ pairs is verified by inspection of the seeded ring coordinates above.
+DO $$
+DECLARE
+  seeded_refs TEXT[] := ARRAY[
+    'somaliland-port-berbera',
+    'somaliland-port-zeila',
+    'somaliland-eez',
+    'somaliland-transit-aden',
+    'somaliland-fir',
+    'somaliland-dest-berbera',
+    'somaliland-dest-zeila',
+    'djibouti-eez',
+    'djibouti-port-djibouti',
+    'djibouti-fir',
+    'djibouti-dest-djibouti'
+  ];
+  overlap_count INT;
+BEGIN
+  -- Build per-ring bounding boxes and check every same-kind pair for overlap.
+  -- Two bboxes overlap iff: a.min_lng < b.max_lng AND b.min_lng < a.max_lng
+  --                    AND  a.min_lat < b.max_lat AND b.min_lat < a.max_lat
+  -- Strict < means abutting edges (shared value) do NOT count as overlap.
+  -- EEZ and PORT are excluded (see comment above).
+  WITH bbox AS (
+    SELECT
+      g.ref,
+      g.kind,
+      MIN((pt->>'lat')::numeric) AS min_lat,
+      MAX((pt->>'lat')::numeric) AS max_lat,
+      MIN((pt->>'lng')::numeric) AS min_lng,
+      MAX((pt->>'lng')::numeric) AS max_lng
+    FROM public.geofences g,
+         jsonb_array_elements(g.geometry) AS pt
+    WHERE g.active = TRUE
+      AND g.kind NOT IN ('PORT', 'EEZ')
+      AND g.ref = ANY(seeded_refs)
+    GROUP BY g.ref, g.kind
+  )
+  SELECT COUNT(*) INTO overlap_count
+    FROM bbox a
+    JOIN bbox b ON a.kind = b.kind AND a.ref < b.ref  -- each pair once
+   WHERE a.min_lng < b.max_lng AND b.min_lng < a.max_lng
+     AND a.min_lat < b.max_lat AND b.min_lat < a.max_lat;
+
+  IF overlap_count <> 0 THEN
+    RAISE EXCEPTION 'TEST FAILED: % same-kind geofence bbox pair(s) overlap among seeded refs (PORT_VICINITY/TRANSIT_LANE/FIR)', overlap_count;
   END IF;
 END $$;
 
