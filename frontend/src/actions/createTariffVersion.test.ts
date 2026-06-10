@@ -174,4 +174,26 @@ describe('createTariffVersion', () => {
         });
         expect(r.ok).toBe(false);
     });
+
+    it('FINANCE_ADMIN non-member → forbidden', async () => {
+        const financeUser = { id: 'finance-1', fullName: 'Finance Admin', role: 'FINANCE_ADMIN' };
+        requireRoleResult = { user: financeUser, error: null };
+
+        const { assertAdminCanActOn } = await import('@/lib/auth/adminTenant');
+        vi.mocked(assertAdminCanActOn).mockRejectedValueOnce(new Error('not a member'));
+
+        const { createTariffVersion } = await import('./createTariffVersion');
+        const r = await createTariffVersion({
+            jurisdictionId: VALID_JID,
+            mode: 'MARITIME',
+            ratePerTco2: 40,
+            effectiveFrom: FUTURE,
+            decreeRef: 'DEC-001',
+        });
+
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.error).toBe('forbidden');
+        // No tariffs rows should have been touched
+        expect(mockPlatform.from).not.toHaveBeenCalled();
+    });
 });

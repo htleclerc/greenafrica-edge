@@ -28,7 +28,7 @@ const schema = z.object({
     decreeRef: z.string().min(1),
 });
 
-export type CreateTariffVersionResult =
+type CreateTariffVersionResult =
     | { ok: true }
     | { ok: false; error: 'overlap' | 'past_date' | 'forbidden' | string };
 

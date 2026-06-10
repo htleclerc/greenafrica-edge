@@ -21,7 +21,7 @@ const schema = z.object({
     enabled: z.boolean(),
 });
 
-export type ToggleJurisdictionModeResult =
+type ToggleJurisdictionModeResult =
     | { ok: true }
     | { ok: false; error: string };
 
