@@ -3,11 +3,12 @@ package tax
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
-	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/config"
+	"github.com/htleclerc/africgreen/backend/internal/tariff"
 )
 
 // Handler exposes tax calculation endpoints.
@@ -16,34 +17,35 @@ type Handler struct {
 	registry map[string]ModeCalculator
 }
 
-// NewHandler builds a tax HTTP handler. db + appcfg may be nil during early wiring;
+// NewHandler builds a tax HTTP handler. db may be nil during early wiring;
 // the handler returns 503 in that case rather than panicking.
-func NewHandler(cfg *config.Config, db *sql.DB, appcfg *appconfig.Reader) *Handler {
+func NewHandler(cfg *config.Config, db *sql.DB, tariffs *tariff.Store) *Handler {
 	h := &Handler{cfg: cfg}
-	if db != nil && appcfg != nil {
-		h.registry = NewModeRegistry(db, appcfg)
+	if db != nil && tariffs != nil {
+		h.registry = NewModeRegistry(db, tariffs)
 	}
 	return h
 }
 
 type CalculateRequest struct {
-	Mode         string   `json:"mode,omitempty"` // "MARITIME" (default) | "AIR"
-	IMO          string   `json:"imo,omitempty"`
-	Category     string   `json:"category,omitempty"`
-	GrossTonnage int      `json:"gross_tonnage,omitempty"`
-	DistanceNM   float64  `json:"distance_nm,omitempty"`
-	ICAOType     string   `json:"icao_type,omitempty"`
-	EngineType   string   `json:"engine_type,omitempty"`
-	MTOWKg       int      `json:"mtow_kg,omitempty"`
-	LTOCycles    *int     `json:"lto_cycles,omitempty"`
-	RateOverride *float64 `json:"rate_override,omitempty"`
+	Mode           string   `json:"mode,omitempty"` // "MARITIME" (default) | "AIR"
+	JurisdictionID string   `json:"jurisdiction_id,omitempty"`
+	IMO            string   `json:"imo,omitempty"`
+	Category       string   `json:"category,omitempty"`
+	GrossTonnage   int      `json:"gross_tonnage,omitempty"`
+	DistanceNM     float64  `json:"distance_nm,omitempty"`
+	ICAOType       string   `json:"icao_type,omitempty"`
+	EngineType     string   `json:"engine_type,omitempty"`
+	MTOWKg         int      `json:"mtow_kg,omitempty"`
+	LTOCycles      *int     `json:"lto_cycles,omitempty"`
+	RateOverride   *float64 `json:"rate_override,omitempty"`
 }
 
 // Calculate handles single-asset tax calculation, dispatched by mode.
 // POST /api/v1/tax/calculate
 func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 	if h.registry == nil {
-		http.Error(w, `{"error":"tax calculator not wired (db/appcfg missing)"}`, http.StatusServiceUnavailable)
+		http.Error(w, `{"error":"tax calculator not wired (db missing)"}`, http.StatusServiceUnavailable)
 		return
 	}
 	var req CalculateRequest
@@ -56,6 +58,12 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 	if mode == "" {
 		mode = "MARITIME"
 	}
+
+	if req.JurisdictionID == "" {
+		// Expand-window default: pre-W2 callers don't send a jurisdiction yet.
+		req.JurisdictionID = "00000000-0000-4000-8000-00000000534f" // Somaliland
+	}
+
 	calc, ok := h.registry[mode]
 	if !ok {
 		http.Error(w, `{"error":"unknown mode"}`, http.StatusBadRequest)
@@ -81,6 +89,13 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 
 	res, err := calc.Calculate(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, tariff.ErrNoActiveTariff) {
+			log.Printf("[tax] no active tariff mode=%s jurisdiction=%s: %v", mode, req.JurisdictionID, err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "no_active_tariff"})
+			return
+		}
 		log.Printf("[tax] calculate mode=%s imo=%s icao=%s: %v", mode, req.IMO, req.ICAOType, err)
 		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return

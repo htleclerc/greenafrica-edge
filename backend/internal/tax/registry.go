@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/htleclerc/africgreen/backend/internal/appconfig"
+	"github.com/htleclerc/africgreen/backend/internal/tariff"
 )
 
 // ModeCalculator computes carbon tax for one transport mode from a CalculateRequest.
@@ -17,18 +17,19 @@ type maritimeMode struct{ c *Calculator }
 
 func (m maritimeMode) Calculate(ctx context.Context, req CalculateRequest) (Result, error) {
 	return m.c.Calculate(ctx, Input{
-		IMO:          req.IMO,
-		Category:     req.Category,
-		GrossTonnage: req.GrossTonnage,
-		DistanceNM:   req.DistanceNM,
-		RateOverride: req.RateOverride,
+		IMO:            req.IMO,
+		Category:       req.Category,
+		GrossTonnage:   req.GrossTonnage,
+		DistanceNM:     req.DistanceNM,
+		JurisdictionID: req.JurisdictionID,
+		RateOverride:   req.RateOverride,
 	})
 }
 
 // NewModeRegistry builds the mode→calculator dispatch map.
-func NewModeRegistry(db *sql.DB, cfg *appconfig.Reader) map[string]ModeCalculator {
+func NewModeRegistry(db *sql.DB, tariffs *tariff.Store) map[string]ModeCalculator {
 	return map[string]ModeCalculator{
-		"MARITIME": maritimeMode{c: NewCalculator(db, cfg)},
-		"AIR":      newAirCalculator(db, cfg),
+		"MARITIME": maritimeMode{c: NewCalculator(db, tariffs)},
+		"AIR":      newAirCalculator(db, tariffs),
 	}
 }

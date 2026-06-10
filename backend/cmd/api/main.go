@@ -18,6 +18,7 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/originport"
 	"github.com/htleclerc/africgreen/backend/internal/reconcile"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/tariff"
 	"github.com/htleclerc/africgreen/backend/internal/tax"
 )
 
@@ -52,7 +53,8 @@ func main() {
 	})
 
 	// Tax
-	taxHandler := tax.NewHandler(cfg, db, appcfg)
+	tariffStore := tariff.NewStore(db)
+	taxHandler := tax.NewHandler(cfg, db, tariffStore)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 
