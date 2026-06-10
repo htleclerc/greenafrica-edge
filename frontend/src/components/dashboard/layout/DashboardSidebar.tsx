@@ -13,6 +13,7 @@ import { filterNavItems } from '@/lib/rbac';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
+import { JurisdictionSwitcher } from './JurisdictionSwitcher';
 
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_EXPANDED  = 220;
@@ -126,6 +127,9 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                         </span>
                     </div>
                 </Link>
+
+                {/* Jurisdiction switcher (staff with >1 jurisdiction) */}
+                <JurisdictionSwitcher expanded={expanded || mobileOpen} />
 
                 {/* Nav */}
                 <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">

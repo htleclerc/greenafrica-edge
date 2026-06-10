@@ -2677,7 +2677,15 @@
     "sendInvite": "Send invite",
     "sending": "Sending…",
     "cancel": "Cancel",
-    "aoc": { "col": "AOC #", "set": "Set AOC", "dialogTitle": "Set AOC number", "dialogSubtitle": "Pre-seed the expected AOC for {name}. Self-service air sign-up matches this.", "placeholder": "SO-AOC-001", "save": "Save", "saving": "Saving…" }
+    "aoc": {
+      "col": "AOC #",
+      "set": "Set AOC",
+      "dialogTitle": "Set AOC number",
+      "dialogSubtitle": "Pre-seed the expected AOC for {name}. Self-service air sign-up matches this.",
+      "placeholder": "SO-AOC-001",
+      "save": "Save",
+      "saving": "Saving…"
+    }
   },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
@@ -3484,5 +3492,10 @@
       "pt": "Português",
       "sw": "Kiswahili"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Jurisdiction",
+    "select": "Select jurisdiction…",
+    "error": "Could not switch"
   }
 }

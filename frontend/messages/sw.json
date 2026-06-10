@@ -2690,5 +2690,10 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Mamlaka",
+    "select": "Chagua mamlaka…",
+    "error": "Imeshindwa kubadilisha"
   }
 }

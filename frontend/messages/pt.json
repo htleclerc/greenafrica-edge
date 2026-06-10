@@ -2690,5 +2690,10 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Jurisdição",
+    "select": "Selecionar jurisdição…",
+    "error": "Não foi possível mudar"
   }
 }

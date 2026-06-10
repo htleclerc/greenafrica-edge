@@ -17,10 +17,15 @@
  *   • platform sites (crons iterating jurisdictions, Stripe webhooks keyed by external
  *     id): createPlatformClient() — legitimately cross-tenant.
  *
- * FAIL-CLOSED: throws rather than guessing. A silent default would mis-scope data.
+ * Multi-jurisdiction staff: resolved via the ACTIVE_JURISDICTION_COOKIE set by the
+ * jurisdiction switcher UI. Fail-closed (throws) when the cookie is absent or invalid —
+ * staff must explicitly select an active jurisdiction before any tenant-scoped action.
  */
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
+
+/** Cookie name used by the jurisdiction switcher to persist the active jurisdiction. */
+export const ACTIVE_JURISDICTION_COOKIE = 'gg-active-jid';
 
 /** Uncached implementation — exported for tests (mirrors feature-flags.ts pattern). */
 export async function _getServerJurisdictionIdImpl(): Promise<string> {
@@ -56,8 +61,14 @@ export async function _getServerJurisdictionIdImpl(): Promise<string> {
         return ids[0];
     }
     if (ids.length > 1) {
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        const active = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value;
+        if (active && ids.includes(active)) {
+            return active;
+        }
         throw new Error(
-            'getServerJurisdictionId: multi-jurisdiction user requires an explicit active jurisdiction (switcher not yet implemented)'
+            'getServerJurisdictionId: multi-jurisdiction user — select an active jurisdiction (switcher)'
         );
     }
     throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);

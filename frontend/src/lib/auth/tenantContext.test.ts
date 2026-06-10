@@ -8,6 +8,7 @@ const SN = '11111111-1111-4111-8111-111111111111';
 let authUser: { id: string } | null;
 let ownerRow: { jurisdiction_id: string } | null;
 let membershipRows: Array<{ jurisdiction_id: string }>;
+let activeCookieValue: string | undefined;
 
 const mockClient = {
     auth: {
@@ -37,10 +38,19 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: async () => mockClient,
 }));
 
+// Mock next/headers cookies
+vi.mock('next/headers', () => ({
+    cookies: async () => ({
+        get: (_name: string) => (activeCookieValue !== undefined ? { value: activeCookieValue } : undefined),
+    }),
+}));
+
 beforeEach(() => {
     authUser = { id: 'user-1' };
     ownerRow = null;
     membershipRows = [];
+    activeCookieValue = undefined;
+    vi.resetModules();
 });
 
 describe('getServerJurisdictionId', () => {
@@ -51,6 +61,30 @@ describe('getServerJurisdictionId', () => {
 
     it('returns the single membership jurisdiction for staff (no owner row)', async () => {
         membershipRows = [{ jurisdiction_id: SO }];
+        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
+    });
+
+    it('multi-juri + valid cookie in memberships → returns cookie value', async () => {
+        membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
+        activeCookieValue = SO;
+        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
+    });
+
+    it('multi-juri + no cookie → throws with select an active jurisdiction', async () => {
+        membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
+        activeCookieValue = undefined;
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
+    });
+
+    it('multi-juri + cookie NOT in memberships → throws', async () => {
+        membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
+        activeCookieValue = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
+    });
+
+    it('single-juri → returns it and ignores any cookie', async () => {
+        membershipRows = [{ jurisdiction_id: SO }];
+        activeCookieValue = SN; // cookie points elsewhere but should be ignored
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
     });
 

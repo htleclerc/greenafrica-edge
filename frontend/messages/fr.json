@@ -2647,7 +2647,15 @@
     "sendInvite": "Envoyer l'invitation",
     "sending": "Envoi…",
     "cancel": "Annuler",
-    "aoc": { "col": "N° AOC", "set": "Définir AOC", "dialogTitle": "Définir le numéro AOC", "dialogSubtitle": "Pré-renseigner l'AOC attendu pour {name}. L'inscription aérienne self-service le compare.", "placeholder": "SO-AOC-001", "save": "Enregistrer", "saving": "Enregistrement…" }
+    "aoc": {
+      "col": "N° AOC",
+      "set": "Définir AOC",
+      "dialogTitle": "Définir le numéro AOC",
+      "dialogSubtitle": "Pré-renseigner l'AOC attendu pour {name}. L'inscription aérienne self-service le compare.",
+      "placeholder": "SO-AOC-001",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…"
+    }
   },
   "AdminOriginPort": {
     "title": "Propositions de destination port d'origine",
@@ -3454,5 +3462,10 @@
       "pt": "Português",
       "sw": "Kiswahili"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Juridiction",
+    "select": "Choisir la juridiction…",
+    "error": "Échec du changement"
   }
 }

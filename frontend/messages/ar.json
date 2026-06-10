@@ -2693,5 +2693,10 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "الولاية القضائية",
+    "select": "اختر الولاية…",
+    "error": "تعذر تغيير الولاية"
   }
 }
