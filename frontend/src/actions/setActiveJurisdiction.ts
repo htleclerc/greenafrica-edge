@@ -8,7 +8,7 @@ const schema = z.object({
     jurisdictionId: z.string().uuid(),
 });
 
-export type SetActiveJurisdictionResult = { ok: true } | { ok: false; error: string };
+type SetActiveJurisdictionResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Set the active jurisdiction cookie for a multi-jurisdiction staff member.
