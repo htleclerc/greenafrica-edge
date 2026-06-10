@@ -49,7 +49,10 @@ export async function GET() {
             const j = Array.isArray(r.jurisdictions) ? r.jurisdictions[0] : r.jurisdictions;
             if (!j) return [];
             return [{ id: j.id, code: j.code, name: j.name }];
-        });
+        })
+        // Sort deterministically by code so the auto-select on first login
+        // always picks the same jurisdiction regardless of DB row order.
+        .sort((a, b) => a.code.localeCompare(b.code));
 
     const cookieStore = await cookies();
     const cookieValue = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value ?? null;

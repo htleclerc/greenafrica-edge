@@ -2694,6 +2694,12 @@
   "JurisdictionSwitcher": {
     "label": "Mamlaka",
     "select": "Chagua mamlaka…",
-    "error": "Imeshindwa kubadilisha"
+    "error": "Imeshindwa kubadilisha",
+    "retry": "Jaribu tena"
+  },
+  "DashboardError": {
+    "title": "Kitu kimekwenda vibaya",
+    "jurisdictionHint": "Ukifanya kazi katika mamlaka nyingi, chagua mamlaka yako hai katika upau wa kando kisha ujaribu tena.",
+    "retry": "Jaribu tena"
   }
 }

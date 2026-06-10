@@ -3496,6 +3496,12 @@
   "JurisdictionSwitcher": {
     "label": "Jurisdiction",
     "select": "Select jurisdiction…",
-    "error": "Could not switch"
+    "error": "Could not switch",
+    "retry": "Retry"
+  },
+  "DashboardError": {
+    "title": "Something went wrong",
+    "jurisdictionHint": "If you operate multiple jurisdictions, select your active jurisdiction in the sidebar and retry.",
+    "retry": "Retry"
   }
 }

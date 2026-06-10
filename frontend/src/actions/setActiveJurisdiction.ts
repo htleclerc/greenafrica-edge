@@ -49,7 +49,33 @@ export async function setActiveJurisdiction(raw: unknown): Promise<SetActiveJuri
         sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 30,
+        secure: process.env.NODE_ENV === 'production',
     });
+
+    // Best-effort audit log — failure must NOT fail the switch.
+    // RLS mig 004: all authenticated users may INSERT audit_logs.
+    try {
+        // Fetch the user's display name cheaply from their profile.
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .maybeSingle();
+        const userFullName = (profile as { full_name: string | null } | null)?.full_name ?? user.email ?? user.id;
+
+        await supabase.from('audit_logs').insert({
+            user_id: user.id,
+            user_full_name: userFullName,
+            action: 'TRANSACTION_UPDATED',
+            severity: 'INFO',
+            entity_type: 'Jurisdiction',
+            entity_id: jurisdictionId,
+            details_json: { event: 'ACTIVE_JURISDICTION_SWITCHED' },
+        });
+    } catch (err) {
+        // Fail-soft: audit log is informational; the switch still succeeds.
+        console.error('[setActiveJurisdiction] audit_log insert failed:', err);
+    }
 
     return { ok: true };
 }

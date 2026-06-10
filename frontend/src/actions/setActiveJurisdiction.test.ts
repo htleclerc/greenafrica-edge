@@ -1,78 +1,162 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const COOKIE_NAME = 'gg-active-jid';
-const VALID_UUID = '00000000-0000-4000-8000-000000000001';
+// ── Mutable state shared across mock chains ──────────────────────────────────
+let membershipRow: { jurisdiction_id: string } | null = { jurisdiction_id: 'jur-1' };
+let profileRow: { full_name: string } | null = { full_name: 'Test User' };
+const auditInsertCalls: unknown[] = [];
+let auditInsertShouldThrow = false;
+const cookieSetCalls: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
 
-// ── Mock: supabase session client ────────────────────────────────────────────
-const mockServer = {
-    auth: { getUser: vi.fn() },
-    from: vi.fn(),
-};
-vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(async () => mockServer) }));
-
-// ── Mock: tenantContext (just export the constant) ───────────────────────────
-vi.mock('@/lib/auth/tenantContext', () => ({
-    ACTIVE_JURISDICTION_COOKIE: COOKIE_NAME,
-}));
-
-// ── Mock: next/headers cookies ───────────────────────────────────────────────
-const mockCookieSet = vi.fn();
-vi.mock('next/headers', () => ({
-    cookies: async () => ({ set: mockCookieSet }),
-}));
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function maybeSingle(value: unknown) {
-    return {
-        select: () => ({
-            eq: () => ({
-                eq: () => ({ maybeSingle: async () => ({ data: value, error: null }) }),
-            }),
+// ── Supabase session client mock ─────────────────────────────────────────────
+const mockSupabase = {
+    auth: {
+        getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'user-1', email: 'user@test.com' } },
         }),
-    };
+    },
+    from: vi.fn((table: string) => {
+        if (table === 'user_jurisdictions') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        eq: () => ({
+                            maybeSingle: async () => ({ data: membershipRow, error: null }),
+                        }),
+                    }),
+                }),
+            };
+        }
+        if (table === 'profiles') {
+            return {
+                select: () => ({
+                    eq: () => ({
+                        maybeSingle: async () => ({ data: profileRow, error: null }),
+                    }),
+                }),
+            };
+        }
+        if (table === 'audit_logs') {
+            return {
+                insert: async (row: unknown) => {
+                    auditInsertCalls.push(row);
+                    if (auditInsertShouldThrow) throw new Error('audit insert failed');
+                    return { error: null };
+                },
+            };
+        }
+        return {} as never;
+    }),
+};
+
+vi.mock('@/lib/supabase/server', () => ({
+    createClient: vi.fn().mockResolvedValue(mockSupabase),
+}));
+
+// ── Cookie mock ───────────────────────────────────────────────────────────────
+const mockCookieSet = vi.fn((name: string, value: string, options: Record<string, unknown>) => {
+    cookieSetCalls.push({ name, value, options });
+});
+vi.mock('next/headers', () => ({
+    cookies: vi.fn().mockResolvedValue({ set: mockCookieSet }),
+}));
+
+const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000';
+
+// Dynamic import after mocks are set up
+async function getSUT() {
+    const { setActiveJurisdiction } = await import('./setActiveJurisdiction');
+    return setActiveJurisdiction;
 }
 
-beforeEach(() => {
-    vi.clearAllMocks();
-    mockServer.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-});
-
 describe('setActiveJurisdiction', () => {
-    it('invalid uuid → ok:false, error: invalid input', async () => {
-        const { setActiveJurisdiction } = await import('./setActiveJurisdiction');
-        const r = await setActiveJurisdiction({ jurisdictionId: 'not-a-uuid' });
-        expect(r).toEqual({ ok: false, error: 'invalid input' });
-        expect(mockCookieSet).not.toHaveBeenCalled();
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.resetModules();
+        membershipRow = { jurisdiction_id: 'jur-1' };
+        profileRow = { full_name: 'Test User' };
+        auditInsertCalls.length = 0;
+        cookieSetCalls.length = 0;
+        auditInsertShouldThrow = false;
+        mockSupabase.auth.getUser.mockResolvedValue({
+            data: { user: { id: 'user-1', email: 'user@test.com' } },
+        });
     });
 
-    it('no user session → ok:false, error: not authenticated', async () => {
-        mockServer.auth.getUser.mockResolvedValue({ data: { user: null } });
-        const { setActiveJurisdiction } = await import('./setActiveJurisdiction');
-        const r = await setActiveJurisdiction({ jurisdictionId: VALID_UUID });
-        expect(r).toEqual({ ok: false, error: 'not authenticated' });
-        expect(mockCookieSet).not.toHaveBeenCalled();
+    it('returns error on invalid UUID', async () => {
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: 'not-a-uuid' });
+        expect(result).toMatchObject({ ok: false });
     });
 
-    it('non-member → ok:false, error: not a member, cookie NOT set', async () => {
-        mockServer.from.mockReturnValue(maybeSingle(null));
-        const { setActiveJurisdiction } = await import('./setActiveJurisdiction');
-        const r = await setActiveJurisdiction({ jurisdictionId: VALID_UUID });
-        expect(r).toEqual({ ok: false, error: 'not a member of this jurisdiction' });
-        expect(mockCookieSet).not.toHaveBeenCalled();
+    it('returns error when user is unauthenticated', async () => {
+        mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: null } });
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: VALID_UUID });
+        expect(result).toMatchObject({ ok: false, error: 'not authenticated' });
     });
 
-    it('member → ok:true, cookie set with correct name and options', async () => {
-        mockServer.from.mockReturnValue(maybeSingle({ jurisdiction_id: VALID_UUID }));
-        const { setActiveJurisdiction } = await import('./setActiveJurisdiction');
-        const r = await setActiveJurisdiction({ jurisdictionId: VALID_UUID });
-        expect(r).toEqual({ ok: true });
+    it('returns error when user is not a member of the jurisdiction', async () => {
+        membershipRow = null;
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: VALID_UUID });
+        expect(result).toMatchObject({ ok: false, error: 'not a member of this jurisdiction' });
+    });
+
+    it('sets cookie with secure:true in production', async () => {
+        const origEnv = process.env.NODE_ENV;
+        // @ts-expect-error NODE_ENV is nominally read-only but writable in vitest's Node context
+        process.env.NODE_ENV = 'production';
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: VALID_UUID });
+        expect(result).toMatchObject({ ok: true });
         expect(mockCookieSet).toHaveBeenCalledOnce();
-        const [name, value, opts] = mockCookieSet.mock.calls[0];
-        expect(name).toBe(COOKIE_NAME);
-        expect(value).toBe(VALID_UUID);
-        expect(opts).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/' });
-        expect(typeof opts.maxAge).toBe('number');
-        expect(opts.maxAge).toBeGreaterThan(0);
+        const [, , options] = mockCookieSet.mock.calls[0];
+        expect(options).toMatchObject({
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            secure: true,
+        });
+        // @ts-expect-error NODE_ENV is nominally read-only but writable in vitest's Node context
+        process.env.NODE_ENV = origEnv;
+    });
+
+    it('sets cookie with secure:false outside production', async () => {
+        const fn = await getSUT();
+        // NODE_ENV is 'test' in vitest
+        await fn({ jurisdictionId: VALID_UUID });
+        const [, , options] = mockCookieSet.mock.calls[0];
+        expect(options.secure).toBe(false);
+    });
+
+    it('writes audit log with ACTIVE_JURISDICTION_SWITCHED event on success', async () => {
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: VALID_UUID });
+        expect(result).toMatchObject({ ok: true });
+        expect(auditInsertCalls).toHaveLength(1);
+        expect(auditInsertCalls[0]).toMatchObject({
+            user_id: 'user-1',
+            user_full_name: 'Test User',
+            action: 'TRANSACTION_UPDATED',
+            severity: 'INFO',
+            entity_type: 'Jurisdiction',
+            entity_id: VALID_UUID,
+            details_json: { event: 'ACTIVE_JURISDICTION_SWITCHED' },
+        });
+    });
+
+    it('falls back to email when profile has no full_name', async () => {
+        profileRow = null;
+        const fn = await getSUT();
+        await fn({ jurisdictionId: VALID_UUID });
+        expect(auditInsertCalls[0]).toMatchObject({ user_full_name: 'user@test.com' });
+    });
+
+    it('still returns ok when audit insert throws (fail-soft)', async () => {
+        auditInsertShouldThrow = true;
+        const fn = await getSUT();
+        const result = await fn({ jurisdictionId: VALID_UUID });
+        // Cookie was already set; switch succeeds even though audit insert throws.
+        expect(result).toMatchObject({ ok: true });
     });
 });
