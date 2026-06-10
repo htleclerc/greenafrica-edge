@@ -24,6 +24,14 @@ import { sendInvoiceEmail } from './emailService';
  * without skipping the DB writes — that's the point of the test.
  */
 
+// Wedge 2: Go /api/v1/tax/calculate now returns tariff_id, jurisdiction_id, currency
+// in the breakdown. Both breakdown types extend this shared tail.
+type TaxBreakdownTail = {
+  tariff_id?: string;
+  jurisdiction_id?: string;
+  currency?: string;
+};
+
 type TaxCalcResult = {
   tco2: number;
   usd_amount: number;
@@ -33,7 +41,7 @@ type TaxCalcResult = {
     emissions_factor_source: string;
     emissions_factor_id: string;
     rate_usd_per_tco2: number;
-  };
+  } & TaxBreakdownTail;
 };
 
 // Air-mode result (W1-B contract). Same envelope {tco2,usd_amount}, ICAO-LTO breakdown.
@@ -46,7 +54,7 @@ type AirTaxCalcResult = {
     co2_kg_per_lto_cycle: number;
     lto_cycles: number;
     rate_usd_per_tco2: number;
-  };
+  } & TaxBreakdownTail;
 };
 
 interface RunInput {
@@ -82,6 +90,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     .from('arrival_alerts')
     .select(`
       id, mode, vessel_id, aircraft_id, imo_number, estimated_route_nm, matched_agent_id, status,
+      jurisdiction_id,
       vessel:vessels ( id, name, imo_number, mmsi, category, gross_tonnage_dwt, shipowner_id ),
       aircraft:aircraft ( id, icao24, registration, icao_type, engine_type, mtow_kg, operator_id, jurisdiction_id )
     `)
@@ -145,6 +154,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
         category: vessel.category,
         gross_tonnage: vessel.gross_tonnage_dwt,
         distance_nm: estimatedRouteNm,
+        jurisdiction_id: alert.jurisdiction_id ?? undefined,
       }),
     });
     if (!taxRes.ok) {
@@ -179,6 +189,8 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
       emission_factor_used_id: tax.breakdown.emissions_factor_id || null,
       rate_usd_per_tco2: tax.breakdown.rate_usd_per_tco2,
       breakdown_json: tax.breakdown,
+      tariff_id: tax.breakdown.tariff_id ?? null,
+      jurisdiction_id: alert.jurisdiction_id ?? null,
     })
     .select('id, ref')
     .single();
@@ -335,10 +347,12 @@ interface AlertForAir {
  * Mirrors the maritime tail but keyed on an aircraft instead of a vessel:
  *   1. Resolve the joined aircraft (error if missing).
  *   2. POST the W1-B air contract to /api/v1/tax/calculate (ICAO LTO). A missing
- *      AIR rate makes the Go calc return 500 → we fail-closed (ok:false, no txn).
+ *      AIR rate / unknown type → Go returns 422 no_active_tariff → we fail-closed
+ *      (ok:false, no txn).
  *   3. Insert a mode='AIR' PROFORMA transactions row (aircraft_id set, vessel_id
  *      NULL; vessel_name/vessel_imo carry the aircraft registration/icao24 as the
- *      shared asset name/identifier).
+ *      shared asset name/identifier). jurisdiction_id is taken from the alert
+ *      (the billing event), not the aircraft join.
  *   4. Build the PDF, upload it (unless dry-run), flip the alert to PROFORMA_SENT.
  *
  * Air alerts have NO matched_agent_id (no air agent-matching in v1), so the email
@@ -372,10 +386,11 @@ async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunR
         engine_type: aircraft.engine_type,
         mtow_kg: aircraft.mtow_kg,
         lto_cycles: 1,
+        jurisdiction_id: alert.jurisdiction_id ?? undefined,
       }),
     });
     if (!taxRes.ok) {
-      // Fail-closed: a missing AIR rate / unknown type → 500 → no transaction.
+      // Fail-closed: a missing AIR rate / unknown type → 422 no_active_tariff → no transaction.
       const body = await taxRes.text().catch(() => '');
       return { ok: false, reason: `tax api ${taxRes.status}: ${body}` };
     }
@@ -411,7 +426,10 @@ async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunR
       agent_profile_id: null,
       rate_usd_per_tco2: tax.breakdown.rate_usd_per_tco2,
       breakdown_json: tax.breakdown,
-      jurisdiction_id: aircraft.jurisdiction_id,
+      tariff_id: tax.breakdown.tariff_id ?? null,
+      // jurisdiction_id is taken from the alert (the billing event), not the
+      // aircraft join — the alert is stamped with the jurisdiction at detection time.
+      jurisdiction_id: alert.jurisdiction_id ?? null,
     })
     .select('id, ref')
     .single();

@@ -43,6 +43,10 @@ type TaxCalcResult = {
     emissions_factor_source: string;
     emissions_factor_id: string;
     rate_usd_per_tco2: number;
+    // Wedge 2: Go now returns tariff metadata in the breakdown.
+    tariff_id?: string;
+    jurisdiction_id?: string;
+    currency?: string;
   };
 };
 
@@ -82,7 +86,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     .from('arrival_alerts')
     .select(`
       id, vessel_id, imo_number, status, proforma_transaction_id,
-      matched_agent_id,
+      matched_agent_id, jurisdiction_id,
       vessel:vessels ( id, name, imo_number, mmsi, category, gross_tonnage_dwt, shipowner_id )
     `)
     .eq('id', alertId)
@@ -104,7 +108,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
 
   const { data: proforma, error: pfErr } = await db
     .from('transactions')
-    .select('id, tax_amount_usd, document_type')
+    .select('id, tax_amount_usd, document_type, created_at')
     .eq('id', alert.proforma_transaction_id)
     .single();
   if (pfErr || !proforma) {
@@ -169,6 +173,9 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   }
 
   // ── 4. Tax calculation with real distance ───────────────────────────────
+  // as_of pins the tariff version to the proforma's issuance date — the
+  // reconcile delta measures distance, not decree changes (D3 issuance-date rule).
+  const proformaAsOf = new Date(proforma.created_at as string).toISOString().slice(0, 10);
   let tax: TaxCalcResult;
   try {
     const taxRes = await fetch(`${taxApiUrl}/api/v1/tax/calculate`, {
@@ -179,6 +186,8 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
         category: vessel.category,
         gross_tonnage: vessel.gross_tonnage_dwt,
         distance_nm: realDistanceNm,
+        jurisdiction_id: alert.jurisdiction_id ?? undefined,
+        as_of: proformaAsOf,
       }),
     });
     if (!taxRes.ok) {
@@ -288,6 +297,8 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
       emission_factor_used_id: tax.breakdown.emissions_factor_id || null,
       rate_usd_per_tco2: tax.breakdown.rate_usd_per_tco2,
       breakdown_json: breakdownJson,
+      tariff_id: tax.breakdown.tariff_id ?? null,
+      jurisdiction_id: alert.jurisdiction_id ?? null,
     })
     .select('id, ref')
     .single();
