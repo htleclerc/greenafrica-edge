@@ -3,9 +3,9 @@ package tariff
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -28,49 +28,15 @@ func openTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
-// setupTariffSchema creates the minimal schema needed to run tariff tests:
-// transport_mode enum, jurisdictions stub, and the tariffs table.
-// It is idempotent (IF NOT EXISTS / ON CONFLICT DO NOTHING).
-func setupTariffSchema(t *testing.T, db *sql.DB) {
-	t.Helper()
-	ctx := context.Background()
-	stmts := []string{
-		`DO $$ BEGIN
-		   CREATE TYPE public.transport_mode AS ENUM ('MARITIME','AIR');
-		 EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
-		`CREATE TABLE IF NOT EXISTS public.jurisdictions (
-		   id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-		   name TEXT NOT NULL
-		 )`,
-		`CREATE TABLE IF NOT EXISTS public.tariffs (
-		   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-		   jurisdiction_id UUID NOT NULL REFERENCES public.jurisdictions(id),
-		   mode            public.transport_mode NOT NULL,
-		   asset_category  TEXT,
-		   zone            TEXT,
-		   rate_per_tco2   NUMERIC(10,2) NOT NULL CHECK (rate_per_tco2 > 0),
-		   currency        CHAR(3) NOT NULL DEFAULT 'USD',
-		   effective_from  DATE NOT NULL,
-		   effective_to    DATE,
-		   status          TEXT NOT NULL DEFAULT 'ACTIVE'
-		                   CHECK (status IN ('DRAFT','ACTIVE','ARCHIVED')),
-		   CHECK (effective_to IS NULL OR effective_to > effective_from),
-		   CONSTRAINT tariffs_zone_reserved CHECK (zone IS NULL)
-		 )`,
-	}
-	for _, s := range stmts {
-		if _, err := db.ExecContext(ctx, s); err != nil {
-			t.Fatalf("schema setup: %v\nSQL: %s", err, s)
-		}
-	}
-}
-
-// seedJurisdiction inserts a test jurisdiction and returns its UUID string.
-func seedJurisdiction(t *testing.T, db *sql.DB, name string) string {
+// seedJurisdiction inserts a test jurisdiction using a unique throwaway code and
+// returns its UUID string.  The caller gets a t.Cleanup that removes tariffs rows
+// (FK child) then the jurisdiction row (parent).
+func seedJurisdiction(t *testing.T, db *sql.DB, code, name string) string {
 	t.Helper()
 	var id string
 	err := db.QueryRowContext(context.Background(),
-		`INSERT INTO public.jurisdictions (name) VALUES ($1) RETURNING id::text`, name,
+		`INSERT INTO public.jurisdictions (code, name) VALUES ($1, $2) RETURNING id::text`,
+		code, name,
 	).Scan(&id)
 	if err != nil {
 		t.Fatalf("seedJurisdiction %q: %v", name, err)
@@ -113,8 +79,7 @@ func insertTariff(t *testing.T, db *sql.DB, jid, mode, category string, rate flo
 
 func TestLookup_SpecificCategoryBeatsNull(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-SPECIFC")
+	jid := seedJurisdiction(t, db, "Z1", "Test Jurisdiction Specific")
 
 	// NULL row (all categories): rate 40
 	insertTariff(t, db, jid, "MARITIME", "", 40, "2026-01-01", "", "ACTIVE")
@@ -138,8 +103,7 @@ func TestLookup_SpecificCategoryBeatsNull(t *testing.T) {
 
 func TestLookup_NullCategoryFallback(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-FALLBACK")
+	jid := seedJurisdiction(t, db, "Z2", "Test Jurisdiction Fallback")
 
 	// Only a NULL-category row (no CARGO-specific row)
 	insertTariff(t, db, jid, "MARITIME", "", 40, "2026-01-01", "", "ACTIVE")
@@ -155,12 +119,16 @@ func TestLookup_NullCategoryFallback(t *testing.T) {
 	}
 }
 
-// ─── Test 3: date-window selection ───────────────────────────────────────────
+// ─── Test 3: date-window selection + regression for day-granular cache key ────
+//
+// Uses the SAME store for both date queries.  With the old string key (no day
+// component) the second call would have returned the cached rate from the first
+// call (45) instead of the correct historical rate (30) — proving the cache bug
+// is fixed by the cacheKey struct.
 
 func TestLookup_DateWindowSelection(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-DATE")
+	jid := seedJurisdiction(t, db, "Z3", "Test Jurisdiction Date")
 
 	// Old version [2025-01-01, 2026-01-01) — closed; should NOT be returned for at >= 2026-01-01
 	insertTariff(t, db, jid, "MARITIME", "", 30, "2025-01-01", "2026-01-01", "ACTIVE")
@@ -178,9 +146,10 @@ func TestLookup_DateWindowSelection(t *testing.T) {
 		t.Fatalf("rate at 2026-01-01 = %.2f, want 45 (closed version must not be returned)", r.RatePerTCO2)
 	}
 
-	// at = 2025-06-01 (within old version's window) — a fresh store (no cache)
-	store2 := NewStore(db)
-	r2, err := store2.Lookup(context.Background(), jid, "MARITIME", "", time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC))
+	// at = 2025-06-01 (within old version's window) — same store, different day key.
+	// This is the regression test: if the cache key did not include the day, the store
+	// would return 45 (cached above) instead of 30.
+	r2, err := store.Lookup(context.Background(), jid, "MARITIME", "", time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatalf("Lookup in old window: %v", err)
 	}
@@ -193,17 +162,15 @@ func TestLookup_DateWindowSelection(t *testing.T) {
 
 func TestLookup_FailClosedNoActiveRow(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-FAILCLOSED")
+	jid := seedJurisdiction(t, db, "Z4", "Test Jurisdiction FailClosed")
 
 	store := NewStore(db)
 	_, err := store.Lookup(context.Background(), jid, "MARITIME", "", time.Now())
 	if err == nil {
 		t.Fatal("expected error for missing ACTIVE tariff, got nil")
 	}
-	const want = "no active tariff"
-	if !strings.Contains(err.Error(), want) {
-		t.Fatalf("error = %q, want it to contain %q", err.Error(), want)
+	if !errors.Is(err, ErrNoActiveTariff) {
+		t.Fatalf("error = %q, want errors.Is(err, ErrNoActiveTariff) to be true", err)
 	}
 }
 
@@ -211,8 +178,7 @@ func TestLookup_FailClosedNoActiveRow(t *testing.T) {
 
 func TestLookup_CacheHitWithinTTL(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-CACHE")
+	jid := seedJurisdiction(t, db, "Z5", "Test Jurisdiction Cache")
 
 	id := insertTariff(t, db, jid, "MARITIME", "", 55, "2026-01-01", "", "ACTIVE")
 
@@ -251,8 +217,7 @@ func TestLookup_CacheHitWithinTTL(t *testing.T) {
 
 func TestLookup_DraftRowNotReturned(t *testing.T) {
 	db := openTestDB(t)
-	setupTariffSchema(t, db)
-	jid := seedJurisdiction(t, db, "TEST-JID-DRAFT")
+	jid := seedJurisdiction(t, db, "Z6", "Test Jurisdiction Draft")
 
 	// Only a DRAFT row — must not be returned
 	insertTariff(t, db, jid, "MARITIME", "", 99, "2026-01-01", "", "DRAFT")
@@ -262,9 +227,7 @@ func TestLookup_DraftRowNotReturned(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected fail-closed error for DRAFT-only tariff, got nil")
 	}
-	const want = "no active tariff"
-	if !strings.Contains(err.Error(), want) {
-		t.Fatalf("error = %q, want it to contain %q", err.Error(), want)
+	if !errors.Is(err, ErrNoActiveTariff) {
+		t.Fatalf("error = %q, want errors.Is(err, ErrNoActiveTariff) to be true", err)
 	}
 }
-
