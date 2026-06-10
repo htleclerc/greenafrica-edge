@@ -45,7 +45,9 @@ const AIRCRAFT = {
   engine_type: 'CFM56-5B',
   mtow_kg: 78000,
   operator_id: 'op-ghost-1',
-  jurisdiction_id: SOMALILAND_JID,
+  // Intentionally different from the alert's jurisdiction_id — proves that the
+  // transaction jurisdiction_id comes from the ALERT (billing event), not the asset.
+  jurisdiction_id: 'decoy-aircraft-jid',
 };
 
 /**
@@ -89,6 +91,18 @@ function makeClient(opts: { aircraft?: typeof AIRCRAFT | null; alertStatus?: str
           captured.alertUpdate = payload;
           return { eq: vi.fn().mockResolvedValue({ error: null }) };
         }),
+      };
+    }
+    if (table === 'jurisdictions') {
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { name: 'Republic of Somaliland' },
+              error: null,
+            }),
+          })),
+        })),
       };
     }
     if (table === 'transactions') {

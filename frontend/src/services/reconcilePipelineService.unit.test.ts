@@ -53,7 +53,7 @@ const PROFORMA_AS_OF = '2026-06-05'; // UTC date slice of PROFORMA_CREATED_AT
  * Fake SupabaseClient for the reconcile pipeline. Captures the transactions insert
  * payload so the test can assert the Wedge 2 jurisdiction/tariff/as_of contract.
  */
-function makeClient(opts: { proformaUsd?: number } = {}) {
+function makeClient(opts: { proformaUsd?: number; proformaCreatedAt?: string } = {}) {
   const captured: {
     insertedTxn?: Record<string, unknown>;
     alertUpdate?: Record<string, unknown>;
@@ -76,7 +76,7 @@ function makeClient(opts: { proformaUsd?: number } = {}) {
     id: 'proforma-txn-001',
     tax_amount_usd: proformaUsd,
     document_type: 'PROFORMA',
-    created_at: PROFORMA_CREATED_AT,
+    created_at: opts.proformaCreatedAt ?? PROFORMA_CREATED_AT,
   };
 
   const distanceFinalPayload = {
@@ -169,6 +169,18 @@ function makeClient(opts: { proformaUsd?: number } = {}) {
         })),
       };
     }
+    if (table === 'jurisdictions') {
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { name: 'Republic of Somaliland' },
+              error: null,
+            }),
+          })),
+        })),
+      };
+    }
     throw new Error(`unexpected table: ${table}`);
   });
 
@@ -240,5 +252,65 @@ describe('runReconcilePipeline — Wedge 2 (jurisdiction + tariff_id + as_of pin
       tariff_id: 'tariff-so-sea-001',
       jurisdiction_id: SOMALILAND_JID,
     });
+  });
+
+  it('fail-closed: Go returns 422 no_active_tariff → ok:false, reason contains 422, no transaction inserted', async () => {
+    let fetchCallCount = 0;
+    const fetchMock = vi.fn(() => {
+      fetchCallCount += 1;
+      if (fetchCallCount === 1) {
+        // First call: distance-final succeeds
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ alert_id: 'alert-recon-1', total_distance_eez_nm: 155 }),
+          text: async () => '',
+        });
+      }
+      // Second call: tax/calculate → 422 no_active_tariff
+      return Promise.resolve({
+        ok: false,
+        status: 422,
+        json: async () => ({ error: 'no_active_tariff' }),
+        text: async () => '{"error":"no_active_tariff"}',
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient();
+    const result = await runReconcilePipeline({
+      alertId: 'alert-recon-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toContain('422');
+    expect(captured.insertedTxn).toBeUndefined();
+  });
+
+  it('proformaAsOf uses UTC slice — offset created_at 2026-06-05T01:30:00+03:00 → as_of 2026-06-04', async () => {
+    // 2026-06-05T01:30:00+03:00 = 2026-06-04T22:30:00Z → UTC date is 2026-06-04.
+    const { client, fetchMock } = makeClient({ proformaCreatedAt: '2026-06-05T01:30:00+03:00' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await runReconcilePipeline({
+      alertId: 'alert-recon-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(`pipeline failed: ${result.reason}`);
+
+    const calcCall = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
+    const body = JSON.parse(calcCall[1].body as string);
+    expect(body.as_of).toBe('2026-06-04');
   });
 });

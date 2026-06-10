@@ -92,7 +92,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
       id, mode, vessel_id, aircraft_id, imo_number, estimated_route_nm, matched_agent_id, status,
       jurisdiction_id,
       vessel:vessels ( id, name, imo_number, mmsi, category, gross_tonnage_dwt, shipowner_id ),
-      aircraft:aircraft ( id, icao24, registration, icao_type, engine_type, mtow_kg, operator_id, jurisdiction_id )
+      aircraft:aircraft ( id, icao24, registration, icao_type, engine_type, mtow_kg, operator_id )
     `)
     .eq('id', alertId)
     .single();
@@ -104,9 +104,24 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     return { ok: false, reason: `alert status ${alert.status} is not actionable` };
   }
 
+  // ── Jurisdiction guard (W2): alert must carry a jurisdiction_id. ─────────
+  if (!alert.jurisdiction_id) {
+    return { ok: false, reason: 'alert missing jurisdiction_id' };
+  }
+
+  // ── Resolve jurisdiction display name for the invoice PDF (W2). ──────────
+  // The alert's jurisdiction_id is NOT NULL (enforced at detection time), so the
+  // row will exist; fallback to the legacy label if the lookup somehow fails.
+  const { data: juri } = await db
+    .from('jurisdictions')
+    .select('name')
+    .eq('id', alert.jurisdiction_id)
+    .maybeSingle();
+  const jurisdictionName = juri?.name ?? 'Republic of Somaliland';
+
   // ── AIR branch (W1-C): detected air arrival → air tax calc → mode='AIR' PROFORMA.
   if (alert.mode === 'AIR') {
-    return runAirProforma(input, alert);
+    return runAirProforma(input, alert, jurisdictionName);
   }
 
   const vessel = Array.isArray(alert.vessel) ? alert.vessel[0] : alert.vessel;
@@ -170,6 +185,9 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
   }
 
   // ── 3. Insert PROFORMA transaction ──────────────────────────────────────
+  if (!tax.breakdown.tariff_id) {
+    console.warn('[proformaPipeline] breakdown missing tariff_id — Go backend predates W2 tariffs; deploy ordering violated');
+  }
   const { data: txn, error: txnErr } = await db
     .from('transactions')
     .insert({
@@ -232,7 +250,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     vesselImo: vessel.imo_number,
     vesselMmsi: vessel.mmsi ?? '',
     ownerName,
-    jurisdiction: 'Republic of Somaliland',
+    jurisdiction: jurisdictionName,
     periodStart,
     periodEnd,
     emissionsTco2: tax.tco2,
@@ -321,6 +339,8 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
 }
 
 // ── Shape of the aircraft embed selected alongside the alert (W1-C). ──────────
+// Note: aircraft.jurisdiction_id is intentionally excluded — jurisdiction for
+// billing is always taken from the alert (the detection event), not the asset.
 interface AircraftJoin {
   id: string;
   icao24: string | null;
@@ -329,7 +349,6 @@ interface AircraftJoin {
   engine_type: string | null;
   mtow_kg: number | null;
   operator_id: string | null;
-  jurisdiction_id: string | null;
 }
 
 // The fields the air branch reads off the already-loaded alert. `aircraft` may
@@ -358,8 +377,13 @@ interface AlertForAir {
  * Air alerts have NO matched_agent_id (no air agent-matching in v1), so the email
  * step is skipped — there is no recipient.
  */
-async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunResult> {
+async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionName: string): Promise<RunResult> {
   const { alertId, adminClient: db, taxApiUrl } = input;
+
+  // ── Jurisdiction guard (W2): forwarded from the caller after the shared lookup.
+  if (!alert.jurisdiction_id) {
+    return { ok: false, reason: 'alert missing jurisdiction_id' };
+  }
 
   // ── 1. Resolve the joined aircraft ───────────────────────────────────────
   const aircraft = Array.isArray(alert.aircraft) ? alert.aircraft[0] : alert.aircraft;
@@ -403,6 +427,9 @@ async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunR
   }
 
   // ── 3. Insert mode='AIR' PROFORMA transaction ────────────────────────────
+  if (!tax.breakdown.tariff_id) {
+    console.warn('[proformaPipeline] breakdown missing tariff_id — Go backend predates W2 tariffs; deploy ordering violated');
+  }
   // Shared "asset name/identifier" columns (vessel_name/vessel_imo stay NOT NULL
   // post-mig-077): registration is the human name, icao24 the identifier.
   const assetName = aircraft.registration ?? aircraft.icao_type ?? aircraft.icao24 ?? 'AIRCRAFT';
@@ -469,7 +496,7 @@ async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunR
     vesselImo: assetIdent,
     vesselMmsi: aircraft.icao24 ?? '',
     ownerName: assetName,
-    jurisdiction: 'Republic of Somaliland',
+    jurisdiction: jurisdictionName,
     periodStart,
     periodEnd,
     emissionsTco2: tax.tco2,

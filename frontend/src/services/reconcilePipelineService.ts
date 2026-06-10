@@ -102,6 +102,11 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     return { ok: false, reason: 'alert has no linked pro-forma transaction' };
   }
 
+  // ── Jurisdiction guard (W2): alert must carry a jurisdiction_id. ─────────
+  if (!alert.jurisdiction_id) {
+    return { ok: false, reason: 'alert missing jurisdiction_id' };
+  }
+
   const vessel = Array.isArray(alert.vessel) ? alert.vessel[0] : alert.vessel;
   if (!vessel) return { ok: false, reason: 'vessel missing' };
   if (!alert.matched_agent_id) return { ok: false, reason: 'alert has no matched agent' };
@@ -139,6 +144,16 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     if (owner?.name) ownerName = owner.name;
   }
 
+  // ── Resolve jurisdiction display name for the invoice PDF (W2). ──────────
+  // The alert's jurisdiction_id is NOT NULL (enforced at detection time), so the
+  // row will exist; fallback to the legacy label if the lookup somehow fails.
+  const { data: juri } = await db
+    .from('jurisdictions')
+    .select('name')
+    .eq('id', alert.jurisdiction_id)
+    .maybeSingle();
+  const jurisdictionName = juri?.name ?? 'Republic of Somaliland';
+
   // ── 2. Shared Go-backend auth headers ───────────────────────────────────
   const apiSecret =
     input.taxApiSecret
@@ -175,7 +190,11 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   // ── 4. Tax calculation with real distance ───────────────────────────────
   // as_of pins the tariff version to the proforma's issuance date — the
   // reconcile delta measures distance, not decree changes (D3 issuance-date rule).
-  const proformaAsOf = new Date(proforma.created_at as string).toISOString().slice(0, 10);
+  const d = new Date(proforma.created_at as string);
+  if (Number.isNaN(d.getTime())) {
+    return { ok: false, reason: 'proforma created_at invalid' };
+  }
+  const proformaAsOf = d.toISOString().slice(0, 10);
   let tax: TaxCalcResult;
   try {
     const taxRes = await fetch(`${taxApiUrl}/api/v1/tax/calculate`, {
@@ -277,6 +296,9 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   };
 
   // ── 6. Insert reconciliation transaction ────────────────────────────────
+  if (!tax.breakdown.tariff_id) {
+    console.warn('[reconcilePipeline] breakdown missing tariff_id — Go backend predates W2 tariffs; deploy ordering violated');
+  }
   const { data: txn, error: txnErr } = await db
     .from('transactions')
     .insert({
@@ -355,7 +377,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     vesselImo: vessel.imo_number,
     vesselMmsi: vessel.mmsi ?? '',
     ownerName,
-    jurisdiction: 'Republic of Somaliland',
+    jurisdiction: jurisdictionName,
     periodStart,
     periodEnd,
     emissionsTco2: tax.tco2,

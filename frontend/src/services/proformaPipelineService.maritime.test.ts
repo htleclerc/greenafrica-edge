@@ -85,6 +85,18 @@ function makeClient(opts: { alertStatus?: string } = {}) {
         }),
       };
     }
+    if (table === 'jurisdictions') {
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { name: 'Republic of Somaliland' },
+              error: null,
+            }),
+          })),
+        })),
+      };
+    }
     if (table === 'profiles') {
       return {
         select: vi.fn(() => ({
