@@ -49,6 +49,7 @@ BEGIN
   END IF;
 
   IF (
+    NEW.id                 IS DISTINCT FROM OLD.id                 OR
     NEW.jurisdiction_id    IS DISTINCT FROM OLD.jurisdiction_id    OR
     NEW.effective_from     IS DISTINCT FROM OLD.effective_from     OR
     NEW.concessionaire_pct IS DISTINCT FROM OLD.concessionaire_pct OR
