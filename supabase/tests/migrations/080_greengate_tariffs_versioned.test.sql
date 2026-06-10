@@ -3,6 +3,7 @@ BEGIN;
 
 -- 1. Seeds: exactly 2 ACTIVE Somaliland tariff rows (MARITIME + AIR),
 --    effective_to NULL, currency USD, rate_per_tco2 > 0.
+--    Also asserts value-identical cutover: seeded rates must match the live app_config values.
 DO $$
 DECLARE cnt INT;
 BEGIN
@@ -30,6 +31,23 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'TEST FAILED: AIR seed row missing';
   END IF;
+  -- Value-identity assertions: seeded rates must equal the app_config source values
+  PERFORM 1 FROM public.tariffs t
+   WHERE t.jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+     AND t.mode = 'MARITIME'
+     AND t.status = 'ACTIVE'
+     AND t.rate_per_tco2 = (SELECT (value #>> '{}')::numeric FROM public.app_config WHERE key = 'carbon_tax.rate_usd_per_tco2');
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'TEST FAILED: MARITIME seeded rate does not match app_config carbon_tax.rate_usd_per_tco2';
+  END IF;
+  PERFORM 1 FROM public.tariffs t
+   WHERE t.jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+     AND t.mode = 'AIR'
+     AND t.status = 'ACTIVE'
+     AND t.rate_per_tco2 = (SELECT (value #>> '{}')::numeric FROM public.app_config WHERE key = 'carbon_tax.air_rate_usd_per_tco2');
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'TEST FAILED: AIR seeded rate does not match app_config carbon_tax.air_rate_usd_per_tco2';
+  END IF;
 END $$;
 
 -- 2. Exclusion constraint rejects an overlapping ACTIVE window for the same key.
@@ -48,6 +66,33 @@ BEGIN
     WHEN exclusion_violation THEN
       -- expected
   END;
+END $$;
+
+-- 2b. A DRAFT row overlapping the same ACTIVE window IS accepted (exclusion only applies to ACTIVE).
+--     Flipping that DRAFT row to ACTIVE must raise exclusion_violation.
+DO $$
+DECLARE draft_id UUID;
+BEGIN
+  -- Insert a DRAFT overlapping the seeded MARITIME ACTIVE window — must succeed
+  INSERT INTO public.tariffs
+    (jurisdiction_id, mode, asset_category, zone, rate_per_tco2, currency,
+     effective_from, effective_to, status)
+  VALUES
+    ('00000000-0000-4000-8000-00000000534f', 'MARITIME', NULL, NULL, 50, 'USD',
+     CURRENT_DATE, NULL, 'DRAFT')
+  RETURNING id INTO draft_id;
+  IF draft_id IS NULL THEN
+    RAISE EXCEPTION 'TEST FAILED: DRAFT overlapping row should be accepted but insert failed';
+  END IF;
+  -- Flipping it to ACTIVE must raise exclusion_violation
+  BEGIN
+    UPDATE public.tariffs SET status = 'ACTIVE' WHERE id = draft_id;
+    RAISE EXCEPTION 'TEST FAILED: expected exclusion_violation when promoting DRAFT→ACTIVE but update succeeded';
+  EXCEPTION
+    WHEN exclusion_violation THEN
+      -- expected
+  END;
+  DELETE FROM public.tariffs WHERE id = draft_id;
 END $$;
 
 -- 3. A category-SPECIFIC row ('TANKER') in the same window IS allowed (different key).
@@ -80,7 +125,7 @@ BEGIN
   IF air_id IS NULL THEN
     RAISE EXCEPTION 'TEST FAILED: AIR seed row not found for versioning test';
   END IF;
-  -- Close the current version
+  -- Close the current version (allowed: setting effective_to on ACTIVE row)
   UPDATE public.tariffs SET effective_to = CURRENT_DATE + 30 WHERE id = air_id;
   -- Insert a successor (starts where the old one ends — no overlap)
   INSERT INTO public.tariffs

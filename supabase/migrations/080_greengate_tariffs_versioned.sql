@@ -15,6 +15,8 @@
 --   • No overlapping ACTIVE windows per (jurisdiction, mode, category, zone) — exclusion constraint.
 --   • signature_hash reserved for D2 anchoring (decision 3A: invoices only in v8).
 --   • transactions snapshot tariff_id at issuance — issued invoices never change.
+--   • ARCHIVED = withdrawn/never-applicable. A SUPERSEDED version is CLOSED (effective_to set),
+--     never archived — past-dated lookups must keep resolving.
 --
 -- Seeds Somaliland MARITIME + AIR versions from the live app_config values so the
 -- Go cutover is value-identical.
@@ -28,15 +30,7 @@
 
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
--- IMMUTABLE helper to cast transport_mode enum to text for use in exclusion-constraint
--- index expressions (Postgres requires index expressions to be IMMUTABLE; a raw enum::text
--- cast is only STABLE, so we wrap it in an IMMUTABLE function).
-CREATE OR REPLACE FUNCTION public.transport_mode_text(m public.transport_mode)
-RETURNS TEXT
-LANGUAGE SQL
-IMMUTABLE
-STRICT
-AS $$ SELECT m::text $$;
+-- btree_gist supports enum types natively via gist_enum_ops — no wrapper function needed.
 
 CREATE TABLE IF NOT EXISTS public.tariffs (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -54,9 +48,13 @@ CREATE TABLE IF NOT EXISTS public.tariffs (
   created_by       UUID REFERENCES public.profiles(id),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (effective_to IS NULL OR effective_to > effective_from),
+  -- transitional: v1 lookup is not zone-aware; drop this CHECK in the migration that makes the Go lookup zone-aware
+  CONSTRAINT tariffs_zone_reserved CHECK (zone IS NULL),
+  -- '*' is the NULL sentinel in the exclusion constraint COALESCE keys — never allow literal '*'
+  CONSTRAINT tariffs_no_sentinel CHECK (asset_category IS DISTINCT FROM '*' AND zone IS DISTINCT FROM '*'),
   CONSTRAINT tariffs_no_overlap EXCLUDE USING gist (
     jurisdiction_id WITH =,
-    public.transport_mode_text(mode) WITH =,
+    mode WITH =,                                  -- native enum gist ops (gist_enum_ops)
     (COALESCE(asset_category, '*')) WITH =,
     (COALESCE(zone, '*')) WITH =,
     daterange(effective_from, effective_to, '[)') WITH &&
@@ -65,6 +63,34 @@ CREATE TABLE IF NOT EXISTS public.tariffs (
 
 CREATE INDEX IF NOT EXISTS idx_tariffs_lookup
   ON public.tariffs (jurisdiction_id, mode, status, effective_from DESC);
+
+-- Immutability guard: ACTIVE fiscal rows are append-only for the core rate fields.
+-- Allowed on ACTIVE rows: setting effective_to, changing status, decree_ref, signature_hash.
+CREATE OR REPLACE FUNCTION public.tariffs_active_guard()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF OLD.status = 'ACTIVE' THEN
+    IF (
+      NEW.jurisdiction_id  IS DISTINCT FROM OLD.jurisdiction_id  OR
+      NEW.mode             IS DISTINCT FROM OLD.mode             OR
+      NEW.asset_category   IS DISTINCT FROM OLD.asset_category   OR
+      NEW.zone             IS DISTINCT FROM OLD.zone             OR
+      NEW.rate_per_tco2    IS DISTINCT FROM OLD.rate_per_tco2    OR
+      NEW.currency         IS DISTINCT FROM OLD.currency         OR
+      NEW.effective_from   IS DISTINCT FROM OLD.effective_from
+    ) THEN
+      RAISE EXCEPTION 'tariffs: ACTIVE fiscal rows are immutable except closing effective_to / status / decree_ref / signature_hash';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER tariffs_active_immutable
+  BEFORE UPDATE ON public.tariffs
+  FOR EACH ROW EXECUTE FUNCTION public.tariffs_active_guard();
 
 ALTER TABLE public.transactions
   ADD COLUMN IF NOT EXISTS tariff_id UUID REFERENCES public.tariffs(id);
@@ -100,7 +126,21 @@ SELECT '00000000-0000-4000-8000-00000000534f', 'AIR',
   FROM public.app_config WHERE key = 'carbon_tax.air_rate_usd_per_tco2'
 ON CONFLICT DO NOTHING;
 
--- DOWN:
+-- Post-seed assertion: fail at deploy time if app_config keys were absent (silent-empty-seed guard).
+DO $$
+BEGIN
+  IF (
+    SELECT count(*) FROM public.tariffs
+     WHERE jurisdiction_id = '00000000-0000-4000-8000-00000000534f'
+       AND status = 'ACTIVE'
+       AND effective_to IS NULL
+  ) <> 2 THEN
+    RAISE EXCEPTION 'mig 080: Somaliland tariff seeds missing (app_config keys absent?)';
+  END IF;
+END $$;
+
+-- DOWN (DESTRUCTIVE: drops the issuance snapshot on issued invoices; revert the tariff-aware Go deploy FIRST or every calculation will fail-closed):
+-- DROP TRIGGER IF EXISTS tariffs_active_immutable ON public.tariffs;
+-- DROP FUNCTION IF EXISTS public.tariffs_active_guard();
 -- ALTER TABLE public.transactions DROP COLUMN IF EXISTS tariff_id;
 -- DROP TABLE IF EXISTS public.tariffs;
--- DROP FUNCTION IF EXISTS public.transport_mode_text(public.transport_mode);
