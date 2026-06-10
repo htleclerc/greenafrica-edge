@@ -51,17 +51,24 @@ type Store struct {
 
 	mu        sync.Mutex
 	cached    []Geofence
+	loaded    bool // true once the cache has been populated at least once
 	fetchedAt time.Time
 }
 
 func NewStore(db *sql.DB) *Store { return &Store{db: db, ttl: 60 * time.Second} }
 
 func (s *Store) all(ctx context.Context) ([]Geofence, error) {
+	// Check cache under lock, then release before the DB round-trip.
+	// A rare concurrent duplicate fetch is harmless — both callers will store
+	// the same data and the last writer wins (matches tariff-store pattern).
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.cached != nil && time.Since(s.fetchedAt) < s.ttl {
-		return s.cached, nil
+	if s.loaded && time.Since(s.fetchedAt) < s.ttl {
+		cached := s.cached
+		s.mu.Unlock()
+		return cached, nil
 	}
+	s.mu.Unlock()
+
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, ref, jurisdiction_id, mode::text, kind, name, geometry
 		  FROM public.geofences WHERE active = TRUE`)
@@ -69,7 +76,7 @@ func (s *Store) all(ctx context.Context) ([]Geofence, error) {
 		return nil, fmt.Errorf("geofence: load: %w", err)
 	}
 	defer rows.Close()
-	var out []Geofence
+	out := make([]Geofence, 0) // always non-nil so an empty DB is cached correctly
 	for rows.Next() {
 		var g Geofence
 		var geom []byte
@@ -96,7 +103,11 @@ func (s *Store) all(ctx context.Context) ([]Geofence, error) {
 		}
 		return out[i].Ref < out[j].Ref
 	})
-	s.cached, s.fetchedAt = out, time.Now()
+
+	s.mu.Lock()
+	s.cached, s.fetchedAt, s.loaded = out, time.Now(), true
+	s.mu.Unlock()
+
 	return out, nil
 }
 

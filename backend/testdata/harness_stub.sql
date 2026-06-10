@@ -250,7 +250,7 @@ ALTER TABLE public.vessels
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'jurisdiction_zone') THEN
     CREATE TYPE public.jurisdiction_zone AS ENUM (
-      'EEZ','PORT_VICINITY','TRANSIT_LANE','INTERNATIONAL'
+      'EEZ','PORT_VICINITY','TRANSIT_LANE'
     );
   END IF;
 END $$;

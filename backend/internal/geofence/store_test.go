@@ -53,6 +53,12 @@ var maritimeTests = []struct {
 	{"somaliland transit aden", 12.00, 44.00, true, KindTransitLane, soJID},
 	// International waters
 	{"international waters", 5.00, 50.00, false, "", ""},
+	// Maritime abutting edge: SO EEZ west edge at lng 43.20, lat 11.30.
+	// DJ EEZ ring has a vertex at (11.55, 43.20) and extends east only above lat 11.55;
+	// at lat 11.30 the SO EEZ polygon includes that column (west edge segment runs
+	// (11.50,43.20)→(10.00,43.20) closing the ring). Ray-cast analysis shows exactly
+	// one crossing inside SO EEZ and zero inside DJ EEZ → deterministic winner = SO.
+	{"maritime abutting edge SO/DJ at lng 43.20 lat 11.30 → SO", 11.30, 43.20, true, KindEEZ, soJID},
 }
 
 func TestMaritimeMatch_BoundaryPoints(t *testing.T) {
@@ -96,6 +102,14 @@ var firTests = []struct {
 	{"djibouti ambouli dj fir", 11.55, 43.16, true, djJID},
 	// Exactly on SO/DJ shared edge: lat 10.0 is below DJ FIR south edge (10.90) → Somaliland
 	{"shared edge so side", 10.00, 43.45, true, soJID},
+	// FIR shared-edge point at lat 11.00, lng 43.45 (within both FIRs' lat range).
+	// DJ FIR south edge = lat 10.90 (11.00 is inside DJ lat range).
+	// Ray-cast from lng 43.45 east: SO FIR west edge is xi=43.45 → strict (xi>lng)
+	// = (43.45>43.45) = false, so SO FIR's west-edge segments are never triggered for
+	// the SO ring. DJ FIR east edge xi=43.45 similarly fires 0 crossings on its east-edge
+	// segments. Empirically SO FIR fires one interior crossing (the (11.80,49.5)→(11.80,43.45)
+	// segment); DJ FIR fires 0 → point resolves to EXACTLY Somaliland.
+	{"fir shared-edge lat 11.00 lng 43.45 → SO", 11.00, 43.45, true, soJID},
 }
 
 func TestFIRMatch_BoundaryPoints(t *testing.T) {

@@ -52,6 +52,9 @@ func (w *Watcher) Evaluate(ctx context.Context, p Position) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("corridor: load ports: %w", err)
 	}
+	if len(ports) == 0 {
+		return "", fmt.Errorf("corridor: no active PORT geofences")
+	}
 
 	bestDist := math.MaxFloat64
 	bestJID := ""

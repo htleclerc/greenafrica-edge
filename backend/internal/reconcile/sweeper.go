@@ -27,6 +27,7 @@ func NewSweeper(db *sql.DB, gfs *geofence.Store) *Sweeper {
 func (s *Sweeper) RunOnce(ctx context.Context) (int, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT a.id, a.vessel_id,
+		       COALESCE(a.jurisdiction_id::text, '') AS alert_jid,
 		       (SELECT vp.lat FROM public.vessel_positions vp
 		         WHERE vp.vessel_id=a.vessel_id ORDER BY vp.recorded_at DESC LIMIT 1),
 		       (SELECT vp.lng FROM public.vessel_positions vp
@@ -44,6 +45,7 @@ func (s *Sweeper) RunOnce(ctx context.Context) (int, error) {
 	type pending struct {
 		alertID    string
 		vesselID   string
+		alertJID   string // jurisdiction_id of the ARRIVED alert (empty = legacy/unknown)
 		lat        float64
 		lng        float64
 		recordedAt time.Time
@@ -51,7 +53,7 @@ func (s *Sweeper) RunOnce(ctx context.Context) (int, error) {
 	var all []pending
 	for rows.Next() {
 		var p pending
-		if err := rows.Scan(&p.alertID, &p.vesselID, &p.lat, &p.lng, &p.recordedAt); err != nil {
+		if err := rows.Scan(&p.alertID, &p.vesselID, &p.alertJID, &p.lat, &p.lng, &p.recordedAt); err != nil {
 			return 0, fmt.Errorf("sweeper: scan: %w", err)
 		}
 		all = append(all, p)
@@ -59,18 +61,27 @@ func (s *Sweeper) RunOnce(ctx context.Context) (int, error) {
 
 	n := 0
 	for _, p := range all {
-		zoneStr, _, matched, merr := s.gfs.MaritimeMatch(ctx, p.lat, p.lng)
+		zoneStr, posJID, matched, merr := s.gfs.MaritimeMatch(ctx, p.lat, p.lng)
 		if merr != nil {
 			return n, fmt.Errorf("sweeper: maritime match: %w", merr)
 		}
-		// Still inside EEZ or port vicinity — skip.
+
+		// Still inside EEZ or port vicinity of the SAME jurisdiction — skip.
+		// A vessel that crossed into a different jurisdiction's EEZ HAS departed
+		// the alert jurisdiction even though its zone kind is still "EEZ".
 		if matched {
 			zone := eez.Zone(zoneStr)
 			if zone == eez.ZoneEEZ || zone == eez.ZonePortVicinity {
-				continue
+				// Same jurisdiction (or legacy alert with unknown jid) → still present.
+				if p.alertJID == "" || posJID == p.alertJID {
+					continue
+				}
+				// Jurisdiction hop: vessel in coastal waters of a different jurisdiction
+				// → fall through to DEPARTED_EEZ.
 			}
 		}
-		// No match (international waters) or matched a transit lane — mark departed.
+		// No match (international waters) or matched a transit lane or jurisdiction
+		// hop → mark departed.
 		_, err := s.db.ExecContext(ctx,
 			`UPDATE public.arrival_alerts
 			    SET status='DEPARTED_EEZ', departed_eez_at=$1

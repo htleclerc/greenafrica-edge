@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
@@ -36,54 +37,79 @@ func NewTracker(db *sql.DB, gfs *geofence.Store) *Tracker {
 	return &Tracker{db: db, gfs: gfs}
 }
 
+// isUniqueViolation detects pg's unique_violation via substring match to avoid
+// pulling the pgconn dep here.
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "23505") ||
+		strings.Contains(msg, "duplicate key") ||
+		strings.Contains(msg, "unique constraint")
+}
+
 // OnPosition evaluates the zone and updates arrival_alerts if an edge crossed.
 // Returns the event (with From/To zones) so callers can log/observe.
 func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
-	zoneStr, jid, matched, err := t.gfs.MaritimeMatch(ctx, p.Lat, p.Lng)
-	if err != nil {
-		return Event{}, fmt.Errorf("eez tracker: maritime match: %w", err)
+	zoneStr, jid, matched, derr := t.gfs.MaritimeMatch(ctx, p.Lat, p.Lng)
+	if derr != nil {
+		return Event{}, fmt.Errorf("eez tracker: geofence match: %w", derr)
 	}
-	var now Zone
+	now := ZoneInternational
 	if matched {
 		now = Zone(zoneStr)
-	} else {
-		now = ZoneInternational
-		jid = ""
 	}
 
-	// Read previous zone from vessels.last_zone
+	// Read previous (zone, jurisdiction) pair.
 	var prev sql.NullString
+	var prevJid sql.NullString
 	if err := t.db.QueryRowContext(ctx,
-		`SELECT last_zone FROM public.vessels WHERE id=$1`, p.VesselID,
-	).Scan(&prev); err != nil {
+		`SELECT last_zone, last_zone_jurisdiction_id::text FROM public.vessels WHERE id=$1`, p.VesselID,
+	).Scan(&prev, &prevJid); err != nil {
 		return Event{}, fmt.Errorf("eez tracker: read last_zone: %w", err)
 	}
 	prevZone := Zone(prev.String)
 
 	evt := Event{VesselID: p.VesselID, From: prevZone, To: now}
 
-	// Update vessels.last_zone
-	if _, err := t.db.ExecContext(ctx,
-		`UPDATE public.vessels SET last_zone=$1 WHERE id=$2`,
-		string(now), p.VesselID,
-	); err != nil {
-		return evt, fmt.Errorf("eez tracker: write last_zone: %w", err)
+	inNow := now == ZoneEEZ || now == ZonePortVicinity
+	inPrev := prevZone == ZoneEEZ || prevZone == ZonePortVicinity
+	// A jurisdiction hop while staying in coastal waters (DJ EEZ → SO EEZ across the
+	// abutting edge) is an exit from the old jurisdiction AND an entry into the new.
+	crossed := inPrev && inNow && prevJid.Valid && prevJid.String != jid
+
+	exited := inPrev && (!inNow || crossed)
+	entered := inNow && (!inPrev || crossed)
+	persistOK := true
+
+	if exited {
+		// Close only the alert belonging to the jurisdiction we just left.
+		// The jurisdiction filter is lenient for legacy rows (prevJid empty = unknown):
+		// when we know the previous jurisdiction, only close ITS alert; when unknown
+		// (legacy), keep old behavior and close whatever ARRIVED alert exists.
+		_, err := t.db.ExecContext(ctx,
+			`UPDATE public.arrival_alerts
+			    SET status='DEPARTED_EEZ', departed_eez_at=$1
+			  WHERE vessel_id=$2
+			    AND status='ARRIVED'
+			    AND (jurisdiction_id::text = $3 OR $3 = '')`,
+			p.RecordedAt, p.VesselID, prevJid.String)
+		if err != nil {
+			return evt, fmt.Errorf("eez tracker: update to DEPARTED_EEZ: %w", err)
+		}
 	}
 
-	entered := (prevZone != ZoneEEZ && prevZone != ZonePortVicinity) &&
-		(now == ZoneEEZ || now == ZonePortVicinity)
-	exited := (prevZone == ZoneEEZ || prevZone == ZonePortVicinity) &&
-		(now != ZoneEEZ && now != ZonePortVicinity)
-
 	if entered {
-		// Flip the active alert (if any) to ARRIVED with arrived_at timestamp.
-		// If no active alert exists, create one retroactively.
+		// The corridor stamp is PROVISIONAL; physical entry is authoritative.
+		// Flip the active alert (if any, for this jurisdiction) to ARRIVED with
+		// authoritative arrived_at timestamp.
 		res, err := t.db.ExecContext(ctx,
 			`UPDATE public.arrival_alerts
-			    SET status='ARRIVED', arrived_at=$1
+			    SET status='ARRIVED', arrived_at=$1, jurisdiction_id=$3::uuid
 			  WHERE vessel_id=$2
 			    AND status IN ('PROFORMA_SENT','MATCHED_AUTO','CLAIMED','UNCLAIMED','ESCALATED','DETECTED')`,
-			p.RecordedAt, p.VesselID)
+			p.RecordedAt, p.VesselID, jid)
 		if err != nil {
 			return evt, fmt.Errorf("eez tracker: update to ARRIVED: %w", err)
 		}
@@ -110,19 +136,31 @@ func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
 				 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5, $6::uuid)`,
 				p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt, jid,
 			); ierr != nil {
-				log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
+				if isUniqueViolation(ierr) {
+					// An active alert for a different jurisdiction is not yet reconciled.
+					// Do NOT persist last_zone / last_zone_jurisdiction_id — this tick's
+					// edge will re-fire on the next position (natural retry).
+					log.Printf("[eez] retroactive alert blocked by unique index (cross-jid conflict): vessel=%s jid=%s — will retry next tick", p.VesselID, jid)
+					persistOK = false
+				} else {
+					log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
+				}
 			}
 		}
 	}
 
-	if exited {
-		_, err := t.db.ExecContext(ctx,
-			`UPDATE public.arrival_alerts
-			    SET status='DEPARTED_EEZ', departed_eez_at=$1
-			  WHERE vessel_id=$2 AND status='ARRIVED'`,
-			p.RecordedAt, p.VesselID)
-		if err != nil {
-			return evt, fmt.Errorf("eez tracker: update to DEPARTED_EEZ: %w", err)
+	// Persist (zone, jurisdiction) only when we have a clean state.
+	// If persistOK is false the edge re-fires on the next position.
+	if persistOK {
+		jidArg := jid
+		if !matched {
+			jidArg = ""
+		}
+		if _, err := t.db.ExecContext(ctx,
+			`UPDATE public.vessels SET last_zone=$1, last_zone_jurisdiction_id=NULLIF($2,'')::uuid WHERE id=$3`,
+			string(now), jidArg, p.VesselID,
+		); err != nil {
+			return evt, fmt.Errorf("eez tracker: write last_zone: %w", err)
 		}
 	}
 
