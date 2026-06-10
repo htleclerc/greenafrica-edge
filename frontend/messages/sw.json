@@ -675,7 +675,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "SERIKALI YA SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "IMESIMBWA"
+    "footer_encrypted": "IMESIMBWA",
+    "nav_jurisdictions": "Mamlaka"
   },
   "DashboardPages": {
     "alerts_title": "Tahadhari na Kasoro",
@@ -2701,5 +2702,47 @@
     "title": "Kitu kimekwenda vibaya",
     "jurisdictionHint": "Ukifanya kazi katika mamlaka nyingi, chagua mamlaka yako hai katika upau wa kando kisha ujaribu tena.",
     "retry": "Jaribu tena"
+  },
+  "AdminJurisdictions": {
+    "title": "Mamlaka",
+    "subtitle": "Sajili, matrix ya uanzishaji wa hali na viwango vilivyopigiwa chapa kwa kila mamlaka.",
+    "jurisdictionCount": "mamlaka",
+    "empty": "Hakuna mamlaka zilizopatikana.",
+    "movedNotice": "Viwango vya kila mamlaka vimehamishiwa kwenye sajili ya mamlaka.",
+    "mode": {
+      "sectionTitle": "Hali",
+      "activatedAt": "Ilianzishwa",
+      "confirm": "Thibitisha",
+      "cancel": "Ghairi"
+    },
+    "tariff": {
+      "sectionTitle": "Viwango",
+      "noActive": "Hakuna kazi",
+      "noActiveLong": "Hakuna kiwango kinachofanya kazi — utozaji wa bili umefungwa hadi kiwango kiundwe.",
+      "since": "tangu",
+      "categorySpecific": "mahususi kwa kategoria",
+      "history": "{count} toleo zilizofungwa",
+      "newVersion": "Toleo jipya",
+      "newVersionTitle": "Unda toleo jipya la kiwango",
+      "fieldMode": "Hali",
+      "fieldRate": "Kiwango (USD / tCO₂)",
+      "fieldEffectiveFrom": "Inatumika kutoka",
+      "fieldDecreeRef": "Marejeo ya amri",
+      "fieldAssetCategory": "Kategoria ya mali (hiari)",
+      "fieldAssetCategoryHint": "Acha wazi kwa kategoria zote",
+      "submit": "Unda",
+      "cancel": "Ghairi",
+      "errorInvalidRate": "Kiwango lazima kiwe nambari chanya.",
+      "errorDecreeRequired": "Marejeo ya amri yanahitajika.",
+      "errorOverlap": "Kipindi kinachoingiliana — funga toleo la sasa au chagua tarehe ya baadaye.",
+      "errorPastDate": "Tarehe ya kutumika lazima iwe leo au baadaye.",
+      "errorForbidden": "Huna ruhusa ya kusimamia viwango vya mamlaka hii."
+    },
+    "split": {
+      "sectionTitle": "Mgawanyo wa mapato",
+      "noRule": "Hakuna kanuni ya mgawanyo iliyoandikwa.",
+      "concessionairePct": "Msimamizi {pct}%",
+      "sovereignPct": "Serikali {pct}%"
+    }
   }
 }

@@ -9,7 +9,8 @@ import { updateAppConfig } from '@/actions/updateAppConfig';
 import type { AppConfigEntry } from '@/services/appConfigService';
 
 const NUMBER_KEYS = new Set([
-    'carbon_tax.rate_usd_per_tco2',
+    // carbon_tax.rate_usd_per_tco2 retired: billing reads versioned tariffs table
+    // (mig 080). The key is preserved in DB for rollback but removed from the UI.
     'arrival.corridor_radius_nm',
     'arrival.claim_sla_hours',
     'arrival.escalation_eta_buffer_h',
@@ -47,7 +48,7 @@ const SECRET_KEYS = new Set([
 
 /** Ordered list of keys rendered in the section. */
 const KEY_ORDER: string[] = [
-    'carbon_tax.rate_usd_per_tco2',
+    // carbon_tax.rate_usd_per_tco2 removed — billing now reads tariffs table (mig 080)
     'arrival.corridor_radius_nm',
     'arrival.claim_sla_hours',
     'arrival.escalation_eta_buffer_h',

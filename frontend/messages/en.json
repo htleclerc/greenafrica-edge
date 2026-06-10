@@ -813,7 +813,8 @@
     "footer_encrypted": "ENCRYPTED",
     "nav_registrations": "Registrations",
     "nav_wallets": "Wallets",
-    "nav_refunds": "Refunds"
+    "nav_refunds": "Refunds",
+    "nav_jurisdictions": "Jurisdictions"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -1491,7 +1492,10 @@
     "review": "Review",
     "request_exemption": "Request Exemption",
     "revenue_trend": "Revenue Trend",
-    "full_report": "Full Report →"
+    "full_report": "Full Report →",
+    "tax_rate_moved_title": "Per-jurisdiction tariffs have moved",
+    "tax_rate_moved_desc": "Carbon tax rates are now managed per jurisdiction in the Jurisdictions registry. Billing reads the versioned tariff rows directly — the old global rate surface is retired.",
+    "tax_rate_moved_link": "Go to Jurisdictions →"
   },
   "ValidationsPage": {
     "title": "Agent Validations",
@@ -3503,5 +3507,47 @@
     "title": "Something went wrong",
     "jurisdictionHint": "If you operate multiple jurisdictions, select your active jurisdiction in the sidebar and retry.",
     "retry": "Retry"
+  },
+  "AdminJurisdictions": {
+    "title": "Jurisdictions",
+    "subtitle": "Registry, mode activation matrix, and versioned tariffs per jurisdiction.",
+    "jurisdictionCount": "jurisdictions",
+    "empty": "No jurisdictions found.",
+    "movedNotice": "Per-jurisdiction tariffs have moved to the Jurisdictions registry.",
+    "mode": {
+      "sectionTitle": "Modes",
+      "activatedAt": "Activated",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "tariff": {
+      "sectionTitle": "Tariffs",
+      "noActive": "No active",
+      "noActiveLong": "No active tariff — billing is fail-closed until a tariff is created.",
+      "since": "since",
+      "categorySpecific": "category-specific",
+      "history": "{count} closed versions",
+      "newVersion": "New version",
+      "newVersionTitle": "Create new tariff version",
+      "fieldMode": "Mode",
+      "fieldRate": "Rate (USD / tCO₂)",
+      "fieldEffectiveFrom": "Effective from",
+      "fieldDecreeRef": "Decree ref.",
+      "fieldAssetCategory": "Asset category (optional)",
+      "fieldAssetCategoryHint": "Leave blank for all categories",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "errorInvalidRate": "Rate must be a positive number.",
+      "errorDecreeRequired": "Decree reference is required.",
+      "errorOverlap": "Overlapping active window — close the current version first or choose a later date.",
+      "errorPastDate": "Effective date must be today or in the future.",
+      "errorForbidden": "You don't have permission to manage tariffs for this jurisdiction."
+    },
+    "split": {
+      "sectionTitle": "Revenue split",
+      "noRule": "No split rule on record.",
+      "concessionairePct": "Concessionaire {pct}%",
+      "sovereignPct": "Sovereign {pct}%"
+    }
   }
 }

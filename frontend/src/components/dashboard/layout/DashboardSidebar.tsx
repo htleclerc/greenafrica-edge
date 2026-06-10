@@ -6,7 +6,7 @@ import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
-    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2,
+    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -48,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'refunds',      icon: <Undo2 className="w-5 h-5" />,         href: '/admin/refunds',         labelKey: 'nav_refunds',      section: 'admin' },
     { key: 'cash-desk',    icon: <Banknote className="w-5 h-5" />,      href: '/admin/cash-desk',       labelKey: 'nav_cash_desk',    section: 'admin' },
     { key: 'wallets',      icon: <Wallet className="w-5 h-5" />,        href: '/admin/wallets',         labelKey: 'nav_wallets',      section: 'admin' },
+    { key: 'jurisdictions', icon: <Globe2 className="w-5 h-5" />,      href: '/admin/jurisdictions',   labelKey: 'nav_jurisdictions', section: 'admin' },
 ];
 
 interface DashboardSidebarProps {

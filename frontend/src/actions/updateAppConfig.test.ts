@@ -89,6 +89,16 @@ describe('updateAppConfig — Plan 7H-1 feature flag keys (Task 3)', () => {
         expect(upserts).toHaveLength(0);
     });
 
+    it('rejects carbon_tax.rate_usd_per_tco2 (retired — billing reads tariffs table)', async () => {
+        const { updateAppConfig } = await import('./updateAppConfig');
+        const res = await updateAppConfig({
+            key: 'carbon_tax.rate_usd_per_tco2',
+            value: 40,
+        });
+        expect(res).toEqual({ ok: false, reason: 'key not allowlisted' });
+        expect(upserts).toHaveLength(0);
+    });
+
     it('rejects non-SUPERADMIN callers', async () => {
         profile = { role: 'FINANCE_ADMIN' };
         const { updateAppConfig } = await import('./updateAppConfig');
