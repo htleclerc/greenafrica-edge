@@ -100,6 +100,7 @@ function makeReq(body: unknown, secret?: string): Request {
     });
 }
 
+// NOTE: this legacy suite predates the multi-jurisdiction tests (./route.test.ts). It uses a static import, so the module-level firCache is SHARED across these tests — all cases must keep identical geofence fixtures. Covers the AIS_INGEST_SECRET fallback + counters.
 describe('POST /api/adsb/ingest', () => {
     beforeEach(() => {
         vi.clearAllMocks();

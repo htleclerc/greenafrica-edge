@@ -31,13 +31,14 @@ const TERMINAL_ALERT_STATES = ['RECONCILED', 'CANCELLED'];
 // edges): the abutting SO|DJ FIRs at lng 43.45 resolve to exactly one jurisdiction.
 type FirRing = { jurisdiction_id: string; ring: Array<{ lat: number; lng: number }> };
 let firCache: { fetchedAt: number; firs: FirRing[] } | null = null;
+// 60s — matches the Go geofence store TTL; geofence admin edits propagate within one TTL window.
 const FIR_CACHE_TTL_MS = 60_000;
 
 async function loadFIRs(admin: ReturnType<typeof createPlatformClient>): Promise<FirRing[]> {
   if (firCache && Date.now() - firCache.fetchedAt < FIR_CACHE_TTL_MS) return firCache.firs;
   const { data, error } = await admin
     .from('geofences')
-    .select('jurisdiction_id, ring:geometry')
+    .select('jurisdiction_id, ring:geometry') // 'geometry' is the JSONB column name (mig 082), aliased to 'ring' — not a PostGIS type.
     .eq('kind', 'FIR')
     .eq('active', true);
   if (error || !data || data.length === 0) {
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
         .from('aircraft')
         .upsert(aircraftRow, { onConflict: 'icao24' });
       if (!acErr) aircraftUpserted++;
+      else console.warn('[adsb] aircraft upsert failed:', acErr);
 
       // Resolve the aircraft id + operator from icao24.
       const { data: aircraft } = await admin
