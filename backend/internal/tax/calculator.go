@@ -1,6 +1,9 @@
 // Package tax computes carbon tax for a given vessel + transit distance.
 // Rate is sourced from the versioned tariffs table (jurisdiction-aware, fail-closed).
 // Formula: tax_USD = distance_NM × factor_g_CO2_per_NM × 1e-6 × rate_USD_per_tCO2
+//
+// as_of pins tariff-version resolution to a fiscal date (e.g. reconciliation
+// re-pricing at the proforma's issuance date); default = today.
 package tax
 
 import (
@@ -15,11 +18,11 @@ import (
 
 type Input struct {
 	IMO            string
-	Category       string   // public.vessel_category enum literal
+	Category       string    // public.vessel_category enum literal
 	GrossTonnage   int
 	DistanceNM     float64
 	JurisdictionID string
-	RateOverride   *float64 // optional: if nil, read versioned tariffs table
+	AsOf           time.Time // fiscal date for tariff-version resolution; zero = today
 }
 
 type Breakdown struct {
@@ -58,18 +61,16 @@ func (c *Calculator) Calculate(ctx context.Context, in Input) (Result, error) {
 		return Result{}, fmt.Errorf("tax: factor lookup: %w", err)
 	}
 
-	rate := 0.0
-	tariffID := ""
-	currency := "USD"
-	if in.RateOverride != nil {
-		rate = *in.RateOverride
-	} else {
-		t, terr := c.tariffs.Lookup(ctx, in.JurisdictionID, "MARITIME", in.Category, time.Now())
-		if terr != nil {
-			return Result{}, fmt.Errorf("tax: %w", terr)
-		}
-		rate, tariffID, currency = t.RatePerTCO2, t.ID, t.Currency
+	at := in.AsOf
+	if at.IsZero() {
+		at = time.Now()
 	}
+
+	t, terr := c.tariffs.Lookup(ctx, in.JurisdictionID, "MARITIME", in.Category, at)
+	if terr != nil {
+		return Result{}, fmt.Errorf("tax: %w", terr)
+	}
+	rate, tariffID, currency := t.RatePerTCO2, t.ID, t.Currency
 
 	tco2 := in.DistanceNM * f.GramsCO2PerNM / 1e6
 	usd := tco2 * rate

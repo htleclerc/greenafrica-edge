@@ -16,13 +16,17 @@ type ModeCalculator interface {
 type maritimeMode struct{ c *Calculator }
 
 func (m maritimeMode) Calculate(ctx context.Context, req CalculateRequest) (Result, error) {
+	asOf, err := resolveAsOf(req.AsOf)
+	if err != nil {
+		return Result{}, err
+	}
 	return m.c.Calculate(ctx, Input{
 		IMO:            req.IMO,
 		Category:       req.Category,
 		GrossTonnage:   req.GrossTonnage,
 		DistanceNM:     req.DistanceNM,
 		JurisdictionID: req.JurisdictionID,
-		RateOverride:   req.RateOverride,
+		AsOf:           asOf,
 	})
 }
 

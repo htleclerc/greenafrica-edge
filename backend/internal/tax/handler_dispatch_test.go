@@ -25,7 +25,7 @@ func TestModeRegistry_DispatchesAndDefaults(t *testing.T) {
 	}
 
 	mres, err := reg["MARITIME"].Calculate(context.Background(), CalculateRequest{
-		Mode: "MARITIME", JurisdictionID: somaliaJurisdictionID, IMO: "none", Category: "CARGO", GrossTonnage: 30000, DistanceNM: 140,
+		Mode: "MARITIME", JurisdictionID: somalilandJurisdictionID, IMO: "none", Category: "CARGO", GrossTonnage: 30000, DistanceNM: 140,
 	})
 	if err != nil {
 		t.Fatalf("maritime dispatch: %v", err)
@@ -38,7 +38,7 @@ func TestModeRegistry_DispatchesAndDefaults(t *testing.T) {
 	}
 
 	ares, err := reg["AIR"].Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(1),
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(1),
 	})
 	if err != nil {
 		t.Fatalf("air dispatch: %v", err)
@@ -57,7 +57,7 @@ func TestHandler_NoActiveTariff_Returns422(t *testing.T) {
 
 	// Use a fresh store — the unknown jurisdiction will produce ErrNoActiveTariff.
 	tariffs := tariff.NewStore(db)
-	h := NewHandler(nil, db, tariffs)
+	h := NewHandler(db, tariffs)
 
 	body, _ := json.Marshal(CalculateRequest{
 		Mode:           "MARITIME",

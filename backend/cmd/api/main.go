@@ -54,7 +54,7 @@ func main() {
 
 	// Tax
 	tariffStore := tariff.NewStore(db)
-	taxHandler := tax.NewHandler(cfg, db, tariffStore)
+	taxHandler := tax.NewHandler(db, tariffStore)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 

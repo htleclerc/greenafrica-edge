@@ -114,15 +114,16 @@ CREATE POLICY "finance admins write tariffs" ON public.tariffs FOR ALL
     AND jurisdiction_id = ANY(public.current_jurisdiction_ids())
   );
 
+-- decree date MOE&CC/mi/36/2026 effective date — historical proformas must keep resolving (as_of re-pricing)
 INSERT INTO public.tariffs (jurisdiction_id, mode, rate_per_tco2, currency, effective_from, status, decree_ref)
 SELECT '00000000-0000-4000-8000-00000000534f', 'MARITIME',
-       (value #>> '{}')::numeric, 'USD', CURRENT_DATE, 'ACTIVE', 'MOE&CC/mi/36/2026'
+       (value #>> '{}')::numeric, 'USD', DATE '2026-03-31', 'ACTIVE', 'MOE&CC/mi/36/2026'
   FROM public.app_config WHERE key = 'carbon_tax.rate_usd_per_tco2'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.tariffs (jurisdiction_id, mode, rate_per_tco2, currency, effective_from, status, decree_ref)
 SELECT '00000000-0000-4000-8000-00000000534f', 'AIR',
-       (value #>> '{}')::numeric, 'USD', CURRENT_DATE, 'ACTIVE', 'MOE&CC/mi/36/2026'
+       (value #>> '{}')::numeric, 'USD', DATE '2026-03-31', 'ACTIVE', 'MOE&CC/mi/36/2026'
   FROM public.app_config WHERE key = 'carbon_tax.air_rate_usd_per_tco2'
 ON CONFLICT DO NOTHING;
 

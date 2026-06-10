@@ -11,7 +11,8 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/tariff"
 )
 
-const somaliaJurisdictionID = "00000000-0000-4000-8000-00000000534f"
+// somalilandJurisdictionID aliases the package constant for test readability.
+const somalilandJurisdictionID = defaultJurisdictionSomaliland
 
 func ptrInt(i int) *int { return &i }
 
@@ -33,7 +34,7 @@ func TestAir_EDBHit(t *testing.T) {
 	defer db.Close()
 	calc := newAirCalculator(db, tariffs)
 	res, err := calc.Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(1),
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(1),
 	})
 	if err != nil {
 		t.Fatalf("Calculate: %v", err)
@@ -51,7 +52,7 @@ func TestAir_EDBHit(t *testing.T) {
 	if bd.TariffID == "" {
 		t.Fatal("tariff_id must be set on breakdown (tariff lookup populated it)")
 	}
-	if bd.JurisdictionID != somaliaJurisdictionID {
+	if bd.JurisdictionID != somalilandJurisdictionID {
 		t.Fatalf("jurisdiction_id = %q, want Somaliland", bd.JurisdictionID)
 	}
 	if bd.Currency != "USD" {
@@ -64,7 +65,7 @@ func TestAir_MTOWFallback(t *testing.T) {
 	defer db.Close()
 	calc := newAirCalculator(db, tariffs)
 	res, err := calc.Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "ZZZZ", MTOWKg: 80000, LTOCycles: ptrInt(1),
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "ZZZZ", MTOWKg: 80000, LTOCycles: ptrInt(1),
 	})
 	if err != nil {
 		t.Fatalf("Calculate: %v", err)
@@ -86,7 +87,7 @@ func TestAir_MissNoMTOW_Errors(t *testing.T) {
 	defer db.Close()
 	calc := newAirCalculator(db, tariffs)
 	_, err := calc.Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "ZZZZ", MTOWKg: 0, LTOCycles: ptrInt(1),
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "ZZZZ", MTOWKg: 0, LTOCycles: ptrInt(1),
 	})
 	if err == nil {
 		t.Fatal("expected error when type unseeded and mtow_kg<=0")
@@ -115,7 +116,7 @@ func TestAir_ZeroCycles_Errors(t *testing.T) {
 	defer db.Close()
 	calc := newAirCalculator(db, tariffs)
 	_, err := calc.Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(0),
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000, LTOCycles: ptrInt(0),
 	})
 	if err == nil {
 		t.Fatal("expected error for explicit lto_cycles=0 (must be positive)")
@@ -128,7 +129,7 @@ func TestAir_AbsentCycles_DefaultsToOne(t *testing.T) {
 	calc := newAirCalculator(db, tariffs)
 	// LTOCycles omitted (nil) → defaults to 1 cycle → A320 2600/1000*40 = 104.
 	res, err := calc.Calculate(context.Background(), CalculateRequest{
-		Mode: "AIR", JurisdictionID: somaliaJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000,
+		Mode: "AIR", JurisdictionID: somalilandJurisdictionID, ICAOType: "A320", EngineType: "CFM56-5B", MTOWKg: 78000,
 	})
 	if err != nil {
 		t.Fatalf("Calculate: %v", err)

@@ -32,7 +32,7 @@ func TestCalculate_UsesCascadeAndRate(t *testing.T) {
 		Category:       "CARGO",
 		GrossTonnage:   30000,
 		DistanceNM:     140,
-		JurisdictionID: somaliaJurisdictionID,
+		JurisdictionID: somalilandJurisdictionID,
 	})
 	if err != nil {
 		t.Fatalf("Calculate: %v", err)
@@ -53,7 +53,7 @@ func TestCalculate_UsesCascadeAndRate(t *testing.T) {
 	if bd.TariffID == "" {
 		t.Fatal("tariff_id must be set on breakdown")
 	}
-	if bd.JurisdictionID != somaliaJurisdictionID {
+	if bd.JurisdictionID != somalilandJurisdictionID {
 		t.Fatalf("jurisdiction_id = %q, want Somaliland", bd.JurisdictionID)
 	}
 	if bd.Currency != "USD" {

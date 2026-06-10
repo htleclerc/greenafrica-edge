@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/emissions"
 	"github.com/htleclerc/africgreen/backend/internal/methodologies"
@@ -69,18 +68,16 @@ func (a *airCalculator) Calculate(ctx context.Context, req CalculateRequest) (Re
 		approximate = true
 	}
 
-	rate := 0.0
-	tariffID := ""
-	currency := "USD"
-	if req.RateOverride != nil {
-		rate = *req.RateOverride
-	} else {
-		t, terr := a.tariffs.Lookup(ctx, req.JurisdictionID, "AIR", req.ICAOType, time.Now())
-		if terr != nil {
-			return Result{}, fmt.Errorf("air: %w", terr)
-		}
-		rate, tariffID, currency = t.RatePerTCO2, t.ID, t.Currency
+	at, err := resolveAsOf(req.AsOf)
+	if err != nil {
+		return Result{}, fmt.Errorf("air: invalid as_of: %w", err)
 	}
+
+	t, terr := a.tariffs.Lookup(ctx, req.JurisdictionID, "AIR", req.ICAOType, at)
+	if terr != nil {
+		return Result{}, fmt.Errorf("air: %w", terr)
+	}
+	rate, tariffID, currency := t.RatePerTCO2, t.ID, t.Currency
 
 	tco2 := co2PerLTO * float64(cycles) / 1000.0
 	usd := tco2 * rate
