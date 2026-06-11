@@ -2750,6 +2750,18 @@
       "concessionairePct": "Concessionária {pct}%",
       "sovereignPct": "Soberano {pct}%"
     },
-    "modesDisclosure": "Indicador de registo — ainda não condiciona a deteção nem a faturação."
+    "settlement": {
+      "sectionTitle": "Liquidação",
+      "empty": "Ainda não há dados de liquidação.",
+      "gross": "Receita bruta cobrada — reembolsos executados não deduzidos; desembolso diferido (garantia).",
+      "currentMonth": "Mês atual",
+      "cumulative": "Acumulado",
+      "total": "Total",
+      "concessionaire": "Concessionária",
+      "sovereign": "Soberano",
+      "unattributed": "{count} tx não atribuídas",
+      "mismatched": "{count} tx incorretas"
+    },
+    "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação."
   }
 }

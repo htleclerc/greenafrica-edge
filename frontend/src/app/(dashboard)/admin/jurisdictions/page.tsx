@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { AdminJurisdictions } from '@/components/dashboard/admin/AdminJurisdictions';
-import type { JurisdictionRow, JurisdictionModeConfigRow, TariffRow, SplitRuleRow } from '@/components/dashboard/admin/AdminJurisdictions';
+import type { JurisdictionRow, JurisdictionModeConfigRow, TariffRow, SplitRuleRow, SettlementRow } from '@/components/dashboard/admin/AdminJurisdictions';
 
 export const metadata: Metadata = {
     title: 'Jurisdictions | Green Gate',
@@ -31,7 +31,7 @@ export default async function AdminJurisdictionsRoute() {
 
     const platform = createPlatformClient();
 
-    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes] = await Promise.all([
+    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes, settlementRes] = await Promise.all([
         platform
             .from('jurisdictions')
             .select('id, code, name, default_currency, locales, status')
@@ -50,6 +50,10 @@ export default async function AdminJurisdictionsRoute() {
             .select('id, jurisdiction_id, concessionaire_pct, sovereign_pct, contract_ref, effective_from, effective_to')
             .is('effective_to', null)
             .order('effective_from', { ascending: false }),
+        platform
+            .from('v_revenue_split_settlement')
+            .select('*')
+            .order('month', { ascending: false }),
     ]);
 
     if (jurisdictionsRes.error) {
@@ -64,6 +68,9 @@ export default async function AdminJurisdictionsRoute() {
     if (splitRulesRes.error) {
         throw new Error(`Failed to load split rules: ${splitRulesRes.error.message}`);
     }
+    if (settlementRes.error) {
+        throw new Error(`Failed to load settlement data: ${settlementRes.error.message}`);
+    }
 
     return (
         <div className="px-6 py-4">
@@ -72,6 +79,7 @@ export default async function AdminJurisdictionsRoute() {
                 modeConfigs={(modeConfigsRes.data ?? []) as JurisdictionModeConfigRow[]}
                 tariffs={(tariffsRes.data ?? []) as TariffRow[]}
                 splitRules={(splitRulesRes.data ?? []) as SplitRuleRow[]}
+                settlement={(settlementRes.data ?? []) as SettlementRow[]}
                 viewerRole={profile.role}
             />
         </div>
