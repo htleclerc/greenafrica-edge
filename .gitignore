@@ -40,3 +40,4 @@ docs/*
 !docs/superpowers/
 !docs/user_stories.md
 !docs/designs/
+!docs/reviews/
