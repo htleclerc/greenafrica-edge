@@ -34,6 +34,12 @@ const GEOFENCE_ROWS_OK = [
   { jurisdiction_id: SO_JID, ring: SO_RING },
 ];
 
+// AIR activation matrix rows for the default mock (both jurisdictions enabled).
+const AIR_MATRIX_ROWS_DEFAULT = [
+  { jurisdiction_id: SO_JID, enabled: true },
+  { jurisdiction_id: DJ_JID, enabled: true },
+];
+
 const SECRET = 'test-adsb-secret';
 
 function makeRequest(body: unknown) {
@@ -49,10 +55,14 @@ function makeRequest(body: unknown) {
 
 // Build a mock createPlatformClient. `geofencesData` controls what geofences
 // returns; `operatorId` controls whether GHOST path runs (null = GHOST).
+// `airMatrixRows` overrides the jurisdiction_mode_config result (default: both enabled).
+// `airMatrixError` simulates a DB error loading the matrix.
 function makeMockCreatePlatformClient(opts: {
   geofencesData?: typeof GEOFENCE_ROWS_OK | null;
   geofencesError?: boolean;
   operatorId?: string | null;
+  airMatrixRows?: Array<{ jurisdiction_id: string; enabled: boolean }> | null;
+  airMatrixError?: boolean;
 }) {
   const insertedShipowners: unknown[] = [];
   const insertedPositions: unknown[] = [];
@@ -64,8 +74,21 @@ function makeMockCreatePlatformClient(opts: {
       ? { data: [], error: null }
       : { data: opts.geofencesData ?? GEOFENCE_ROWS_OK, error: null };
 
+  const airMatrixResult = opts.airMatrixError
+    ? { data: null, error: { message: 'matrix DB error' } }
+    : opts.airMatrixRows !== undefined
+      ? { data: opts.airMatrixRows, error: null }
+      : { data: AIR_MATRIX_ROWS_DEFAULT, error: null };
+
   const client = {
     from: vi.fn((table: string) => {
+      if (table === 'jurisdiction_mode_config') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue(airMatrixResult),
+          })),
+        };
+      }
       if (table === 'geofences') {
         return {
           select: vi.fn(() => ({
@@ -247,13 +270,13 @@ describe('POST /api/adsb/ingest — multi-jurisdiction FIR', () => {
     expect((insertedPositions[0] as Record<string, unknown>).in_fir).toBe(false);
   });
 
-  it('case 5: geofences load error → 500, message = FIR geofences unavailable, zero inserts', async () => {
+  it('case 5: geofences load error → 500, message = detection config unavailable, zero inserts', async () => {
     vi.resetModules();
     const { POST, insertedAlerts, insertedPositions } = await importRoute({ geofencesError: true });
     const res = await POST(makeRequest({ positions: [{ icao24: 'ERR001', lat: 9.56, lng: 44.08 }] }) as never);
     expect(res.status).toBe(500);
     const json = await res.json();
-    expect(json.error).toBe('FIR geofences unavailable');
+    expect(json.error).toBe('detection config unavailable');
     expect(insertedAlerts).toHaveLength(0);
     expect(insertedPositions).toHaveLength(0);
   });
@@ -282,5 +305,78 @@ describe('POST /api/adsb/ingest — multi-jurisdiction FIR', () => {
     const ghost = insertedShipowners[0] as Record<string, unknown>;
     // No jurisdiction_id set — column DEFAULT applies
     expect(ghost.jurisdiction_id).toBeUndefined();
+  });
+
+  // ─── AIR activation matrix tests ─────────────────────────────────────────────
+
+  it('air matrix (a): AIR disabled for DJ → position inside DJ FIR: position inserted, in_fir=true, NO alert, alerts_skipped_disabled=1', async () => {
+    vi.resetModules();
+    const { POST, insertedAlerts, insertedPositions } = await importRoute({
+      operatorId: 'op-dj-disabled',
+      // DJ disabled, SO still enabled
+      airMatrixRows: [
+        { jurisdiction_id: SO_JID, enabled: true },
+        { jurisdiction_id: DJ_JID, enabled: false },
+      ],
+    });
+    // lat 11.55, lng 43.16 is inside DJ FIR
+    const res = await POST(makeRequest({ positions: [{ icao24: 'DJ_DISABLED', lat: 11.55, lng: 43.16 }] }) as never);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.alerts_created).toBe(0);
+    expect(json.alerts_skipped_disabled).toBe(1);
+    expect(insertedAlerts).toHaveLength(0);
+    // Position still recorded and in_fir=true (registry keeps flowing)
+    expect(insertedPositions).toHaveLength(1);
+    expect((insertedPositions[0] as Record<string, unknown>).in_fir).toBe(true);
+  });
+
+  it('air matrix (b): matrix row missing for matched jurisdiction → fail-closed, no alert', async () => {
+    vi.resetModules();
+    const { POST, insertedAlerts, insertedPositions } = await importRoute({
+      operatorId: 'op-missing-jid',
+      // Empty matrix — no rows at all
+      airMatrixRows: [],
+    });
+    // lat 11.55, lng 43.16 is inside DJ FIR, but DJ has no matrix row
+    const res = await POST(makeRequest({ positions: [{ icao24: 'MISSING_MATRIX', lat: 11.55, lng: 43.16 }] }) as never);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.alerts_created).toBe(0);
+    expect(json.alerts_skipped_disabled).toBe(1);
+    expect(insertedAlerts).toHaveLength(0);
+    // Position still recorded
+    expect(insertedPositions).toHaveLength(1);
+  });
+
+  it('air matrix (c): matrix load error → 500, zero inserts', async () => {
+    vi.resetModules();
+    const { POST, insertedAlerts, insertedPositions } = await importRoute({
+      operatorId: 'op-matrix-err',
+      airMatrixError: true,
+    });
+    const res = await POST(makeRequest({ positions: [{ icao24: 'MATRIX_ERR', lat: 9.56, lng: 44.08 }] }) as never);
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe('detection config unavailable');
+    expect(insertedAlerts).toHaveLength(0);
+    expect(insertedPositions).toHaveLength(0);
+  });
+
+  it('air matrix (d): regression — AIR enabled for SO → alert still created', async () => {
+    vi.resetModules();
+    const { POST, insertedAlerts } = await importRoute({
+      operatorId: 'op-so-enabled',
+      // Default matrix (both enabled) — explicit for clarity
+      airMatrixRows: AIR_MATRIX_ROWS_DEFAULT,
+    });
+    // lat 9.56, lng 44.08 is inside SO FIR
+    const res = await POST(makeRequest({ positions: [{ icao24: 'SO_ENABLED', lat: 9.56, lng: 44.08 }] }) as never);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.alerts_created).toBe(1);
+    expect(json.alerts_skipped_disabled).toBe(0);
+    expect(insertedAlerts).toHaveLength(1);
+    expect((insertedAlerts[0] as Record<string, unknown>).jurisdiction_id).toBe(SO_JID);
   });
 });

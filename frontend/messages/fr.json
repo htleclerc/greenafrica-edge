@@ -3525,6 +3525,18 @@
       "concessionairePct": "Concessionnaire {pct}%",
       "sovereignPct": "Souverain {pct}%"
     },
-    "modesDisclosure": "Indicateur de registre — ne conditionne pas encore la détection ni la facturation."
+    "settlement": {
+      "sectionTitle": "Règlement",
+      "empty": "Aucune donnée de règlement disponible.",
+      "gross": "Revenus bruts collectés — remboursements exécutés non déduits ; décaissement différé (séquestre).",
+      "currentMonth": "Mois en cours",
+      "cumulative": "Cumulatif",
+      "total": "Total",
+      "concessionaire": "Concessionnaire",
+      "sovereign": "Souverain",
+      "unattributed": "{count} tx non attribuées",
+      "mismatched": "{count} tx incorrectes"
+    },
+    "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation."
   }
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/eez"
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/middleware"
+	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
 	"github.com/htleclerc/africgreen/backend/internal/originport"
 	"github.com/htleclerc/africgreen/backend/internal/reconcile"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
@@ -35,8 +36,9 @@ func main() {
 
 	appcfg := appconfig.New(db)
 	gfs := geofence.NewStore(db)
-	watcher := corridor.New(db, appcfg, gfs)
-	tracker := eez.NewTracker(db, gfs)
+	modes := modeconfig.NewStore(db)
+	watcher := corridor.New(db, appcfg, gfs, modes)
+	tracker := eez.NewTracker(db, gfs, modes)
 	sweeper := reconcile.NewSweeper(db, gfs)
 
 	// ── Graceful shutdown context ─────────────────────────────────────────
