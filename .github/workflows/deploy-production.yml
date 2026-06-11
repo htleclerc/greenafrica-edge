@@ -107,7 +107,8 @@ jobs:
   healthcheck:
     name: Health Checks
     runs-on: ubuntu-latest
-    needs: [deploy, backend]
+    # frontend deploys via the native Vercel integration; the PRODUCTION_URL check below is still valid
+    needs: [backend]
 
     steps:
       - name: Wait for deploy propagation
