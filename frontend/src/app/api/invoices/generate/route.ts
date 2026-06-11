@@ -61,6 +61,45 @@ function json(status: number, body: Record<string, unknown>) {
     return NextResponse.json(body, { status });
 }
 
+/**
+ * Returns the hash/signature fields to include in the transactions UPDATE.
+ * Both values must already be present (paired) to treat the row as signed —
+ * an orphaned state (hash set, signature NULL) is treated as unsigned and a
+ * fresh pair is written.  Mirrors the read guard in step 7.
+ */
+export function buildHashFields(
+    tx: { content_hash: string | null | undefined; verify_signature: string | null | undefined },
+    contentHash: string,
+    verifySignature: string,
+): Record<string, string> {
+    return tx.content_hash && tx.verify_signature
+        ? {}  // both already set — reuse stored values, skip overwrite
+        : { content_hash: contentHash, verify_signature: verifySignature };
+}
+
+/**
+ * Builds the single-element lineItems array for a carbon-tax invoice.
+ * The authoritative total is always one charge: emissions × effective rate.
+ */
+export function buildLineItems(
+    emissionsTco2: number,
+    effectiveRate: number,
+    totalUsd: number,
+): InvoiceData['lineItems'] {
+    return [
+        {
+            zone: 'EEZ',
+            days: 1,
+            emissionsTco2,
+            rate: effectiveRate,
+            amount: totalUsd,
+            description: `Carbon tax (${emissionsTco2.toFixed(2)} tCO2 × ${effectiveRate.toFixed(2)} USD/tCO2)`,
+            qtyDisplay: `${emissionsTco2.toFixed(2)} tCO2`,
+            rateDisplay: `$${effectiveRate.toFixed(2)}/t`,
+        },
+    ];
+}
+
 export async function POST(request: NextRequest) {
     // ── 1. Authenticate ─────────────────────────────────────────────────
     const requestSupabase = await createRequestClient();
@@ -253,18 +292,7 @@ export async function POST(request: NextRequest) {
         // total is a single carbon-tax charge computed as emissions × rate.
         // The old 75/20/5 "Carbon Tax / Port Call Fee / Security Surcharge"
         // split was fabricated and had no basis in the underlying regulation.
-        lineItems: [
-            {
-                zone: 'EEZ',
-                days: 1,
-                emissionsTco2,
-                rate: effectiveRate,
-                amount: totalUsd,
-                description: `Carbon tax (${emissionsTco2.toFixed(2)} tCO2 × ${effectiveRate.toFixed(2)} USD/tCO2)`,
-                qtyDisplay: `${emissionsTco2.toFixed(2)} tCO2`,
-                rateDisplay: `$${effectiveRate.toFixed(2)}/t`,
-            },
-        ],
+        lineItems: buildLineItems(emissionsTco2, effectiveRate, totalUsd),
     };
 
     try {
@@ -288,10 +316,8 @@ export async function POST(request: NextRequest) {
         // content_hash and verify_signature are first-write-only: if they are
         // already set (a previously distributed PDF carries those values in its
         // QR code), we MUST NOT overwrite them or that PDF will stop verifying.
-        // Only write them when the DB value is currently NULL.
-        const hashFields = tx.content_hash
-            ? {}  // hash already set — reuse stored values, skip overwrite
-            : { content_hash: contentHash, verify_signature: verifySignature };
+        // Only write them when BOTH are NULL — mirrors the read guard at step 7.
+        const hashFields = buildHashFields(tx, contentHash, verifySignature);
         const { error: txUpdateErr } = await admin
             .from('transactions')
             .update({
