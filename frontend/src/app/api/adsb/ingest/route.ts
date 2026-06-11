@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
     let positionsInserted = 0;
     let aircraftUpserted = 0;
     let alertsCreated = 0;
+    // Upper bound: one per in-FIR position while disabled, not per alert that would have been opened.
     let alertsSkippedDisabled = 0;
 
     for (const pos of positions) {
