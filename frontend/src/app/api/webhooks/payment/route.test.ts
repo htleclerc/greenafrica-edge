@@ -24,11 +24,21 @@ let transactionRows: Record<string, unknown>[] = [];
 let systemActorRow: Record<string, unknown> | null = null;
 // Existing CONFIRMED payments row for idempotency tests
 let existingConfirmedPayment: Record<string, unknown> | null = null;
+// Scriptable payments insert error for insert-failure test
+let paymentsInsertError: { message: string } | null = null;
+// Scriptable RPC error for recompute-failure test
+let recomputeRpcError: { message: string } | null = null;
+
+// m3 — pin the eq column for the transactions lookup
+const eqCalls: { col: string; val: string }[] = [];
 
 function resetMocks() {
   insertCalls.length = 0;
   rpcCalls.length = 0;
+  eqCalls.length = 0;
   existingConfirmedPayment = null;
+  paymentsInsertError = null;
+  recomputeRpcError = null;
   transactionRows = [{
     id: 'abcd1234-0000-0000-0000-000000000000',
     vessel_id: 'v-1',
@@ -36,6 +46,7 @@ function resetMocks() {
     tax_amount_usd: 1250,
     status: 'PENDING',
     shipowner_id: 'so-1',
+    jurisdiction_id: 'jur-djibouti',
   }];
   systemActorRow = { id: 'sys-admin-1' };
 }
@@ -45,10 +56,13 @@ const fromBuilder = (table: string) => {
   if (table === 'transactions') {
     return {
       select: () => ({
-        // new route uses .eq('invoice_ref', ...) not .ilike(...)
-        eq: (_col: string, _val: string) => ({
-          limit: async () => ({ data: transactionRows, error: null }),
-        }),
+        // m3 — capture the eq column/value so tests can assert lookup column
+        eq: (col: string, val: string) => {
+          eqCalls.push({ col, val });
+          return {
+            limit: async () => ({ data: transactionRows, error: null }),
+          };
+        },
       }),
     };
   }
@@ -63,7 +77,7 @@ const fromBuilder = (table: string) => {
       }),
       insert: (payload: Record<string, unknown>) => {
         insertCalls.push({ table, payload });
-        return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: null, error: paymentsInsertError });
       },
     };
   }
@@ -98,7 +112,7 @@ const mockSupabase = {
   from: vi.fn(fromBuilder),
   rpc: vi.fn(async (fn: string, args: Record<string, unknown>) => {
     rpcCalls.push({ fn, args });
-    return { data: null, error: null };
+    return { data: null, error: recomputeRpcError };
   }),
 };
 
@@ -121,6 +135,14 @@ function buildReq(body: unknown, headers: Record<string, string> = {}): NextRequ
   return new Request('http://x/api/webhooks/payment', {
     method: 'POST',
     body: JSON.stringify(body),
+    headers,
+  }) as unknown as NextRequest;
+}
+
+function buildRawReq(rawBody: string, headers: Record<string, string> = {}): NextRequest {
+  return new Request('http://x/api/webhooks/payment', {
+    method: 'POST',
+    body: rawBody,
     headers,
   }) as unknown as NextRequest;
 }
@@ -240,19 +262,29 @@ describe('POST /api/webhooks/payment — audit trail', () => {
   });
 });
 
+// ── m3 — pin the lookup column ────────────────────────────────────────────────
+
+describe('POST /api/webhooks/payment — reference lookup column', () => {
+  it('looks up transactions by invoice_ref column with the exact ref value', async () => {
+    const { POST } = await import('./route');
+    await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
+
+    // The eq call for transactions must use 'invoice_ref' as the column
+    const txEq = eqCalls.find((c) => c.col === 'invoice_ref');
+    expect(txEq).toBeDefined();
+    expect(txEq!.col).toBe('invoice_ref');
+    expect(txEq!.val).toBe(INVOICE_REF);
+  });
+});
+
 // ── Payments-row rail: happy path per provider ────────────────────────────────
 
 describe('POST /api/webhooks/payment — payments-row rail (happy path)', () => {
   it.each([
     ['paystack', paystackSuccess, { 'x-paystack-signature': 'sig' }, PROVIDER_REF_PAYSTACK, 'MOBILE_MONEY'],
     ['flutterwave', flutterwaveSuccess, { 'verif-hash': 'hash' }, PROVIDER_REF_FLW, 'MOBILE_MONEY'],
-    ['wave', waveSuccess, { 'x-wave-signature': 'waveSecret' }, PROVIDER_REF_WAVE, 'MOBILE_MONEY'],
     ['payoneer', payoneerSuccess, { 'payoneer-signature': 'posig' }, PROVIDER_REF_PAYONEER, 'THIRD_PARTY'],
   ] as const)('inserts CONFIRMED payment row for %s', async (providerName, payload, headers, expectedProviderRef, expectedRail) => {
-    // Wave checks env var directly
-    if (providerName === 'wave') {
-      process.env.WAVE_WEBHOOK_SECRET = 'waveSecret';
-    }
     const { POST } = await import('./route');
     const res = await POST(buildReq(payload, headers));
     const json = await res.json();
@@ -267,11 +299,14 @@ describe('POST /api/webhooks/payment — payments-row rail (happy path)', () => 
 
     expect(row.transaction_id).toBe('abcd1234-0000-0000-0000-000000000000');
     expect(row.shipowner_id).toBe('so-1');
+    // I1 — jurisdiction_id stamped from the transaction row
+    expect(row.jurisdiction_id).toBe('jur-djibouti');
     expect(row.status).toBe('CONFIRMED');
     expect(row.rail).toBe(expectedRail);
     expect(row.amount_usd_minor).toBe(125000); // $1250 * 100
     expect(row.currency).toBe('USD');
-    expect(row.external_reference).toBe(expectedProviderRef);
+    // I2 — external_reference is namespaced as "{provider}:{providerRef}"
+    expect(row.external_reference).toBe(`${providerName}:${expectedProviderRef}`);
     expect(row.confirmed_by).toBe('sys-admin-1');
     expect(row.confirmed_at).toBeTruthy();
     expect((row.rail_details as Record<string, unknown>).provider).toBe(providerName);
@@ -280,10 +315,49 @@ describe('POST /api/webhooks/payment — payments-row rail (happy path)', () => 
     const rpc = rpcCalls.find((c) => c.fn === 'recompute_transaction_status');
     expect(rpc).toBeDefined();
     expect(rpc!.args.p_txn_id).toBe('abcd1234-0000-0000-0000-000000000000');
+  });
+});
 
-    if (providerName === 'wave') {
-      delete process.env.WAVE_WEBHOOK_SECRET;
-    }
+// ── m1 — Wave explicitly disabled ────────────────────────────────────────────
+
+describe('POST /api/webhooks/payment — Wave not supported', () => {
+  it('verifies the Wave signature then returns wave_not_supported (no DB writes)', async () => {
+    process.env.WAVE_WEBHOOK_SECRET = 'waveSecret';
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(waveSuccess, { 'x-wave-signature': 'waveSecret' }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('wave_not_supported');
+    expect(json.received).toBe(true);
+    // No DB writes — wave is disabled before any data access
+    expect(insertCalls).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(0);
+
+    delete process.env.WAVE_WEBHOOK_SECRET;
+  });
+
+  it('still returns 401 for an invalid Wave secret', async () => {
+    process.env.WAVE_WEBHOOK_SECRET = 'correct-secret';
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(waveSuccess, { 'x-wave-signature': 'wrong-secret' }));
+    expect(res.status).toBe(401);
+    delete process.env.WAVE_WEBHOOK_SECRET;
+  });
+});
+
+// ── m2 — JSON parse failure → 400 ────────────────────────────────────────────
+
+describe('POST /api/webhooks/payment — JSON parse failure', () => {
+  it('returns 400 (not 200 error_logged) for malformed JSON', async () => {
+    const { POST } = await import('./route');
+    const res = await POST(buildRawReq('not valid json', { 'x-paystack-signature': 'sig' }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBeTruthy();
+    // No DB writes
+    expect(insertCalls).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(0);
   });
 });
 
@@ -361,12 +435,65 @@ describe('POST /api/webhooks/payment — amount mismatch', () => {
     expect(json.action).toBe('rejected_amount_mismatch');
     expect(insertCalls.find((c) => c.table === 'payments')).toBeUndefined();
   });
+
+  // m3 — amount boundary pair: ±$0.01 passes, ±$0.02 rejects
+  it('accepts amount exactly at the +$0.01 tolerance boundary (Paystack)', async () => {
+    // $1250 + $0.01 = $1250.01 → 125001 cents
+    const payload = {
+      event: 'charge.success',
+      data: { reference: INVOICE_REF, id: 12345, amount: 125001, currency: 'USD' },
+    };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(payload, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('confirmed');
+  });
+
+  it('accepts amount exactly at the -$0.01 tolerance boundary (Paystack)', async () => {
+    // $1250 - $0.01 = $1249.99 → 124999 cents
+    const payload = {
+      event: 'charge.success',
+      data: { reference: INVOICE_REF, id: 12345, amount: 124999, currency: 'USD' },
+    };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(payload, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('confirmed');
+  });
+
+  it('rejects amount $0.02 over tolerance (Paystack)', async () => {
+    // $1250 + $0.02 = $1250.02 → 125002 cents
+    const payload = {
+      event: 'charge.success',
+      data: { reference: INVOICE_REF, id: 12345, amount: 125002, currency: 'USD' },
+    };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(payload, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('rejected_amount_mismatch');
+  });
+
+  it('rejects amount $0.02 under tolerance (Paystack)', async () => {
+    // $1250 - $0.02 = $1249.98 → 124998 cents
+    const payload = {
+      event: 'charge.success',
+      data: { reference: INVOICE_REF, id: 12345, amount: 124998, currency: 'USD' },
+    };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(payload, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('rejected_amount_mismatch');
+  });
 });
 
 // ── Unknown reference ─────────────────────────────────────────────────────────
 
 describe('POST /api/webhooks/payment — unknown reference', () => {
-  it('returns unknown_reference with zero writes for all providers', async () => {
+  it('returns unknown_reference with zero writes for all non-wave providers', async () => {
     transactionRows = [];
     const { POST } = await import('./route');
 
@@ -398,6 +525,7 @@ describe('POST /api/webhooks/payment — idempotency', () => {
       tax_amount_usd: 1250,
       status: 'PAID',
       shipowner_id: 'so-1',
+      jurisdiction_id: 'jur-djibouti',
     }];
     const { POST } = await import('./route');
     const res = await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
@@ -409,7 +537,8 @@ describe('POST /api/webhooks/payment — idempotency', () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
-  it('returns already_paid when a CONFIRMED payments row exists for this providerRef', async () => {
+  it('returns already_paid when a CONFIRMED payments row exists for the namespaced providerRef', async () => {
+    // I2 — idempotency lookup uses the namespaced ref "paystack:{id}"
     existingConfirmedPayment = { id: 'pay-existing-1', status: 'CONFIRMED' };
     const { POST } = await import('./route');
     const res = await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
@@ -419,6 +548,63 @@ describe('POST /api/webhooks/payment — idempotency', () => {
     expect(json.action).toBe('already_paid');
     expect(insertCalls.find((c) => c.table === 'payments')).toBeUndefined();
     expect(rpcCalls).toHaveLength(0);
+  });
+});
+
+// ── I3 — NULL shipowner guard ─────────────────────────────────────────────────
+
+describe('POST /api/webhooks/payment — null shipowner', () => {
+  it('returns error_logged (defensive) when matched tx has no shipowner_id', async () => {
+    transactionRows = [{
+      id: 'abcd1234-0000-0000-0000-000000000000',
+      vessel_id: 'v-1',
+      vessel_name: 'MV Test',
+      tax_amount_usd: 1250,
+      status: 'PENDING',
+      shipowner_id: null,
+      jurisdiction_id: 'jur-djibouti',
+    }];
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('error_logged');
+    expect(insertCalls.find((c) => c.table === 'payments')).toBeUndefined();
+    expect(rpcCalls).toHaveLength(0);
+  });
+});
+
+// ── m3 — insert failure → error_logged ───────────────────────────────────────
+
+describe('POST /api/webhooks/payment — payments insert failure', () => {
+  it('returns error_logged when the payments INSERT fails', async () => {
+    paymentsInsertError = { message: 'unique violation' };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.action).toBe('error_logged');
+    // RPC must NOT have been called (insert failed → bail before recompute)
+    expect(rpcCalls).toHaveLength(0);
+  });
+});
+
+// ── m3 — recompute failure → still confirmed ──────────────────────────────────
+
+describe('POST /api/webhooks/payment — recompute failure', () => {
+  it('returns confirmed even when the recompute RPC errors (payment row already inserted)', async () => {
+    recomputeRpcError = { message: 'rpc error' };
+    const { POST } = await import('./route');
+    const res = await POST(buildReq(paystackSuccess, { 'x-paystack-signature': 'sig' }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    // Payment row is inserted and CONFIRMED — recompute failure is logged but
+    // the payment is not rolled back.
+    expect(json.action).toBe('confirmed');
+    expect(insertCalls.find((c) => c.table === 'payments')).toBeDefined();
   });
 });
 
@@ -447,14 +633,6 @@ describe('POST /api/webhooks/payment — signature validation', () => {
     const { POST } = await import('./route');
     const res = await POST(buildReq(payoneerSuccess, { 'payoneer-signature': 'bad-sig' }));
     expect(res.status).toBe(401);
-  });
-
-  it('returns 401 for invalid Wave secret', async () => {
-    process.env.WAVE_WEBHOOK_SECRET = 'correct-secret';
-    const { POST } = await import('./route');
-    const res = await POST(buildReq(waveSuccess, { 'x-wave-signature': 'wrong-secret' }));
-    expect(res.status).toBe(401);
-    delete process.env.WAVE_WEBHOOK_SECRET;
   });
 
   it('returns 400 for unknown provider (no recognised header)', async () => {

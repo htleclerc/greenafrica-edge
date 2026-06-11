@@ -9,6 +9,9 @@ import {
     type PaymentRequest,
 } from '@/services/paymentService';
 import { fetchJurisdictionName } from '@/lib/jurisdictionName';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('payments-create');
 
 /**
  * POST /api/payments/create
@@ -78,6 +81,8 @@ export async function POST(request: NextRequest) {
         .select(`
             id,
             jurisdiction_id,
+            shipowner_id,
+            invoice_ref,
             vessel_id,
             vessel_name,
             vessel_imo,
@@ -100,6 +105,17 @@ export async function POST(request: NextRequest) {
     if (tx.status === 'PAID') {
         return NextResponse.json(
             { error: 'Transaction is already PAID', alreadyPaid: true },
+            { status: 409 },
+        );
+    }
+
+    // I3 — NULL shipowner blocks at initiation: never take money we can't record.
+    // A transaction without a shipowner has no owner to credit; the webhook would
+    // receive a confirmed payment with nowhere to attach it.
+    if (!tx.shipowner_id) {
+        log.error('payments_create_no_shipowner', { transactionId: tx.id });
+        return NextResponse.json(
+            { error: 'transaction has no shipowner; online checkout unavailable' },
             { status: 409 },
         );
     }
@@ -127,9 +143,22 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    // 3. Build the canonical invoice ref (matches ProFormaModal logic)
+    // 3. Resolve (or mint + persist) the canonical invoice ref.
+    // The provider echoes this ref back; the webhook matches transactions.invoice_ref
+    // EXACTLY — never mint a divergent ref.
+    // Format mirrors invoices/generate: INV-{year}-{first-uuid-segment-8hex}{4hex-entropy}
+    // If invoice_ref is already set on the transaction (e.g. from invoice generation),
+    // reuse it verbatim. If NULL, mint a fresh one using the same format and persist it
+    // on the transaction row so the webhook can match it later.
     const createdAt = new Date(tx.created_at);
-    const invoiceRef = `INV-${createdAt.getFullYear()}-${tx.id.split('-')[1].toUpperCase()}`;
+    let invoiceRef = (tx as { invoice_ref?: string | null }).invoice_ref ?? null;
+    if (!invoiceRef) {
+        const uuidSeg = tx.id.split('-')[0].toLowerCase();
+        const entropy = Math.floor(Math.random() * 0xFFFF).toString(16).padStart(4, '0');
+        invoiceRef = `INV-${createdAt.getFullYear()}-${uuidSeg}${entropy}`;
+        // First-write: persist so the webhook can match this exact ref.
+        await platform.from('transactions').update({ invoice_ref: invoiceRef }).eq('id', tx.id);
+    }
 
     // 4. Build the PaymentRequest
     const jurisdictionName = await fetchJurisdictionName(

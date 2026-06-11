@@ -108,21 +108,9 @@ function parseFlutterwavePayload(body: Record<string, unknown>): Omit<ParsedPayl
   return { invoiceRef, providerRef, isSuccess, paidAmountUsd, paidCurrency, rail: 'MOBILE_MONEY' };
 }
 
-function parseWavePayload(body: Record<string, unknown>): Omit<ParsedPayload, 'provider'> {
-  // Wave echoes back the client_reference we supplied at initialization
-  const invoiceRef = String(body.client_reference ?? '');
-  const providerRef = String(body.id ?? '');
-  const isSuccess = body.payment_status === 'succeeded';
-
-  // Wave amounts are in major units
-  const rawAmount = body.amount;
-  const rawCurrency = String(body.currency ?? '').toUpperCase();
-  const paidAmountUsd = typeof rawAmount === 'number' ? rawAmount :
-    (typeof rawAmount === 'string' ? parseFloat(rawAmount) || null : null);
-  const paidCurrency = rawCurrency || null;
-
-  return { invoiceRef, providerRef, isSuccess, paidAmountUsd, paidCurrency, rail: 'MOBILE_MONEY' };
-}
+// parseWavePayload intentionally omitted: Wave is disabled on this route (m1).
+// Re-implement when re-enabling: read from body.data.* (real Wave webhook shape)
+// and enforce XOF/SOS → USD FX conversion policy before accepting the payment.
 
 function parsePayoneerPayload(body: Record<string, unknown>): Omit<ParsedPayload, 'provider'> {
   const data = (body.data ?? {}) as Record<string, unknown>;
@@ -144,10 +132,16 @@ function parsePayoneerPayload(body: Record<string, unknown>): Omit<ParsedPayload
 
 export async function POST(request: NextRequest) {
   let provider = '(unknown)';
+  // m2 — JSON parse failure is a malformed request, not a server error: return 400
+  // (not 200 error_logged, which would suppress retries for a legitimate bad payload).
+  const rawBody = await request.text();
+  let body: Record<string, unknown>;
   try {
-    const rawBody = await request.text();
-    const body = JSON.parse(rawBody) as Record<string, unknown>;
-
+    body = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  try {
     const adminClient = createPlatformClient();
 
     // ── Detect provider + verify signature ───────────────────────────────
@@ -173,12 +167,21 @@ export async function POST(request: NextRequest) {
       parsed = { provider, ...parseFlutterwavePayload(body) };
 
     } else if (waveSig) {
+      // m1 — Wave is explicitly disabled on this route.
+      // Reasons: (1) Wave only settles in XOF/SOS — we accept USD only, so every
+      // real Wave webhook would dead-end at the currency check anyway; (2) the
+      // actual Wave webhook payload nests event data under a `data` key while
+      // parseWavePayload reads top-level fields, so the reference/amount would
+      // always parse as empty/null. Re-enable with: FX policy for XOF↔USD +
+      // updated parser reading body.data.* + integration tests against live sandbox.
+      // Signature is still verified so we don't expose a 200-ack endpoint to
+      // unauthenticated callers.
       const expectedWave = process.env.WAVE_WEBHOOK_SECRET;
       if (!expectedWave || waveSig !== expectedWave) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
-      provider = 'wave';
-      parsed = { provider, ...parseWavePayload(body) };
+      log.info('wave_not_supported', {});
+      return NextResponse.json({ received: true, action: 'wave_not_supported' });
 
     } else if (payoneerSig) {
       if (!(await verifyPayoneerSignature(rawBody, payoneerSig))) {
@@ -207,17 +210,20 @@ export async function POST(request: NextRequest) {
     // ilike prefix matching is collision-prone and inconsistent with how refs are minted.
     const { data: txRows } = await adminClient
       .from('transactions')
-      .select('id, vessel_id, vessel_name, tax_amount_usd, status, shipowner_id')
+      .select('id, vessel_id, vessel_name, tax_amount_usd, status, shipowner_id, jurisdiction_id')
       .eq('invoice_ref', parsed.invoiceRef)
       .limit(1);
 
     const tx = txRows && txRows.length > 0 ? txRows[0] : null;
 
     if (!tx) {
+      // I4 — log provider, providerRef, and invoiceRef for manual replay of
+      // paid-but-unrecorded payments. Provider txn IDs are not sensitive (same
+      // policy as Stripe's stripePiId logging).
       log.warn('webhook_unknown_reference', {
         provider: parsed.provider,
-        // Log only enough to debug — no full ref echoed back in the response
-        refLen: parsed.invoiceRef.length,
+        providerRef: parsed.providerRef,
+        invoiceRef: parsed.invoiceRef,
       });
       return NextResponse.json({ received: true, action: 'unknown_reference' });
     }
@@ -229,19 +235,37 @@ export async function POST(request: NextRequest) {
       vessel_name: string;
       tax_amount_usd: number;
       status: string;
-      shipowner_id: string;
+      shipowner_id: string | null;
+      jurisdiction_id: string | null;
     };
     if (txRecord.status === 'PAID') {
       log.info('webhook_already_paid', { provider: parsed.provider, transactionId: txRecord.id });
       return NextResponse.json({ received: true, action: 'already_paid' });
     }
 
+    // I3 — Defensive: a matched tx with NULL shipowner_id must never produce a
+    // payment row (shipowner_id is a required FK on payments). Log and ack.
+    if (!txRecord.shipowner_id) {
+      log.error('webhook_null_shipowner', {
+        provider: parsed.provider,
+        transactionId: txRecord.id,
+        invoiceRef: parsed.invoiceRef,
+      });
+      return NextResponse.json({ received: true, action: 'error_logged' });
+    }
+
     // ── Idempotency: existing CONFIRMED payments row for this external ref ─
-    if (parsed.providerRef) {
+    // I2 — namespace external_reference as "{provider}:{providerRef}" to avoid
+    // cross-provider integer-id collisions on the same rail (e.g. Paystack id=100
+    // and Flutterwave id=100 are different charges). The DB unique index (mig 087)
+    // enforces uniqueness on this namespaced value.
+    const namespacedRef = parsed.providerRef ? `${parsed.provider}:${parsed.providerRef}` : null;
+
+    if (namespacedRef) {
       const { data: existingPayment } = await adminClient
         .from('payments')
         .select('id, status')
-        .eq('external_reference', parsed.providerRef)
+        .eq('external_reference', namespacedRef)
         .eq('status', 'CONFIRMED')
         .maybeSingle();
       if (existingPayment) {
@@ -345,6 +369,9 @@ export async function POST(request: NextRequest) {
       .insert({
         transaction_id: txRecord.id,
         shipowner_id: txRecord.shipowner_id,
+        // I1 — stamp the jurisdiction from the transaction row so a DJ payment
+        // never inherits the mig-072 default (Somaliland).
+        jurisdiction_id: txRecord.jurisdiction_id,
         declared_by: null,             // no human actor on webhook path
         amount_minor: amountUsdMinor,   // USD → minor = major * 100
         currency: 'USD',
@@ -357,7 +384,9 @@ export async function POST(request: NextRequest) {
           provider: parsed.provider,
           provider_ref: parsed.providerRef,
         },
-        external_reference: parsed.providerRef || null,
+        // I2 — namespace as "{provider}:{providerRef}" to avoid cross-provider
+        // integer-id collisions (Paystack id=100 ≠ Flutterwave id=100).
+        external_reference: namespacedRef,
         status: 'CONFIRMED',
         confirmed_by: systemActorId,
         confirmed_at: confirmedAt,
