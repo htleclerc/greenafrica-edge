@@ -1,38 +1,20 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Download, Plus, Save, AlertTriangle, CheckCircle, Edit2, Eye } from 'lucide-react';
+import { Download, Plus, AlertTriangle, Eye, Globe2 } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
-import { useTaxConfigs } from '@/hooks/useTaxConfigs';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useExemptions } from '@/hooks/useExemptions';
 import { useKpis } from '@/hooks/useKpis';
 import {
-    TaxConfiguration, VesselCategory, JurisdictionZone,
     TransactionType, TransactionStatus,
 } from '@/types/secure';
 import { transactionVariant } from '@/lib/badgeUtils';
 import { useRole } from '@/lib/RoleContext';
 import { canEdit } from '@/lib/rbac';
-import { updateTaxConfiguration } from '@/services/taxService';
-import { createClient } from '@/lib/supabase/client';
-
-const CATEGORY_LABEL: Partial<Record<VesselCategory, string>> = {
-    [VesselCategory.CONTAINER]:    'Container Ship',
-    [VesselCategory.CARGO]:        'General Cargo',
-    [VesselCategory.TANKER]:       'Oil Tanker',
-    [VesselCategory.BULK_CARRIER]: 'Bulk Carrier',
-    [VesselCategory.FERRY]:        'Passenger Ferry',
-};
-
-const ZONE_LABEL: Record<JurisdictionZone, string> = {
-    [JurisdictionZone.EEZ]:           'EEZ — Zone A',
-    [JurisdictionZone.PORT_VICINITY]: 'Port Vicinity',
-    [JurisdictionZone.TRANSIT_LANE]:  'Transit Lane',
-    [JurisdictionZone.INTERNATIONAL]: 'International Waters',
-};
 
 const TX_TYPE_LABEL: Record<TransactionType, string> = {
     [TransactionType.ENTRY_TAX]:   'Entry Tax',
@@ -52,69 +34,9 @@ export function CarbonTaxSettingsPage() {
     const t = useTranslations('TaxSettingsPage');
     const { role } = useRole();
     const isReadOnly = !canEdit('tax-settings', role);
-    const { data: taxConfigs } = useTaxConfigs();
     const { data: transactions } = useTransactions();
     const { data: exemptions } = useExemptions();
     const { data: kpis } = useKpis();
-    const [configs, setConfigs] = React.useState<TaxConfiguration[]>(taxConfigs);
-    const [originalConfigs, setOriginalConfigs] = React.useState<TaxConfiguration[]>(taxConfigs);
-    React.useEffect(() => {
-        setConfigs(taxConfigs);
-        setOriginalConfigs(taxConfigs);
-    }, [taxConfigs]);
-    const [editId, setEditId]   = React.useState<string | null>(null);
-    const [saved, setSaved]     = React.useState(false);
-    const [saving, setSaving]   = React.useState(false);
-    const [saveError, setSaveError] = React.useState<string | null>(null);
-
-    function handleRateChange(id: string, value: number) {
-        setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, baseRateUsdPerTco2: value } : c));
-    }
-
-    function handleMultiplierChange(id: string, value: number) {
-        setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, multiplier: value } : c));
-    }
-
-    async function handleSave() {
-        if (isReadOnly || saving) return;
-        setSaving(true);
-        setSaveError(null);
-
-        const dirty = configs.filter((c) => {
-            const orig = originalConfigs.find((o) => o.id === c.id);
-            if (!orig) return false;
-            return orig.baseRateUsdPerTco2 !== c.baseRateUsdPerTco2 || orig.multiplier !== c.multiplier;
-        });
-
-        if (dirty.length === 0) {
-            setSaving(false);
-            setEditId(null);
-            return;
-        }
-
-        try {
-            const client = createClient();
-            const results = await Promise.all(
-                dirty.map((c) =>
-                    updateTaxConfiguration(client, c.id, {
-                        base_rate_usd_per_tco2: c.baseRateUsdPerTco2,
-                        multiplier: c.multiplier,
-                    }),
-                ),
-            );
-            if (results.some((r) => r === null)) {
-                throw new Error('One or more rows failed to update. Check RLS policies and your role.');
-            }
-            setOriginalConfigs(configs);
-            setSaved(true);
-            setEditId(null);
-            setTimeout(() => setSaved(false), 3000);
-        } catch (err) {
-            setSaveError(err instanceof Error ? err.message : 'Save failed');
-        } finally {
-            setSaving(false);
-        }
-    }
 
     const totalRevenueMtd = transactions
         .filter((tx) => tx.status === TransactionStatus.PAID)
@@ -165,108 +87,26 @@ export function CarbonTaxSettingsPage() {
                 <KpiCard label={t('kpi_unpaid_obligations')}  value={`$${(totalPending / 1000).toFixed(1)}K`} sub={t('kpi_overdue_pending')} color="#EF4444" tag={t('kpi_urgent')} />
             </div>
 
-            {/* Body: Tax Config + Right panel */}
+            {/* Body: Moved notice + Right panel */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                {/* Tax Rate Configuration table */}
                 <div className="xl:col-span-2 flex flex-col gap-5">
-                    <div className="os-card overflow-hidden">
-                        <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-center justify-between">
-                            <div>
-                                <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('tax_rate_config')}</h3>
-                                <p className="text-[10px] text-[var(--os-text-muted)]">
-                                    {t('tax_rate_config_desc')}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {saved && (
-                                    <span className="flex items-center gap-1 text-xs text-[#00D97E]">
-                                        <CheckCircle className="w-3.5 h-3.5" /> {t('saved')}
-                                    </span>
-                                )}
-                                {saveError && (
-                                    <span className="flex items-center gap-1 text-xs text-[#EF4444]" title={saveError}>
-                                        <AlertTriangle className="w-3.5 h-3.5" /> {saveError}
-                                    </span>
-                                )}
-                                {!isReadOnly && (
-                                    <OsButton variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />} onClick={handleSave} disabled={saving}>
-                                        {saving ? 'Saving…' : t('save_publish')}
-                                    </OsButton>
-                                )}
-                            </div>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-[var(--os-border)] bg-[var(--os-surface-2)]">
-                                        {[t('col_vessel_category'), t('col_jurisdiction_zone'), t('col_base_rate'), t('col_multiplier'), t('col_effective_rate'), t('col_status'), ''].map((h) => (
-                                            <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] whitespace-nowrap">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {configs.map((cfg) => {
-                                        const isEditing = editId === cfg.id;
-                                        const effectiveRate = (cfg.baseRateUsdPerTco2 * cfg.multiplier).toFixed(2);
-                                        return (
-                                            <tr key={cfg.id} className="border-b border-[var(--os-border)] last:border-0 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                                                <td className="px-5 py-3 font-medium text-[var(--os-text-primary)]">
-                                                    {CATEGORY_LABEL[cfg.vesselCategory] ?? cfg.vesselCategory}
-                                                </td>
-                                                <td className="px-5 py-3 text-[var(--os-text-secondary)] text-xs">
-                                                    {ZONE_LABEL[cfg.jurisdictionZone]}
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="number"
-                                                            value={cfg.baseRateUsdPerTco2}
-                                                            onChange={(e) => handleRateChange(cfg.id, Number(e.target.value))}
-                                                            className="w-20 h-8 px-2 rounded-lg bg-[var(--os-surface-3)] border border-[#00D97E]/40 text-sm text-[var(--os-text-primary)] focus:outline-none focus:border-[#00D97E]"
-                                                        />
-                                                    ) : (
-                                                        <span className="font-mono font-semibold text-[var(--os-text-primary)]">
-                                                            ${cfg.baseRateUsdPerTco2}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="number"
-                                                            step="0.1"
-                                                            value={cfg.multiplier}
-                                                            onChange={(e) => handleMultiplierChange(cfg.id, Number(e.target.value))}
-                                                            className="w-16 h-8 px-2 rounded-lg bg-[var(--os-surface-3)] border border-[#00D97E]/40 text-sm text-[var(--os-text-primary)] focus:outline-none focus:border-[#00D97E]"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-[var(--os-text-secondary)]">{cfg.multiplier}x</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    <span className="font-mono font-bold text-[#00D97E]">${effectiveRate}</span>
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    <OsBadge
-                                                        variant={cfg.status === 'ACTIVE' ? 'active' : cfg.status === 'DRAFT' ? 'draft' : 'archived'}
-                                                        label={cfg.status}
-                                                    />
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    {!isReadOnly && (
-                                                        <button
-                                                            onClick={() => setEditId(isEditing ? null : cfg.id)}
-                                                            className="text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                    {/* Tariff rates moved to /admin/jurisdictions (Wedge 2) */}
+                    <div className="os-card p-5 flex items-start gap-4">
+                        <Globe2 className="w-5 h-5 text-[#00D97E] flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">
+                                {t('tax_rate_moved_title')}
+                            </p>
+                            <p className="text-xs text-[var(--os-text-muted)] mb-3">
+                                {t('tax_rate_moved_desc')}
+                            </p>
+                            <Link
+                                href="/admin/jurisdictions"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00D97E] hover:underline"
+                            >
+                                <Globe2 className="w-3.5 h-3.5" />
+                                {t('tax_rate_moved_link')}
+                            </Link>
                         </div>
                     </div>
 

@@ -675,7 +675,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "GOVERNO DE SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
-    "footer_encrypted": "CRIPTOGRAFADO"
+    "footer_encrypted": "CRIPTOGRAFADO",
+    "nav_jurisdictions": "Jurisdições"
   },
   "DashboardPages": {
     "alerts_title": "Alertas e Exceções",
@@ -905,7 +906,8 @@
     "simulator_cat_bulk": "Graneleiro (Bulk)",
     "simulator_cat_ferry": "Balsa de Passageiros",
     "simulator_unit_knots": "nós",
-    "simulator_unit_hours": "horas"
+    "simulator_unit_hours": "horas",
+    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições."
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",
@@ -2690,5 +2692,64 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Jurisdição",
+    "select": "Selecionar jurisdição…",
+    "error": "Não foi possível mudar",
+    "retry": "Tentar novamente"
+  },
+  "DashboardError": {
+    "title": "Algo correu mal",
+    "jurisdictionHint": "Se opera em várias jurisdições, selecione a sua jurisdição ativa na barra lateral e tente novamente.",
+    "retry": "Tentar novamente"
+  },
+  "AdminJurisdictions": {
+    "title": "Jurisdições",
+    "subtitle": "Registo, matriz de ativação de modos e tarifas versionadas por jurisdição.",
+    "jurisdictionCount": "jurisdições",
+    "empty": "Nenhuma jurisdição encontrada.",
+    "movedNotice": "As tarifas por jurisdição foram movidas para o registo de jurisdições.",
+    "mode": {
+      "sectionTitle": "Modos",
+      "activatedAt": "Ativado em",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "errorNotFound": "Configuração de modo não encontrada para esta jurisdição.",
+      "error": "Ocorreu um erro. Por favor, tente novamente."
+    },
+    "tariff": {
+      "sectionTitle": "Tarifas",
+      "noActive": "Nenhuma ativa",
+      "noActiveLong": "Nenhuma tarifa ativa — a faturação está bloqueada até ser criada uma tarifa.",
+      "since": "desde",
+      "categorySpecific": "específicas por categoria",
+      "history": "{count} versões encerradas",
+      "newVersion": "Nova versão",
+      "newVersionTitle": "Criar nova versão de tarifa",
+      "fieldMode": "Modo",
+      "fieldRate": "Taxa (USD / tCO₂)",
+      "fieldEffectiveFrom": "Vigente a partir de",
+      "fieldDecreeRef": "Ref. decreto",
+      "fieldAssetCategory": "Categoria de ativo (opcional)",
+      "fieldAssetCategoryHint": "Deixar em branco para todas as categorias",
+      "submit": "Criar",
+      "cancel": "Cancelar",
+      "errorInvalidRate": "A taxa deve ser um número positivo.",
+      "errorDecreeRequired": "A referência do decreto é obrigatória.",
+      "errorOverlap": "Janela ativa sobreposta — encerre a versão atual ou escolha uma data posterior.",
+      "errorPastDate": "A data de vigência deve ser amanhã ou posterior — alterações no próprio dia recalculariam as proformas já emitidas hoje.",
+      "errorForbidden": "Não tem permissão para gerir tarifas nesta jurisdição.",
+      "scheduled": "AGENDADO",
+      "scheduledFrom": "vigente a partir de",
+      "currentlyBilling": "Atualmente a faturar"
+    },
+    "split": {
+      "sectionTitle": "Repartição de receitas",
+      "noRule": "Nenhuma regra de repartição registada.",
+      "concessionairePct": "Concessionária {pct}%",
+      "sovereignPct": "Soberano {pct}%"
+    },
+    "modesDisclosure": "Indicador de registo — ainda não condiciona a deteção nem a faturação."
   }
 }

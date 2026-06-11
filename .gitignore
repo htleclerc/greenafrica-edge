@@ -39,3 +39,4 @@ docs/*
 !docs/runbooks/
 !docs/superpowers/
 !docs/user_stories.md
+!docs/designs/

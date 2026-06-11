@@ -676,7 +676,8 @@
     "sidebar_app_subtitle": "GREEN GATE",
     "footer_government": "حكومة صوماليلاند",
     "footer_copyright": "© 2025 أفريقرين",
-    "footer_encrypted": "مشفّر"
+    "footer_encrypted": "مشفّر",
+    "nav_jurisdictions": "الولايات القضائية"
   },
   "DashboardPages": {
     "alerts_title": "التنبيهات والاستثناءات",
@@ -908,7 +909,8 @@
     "simulator_cat_bulk": "سفينة صب",
     "simulator_cat_ferry": "عبّارة ركاب",
     "simulator_unit_knots": "عقدة",
-    "simulator_unit_hours": "ساعات"
+    "simulator_unit_hours": "ساعات",
+    "simulator_legacy_rates_notice": "محاكاة استرشادية — جدول معدلات قديم؛ التعريفات الرسمية متاحة في الإدارة ← الولايات القضائية."
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",
@@ -2693,5 +2695,64 @@
       "submit": "Create proposal",
       "cancel": "Cancel"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "الولاية القضائية",
+    "select": "اختر الولاية…",
+    "error": "تعذر تغيير الولاية",
+    "retry": "إعادة المحاولة"
+  },
+  "DashboardError": {
+    "title": "حدث خطأ ما",
+    "jurisdictionHint": "إذا كنت تعمل في عدة ولايات قضائية، حدد ولايتك النشطة في الشريط الجانبي ثم أعد المحاولة.",
+    "retry": "إعادة المحاولة"
+  },
+  "AdminJurisdictions": {
+    "title": "الولايات القضائية",
+    "subtitle": "السجل، ومصفوفة تفعيل الأنماط، والتعريفات الموصومة لكل ولاية قضائية.",
+    "jurisdictionCount": "ولايات قضائية",
+    "empty": "لم يتم العثور على ولايات قضائية.",
+    "movedNotice": "تم نقل التعريفات الخاصة بكل ولاية قضائية إلى سجل الولايات.",
+    "mode": {
+      "sectionTitle": "الأنماط",
+      "activatedAt": "تم التفعيل",
+      "confirm": "تأكيد",
+      "cancel": "إلغاء",
+      "errorNotFound": "لم يتم العثور على إعداد النمط لهذه الولاية القضائية.",
+      "error": "حدث خطأ. يرجى المحاولة مجدداً."
+    },
+    "tariff": {
+      "sectionTitle": "التعريفات",
+      "noActive": "لا يوجد نشط",
+      "noActiveLong": "لا توجد تعريفة نشطة — الفوترة مغلقة حتى يتم إنشاء تعريفة.",
+      "since": "منذ",
+      "categorySpecific": "خاص بالفئة",
+      "history": "{count} إصدارات مغلقة",
+      "newVersion": "إصدار جديد",
+      "newVersionTitle": "إنشاء إصدار جديد من التعريفة",
+      "fieldMode": "النمط",
+      "fieldRate": "المعدل (دولار / طن ثاني أكسيد الكربون)",
+      "fieldEffectiveFrom": "ساري من",
+      "fieldDecreeRef": "مرجع المرسوم",
+      "fieldAssetCategory": "فئة الأصل (اختياري)",
+      "fieldAssetCategoryHint": "اتركه فارغاً لجميع الفئات",
+      "submit": "إنشاء",
+      "cancel": "إلغاء",
+      "errorInvalidRate": "يجب أن يكون المعدل رقماً موجباً.",
+      "errorDecreeRequired": "مرجع المرسوم مطلوب.",
+      "errorOverlap": "نافذة نشطة متداخلة — أغلق الإصدار الحالي أو اختر تاريخاً لاحقاً.",
+      "errorPastDate": "يجب أن يكون تاريخ السريان غداً أو لاحقاً — التغييرات في اليوم نفسه ستعيد تسعير الفواتير المبدئية الصادرة اليوم.",
+      "errorForbidden": "ليس لديك صلاحية إدارة تعريفات هذه الولاية.",
+      "scheduled": "مجدول",
+      "scheduledFrom": "ساري من",
+      "currentlyBilling": "مفوتر حالياً"
+    },
+    "split": {
+      "sectionTitle": "توزيع الإيرادات",
+      "noRule": "لا توجد قاعدة توزيع مسجلة.",
+      "concessionairePct": "الامتياز {pct}%",
+      "sovereignPct": "السيادة {pct}%"
+    },
+    "modesDisclosure": "علامة السجل — لا تتحكم بعد في الكشف أو الفوترة."
   }
 }

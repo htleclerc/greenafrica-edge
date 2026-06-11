@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/emissions"
 	"github.com/htleclerc/africgreen/backend/internal/methodologies"
+	"github.com/htleclerc/africgreen/backend/internal/tariff"
 )
 
 // AirBreakdown is the air-mode breakdown (per ICAO LTO cycle).
@@ -17,15 +17,18 @@ type AirBreakdown struct {
 	CO2KgPerLTOCycle float64 `json:"co2_kg_per_lto_cycle"`
 	LTOCycles        int     `json:"lto_cycles"`
 	RateUSDPerTCO2   float64 `json:"rate_usd_per_tco2"`
+	TariffID         string  `json:"tariff_id"`
+	JurisdictionID   string  `json:"jurisdiction_id"`
+	Currency         string  `json:"currency"`
 }
 
 type airCalculator struct {
-	db  *sql.DB
-	cfg *appconfig.Reader
+	db      *sql.DB
+	tariffs *tariff.Store
 }
 
-func newAirCalculator(db *sql.DB, cfg *appconfig.Reader) *airCalculator {
-	return &airCalculator{db: db, cfg: cfg}
+func newAirCalculator(db *sql.DB, tariffs *tariff.Store) *airCalculator {
+	return &airCalculator{db: db, tariffs: tariffs}
 }
 
 // Calculate implements ModeCalculator for AIR (ICAO LTO).
@@ -65,16 +68,16 @@ func (a *airCalculator) Calculate(ctx context.Context, req CalculateRequest) (Re
 		approximate = true
 	}
 
-	rate := 0.0
-	if req.RateOverride != nil {
-		rate = *req.RateOverride
-	} else {
-		v, rerr := a.cfg.GetFloat(ctx, "carbon_tax.air_rate_usd_per_tco2")
-		if rerr != nil {
-			return Result{}, fmt.Errorf("air: rate: %w", rerr)
-		}
-		rate = v
+	at, err := resolveAsOf(req.AsOf)
+	if err != nil {
+		return Result{}, fmt.Errorf("air: invalid as_of: %w", err)
 	}
+
+	t, terr := a.tariffs.Lookup(ctx, req.JurisdictionID, "AIR", req.ICAOType, at)
+	if terr != nil {
+		return Result{}, fmt.Errorf("air: %w", terr)
+	}
+	rate, tariffID, currency := t.RatePerTCO2, t.ID, t.Currency
 
 	tco2 := co2PerLTO * float64(cycles) / 1000.0
 	usd := tco2 * rate
@@ -88,6 +91,9 @@ func (a *airCalculator) Calculate(ctx context.Context, req CalculateRequest) (Re
 			CO2KgPerLTOCycle: co2PerLTO,
 			LTOCycles:        cycles,
 			RateUSDPerTCO2:   rate,
+			TariffID:         tariffID,
+			JurisdictionID:   req.JurisdictionID,
+			Currency:         currency,
 		},
 	}, nil
 }

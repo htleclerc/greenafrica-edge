@@ -691,7 +691,8 @@
     "footer_encrypted": "CHIFFRÉ",
     "nav_registrations": "Inscriptions",
     "nav_wallets": "Portefeuilles",
-    "nav_refunds": "Remboursements"
+    "nav_refunds": "Remboursements",
+    "nav_jurisdictions": "Juridictions"
   },
   "Auth": {
     "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",
@@ -1045,7 +1046,8 @@
     "simulator_cat_bulk": "Vraquier (Bulk)",
     "simulator_cat_ferry": "Ferry passagers",
     "simulator_unit_knots": "nœuds",
-    "simulator_unit_hours": "heures"
+    "simulator_unit_hours": "heures",
+    "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -1545,7 +1547,10 @@
     "review": "Examiner",
     "request_exemption": "Demander une exemption",
     "revenue_trend": "Tendance des revenus",
-    "full_report": "Rapport complet →"
+    "full_report": "Rapport complet →",
+    "tax_rate_moved_title": "Les tarifs par juridiction ont été déplacés",
+    "tax_rate_moved_desc": "Les taux de taxe carbone sont maintenant gérés par juridiction dans le registre des juridictions. La facturation lit directement les lignes de tarif versionnées — l'ancienne surface de taux global est retirée.",
+    "tax_rate_moved_link": "Aller aux juridictions →"
   },
   "ValidationsPage": {
     "title": "Validation des agents",
@@ -2647,7 +2652,15 @@
     "sendInvite": "Envoyer l'invitation",
     "sending": "Envoi…",
     "cancel": "Annuler",
-    "aoc": { "col": "N° AOC", "set": "Définir AOC", "dialogTitle": "Définir le numéro AOC", "dialogSubtitle": "Pré-renseigner l'AOC attendu pour {name}. L'inscription aérienne self-service le compare.", "placeholder": "SO-AOC-001", "save": "Enregistrer", "saving": "Enregistrement…" }
+    "aoc": {
+      "col": "N° AOC",
+      "set": "Définir AOC",
+      "dialogTitle": "Définir le numéro AOC",
+      "dialogSubtitle": "Pré-renseigner l'AOC attendu pour {name}. L'inscription aérienne self-service le compare.",
+      "placeholder": "SO-AOC-001",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…"
+    }
   },
   "AdminOriginPort": {
     "title": "Propositions de destination port d'origine",
@@ -3454,5 +3467,64 @@
       "pt": "Português",
       "sw": "Kiswahili"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Juridiction",
+    "select": "Choisir la juridiction…",
+    "error": "Échec du changement",
+    "retry": "Réessayer"
+  },
+  "DashboardError": {
+    "title": "Une erreur s'est produite",
+    "jurisdictionHint": "Si vous opérez dans plusieurs juridictions, sélectionnez votre juridiction active dans la barre latérale puis réessayez.",
+    "retry": "Réessayer"
+  },
+  "AdminJurisdictions": {
+    "title": "Juridictions",
+    "subtitle": "Registre, matrice d'activation des modes et tarifs versionnés par juridiction.",
+    "jurisdictionCount": "juridictions",
+    "empty": "Aucune juridiction trouvée.",
+    "movedNotice": "Les tarifs par juridiction ont été déplacés vers le registre des juridictions.",
+    "mode": {
+      "sectionTitle": "Modes",
+      "activatedAt": "Activé le",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "errorNotFound": "Configuration du mode introuvable pour cette juridiction.",
+      "error": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "tariff": {
+      "sectionTitle": "Tarifs",
+      "noActive": "Aucun actif",
+      "noActiveLong": "Aucun tarif actif — la facturation est bloquée jusqu'à la création d'un tarif.",
+      "since": "depuis",
+      "categorySpecific": "spécifiques à la catégorie",
+      "history": "{count} versions clôturées",
+      "newVersion": "Nouvelle version",
+      "newVersionTitle": "Créer une nouvelle version de tarif",
+      "fieldMode": "Mode",
+      "fieldRate": "Taux (USD / tCO₂)",
+      "fieldEffectiveFrom": "Date d'entrée en vigueur",
+      "fieldDecreeRef": "Réf. décret",
+      "fieldAssetCategory": "Catégorie d'actif (optionnel)",
+      "fieldAssetCategoryHint": "Laisser vide pour toutes les catégories",
+      "submit": "Créer",
+      "cancel": "Annuler",
+      "errorInvalidRate": "Le taux doit être un nombre positif.",
+      "errorDecreeRequired": "La référence du décret est obligatoire.",
+      "errorOverlap": "Fenêtre active en chevauchement — clôturez la version actuelle ou choisissez une date ultérieure.",
+      "errorPastDate": "La date d'entrée en vigueur doit être demain au plus tôt — une modification le jour même re-calculerait les proformas déjà émis aujourd'hui.",
+      "errorForbidden": "Vous n'avez pas la permission de gérer les tarifs pour cette juridiction.",
+      "scheduled": "PLANIFIÉ",
+      "scheduledFrom": "en vigueur le",
+      "currentlyBilling": "Actuellement facturé"
+    },
+    "split": {
+      "sectionTitle": "Répartition des revenus",
+      "noRule": "Aucune règle de répartition enregistrée.",
+      "concessionairePct": "Concessionnaire {pct}%",
+      "sovereignPct": "Souverain {pct}%"
+    },
+    "modesDisclosure": "Indicateur de registre — ne conditionne pas encore la détection ni la facturation."
   }
 }

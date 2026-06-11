@@ -17,10 +17,25 @@
  *   • platform sites (crons iterating jurisdictions, Stripe webhooks keyed by external
  *     id): createPlatformClient() — legitimately cross-tenant.
  *
+ * Cookie mechanism (staff multi-jurisdiction):
+ *   The `gg-active-jurisdiction` httpOnly cookie is written by the validated
+ *   `setActiveJurisdiction` server action (checks RLS membership before writing).
+ *   For staff with > 1 membership the cookie MUST be present and valid — this
+ *   function throws when it is absent or not in the user's memberships. The UI
+ *   JurisdictionSwitcher auto-selects on first load via that action; the
+ *   (dashboard)/error.tsx boundary handles the no-cookie edge case gracefully.
+ *
  * FAIL-CLOSED: throws rather than guessing. A silent default would mis-scope data.
  */
 import { cache } from 'react';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+
+/**
+ * Cookie name for the staff active-jurisdiction switcher.
+ * httpOnly, sameSite=lax, max-age 30 days.
+ */
+export const ACTIVE_JURISDICTION_COOKIE = 'gg-active-jurisdiction';
 
 /** Uncached implementation — exported for tests (mirrors feature-flags.ts pattern). */
 export async function _getServerJurisdictionIdImpl(): Promise<string> {
@@ -44,23 +59,29 @@ export async function _getServerJurisdictionIdImpl(): Promise<string> {
         return owner.jurisdiction_id as string;
     }
 
-    // Staff path: the single active jurisdiction membership. Multi-jurisdiction staff
-    // need an explicit active-jurisdiction selection (the switcher from the design
-    // review) — until that exists, fail closed rather than guess.
+    // Staff path: read the switcher cookie first (Wedge 2 multi-country staff).
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value;
+
     const { data: memberships } = await supabase
         .from('user_jurisdictions')
         .select('jurisdiction_id')
         .eq('user_id', user.id);
     const ids = (memberships ?? []).map((m) => m.jurisdiction_id as string);
+
+    if (ids.length === 0) {
+        throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);
+    }
     if (ids.length === 1) {
         return ids[0];
     }
-    if (ids.length > 1) {
-        throw new Error(
-            'getServerJurisdictionId: multi-jurisdiction user requires an explicit active jurisdiction (switcher not yet implemented)'
-        );
+    // Multi-jurisdiction: cookie MUST be present and match a membership (fail-closed).
+    if (cookieValue && ids.includes(cookieValue)) {
+        return cookieValue;
     }
-    throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);
+    throw new Error(
+        'getServerJurisdictionId: multi-jurisdiction user — select an active jurisdiction (switcher)',
+    );
 }
 
 /**

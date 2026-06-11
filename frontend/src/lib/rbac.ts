@@ -65,6 +65,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'refunds':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'cash-desk':    [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.PORT_OFFICER],
     'wallets':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'jurisdictions': [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
     // Settings — everyone
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
