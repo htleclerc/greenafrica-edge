@@ -80,7 +80,7 @@ export async function toggleJurisdictionMode(
         await platform.from('audit_logs').insert({
             user_id: auth.user.id,
             user_full_name: auth.user.fullName,
-            action: 'JURISDICTION_UPDATED',
+            action: 'TRANSACTION_UPDATED', // audit_action is an enum (mig 003) — generic value + real event in details_json (house pattern).
             severity: 'INFO',
             entity_type: 'Jurisdiction',
             entity_id: jurisdictionId,

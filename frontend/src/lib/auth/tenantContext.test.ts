@@ -68,11 +68,9 @@ describe('getServerJurisdictionId', () => {
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
     });
 
-    it('multi-jurisdiction staff without cookie falls back to first sorted membership', async () => {
+    it('multi-jurisdiction staff without cookie throws (fail-closed)', async () => {
         membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
-        // SN sorts before SO lexicographically ('1...' < '0...' is FALSE — SO='0...' < SN='1...')
-        // SO = '00000000...' sorts before SN = '11111111...'
-        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
     });
 
     it('multi-jurisdiction staff with valid cookie returns cookie jurisdiction', async () => {
@@ -81,10 +79,10 @@ describe('getServerJurisdictionId', () => {
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SN);
     });
 
-    it('multi-jurisdiction staff with invalid cookie (not a member) falls back to first sorted', async () => {
+    it('multi-jurisdiction staff with foreign cookie (not a member) throws (fail-closed)', async () => {
         membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
         activeCookieValue = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
-        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
     });
 
     it('throws when no jurisdiction can be resolved (fail-closed)', async () => {

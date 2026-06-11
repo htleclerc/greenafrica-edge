@@ -185,17 +185,17 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 
 | Composant | Description |
 |---|---|
-| **Mig 080** | Table `tariffs` versionnée — tarifs par juridiction/mode/catégorie avec `effective_from/to`, `signature_hash`, exclusion de chevauchement de dates. Seed Somaliland maritime + air. Colonne `tariff_id` snapshottée sur `transactions` et `arrival_alerts`. |
+| **Mig 080** | Table `tariffs` versionnée — tarifs par juridiction/mode/catégorie avec `effective_from/to`, `signature_hash`, exclusion de chevauchement de dates. Seed Somaliland maritime + air. Colonne `tariff_id` snapshottée sur `transactions` UNIQUEMENT. |
 | **RPC mig 084** | `create_tariff_version(jurisdiction_id, mode, ...)` — atomique, dates strictement futures, vérifie l'unicité avant insertion. |
 | **Mig 081** | Table `revenue_split_rule` — split concessionnaire%/souverain% versionné par juridiction, `signature_hash`, contrainte `concessionaire_pct + sovereign_pct = 100`. |
 | **Mig 082** | Table `geofences` avec FIR Djibouti polygonale + onboarding juridiction DJ `'00000000-0000-4000-8000-00000000444a'` maritime+air. |
-| **Mig 083** | Détection vessel→zone→juridiction : `vessel_zone_jurisdiction` + fonction `resolve_vessel_jurisdiction()`. |
+| **Mig 083** | Colonne `vessels.last_zone_jurisdiction_id` (suivi (zone, juridiction) par le tracker — hops EEZ→EEZ inter-juridictions). |
 | **Go `internal/geofence`** | Store geofence DB-backed avec cache 60s TTL ; détection multi-juridiction via ray-cast point-in-polygon (abutting FIRs SO\|DJ désambiguisés par le demi-ouvert partagé — identique au Go `internal/fir`). |
 | **ADS-B ingest multi-juridiction** | Route `/api/adsb/ingest` charge les FIR depuis `public.geofences` (mig 082), résout `jurisdiction_id` du matched ring plutôt que hardcodé SO. |
 | **Pipelines jurisdiction + tariff_id** | `proformaPipelineService` + `reconcilePipelineService` passent `jurisdiction_id` + `as_of` (= date d'émission de la proforma, pas aujourd'hui) au calculateur Go ; snapshotent `tariff_id` sur la transaction ; fail-closed si tarif absent. |
 | **Go calculateurs tariff-aware** | `internal/tariff` charge le tarif actif depuis la DB (par `jurisdiction_id` + `mode` + `as_of`) ; les calculateurs MARITIME + AIR utilisent ce tarif ; fail-closed si absent. |
 | **Switcher de juridiction staff** | Cookie httpOnly `gg-active-jurisdiction` ; action `setActiveJurisdiction` (valide l'appartenance RLS avant d'écrire) ; `JurisdictionSwitcher` composant client dans la sidebar (0 membership = caché, 1 = label statique, >1 = dropdown). `ACTIVE_JURISDICTION_COOKIE` exporté de `tenantContext.ts`. |
-| **`getServerJurisdictionId` multi-pays** | Lit le cookie switcher pour les staff multi-juridiction ; fallback vers le premier membership trié si cookie absent/invalide. |
+| **`getServerJurisdictionId` multi-pays** | Lit le cookie `gg-active-jurisdiction` pour les staff multi-juridiction ; résolution validée contre les memberships, FAIL-CLOSED sans cookie valide (l'UI auto-sélectionne via l'action validée `setActiveJurisdiction`). |
 | **Admin `/admin/jurisdictions`** | Registry des juridictions : mode matrix (maritime/air pills), tarifs versionnés par mode, RPC `create_tariff_version`. |
 
 ### Limitations connues / fast-follows
@@ -207,6 +207,7 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 5. **Signup public multi-pays différé** — opérateurs Djibouti = onboarding admin pattern AOC (même chemin que l'aérien Somaliland).
 6. **Analytics pan-africain différé** — agrégats cross-juridiction non implémentés (§9 NOT in scope v8 initial).
 7. **Settlement du revenue split différé** — la table + le seed concessionnaire sont livrés ; l'escrow et le déclenchement comptable = fast-follow.
+8. **/admin/jurisdictions lit le control-plane via client plateforme : les % de partage de toutes les juridictions sont visibles par tout staff ayant accès à la page — à re-scoper quand du staff local mono-juridiction existera.**
 
 ### Note de déploiement
 

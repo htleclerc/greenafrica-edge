@@ -17,6 +17,14 @@
  *   • platform sites (crons iterating jurisdictions, Stripe webhooks keyed by external
  *     id): createPlatformClient() — legitimately cross-tenant.
  *
+ * Cookie mechanism (staff multi-jurisdiction):
+ *   The `gg-active-jurisdiction` httpOnly cookie is written by the validated
+ *   `setActiveJurisdiction` server action (checks RLS membership before writing).
+ *   For staff with > 1 membership the cookie MUST be present and valid — this
+ *   function throws when it is absent or not in the user's memberships. The UI
+ *   JurisdictionSwitcher auto-selects on first load via that action; the
+ *   (dashboard)/error.tsx boundary handles the no-cookie edge case gracefully.
+ *
  * FAIL-CLOSED: throws rather than guessing. A silent default would mis-scope data.
  */
 import { cache } from 'react';
@@ -67,13 +75,13 @@ export async function _getServerJurisdictionIdImpl(): Promise<string> {
     if (ids.length === 1) {
         return ids[0];
     }
-    // Multi-jurisdiction: honour the switcher cookie if it matches a membership.
+    // Multi-jurisdiction: cookie MUST be present and match a membership (fail-closed).
     if (cookieValue && ids.includes(cookieValue)) {
         return cookieValue;
     }
-    // Fall back to the first membership (sorted lexicographically to be deterministic).
-    const sorted = [...ids].sort();
-    return sorted[0];
+    throw new Error(
+        'getServerJurisdictionId: multi-jurisdiction user — select an active jurisdiction (switcher)',
+    );
 }
 
 /**

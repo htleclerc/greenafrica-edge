@@ -79,7 +79,8 @@ export async function createTariffVersion(
         const msg = rpcError.message ?? '';
         const code = rpcError.code ?? '';
         // SECURITY DEFINER role check failed
-        if (code === 'insufficient_privilege' || msg.includes('forbidden')) {
+        // audit_action is an enum (mig 003) — generic value + real event in details_json (house pattern).
+        if (code === '42501' || msg.includes('forbidden')) {
             return { ok: false, error: 'forbidden' };
         }
         // Overlapping active window
@@ -92,7 +93,7 @@ export async function createTariffVersion(
             return { ok: false, error: 'overlap' };
         }
         // Same-day or past date
-        if (msg.includes('strictly future') || code === 'check_violation') {
+        if (msg.includes('strictly future') || code === '23514') {
             return { ok: false, error: 'past_date' };
         }
         return { ok: false, error: msg };
@@ -104,7 +105,7 @@ export async function createTariffVersion(
         await platform.from('audit_logs').insert({
             user_id: auth.user.id,
             user_full_name: auth.user.fullName,
-            action: 'TARIFF_CREATED',
+            action: 'TAX_RATE_UPDATED', // audit_action is an enum (mig 003) — generic value + real event in details_json (house pattern).
             severity: 'INFO',
             entity_type: 'Tariff',
             entity_id: jurisdictionId,
