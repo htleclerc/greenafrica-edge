@@ -156,8 +156,40 @@ export async function POST(request: NextRequest) {
         const uuidSeg = tx.id.split('-')[0].toLowerCase();
         const entropy = Math.floor(Math.random() * 0xFFFF).toString(16).padStart(4, '0');
         invoiceRef = `INV-${createdAt.getFullYear()}-${uuidSeg}${entropy}`;
-        // First-write: persist so the webhook can match this exact ref.
-        await platform.from('transactions').update({ invoice_ref: invoiceRef }).eq('id', tx.id);
+        // Race guard: only write if still NULL (another concurrent checkout may have
+        // won the race and already persisted its own ref — the conditional UPDATE is a
+        // no-op in that case, and we then adopt the winner's ref below).
+        const { error: refPersistErr } = await platform
+            .from('transactions')
+            .update({ invoice_ref: invoiceRef })
+            .eq('id', tx.id)
+            .is('invoice_ref', null);
+        if (refPersistErr) {
+            log.error('payments_create_ref_persist_failed', {
+                transactionId: tx.id,
+                error: refPersistErr.message,
+            });
+            return NextResponse.json(
+                { error: 'Failed to persist invoice reference; payment aborted' },
+                { status: 500 },
+            );
+        }
+        // Re-read the authoritative stored ref. If we lost the race, adopt the
+        // winner's ref so both requests drive the provider with the same reference
+        // that the webhook will later match.
+        const { data: reRead } = await platform
+            .from('transactions')
+            .select('invoice_ref')
+            .eq('id', tx.id)
+            .single();
+        if (!reRead?.invoice_ref) {
+            log.error('payments_create_ref_reread_null', { transactionId: tx.id });
+            return NextResponse.json(
+                { error: 'Failed to persist invoice reference; payment aborted' },
+                { status: 500 },
+            );
+        }
+        invoiceRef = reRead.invoice_ref as string;
     }
 
     // 4. Build the PaymentRequest
