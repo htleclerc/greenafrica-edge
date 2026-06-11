@@ -11,40 +11,57 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
  * Protected by ADSB_INGEST_SECRET (falls back to AIS_INGEST_SECRET) in the
  * Authorization header.
  *
+ * Multi-jurisdiction: FIR geofences are loaded from public.geofences (mig 082,
+ * kind='FIR', active=true) with a 60-second module-level cache. The jurisdiction_id
+ * is resolved from the matched ring rather than being hardcoded. Abutting FIRs
+ * (SO|DJ share lng 43.45) are disambiguated by the strict half-open ray-cast —
+ * identical semantics to the Go detector (backend/internal/fir).
+ *
  * Body: { positions: Array<{ icao24, lat, lng, registration?, icao_type?,
  *         engine_type?, mtow_kg?, altitude_ft?, ground_speed_kt?, heading? }> }
  */
-
-// Somaliland tenant id (last bytes 0x534F = ASCII "SO"); mirrors mig 071 seed.
-const SOMALILAND_JID = '00000000-0000-4000-8000-00000000534f';
 
 // Terminal arrival-alert states: an alert in one of these is "closed" and a new
 // air detection may open a fresh one. Mirrors arrival_alerts' open-state indexes.
 const TERMINAL_ALERT_STATES = ['RECONCILED', 'CANCELLED'];
 
-// Approximate Somaliland FIR bounding ring (lat 7.5–11.8 N, lng 42.5–49.5 E) —
-// the SAME coarse rectangle as Go backend/internal/fir. Ray-cast point-in-polygon.
-// {lat, lng} pairs; NOT the official ICAO FIR boundary.
-const SOMALILAND_FIR: Array<{ lat: number; lng: number }> = [
-  { lat: 7.5, lng: 42.5 },
-  { lat: 7.5, lng: 49.5 },
-  { lat: 11.8, lng: 49.5 },
-  { lat: 11.8, lng: 42.5 },
-  { lat: 7.5, lng: 42.5 },
-];
+// FIR geofences loaded from public.geofences (mig 082) — module-level 60s cache.
+// Detection resolves jurisdiction_id from the matched ring (multi-jurisdiction).
+// Ray-cast keeps the EXACT strict semantics of the Go detector (half-open shared
+// edges): the abutting SO|DJ FIRs at lng 43.45 resolve to exactly one jurisdiction.
+type FirRing = { jurisdiction_id: string; ring: Array<{ lat: number; lng: number }> };
+let firCache: { fetchedAt: number; firs: FirRing[] } | null = null;
+// 60s — matches the Go geofence store TTL; geofence admin edits propagate within one TTL window.
+const FIR_CACHE_TTL_MS = 60_000;
 
-function pointInFIR(lat: number, lng: number): boolean {
+async function loadFIRs(admin: ReturnType<typeof createPlatformClient>): Promise<FirRing[]> {
+  if (firCache && Date.now() - firCache.fetchedAt < FIR_CACHE_TTL_MS) return firCache.firs;
+  const { data, error } = await admin
+    .from('geofences')
+    .select('jurisdiction_id, ring:geometry') // 'geometry' is the JSONB column name (mig 082), aliased to 'ring' — not a PostGIS type.
+    .eq('kind', 'FIR')
+    .eq('active', true);
+  if (error || !data || data.length === 0) {
+    throw new Error(`adsb: FIR geofence load failed: ${error?.message ?? 'no active FIR geofences'}`);
+  }
+  const firs = data as unknown as FirRing[];
+  firCache = { fetchedAt: Date.now(), firs };
+  return firs;
+}
+
+function matchFIR(lat: number, lng: number, firs: FirRing[]): string | null {
+  for (const f of firs) {
+    if (pointInRing(lat, lng, f.ring)) return f.jurisdiction_id;
+  }
+  return null;
+}
+
+function pointInRing(lat: number, lng: number, poly: Array<{ lat: number; lng: number }>): boolean {
   let inside = false;
-  const poly = SOMALILAND_FIR;
   const n = poly.length;
   for (let i = 0, j = n - 1; i < n; j = i, i++) {
-    const yi = poly[i].lat;
-    const xi = poly[i].lng;
-    const yj = poly[j].lat;
-    const xj = poly[j].lng;
-    if (xi > lng !== xj > lng && lat < ((yj - yi) * (lng - xi)) / (xj - xi) + yi) {
-      inside = !inside;
-    }
+    const yi = poly[i].lat, xi = poly[i].lng, yj = poly[j].lat, xj = poly[j].lng;
+    if (xi > lng !== xj > lng && lat < ((yj - yi) * (lng - xi)) / (xj - xi) + yi) inside = !inside;
   }
   return inside;
 }
@@ -79,9 +96,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Cross-tenant ADS-B ingest feed (keyed by ADSB_INGEST_SECRET, no tenant
-    // context). UNSCOPED platform client; aircraft rows inherit jurisdiction via
-    // the column DEFAULT until geofence→jurisdiction lands (mirrors /api/ais/ingest).
+    // context). UNSCOPED platform client; FIR geofences determine jurisdiction_id
+    // per-detection (multi-country).
     const admin = createPlatformClient();
+
+    // Load FIR geofences once for the whole batch (fail-closed: no position is
+    // processed without geofences — a corrupt cache would silently mis-bill).
+    let firs: FirRing[];
+    try {
+      firs = await loadFIRs(admin);
+    } catch {
+      return NextResponse.json({ error: 'FIR geofences unavailable' }, { status: 500 });
+    }
 
     let positionsInserted = 0;
     let aircraftUpserted = 0;
@@ -105,6 +131,7 @@ export async function POST(request: NextRequest) {
         .from('aircraft')
         .upsert(aircraftRow, { onConflict: 'icao24' });
       if (!acErr) aircraftUpserted++;
+      else console.warn('[adsb] aircraft upsert failed:', acErr);
 
       // Resolve the aircraft id + operator from icao24.
       const { data: aircraft } = await admin
@@ -116,18 +143,25 @@ export async function POST(request: NextRequest) {
 
       if (!aircraft) continue;
 
+      // Resolve jurisdiction from FIR geofences.
+      const matchedJid = matchFIR(pos.lat, pos.lng, firs);
+      const inFir = matchedJid !== null;
+
       // GHOST operator: an aircraft with no operator gets a placeholder GHOST
       // shipowners row (AIR mode), then aircraft.operator_id is linked to it.
+      // jurisdiction_id is set to the matched FIR jurisdiction when inside a FIR;
+      // outside any FIR the column DEFAULT applies (home-registry semantics).
       let operatorId = aircraft.operator_id as string | null;
       if (!operatorId) {
+        const ghostRow: Record<string, unknown> = {
+          name: pos.registration || pos.icao24,
+          account_state: 'GHOST',
+          applicable_modes: ['AIR'],
+        };
+        if (matchedJid !== null) ghostRow.jurisdiction_id = matchedJid;
         const { data: ghost } = await admin
           .from('shipowners')
-          .insert({
-            name: pos.registration || pos.icao24,
-            account_state: 'GHOST',
-            applicable_modes: ['AIR'],
-            jurisdiction_id: SOMALILAND_JID,
-          })
+          .insert(ghostRow)
           .select('id')
           .single();
         if (ghost) {
@@ -140,7 +174,6 @@ export async function POST(request: NextRequest) {
       }
 
       // FIR geofence + position insert.
-      const inFir = pointInFIR(pos.lat, pos.lng);
       const { error: posErr } = await admin.from('aircraft_positions').insert({
         aircraft_id: aircraft.id,
         lat: pos.lat,
@@ -172,7 +205,7 @@ export async function POST(request: NextRequest) {
               detected_lat: pos.lat,
               detected_lng: pos.lng,
               status: 'MATCHED_AUTO',
-              jurisdiction_id: SOMALILAND_JID,
+              jurisdiction_id: matchedJid, // always non-null here (inFir === true)
             })
             .select('id')
             .single();

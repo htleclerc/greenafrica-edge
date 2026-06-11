@@ -813,7 +813,8 @@
     "footer_encrypted": "ENCRYPTED",
     "nav_registrations": "Registrations",
     "nav_wallets": "Wallets",
-    "nav_refunds": "Refunds"
+    "nav_refunds": "Refunds",
+    "nav_jurisdictions": "Jurisdictions"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -1045,7 +1046,8 @@
     "simulator_cat_bulk": "Bulk Carrier",
     "simulator_cat_ferry": "Passenger Ferry",
     "simulator_unit_knots": "knots",
-    "simulator_unit_hours": "hours"
+    "simulator_unit_hours": "hours",
+    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions."
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",
@@ -1491,7 +1493,10 @@
     "review": "Review",
     "request_exemption": "Request Exemption",
     "revenue_trend": "Revenue Trend",
-    "full_report": "Full Report →"
+    "full_report": "Full Report →",
+    "tax_rate_moved_title": "Per-jurisdiction tariffs have moved",
+    "tax_rate_moved_desc": "Carbon tax rates are now managed per jurisdiction in the Jurisdictions registry. Billing reads the versioned tariff rows directly — the old global rate surface is retired.",
+    "tax_rate_moved_link": "Go to Jurisdictions →"
   },
   "ValidationsPage": {
     "title": "Agent Validations",
@@ -2677,7 +2682,15 @@
     "sendInvite": "Send invite",
     "sending": "Sending…",
     "cancel": "Cancel",
-    "aoc": { "col": "AOC #", "set": "Set AOC", "dialogTitle": "Set AOC number", "dialogSubtitle": "Pre-seed the expected AOC for {name}. Self-service air sign-up matches this.", "placeholder": "SO-AOC-001", "save": "Save", "saving": "Saving…" }
+    "aoc": {
+      "col": "AOC #",
+      "set": "Set AOC",
+      "dialogTitle": "Set AOC number",
+      "dialogSubtitle": "Pre-seed the expected AOC for {name}. Self-service air sign-up matches this.",
+      "placeholder": "SO-AOC-001",
+      "save": "Save",
+      "saving": "Saving…"
+    }
   },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
@@ -3484,5 +3497,64 @@
       "pt": "Português",
       "sw": "Kiswahili"
     }
+  },
+  "JurisdictionSwitcher": {
+    "label": "Jurisdiction",
+    "select": "Select jurisdiction…",
+    "error": "Could not switch",
+    "retry": "Retry"
+  },
+  "DashboardError": {
+    "title": "Something went wrong",
+    "jurisdictionHint": "If you operate multiple jurisdictions, select your active jurisdiction in the sidebar and retry.",
+    "retry": "Retry"
+  },
+  "AdminJurisdictions": {
+    "title": "Jurisdictions",
+    "subtitle": "Registry, mode activation matrix, and versioned tariffs per jurisdiction.",
+    "jurisdictionCount": "jurisdictions",
+    "empty": "No jurisdictions found.",
+    "movedNotice": "Per-jurisdiction tariffs have moved to the Jurisdictions registry.",
+    "mode": {
+      "sectionTitle": "Modes",
+      "activatedAt": "Activated",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "errorNotFound": "Mode configuration not found for this jurisdiction.",
+      "error": "An error occurred. Please try again."
+    },
+    "tariff": {
+      "sectionTitle": "Tariffs",
+      "noActive": "No active",
+      "noActiveLong": "No active tariff — billing is fail-closed until a tariff is created.",
+      "since": "since",
+      "categorySpecific": "category-specific",
+      "history": "{count} closed versions",
+      "newVersion": "New version",
+      "newVersionTitle": "Create new tariff version",
+      "fieldMode": "Mode",
+      "fieldRate": "Rate (USD / tCO₂)",
+      "fieldEffectiveFrom": "Effective from",
+      "fieldDecreeRef": "Decree ref.",
+      "fieldAssetCategory": "Asset category (optional)",
+      "fieldAssetCategoryHint": "Leave blank for all categories",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "errorInvalidRate": "Rate must be a positive number.",
+      "errorDecreeRequired": "Decree reference is required.",
+      "errorOverlap": "Overlapping active window — close the current version first or choose a later date.",
+      "errorPastDate": "Effective date must be tomorrow or later — same-day changes would re-price proformas already issued today.",
+      "errorForbidden": "You don't have permission to manage tariffs for this jurisdiction.",
+      "scheduled": "SCHEDULED",
+      "scheduledFrom": "effective from",
+      "currentlyBilling": "Currently billing"
+    },
+    "split": {
+      "sectionTitle": "Revenue split",
+      "noRule": "No split rule on record.",
+      "concessionairePct": "Concessionaire {pct}%",
+      "sovereignPct": "Sovereign {pct}%"
+    },
+    "modesDisclosure": "Registry flag — does not yet gate detection or billing."
   }
 }

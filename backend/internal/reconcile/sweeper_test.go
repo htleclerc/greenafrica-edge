@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 )
 
@@ -43,7 +44,8 @@ func TestRunOnce_DetectsEEZExit(t *testing.T) {
 		`INSERT INTO public.vessel_positions (vessel_id, lat, lng, heading, speed_knots, recorded_at)
 		 VALUES ($1, 2.0, 55.0, 90, 12, NOW())`, vID)
 
-	s := NewSweeper(db)
+	gfs := geofence.NewStore(db)
+	s := NewSweeper(db, gfs)
 	n, err := s.RunOnce(context.Background())
 	if err != nil {
 		t.Fatalf("RunOnce: %v", err)
@@ -69,7 +71,8 @@ func TestStart_RunsTicksUntilContextCancel(t *testing.T) {
 	defer db.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s := NewSweeper(db)
+	gfs := geofence.NewStore(db)
+	s := NewSweeper(db, gfs)
 	done := make(chan error, 1)
 	go func() { done <- s.Start(ctx, 50*time.Millisecond) }()
 	time.Sleep(200 * time.Millisecond)

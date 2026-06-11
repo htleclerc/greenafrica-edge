@@ -21,6 +21,7 @@ import { runProformaPipeline } from './proformaPipelineService';
 const SOMALILAND_JID = '00000000-0000-4000-8000-00000000534f';
 
 // Air-mode tax result mirroring the W1-B /api/v1/tax/calculate contract.
+// Wedge 2: breakdown now carries tariff_id, jurisdiction_id, currency.
 const AIR_TAX_RESULT = {
   tco2: 2.6,
   usd_amount: 104.0,
@@ -30,6 +31,9 @@ const AIR_TAX_RESULT = {
     co2_kg_per_lto_cycle: 2600,
     lto_cycles: 1,
     rate_usd_per_tco2: 40,
+    tariff_id: 'tariff-so-air-001',
+    jurisdiction_id: SOMALILAND_JID,
+    currency: 'USD',
   },
 };
 
@@ -41,7 +45,9 @@ const AIRCRAFT = {
   engine_type: 'CFM56-5B',
   mtow_kg: 78000,
   operator_id: 'op-ghost-1',
-  jurisdiction_id: SOMALILAND_JID,
+  // Intentionally different from the alert's jurisdiction_id — proves that the
+  // transaction jurisdiction_id comes from the ALERT (billing event), not the asset.
+  jurisdiction_id: 'decoy-aircraft-jid',
 };
 
 /**
@@ -66,6 +72,7 @@ function makeClient(opts: { aircraft?: typeof AIRCRAFT | null; alertStatus?: str
     estimated_route_nm: null,
     matched_agent_id: null, // air alerts have no matched agent
     status: opts.alertStatus ?? 'MATCHED_AUTO',
+    jurisdiction_id: SOMALILAND_JID,
     vessel: null,
     aircraft,
   };
@@ -84,6 +91,18 @@ function makeClient(opts: { aircraft?: typeof AIRCRAFT | null; alertStatus?: str
           captured.alertUpdate = payload;
           return { eq: vi.fn().mockResolvedValue({ error: null }) };
         }),
+      };
+    }
+    if (table === 'jurisdictions') {
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { name: 'Republic of Somaliland' },
+              error: null,
+            }),
+          })),
+        })),
       };
     }
     if (table === 'transactions') {
@@ -153,6 +172,7 @@ describe('runProformaPipeline — AIR branch (W1-C-2)', () => {
       engine_type: 'CFM56-5B',
       mtow_kg: 78000,
       lto_cycles: 1,
+      jurisdiction_id: SOMALILAND_JID,
     });
     // Auth header propagated like the maritime path.
     expect((calledInit as RequestInit).headers).toMatchObject({
@@ -176,7 +196,9 @@ describe('runProformaPipeline — AIR branch (W1-C-2)', () => {
       shipowner_id: 'op-ghost-1',   // aircraft.operator_id
       agent_profile_id: null,
       rate_usd_per_tco2: 40,
+      // Wedge 2: jurisdiction_id from the alert (billing event), tariff_id snapshot.
       jurisdiction_id: SOMALILAND_JID,
+      tariff_id: 'tariff-so-air-001',
     });
     expect(captured.insertedTxn?.breakdown_json).toEqual(AIR_TAX_RESULT.breakdown);
     // Maritime-only columns must NOT be present on an air row.

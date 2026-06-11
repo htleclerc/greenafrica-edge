@@ -14,10 +14,12 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/config"
 	"github.com/htleclerc/africgreen/backend/internal/corridor"
 	"github.com/htleclerc/africgreen/backend/internal/eez"
+	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/middleware"
 	"github.com/htleclerc/africgreen/backend/internal/originport"
 	"github.com/htleclerc/africgreen/backend/internal/reconcile"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/tariff"
 	"github.com/htleclerc/africgreen/backend/internal/tax"
 )
 
@@ -32,9 +34,10 @@ func main() {
 	defer db.Close()
 
 	appcfg := appconfig.New(db)
-	watcher := corridor.New(db, appcfg)
-	tracker := eez.NewTracker(db)
-	sweeper := reconcile.NewSweeper(db)
+	gfs := geofence.NewStore(db)
+	watcher := corridor.New(db, appcfg, gfs)
+	tracker := eez.NewTracker(db, gfs)
+	sweeper := reconcile.NewSweeper(db, gfs)
 
 	// ── Graceful shutdown context ─────────────────────────────────────────
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -52,7 +55,8 @@ func main() {
 	})
 
 	// Tax
-	taxHandler := tax.NewHandler(cfg, db, appcfg)
+	tariffStore := tariff.NewStore(db)
+	taxHandler := tax.NewHandler(db, tariffStore)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
 

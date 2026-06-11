@@ -32,19 +32,3 @@ export async function getActiveTaxRate(
     return data ? rowToTaxConfiguration(data as TaxConfigurationRow) : null;
 }
 
-export async function createTaxConfiguration(
-    client: Client,
-    input: Record<string, unknown>,
-): Promise<TaxConfiguration | null> {
-    const { data } = await client.from('tax_configurations').insert(input).select().single();
-    return data ? rowToTaxConfiguration(data as TaxConfigurationRow) : null;
-}
-
-export async function updateTaxConfiguration(
-    client: Client,
-    id: string,
-    update: Record<string, unknown>,
-): Promise<TaxConfiguration | null> {
-    const { data } = await client.from('tax_configurations').update(update).eq('id', id).select().single();
-    return data ? rowToTaxConfiguration(data as TaxConfigurationRow) : null;
-}

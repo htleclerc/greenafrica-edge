@@ -1,6 +1,16 @@
 // frontend/src/app/api/adsb/ingest/__tests__/route.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// SO FIR ring from mig 082 (de-overlapped west edge: 43.45 not 42.5)
+const SO_JID = '00000000-0000-4000-8000-00000000534f';
+const SO_RING = [
+    { lat: 7.5, lng: 43.45 },
+    { lat: 7.5, lng: 49.5 },
+    { lat: 11.8, lng: 49.5 },
+    { lat: 11.8, lng: 43.45 },
+    { lat: 7.5, lng: 43.45 },
+];
+
 // Spies for the table operations we assert on.
 const aircraftUpsert = vi.fn();
 const alertInsert = vi.fn();
@@ -23,14 +33,23 @@ function makeQuery(opts: { rows?: unknown; single?: unknown }) {
     return q;
 }
 
-// Per-table dispatch. aircraft: upsert ok, then select→single returns the row
-// (operator_id NULL so the GHOST path runs). shipowners: insert→select→single
-// returns a ghost id. aircraft_positions: insert ok. arrival_alerts: the OPEN
-// lookup (select.eq.not.limit.maybeSingle) returns null, then insert→select→single
-// returns a new alert id.
+// Per-table dispatch. geofences: returns the SO FIR row so loadFIRs() succeeds.
+// aircraft: upsert ok, then select→single returns the row (operator_id NULL so
+// the GHOST path runs). shipowners: insert→select→single returns a ghost id.
+// aircraft_positions: insert ok. arrival_alerts: the OPEN lookup returns null,
+// then insert→select→single returns a new alert id.
 function makeAdmin() {
     return {
         from: vi.fn((table: string) => {
+            if (table === 'geofences') {
+                // Two-level chain: .select().eq().eq() → resolves with FIR rows
+                const eqInner = vi.fn().mockResolvedValue({
+                    data: [{ jurisdiction_id: SO_JID, ring: SO_RING }],
+                    error: null,
+                });
+                const eqOuter = vi.fn(() => ({ eq: eqInner }));
+                return { select: vi.fn(() => ({ eq: eqOuter })) };
+            }
             if (table === 'aircraft') {
                 return {
                     upsert: (...a: unknown[]) => {
@@ -81,6 +100,7 @@ function makeReq(body: unknown, secret?: string): Request {
     });
 }
 
+// NOTE: this legacy suite predates the multi-jurisdiction tests (./route.test.ts). It uses a static import, so the module-level firCache is SHARED across these tests — all cases must keep identical geofence fixtures. Covers the AIS_INGEST_SECRET fallback + counters.
 describe('POST /api/adsb/ingest', () => {
     beforeEach(() => {
         vi.clearAllMocks();

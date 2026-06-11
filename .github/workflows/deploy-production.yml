@@ -42,7 +42,7 @@ jobs:
   backend:
     name: Fly.io Backend
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, migrations] # tariffs/geofences migrations MUST land before the fail-closed Go deploy (W2)
 
     steps:
       - uses: actions/checkout@v4

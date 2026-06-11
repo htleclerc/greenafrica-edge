@@ -22,12 +22,16 @@ type Polygon []Point
 // official ICAO FIR boundary — refine against the published FIR before
 // production billing. Mirrors the approximate maritime EEZ ring in
 // backend/internal/eez.
+//
+// Deprecated: production paths read public.geofences via internal/geofence.
 var SomalilandFIR = Polygon{
 	{7.5, 42.5}, {7.5, 49.5}, {11.8, 49.5}, {11.8, 42.5}, {7.5, 42.5},
 }
 
 // Detect returns ZoneFIR if the point lies inside the Somaliland FIR ring,
 // else ZoneOutside.
+//
+// Deprecated: production paths read public.geofences via internal/geofence.
 func Detect(lat, lng float64) Zone {
 	if pointInPolygon(lat, lng, SomalilandFIR) {
 		return ZoneFIR

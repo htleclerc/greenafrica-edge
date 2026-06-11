@@ -10,7 +10,9 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
  * migrations 027 and 035.
  */
 const ALLOWED_KEYS = new Set<string>([
-    'carbon_tax.rate_usd_per_tco2',
+    // carbon_tax.rate_usd_per_tco2 retired — billing now reads versioned tariffs
+    // from the tariffs table (mig 080). Key kept in DB for rollback but no longer
+    // writable from the UI.
     'arrival.corridor_radius_nm',
     'arrival.claim_sla_hours',
     'arrival.escalation_eta_buffer_h',

@@ -43,6 +43,10 @@ type TaxCalcResult = {
     emissions_factor_source: string;
     emissions_factor_id: string;
     rate_usd_per_tco2: number;
+    // Wedge 2: Go now returns tariff metadata in the breakdown.
+    tariff_id?: string;
+    jurisdiction_id?: string;
+    currency?: string;
   };
 };
 
@@ -82,7 +86,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     .from('arrival_alerts')
     .select(`
       id, vessel_id, imo_number, status, proforma_transaction_id,
-      matched_agent_id,
+      matched_agent_id, jurisdiction_id,
       vessel:vessels ( id, name, imo_number, mmsi, category, gross_tonnage_dwt, shipowner_id )
     `)
     .eq('id', alertId)
@@ -98,13 +102,18 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     return { ok: false, reason: 'alert has no linked pro-forma transaction' };
   }
 
+  // ── Jurisdiction guard (W2): alert must carry a jurisdiction_id. ─────────
+  if (!alert.jurisdiction_id) {
+    return { ok: false, reason: 'alert missing jurisdiction_id' };
+  }
+
   const vessel = Array.isArray(alert.vessel) ? alert.vessel[0] : alert.vessel;
   if (!vessel) return { ok: false, reason: 'vessel missing' };
   if (!alert.matched_agent_id) return { ok: false, reason: 'alert has no matched agent' };
 
   const { data: proforma, error: pfErr } = await db
     .from('transactions')
-    .select('id, tax_amount_usd, document_type')
+    .select('id, tax_amount_usd, document_type, created_at')
     .eq('id', alert.proforma_transaction_id)
     .single();
   if (pfErr || !proforma) {
@@ -134,6 +143,16 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
       .maybeSingle();
     if (owner?.name) ownerName = owner.name;
   }
+
+  // ── Resolve jurisdiction display name for the invoice PDF (W2). ──────────
+  // The alert's jurisdiction_id is NOT NULL (enforced at detection time), so the
+  // row will exist; fallback to the legacy label if the lookup somehow fails.
+  const { data: juri } = await db
+    .from('jurisdictions')
+    .select('name')
+    .eq('id', alert.jurisdiction_id)
+    .maybeSingle();
+  const jurisdictionName = juri?.name ?? 'Republic of Somaliland';
 
   // ── 2. Shared Go-backend auth headers ───────────────────────────────────
   const apiSecret =
@@ -169,6 +188,13 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   }
 
   // ── 4. Tax calculation with real distance ───────────────────────────────
+  // as_of pins the tariff version to the proforma's issuance date — the
+  // reconcile delta measures distance, not decree changes (D3 issuance-date rule).
+  const d = new Date(proforma.created_at as string);
+  if (Number.isNaN(d.getTime())) {
+    return { ok: false, reason: 'proforma created_at invalid' };
+  }
+  const proformaAsOf = d.toISOString().slice(0, 10);
   let tax: TaxCalcResult;
   try {
     const taxRes = await fetch(`${taxApiUrl}/api/v1/tax/calculate`, {
@@ -179,6 +205,8 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
         category: vessel.category,
         gross_tonnage: vessel.gross_tonnage_dwt,
         distance_nm: realDistanceNm,
+        jurisdiction_id: alert.jurisdiction_id ?? undefined,
+        as_of: proformaAsOf,
       }),
     });
     if (!taxRes.ok) {
@@ -268,6 +296,9 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   };
 
   // ── 6. Insert reconciliation transaction ────────────────────────────────
+  if (!tax.breakdown.tariff_id) {
+    console.warn('[reconcilePipeline] breakdown missing tariff_id — Go backend predates W2 tariffs; deploy ordering violated');
+  }
   const { data: txn, error: txnErr } = await db
     .from('transactions')
     .insert({
@@ -288,6 +319,8 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
       emission_factor_used_id: tax.breakdown.emissions_factor_id || null,
       rate_usd_per_tco2: tax.breakdown.rate_usd_per_tco2,
       breakdown_json: breakdownJson,
+      tariff_id: tax.breakdown.tariff_id ?? null,
+      jurisdiction_id: alert.jurisdiction_id ?? null,
     })
     .select('id, ref')
     .single();
@@ -344,7 +377,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     vesselImo: vessel.imo_number,
     vesselMmsi: vessel.mmsi ?? '',
     ownerName,
-    jurisdiction: 'Republic of Somaliland',
+    jurisdiction: jurisdictionName,
     periodStart,
     periodEnd,
     emissionsTco2: tax.tco2,
