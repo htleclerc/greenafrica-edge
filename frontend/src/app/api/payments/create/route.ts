@@ -8,6 +8,7 @@ import {
     type PaymentProvider,
     type PaymentRequest,
 } from '@/services/paymentService';
+import { fetchJurisdictionName } from '@/lib/jurisdictionName';
 
 /**
  * POST /api/payments/create
@@ -131,6 +132,10 @@ export async function POST(request: NextRequest) {
     const invoiceRef = `INV-${createdAt.getFullYear()}-${tx.id.split('-')[1].toUpperCase()}`;
 
     // 4. Build the PaymentRequest
+    const jurisdictionName = await fetchJurisdictionName(
+        admin,
+        (tx as { jurisdiction_id?: string | null }).jurisdiction_id,
+    );
     const paymentRequest: PaymentRequest = {
         transactionId: tx.id,
         amount: Number(tx.tax_amount_usd),
@@ -141,7 +146,8 @@ export async function POST(request: NextRequest) {
             vesselImo: tx.vessel_imo,
             vesselName: tx.vessel_name,
             ownerEntity,
-            jurisdiction: 'Republic of Somaliland',
+            // Sovereign name from the transaction's jurisdiction_id — never hardcoded.
+            jurisdiction: jurisdictionName,
             taxPeriod: createdAt.toISOString().slice(0, 7),
         },
         customerEmail,

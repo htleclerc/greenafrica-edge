@@ -17,11 +17,15 @@ interface ProFormaModalProps {
     onClose: () => void;
     onSent?: () => void;
     onPayNow?: () => void;
+    /** Resolved sovereign display name for this transaction's jurisdiction.
+     *  Defaults to 'Republic of Somaliland' for backward compatibility with
+     *  call-sites that have not yet been updated to thread the prop. */
+    jurisdictionName?: string;
 }
 
 type SendStatus = 'idle' | 'generating' | 'success' | 'error';
 
-export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalProps) {
+export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName = 'Republic of Somaliland' }: ProFormaModalProps) {
     const t = useTranslations('InvoicesPage');
     const { isDemo, role } = useRole();
     const isArmateur = role === UserRole.SHIPPING_AGENT;
@@ -41,7 +45,11 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
         ) ?? null;
     }, [vessel, taxConfigs]);
 
-    const realRate = taxConfig ? taxConfig.baseRateUsdPerTco2 * taxConfig.multiplier : 20;
+    // Fail-closed: when no active tax config is found, rate is null — we NEVER
+    // silently substitute a fabricated default (the old `: 20` was wrong).
+    // The send action is disabled when rateUnavailable is true (see below).
+    const realRate: number | null = taxConfig ? taxConfig.baseRateUsdPerTco2 * taxConfig.multiplier : null;
+    const rateUnavailable = realRate === null;
 
     // Fetch the real owner profile
     const [owner, setOwner] = React.useState<ProfileSummary | null>(null);
@@ -99,10 +107,8 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
         [TransactionType.PORT_STAY]:   t('type_port_stay'),
     };
 
-    // Fee breakdown (carbon tax + port + security)
-    const carbonTaxFee  = Math.round(tx.taxAmountUsd * 0.75);
-    const portCallFee   = Math.round(tx.taxAmountUsd * 0.20);
-    const securityFee   = tx.taxAmountUsd - carbonTaxFee - portCallFee;
+    // The old 75/20/5 fabricated fee breakdown has been removed — fiscal
+    // documents must not invent sub-line items without a regulatory basis.
 
     // ── Three distinct actions, one shared generation pipeline ──
     //   1. Print & Save PDF (top button)  → generate + upload + window.print()
@@ -229,7 +235,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                     : <Printer className="w-3.5 h-3.5" />}
                                 onClick={handleSendEmail}
-                                disabled={isBusy || isDemo}
+                                disabled={isBusy || isDemo || rateUnavailable}
                             >
                                 {isBusy && lastAction === 'sendEmail' ? 'Sending…' : t('print_and_send')}
                             </OsButton>
@@ -308,7 +314,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                 <div className="p-3 rounded-xl bg-[rgba(0,217,126,0.04)] border border-[#00D97E]/15 mb-3">
                                     <p className="text-[10px] text-[var(--os-text-muted)] mb-1">{t('apply_formula')}</p>
                                     <p className="text-sm font-mono font-bold text-[#00D97E]">
-                                        TOTAL = ({tx.emissionsTco2} × ${realRate.toFixed(2)}) ≈ ${tx.taxAmountUsd.toLocaleString()}
+                                        TOTAL = ({tx.emissionsTco2} × ${rateUnavailable ? '—' : realRate!.toFixed(2)}) ≈ ${tx.taxAmountUsd.toLocaleString()}
                                     </p>
                                     {taxConfig && (
                                         <p className="text-[9px] text-[var(--os-text-muted)] mt-1">
@@ -319,9 +325,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     {[
                                         { label: t('co2_emissions'), value: `${tx.emissionsTco2} tCO₂` },
-                                        { label: t('rate_per_tco2'), value: `$${realRate.toFixed(2)}` },
-                                        { label: t('port_stay_fee'), value: `$${portCallFee.toLocaleString()}` },
-                                        { label: t('fee_security_surcharge'), value: `$${securityFee.toLocaleString()}` },
+                                        { label: t('rate_per_tco2'), value: rateUnavailable ? '—' : `$${realRate!.toFixed(2)}` },
                                     ].map(({ label, value }) => (
                                         <div key={label} className="flex flex-col">
                                             <span className="text-[10px] text-[var(--os-text-muted)]">{label}</span>
@@ -329,6 +333,11 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                         </div>
                                     ))}
                                 </div>
+                                {rateUnavailable && (
+                                    <p className="mt-2 text-[10px] text-[#F59E0B]">
+                                        Rate unavailable — no active tax config found for this vessel category.
+                                    </p>
+                                )}
                             </div>
 
                             {/* Delivery details */}
@@ -382,16 +391,17 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                 {/* Official header with logo */}
                                 <div className="flex items-start justify-between mb-5 pb-4" style={{ borderBottom: '2px solid #0D1F18' }}>
                                     <div className="flex items-start gap-3">
-                                        {/* Logo + Somaliland flag (stacked) */}
+                                        {/* TODO P2: per-jurisdiction banking block — flag/bank assets are currently SO-specific */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                             <img
                                                 src="/brand/africgreen-icon-emerald.svg"
                                                 alt="Green Gate"
                                                 style={{ width: '52px', height: '52px' }}
                                             />
+                                            {/* TODO P2: per-jurisdiction flag asset */}
                                             <img
                                                 src="/brand/somaliland-flag.svg"
-                                                alt="Somaliland"
+                                                alt={jurisdictionName}
                                                 style={{ width: '52px', height: 'auto', border: '1px solid #CBD5E1' }}
                                             />
                                         </div>
@@ -406,7 +416,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                                 SOLIDE TECHNOLOGY <span style={{ fontWeight: 500, color: '#64748B' }}>— Concessionaire</span>
                                             </p>
                                             <p style={{ fontSize: '9px', color: '#475569', marginTop: '4px', lineHeight: 1.3 }}>
-                                                Republic of Somaliland<br />
+                                                {jurisdictionName}<br />
                                                 Ministry of Environment & Climate Change<br />
                                                 Maritime Carbon Tax Authority
                                             </p>
@@ -488,7 +498,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                 }}>
                                     Pursuant to <strong>Ministerial Decree MOE&amp;CC/MWI/36/2026</strong> (Hargeisa, 31 March 2026),
                                     the Maritime Carbon Tax Act (2024) and IMO MEPC.346(78), the above-named vessel is hereby
-                                    notified of carbon emission liabilities incurred within the Somaliland EEZ. Collection is
+                                    notified of carbon emission liabilities incurred within the {jurisdictionName} EEZ. Collection is
                                     exclusively managed by <strong>SOLIDE TECHNOLOGY</strong>.
                                 </div>
 
@@ -517,18 +527,21 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {[
-                                            { desc: 'Carbon Emissions Tax (IMO Cubic Law)', qty: `${tx.emissionsTco2.toFixed(2)} tCO₂`, rate: `$${realRate.toFixed(2)}/t`, amount: carbonTaxFee },
-                                            { desc: 'Port Call Fixed Fee', qty: '1', rate: `$${portCallFee.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, amount: portCallFee },
-                                            { desc: 'Maritime Security Surcharge', qty: '1', rate: `$${securityFee.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, amount: securityFee },
-                                        ].map(({ desc, qty, rate, amount }, i) => (
-                                            <tr key={desc} style={{ background: i % 2 === 0 ? '#F8FAFC' : 'white' }}>
-                                                <td style={{ padding: '6px 8px', color: '#0D1F18' }}>{desc}</td>
-                                                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>{qty}</td>
-                                                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>{rate}</td>
-                                                <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0D1F18', fontFamily: 'monospace' }}>${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                                            </tr>
-                                        ))}
+                                        {/* Single carbon-tax line — fiscal documents must not invent sub-line items */}
+                                        <tr style={{ background: '#F8FAFC' }}>
+                                            <td style={{ padding: '6px 8px', color: '#0D1F18' }}>
+                                                {`Carbon tax (${tx.emissionsTco2.toFixed(2)} tCO2 × ${rateUnavailable ? '— ' : realRate!.toFixed(2)} USD/tCO2)`}
+                                            </td>
+                                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>
+                                                {`${tx.emissionsTco2.toFixed(2)} tCO2`}
+                                            </td>
+                                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569', fontFamily: 'monospace' }}>
+                                                {rateUnavailable ? '—' : `$${realRate!.toFixed(2)}/t`}
+                                            </td>
+                                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0D1F18', fontFamily: 'monospace' }}>
+                                                ${tx.taxAmountUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
 
@@ -591,7 +604,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                             textAlign: 'center',
                                             lineHeight: 1.1,
                                         }}>
-                                            OFFICIAL<br />SEAL<br />SOMALILAND
+                                            OFFICIAL<br />SEAL<br />{jurisdictionName.toUpperCase().split(' ').pop()}
                                         </div>
                                     </div>
                                 </div>
@@ -605,7 +618,8 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                                     lineHeight: 1.4,
                                 }}>
                                     <p><strong>Payment terms:</strong> 30 days from issuance. Late settlement incurs a flat US$20,000 penalty fee.</p>
-                                    <p><strong>Remit to:</strong> SOLIDE TECHNOLOGY (Concessionaire) · Bank of Somaliland · SWIFT BSSLSO21 · Ref: {invoiceRef}</p>
+                                    {/* TODO P2: per-jurisdiction banking block — bank/SWIFT details are currently SO-specific */}
+                                    <p><strong>Remit to:</strong> SOLIDE TECHNOLOGY (Concessionaire) · Bank of {jurisdictionName} · SWIFT BSSLSO21 · Ref: {invoiceRef}</p>
                                     <p style={{ marginTop: '4px', textAlign: 'center', color: '#CBD5E1' }}>
                                         Document generated by Green Gate OS · Sovereign Carbon Intelligence Platform · AES-256 Encrypted
                                     </p>
@@ -624,7 +638,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                             size="sm"
                             icon={isBusy && lastAction === 'draftSave' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : undefined}
                             onClick={handleDraftSave}
-                            disabled={isBusy || isDemo}
+                            disabled={isBusy || isDemo || rateUnavailable}
                         >
                             {isBusy && lastAction === 'draftSave' ? t('draft_save') + '…' : t('draft_save')}
                         </OsButton>
@@ -633,7 +647,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow }: ProFormaModalPr
                             size="sm"
                             icon={isBusy && lastAction === 'printSave' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
                             onClick={handlePrintSave}
-                            disabled={isBusy || isDemo}
+                            disabled={isBusy || isDemo || rateUnavailable}
                         >
                             {isBusy && lastAction === 'printSave' ? t('print_save_pdf') + '…' : t('print_save_pdf')}
                         </OsButton>

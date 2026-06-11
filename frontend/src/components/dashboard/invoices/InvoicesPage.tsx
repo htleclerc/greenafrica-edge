@@ -14,6 +14,7 @@ import { ProFormaModal } from './ProFormaModal';
 import { WireTransferModal, type WireTransferInstructions } from './WireTransferModal';
 import { RecordPaymentModal, type RecordPaymentInput } from './RecordPaymentModal';
 import { createClient } from '@/lib/supabase/client';
+import { fetchJurisdictionName } from '@/lib/jurisdictionName';
 
 const STATUS_ICON: Record<TransactionStatus, React.ReactNode> = {
     [TransactionStatus.PAID]:     <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />,
@@ -43,6 +44,17 @@ export function InvoicesPage() {
     const [recordPaymentTx, setRecordPaymentTx] = React.useState<Transaction | null>(null);
     const [paymentLoading, setPaymentLoading] = React.useState<string | null>(null);
     const [paymentError, setPaymentError]     = React.useState<string | null>(null);
+    const [proFormaJurisdictionName, setProFormaJurisdictionName] = React.useState<string>('Republic of Somaliland');
+
+    // Resolve the jurisdiction display name whenever the proforma modal is opened.
+    React.useEffect(() => {
+        let cancelled = false;
+        const client = createClient();
+        // fetchJurisdictionName handles null/undefined with the legacy fallback
+        fetchJurisdictionName(client, proForma?.jurisdictionId ?? null)
+            .then((name) => { if (!cancelled) setProFormaJurisdictionName(name); });
+        return () => { cancelled = true; };
+    }, [proForma?.jurisdictionId]);
 
     // ── Pay Now handler — calls /api/payments/create ──
     async function handlePayNow(tx: Transaction) {
@@ -405,6 +417,7 @@ export function InvoicesPage() {
                         setProForma(null);
                         handlePayNow(tx);
                     }}
+                    jurisdictionName={proFormaJurisdictionName}
                 />
             )}
 
