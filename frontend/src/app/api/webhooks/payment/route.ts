@@ -3,6 +3,10 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 import { confirmPayment, verifyPaystackSignature, verifyFlutterwaveSignature, verifyPayoneerSignature } from '@/services/paymentService';
 import { writeAuditLog } from '@/services/auditService';
 import { parseInvoiceRef } from '@/services/invoiceService';
+import { resolveSystemActor } from '@/lib/system-actor';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('payment-webhook');
 
 /**
  * POST /api/webhooks/payment
@@ -116,19 +120,30 @@ export async function POST(request: NextRequest) {
 
       await confirmPayment(adminClient, tx.id, providerRef);
 
-      await writeAuditLog(adminClient, {
-        action: 'PAYMENT_RECEIVED',
-        entity_type: 'transaction',
-        entity_id: tx.id,
-        user_id: '00000000-0000-0000-0000-000000000000',
-        severity: 'info',
-        details: {
-          provider,
-          provider_ref: providerRef,
-          amount_usd: tx.tax_amount_usd,
-          vessel: tx.vessel_name,
-        },
-      });
+      // audit_action has no PAYMENT_RECEIVED value — map onto
+      // TRANSACTION_UPDATED and carry the real event in details_json (same
+      // pattern as the refund-reconcile cron). user_id has an FK to profiles,
+      // so a real system actor is required (no sentinel UUID exists there).
+      const systemActorId = await resolveSystemActor(adminClient);
+      if (systemActorId) {
+        await writeAuditLog(adminClient, {
+          user_id: systemActorId,
+          user_full_name: 'Payment Webhook',
+          action: 'TRANSACTION_UPDATED',
+          severity: 'INFO',
+          entity_type: 'Transaction',
+          entity_id: tx.id,
+          details_json: {
+            event: 'PAYMENT_RECEIVED',
+            provider,
+            provider_ref: providerRef,
+            amount_usd: tx.tax_amount_usd,
+            vessel: tx.vessel_name,
+          },
+        });
+      } else {
+        log.warn('audit_skipped_no_system_actor', { transactionId: tx.id, provider });
+      }
     }
 
     return NextResponse.json({ success: true, provider });
