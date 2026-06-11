@@ -116,7 +116,8 @@ jobs:
 
       - name: Check frontend
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.PRODUCTION_URL }}/login" || echo "000")
+          # -L: the vercel.app URL 307-redirects to the production domain (greengate.africa).
+          STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" "${{ secrets.PRODUCTION_URL }}/login" || echo "000")
           echo "Frontend: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::error::Frontend health check failed with status $STATUS"
