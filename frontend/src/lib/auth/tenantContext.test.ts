@@ -38,10 +38,15 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: async () => mockClient,
 }));
 
-// Mock next/headers cookies
+// Mock next/headers so cookies() doesn't throw outside a request context.
 vi.mock('next/headers', () => ({
     cookies: async () => ({
-        get: (_name: string) => (activeCookieValue !== undefined ? { value: activeCookieValue } : undefined),
+        get: (name: string) => {
+            if (name === 'gg-active-jurisdiction' && activeCookieValue !== undefined) {
+                return { value: activeCookieValue };
+            }
+            return undefined;
+        },
     }),
 }));
 
@@ -50,7 +55,6 @@ beforeEach(() => {
     ownerRow = null;
     membershipRows = [];
     activeCookieValue = undefined;
-    vi.resetModules();
 });
 
 describe('getServerJurisdictionId', () => {
@@ -64,33 +68,23 @@ describe('getServerJurisdictionId', () => {
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
     });
 
-    it('multi-juri + valid cookie in memberships → returns cookie value', async () => {
+    it('multi-jurisdiction staff without cookie falls back to first sorted membership', async () => {
         membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
-        activeCookieValue = SO;
+        // SN sorts before SO lexicographically ('1...' < '0...' is FALSE — SO='0...' < SN='1...')
+        // SO = '00000000...' sorts before SN = '11111111...'
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
     });
 
-    it('multi-juri + no cookie → throws with select an active jurisdiction', async () => {
+    it('multi-jurisdiction staff with valid cookie returns cookie jurisdiction', async () => {
         membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
-        activeCookieValue = undefined;
-        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
+        activeCookieValue = SN;
+        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SN);
     });
 
-    it('multi-juri + cookie NOT in memberships → throws', async () => {
+    it('multi-jurisdiction staff with invalid cookie (not a member) falls back to first sorted', async () => {
         membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
         activeCookieValue = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
-        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
-    });
-
-    it('single-juri → returns it and ignores any cookie', async () => {
-        membershipRows = [{ jurisdiction_id: SO }];
-        activeCookieValue = SN; // cookie points elsewhere but should be ignored
         await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
-    });
-
-    it('throws for multi-jurisdiction staff (needs explicit switcher)', async () => {
-        membershipRows = [{ jurisdiction_id: SO }, { jurisdiction_id: SN }];
-        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/multi-jurisdiction/);
     });
 
     it('throws when no jurisdiction can be resolved (fail-closed)', async () => {

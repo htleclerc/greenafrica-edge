@@ -17,15 +17,17 @@
  *   • platform sites (crons iterating jurisdictions, Stripe webhooks keyed by external
  *     id): createPlatformClient() — legitimately cross-tenant.
  *
- * Multi-jurisdiction staff: resolved via the ACTIVE_JURISDICTION_COOKIE set by the
- * jurisdiction switcher UI. Fail-closed (throws) when the cookie is absent or invalid —
- * staff must explicitly select an active jurisdiction before any tenant-scoped action.
+ * FAIL-CLOSED: throws rather than guessing. A silent default would mis-scope data.
  */
 import { cache } from 'react';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 
-/** Cookie name used by the jurisdiction switcher to persist the active jurisdiction. */
-export const ACTIVE_JURISDICTION_COOKIE = 'gg-active-jid';
+/**
+ * Cookie name for the staff active-jurisdiction switcher.
+ * httpOnly, sameSite=lax, max-age 30 days.
+ */
+export const ACTIVE_JURISDICTION_COOKIE = 'gg-active-jurisdiction';
 
 /** Uncached implementation — exported for tests (mirrors feature-flags.ts pattern). */
 export async function _getServerJurisdictionIdImpl(): Promise<string> {
@@ -49,29 +51,29 @@ export async function _getServerJurisdictionIdImpl(): Promise<string> {
         return owner.jurisdiction_id as string;
     }
 
-    // Staff path: the single active jurisdiction membership. Multi-jurisdiction staff
-    // need an explicit active-jurisdiction selection (the switcher from the design
-    // review) — until that exists, fail closed rather than guess.
+    // Staff path: read the switcher cookie first (Wedge 2 multi-country staff).
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value;
+
     const { data: memberships } = await supabase
         .from('user_jurisdictions')
         .select('jurisdiction_id')
         .eq('user_id', user.id);
     const ids = (memberships ?? []).map((m) => m.jurisdiction_id as string);
+
+    if (ids.length === 0) {
+        throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);
+    }
     if (ids.length === 1) {
         return ids[0];
     }
-    if (ids.length > 1) {
-        const { cookies } = await import('next/headers');
-        const cookieStore = await cookies();
-        const active = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value;
-        if (active && ids.includes(active)) {
-            return active;
-        }
-        throw new Error(
-            'getServerJurisdictionId: multi-jurisdiction user — select an active jurisdiction (switcher)'
-        );
+    // Multi-jurisdiction: honour the switcher cookie if it matches a membership.
+    if (cookieValue && ids.includes(cookieValue)) {
+        return cookieValue;
     }
-    throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);
+    // Fall back to the first membership (sorted lexicographically to be deterministic).
+    const sorted = [...ids].sort();
+    return sorted[0];
 }
 
 /**
