@@ -28,15 +28,14 @@ jobs:
         with:
           version: latest
 
-      - name: Link project
-        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
+      # Direct Postgres auth via the pooler URL (secret SUPABASE_DB_URL).
+      # `supabase link` needs a management-API access token the CI doesn't have
+      # (and the CLI token lacks privileges on this org) — db push --db-url is
+      # the proven path used for every hosted push since 2026-05.
       - name: Run migrations
-        run: supabase db push
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
   # ── Go backend deploy (Fly.io) ──────────────────────────────────────────
   backend:
