@@ -14,6 +14,7 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/geo"
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
+	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
 )
 
 type Position struct {
@@ -26,13 +27,14 @@ type Position struct {
 }
 
 type Watcher struct {
-	db  *sql.DB
-	cfg *appconfig.Reader
-	gfs *geofence.Store
+	db    *sql.DB
+	cfg   *appconfig.Reader
+	gfs   *geofence.Store
+	modes *modeconfig.Store
 }
 
-func New(db *sql.DB, cfg *appconfig.Reader, gfs *geofence.Store) *Watcher {
-	return &Watcher{db: db, cfg: cfg, gfs: gfs}
+func New(db *sql.DB, cfg *appconfig.Reader, gfs *geofence.Store, modes *modeconfig.Store) *Watcher {
+	return &Watcher{db: db, cfg: cfg, gfs: gfs, modes: modes}
 }
 
 // Evaluate reports whether the position triggered a new alert. If the vessel
@@ -66,6 +68,17 @@ func (w *Watcher) Evaluate(ctx context.Context, p Position) (string, error) {
 	}
 	if bestDist > radiusNM {
 		return "", nil // outside corridor
+	}
+
+	// Mode activation gate: MARITIME must be enabled for the nearest jurisdiction.
+	// Missing row = DISABLED (fail-closed). In-flight voyages complete elsewhere
+	// (exit/reconcile paths never consult this gate).
+	on, merr := w.modes.Enabled(ctx, bestJID, "MARITIME")
+	if merr != nil {
+		return "", fmt.Errorf("corridor: mode config: %w", merr)
+	}
+	if !on {
+		return "", nil // MARITIME disabled for this jurisdiction — no new detections (in-flight completes elsewhere).
 	}
 
 	// Simple ETA: straight-line time at current speed, min 6 knots to avoid /0.
