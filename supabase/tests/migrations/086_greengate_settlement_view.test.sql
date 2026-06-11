@@ -11,6 +11,7 @@ DECLARE
   zz_rid     UUID;
   so_rid     UUID;     -- SO escrow rule — used as the cross-jurisdiction mismatch source
   v_id       UUID;
+  tx1_id     UUID;     -- Tx1 id — used as related_transaction_id for Tx6
   cur_month  DATE := date_trunc('month', NOW())::date;
 
   -- counters for current-month ZZ MARITIME row
@@ -21,6 +22,7 @@ DECLARE
   r_unatr_count    BIGINT;
   r_unatr_usd      NUMERIC;
   r_mismatch_count BIGINT;
+  r_mismatch_usd   NUMERIC;
 
   -- counters for 2025-12 ZZ MARITIME row
   d_tx_count       BIGINT;
@@ -30,6 +32,7 @@ DECLARE
   d_unatr_count    BIGINT;
   d_unatr_usd      NUMERIC;
   d_mismatch_count BIGINT;
+  d_mismatch_usd   NUMERIC;
 BEGIN
   -- ── 1. ZZ jurisdiction ─────────────────────────────────────────────────────
   INSERT INTO public.jurisdictions
@@ -83,7 +86,8 @@ BEGIN
     (v_id, 'MARITIME', 'Test Vessel 086-ZZ', '9086001',
      'ENTRY_TAX', 2.50, 100.00,
      'PAID', 'PAID', 'PROFORMA',
-     40.00, zz_jid);
+     40.00, zz_jid)
+  RETURNING id INTO tx1_id;
 
   -- Tx2: PAID, 100 USD, NOW() → trigger stamps zz_rid → attributed
   INSERT INTO public.transactions
@@ -140,19 +144,36 @@ BEGIN
      40.00, zz_jid,
      so_rid);  -- deliberately from SO — proves mismatch detection
 
+  -- Tx6: PAID FINAL with related_transaction_id = Tx1 — reconcile bookkeeping row.
+  -- The view must EXCLUDE this row (C1 fix) to avoid double-counting the voyage's
+  -- PAID proforma (Tx1). tx_count and total_usd for row A must stay 3 / 300.00.
+  INSERT INTO public.transactions
+    (vessel_id, mode, vessel_name, vessel_imo,
+     transaction_type, emissions_tco2, tax_amount_usd,
+     status, collections_status, document_type,
+     rate_usd_per_tco2, jurisdiction_id,
+     related_transaction_id)
+  VALUES
+    (v_id, 'MARITIME', 'Test Vessel 086-ZZ', '9086001',
+     'ENTRY_TAX', 2.50, 100.00,
+     'PAID', 'PAID', 'FINAL',
+     40.00, zz_jid,
+     tx1_id);  -- bookkeeping FINAL pointing back to Tx1
+
   -- ── 5. Assert current-month ZZ MARITIME row ────────────────────────────────
-  -- Expects: Tx1 + Tx2 + Tx5 (all PAID, current-month)
-  --   tx_count       = 3
-  --   total_usd      = 300.00
-  --   concessionaire = 30% of (Tx1 + Tx2) = 60.00  (Tx5 excluded: mismatch)
-  --   sovereign      = 70% of (Tx1 + Tx2) = 140.00
+  -- Expects: Tx1 + Tx2 + Tx5 (all PAID, current-month; Tx6 excluded by C1 filter)
+  --   tx_count        = 3
+  --   total_usd       = 300.00
+  --   concessionaire  = 30% of (Tx1 + Tx2) = 60.00  (Tx5 excluded: mismatch)
+  --   sovereign       = 70% of (Tx1 + Tx2) = 140.00
   --   unattributed_count = 0  (all current-month PAID rows have a rule stamp)
   --   unattributed_usd   = NULL (FILTER matches no rows → NULL aggregate)
   --   mismatched_count   = 1  (Tx5)
+  --   mismatched_usd     = 100.00  (Tx5)
   SELECT tx_count, total_usd, concessionaire_usd, sovereign_usd,
-         unattributed_count, unattributed_usd, mismatched_count
+         unattributed_count, unattributed_usd, mismatched_count, mismatched_usd
     INTO r_tx_count, r_total_usd, r_conc_usd, r_sov_usd,
-         r_unatr_count, r_unatr_usd, r_mismatch_count
+         r_unatr_count, r_unatr_usd, r_mismatch_count, r_mismatch_usd
     FROM public.v_revenue_split_settlement
    WHERE jurisdiction_id = zz_jid
      AND month = cur_month
@@ -190,6 +211,10 @@ BEGIN
     RAISE EXCEPTION 'TEST FAILED (case A.mismatched_count): expected 1 but got %', r_mismatch_count;
   END IF;
 
+  IF r_mismatch_usd <> 100.00 THEN
+    RAISE EXCEPTION 'TEST FAILED (case A.mismatched_usd): expected 100.00 but got %', r_mismatch_usd;
+  END IF;
+
   -- ── 6. Assert 2025-12 ZZ MARITIME row (Tx4 only) ──────────────────────────
   -- Expects:
   --   tx_count          = 1
@@ -199,10 +224,11 @@ BEGIN
   --   unattributed_count = 1  (Tx4 has split_rule_id IS NULL)
   --   unattributed_usd  = 100.00
   --   mismatched_count  = 0
+  --   mismatched_usd    = NULL (FILTER matches no rows → NULL aggregate)
   SELECT tx_count, total_usd, concessionaire_usd, sovereign_usd,
-         unattributed_count, unattributed_usd, mismatched_count
+         unattributed_count, unattributed_usd, mismatched_count, mismatched_usd
     INTO d_tx_count, d_total_usd, d_conc_usd, d_sov_usd,
-         d_unatr_count, d_unatr_usd, d_mismatch_count
+         d_unatr_count, d_unatr_usd, d_mismatch_count, d_mismatch_usd
     FROM public.v_revenue_split_settlement
    WHERE jurisdiction_id = zz_jid
      AND month = DATE '2025-12-01'
@@ -240,11 +266,19 @@ BEGIN
     RAISE EXCEPTION 'TEST FAILED (case B.mismatched_count): expected 0 but got %', d_mismatch_count;
   END IF;
 
+  IF d_mismatch_usd IS NOT NULL THEN
+    RAISE EXCEPTION 'TEST FAILED (case B.mismatched_usd): expected NULL (no mismatched rows) but got %', d_mismatch_usd;
+  END IF;
+
   -- ── 7. PENDING tx must NOT appear anywhere ─────────────────────────────────
   -- The view filters status = 'PAID'. We seeded exactly one PENDING (Tx3) for ZZ.
   -- The two ZZ rows (current-month tx_count=3, dec tx_count=1) account for 4 PAID
   -- rows → any ZZ row with tx_count including the PENDING tx would fail the above.
   -- Implicit: confirmed by the exact tx_count=3 assertion above (not 4).
+
+  -- ── 8. Reconcile bookkeeping FINAL must NOT appear (C1 filter) ─────────────
+  -- Tx6 is a PAID FINAL with related_transaction_id IS NOT NULL (→ Tx1).
+  -- The view excludes it. Confirmed by tx_count=3 / total_usd=300 above (not 4/400).
 
 END $$;
 
