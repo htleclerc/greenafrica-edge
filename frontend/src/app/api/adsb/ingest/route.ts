@@ -49,6 +49,24 @@ async function loadFIRs(admin: ReturnType<typeof createPlatformClient>): Promise
   return firs;
 }
 
+// AIR activation matrix (jurisdiction_mode_config) — same 60s module cache as FIRs.
+// FAIL-CLOSED: a jurisdiction absent from the set is DISABLED (no new air alerts;
+// positions/registry keep flowing — billing stops, detection data does not).
+// NOTE: an empty result (no AIR rows) is valid — it means everything is disabled.
+let airEnabledCache: { fetchedAt: number; enabled: Set<string> } | null = null;
+
+async function loadAirEnabled(admin: ReturnType<typeof createPlatformClient>): Promise<Set<string>> {
+  if (airEnabledCache && Date.now() - airEnabledCache.fetchedAt < FIR_CACHE_TTL_MS) return airEnabledCache.enabled;
+  const { data, error } = await admin
+    .from('jurisdiction_mode_config')
+    .select('jurisdiction_id, enabled')
+    .eq('mode', 'AIR');
+  if (error || !data) throw new Error(`adsb: air matrix load failed: ${error?.message}`);
+  const enabled = new Set<string>(data.filter((r) => r.enabled === true).map((r) => r.jurisdiction_id as string));
+  airEnabledCache = { fetchedAt: Date.now(), enabled };
+  return enabled;
+}
+
 function matchFIR(lat: number, lng: number, firs: FirRing[]): string | null {
   for (const f of firs) {
     if (pointInRing(lat, lng, f.ring)) return f.jurisdiction_id;
@@ -100,18 +118,21 @@ export async function POST(request: NextRequest) {
     // per-detection (multi-country).
     const admin = createPlatformClient();
 
-    // Load FIR geofences once for the whole batch (fail-closed: no position is
-    // processed without geofences — a corrupt cache would silently mis-bill).
+    // Load detection config once for the whole batch (fail-closed: if either
+    // FIR geofences or the AIR activation matrix is unavailable, reject the
+    // whole batch rather than silently mis-bill or mis-detect).
     let firs: FirRing[];
+    let airEnabled: Set<string>;
     try {
-      firs = await loadFIRs(admin);
+      [firs, airEnabled] = await Promise.all([loadFIRs(admin), loadAirEnabled(admin)]);
     } catch {
-      return NextResponse.json({ error: 'FIR geofences unavailable' }, { status: 500 });
+      return NextResponse.json({ error: 'detection config unavailable' }, { status: 500 });
     }
 
     let positionsInserted = 0;
     let aircraftUpserted = 0;
     let alertsCreated = 0;
+    let alertsSkippedDisabled = 0;
 
     for (const pos of positions) {
       if (!pos.icao24 || pos.lat == null || pos.lng == null) continue;
@@ -185,39 +206,47 @@ export async function POST(request: NextRequest) {
       });
       if (!posErr) positionsInserted++;
 
-      // Air arrival detection: inside the FIR + no OPEN air alert for this
-      // aircraft → open one (MATCHED_AUTO), then best-effort enqueue the proforma.
+      // Air arrival detection: inside the FIR + AIR enabled for this jurisdiction
+      // + no OPEN air alert for this aircraft → open one (MATCHED_AUTO), then
+      // best-effort enqueue the proforma.
+      // FAIL-CLOSED: if the jurisdiction has no row in the activation matrix (or
+      // its row is disabled) we skip alert creation. Positions + registry keep
+      // flowing regardless — billing stops, detection data does not.
       if (inFir) {
-        const { data: openAlert } = await admin
-          .from('arrival_alerts')
-          .select('id')
-          .eq('aircraft_id', aircraft.id)
-          .not('status', 'in', `(${TERMINAL_ALERT_STATES.join(',')})`)
-          .limit(1)
-          .maybeSingle();
-
-        if (!openAlert) {
-          const { data: newAlert } = await admin
+        if (!airEnabled.has(matchedJid!)) {
+          alertsSkippedDisabled++;
+        } else {
+          const { data: openAlert } = await admin
             .from('arrival_alerts')
-            .insert({
-              aircraft_id: aircraft.id,
-              mode: 'AIR',
-              detected_lat: pos.lat,
-              detected_lng: pos.lng,
-              status: 'MATCHED_AUTO',
-              jurisdiction_id: matchedJid, // always non-null here (inFir === true)
-            })
             .select('id')
-            .single();
+            .eq('aircraft_id', aircraft.id)
+            .not('status', 'in', `(${TERMINAL_ALERT_STATES.join(',')})`)
+            .limit(1)
+            .maybeSingle();
 
-          if (newAlert) {
-            alertsCreated++;
-            // Best-effort enqueue (non-fatal on error, like claimArrivalAlert).
-            const { error: enqErr } = await admin.rpc('pgmq_enqueue_proforma', {
-              alert_id: newAlert.id,
-            });
-            if (enqErr) {
-              console.error('[adsb] enqueue failed:', enqErr);
+          if (!openAlert) {
+            const { data: newAlert } = await admin
+              .from('arrival_alerts')
+              .insert({
+                aircraft_id: aircraft.id,
+                mode: 'AIR',
+                detected_lat: pos.lat,
+                detected_lng: pos.lng,
+                status: 'MATCHED_AUTO',
+                jurisdiction_id: matchedJid, // always non-null here (inFir === true)
+              })
+              .select('id')
+              .single();
+
+            if (newAlert) {
+              alertsCreated++;
+              // Best-effort enqueue (non-fatal on error, like claimArrivalAlert).
+              const { error: enqErr } = await admin.rpc('pgmq_enqueue_proforma', {
+                alert_id: newAlert.id,
+              });
+              if (enqErr) {
+                console.error('[adsb] enqueue failed:', enqErr);
+              }
             }
           }
         }
@@ -229,6 +258,7 @@ export async function POST(request: NextRequest) {
       positions_inserted: positionsInserted,
       aircraft_upserted: aircraftUpserted,
       alerts_created: alertsCreated,
+      alerts_skipped_disabled: alertsSkippedDisabled,
     });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

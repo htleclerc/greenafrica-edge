@@ -34,6 +34,7 @@ function makeQuery(opts: { rows?: unknown; single?: unknown }) {
 }
 
 // Per-table dispatch. geofences: returns the SO FIR row so loadFIRs() succeeds.
+// jurisdiction_mode_config: returns AIR enabled for SO so the matrix gate passes.
 // aircraft: upsert ok, then select→single returns the row (operator_id NULL so
 // the GHOST path runs). shipowners: insert→select→single returns a ghost id.
 // aircraft_positions: insert ok. arrival_alerts: the OPEN lookup returns null,
@@ -41,6 +42,14 @@ function makeQuery(opts: { rows?: unknown; single?: unknown }) {
 function makeAdmin() {
     return {
         from: vi.fn((table: string) => {
+            if (table === 'jurisdiction_mode_config') {
+                // Single-level chain: .select().eq() → resolves with AIR-enabled SO row.
+                const eqFn = vi.fn().mockResolvedValue({
+                    data: [{ jurisdiction_id: SO_JID, enabled: true }],
+                    error: null,
+                });
+                return { select: vi.fn(() => ({ eq: eqFn })) };
+            }
             if (table === 'geofences') {
                 // Two-level chain: .select().eq().eq() → resolves with FIR rows
                 const eqInner = vi.fn().mockResolvedValue({
