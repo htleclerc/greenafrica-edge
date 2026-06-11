@@ -48,8 +48,12 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
+      # Paths are relative to working-directory (backend/): the old
+      # `--config backend/fly.toml` resolved to backend/backend/fly.toml →
+      # flyctl fell back to an empty config ("missing app name") — this job
+      # had NEVER succeeded. The Dockerfile expects build context = backend/.
       - name: Deploy backend
-        run: flyctl deploy --config backend/fly.toml --dockerfile backend/Dockerfile
+        run: flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
         working-directory: backend
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
