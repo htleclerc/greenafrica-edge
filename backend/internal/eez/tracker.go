@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
+	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
 )
 
 type Position struct {
@@ -28,13 +29,14 @@ type Event struct {
 }
 
 type Tracker struct {
-	db  *sql.DB
-	gfs *geofence.Store
+	db    *sql.DB
+	gfs   *geofence.Store
+	modes *modeconfig.Store
 }
 
 // NewTracker creates a Tracker that resolves zones from the DB-driven geofence store.
-func NewTracker(db *sql.DB, gfs *geofence.Store) *Tracker {
-	return &Tracker{db: db, gfs: gfs}
+func NewTracker(db *sql.DB, gfs *geofence.Store, modes *modeconfig.Store) *Tracker {
+	return &Tracker{db: db, gfs: gfs, modes: modes}
 }
 
 // isUniqueViolation detects pg's unique_violation via substring match to avoid
@@ -101,49 +103,63 @@ func (t *Tracker) OnPosition(ctx context.Context, p Position) (Event, error) {
 	}
 
 	if entered {
-		// The corridor stamp is PROVISIONAL; physical entry is authoritative.
-		// Flip the active alert (if any, for this jurisdiction) to ARRIVED with
-		// authoritative arrived_at timestamp.
-		res, err := t.db.ExecContext(ctx,
-			`UPDATE public.arrival_alerts
-			    SET status='ARRIVED', arrived_at=$1, jurisdiction_id=$3::uuid
-			  WHERE vessel_id=$2
-			    AND status IN ('PROFORMA_SENT','MATCHED_AUTO','CLAIMED','UNCLAIMED','ESCALATED','DETECTED')`,
-			p.RecordedAt, p.VesselID, jid)
-		if err != nil {
-			return evt, fmt.Errorf("eez tracker: update to ARRIVED: %w", err)
+		// Mode activation gate: MARITIME must be enabled for the entered jurisdiction.
+		// Missing row = DISABLED (fail-closed). In-flight voyages complete elsewhere
+		// (exited/reconcile paths never consult this gate). last_zone still persists
+		// below when disabled — intentional silence, not a retry.
+		on, merr := t.modes.Enabled(ctx, jid, "MARITIME")
+		if merr != nil {
+			return evt, fmt.Errorf("eez tracker: mode config: %w", merr)
 		}
-		n, _ := res.RowsAffected()
-		if n == 0 {
-			// Retroactive alert: the vessel entered EEZ without any prior
-			// DETECTED/CLAIMED/… alert (AIS gap, spoofing, etc.). Create one
-			// in ARRIVED state so the pipeline has something to reconcile.
-			var imo string
-			if lerr := t.db.QueryRowContext(ctx,
-				`SELECT imo_number FROM public.vessels WHERE id=$1`, p.VesselID,
-			).Scan(&imo); lerr != nil {
-				log.Printf("[eez] retroactive alert: lookup imo for vessel=%s: %v", p.VesselID, lerr)
-				return evt, nil
+		if !on {
+			// MARITIME disabled for the entered jurisdiction: no flip, no retroactive
+			// alert. last_zone still persists below (intentional silence, not a retry).
+			log.Printf("[eez] entry into disabled jurisdiction ignored: vessel=%s jid=%s", p.VesselID, jid)
+		} else {
+			// The corridor stamp is PROVISIONAL; physical entry is authoritative.
+			// Flip the active alert (if any, for this jurisdiction) to ARRIVED with
+			// authoritative arrived_at timestamp.
+			res, err := t.db.ExecContext(ctx,
+				`UPDATE public.arrival_alerts
+				    SET status='ARRIVED', arrived_at=$1, jurisdiction_id=$3::uuid
+				  WHERE vessel_id=$2
+				    AND status IN ('PROFORMA_SENT','MATCHED_AUTO','CLAIMED','UNCLAIMED','ESCALATED','DETECTED')`,
+				p.RecordedAt, p.VesselID, jid)
+			if err != nil {
+				return evt, fmt.Errorf("eez tracker: update to ARRIVED: %w", err)
 			}
-			if imo == "" {
-				log.Printf("[eez] retroactive alert skipped: vessel=%s has empty imo", p.VesselID)
-				return evt, nil
-			}
-			if _, ierr := t.db.ExecContext(ctx,
-				`INSERT INTO public.arrival_alerts
-				   (vessel_id, imo_number, detected_lat, detected_lng,
-				    distance_to_port_nm, status, arrived_at, jurisdiction_id)
-				 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5, $6::uuid)`,
-				p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt, jid,
-			); ierr != nil {
-				if isUniqueViolation(ierr) {
-					// An active alert for a different jurisdiction is not yet reconciled.
-					// Do NOT persist last_zone / last_zone_jurisdiction_id — this tick's
-					// edge will re-fire on the next position (natural retry).
-					log.Printf("[eez] retroactive alert blocked by unique index (cross-jid conflict): vessel=%s jid=%s — will retry next tick", p.VesselID, jid)
-					persistOK = false
-				} else {
-					log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
+			n, _ := res.RowsAffected()
+			if n == 0 {
+				// Retroactive alert: the vessel entered EEZ without any prior
+				// DETECTED/CLAIMED/… alert (AIS gap, spoofing, etc.). Create one
+				// in ARRIVED state so the pipeline has something to reconcile.
+				var imo string
+				if lerr := t.db.QueryRowContext(ctx,
+					`SELECT imo_number FROM public.vessels WHERE id=$1`, p.VesselID,
+				).Scan(&imo); lerr != nil {
+					log.Printf("[eez] retroactive alert: lookup imo for vessel=%s: %v", p.VesselID, lerr)
+					return evt, nil
+				}
+				if imo == "" {
+					log.Printf("[eez] retroactive alert skipped: vessel=%s has empty imo", p.VesselID)
+					return evt, nil
+				}
+				if _, ierr := t.db.ExecContext(ctx,
+					`INSERT INTO public.arrival_alerts
+					   (vessel_id, imo_number, detected_lat, detected_lng,
+					    distance_to_port_nm, status, arrived_at, jurisdiction_id)
+					 VALUES ($1, $2, $3, $4, 0, 'ARRIVED', $5, $6::uuid)`,
+					p.VesselID, imo, p.Lat, p.Lng, p.RecordedAt, jid,
+				); ierr != nil {
+					if isUniqueViolation(ierr) {
+						// An active alert for a different jurisdiction is not yet reconciled.
+						// Do NOT persist last_zone / last_zone_jurisdiction_id — this tick's
+						// edge will re-fire on the next position (natural retry).
+						log.Printf("[eez] retroactive alert blocked by unique index (cross-jid conflict): vessel=%s jid=%s — will retry next tick", p.VesselID, jid)
+						persistOK = false
+					} else {
+						log.Printf("[eez] retroactive alert: insert vessel=%s imo=%s: %v", p.VesselID, imo, ierr)
+					}
 				}
 			}
 		}

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { AdminJurisdictions, type JurisdictionRow, type JurisdictionModeConfigRow, type TariffRow, type SplitRuleRow } from './AdminJurisdictions';
+import { AdminJurisdictions, type JurisdictionRow, type JurisdictionModeConfigRow, type TariffRow, type SplitRuleRow, type SettlementRow } from './AdminJurisdictions';
 import en from '../../../../messages/en.json';
 
 vi.mock('next/navigation', () => ({
@@ -55,7 +55,40 @@ const SPLIT: SplitRuleRow = {
     effective_to: null,
 };
 
-function renderPanel(viewerRole = 'SUPERADMIN') {
+// Settlement fixtures
+const SETTLEMENT_ROW: SettlementRow = {
+    jurisdiction_id: JUR.id,
+    jurisdiction_code: 'SO',
+    month: '2026-06-01',
+    mode: 'MARITIME',
+    tx_count: 3,
+    total_usd: '12000.50',
+    concessionaire_usd: '2400.10',
+    sovereign_usd: '9600.40',
+    unattributed_count: 0,
+    unattributed_usd: null,
+    mismatched_count: 0,
+    mismatched_usd: null,
+};
+
+// A row with NULL concessionaire_usd to test COALESCE→0.00
+const SETTLEMENT_ROW_NULL_CONC: SettlementRow = {
+    ...SETTLEMENT_ROW,
+    month: '2026-05-01',
+    concessionaire_usd: null,
+    sovereign_usd: null,
+    total_usd: null,
+};
+
+// A row with unattributed_count > 0 to test the warning line
+const SETTLEMENT_ROW_UNATTR: SettlementRow = {
+    ...SETTLEMENT_ROW,
+    month: '2026-06-01',
+    unattributed_count: 2,
+    mismatched_count: 1,
+};
+
+function renderPanel(viewerRole = 'SUPERADMIN', settlement: SettlementRow[] = []) {
     return render(
         <NextIntlClientProvider locale="en" messages={en}>
             <AdminJurisdictions
@@ -63,6 +96,7 @@ function renderPanel(viewerRole = 'SUPERADMIN') {
                 modeConfigs={MODE_CONFIGS}
                 tariffs={TARIFFS}
                 splitRules={[SPLIT]}
+                settlement={settlement}
                 viewerRole={viewerRole}
             />
         </NextIntlClientProvider>,
@@ -125,11 +159,40 @@ describe('AdminJurisdictions', () => {
                     modeConfigs={[]}
                     tariffs={[]}
                     splitRules={[]}
+                    settlement={[]}
                     viewerRole="SUPERADMIN"
                 />
             </NextIntlClientProvider>,
         );
         // Empty state text should appear
         expect(screen.getByText(en.AdminJurisdictions.empty)).toBeInTheDocument();
+    });
+
+    it('settlement: shows empty state when no rows for jurisdiction', () => {
+        renderPanel('SUPERADMIN', []);
+        expect(screen.getByText(en.AdminJurisdictions.settlement.empty)).toBeInTheDocument();
+    });
+
+    it('settlement: renders total and concessionaire amounts for a jurisdiction', () => {
+        renderPanel('SUPERADMIN', [SETTLEMENT_ROW]);
+        // Total should appear
+        expect(screen.getByText(/12,000\.50 USD/)).toBeInTheDocument();
+        // Concessionaire
+        expect(screen.getByText(/2,400\.10 USD/)).toBeInTheDocument();
+        // Sovereign
+        expect(screen.getByText(/9,600\.40 USD/)).toBeInTheDocument();
+    });
+
+    it('settlement: COALESCE NULL concessionaire_usd renders 0.00', () => {
+        renderPanel('SUPERADMIN', [SETTLEMENT_ROW_NULL_CONC]);
+        // Both concessionaire and total are null → rendered as "0.00 USD"
+        const zeros = screen.getAllByText(/0\.00 USD/);
+        expect(zeros.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('settlement: shows warning line when unattributed_count > 0', () => {
+        renderPanel('SUPERADMIN', [SETTLEMENT_ROW_UNATTR]);
+        expect(screen.getByText(/2 unattributed tx/)).toBeInTheDocument();
+        expect(screen.getByText(/1 mismatched tx/)).toBeInTheDocument();
     });
 });

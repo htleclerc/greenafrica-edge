@@ -3555,6 +3555,18 @@
       "concessionairePct": "Concessionaire {pct}%",
       "sovereignPct": "Sovereign {pct}%"
     },
-    "modesDisclosure": "Registry flag — does not yet gate detection or billing."
+    "settlement": {
+      "sectionTitle": "Settlement",
+      "empty": "No settlement data yet.",
+      "gross": "Gross collected revenue — executed refunds not netted; disbursement deferred (escrow).",
+      "currentMonth": "Current month",
+      "cumulative": "Cumulative",
+      "total": "Total",
+      "concessionaire": "Concessionaire",
+      "sovereign": "Sovereign",
+      "unattributed": "{count} unattributed tx",
+      "mismatched": "{count} mismatched tx"
+    },
+    "modesDisclosure": "Gates new detections and billing — in-flight voyages complete; the calc API stays open for reconciliation."
   }
 }

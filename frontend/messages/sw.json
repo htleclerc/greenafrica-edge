@@ -2750,6 +2750,18 @@
       "concessionairePct": "Msimamizi {pct}%",
       "sovereignPct": "Serikali {pct}%"
     },
-    "modesDisclosure": "Alama ya sajili — bado haizuii ugunduzi wala utozaji wa bili."
+    "settlement": {
+      "sectionTitle": "Makubaliano ya Malipo",
+      "empty": "Bado hakuna data ya makubaliano.",
+      "gross": "Mapato ghafi yaliyokusanywa — marejesho yaliyotekelezwa hayajatolewa; malipo yameahirishwa (dhamana).",
+      "currentMonth": "Mwezi huu",
+      "cumulative": "Jumla",
+      "total": "Jumla Yote",
+      "concessionaire": "Msimamizi",
+      "sovereign": "Serikali",
+      "unattributed": "{count} miamala isiyo na sifa",
+      "mismatched": "{count} miamala isiyolingana"
+    },
+    "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho."
   }
 }

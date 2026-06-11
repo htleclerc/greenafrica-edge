@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
+	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 )
 
@@ -51,7 +52,8 @@ func TestOnPosition_EntryMovesAlertToArrived(t *testing.T) {
 		 VALUES ($1, 'TEST-EEZ-E', 11.5, 46, 300, 'PROFORMA_SENT')`, vID)
 
 	gfs := geofence.NewStore(db)
-	tr := NewTracker(db, gfs)
+	modes := modeconfig.NewStore(db)
+	tr := NewTracker(db, gfs, modes)
 	// Position inside EEZ (matches mig 082 Somaliland EEZ polygon around 10.5, 45)
 	_, err := tr.OnPosition(ctx, Position{
 		VesselID: vID, Lat: 10.5, Lng: 45.0, RecordedAt: time.Now(),
@@ -114,7 +116,8 @@ func TestOnPosition_CrossJurisdictionHop_BlockedThenRetry(t *testing.T) {
 	}
 
 	gfs := geofence.NewStore(db)
-	tr := NewTracker(db, gfs)
+	modes := modeconfig.NewStore(db)
+	tr := NewTracker(db, gfs, modes)
 
 	// ── Step 1: vessel moves into SO EEZ (e.g. Somaliland EEZ at 11.30, 43.30) ─
 	// The geofence store resolves this to SO EEZ (see store_test.go boundary cases).
@@ -183,5 +186,70 @@ func TestOnPosition_CrossJurisdictionHop_BlockedThenRetry(t *testing.T) {
 		   FROM public.vessels WHERE id=$1`, vID).Scan(&lz, &lzJID)
 	if lz != "EEZ" || lzJID != soJID {
 		t.Fatalf("step2: last_zone=%q jid=%q, want EEZ/%s", lz, lzJID, soJID)
+	}
+}
+
+// TestOnPosition_ModeDisabled_NoRetroactiveAlert: Somaliland MARITIME disabled →
+// a vessel entering the EEZ with no prior alert does NOT get a retroactive ARRIVED
+// alert, but last_zone IS updated (intentional silence, not a retry).
+func TestOnPosition_ModeDisabled_NoRetroactiveAlert(t *testing.T) {
+	db, _ := supadb.Open(getTestDBURL())
+	defer db.Close()
+
+	ctx := context.Background()
+
+	// Fixture vessel starting in INTERNATIONAL zone.
+	var vID string
+	_ = db.QueryRowContext(ctx,
+		`INSERT INTO public.vessels
+		   (mmsi, imo_number, name, call_sign, flag_code, category,
+		    gross_tonnage_dwt, engine_power_kw, design_speed_knots,
+		    compliance_status, last_zone)
+		 VALUES ('999333002','TEST-EEZ-GATED','MV GATED EEZ','TEZG','SO','CARGO',
+		         50000,20000,14.0,'APPROACHING','INTERNATIONAL')
+		 ON CONFLICT (imo_number) DO UPDATE SET last_zone='INTERNATIONAL', last_zone_jurisdiction_id=NULL
+		 RETURNING id`).Scan(&vID)
+	defer db.ExecContext(ctx, `DELETE FROM public.arrival_alerts WHERE vessel_id=$1`, vID)
+	defer db.ExecContext(ctx, `DELETE FROM public.vessels WHERE id=$1`, vID)
+
+	// Disable Somaliland MARITIME.
+	_, err := db.ExecContext(ctx,
+		`UPDATE public.jurisdiction_mode_config
+		    SET enabled = FALSE
+		  WHERE jurisdiction_id = $1::uuid AND mode = 'MARITIME'`, soJID)
+	if err != nil {
+		t.Fatalf("disable mode: %v", err)
+	}
+	defer db.ExecContext(ctx,
+		`UPDATE public.jurisdiction_mode_config
+		    SET enabled = TRUE
+		  WHERE jurisdiction_id = $1::uuid AND mode = 'MARITIME'`, soJID)
+
+	gfs := geofence.NewStore(db)
+	modes := modeconfig.NewStore(db)
+	tr := NewTracker(db, gfs, modes)
+
+	// Position inside Somaliland EEZ.
+	_, err = tr.OnPosition(ctx, Position{
+		VesselID: vID, Lat: 10.5, Lng: 45.0, RecordedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("OnPosition (disabled): %v", err)
+	}
+
+	// No retroactive ARRIVED alert should have been created.
+	var n int
+	_ = db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM public.arrival_alerts WHERE vessel_id=$1`, vID).Scan(&n)
+	if n != 0 {
+		t.Fatalf("expected no alert when MARITIME disabled, got %d", n)
+	}
+
+	// last_zone must have been updated (intentional silence: we advanced zone).
+	var lz string
+	_ = db.QueryRowContext(ctx,
+		`SELECT COALESCE(last_zone,'') FROM public.vessels WHERE id=$1`, vID).Scan(&lz)
+	if lz == "INTERNATIONAL" {
+		t.Fatal("expected last_zone to advance even when MARITIME disabled")
 	}
 }

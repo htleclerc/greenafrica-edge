@@ -53,11 +53,27 @@ export interface SplitRuleRow {
     effective_to: string | null;
 }
 
+export interface SettlementRow {
+    jurisdiction_id: string;
+    jurisdiction_code: string;
+    month: string; // ISO date string, 1st of month
+    mode: 'MARITIME' | 'AIR';
+    tx_count: number | string;
+    total_usd: number | string | null;
+    concessionaire_usd: number | string | null;
+    sovereign_usd: number | string | null;
+    unattributed_count: number | string;
+    unattributed_usd: number | string | null;
+    mismatched_count: number | string;
+    mismatched_usd: number | string | null;
+}
+
 interface Props {
     jurisdictions: JurisdictionRow[];
     modeConfigs: JurisdictionModeConfigRow[];
     tariffs: TariffRow[];
     splitRules: SplitRuleRow[];
+    settlement: SettlementRow[];
     viewerRole: string;
 }
 
@@ -565,6 +581,126 @@ function SplitSection({ split }: { split: SplitRuleRow | undefined }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Settlement section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function fmtUsd(raw: number | string | null | undefined): string {
+    const n = Number(raw ?? 0);
+    return (Number.isFinite(n) ? n : 0).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }) + ' USD';
+}
+
+interface SettlementSectionProps {
+    jid: string;
+    rows: SettlementRow[];
+}
+
+function SettlementSection({ jid, rows }: SettlementSectionProps) {
+    const t = useTranslations('AdminJurisdictions');
+
+    const jurRows = rows.filter((r) => r.jurisdiction_id === jid);
+
+    // Current month = the most recent month bucket (rows already ordered DESC by month)
+    const latestMonth = jurRows[0]?.month ?? '';
+    const currentMonthRows = jurRows.filter((r) => r.month === latestMonth);
+
+    // Cumulative: sum across ALL rows for this jurisdiction
+    const cumulative = jurRows.reduce(
+        (acc, r) => ({
+            total: acc.total + Number(r.total_usd ?? 0),
+            concessionaire: acc.concessionaire + Number(r.concessionaire_usd ?? 0),
+            sovereign: acc.sovereign + Number(r.sovereign_usd ?? 0),
+            unattributed_count: acc.unattributed_count + Number(r.unattributed_count ?? 0),
+            mismatched_count: acc.mismatched_count + Number(r.mismatched_count ?? 0),
+        }),
+        { total: 0, concessionaire: 0, sovereign: 0, unattributed_count: 0, mismatched_count: 0 },
+    );
+
+    if (jurRows.length === 0) {
+        return (
+            <div className="mt-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1.5">
+                    {t('settlement.sectionTitle')}
+                </p>
+                <p className="text-[11px] text-[var(--os-text-muted)]">{t('settlement.empty')}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-1.5">
+                {t('settlement.sectionTitle')}
+            </p>
+
+            {/* Current month rows */}
+            <div className="flex flex-col gap-1 mb-1">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                    {t('settlement.currentMonth')}
+                </p>
+                {currentMonthRows.map((r) => {
+                    const unattr = Number(r.unattributed_count ?? 0);
+                    const mismatch = Number(r.mismatched_count ?? 0);
+                    return (
+                        <div key={`${r.month}-${r.mode}`} className="flex flex-wrap items-center gap-3 text-xs">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)]">{r.mode}</span>
+                            <span className="text-[var(--os-text-secondary)]">
+                                {t('settlement.total')}: <span className="font-mono text-[var(--os-text-primary)]">{fmtUsd(r.total_usd)}</span>
+                            </span>
+                            <span className="text-[var(--os-text-muted)] text-[11px]">
+                                {t('settlement.concessionaire')}: <span className="font-mono">{fmtUsd(r.concessionaire_usd)}</span>
+                            </span>
+                            <span className="text-[var(--os-text-muted)] text-[11px]">
+                                {t('settlement.sovereign')}: <span className="font-mono">{fmtUsd(r.sovereign_usd)}</span>
+                            </span>
+                            {(unattr > 0 || mismatch > 0) && (
+                                <span className="text-[10px] text-[var(--os-text-muted)] opacity-70">
+                                    {unattr > 0 && t('settlement.unattributed', { count: unattr })}
+                                    {unattr > 0 && mismatch > 0 && ' · '}
+                                    {mismatch > 0 && t('settlement.mismatched', { count: mismatch })}
+                                </span>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Cumulative row */}
+            {jurRows.length > 1 && (
+                <div className="flex flex-wrap items-center gap-3 text-xs mt-1 pt-1 border-t border-[var(--os-border)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                        {t('settlement.cumulative')}
+                    </span>
+                    <span className="text-[var(--os-text-secondary)]">
+                        {t('settlement.total')}: <span className="font-mono text-[var(--os-text-primary)]">{fmtUsd(cumulative.total)}</span>
+                    </span>
+                    <span className="text-[var(--os-text-muted)] text-[11px]">
+                        {t('settlement.concessionaire')}: <span className="font-mono">{fmtUsd(cumulative.concessionaire)}</span>
+                    </span>
+                    <span className="text-[var(--os-text-muted)] text-[11px]">
+                        {t('settlement.sovereign')}: <span className="font-mono">{fmtUsd(cumulative.sovereign)}</span>
+                    </span>
+                    {(cumulative.unattributed_count > 0 || cumulative.mismatched_count > 0) && (
+                        <span className="text-[10px] text-[var(--os-text-muted)] opacity-70">
+                            {cumulative.unattributed_count > 0 && t('settlement.unattributed', { count: cumulative.unattributed_count })}
+                            {cumulative.unattributed_count > 0 && cumulative.mismatched_count > 0 && ' · '}
+                            {cumulative.mismatched_count > 0 && t('settlement.mismatched', { count: cumulative.mismatched_count })}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Footnote */}
+            <p className="text-[10px] text-[var(--os-text-muted)] opacity-60 mt-1.5">
+                {t('settlement.gross')}
+            </p>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Jurisdiction card
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -573,13 +709,14 @@ interface JurisdictionCardProps {
     modeConfigs: JurisdictionModeConfigRow[];
     tariffs: TariffRow[];
     splitRule: SplitRuleRow | undefined;
+    settlement: SettlementRow[];
     canToggleModes: boolean;
     canCreateTariff: boolean;
     onRefresh: () => void;
 }
 
 function JurisdictionCard({
-    jur, modeConfigs, tariffs, splitRule, canToggleModes, canCreateTariff, onRefresh,
+    jur, modeConfigs, tariffs, splitRule, settlement, canToggleModes, canCreateTariff, onRefresh,
 }: JurisdictionCardProps) {
     const t = useTranslations('AdminJurisdictions');
     const modes = TRANSPORT_MODES;
@@ -645,6 +782,9 @@ function JurisdictionCard({
 
             {/* Split */}
             <SplitSection split={splitRule} />
+
+            {/* Settlement */}
+            <SettlementSection jid={jur.id} rows={settlement} />
         </div>
     );
 }
@@ -653,7 +793,7 @@ function JurisdictionCard({
 // Main panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, viewerRole }: Props) {
+export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, settlement, viewerRole }: Props) {
     const t = useTranslations('AdminJurisdictions');
     const router = useRouter();
 
@@ -695,6 +835,7 @@ export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitR
                                 modeConfigs={jurModeConfigs}
                                 tariffs={jurTariffs}
                                 splitRule={splitRule}
+                                settlement={settlement}
                                 canToggleModes={canToggleModes}
                                 canCreateTariff={canCreateTariff}
                                 onRefresh={onRefresh}
