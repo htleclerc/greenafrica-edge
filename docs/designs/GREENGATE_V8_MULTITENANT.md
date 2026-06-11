@@ -200,7 +200,7 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 
 ### Limitations connues / fast-follows
 
-1. ✅ **LIVRÉ W3** ~~`jurisdiction_mode_config.enabled` non consulté par la détection/billing~~ — enforcement complet : `disabled = stop nouvelles détections/alertes ; voyages en cours complètent ; API calc ouverte ; ligne matrice absente = désactivé`. Test pg 085 valide « mode désactivé → zéro alertes ». **Note ops** : les alertes DETECTED/PROFORMA_SENT créées avant un disable restent actives jusqu'au prochain voyage — comportement attendu.
+1. ✅ **LIVRÉ W3** ~~`jurisdiction_mode_config.enabled` non consulté par la détection/billing~~ — enforcement complet : `disabled = stop nouvelles détections/alertes ; voyages en cours complètent ; API calc ouverte ; ligne matrice absente = désactivé`. Le pg 085 teste le trigger de stamping `transactions_stamp_split_rule` ; les preuves « désactivé → zéro alerte » sont les tests Go (corridor/tracker) + les tests vitest de la route ADS-B. **Note ops** : les alertes DETECTED/PROFORMA_SENT créées avant un disable restent actives jusqu'au prochain voyage — comportement attendu.
 2. **Simulateur staff lit `tax_configurations` (table legacy)** — bannière posée dans l'UI ; convergence vers la table `tariffs` = follow-up.
 3. **Visibilité multi-juridiction des vessels** — `vessels.jurisdiction_id` est scopé SO par défaut ; les opérateurs DJ sont onboardés en pattern admin AOC (pas de self-service public cross-pays).
 4. **Corridor stamping PROVISOIRE** — nearest-port ≤ 500nm ; ré-résolution par destination matching à prévoir (follow-up).
@@ -219,17 +219,17 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 
 | Composant | Description |
 |---|---|
-| **Mig 085** | Colonne `transactions.split_rule_id` (FK → `revenue_split_rule`) snapshottée à l'émission via trigger `trg_stamp_split_rule_id` + backfill des transactions existantes. |
+| **Mig 085** | Colonne `transactions.split_rule_id` (FK → `revenue_split_rule`) snapshottée à l'émission via trigger `transactions_stamp_split_rule` + backfill des transactions existantes. |
 | **Mig 086** | Vue `v_revenue_split_settlement` — buckets gross/attributed/unattributed/mismatched par juridiction + mode + mois ; `GRANT SELECT` service_role uniquement. |
-| **Go `internal/modeconfig`** | Package DB-backed qui lit `jurisdiction_mode_config` et expose `IsModeEnabled(jurisdictionID, mode)` avec cache 30s. |
-| **Gating corridor + tracker** | `proformaPipelineService` et `trackVesselEntryExit` vérifient `modeconfig.IsModeEnabled` avant de créer des alertes ; incrémentent le compteur `alerts_skipped_disabled`. |
-| **Gating ADS-B ingest** | `/api/adsb/ingest` appelle `IsModeEnabled(jurisdiction, AIR)` ; saute silencieusement les positions si l'air est désactivé pour la juridiction matchée. |
+| **Go `internal/modeconfig`** | Package DB-backed qui lit `jurisdiction_mode_config` et expose `Enabled(ctx, jurisdictionID, mode)` avec cache 60s. |
+| **Gating corridor + tracker** | `corridor.Watcher.Evaluate` et `eez.Tracker.OnPosition` (Go) vérifient `modeconfig.Enabled` avant de créer des alertes (silencieux + log) ; la route ADS-B TS incrémente le compteur `alerts_skipped_disabled`. |
+| **Gating ADS-B ingest** | `/api/adsb/ingest` appelle `modeconfig.Enabled(jurisdiction, AIR)` ; les positions et aéronefs continuent d'être insérés — seule la création d'alerte est sautée si l'air est désactivé pour la juridiction matchée. |
 | **UI settlement** | Onglet « Settlement » sur `/admin/jurisdictions` : totaux gross/attribués/non-attribués + badge « mismatched » ; disclosure « Décaissement via escrow Min. Finance — hors scope v8 ». |
 | **CI healthcheck** | `healthcheck` ne dépend plus du job Vercel opt-in (`needs: [deploy, backend]` → `needs: [backend]`) — le check PRODUCTION_URL reste valide via l'intégration Vercel native. |
 
 ### Note de déploiement
 
-**Migs 085-086 AVANT ou avec le déploiement du backend Go.** Le package `internal/modeconfig` lit `jurisdiction_mode_config`, table existante depuis la mig 071 — pas de hard-fail si le Go est livré légèrement avant les migs (la matrice sera simplement vide = fail-open par défaut). Même release recommandée : `supabase db push` → deploy Go.
+**Migs 085-086 AVANT ou avec le déploiement du backend Go.** Le package `internal/modeconfig` lit `jurisdiction_mode_config`, table existante depuis la mig 071 — matrice absente/vide = tout DÉSACTIVÉ (fail-closed : aucune nouvelle alerte) — le contrat explicite de `internal/modeconfig`. En pratique, la table existe depuis la mig 071, donc le Go lit toujours la matrice réelle. Même release recommandée : `supabase db push` → deploy Go.
 
 ---
 
