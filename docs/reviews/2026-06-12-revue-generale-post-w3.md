@@ -47,6 +47,16 @@ Le moteur W2/W3 (lookup tarifaire fail-closed, pinning `as_of`, snapshots `tarif
 | 6 | Invariants tarifaires in-table (anti ACTIVE→DRAFT→ACTIVE, anti rétro-INSERT, garde DELETE/TRUNCATE) | B-I1/I2 | S |
 | 7 | Corridor : flag `jurisdiction_provisional` + garde reconcile (mismatch → VOID + ré-émission sous la bonne juridiction) | B-I3 | M |
 
+**Statut Wedge 4 (2026-06-12, branche `feat/greengate-wedge4-fiscal-hardening`) — 7/7 livrés :**
+
+1. ✅ Mig 089 (`b4dac7f` + revue `8fc8ece` : 42/42 colonnes classées gelées/opérationnelles, hatch `app.transactions_allow_backfill` resserré NULL→valeur) + mig 090 VOID terminal (`17c9384`).
+2. ✅ T1 `4f0efc0` : lib `jurisdictionName` (4 routes PDF legacy + ProFormaModal), ventilation 75/20/5 supprimée (taxe carbone = une seule ligne), `content_hash` first-write-only ; + `52b0b82` (garde hash symétrique, assertions fiscales sur `invoices/generate`).
+3. ✅ T2 `b1434bb` : refonte multi-provider sur le rail payments-row + recompute (ref exacte, montant validé) ; revues `6e1aec8`/`064fbd8`/`e784eb5` (ref canonique à l'initiation, juridiction stampée, refs namespacées, Wave désactivé) ; index unique provider:ref = mig 087.
+4. ✅ Mig 087 (`232b6c0`) : policies juridiction sur wallets/wallet_ledger/refunds/owner_notifications, pattern mig 073.
+5. ✅ Runbook `docs/runbooks/2026-backup-dr.md` + `scripts/backup/restore-test.sh` (exécuté, tip hébergé=086) + refresh runbook canary (`613519d`).
+6. ✅ Mig 088 (`16e486e`) : anti rétro-activation, anti round-trip ACTIVE→DRAFT→ACTIVE, gardes DELETE/TRUNCATE ; hatch `app.tariffs_allow_retro` honoré par les fixtures Go (`4b874d8`).
+7. ✅ T6 `b9f4b32` : stamp `jurisdiction_provisional` + garde reconcile (mismatch → VOID + ré-émission) ; `17c9384` (ré-émission idempotente, VOID terminal mig 090, void optimiste, plafond dead-letter pgmq) ; `93ba102` (lookups fail-closed, wrappers pgmq verrouillés service_role). Proforma PAYÉE mismatchée : FINAL sous la juridiction réelle + flag jsonb + log.error (correction inter-États manuelle).
+
 ### P1 — Fiabilité & CI
 8. CI : tests Go bloquants (1 ligne), bump actions (deadline 16/06), fly.toml memory 1 GB, tests pg en CI (job Docker). · 9. Queue : drain par batch + alarme profondeur. · 10. Monitoring automatisé des vues invariantes (pg_cron → alerte) + alerte 422. · 11. timingSafeEqual + rate-limit des routes publiques + statut ais/poll. · 12. initiatePayment : vérifier ownership/status/document_type (ferme le double-comptage REFUND B-I5).
 
