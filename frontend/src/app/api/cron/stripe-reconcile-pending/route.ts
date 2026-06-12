@@ -110,9 +110,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 if (updErr) throw updErr;
 
                 if (row.transaction_id) {
-                    await admin.rpc('recompute_transaction_status', {
-                        p_transaction_id: row.transaction_id,
+                    const { error: rpcErr } = await admin.rpc('recompute_transaction_status', {
+                        p_txn_id: row.transaction_id,
                     });
+                    if (rpcErr) {
+                        // Payments trigger recomputes too — log, don't fail the run.
+                        console.error(
+                            `[stripe-reconcile] recompute_transaction_status failed for tx ${row.transaction_id}: ${rpcErr.message}`,
+                        );
+                    }
                 }
 
                 console.log(

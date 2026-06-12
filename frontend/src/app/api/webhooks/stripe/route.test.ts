@@ -288,8 +288,10 @@ describe('POST /api/webhooks/stripe', () => {
             }),
         );
 
-        // recompute_transaction_status RPC fired
-        expect(rpcCalls.find((c) => c.fn === 'recompute_transaction_status')).toBeDefined();
+        // recompute_transaction_status RPC fired with the mig-051 param name
+        const recompute = rpcCalls.find((c) => c.fn === 'recompute_transaction_status');
+        expect(recompute).toBeDefined();
+        expect(recompute!.args).toEqual({ p_txn_id: 't-1' });
     });
 
     it('is idempotent: returns 200 without re-UPDATE when row is already CONFIRMED', async () => {

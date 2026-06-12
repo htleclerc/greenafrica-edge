@@ -187,9 +187,17 @@ async function handlePaymentSucceeded(
     if (updErr) throw updErr;
 
     if (payment.transaction_id) {
-        await admin.rpc('recompute_transaction_status', {
-            p_transaction_id: payment.transaction_id,
+        const { error: rpcErr } = await admin.rpc('recompute_transaction_status', {
+            p_txn_id: payment.transaction_id,
         });
+        if (rpcErr) {
+            // Payments trigger recomputes too — log, don't fail the webhook.
+            log.error('recompute_transaction_status_failed', {
+                paymentId: payment.id,
+                transactionId: payment.transaction_id,
+                error: rpcErr.message,
+            });
+        }
     }
 
     log.info('webhook_payment_succeeded', {
