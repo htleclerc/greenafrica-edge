@@ -50,8 +50,11 @@ BEGIN
   END IF;
 END $$;
 
--- 2. Exclusion constraint rejects an overlapping ACTIVE window for the same key.
---    Insert MARITIME NULL-category ACTIVE at CURRENT_DATE → expect exclusion_violation.
+-- 2. Rejecting an overlapping ACTIVE window for the same key.
+--    Insert MARITIME NULL-category ACTIVE at CURRENT_DATE → blocked.
+--    Before mig 088: exclusion_violation (constraint fires).
+--    After mig 088: insufficient_privilege (retro-insert guard fires first);
+--    accept both — the insert is blocked either way.
 DO $$
 BEGIN
   BEGIN
@@ -61,15 +64,22 @@ BEGIN
     VALUES
       ('00000000-0000-4000-8000-00000000534f', 'MARITIME', NULL, NULL, 50, 'USD',
        CURRENT_DATE, NULL, 'ACTIVE');
-    RAISE EXCEPTION 'TEST FAILED: expected exclusion_violation but insert succeeded';
+    RAISE EXCEPTION 'TEST FAILED: expected exclusion_violation or insufficient_privilege but insert succeeded';
   EXCEPTION
     WHEN exclusion_violation THEN
-      -- expected
+      -- expected (pre-mig-088 chain)
+    WHEN insufficient_privilege THEN
+      -- expected (post-mig-088: retro-insert guard fires before exclusion constraint)
   END;
 END $$;
 
 -- 2b. A DRAFT row overlapping the same ACTIVE window IS accepted (exclusion only applies to ACTIVE).
---     Flipping that DRAFT row to ACTIVE must raise exclusion_violation.
+--     Flipping that DRAFT row to ACTIVE must be rejected.
+--     Before mig 088: exclusion_violation (overlapping ACTIVE window).
+--     After mig 088: insufficient_privilege (status-transition guard: retro
+--     effective_from <= CURRENT_DATE blocks re-activation); accept both.
+--     The DELETE at the end is omitted post-088 because the delete guard blocks it —
+--     the ROLLBACK at the top-level BEGIN handles cleanup instead.
 DO $$
 DECLARE draft_id UUID;
 BEGIN
@@ -84,19 +94,25 @@ BEGIN
   IF draft_id IS NULL THEN
     RAISE EXCEPTION 'TEST FAILED: DRAFT overlapping row should be accepted but insert failed';
   END IF;
-  -- Flipping it to ACTIVE must raise exclusion_violation
+  -- Flipping it to ACTIVE must be blocked
   BEGIN
     UPDATE public.tariffs SET status = 'ACTIVE' WHERE id = draft_id;
-    RAISE EXCEPTION 'TEST FAILED: expected exclusion_violation when promoting DRAFT→ACTIVE but update succeeded';
+    RAISE EXCEPTION 'TEST FAILED: expected exclusion_violation or insufficient_privilege when promoting DRAFT→ACTIVE but update succeeded';
   EXCEPTION
     WHEN exclusion_violation THEN
-      -- expected
+      -- expected (pre-mig-088: overlapping window)
+    WHEN insufficient_privilege THEN
+      -- expected (post-mig-088: status-transition guard blocks retro-activation)
   END;
-  DELETE FROM public.tariffs WHERE id = draft_id;
+  -- Do NOT DELETE here — post-mig-088 the delete guard blocks DELETEs.
+  -- Top-level ROLLBACK cleans up.
 END $$;
 
 -- 3. A category-SPECIFIC row ('TANKER') in the same window IS allowed (different key).
---    Insert then delete — no exception expected.
+--    Uses a future effective_from (CURRENT_DATE + 90) — post-mig-088, ACTIVE rows with
+--    effective_from <= CURRENT_DATE are blocked by the retro-insert guard; future dates
+--    are always accepted regardless. The DELETE is omitted post-088 (delete guard);
+--    ROLLBACK at end of transaction cleans up.
 DO $$
 DECLARE tid UUID;
 BEGIN
@@ -105,9 +121,12 @@ BEGIN
      effective_from, effective_to, status)
   VALUES
     ('00000000-0000-4000-8000-00000000534f', 'MARITIME', 'TANKER', NULL, 55, 'USD',
-     CURRENT_DATE, NULL, 'ACTIVE')
+     CURRENT_DATE + 90, NULL, 'ACTIVE')
   RETURNING id INTO tid;
-  DELETE FROM public.tariffs WHERE id = tid;
+  IF tid IS NULL THEN
+    RAISE EXCEPTION 'TEST FAILED: TANKER-specific row should not conflict but insert returned NULL id';
+  END IF;
+  -- No DELETE: post-mig-088 delete guard blocks it; ROLLBACK handles cleanup.
 EXCEPTION
   WHEN OTHERS THEN
     RAISE EXCEPTION 'TEST FAILED: TANKER-specific row should not conflict: %', SQLERRM;
@@ -138,9 +157,9 @@ BEGIN
   IF new_id IS NULL THEN
     RAISE EXCEPTION 'TEST FAILED: successor AIR row not inserted';
   END IF;
-  -- Cleanup (ROLLBACK will handle it, but undo for cleanliness within the block)
-  DELETE FROM public.tariffs WHERE id = new_id;
-  UPDATE public.tariffs SET effective_to = NULL WHERE id = air_id;
+  -- Cleanup: ROLLBACK at end of transaction handles this.
+  -- (Post-mig-088 DELETE guard blocks explicit DELETE; re-opening effective_to
+  --  would conflict with the just-inserted successor row anyway.)
 END $$;
 
 -- 5. transactions.tariff_id column exists and is a nullable UUID FK to tariffs.
