@@ -3,8 +3,9 @@
 > **Authoritative runbook** for the J+0 → J+21 production rollout of Plan 7 phases A–H (Shipowner Portal v1).
 >
 > **Owner**: Loïc Leclerc (`admin@drwintech.com`)
-> **Last updated**: 2026-05-13
+> **Last updated**: 2026-06-12 (stale-claims refresh: §1.1 migration tip + push command, §1.3 cron schedules)
 > **References**: Master spec [`docs/superpowers/specs/2026-05-01-shipowner-portal-v1-design.md`](../superpowers/specs/2026-05-01-shipowner-portal-v1-design.md) §12.3 (rollout), §12.4 (monitoring), §12.5 (rollback). Plan 7H-1/7H-2/7H-3.
+> **Backup/DR**: [`2026-backup-dr.md`](2026-backup-dr.md) — backup posture, restore procedures, monthly restore drill.
 
 This document is the **single source of truth** for portal rollout. Read top-to-bottom on canary day. Every SQL block is copy-paste runnable in Supabase Studio. Every alarm has a threshold.
 
@@ -15,12 +16,14 @@ This document is the **single source of truth** for portal rollout. Read top-to-
 ### 1.1 Migrations pushed to hosted
 
 ```bash
-supabase migration list --linked
+# `--linked` does NOT work from this machine (supabase link → management-API 403).
+# Use the pooler URL (secret SUPABASE_DB_URL, same as GitHub Actions / backend/.env):
+supabase migration list --db-url "$SUPABASE_DB_URL"
 ```
 
-Expected: local == hosted up through `067_invariant_views.sql`.
+Expected: local == hosted up through `086_greengate_settlement_view.sql` (Wedge 3, pushed 2026-06-11; verified 2026-06-12 via the restore drill). After the Wedge 4 merge deploys: `090_greengate_void_terminal.sql`.
 
-At time of writing (2026-05-13), the following are **pending push to hosted** and must be pushed as a batch:
+Historical (2026-05-13): the following were pending at the time — **all pushed since**, kept for the record:
 
 | Mig | From plan | Purpose |
 |---|---|---|
@@ -34,9 +37,9 @@ At time of writing (2026-05-13), the following are **pending push to hosted** an
 | 067 | 7H-3 | 4 invariant monitoring views |
 | 068 | follow-up | `v_transaction_payment_drift` v7-cutover filter (excludes pre-2026-05-01 legacy) |
 
-Push command:
+Push command (the form that actually works — same as the CI migrations job in `.github/workflows/deploy-production.yml`):
 ```bash
-supabase db push --include-all
+supabase db push --db-url "$SUPABASE_DB_URL" --yes
 ```
 
 If partial-apply errors appear (`column already exists`, `constraint already exists`): follow the diagnostic pattern from the 2026-04-25 push (memory note) — inspect schema state, drop conflicting bits, retry, `migration repair --status applied <N>` as needed.
@@ -60,12 +63,15 @@ vercel env ls production
 
 ### 1.3 Cron schedules visible in Vercel dashboard
 
+Actual schedules per `frontend/vercel.json` (3 crons, all daily — Vercel Hobby rejects sub-daily expressions):
+
 | Route | Schedule | Owner plan |
 |---|---|---|
-| `/api/cron/overdue-alerts` | Daily 09:00 UTC | Pre-Plan 7 |
-| `/api/cron/notification-email-loop` | Daily 09:00 UTC | 7H-1 |
-| `/api/cron/stripe-reconcile-pending` | `*/15 * * * *` | 7D |
-| `/api/cron/stripe-refund-reconcile-pending` | `*/15 * * * *` | 7H-1 (active post-7G merge) |
+| `/api/cron/overdue-alerts` | `0 9 * * *` (daily 09:00 UTC) | Pre-Plan 7 |
+| `/api/cron/notification-email-loop` | `0 9 * * *` (daily 09:00 UTC) | 7H-1 |
+| `/api/cron/stripe-reconcile-all` | `0 9 * * *` (daily 09:00 UTC) | Chains 7D + 7H-1 reconcilers |
+
+> **Note**: `/api/cron/stripe-reconcile-pending` (7D) and `/api/cron/stripe-refund-reconcile-pending` (7H-1) still exist as routes but are **NOT scheduled** — their original `*/15 * * * *` cadence fails Hobby-plan deploys, so `stripe-reconcile-all` chains both behind the single daily slot. Consequence: a missed Stripe webhook can leave a PROCESSING payment / APPROVED refund stuck for up to ~24h before reconciliation. The individual routes remain callable manually with `Authorization: Bearer $CRON_SECRET` for ops/debug. Restore `*/15` on Vercel Pro if reactivity becomes a constraint.
 
 Vercel Crons dashboard → confirm last/next run timestamps look sane.
 
@@ -234,7 +240,7 @@ Have one canary owner pay one proforma ($100) via Stripe. Verify:
 UPDATE app_config SET value = 'false'::jsonb WHERE key = 'feature.online_payment_stripe_enabled';
 ```
 
-In-flight Checkout sessions: existing PROCESSING payments will continue to reconcile via `/api/cron/stripe-reconcile-pending` every 15min. Webhook handler still functions even when flag is off (idempotent by design).
+In-flight Checkout sessions: existing PROCESSING payments will continue to reconcile via `/api/cron/stripe-reconcile-all` daily at 09:00 UTC (up to ~24h latency — see §1.3 note; trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET for immediate reconcile). Webhook handler still functions even when flag is off (idempotent by design).
 
 ---
 
@@ -451,7 +457,7 @@ scope:stripe-webhook
 - Decision: add handler (then mig + deploy) OR ignore (most likely safe — handler is no-op idempotent return 200).
 
 ### 11.7 Stuck INITIATED payment (`v_payments_initiated_overdue` non-zero)
-- For STRIPE rail: `/api/cron/stripe-reconcile-pending` should have reconciled within 15min. If still INITIATED after 1hr, check `external_reference` against Stripe dashboard.
+- For STRIPE rail: `/api/cron/stripe-reconcile-all` reconciles daily at 09:00 UTC (§1.3). For an immediate check, trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET, or check `external_reference` against the Stripe dashboard.
 - For WIRE/CHEQUE/CASH rails: payment proof was uploaded but admin never confirmed/rejected. Surface via `/admin/payments` queue.
 
 ---
