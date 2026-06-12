@@ -125,3 +125,22 @@ GRANT EXECUTE ON FUNCTION public.pgmq_archive_message(TEXT, BIGINT) TO service_r
 
 COMMENT ON FUNCTION public.pgmq_archive_message IS
   'Dead-letter wrapper: archive a pgmq message that has exceeded the retry ceiling. Semantically identical to pgmq_ack_message but named to make intent explicit.';
+
+-- ── 3. Lock ALL pgmq SECURITY DEFINER wrappers to service_role only ──────────
+-- The mig-035 wrappers (pop/ack/enqueue) and the mig-090 archive wrapper all
+-- carry SECURITY DEFINER, meaning they execute as the function owner. Without
+-- an explicit REVOKE, PostgreSQL's default PUBLIC EXECUTE privilege means any
+-- role — including anon — can call them via PostgREST. That would let an
+-- unauthenticated caller pop, ack, or archive billing queue messages (DoS /
+-- data destruction). Revoke from PUBLIC, anon, and authenticated to close the
+-- gap. The GRANT to service_role above (and in mig 035) is preserved.
+--
+-- mig-035 wrappers (back-patched here; mig 035 itself cannot be edited in
+-- production because it has already been applied, but REVOKE is idempotent
+-- and takes effect on the CURRENT schema state):
+REVOKE EXECUTE ON FUNCTION public.pgmq_pop_message(TEXT, INT)    FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pgmq_ack_message(TEXT, BIGINT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pgmq_enqueue_proforma(UUID)    FROM PUBLIC, anon, authenticated;
+
+-- mig-090 wrapper:
+REVOKE EXECUTE ON FUNCTION public.pgmq_archive_message(TEXT, BIGINT) FROM PUBLIC, anon, authenticated;

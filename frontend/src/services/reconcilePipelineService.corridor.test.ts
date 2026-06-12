@@ -96,8 +96,12 @@ function makeClient(
     proformaUsd?: number;
     /** FIX 1: simulate a pre-existing reissued proforma (idempotency test). */
     existingReissueId?: string;
+    /** FIX 1: simulate a DB error on the idempotency lookup. */
+    reissueIdempotencyError?: string;
     /** FIX 2a: simulate in-flight payments on the proforma. */
     hasInFlightPayments?: boolean;
+    /** FIX 2a: simulate a DB error on the in-flight payments check. */
+    inFlightPaymentsError?: string;
     /** FIX 2b: simulate optimistic void returning 0 rows (state changed). */
     voidReturnsZeroRows?: boolean;
   } = {},
@@ -151,39 +155,30 @@ function makeClient(
       // Build a chainable mock that supports all the query patterns used by the
       // reconcile + reissue code. Key chains:
       //   (A) proforma lookup: .select().eq(id).single()
-      //   (B) idempotency check: .select().eq(alert).eq(doc_type).neq(status).eq(breakdown).maybeSingle()
+      //   (B) idempotency check: .select().eq(alert).eq(doc_type).neq(status).eq(breakdown).order().limit(1) → array
       //   (C) paid_summary: handled via 'transaction_paid_summary' table below
-      const makeChain = (terminal: Record<string, unknown>) => {
-        // Supports arbitrary chaining — every method returns a new proxy that
-        // resolves with `terminal` when single() or maybeSingle() is called.
-        const chain: Record<string, unknown> = {};
-        for (const method of ['eq', 'neq', 'in', 'limit', 'select']) {
-          chain[method] = vi.fn(() => chain);
-        }
-        chain['single'] = vi.fn().mockResolvedValue(terminal);
-        chain['maybeSingle'] = vi.fn().mockResolvedValue(terminal);
-        return chain;
-      };
 
       return {
         select: vi.fn((cols?: string) => {
-          // The idempotency-check query selects 'id' and uses maybeSingle.
-          // The proforma fetch selects the full set and uses single.
-          // Both end up calling maybeSingle/single on the same chain; we
-          // distinguish by which terminal we wire to maybeSingle:
-          //   - existingReissueId → idempotency found
-          //   - else              → idempotency not found (null)
-          // For single() we always return proformaRow (the proforma fetch).
-          const idempotencyResult = opts.existingReissueId
-            ? { data: { id: opts.existingReissueId }, error: null }
-            : { data: null, error: null };
+          // The idempotency-check query selects 'id' and uses order().limit(1) → returns {data:[...], error}.
+          // The proforma fetch selects the full set and uses single().
+          // We distinguish: single() always returns proformaRow; limit(1) returns the idempotency array.
+          const idempotencyResult = opts.reissueIdempotencyError
+            ? { data: null, error: { message: opts.reissueIdempotencyError } }
+            : opts.existingReissueId
+              ? { data: [{ id: opts.existingReissueId }], error: null }
+              : { data: [], error: null };
 
           const chain: Record<string, unknown> = {};
-          for (const method of ['eq', 'neq', 'in', 'limit']) {
+          for (const method of ['eq', 'neq', 'in']) {
             chain[method] = vi.fn(() => chain);
           }
+          // order() → returns chain (supports further chaining)
+          chain['order'] = vi.fn(() => chain);
+          // limit(1) → resolves with the idempotency array result
+          chain['limit'] = vi.fn().mockResolvedValue(idempotencyResult);
           chain['single'] = vi.fn().mockResolvedValue({ data: proformaRow, error: null });
-          chain['maybeSingle'] = vi.fn().mockResolvedValue(idempotencyResult);
+          chain['maybeSingle'] = vi.fn().mockResolvedValue({ data: null, error: null });
           void cols;
           return chain;
         }),
@@ -228,12 +223,14 @@ function makeClient(
     }
     if (table === 'payments') {
       // FIX 2a: in-flight payment check
-      const paymentRows = opts.hasInFlightPayments ? [{ id: 'pay-inflight-001' }] : [];
+      const paymentResult = opts.inFlightPaymentsError
+        ? { data: null, error: { message: opts.inFlightPaymentsError } }
+        : { data: opts.hasInFlightPayments ? [{ id: 'pay-inflight-001' }] : [], error: null };
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             in: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue({ data: paymentRows, error: null }),
+              limit: vi.fn().mockResolvedValue(paymentResult),
             })),
           })),
         })),
@@ -577,6 +574,72 @@ describe('runReconcilePipeline — corridor guard (W4-T6 cross-state mismatch)',
     expect(logCalls).toContainEqual(
       expect.objectContaining({ level: 'error', event: 'jurisdiction_mismatch_paid_proforma' }),
     );
+  });
+
+  // ── FIX 1 (error path): idempotency lookup DB error → fail-closed ──────────
+
+  it('mismatch + UNPAID + idempotency lookup error → fail-closed, no void, no reissue', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({
+      proformaStatus: 'PENDING',
+      reissueIdempotencyError: 'connection timeout',
+    });
+    const result = await runReconcilePipeline({
+      alertId: ALERT_ID,
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    // Fail-closed: must return an error reason without proceeding.
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toContain('reissue idempotency check');
+    expect(result.reason).toContain('connection timeout');
+
+    // No void attempt, no reissue INSERT.
+    expect(captured.txnUpdates).toEqual([]);
+    expect(captured.txnInserts).toHaveLength(0);
+
+    // No fetch — we returned before reaching tax/calculate.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // ── FIX 2a (error path): in-flight payments query error → fail-closed ──────
+
+  it('mismatch + UNPAID + in-flight payments query error → fail-closed, no void, no reissue', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({
+      proformaStatus: 'PENDING',
+      inFlightPaymentsError: 'query timed out',
+    });
+    const result = await runReconcilePipeline({
+      alertId: ALERT_ID,
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    // Fail-closed: must return an error reason, never proceed to void.
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toContain('in-flight payment check');
+    expect(result.reason).toContain('query timed out');
+
+    // No void attempt, no reissue INSERT.
+    expect(captured.txnUpdates).toEqual([]);
+    expect(captured.txnInserts).toHaveLength(0);
+
+    // No fetch — we returned before reaching tax/calculate.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   // ── FIX 2b: optimistic void — 0 rows returned → retry ─────────────────────

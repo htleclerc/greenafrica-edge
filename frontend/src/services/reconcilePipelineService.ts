@@ -151,22 +151,37 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     // second proforma — two live proformas for the same alert. Look for a
     // non-VOID proforma on this alert whose breakdown stamps jurisdiction_reissued_from
     // pointing at the current proforma.id. If found, repair the pointer and exit.
-    const { data: existingReissue } = await db
+    const { data: existingReissueRows, error: reissueErr } = await db
       .from('transactions')
       .select('id')
       .eq('arrival_alert_id', alertId)
       .eq('document_type', 'PROFORMA')
       .neq('status', 'VOID')
       .eq('breakdown_json->>jurisdiction_reissued_from', proforma.id)
-      .maybeSingle();
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    if (reissueErr) {
+      return { ok: false, reason: `reissue idempotency check: ${reissueErr.message}` };
+    }
+    const existingReissue = existingReissueRows && existingReissueRows.length > 0
+      ? existingReissueRows[0]
+      : null;
 
     if (existingReissue) {
       // The INSERT already succeeded on a previous delivery. Just re-point the
       // alert's proforma pointer (idempotent repair) and exit without a second INSERT.
-      await db
+      const { error: repairErr } = await db
         .from('arrival_alerts')
         .update({ proforma_transaction_id: existingReissue.id })
         .eq('id', alertId);
+      if (repairErr) {
+        log.warn('proforma_reissue_pointer_repair_failed', {
+          alertId,
+          existingTransactionId: existingReissue.id,
+          error: repairErr.message,
+        });
+      }
       log.info('proforma_reissue_recovered', {
         alertId,
         existingTransactionId: existingReissue.id,
@@ -178,12 +193,16 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     // ── FIX 2a (in-flight money): NEVER void a proforma with open payments. ──
     // An INITIATED or PROCESSING payment means money is moving right now — voiding
     // the transaction would orphan that payment row. Treat it as the paid path.
-    const { data: inFlightPayments } = await db
+    const { data: inFlightPayments, error: inFlightErr } = await db
       .from('payments')
       .select('id')
       .eq('transaction_id', proforma.id)
       .in('status', ['INITIATED', 'PROCESSING', 'CONFIRMED'])
       .limit(1);
+
+    if (inFlightErr) {
+      return { ok: false, reason: `in-flight payment check: ${inFlightErr.message}` };
+    }
 
     if (inFlightPayments && inFlightPayments.length > 0) {
       // Treat as money-on-the-wire: upgrade the flag so the paid-mismatch block

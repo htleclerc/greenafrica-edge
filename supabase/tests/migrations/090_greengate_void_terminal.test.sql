@@ -129,5 +129,49 @@ END $$;
 
 SELECT '090 case 2: non-VOID recompute regression: PASS' AS test_result;
 
+-- ── Case 3: pgmq wrappers NOT executable by anon ─────────────────────────────
+-- Assert that mig-090 REVOKE locked the SECURITY DEFINER wrappers to
+-- service_role only, closing the PostgREST anon-DoS vector.
+DO $$
+BEGIN
+  -- pgmq_pop_message(TEXT, INT)
+  IF has_function_privilege('anon', 'public.pgmq_pop_message(text, integer)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (3a): anon still has EXECUTE on pgmq_pop_message';
+  END IF;
+  -- pgmq_ack_message(TEXT, BIGINT)
+  IF has_function_privilege('anon', 'public.pgmq_ack_message(text, bigint)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (3b): anon still has EXECUTE on pgmq_ack_message';
+  END IF;
+  -- pgmq_enqueue_proforma(UUID)
+  IF has_function_privilege('anon', 'public.pgmq_enqueue_proforma(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (3c): anon still has EXECUTE on pgmq_enqueue_proforma';
+  END IF;
+  -- pgmq_archive_message(TEXT, BIGINT)
+  IF has_function_privilege('anon', 'public.pgmq_archive_message(text, bigint)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (3d): anon still has EXECUTE on pgmq_archive_message';
+  END IF;
+END $$;
+
+SELECT '090 case 3: anon locked out of pgmq wrappers: PASS' AS test_result;
+
+-- ── Case 4: pgmq wrappers ARE executable by service_role ─────────────────────
+DO $$
+BEGIN
+  IF NOT has_function_privilege('service_role', 'public.pgmq_pop_message(text, integer)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (4a): service_role missing EXECUTE on pgmq_pop_message';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.pgmq_ack_message(text, bigint)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (4b): service_role missing EXECUTE on pgmq_ack_message';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.pgmq_enqueue_proforma(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (4c): service_role missing EXECUTE on pgmq_enqueue_proforma';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.pgmq_archive_message(text, bigint)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'TEST FAILED (4d): service_role missing EXECUTE on pgmq_archive_message';
+  END IF;
+END $$;
+
+SELECT '090 case 4: service_role retains EXECUTE on pgmq wrappers: PASS' AS test_result;
+
 ROLLBACK;
 SELECT '090 void_terminal: PASS' AS test_result;

@@ -74,10 +74,13 @@ export async function POST(req: NextRequest) {
   // pgmq.archive internally, same as ack, so the message is preserved for ops.
   const DEAD_LETTER_THRESHOLD = 5;
   if (readCt > DEAD_LETTER_THRESHOLD) {
-    await admin.rpc('pgmq_archive_message', {
+    const { error: archiveErr } = await admin.rpc('pgmq_archive_message', {
       queue_name: 'reconciliation_queue',
       msg_id: msg.msg_id,
     });
+    if (archiveErr) {
+      log.warn('reconcile_archive_rpc_failed', { alertId, readCt, msg_id: msg.msg_id, error: archiveErr.message });
+    }
     log.error('reconcile_message_dead_lettered', { alertId, readCt, msg_id: msg.msg_id });
     return json(200, { dead_lettered: true, alertId, readCt, msg_id: msg.msg_id });
   }
