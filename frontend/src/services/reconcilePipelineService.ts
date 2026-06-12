@@ -8,6 +8,10 @@ import {
   type InvoiceBadge,
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
+import { runProformaPipeline } from './proformaPipelineService';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('reconcilePipeline');
 
 /**
  * Reconciliation pipeline — the orchestrator.
@@ -113,7 +117,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
 
   const { data: proforma, error: pfErr } = await db
     .from('transactions')
-    .select('id, tax_amount_usd, document_type, created_at')
+    .select('id, tax_amount_usd, document_type, created_at, status, jurisdiction_id')
     .eq('id', alert.proforma_transaction_id)
     .single();
   if (pfErr || !proforma) {
@@ -122,6 +126,89 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
   const proformaUsd = Number(proforma.tax_amount_usd ?? 0);
   if (proformaUsd <= 0) {
     return { ok: false, reason: `pro-forma amount must be > 0 (got ${proformaUsd})` };
+  }
+
+  // ── Corridor guard (W4-T6): cross-state jurisdiction mismatch ─────────────
+  // The proforma may have been issued pre-arrival under a provisionally-detected
+  // jurisdiction (breakdown_json.jurisdiction_provisional). The alert's
+  // jurisdiction_id is the physical ground truth post-tracker — compare them
+  // BEFORE pricing the FINAL, otherwise the reconciliation inherits the wrong
+  // sovereign's tariff and split rule.
+  const proformaJurisdictionId = (proforma.jurisdiction_id ?? null) as string | null;
+  const jurisdictionMismatch =
+    proformaJurisdictionId !== null && proformaJurisdictionId !== alert.jurisdiction_id;
+  // Money already collected under the wrong sovereign must NEVER be destroyed:
+  // PAID / PARTIALLY_PAID rows carry confirmed payments (mig 051 recompute).
+  const proformaHasMoney = proforma.status === 'PAID' || proforma.status === 'PARTIALLY_PAID';
+
+  if (jurisdictionMismatch && !proformaHasMoney) {
+    // Unpaid proforma billed under the wrong jurisdiction → VOID it and reissue
+    // under the alert's actual jurisdiction. status + collections_status flip in
+    // a SINGLE UPDATE so the mig 022 invariant trigger sees a consistent pair
+    // (VOID/WAIVED carries "no money owed" semantics: the voided row drops out of
+    // the credit-usage view and the collections cron). Both columns are FREE
+    // under mig 089 — the fiscal snapshot itself stays frozen.
+    log.warn('proforma_voided_jurisdiction_mismatch', {
+      alertId,
+      proformaTransactionId: proforma.id,
+      proformaJurisdictionId,
+      alertJurisdictionId: alert.jurisdiction_id,
+      proformaStatus: proforma.status,
+    });
+    const { error: voidErr } = await db
+      .from('transactions')
+      .update({ status: 'VOID', collections_status: 'WAIVED' })
+      .eq('id', proforma.id);
+    if (voidErr) {
+      return { ok: false, reason: `void proforma: ${voidErr.message}` };
+    }
+
+    const reissued = await runProformaPipeline({
+      alertId,
+      adminClient: db,
+      taxApiUrl,
+      taxApiSecret: input.taxApiSecret,
+      dryRunEmail: input.dryRunEmail,
+      dryRunStorage: input.dryRunStorage,
+      reissue: { fromTransactionId: proforma.id },
+    });
+    if (!reissued.ok) {
+      // The proforma is already VOID; redelivery retries this branch (re-void is
+      // a no-op UPDATE) until the reissue lands.
+      log.error('proforma_reissue_failed', {
+        alertId,
+        voidedTransactionId: proforma.id,
+        alertJurisdictionId: alert.jurisdiction_id,
+      });
+      return { ok: false, reason: `cross-jurisdiction reissue failed: ${reissued.reason}` };
+    }
+    log.info('proforma_reissued_cross_jurisdiction', {
+      alertId,
+      voidedTransactionId: proforma.id,
+      newTransactionId: reissued.transactionId,
+      alertJurisdictionId: alert.jurisdiction_id,
+    });
+    // ok:false on purpose: the queue worker must NOT ack / mark RECONCILED this
+    // cycle. pgmq redelivers the message and the reconcile re-runs against the
+    // freshly issued proforma (jurisdictions now match → normal path).
+    return { ok: false, reason: 'reissued_under_correct_jurisdiction' };
+  }
+
+  if (jurisdictionMismatch && proformaHasMoney) {
+    // Money was collected under the WRONG sovereign — never touch the paid
+    // proforma row. Reconciliation proceeds under the ALERT's jurisdiction (the
+    // FINAL/COMPLEMENT goes to the correct sovereign) and the reconciliation row
+    // is stamped (at INSERT — mig 089) for the settlement audit. The two states'
+    // ledgers now disagree by the proforma amount: manual inter-state correction
+    // required → ops incident.
+    log.error('jurisdiction_mismatch_paid_proforma', {
+      alertId,
+      proformaTransactionId: proforma.id,
+      proformaJurisdictionId,
+      alertJurisdictionId: alert.jurisdiction_id,
+      proformaStatus: proforma.status,
+      proformaUsd,
+    });
   }
 
   const { data: agent, error: agentErr } = await db
@@ -293,6 +380,16 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     // flag tells finance that the amount is owed back to the agent, not due
     // from them. FINAL / COMPLEMENT are always OWED_TO_AUTHORITY.
     refundDirection: documentType === 'REFUND' ? 'OWED_TO_AGENT' : 'OWED_TO_AUTHORITY',
+    // Corridor guard (W4-T6): the proforma was PAID under a different
+    // jurisdiction than the alert's ground truth. Stamped at INSERT (mig 089
+    // freezes breakdown_json) so settlement ops can find every row needing a
+    // manual inter-state correction.
+    ...(jurisdictionMismatch && proformaHasMoney
+      ? {
+          jurisdiction_mismatch_paid_proforma: true,
+          proforma_jurisdiction_id: proformaJurisdictionId,
+        }
+      : {}),
   };
 
   // ── 6. Insert reconciliation transaction ────────────────────────────────

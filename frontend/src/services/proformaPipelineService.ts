@@ -71,6 +71,19 @@ interface RunInput {
   dryRunEmail?: boolean;
   /** Skip Storage upload. DB writes still happen; invoice_pdf_url stays null. */
   dryRunStorage?: boolean;
+  /**
+   * Corridor guard (Wedge 4 T6): when set, this run RE-ISSUES the proforma to
+   * replace `fromTransactionId` after the reconcile pipeline detected a
+   * cross-jurisdiction mismatch (proforma billed under the wrong sovereign).
+   * In this mode:
+   *   - the alert is accepted in DEPARTED_EEZ status (reconcile-time reissue);
+   *   - the INSERT stamps `breakdown_json.jurisdiction_reissued_from` and never
+   *     `jurisdiction_provisional` (the alert's jurisdiction is post-tracker
+   *     ground truth by now);
+   *   - the alert keeps its status — only `proforma_transaction_id` is
+   *     re-pointed, so the queued reconcile re-runs against the new proforma.
+   */
+  reissue?: { fromTransactionId: string };
 }
 
 type RunResult =
@@ -90,7 +103,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     .from('arrival_alerts')
     .select(`
       id, mode, vessel_id, aircraft_id, imo_number, estimated_route_nm, matched_agent_id, status,
-      jurisdiction_id,
+      jurisdiction_id, arrived_at,
       vessel:vessels ( id, name, imo_number, mmsi, category, gross_tonnage_dwt, shipowner_id ),
       aircraft:aircraft ( id, icao24, registration, icao_type, engine_type, mtow_kg, operator_id )
     `)
@@ -100,7 +113,13 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     return { ok: false, reason: `alert not found: ${alertErr?.message ?? 'nil'}` };
   }
 
-  if (!ACTIONABLE.has(alert.status as string)) {
+  if (input.reissue) {
+    // Corridor reissue (W4-T6) happens at reconcile time — the vessel has
+    // already departed. Any other status means this reissue call is misplaced.
+    if (alert.status !== 'DEPARTED_EEZ') {
+      return { ok: false, reason: `alert status ${alert.status} is not DEPARTED_EEZ (corridor reissue)` };
+    }
+  } else if (!ACTIONABLE.has(alert.status as string)) {
     return { ok: false, reason: `alert status ${alert.status} is not actionable` };
   }
 
@@ -121,6 +140,11 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
 
   // ── AIR branch (W1-C): detected air arrival → air tax calc → mode='AIR' PROFORMA.
   if (alert.mode === 'AIR') {
+    // Corridor guard (W4-T6) is maritime-only: AIR detection is in-FIR ground
+    // truth (ADS-B), so air jurisdictions are never provisional and never reissued.
+    if (input.reissue) {
+      return { ok: false, reason: 'corridor reissue is maritime-only (AIR jurisdiction is ground truth)' };
+    }
     return runAirProforma(input, alert, jurisdictionName);
   }
 
@@ -188,6 +212,21 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
   if (!tax.breakdown.tariff_id) {
     console.warn('[proformaPipeline] breakdown missing tariff_id — Go backend predates W2 tariffs; deploy ordering violated');
   }
+  // Corridor guard (W4-T6): a maritime proforma issued BEFORE the vessel has
+  // physically arrived (arrived_at still NULL) prices a provisionally-detected
+  // jurisdiction — the nearest-port corridor stamp is not ground truth. Flag it
+  // in the INSERT payload: mig 089 freezes breakdown_json after INSERT, so the
+  // stamp can never be added (or removed) later. A corridor reissue is never
+  // provisional — it runs post-tracker, under the alert's final jurisdiction —
+  // and instead carries a back-reference to the voided proforma it replaces.
+  const breakdownJson = {
+    ...tax.breakdown,
+    ...(input.reissue
+      ? { jurisdiction_reissued_from: input.reissue.fromTransactionId }
+      : alert.arrived_at == null
+        ? { jurisdiction_provisional: true }
+        : {}),
+  };
   const { data: txn, error: txnErr } = await db
     .from('transactions')
     .insert({
@@ -206,7 +245,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
       distance_eez_nm: tax.breakdown.distance_nm,
       emission_factor_used_id: tax.breakdown.emissions_factor_id || null,
       rate_usd_per_tco2: tax.breakdown.rate_usd_per_tco2,
-      breakdown_json: tax.breakdown,
+      breakdown_json: breakdownJson,
       tariff_id: tax.breakdown.tariff_id ?? null,
       jurisdiction_id: alert.jurisdiction_id ?? null,
     })
@@ -327,9 +366,16 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     }
   }
 
+  // Corridor reissue (W4-T6): keep the alert in DEPARTED_EEZ and only re-point
+  // proforma_transaction_id — the queued reconcile message redelivers and re-runs
+  // against the new proforma. Normal issuance flips to PROFORMA_SENT as before.
   const { error: alertUpdErr } = await db
     .from('arrival_alerts')
-    .update({ status: 'PROFORMA_SENT', proforma_transaction_id: txn.id })
+    .update(
+      input.reissue
+        ? { proforma_transaction_id: txn.id }
+        : { status: 'PROFORMA_SENT', proforma_transaction_id: txn.id },
+    )
     .eq('id', alertId);
   if (alertUpdErr) {
     return { ok: false, reason: `alert transition: ${alertUpdErr.message}` };
