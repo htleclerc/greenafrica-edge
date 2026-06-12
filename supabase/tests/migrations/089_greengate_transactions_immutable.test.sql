@@ -564,5 +564,32 @@ BEGIN
   END;
 END $$;
 
+-- ── 22b. Column-count completeness tripwire ──────────────────────────────────
+-- mig 089 classifies every column of public.transactions as FROZEN, FIRST-WRITE-
+-- ONLY, GENERATED, or FREE (42 columns total as of this migration).  When a new
+-- column is added in a future migration, this assertion will fail with a clear
+-- message reminding the developer to classify it in the trigger body of
+-- transactions_fiscal_immutable_guard() — see the MAINTENANCE note in the mig
+-- 089 header comment.
+DO $$
+DECLARE
+  col_count INT;
+BEGIN
+  SELECT count(*) INTO col_count
+    FROM information_schema.columns
+   WHERE table_schema = 'public'
+     AND table_name   = 'transactions';
+
+  IF col_count <> 42 THEN
+    RAISE EXCEPTION
+      'TEST FAILED (column-count tripwire): public.transactions has % columns, expected 42. '
+      'A new column was added without being classified in mig 089''s '
+      'transactions_fiscal_immutable_guard() trigger. See the MAINTENANCE note in '
+      'supabase/migrations/089_greengate_transactions_immutable.sql and add the new '
+      'column to the FROZEN / FIRST-WRITE-ONLY / FREE inventory before re-running.',
+      col_count;
+  END IF;
+END $$;
+
 ROLLBACK;
 SELECT '089 transactions immutable: PASS' AS test_result;

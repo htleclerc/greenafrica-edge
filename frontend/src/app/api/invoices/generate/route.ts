@@ -66,6 +66,14 @@ function json(status: number, body: Record<string, unknown>) {
  * Both values must already be present (paired) to treat the row as signed —
  * an orphaned state (hash set, signature NULL) is treated as unsigned and a
  * fresh pair is written.  Mirrors the read guard in step 7.
+ *
+ * NOTE (mig 089): content_hash and verify_signature are first-write-only columns
+ * guarded at the DB layer.  Writing a "fresh pair" only succeeds when the row
+ * currently has BOTH columns NULL (first write).  If either column is already set
+ * and the recomputed value differs from the stored one, the DB will reject the
+ * UPDATE with insufficient_privilege — fail-closed.  This function intentionally
+ * returns {} (skip overwrite) when both are already set, which is the only path
+ * that avoids the guard on regeneration.
  */
 export function buildHashFields(
     tx: { content_hash: string | null | undefined; verify_signature: string | null | undefined },

@@ -15,6 +15,8 @@ import (
 
 // seedTestJurisdiction inserts a throwaway jurisdiction and returns its UUID.
 // A cleanup is registered to delete tariffs (FK child) then the jurisdiction (parent).
+// The tariff DELETE uses the mig 088 escape hatch (app.tariffs_allow_retro='on')
+// inside an explicit transaction so SET LOCAL is scoped to that transaction only.
 func seedTestJurisdiction(t *testing.T, db *sql.DB, code, name string) string {
 	t.Helper()
 	var id string
@@ -26,26 +28,54 @@ func seedTestJurisdiction(t *testing.T, db *sql.DB, code, name string) string {
 		t.Fatalf("seedTestJurisdiction %q: %v", name, err)
 	}
 	t.Cleanup(func() {
-		db.ExecContext(context.Background(), `DELETE FROM public.tariffs WHERE jurisdiction_id = $1::uuid`, id)
+		// Wrap tariff DELETE in an explicit transaction with the retro hatch so
+		// the mig 088 DELETE guard allows the cleanup (SET LOCAL is tx-scoped).
+		tx, err := db.Begin()
+		if err != nil {
+			t.Fatalf("seedTestJurisdiction cleanup begin tx %q: %v", code, err)
+		}
+		if _, err := tx.ExecContext(context.Background(), `SET LOCAL app.tariffs_allow_retro = 'on'`); err != nil {
+			tx.Rollback()
+			t.Fatalf("seedTestJurisdiction cleanup set hatch %q: %v", code, err)
+		}
+		if _, err := tx.ExecContext(context.Background(), `DELETE FROM public.tariffs WHERE jurisdiction_id = $1::uuid`, id); err != nil {
+			tx.Rollback()
+			t.Fatalf("seedTestJurisdiction cleanup delete tariffs %q: %v", code, err)
+		}
+		if err := tx.Commit(); err != nil {
+			t.Fatalf("seedTestJurisdiction cleanup commit %q: %v", code, err)
+		}
 		db.ExecContext(context.Background(), `DELETE FROM public.jurisdictions WHERE id = $1::uuid`, id)
 	})
 	return id
 }
 
 // insertTestTariff inserts a tariff version. effectiveTo="" means NULL (open-ended).
+// Uses the mig 088 escape hatch (app.tariffs_allow_retro='on') inside an explicit
+// transaction so the BEFORE INSERT guard allows retroactively-dated ACTIVE rows that
+// test fixtures routinely insert (effective_from <= CURRENT_DATE).
 func insertTestTariff(t *testing.T, db *sql.DB, jid, mode string, rate float64, effectiveFrom, effectiveTo string) {
 	t.Helper()
 	ctx := context.Background()
-	var err error
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("insertTestTariff begin tx: %v", err)
+	}
+	if _, err := tx.ExecContext(ctx, `SET LOCAL app.tariffs_allow_retro = 'on'`); err != nil {
+		tx.Rollback()
+		t.Fatalf("insertTestTariff set hatch: %v", err)
+	}
+
 	if effectiveTo == "" {
-		_, err = db.ExecContext(ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO public.tariffs
 			  (jurisdiction_id, mode, rate_per_tco2, currency, effective_from, effective_to, status)
 			VALUES ($1::uuid, $2::public.transport_mode, $3, 'USD', $4::date, NULL, 'ACTIVE')`,
 			jid, mode, fmt.Sprintf("%.2f", rate), effectiveFrom,
 		)
 	} else {
-		_, err = db.ExecContext(ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO public.tariffs
 			  (jurisdiction_id, mode, rate_per_tco2, currency, effective_from, effective_to, status)
 			VALUES ($1::uuid, $2::public.transport_mode, $3, 'USD', $4::date, $5::date, 'ACTIVE')`,
@@ -53,7 +83,11 @@ func insertTestTariff(t *testing.T, db *sql.DB, jid, mode string, rate float64, 
 		)
 	}
 	if err != nil {
+		tx.Rollback()
 		t.Fatalf("insertTestTariff: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("insertTestTariff commit: %v", err)
 	}
 }
 
@@ -99,7 +133,9 @@ func TestHandler_InvalidAsOf_Returns400(t *testing.T) {
 // as_of=2025-06-01 → rate 30; no as_of (today ≥ 2026) → rate 45.
 func TestMaritime_AsOf_SelectsHistoricalTariff(t *testing.T) {
 	db, _ := openAirTestDB(t)
-	defer db.Close()
+	// Register db.Close BEFORE seedTestJurisdiction so that t.Cleanup LIFO
+	// order ensures tariff/jurisdiction cleanup runs BEFORE the db is closed.
+	t.Cleanup(func() { db.Close() })
 	jid := seedTestJurisdiction(t, db, "AO1", "AsOf Maritime Test Jurisdiction")
 	insertTestTariff(t, db, jid, "MARITIME", 30, "2025-01-01", "2026-01-01")
 	insertTestTariff(t, db, jid, "MARITIME", 45, "2026-01-01", "")
@@ -153,7 +189,9 @@ func TestMaritime_AsOf_SelectsHistoricalTariff(t *testing.T) {
 // for AIR mode. Same two-version setup; A320 EDB lookup (known factor).
 func TestAir_AsOf_SelectsHistoricalTariff(t *testing.T) {
 	db, _ := openAirTestDB(t)
-	defer db.Close()
+	// Register db.Close BEFORE seedTestJurisdiction so that t.Cleanup LIFO
+	// order ensures tariff/jurisdiction cleanup runs BEFORE the db is closed.
+	t.Cleanup(func() { db.Close() })
 	jid := seedTestJurisdiction(t, db, "AO2", "AsOf Air Test Jurisdiction")
 	insertTestTariff(t, db, jid, "AIR", 30, "2025-01-01", "2026-01-01")
 	insertTestTariff(t, db, jid, "AIR", 45, "2026-01-01", "")

@@ -30,8 +30,11 @@
 --
 --   BYPASS 3 — Missing DELETE / TRUNCATE guards:
 --     mig 081 (revenue_split_rule) guards both. tariffs had neither.
---     FIX: mirror the 081 pattern exactly — row-level DELETE trigger + statement-
---     level TRUNCATE trigger, same ERRCODE = 'insufficient_privilege'.
+--     FIX: mirror the 081 pattern — row-level DELETE trigger + statement-level
+--     TRUNCATE trigger, same ERRCODE = 'insufficient_privilege'.
+--     The DELETE trigger also honors the app.tariffs_allow_retro escape hatch so
+--     that Go test fixture cleanup (DELETE FROM public.tariffs WHERE …) can run
+--     inside the same hatch transaction without poisoning subsequent test runs.
 --
 -- NOTE on ARCHIVED rows:
 --   ARCHIVED rows are permanently out of the active lookup (Go filter: status='ACTIVE')
@@ -115,11 +118,22 @@ CREATE TRIGGER tariffs_insert_guard
 
 -- ── 3. DELETE guard ───────────────────────────────────────────────────────────
 -- Fiscal rows are permanent — mirrors mig 081 revenue_split_rule pattern exactly.
+-- Escape hatch: same GUC as the INSERT guard.  Test fixtures and onboarding
+-- rollback helpers may wrap DELETE in a transaction with
+--   SET LOCAL app.tariffs_allow_retro = 'on';
+-- to bypass this guard.  The GUC is transaction-scoped (SET LOCAL) so it
+-- auto-resets at the transaction boundary and never leaks into production paths.
+-- NULL-semantics note: current_setting(..., true) returns NULL when the GUC has
+-- never been set — IS NOT DISTINCT FROM 'on' is FALSE for NULL, so the guard
+-- still fires on unset GUC (fail-closed).
 CREATE OR REPLACE FUNCTION public.tariffs_delete_guard()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
+  IF current_setting('app.tariffs_allow_retro', true) IS NOT DISTINCT FROM 'on' THEN
+    RETURN OLD;  -- hatch active: allow DELETE (e.g. test fixture cleanup)
+  END IF;
   RAISE EXCEPTION 'tariffs: DELETE forbidden — fiscal rows are permanent'
     USING ERRCODE = 'insufficient_privilege';
 END;

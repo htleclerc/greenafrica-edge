@@ -117,6 +117,11 @@ BEGIN
   -- Row will be cleaned up by ROLLBACK.
 END $$;
 
+-- Reset the escape hatch so subsequent sections (5a DELETE guard) run without it.
+-- SET LOCAL is transaction-scoped; resetting to 'off' here restores fail-closed
+-- behaviour for the rest of this transaction.
+SET LOCAL app.tariffs_allow_retro = 'off';
+
 -- ── 4. Future ACTIVE INSERT (no escape hatch) must succeed ───────────────────
 -- An ACTIVE row with effective_from > CURRENT_DATE is always allowed
 -- (as long as no overlapping ACTIVE window exists — use a unique category).
@@ -137,7 +142,7 @@ BEGIN
 END $$;
 
 -- ── 5. DELETE and TRUNCATE guards ────────────────────────────────────────────
--- DELETE a seeded row must be blocked.
+-- 5a. DELETE without hatch must be blocked.
 DO $$
 DECLARE mar_id UUID;
 BEGIN
@@ -148,12 +153,44 @@ BEGIN
 
   BEGIN
     DELETE FROM public.tariffs WHERE id = mar_id;
-    RAISE EXCEPTION 'TEST FAILED: expected insufficient_privilege for DELETE but succeeded';
+    RAISE EXCEPTION 'TEST FAILED (5a): expected insufficient_privilege for DELETE without hatch but succeeded';
   EXCEPTION
     WHEN insufficient_privilege THEN
       NULL; -- expected
   END;
 END $$;
+
+-- 5b. DELETE with escape hatch (SET LOCAL app.tariffs_allow_retro='on') must succeed.
+-- This exercises the path used by Go test fixture cleanup.
+DO $$
+DECLARE hatch_id UUID;
+BEGIN
+  -- Insert a throwaway ACTIVE row using the hatch (retro date, unique category).
+  SET LOCAL app.tariffs_allow_retro = 'on';
+  INSERT INTO public.tariffs
+    (jurisdiction_id, mode, asset_category, rate_per_tco2, currency, effective_from, effective_to, status)
+  VALUES
+    ('00000000-0000-4000-8000-00000000444a', 'MARITIME', 'VEHICLE', 11, 'USD',
+     DATE '2024-01-01', DATE '2025-01-01', 'ACTIVE')
+  RETURNING id INTO hatch_id;
+
+  IF hatch_id IS NULL THEN
+    RAISE EXCEPTION 'TEST FAILED (5b-setup): hatch INSERT should have succeeded';
+  END IF;
+
+  -- DELETE with hatch still active in this transaction — must succeed.
+  DELETE FROM public.tariffs WHERE id = hatch_id;
+
+  -- Verify the row is gone.
+  PERFORM 1 FROM public.tariffs WHERE id = hatch_id;
+  IF FOUND THEN
+    RAISE EXCEPTION 'TEST FAILED (5b): DELETE with escape hatch should have removed the row';
+  END IF;
+  -- Row cleaned up; the ROLLBACK at the end of the test file will undo everything anyway.
+END $$;
+
+-- Reset hatch after 5b so subsequent sections run with it off.
+SET LOCAL app.tariffs_allow_retro = 'off';
 
 -- TRUNCATE guard: must be blocked.
 -- On a table with FK-dependent children (transactions.tariff_id), PostgreSQL raises
