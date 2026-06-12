@@ -71,7 +71,7 @@ test('signup auto-claim: matching IMO company flips GHOST shipowner to ACTIVE', 
 
     // ─── Anonymous signup form ─────────────────────────────────────────────
     const tag = uniqueTag();
-    const testEmail = `${tag}@e2e.test`;
+    const testEmail = `${tag}@e2e-test.com`;
     const testCompany = `${tag}-Co`;
 
     // Capture the auth user id (and any side-effect rows) for cleanup before

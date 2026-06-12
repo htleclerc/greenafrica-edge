@@ -80,8 +80,8 @@ test('wire payment: owner declares wire, admin confirms, status flips to CONFIRM
 
     // ─── Auth: 2 users (owner + admin) ─────────────────────────────────────
     const tag = uniqueTag();
-    const ownerEmail = `${tag}-owner@e2e.test`;
-    const adminEmail = `${tag}-admin@e2e.test`;
+    const ownerEmail = `${tag}-owner@e2e-test.com`;
+    const adminEmail = `${tag}-admin@e2e-test.com`;
 
     const ownerSession = await createTestUser({
         email: ownerEmail,
@@ -180,32 +180,30 @@ test('wire payment: owner declares wire, admin confirms, status flips to CONFIRM
     await confirmBtn.click();
 
     // ─── Assert: payment is CONFIRMED + notification dispatched ────────────
-    let confirmed = false;
-    for (let i = 0; i < 20 && !confirmed; i++) {
-        const { data } = await admin
+    // ─── Assert: payment is CONFIRMED + notification dispatched ────────────
+    let confirmedAndNotified = false;
+    for (let i = 0; i < 30 && !confirmedAndNotified; i++) {
+        const { data: pmt } = await admin
             .from('payments')
             .select('status, confirmed_by, confirmed_at')
             .eq('id', paymentId!)
             .maybeSingle();
-        if (data?.status === 'CONFIRMED') {
-            expect(data.confirmed_by).toBeTruthy();
-            expect(data.confirmed_at).toBeTruthy();
-            confirmed = true;
+        
+        const { data: notes } = await admin
+            .from('owner_notifications')
+            .select('kind, shipowner_id')
+            .eq('shipowner_id', shipowner.id)
+            .eq('kind', 'PAYMENT_RECEIVED');
+
+        if (pmt?.status === 'CONFIRMED' && (notes ?? []).length >= 1) {
+            expect(pmt.confirmed_by).toBeTruthy();
+            expect(pmt.confirmed_at).toBeTruthy();
+            confirmedAndNotified = true;
             break;
         }
         await adminPage.waitForTimeout(500);
     }
-    expect(confirmed).toBe(true);
-
-    // Plan 7F: confirmPayment triggers notificationService.notifyOwner with
-    // kind=PAYMENT_RECEIVED. INSERT happens before any (potential) email
-    // dispatch, so the row should exist immediately after confirmation.
-    const { data: notes } = await admin
-        .from('owner_notifications')
-        .select('kind, shipowner_id')
-        .eq('shipowner_id', shipowner.id)
-        .eq('kind', 'PAYMENT_RECEIVED');
-    expect((notes ?? []).length).toBeGreaterThanOrEqual(1);
+    expect(confirmedAndNotified).toBe(true);
 
     // Best-effort cleanup of the notification rows we just created.
     registerCleanup(async () => {

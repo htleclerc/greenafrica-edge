@@ -18,6 +18,7 @@ function makeClient(opts: {
     transaction: Record<string, unknown> | null;
     shipowner: Record<string, unknown> | null;
     confirmer?: Record<string, unknown> | null;
+    vessel?: Record<string, unknown> | null;
     updateError?: { message: string } | null;
     uploadError?: { message: string } | null;
 }) {
@@ -37,6 +38,7 @@ function makeClient(opts: {
             if (table === 'transactions') return { select: select(opts.transaction) };
             if (table === 'shipowners')   return { select: select(opts.shipowner) };
             if (table === 'profiles')     return { select: select(opts.confirmer ?? null) };
+            if (table === 'vessels')      return { select: select(opts.vessel ?? { mmsi: '123456789' }) };
             return { select: select(null) };
         }),
         storage,
@@ -58,9 +60,10 @@ describe('generatePaymentReceipt', () => {
             },
             transaction: {
                 id: 'tx-1', invoice_ref: 'INV-2026-ABCD',
-                vessel_name: 'TEST VESSEL', vessel_imo: '9999999', vessel_mmsi: '0',
+                vessel_name: 'TEST VESSEL', vessel_imo: '9999999', vessel_id: 'ves-1',
             },
-            shipowner: { id: 'own-1', name: 'Acme Shipping', jurisdiction_country: 'KE' },
+            vessel: { id: 'ves-1', mmsi: '123456789' },
+            shipowner: { id: 'own-1', name: 'Acme Shipping', country_code: 'KE' },
             confirmer: { id: 'admin-1', full_name: 'Jane Admin' },
         });
 
@@ -125,9 +128,10 @@ describe('generatePaymentReceipt', () => {
             },
             transaction: {
                 id: 'tx-1', invoice_ref: 'INV-2026-ABCD',
-                vessel_name: 'TEST', vessel_imo: '9999999', vessel_mmsi: '0',
+                vessel_name: 'TEST', vessel_imo: '9999999', vessel_id: 'ves-1',
             },
-            shipowner: { id: 'own-1', name: 'Acme', jurisdiction_country: 'KE' },
+            vessel: { id: 'ves-1', mmsi: '123456789' },
+            shipowner: { id: 'own-1', name: 'Acme', country_code: 'KE' },
             confirmer: { id: 'admin-1', full_name: 'Jane' },
             uploadError: { message: 'bucket not found' },
         });

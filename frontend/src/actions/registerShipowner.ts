@@ -147,6 +147,7 @@ async function autoClaim(
         { redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/owner/auth/callback` },
     );
     if (inviteResp.error) {
+        console.error('[registerShipowner] inviteUserByEmail failed:', inviteResp.error.message, inviteResp.error);
         await supabase.from('shipowners')
             .update({ account_state: 'GHOST' })
             .eq('id', shipownerId)
