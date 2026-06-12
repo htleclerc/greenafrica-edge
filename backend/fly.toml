@@ -30,7 +30,8 @@ primary_region = 'ams'
   processes = ["api"]
 
 [[vm]]
+  # `memory` and `memory_mb` are mutually exclusive — keeping the 1 GB form.
+  # The stray `memory_mb = 256` previously won, starving the Go backend.
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256

@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   workflow_call: {} # callable as the CI gate from deploy-production.yml
 
 concurrency:
@@ -21,9 +21,9 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -63,9 +63,9 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.23'
           cache-dependency-path: backend/go.sum
@@ -78,7 +78,57 @@ jobs:
 
       - name: Build
         run: go build -o /dev/null ./cmd/api
+      # NB: `go test` lives in the `integration` job below — most Go packages
+      # (eez, corridor, modeconfig, geofence, reconcile…) are DB-integration
+      # tests that need a migrated Postgres, which this DB-less job can't provide.
 
-      - name: Test
-        run: go test ./... -v
-        continue-on-error: true
+  # ── Integration: Postgres migrations, RLS .test.sql, and DB-backed Go tests ─
+  integration:
+    name: Integration (pg + Go)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Boots the local stack (Docker), applying migrations 001→latest + seed.sql.
+      - name: Start Supabase (apply migrations + seed)
+        run: supabase start
+
+      # Every supabase/tests/migrations/*.test.sql wraps its assertions in
+      # BEGIN…ROLLBACK and RAISE EXCEPTION on failure, so ON_ERROR_STOP=1 turns
+      # a failed assertion into a non-zero psql exit. Run all, report each.
+      - name: Run pg migration tests
+        run: |
+          DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          fail=0
+          for f in supabase/tests/migrations/*.test.sql; do
+            echo "── $f"
+            if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$f"; then
+              echo "::error file=$f::pg test FAILED"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # -p 1 is REQUIRED: the corridor/eez/modeconfig packages each mutate the
+      # shared public.jurisdiction_mode_config matrix. Running packages in
+      # parallel against the one local DB lets one package disable a mode while
+      # another reads it → cross-package pollution. Serialise package execution.
+      - name: Run Go tests (DB-backed)
+        run: go test -p 1 ./...
+        working-directory: backend
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
