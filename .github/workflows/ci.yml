@@ -67,7 +67,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version: '1.25' # must satisfy backend/go.mod `go 1.25.0` (GOTOOLCHAIN=local)
           cache-dependency-path: backend/go.sum
 
       - name: Tidy modules
@@ -92,12 +92,18 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version: '1.25' # must satisfy backend/go.mod `go 1.25.0` (GOTOOLCHAIN=local)
           cache-dependency-path: backend/go.sum
 
+      # Pinned (not `latest`): the RLS tests rely on the blanket
+      # GRANT … TO authenticated that older Supabase seeded by default; CLI
+      # ≥ 2.9x dropped it, so `latest` breaks them with "permission denied for
+      # table". 2.90.0 mirrors the local dev environment and keeps CI
+      # deterministic. Follow-up (P2): add explicit table GRANTs in a migration
+      # so the suite no longer depends on the legacy implicit grant.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.90.0
 
       # Boots the local stack (Docker), applying migrations 001→latest + seed.sql.
       - name: Start Supabase (apply migrations + seed)
