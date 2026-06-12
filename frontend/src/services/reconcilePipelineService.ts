@@ -139,59 +139,127 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     proformaJurisdictionId !== null && proformaJurisdictionId !== alert.jurisdiction_id;
   // Money already collected under the wrong sovereign must NEVER be destroyed:
   // PAID / PARTIALLY_PAID rows carry confirmed payments (mig 051 recompute).
-  const proformaHasMoney = proforma.status === 'PAID' || proforma.status === 'PARTIALLY_PAID';
+  // FIX 2a: in-flight (INITIATED/PROCESSING/CONFIRMED) payments are also treated
+  // as "has money" — voiding a proforma with an active payment would orphan the
+  // payment row. This flag may be upgraded to true inside the mismatch block below.
+  let proformaHasMoney = proforma.status === 'PAID' || proforma.status === 'PARTIALLY_PAID';
 
   if (jurisdictionMismatch && !proformaHasMoney) {
-    // Unpaid proforma billed under the wrong jurisdiction → VOID it and reissue
-    // under the alert's actual jurisdiction. status + collections_status flip in
-    // a SINGLE UPDATE so the mig 022 invariant trigger sees a consistent pair
-    // (VOID/WAIVED carries "no money owed" semantics: the voided row drops out of
-    // the credit-usage view and the collections cron). Both columns are FREE
-    // under mig 089 — the fiscal snapshot itself stays frozen.
-    log.warn('proforma_voided_jurisdiction_mismatch', {
-      alertId,
-      proformaTransactionId: proforma.id,
-      proformaJurisdictionId,
-      alertJurisdictionId: alert.jurisdiction_id,
-      proformaStatus: proforma.status,
-    });
-    const { error: voidErr } = await db
+    // ── FIX 1 (idempotency): check whether a reissue already landed. ─────────
+    // pgmq redelivers the message if PDF/email/re-point failed AFTER the INSERT.
+    // Without this guard a second delivery would void-again (no-op) then INSERT a
+    // second proforma — two live proformas for the same alert. Look for a
+    // non-VOID proforma on this alert whose breakdown stamps jurisdiction_reissued_from
+    // pointing at the current proforma.id. If found, repair the pointer and exit.
+    const { data: existingReissue } = await db
       .from('transactions')
-      .update({ status: 'VOID', collections_status: 'WAIVED' })
-      .eq('id', proforma.id);
-    if (voidErr) {
-      return { ok: false, reason: `void proforma: ${voidErr.message}` };
+      .select('id')
+      .eq('arrival_alert_id', alertId)
+      .eq('document_type', 'PROFORMA')
+      .neq('status', 'VOID')
+      .eq('breakdown_json->>jurisdiction_reissued_from', proforma.id)
+      .maybeSingle();
+
+    if (existingReissue) {
+      // The INSERT already succeeded on a previous delivery. Just re-point the
+      // alert's proforma pointer (idempotent repair) and exit without a second INSERT.
+      await db
+        .from('arrival_alerts')
+        .update({ proforma_transaction_id: existingReissue.id })
+        .eq('id', alertId);
+      log.info('proforma_reissue_recovered', {
+        alertId,
+        existingTransactionId: existingReissue.id,
+        voidedTransactionId: proforma.id,
+      });
+      return { ok: false, reason: 'reissued_under_correct_jurisdiction' };
     }
 
-    const reissued = await runProformaPipeline({
-      alertId,
-      adminClient: db,
-      taxApiUrl,
-      taxApiSecret: input.taxApiSecret,
-      dryRunEmail: input.dryRunEmail,
-      dryRunStorage: input.dryRunStorage,
-      reissue: { fromTransactionId: proforma.id },
-    });
-    if (!reissued.ok) {
-      // The proforma is already VOID; redelivery retries this branch (re-void is
-      // a no-op UPDATE) until the reissue lands.
-      log.error('proforma_reissue_failed', {
+    // ── FIX 2a (in-flight money): NEVER void a proforma with open payments. ──
+    // An INITIATED or PROCESSING payment means money is moving right now — voiding
+    // the transaction would orphan that payment row. Treat it as the paid path.
+    const { data: inFlightPayments } = await db
+      .from('payments')
+      .select('id')
+      .eq('transaction_id', proforma.id)
+      .in('status', ['INITIATED', 'PROCESSING', 'CONFIRMED'])
+      .limit(1);
+
+    if (inFlightPayments && inFlightPayments.length > 0) {
+      // Treat as money-on-the-wire: upgrade the flag so the paid-mismatch block
+      // below fires and we never attempt a void on a transaction with live payments.
+      proformaHasMoney = true;
+      log.error('proforma_void_blocked_inflight_payment', {
+        alertId,
+        proformaTransactionId: proforma.id,
+        proformaJurisdictionId,
+        alertJurisdictionId: alert.jurisdiction_id,
+        proformaStatus: proforma.status,
+      });
+    } else {
+      // Unpaid proforma billed under the wrong jurisdiction → VOID it and reissue
+      // under the alert's actual jurisdiction. status + collections_status flip in
+      // a SINGLE UPDATE so the mig 022 invariant trigger sees a consistent pair
+      // (VOID/WAIVED carries "no money owed" semantics: the voided row drops out of
+      // the credit-usage view and the collections cron). Both columns are FREE
+      // under mig 089 — the fiscal snapshot itself stays frozen.
+      log.warn('proforma_voided_jurisdiction_mismatch', {
+        alertId,
+        proformaTransactionId: proforma.id,
+        proformaJurisdictionId,
+        alertJurisdictionId: alert.jurisdiction_id,
+        proformaStatus: proforma.status,
+      });
+
+      // ── FIX 2b (optimistic void): concurrent state change protection. ───────
+      // Another delivery or concurrent worker may have already changed the
+      // proforma's status. Use a WHERE-clause on the known status so the UPDATE
+      // is a no-op if the row has moved. 0 rows → redelivery re-evaluates.
+      const { data: voidRows, error: voidErr } = await db
+        .from('transactions')
+        .update({ status: 'VOID', collections_status: 'WAIVED' })
+        .eq('id', proforma.id)
+        .eq('status', proforma.status)
+        .select('id');
+      if (voidErr) {
+        return { ok: false, reason: `void proforma: ${voidErr.message}` };
+      }
+      if (!voidRows || voidRows.length === 0) {
+        // The proforma status changed between our read and this update — the
+        // world has moved. Re-deliver so the pipeline re-reads the fresh state.
+        return { ok: false, reason: 'proforma_state_changed_retry' };
+      }
+
+      const reissued = await runProformaPipeline({
+        alertId,
+        adminClient: db,
+        taxApiUrl,
+        taxApiSecret: input.taxApiSecret,
+        dryRunEmail: input.dryRunEmail,
+        dryRunStorage: input.dryRunStorage,
+        reissue: { fromTransactionId: proforma.id },
+      });
+      if (!reissued.ok) {
+        // The proforma is already VOID; redelivery retries this branch (idempotency
+        // check above will recover on any subsequent delivery).
+        log.error('proforma_reissue_failed', {
+          alertId,
+          voidedTransactionId: proforma.id,
+          alertJurisdictionId: alert.jurisdiction_id,
+        });
+        return { ok: false, reason: `cross-jurisdiction reissue failed: ${reissued.reason}` };
+      }
+      log.info('proforma_reissued_cross_jurisdiction', {
         alertId,
         voidedTransactionId: proforma.id,
+        newTransactionId: reissued.transactionId,
         alertJurisdictionId: alert.jurisdiction_id,
       });
-      return { ok: false, reason: `cross-jurisdiction reissue failed: ${reissued.reason}` };
+      // ok:false on purpose: the queue worker must NOT ack / mark RECONCILED this
+      // cycle. pgmq redelivers the message and the reconcile re-runs against the
+      // freshly issued proforma (jurisdictions now match → normal path).
+      return { ok: false, reason: 'reissued_under_correct_jurisdiction' };
     }
-    log.info('proforma_reissued_cross_jurisdiction', {
-      alertId,
-      voidedTransactionId: proforma.id,
-      newTransactionId: reissued.transactionId,
-      alertJurisdictionId: alert.jurisdiction_id,
-    });
-    // ok:false on purpose: the queue worker must NOT ack / mark RECONCILED this
-    // cycle. pgmq redelivers the message and the reconcile re-runs against the
-    // freshly issued proforma (jurisdictions now match → normal path).
-    return { ok: false, reason: 'reissued_under_correct_jurisdiction' };
   }
 
   if (jurisdictionMismatch && proformaHasMoney) {
@@ -423,6 +491,27 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
     .single();
   if (txnErr || !txn) {
     return { ok: false, reason: `insert txn: ${txnErr?.message ?? 'nil'}` };
+  }
+
+  // ── FIX 4 (telemetry): paid-mismatch final issued ─────────────────────────
+  // After the INSERT succeeds, emit a second structured event so settlement ops
+  // can trace every mismatch-final row from the queue log without a DB join.
+  // Read paid_usd_minor from the aggregated view for the proforma row — that view
+  // computes SUM(payments CONFIRMED) so it is always accurate at this point.
+  if (jurisdictionMismatch && proformaHasMoney) {
+    const { data: paidSummary } = await db
+      .from('transaction_paid_summary')
+      .select('paid_usd_minor')
+      .eq('transaction_id', proforma.id)
+      .maybeSingle();
+    log.info('jurisdiction_mismatch_final_issued', {
+      alertId,
+      newTransactionId: txn.id,
+      proformaTransactionId: proforma.id,
+      alertJurisdictionId: alert.jurisdiction_id,
+      proformaJurisdictionId,
+      proformaPaidUsdMinor: paidSummary?.paid_usd_minor ?? null,
+    });
   }
 
   // The auto-trigger on transactions generates `ref` as INV-YYYY-NNNNNN. We

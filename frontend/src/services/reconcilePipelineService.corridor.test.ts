@@ -94,6 +94,12 @@ function makeClient(
     proformaStatus?: string;
     proformaJurisdictionId?: string;
     proformaUsd?: number;
+    /** FIX 1: simulate a pre-existing reissued proforma (idempotency test). */
+    existingReissueId?: string;
+    /** FIX 2a: simulate in-flight payments on the proforma. */
+    hasInFlightPayments?: boolean;
+    /** FIX 2b: simulate optimistic void returning 0 rows (state changed). */
+    voidReturnsZeroRows?: boolean;
   } = {},
 ) {
   const captured: {
@@ -142,12 +148,45 @@ function makeClient(
       };
     }
     if (table === 'transactions') {
+      // Build a chainable mock that supports all the query patterns used by the
+      // reconcile + reissue code. Key chains:
+      //   (A) proforma lookup: .select().eq(id).single()
+      //   (B) idempotency check: .select().eq(alert).eq(doc_type).neq(status).eq(breakdown).maybeSingle()
+      //   (C) paid_summary: handled via 'transaction_paid_summary' table below
+      const makeChain = (terminal: Record<string, unknown>) => {
+        // Supports arbitrary chaining — every method returns a new proxy that
+        // resolves with `terminal` when single() or maybeSingle() is called.
+        const chain: Record<string, unknown> = {};
+        for (const method of ['eq', 'neq', 'in', 'limit', 'select']) {
+          chain[method] = vi.fn(() => chain);
+        }
+        chain['single'] = vi.fn().mockResolvedValue(terminal);
+        chain['maybeSingle'] = vi.fn().mockResolvedValue(terminal);
+        return chain;
+      };
+
       return {
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({ data: proformaRow, error: null }),
-          })),
-        })),
+        select: vi.fn((cols?: string) => {
+          // The idempotency-check query selects 'id' and uses maybeSingle.
+          // The proforma fetch selects the full set and uses single.
+          // Both end up calling maybeSingle/single on the same chain; we
+          // distinguish by which terminal we wire to maybeSingle:
+          //   - existingReissueId → idempotency found
+          //   - else              → idempotency not found (null)
+          // For single() we always return proformaRow (the proforma fetch).
+          const idempotencyResult = opts.existingReissueId
+            ? { data: { id: opts.existingReissueId }, error: null }
+            : { data: null, error: null };
+
+          const chain: Record<string, unknown> = {};
+          for (const method of ['eq', 'neq', 'in', 'limit']) {
+            chain[method] = vi.fn(() => chain);
+          }
+          chain['single'] = vi.fn().mockResolvedValue({ data: proformaRow, error: null });
+          chain['maybeSingle'] = vi.fn().mockResolvedValue(idempotencyResult);
+          void cols;
+          return chain;
+        }),
         insert: vi.fn((payload: Record<string, unknown>) => {
           captured.txnInserts.push(payload);
           return {
@@ -161,8 +200,43 @@ function makeClient(
         }),
         update: vi.fn((payload: Record<string, unknown>) => {
           captured.txnUpdates.push(payload);
-          return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          // FIX 2b: simulate optimistic void returning 0 rows
+          const rows = opts.voidReturnsZeroRows ? [] : [{ id: PROFORMA_ID }];
+          return {
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                select: vi.fn().mockResolvedValue({ data: rows, error: null }),
+              })),
+              mockResolvedValue: undefined,
+            })),
+          };
         }),
+      };
+    }
+    if (table === 'transaction_paid_summary') {
+      // FIX 4: telemetry reads this view for paid_usd_minor after the INSERT.
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { paid_usd_minor: 53200 },
+              error: null,
+            }),
+          })),
+        })),
+      };
+    }
+    if (table === 'payments') {
+      // FIX 2a: in-flight payment check
+      const paymentRows = opts.hasInFlightPayments ? [{ id: 'pay-inflight-001' }] : [];
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            in: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue({ data: paymentRows, error: null }),
+            })),
+          })),
+        })),
       };
     }
     if (table === 'profiles') {
@@ -416,5 +490,127 @@ describe('runReconcilePipeline — corridor guard (W4-T6 cross-state mismatch)',
         ].includes(c.event),
       ),
     ).toEqual([]);
+  });
+
+  // ── FIX 1: idempotent reissue recovery ──────────────────────────────────────
+
+  it('mismatch + UNPAID + existing reissue found → no second INSERT, pointer repaired, log.info proforma_reissue_recovered', async () => {
+    // Simulate: INSERT already landed on a prior delivery (existingReissueId).
+    // The fix must NOT insert again; just re-point the alert and return ok:false.
+    const EXISTING_REISSUE_ID = 'existing-reissued-txn-id';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => TAX_RESULT,
+      text: async () => '',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({
+      proformaStatus: 'PENDING',
+      existingReissueId: EXISTING_REISSUE_ID,
+    });
+    const result = await runReconcilePipeline({
+      alertId: ALERT_ID,
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    // Must exit without a second INSERT (idempotency).
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toBe('reissued_under_correct_jurisdiction');
+
+    // No INSERT — the reissue already exists.
+    expect(captured.txnInserts).toHaveLength(0);
+    // No void attempt either — we bailed out before void.
+    expect(captured.txnUpdates).toEqual([]);
+    // Alert pointer re-pointed to the existing reissue.
+    expect(captured.alertUpdates).toContainEqual(
+      expect.objectContaining({ proforma_transaction_id: EXISTING_REISSUE_ID }),
+    );
+    // No fetch calls — we returned before reaching tax/calculate.
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect(logCalls).toContainEqual(
+      expect.objectContaining({ level: 'info', event: 'proforma_reissue_recovered' }),
+    );
+  });
+
+  // ── FIX 2a: in-flight payment → treat as paid path ─────────────────────────
+
+  it('mismatch + PENDING proforma + in-flight payment → no void, treated as paid mismatch, log.error blocked', async () => {
+    const fetchMock = reconcileFetchMock();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({
+      proformaStatus: 'PENDING',
+      hasInFlightPayments: true,
+    });
+    const result = await runReconcilePipeline({
+      alertId: ALERT_ID,
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    // With in-flight money, pipeline proceeds as paid-mismatch path (full FINAL).
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(`pipeline failed: ${result.reason}`);
+
+    // Proforma was NEVER voided.
+    expect(captured.txnUpdates).toEqual([]);
+    // A FINAL was inserted with the mismatch stamp.
+    expect(captured.txnInserts).toHaveLength(1);
+    const breakdown = captured.txnInserts[0].breakdown_json as Record<string, unknown>;
+    expect(breakdown.jurisdiction_mismatch_paid_proforma).toBe(true);
+
+    // The in-flight block event was emitted.
+    expect(logCalls).toContainEqual(
+      expect.objectContaining({ level: 'error', event: 'proforma_void_blocked_inflight_payment' }),
+    );
+    // The paid-mismatch event was also emitted (fall-through to paid path).
+    expect(logCalls).toContainEqual(
+      expect.objectContaining({ level: 'error', event: 'jurisdiction_mismatch_paid_proforma' }),
+    );
+  });
+
+  // ── FIX 2b: optimistic void — 0 rows returned → retry ─────────────────────
+
+  it('mismatch + UNPAID + void returns 0 rows → proforma_state_changed_retry, no reissue', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => TAX_RESULT,
+      text: async () => '',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({
+      proformaStatus: 'PENDING',
+      voidReturnsZeroRows: true,
+    });
+    const result = await runReconcilePipeline({
+      alertId: ALERT_ID,
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      toleranceOverride: 10,
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    // Should return a retry reason without reissuing.
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toBe('proforma_state_changed_retry');
+
+    // Void was attempted (captured) but returned 0 rows.
+    expect(captured.txnUpdates).toHaveLength(1);
+    expect(captured.txnUpdates[0]).toMatchObject({ status: 'VOID', collections_status: 'WAIVED' });
+    // No INSERT — we returned before reissuing.
+    expect(captured.txnInserts).toHaveLength(0);
   });
 });
