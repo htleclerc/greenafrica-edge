@@ -25,3 +25,7 @@
 - **Environment**: E2E tests and signup flows require `NEXT_PUBLIC_BASE_URL` to be populated in `frontend/.env.local`.
 - **Auth Constraints**: Hosted Supabase Auth rate limits may restrict email invitation requests. Furthermore, Supabase GoTrue invite verification requires email addresses to have standard, valid TLDs (e.g. `@e2e-test.com` instead of `@e2e.test`). For demonstrations and QA walk-throughs, use pre-seeded test accounts (`sadmin@greengate.africa`, `armateur@greengate.africa`, `superadmin@africgreen.gov.sl`).
 
+## Branch Structure & Demo Environment
+- **`main`**: Production branch. Must remain fully secured.
+- **`develop`**: Development and staging branch. Must remain fully secured.
+- **`demo`**: Presentation/demo branch. Features the demo backdoor (`demo_active` cookie and `Quick Demo Access` login panel) for sandbox presentations and local QA walk-throughs.
