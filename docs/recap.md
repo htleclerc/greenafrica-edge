@@ -63,3 +63,15 @@
   5. Saved and copied the recorded `video_demo.webm` to the brain's artifacts directory and embedded it directly inside `walkthrough.md`.
   6. Re-ran the database cleanup script to delete the newly generated payments and reset the transaction/vessel compliance statuses back to their clean states for the user.
   7. Restored the Playwright video config back to `video: 'retain-on-failure'`.
+
+## [2026-06-12 18:15] Branch Restructuring & Demo Backdoor Restoration
+- **Objective**: Divide workspace into secure production/staging branches (`main`, `develop`) and a dedicated presentation branch (`demo`) with restored backdoor authentication.
+- **Actions & Diagnostics**:
+  1. Staged and committed uncommitted E2E/testing enhancements to the feature branch.
+  2. Merged the feature branch into `develop` and fast-forwarded `main` to align them with the production-ready code.
+  3. Reset the `demo` branch to the latest `develop` state and re-implemented the demo bypasses.
+  4. Configured `middleware.ts`, `RoleContext.tsx`, `requireOwner.ts`, and `requireRole.ts` to accept the `demo_active` cookie and mock roles.
+  5. Wrapped server-side cookie checks in `try/catch` blocks to protect Vitest runs from crashing due to dynamic Next.js headers outside request contexts.
+  6. Restored the "Quick Demo Access" UI on the login page unconditionally for the `demo` branch.
+  7. Built the workspace successfully and booted the Next.js server on port 3300. All 742 unit tests passed.
+
