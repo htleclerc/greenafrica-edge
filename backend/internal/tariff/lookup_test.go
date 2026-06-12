@@ -31,6 +31,8 @@ func openTestDB(t *testing.T) *sql.DB {
 // seedJurisdiction inserts a test jurisdiction using a unique throwaway code and
 // returns its UUID string.  The caller gets a t.Cleanup that removes tariffs rows
 // (FK child) then the jurisdiction row (parent).
+// The tariff DELETE uses the mig 088 escape hatch (app.tariffs_allow_retro='on')
+// inside an explicit transaction so SET LOCAL is scoped to that transaction only.
 func seedJurisdiction(t *testing.T, db *sql.DB, code, name string) string {
 	t.Helper()
 	var id string
@@ -42,27 +44,55 @@ func seedJurisdiction(t *testing.T, db *sql.DB, code, name string) string {
 		t.Fatalf("seedJurisdiction %q: %v", name, err)
 	}
 	t.Cleanup(func() {
-		db.ExecContext(context.Background(), `DELETE FROM public.tariffs WHERE jurisdiction_id = $1::uuid`, id)
+		// Wrap tariff DELETE in an explicit transaction with the retro hatch so
+		// the mig 088 DELETE guard allows the cleanup (SET LOCAL is tx-scoped).
+		tx, err := db.Begin()
+		if err != nil {
+			t.Fatalf("seedJurisdiction cleanup begin tx %q: %v", code, err)
+		}
+		if _, err := tx.ExecContext(context.Background(), `SET LOCAL app.tariffs_allow_retro = 'on'`); err != nil {
+			tx.Rollback()
+			t.Fatalf("seedJurisdiction cleanup set hatch %q: %v", code, err)
+		}
+		if _, err := tx.ExecContext(context.Background(), `DELETE FROM public.tariffs WHERE jurisdiction_id = $1::uuid`, id); err != nil {
+			tx.Rollback()
+			t.Fatalf("seedJurisdiction cleanup delete tariffs %q: %v", code, err)
+		}
+		if err := tx.Commit(); err != nil {
+			t.Fatalf("seedJurisdiction cleanup commit %q: %v", code, err)
+		}
 		db.ExecContext(context.Background(), `DELETE FROM public.jurisdictions WHERE id = $1::uuid`, id)
 	})
 	return id
 }
 
 // insertTariff inserts a tariff row and returns its id. effectiveTo="" means NULL (open).
+// Uses the mig 088 escape hatch (app.tariffs_allow_retro='on') inside an explicit
+// transaction so the BEFORE INSERT guard allows retroactively-dated ACTIVE rows that
+// test fixtures routinely insert (effective_from <= CURRENT_DATE).
 func insertTariff(t *testing.T, db *sql.DB, jid, mode, category string, rate float64, effectiveFrom, effectiveTo string, status string) string {
 	t.Helper()
 	ctx := context.Background()
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("insertTariff begin tx: %v", err)
+	}
+	if _, err := tx.ExecContext(ctx, `SET LOCAL app.tariffs_allow_retro = 'on'`); err != nil {
+		tx.Rollback()
+		t.Fatalf("insertTariff set hatch: %v", err)
+	}
+
 	var id string
-	var err error
 	if effectiveTo == "" {
-		err = db.QueryRowContext(ctx, `
+		err = tx.QueryRowContext(ctx, `
 			INSERT INTO public.tariffs (jurisdiction_id, mode, asset_category, rate_per_tco2, currency, effective_from, effective_to, status)
 			VALUES ($1::uuid, $2::public.transport_mode, NULLIF($3,''), $4, 'USD', $5::date, NULL, $6)
 			RETURNING id::text`,
 			jid, mode, category, fmt.Sprintf("%.2f", rate), effectiveFrom, status,
 		).Scan(&id)
 	} else {
-		err = db.QueryRowContext(ctx, `
+		err = tx.QueryRowContext(ctx, `
 			INSERT INTO public.tariffs (jurisdiction_id, mode, asset_category, rate_per_tco2, currency, effective_from, effective_to, status)
 			VALUES ($1::uuid, $2::public.transport_mode, NULLIF($3,''), $4, 'USD', $5::date, $6::date, $7)
 			RETURNING id::text`,
@@ -70,7 +100,11 @@ func insertTariff(t *testing.T, db *sql.DB, jid, mode, category string, rate flo
 		).Scan(&id)
 	}
 	if err != nil {
+		tx.Rollback()
 		t.Fatalf("insertTariff: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("insertTariff commit: %v", err)
 	}
 	return id
 }
@@ -194,10 +228,25 @@ func TestLookup_CacheHitWithinTTL(t *testing.T) {
 		t.Fatalf("first call rate = %.2f, want 55", r1.RatePerTCO2)
 	}
 
-	// Delete the row from DB — if cache is working the second call must still succeed
-	if _, err := db.ExecContext(context.Background(),
-		`DELETE FROM public.tariffs WHERE id = $1::uuid`, id); err != nil {
-		t.Fatalf("delete tariff: %v", err)
+	// Delete the row from DB — if cache is working the second call must still succeed.
+	// Use the mig 088 retro hatch (tx-scoped) so the DELETE guard allows the removal.
+	{
+		ctx := context.Background()
+		delTx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatalf("delete tariff begin tx: %v", err)
+		}
+		if _, err := delTx.ExecContext(ctx, `SET LOCAL app.tariffs_allow_retro = 'on'`); err != nil {
+			delTx.Rollback()
+			t.Fatalf("delete tariff set hatch: %v", err)
+		}
+		if _, err := delTx.ExecContext(ctx, `DELETE FROM public.tariffs WHERE id = $1::uuid`, id); err != nil {
+			delTx.Rollback()
+			t.Fatalf("delete tariff: %v", err)
+		}
+		if err := delTx.Commit(); err != nil {
+			t.Fatalf("delete tariff commit: %v", err)
+		}
 	}
 
 	// Second call — should hit cache and return the same rate

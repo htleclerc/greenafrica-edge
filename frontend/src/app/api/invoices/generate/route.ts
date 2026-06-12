@@ -13,6 +13,7 @@ import {
 } from '@/services/invoiceService';
 import { sendInvoiceEmail } from '@/services/emailService';
 import { createClient as createRequestClient } from '@/lib/supabase/server';
+import { fetchJurisdictionName } from '@/lib/jurisdictionName';
 
 /**
  * POST /api/invoices/generate
@@ -58,6 +59,53 @@ export function canGenerateInvoice(role: string | null | undefined): boolean {
 
 function json(status: number, body: Record<string, unknown>) {
     return NextResponse.json(body, { status });
+}
+
+/**
+ * Returns the hash/signature fields to include in the transactions UPDATE.
+ * Both values must already be present (paired) to treat the row as signed —
+ * an orphaned state (hash set, signature NULL) is treated as unsigned and a
+ * fresh pair is written.  Mirrors the read guard in step 7.
+ *
+ * NOTE (mig 089): content_hash and verify_signature are first-write-only columns
+ * guarded at the DB layer.  Writing a "fresh pair" only succeeds when the row
+ * currently has BOTH columns NULL (first write).  If either column is already set
+ * and the recomputed value differs from the stored one, the DB will reject the
+ * UPDATE with insufficient_privilege — fail-closed.  This function intentionally
+ * returns {} (skip overwrite) when both are already set, which is the only path
+ * that avoids the guard on regeneration.
+ */
+export function buildHashFields(
+    tx: { content_hash: string | null | undefined; verify_signature: string | null | undefined },
+    contentHash: string,
+    verifySignature: string,
+): Record<string, string> {
+    return tx.content_hash && tx.verify_signature
+        ? {}  // both already set — reuse stored values, skip overwrite
+        : { content_hash: contentHash, verify_signature: verifySignature };
+}
+
+/**
+ * Builds the single-element lineItems array for a carbon-tax invoice.
+ * The authoritative total is always one charge: emissions × effective rate.
+ */
+export function buildLineItems(
+    emissionsTco2: number,
+    effectiveRate: number,
+    totalUsd: number,
+): InvoiceData['lineItems'] {
+    return [
+        {
+            zone: 'EEZ',
+            days: 1,
+            emissionsTco2,
+            rate: effectiveRate,
+            amount: totalUsd,
+            description: `Carbon tax (${emissionsTco2.toFixed(2)} tCO2 × ${effectiveRate.toFixed(2)} USD/tCO2)`,
+            qtyDisplay: `${emissionsTco2.toFixed(2)} tCO2`,
+            rateDisplay: `$${effectiveRate.toFixed(2)}/t`,
+        },
+    ];
 }
 
 export async function POST(request: NextRequest) {
@@ -127,7 +175,7 @@ export async function POST(request: NextRequest) {
     // ── 4. Reload the authoritative transaction (ignore client fields) ──
     const { data: tx, error: txErr } = await admin
         .from('transactions')
-        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at')
+        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id')
         .eq('id', transactionId)
         .single();
     if (txErr || !tx) {
@@ -178,31 +226,42 @@ export async function POST(request: NextRequest) {
     }
     const invoiceRef = tx.invoice_ref || mintInvoiceRef();
 
-    // ── 6. Build the fee breakdown on the SERVER, mirroring what the HTML
-    //    preview shows, so the PDF the agent saw is byte-equivalent to what
-    //    is rendered here. The split is 75/20/5 of the authoritative total. ─
+    // ── 6. Resolve the transaction's sovereign name ─────────────────────
+    // Use the jurisdiction_id stamped on the row (W2+). Falls back to
+    // 'Republic of Somaliland' for any pre-W2 row that lacks it.
+    const txRecord = tx as typeof tx & { jurisdiction_id?: string | null };
+    const jurisdictionName = await fetchJurisdictionName(admin, txRecord.jurisdiction_id);
+
     const totalUsd = Number(tx.tax_amount_usd);
     const emissionsTco2 = Number(tx.emissions_tco2);
-    const carbonTaxFee = Math.round(totalUsd * 0.75);
-    const portCallFee = Math.round(totalUsd * 0.20);
-    const securityFee = totalUsd - carbonTaxFee - portCallFee;
     // Effective $/tCO2 rate as applied to this transaction — derive it so
     // we don't need to re-read the tax_configurations table.
     const effectiveRate = emissionsTco2 > 0 ? totalUsd / emissionsTco2 : 0;
 
-    // ── 7. Content hash + HMAC signature ────────────────────────────────
-    const canonicalFields = {
-        invoiceRef,
-        vesselImo: tx.vessel_imo,
-        vesselName: tx.vessel_name,
-        ownerName,
-        totalUsd,
-        periodStart: issueDate,
-        periodEnd: dueDate,
-        mode: mode as InvoiceMode,
-    };
-    const contentHash = hashInvoiceFields(canonicalFields);
-    const verifySignature = signInvoiceRef(invoiceRef, contentHash);
+    // ── 7. Content hash + HMAC signature (first-write-only) ─────────────
+    // If the row already has a content_hash from a prior generation, reuse it
+    // along with its verify_signature so that any previously distributed PDF
+    // (carrying those values in its QR code) continues to verify.  Only compute
+    // fresh values when the row has never been signed before.
+    let contentHash: string;
+    let verifySignature: string;
+    if (tx.content_hash && tx.verify_signature) {
+        contentHash = tx.content_hash;
+        verifySignature = tx.verify_signature;
+    } else {
+        const canonicalFields = {
+            invoiceRef,
+            vesselImo: tx.vessel_imo,
+            vesselName: tx.vessel_name,
+            ownerName,
+            totalUsd,
+            periodStart: issueDate,
+            periodEnd: dueDate,
+            mode: mode as InvoiceMode,
+        };
+        contentHash = hashInvoiceFields(canonicalFields);
+        verifySignature = signInvoiceRef(invoiceRef, contentHash);
+    }
 
     // Build the QR URL with the signed token so /verify can accept/reject
     // it at the edge without touching the DB.
@@ -224,7 +283,9 @@ export async function POST(request: NextRequest) {
         vesselImo: tx.vessel_imo,
         vesselMmsi: '',
         ownerName,
-        jurisdiction: 'Republic of Somaliland',
+        // Sovereign name resolved from the transaction's jurisdiction_id — never
+        // hardcoded so Djibouti invoices name Djibouti, not Somaliland.
+        jurisdiction: jurisdictionName,
         periodStart: issueDate,
         periodEnd: dueDate,
         emissionsTco2,
@@ -235,38 +296,11 @@ export async function POST(request: NextRequest) {
         mode,
         badge,
         verifyUrl,
-        lineItems: [
-            {
-                zone: 'EEZ',
-                days: 1,
-                emissionsTco2,
-                rate: effectiveRate,
-                amount: carbonTaxFee,
-                description: 'Carbon Emissions Tax (IMO Cubic Law)',
-                qtyDisplay: `${emissionsTco2.toFixed(2)} tCO2`,
-                rateDisplay: `$${effectiveRate.toFixed(2)}/t`,
-            },
-            {
-                zone: 'PORT_CALL',
-                days: 1,
-                emissionsTco2: 0,
-                rate: portCallFee,
-                amount: portCallFee,
-                description: 'Port Call Fixed Fee',
-                qtyDisplay: '1',
-                rateDisplay: `$${portCallFee.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
-            },
-            {
-                zone: 'SECURITY',
-                days: 1,
-                emissionsTco2: 0,
-                rate: securityFee,
-                amount: securityFee,
-                description: 'Maritime Security Surcharge',
-                qtyDisplay: '1',
-                rateDisplay: `$${securityFee.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
-            },
-        ],
+        // Fiscal documents must not invent sub-line items.  The authoritative
+        // total is a single carbon-tax charge computed as emissions × rate.
+        // The old 75/20/5 "Carbon Tax / Port Call Fee / Security Surcharge"
+        // split was fabricated and had no basis in the underlying regulation.
+        lineItems: buildLineItems(emissionsTco2, effectiveRate, totalUsd),
     };
 
     try {
@@ -287,12 +321,16 @@ export async function POST(request: NextRequest) {
         }
 
         // ── 10. Persist ref, hash, signature + pdf storage path ─────────
+        // content_hash and verify_signature are first-write-only: if they are
+        // already set (a previously distributed PDF carries those values in its
+        // QR code), we MUST NOT overwrite them or that PDF will stop verifying.
+        // Only write them when BOTH are NULL — mirrors the read guard at step 7.
+        const hashFields = buildHashFields(tx, contentHash, verifySignature);
         const { error: txUpdateErr } = await admin
             .from('transactions')
             .update({
                 invoice_ref: invoiceRef,
-                content_hash: contentHash,
-                verify_signature: verifySignature,
+                ...hashFields,
                 invoice_pdf_url: fileName, // now a storage path, not a public URL
             })
             .eq('id', transactionId);

@@ -9,6 +9,10 @@ build/
 frontend/.qa-screenshots/
 .claude/scheduled_tasks.lock
 
+# Local DB dumps from the backup/restore drill (scripts/backup/restore-test.sh)
+# — NEVER commit dumps: they can contain production fiscal data.
+backups/
+
 # docs/ — ignore everything new at the top level by default. Existing tracked
 # files and subdirectories are whitelisted below. To track a NEW top-level
 # file under docs/, add an explicit `!docs/<name>` line here AND `git add -f`.
@@ -40,3 +44,4 @@ docs/*
 !docs/superpowers/
 !docs/user_stories.md
 !docs/designs/
+!docs/reviews/

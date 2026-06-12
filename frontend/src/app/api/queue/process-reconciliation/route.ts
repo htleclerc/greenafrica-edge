@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { runReconcilePipeline } from '@/services/reconcilePipelineService';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('reconciliationWorker');
 
 export const runtime = 'nodejs';
 
@@ -60,10 +63,30 @@ export async function POST(req: NextRequest) {
   if (popErr) return json(500, { error: `pgmq pop: ${popErr.message}` });
   if (!popped) return new NextResponse(null, { status: 204 });
 
-  const msg = popped as { msg_id: number; message: { arrival_alert_id: string } };
+  const msg = popped as { msg_id: number; read_ct: number; message: { arrival_alert_id: string } };
+  const alertId = msg.message.arrival_alert_id;
+  const readCt = msg.read_ct ?? 0;
+
+  // ── FIX 5 (retry ceiling): dead-letter poison messages after 5 deliveries. ──
+  // pgmq increments read_ct on every pop. If a message has been delivered more
+  // than 5 times it is either a permanent failure or a pathological loop — archive
+  // it so the queue doesn't spin forever. The archive RPC (mig 090) calls
+  // pgmq.archive internally, same as ack, so the message is preserved for ops.
+  const DEAD_LETTER_THRESHOLD = 5;
+  if (readCt > DEAD_LETTER_THRESHOLD) {
+    const { error: archiveErr } = await admin.rpc('pgmq_archive_message', {
+      queue_name: 'reconciliation_queue',
+      msg_id: msg.msg_id,
+    });
+    if (archiveErr) {
+      log.warn('reconcile_archive_rpc_failed', { alertId, readCt, msg_id: msg.msg_id, error: archiveErr.message });
+    }
+    log.error('reconcile_message_dead_lettered', { alertId, readCt, msg_id: msg.msg_id });
+    return json(200, { dead_lettered: true, alertId, readCt, msg_id: msg.msg_id });
+  }
 
   const result = await runReconcilePipeline({
-    alertId: msg.message.arrival_alert_id,
+    alertId,
     adminClient: admin,
     taxApiUrl: apiUrl,
   });

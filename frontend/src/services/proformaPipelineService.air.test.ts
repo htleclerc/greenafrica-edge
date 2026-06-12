@@ -261,4 +261,50 @@ describe('runProformaPipeline — AIR branch (W1-C-2)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(captured.insertedTxn).toBeUndefined();
   });
+
+  it('corridor guard (W4-T6): AIR is never provisional — in-FIR detection is ground truth', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => AIR_TAX_RESULT,
+      text: async () => '',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Air alert fixture carries no arrived_at — the maritime branch would stamp
+    // jurisdiction_provisional here; the air branch must not.
+    const { client, captured } = makeClient();
+    const result = await runProformaPipeline({
+      alertId: 'alert-air-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(result.ok).toBe(true);
+    const breakdown = captured.insertedTxn?.breakdown_json as Record<string, unknown>;
+    expect(breakdown.jurisdiction_provisional).toBeUndefined();
+    expect(breakdown).toEqual(AIR_TAX_RESULT.breakdown);
+  });
+
+  it('corridor guard (W4-T6): reissue mode is rejected on an AIR alert', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client, captured } = makeClient({ alertStatus: 'DEPARTED_EEZ' });
+    const result = await runProformaPipeline({
+      alertId: 'alert-air-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+      reissue: { fromTransactionId: 'voided-proforma-001' },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toContain('maritime-only');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(captured.insertedTxn).toBeUndefined();
+  });
 });

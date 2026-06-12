@@ -236,7 +236,11 @@ BEGIN
     RAISE EXCEPTION 'TEST FAILED (case 5a): expected NULL before backfill but got %', pre_stamp;
   END IF;
 
-  -- Re-run the backfill UPDATE from the migration
+  -- Re-run the backfill UPDATE from the migration.
+  -- mig 089 (transactions_fiscal_immutable) freezes split_rule_id post-INSERT.
+  -- This backfill is a migration-era code path; use the escape hatch so the
+  -- 089 trigger does not reject the NULL→value write here.
+  SET LOCAL app.transactions_allow_backfill = 'on';
   UPDATE public.transactions t
      SET split_rule_id = r.id
     FROM public.revenue_split_rule r

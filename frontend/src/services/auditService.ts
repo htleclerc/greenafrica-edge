@@ -2,6 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AuditLogEntry } from '@/types/secure';
 import type { AuditLogRow } from '@/types/database';
 import { rowToAuditLogEntry } from '@/types/secure/mappers';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('auditService');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Client = SupabaseClient<any>;
@@ -29,5 +32,16 @@ export async function writeAuditLog(
     client: Client,
     entry: Record<string, unknown>,
 ): Promise<void> {
-    await client.from('audit_logs').insert(entry);
+    // Best-effort by design (audit must never break the caller's flow), but
+    // failures must be visible — entries that violate the audit_action /
+    // audit_severity enums or the profiles FK were previously dropped silently.
+    const { error } = await client.from('audit_logs').insert(entry);
+    if (error) {
+        log.warn('audit_log_insert_failed', {
+            action: entry.action,
+            entity_type: entry.entity_type,
+            entity_id: entry.entity_id,
+            error: error.message,
+        });
+    }
 }

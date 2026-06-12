@@ -111,6 +111,7 @@ export function rowToTransaction(row: TransactionRow): Transaction {
         contentHash: (r.content_hash as string | null) ?? null,
         verifySignature: (r.verify_signature as string | null) ?? null,
         paymentProofFiles: (r.payment_proof_files as Transaction['paymentProofFiles']) ?? undefined,
+        jurisdictionId: (r.jurisdiction_id as string | null) ?? null,
     };
 }
 
