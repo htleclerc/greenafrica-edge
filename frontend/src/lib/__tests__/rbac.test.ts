@@ -209,6 +209,24 @@ describe('canEdit (read vs write distinction)', () => {
   });
 });
 
+describe('staff nav key — SUPERADMIN only', () => {
+  it('grants SUPERADMIN access to staff', () => {
+    expect(canAccess('staff', UserRole.SUPERADMIN)).toBe(true);
+  });
+  it('denies PORT_OFFICER access to staff', () => {
+    expect(canAccess('staff', UserRole.PORT_OFFICER)).toBe(false);
+  });
+  it('denies FINANCE_ADMIN access to staff', () => {
+    expect(canAccess('staff', UserRole.FINANCE_ADMIN)).toBe(false);
+  });
+  it('denies MANAGER access to staff', () => {
+    expect(canAccess('staff', UserRole.MANAGER)).toBe(false);
+  });
+  it('denies SHIPPING_AGENT access to staff', () => {
+    expect(canAccess('staff', UserRole.SHIPPING_AGENT)).toBe(false);
+  });
+});
+
 describe('MONEY_RAIL_KEYS export', () => {
   it('exposes the canonical money-rail keys for server-side guards', () => {
     expect(MONEY_RAIL_KEYS.has('tax-settings')).toBe(true);

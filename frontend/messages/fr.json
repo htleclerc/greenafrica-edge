@@ -694,7 +694,27 @@
     "nav_wallets": "Portefeuilles",
     "nav_refunds": "Remboursements",
     "nav_jurisdictions": "Juridictions",
-    "nav_vision": "Tableau de bord"
+    "nav_vision": "Tableau de bord",
+    "nav_staff": "Gestion du personnel"
+  },
+  "AdminStaff": {
+    "page_title": "Gestion du personnel",
+    "page_subtitle": "Invitez des agents gouvernementaux et assignez leurs juridictions.",
+    "form_title": "Inviter un agent",
+    "label_email": "Adresse e-mail",
+    "label_full_name": "Nom complet",
+    "label_role": "Rôle",
+    "label_jurisdictions": "Juridictions",
+    "placeholder_email": "agent@example.gov",
+    "placeholder_full_name": "Prénom et nom",
+    "role_port_officer": "Officier de port",
+    "role_finance_admin": "Admin financier",
+    "role_manager": "Manager",
+    "btn_invite": "Envoyer l'invitation",
+    "btn_sending": "Envoi…",
+    "success_new": "Invitation envoyée à {email}.",
+    "success_existing": "{email} a déjà un compte — rôle et juridictions mis à jour.",
+    "error_prefix": "Erreur : "
   },
   "Auth": {
     "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",
@@ -3174,7 +3194,10 @@
     },
     "proof_document": "Document de preuve",
     "doc_type": "Type de document",
-    "preferred_language": "Langue préférée"
+    "preferred_language": "Langue préférée",
+    "closed_title": "Inscription fermée",
+    "closed_body": "Les inscriptions opérateur sont actuellement sur invitation uniquement. Contactez l'administration.",
+    "back_to_login": "Retour à la connexion"
   },
   "OwnerOnboarding": {
     "step1": {

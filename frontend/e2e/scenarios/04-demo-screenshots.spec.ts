@@ -29,7 +29,7 @@ test('capture screenshots for 5-scene demo walkthrough', async ({ page }) => {
 
     // ─── Scene 2: Enregistrement Armateur ─────────────────────────────────────
     console.log('Scene 2: Loading Onboarding Owner Registration...');
-    await page.goto('/owner/register');
+    await page.goto('/signup');
     await page.fill('input[name="email"]', 'demo-armateur-register@e2e-test.com');
     await page.fill('input[name="name"]', 'GG Demo Video Carrier');
     await page.fill('input[name="imo_company_no"]', '9123456');

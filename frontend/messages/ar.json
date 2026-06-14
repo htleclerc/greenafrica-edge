@@ -679,7 +679,27 @@
     "footer_copyright": "© 2025 أفريقرين",
     "footer_encrypted": "مشفّر",
     "nav_jurisdictions": "الولايات القضائية",
-    "nav_vision": "لوحة الرؤية"
+    "nav_vision": "لوحة الرؤية",
+    "nav_staff": "إدارة الموظفين"
+  },
+  "AdminStaff": {
+    "page_title": "إدارة الموظفين",
+    "page_subtitle": "ادعُ موظفي الحكومة وخصّص لهم الولايات القضائية.",
+    "form_title": "دعوة موظف",
+    "label_email": "عنوان البريد الإلكتروني",
+    "label_full_name": "الاسم الكامل",
+    "label_role": "الدور",
+    "label_jurisdictions": "الولايات القضائية",
+    "placeholder_email": "موظف@مثال.gov",
+    "placeholder_full_name": "الاسم الأول والأخير",
+    "role_port_officer": "ضابط ميناء",
+    "role_finance_admin": "مسؤول مالي",
+    "role_manager": "مدير",
+    "btn_invite": "إرسال الدعوة",
+    "btn_sending": "جارٍ الإرسال…",
+    "success_new": "تم إرسال الدعوة إلى {email}.",
+    "success_existing": "{email} لديه حساب بالفعل — تم تحديث الدور والولايات القضائية.",
+    "error_prefix": "خطأ: "
   },
   "DashboardPages": {
     "alerts_title": "التنبيهات والاستثناءات",
@@ -2803,6 +2823,72 @@
       "ref": "المرجع",
       "mode": "الوضع",
       "departedAt": "وقت المغادرة"
+    }
+  },
+  "OwnerRegister": {
+    "title": "تسجيل المشغّل البحري",
+    "subtitle": "أخبرنا عن شركتك. سنراجع طلبك ونتواصل معك خلال 48 ساعة.",
+    "email": "البريد الإلكتروني للتواصل",
+    "company_name": "اسم الشركة",
+    "imo_company": "رقم IMO للشركة (7 أرقام)",
+    "country": "الدولة (ISO-2)",
+    "address": "العنوان المسجّل",
+    "vessel_imo": "رقم IMO لأحد سفنك",
+    "phone_optional": "الهاتف (اختياري، E.164)",
+    "submit": "إرسال الطلب",
+    "submitting": "جارٍ الإرسال...",
+    "thanks_title": "شكراً لك",
+    "doc_types": {
+      "TRADE_REGISTER": "السجل التجاري",
+      "CERT_INCORPORATION": "شهادة التأسيس",
+      "MOA": "عقد التأسيس",
+      "OTHER": "أخرى"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "يُرجى رفع وثيقة إثبات",
+      "upload_failed": "فشل رفع الملف. يُرجى المحاولة مجدداً."
+    },
+    "proof_document": "وثيقة الإثبات",
+    "doc_type": "نوع الوثيقة",
+    "preferred_language": "اللغة المفضّلة",
+    "closed_title": "التسجيل مغلق",
+    "closed_body": "تسجيل المشغّلين متاح حالياً عبر الدعوة فقط. يُرجى التواصل مع الإدارة.",
+    "back_to_login": "العودة إلى تسجيل الدخول"
+  },
+  "AirRegister": {
+    "title": "تسجيل المشغّل الجوي",
+    "subtitle": "استلم حساب مشغّلك باستخدام رقم AOC وأحد طائراتك.",
+    "tab_maritime": "بحري",
+    "tab_air": "جوي",
+    "email": "البريد الإلكتروني الرسمي",
+    "company_name": "اسم شركة التشغيل",
+    "aoc_number": "رقم AOC",
+    "aircraft_ident": "تسجيل الطائرة أو رمز icao24",
+    "country": "الدولة (ISO-2)",
+    "address": "العنوان المسجّل",
+    "proof_document": "شهادة AOC (PDF/صورة)",
+    "phone_optional": "الهاتف (اختياري)",
+    "preferred_language": "اللغة المفضّلة",
+    "submit": "إرسال الطلب",
+    "submitting": "جارٍ الإرسال…",
+    "thanks_title": "تم استلام الطلب",
+    "errors": {
+      "no_file": "يُرجى إرفاق شهادة AOC الخاصة بك.",
+      "upload_failed": "فشل الرفع، يُرجى المحاولة مجدداً."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
     }
   }
 }

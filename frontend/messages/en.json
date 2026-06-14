@@ -816,7 +816,27 @@
     "nav_wallets": "Wallets",
     "nav_refunds": "Refunds",
     "nav_jurisdictions": "Jurisdictions",
-    "nav_vision": "Vision Board"
+    "nav_vision": "Vision Board",
+    "nav_staff": "Staff Management"
+  },
+  "AdminStaff": {
+    "page_title": "Staff Management",
+    "page_subtitle": "Invite government staff members and assign their jurisdictions.",
+    "form_title": "Invite a staff member",
+    "label_email": "Email address",
+    "label_full_name": "Full name",
+    "label_role": "Role",
+    "label_jurisdictions": "Jurisdictions",
+    "placeholder_email": "staff@example.gov",
+    "placeholder_full_name": "First and last name",
+    "role_port_officer": "Port Officer",
+    "role_finance_admin": "Finance Admin",
+    "role_manager": "Manager",
+    "btn_invite": "Send invitation",
+    "btn_sending": "Sending…",
+    "success_new": "Invitation sent to {email}.",
+    "success_existing": "{email} already has an account — role and jurisdictions updated.",
+    "error_prefix": "Error: "
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -3204,7 +3224,10 @@
     },
     "proof_document": "Proof document",
     "doc_type": "Document type",
-    "preferred_language": "Preferred language"
+    "preferred_language": "Preferred language",
+    "closed_title": "Registration closed",
+    "closed_body": "Operator registrations are currently by invitation only. Please contact the administration.",
+    "back_to_login": "Back to login"
   },
   "OwnerOnboarding": {
     "step1": {
