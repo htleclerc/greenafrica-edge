@@ -2,14 +2,29 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { Shield, Clock, Eye, EyeOff, ArrowRight, AlertCircle, Zap, ChevronRight } from 'lucide-react';
 import { OsButton } from '@/components/ui/OsButton';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { loginDestination } from '@/lib/auth/loginDestination';
+import { safeInternalPath } from '@/lib/auth/safeInternalPath';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
+
+// Maps ?error= param values (set by requireOwner / middleware) to i18n keys
+// under OwnerPortal.login.errors.
+const ERROR_KEY_MAP: Record<string, 'noOwnerRecord' | 'invited' | 'ghost' | 'callbackFailed' | 'generic'> = {
+    no_owner_record: 'noOwnerRecord',
+    state_invited:   'invited',
+    state_ghost:     'ghost',
+    callback_failed: 'callbackFailed',
+};
+
+function resolveErrorKey(raw: string): 'noOwnerRecord' | 'invited' | 'ghost' | 'callbackFailed' | 'generic' {
+    return ERROR_KEY_MAP[raw] ?? 'generic';
+}
 
 function persistDemoRole(role: UserRole) {
     document.cookie = `demo_active=true; path=/; max-age=3600; SameSite=Lax`;
@@ -30,8 +45,18 @@ function enterDemo(role: UserRole) {
     window.location.href = '/dashboard';
 }
 
-export function LoginPage() {
+/**
+ * Inner component that reads ?error= and ?redirectTo= from the URL.
+ *
+ * useSearchParams() requires a <Suspense> boundary to avoid a static-render
+ * error at Next.js build time. The outer LoginPage export provides that
+ * boundary so the page file stays clean.
+ */
+function LoginPageInner() {
     const t = useTranslations('Auth');
+    const tErrors = useTranslations('OwnerPortal.login.errors');
+    const searchParams = useSearchParams();
+
     const [email, setEmail]       = React.useState('');
     const [password, setPassword] = React.useState('');
     const [showPwd, setShowPwd]   = React.useState(false);
@@ -39,6 +64,12 @@ export function LoginPage() {
     const [error, setError]       = React.useState('');
     const [showDemo, setShowDemo] = React.useState(false);
 
+    // Read query params set by requireOwner / middleware redirects.
+    const errorParam = searchParams.get('error');
+    const redirectTo = safeInternalPath(searchParams.get('redirectTo'));
+
+    // Banner message from a server-side redirect (e.g. requireOwner blocked access).
+    const redirectBanner = errorParam ? tErrors(resolveErrorKey(errorParam)) : null;
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -94,6 +125,12 @@ export function LoginPage() {
         if (!isOperator && profile && !profile.is_active) {
             await supabase.auth.signOut();
             window.location.href = '/pending-approval';
+            return;
+        }
+
+        // Honor a safe ?redirectTo= param if present (e.g. from requireOwner / middleware).
+        if (redirectTo) {
+            window.location.href = redirectTo;
             return;
         }
 
@@ -165,6 +202,18 @@ export function LoginPage() {
                             <Clock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                             <p className="text-[11px] text-emerald-400">{t('session_notice')}</p>
                         </div>
+
+                        {/* Redirect error banner — shown when requireOwner / middleware
+                            bounced the user here with an ?error= param */}
+                        {redirectBanner && (
+                            <div
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
+                                style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
+                            >
+                                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                                <p className="text-xs text-red-400">{redirectBanner}</p>
+                            </div>
+                        )}
 
                         {/* Form — no role selector, role is auto-detected from the account */}
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -240,7 +289,7 @@ export function LoginPage() {
                             <button
                                 onClick={() => setShowDemo((v) => !v)}
                                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all group"
-                                style={{ 
+                                style={{
                                     backgroundColor: showDemo ? 'rgba(234,179,8,0.08)' : 'rgba(30, 41, 59, 0.5)',
                                     border: showDemo ? '1px solid rgba(234,179,8,0.3)' : '1px solid var(--os-border)',
                                     color: showDemo ? '#EAB308' : 'var(--os-text-muted)'
@@ -252,14 +301,14 @@ export function LoginPage() {
                                         {t('demo_title')}
                                     </span>
                                 </div>
-                                <ChevronRight 
+                                <ChevronRight
                                     className="w-4 h-4 transition-transform duration-300"
-                                    style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }} 
+                                    style={{ transform: showDemo ? 'rotate(90deg)' : 'rotate(0deg)' }}
                                 />
                             </button>
 
                             {showDemo && (
-                                <div 
+                                <div
                                     className="mt-4 rounded-xl p-5 border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300"
                                 >
                                     <div className="flex items-center gap-2 mb-4">
@@ -268,7 +317,7 @@ export function LoginPage() {
                                             {t('demo_choose_profile')}
                                         </h3>
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-1 gap-3">
                                         {DEMO_PROFILES.map((profile) => (
                                             <button
@@ -276,13 +325,13 @@ export function LoginPage() {
                                                 onClick={() => enterDemo(profile.role)}
                                                 className="group relative flex items-center gap-4 p-4 rounded-xl border border-slate-700/50 bg-slate-800/60 hover:bg-slate-700/60 hover:border-yellow-500/30 transition-all duration-300"
                                             >
-                                                <div 
+                                                <div
                                                     className="h-10 w-10 min-w-[40px] rounded-lg flex items-center justify-center text-white font-bold"
                                                     style={{ backgroundColor: profile.color }}
                                                 >
                                                     {profile.label.charAt(0)}
                                                 </div>
-                                                
+
                                                 <div className="flex-1 text-left min-w-0">
                                                     <div className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors">
                                                         {profile.label}
@@ -292,14 +341,14 @@ export function LoginPage() {
                                                     </div>
                                                 </div>
 
-                                                <ArrowRight 
-                                                    size={16} 
-                                                    className="text-slate-500 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" 
+                                                <ArrowRight
+                                                    size={16}
+                                                    className="text-slate-500 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all"
                                                 />
                                             </button>
                                         ))}
                                     </div>
-                                    
+
                                     <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
                                         <AlertCircle size={14} className="text-yellow-500/70 mt-0.5 flex-shrink-0" />
                                         <p className="text-[10px] leading-relaxed text-slate-400 italic">
@@ -334,5 +383,18 @@ export function LoginPage() {
             </div>
 
         </div>
+    );
+}
+
+/**
+ * LoginPage wraps the inner form in a Suspense boundary so that
+ * useSearchParams() (used inside LoginPageInner) does not cause a
+ * static-rendering error at Next.js build time.
+ */
+export function LoginPage() {
+    return (
+        <React.Suspense>
+            <LoginPageInner />
+        </React.Suspense>
     );
 }
