@@ -8,8 +8,9 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 // invitation link is expired or the cookies were cleared; bounce to /login.
 const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/auth/setup-password'];
 
-// Owner portal: same gate, but unauthenticated visits go to /owner/login
-// (NOT /login — staff and owner entry points are deliberately separate).
+// Owner portal: same gate; unauthenticated visits redirect to the unified /login.
+// /owner/login is kept in OWNER_PUBLIC_PATHS so it stays reachable as a server
+// redirect that preserves legacy invitation links.
 const OWNER_PROTECTED_PREFIX = '/owner';
 const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/auth/callback', '/owner/reset-password'];
 
@@ -178,10 +179,10 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse;
     }
 
-    // Owner portal — unauthenticated visits redirect to /owner/login (not /login)
+    // Owner portal — unauthenticated visits go to the unified /login.
     if (isOwnerProtected && !user) {
         const url = request.nextUrl.clone();
-        url.pathname = '/owner/login';
+        url.pathname = '/login';
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
     }
