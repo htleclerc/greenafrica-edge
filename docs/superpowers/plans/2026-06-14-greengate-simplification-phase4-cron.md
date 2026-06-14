@@ -207,6 +207,8 @@ Expected: tsc clean ; vitest vert (nouveaux tests service + route) ; build OK (r
 
 ## Activation (runbook — pour le PO, hors code)
 
+0. **PRÉREQUIS BLOQUANT avant d'activer le flag** (revue finale P4) : ajouter un **index unique partiel** sur les proformas pour fermer la fenêtre de course cron + worker pgmq (les deux appellent `runProformaPipeline` sans verrou ; aucun index unique n'existe aujourd'hui sur `transactions(arrival_alert_id) WHERE document_type='PROFORMA'`). Sans ça, une collision exacte (rare) pourrait émettre **2 proformas** pour une même arrivée. L'index transforme la course en erreur d'INSERT propre (comptée `failed`). ⚠️ Conception à faire avec soin : vérifier d'abord l'absence de doublons existants, et exclure les proformas VOID / le cas réémission (corridor W4) — donc probablement `WHERE document_type='PROFORMA' AND status <> 'VOID'`. À livrer comme migration dédiée AVANT la bascule du flag.
+
 1. Vérifier `CRON_SECRET`, `AFRICGREEN_API_URL`, `AFRICGREEN_API_SECRET` en prod (Vercel env).
 2. **Preview** : `GET /api/cron/daily-precompute?dryRun=1` (avec le Bearer) → vérifier `scanned` (nb d'alertes qui seraient traitées) sans rien écrire.
 3. **Activer** : poser `app_config` `feature.daily_precompute_enabled = true` (via /admin ou SQL).
