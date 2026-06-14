@@ -7,6 +7,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { DEMO_PROFILES } from '@/mock/datas/testProfiles';
 import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
+import { loginDestination } from '@/lib/auth/loginDestination';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 
@@ -74,27 +75,30 @@ export function LoginPage() {
             return;
         }
 
-        // Fetch the user's profile to get their role
+        // Detect operator (shipowners row) — own-row read is allowed by RLS.
+        const { data: shipowner } = await supabase
+            .from('shipowners')
+            .select('id')
+            .eq('profile_id', data.user.id)
+            .maybeSingle();
+        const isOperator = !!shipowner;
+
+        // Staff role (profiles row may be absent for pure operators).
         const { data: profile } = await supabase
             .from('profiles')
             .select('role, is_active')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
 
-        if (profile && !profile.is_active) {
+        // Inactive staff (not operators) await approval.
+        if (!isOperator && profile && !profile.is_active) {
             await supabase.auth.signOut();
             window.location.href = '/pending-approval';
             return;
         }
 
-        const role = (profile?.role as UserRole) ?? UserRole.PORT_OFFICER;
-
-        // SUPERADMIN → post-login to optionally impersonate another role
-        if (role === UserRole.SUPERADMIN) {
-            window.location.href = '/post-login';
-        } else {
-            window.location.href = '/dashboard';
-        }
+        const role = (profile?.role as UserRole) ?? null;
+        window.location.href = loginDestination({ isOperator, role });
     }
 
     return (
@@ -227,9 +231,6 @@ export function LoginPage() {
                         <p className="text-center text-xs mt-4" style={{ color: 'var(--os-text-muted)' }}>
                             {t('no_account')}{' '}
                             <a href="/signup" className="text-emerald-400 hover:underline font-semibold">{t('request_access')}</a>
-                        </p>
-                        <p className="text-center text-xs mt-2" style={{ color: 'var(--os-text-muted)' }}>
-                            <a href="/owner/login" className="text-emerald-400 hover:underline font-semibold">{t('owner_portal_link')}</a>
                         </p>
                     </div>
 
