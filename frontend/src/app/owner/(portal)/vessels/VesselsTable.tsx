@@ -25,16 +25,18 @@ function complianceVariant(status: string): BadgeVariant {
 
 interface Props {
     rows: VesselRow[];
+    /** Base path for vessel detail links. Defaults to /owner/vessels. */
+    vesselBasePath?: string;
 }
 
-export function VesselsTable({ rows }: Props) {
+export function VesselsTable({ rows, vesselBasePath = '/owner/vessels' }: Props) {
     const columns: OsColumn<VesselRow>[] = [
         {
             key: 'name',
             header: 'Vessel',
             render: (r) => (
                 <Link
-                    href={`/owner/vessels/${r.id}`}
+                    href={`${vesselBasePath}/${r.id}`}
                     className="font-medium text-emerald-400 hover:underline"
                 >
                     {r.name}
