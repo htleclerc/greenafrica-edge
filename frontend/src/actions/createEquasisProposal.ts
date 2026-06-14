@@ -12,14 +12,14 @@ const schema = z.object({
     proposedCountry: z.string().trim().max(50).optional().default(''),
 });
 
-const ALLOWED_ROLES = ['PORT_OFFICER', 'MANAGER', 'SUPERADMIN'] as const;
+const ALLOWED_ROLES = ['PORT_OFFICER', 'SUPERADMIN'] as const;
 
 export type CreateEquasisProposalResult =
     | { ok: true; proposalId: string }
     | { ok: false; reason: string };
 
 /**
- * Manual proposal entry by Port Operations / Manager / Superadmin.
+ * Manual proposal entry by Port Operations / Superadmin.
  *
  * When a port officer has owner-email information from any source
  * (Equasis lookup done by hand, third-party data feed, agent disclosure),

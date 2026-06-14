@@ -9,7 +9,7 @@ const schema = z.object({
     proposalId: z.string().uuid(),
 });
 
-const ALLOWED_ROLES = ['PORT_OFFICER', 'MANAGER', 'SUPERADMIN'] as const;
+const ALLOWED_ROLES = ['PORT_OFFICER', 'SUPERADMIN'] as const;
 
 export type ApplyEquasisProposalResult =
     | { ok: true; shipownerId: string; emailUpdated: boolean }
