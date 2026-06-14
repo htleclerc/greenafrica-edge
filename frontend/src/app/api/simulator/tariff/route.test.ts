@@ -71,7 +71,7 @@ vi.mock('@/lib/supabase/server', () => {
 
 vi.mock('@/lib/auth/tenantContext', () => ({
     _getServerJurisdictionIdImpl: vi.fn(async () => {
-        if (mocks.jurisdictionImplThrows) {
+        if (mocks.jurisdictionImplThrows || mocks.jurisdictionIdFromImpl === null) {
             throw new Error('getServerJurisdictionId: no jurisdiction resolved');
         }
         return mocks.jurisdictionIdFromImpl;

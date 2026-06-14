@@ -37,18 +37,23 @@ export async function GET() {
     // ── Step 1: resolve jurisdiction ──────────────────────────────────────────
 
     // Check if caller is an active operator
-    const { data: shipownerRow } = await supabase
+    const { data: shipownerRow, error: shipownerError } = await supabase
         .from('shipowners')
         .select('jurisdiction_id')
         .eq('profile_id', user.id)
         .eq('account_state', 'ACTIVE')
         .maybeSingle();
 
+    if (shipownerError) {
+        console.error('[tariff] shipowners query failed', shipownerError);
+        return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    }
+
     let jurisdictionId: string | null = null;
 
     if (shipownerRow?.jurisdiction_id) {
         // Operator path
-        jurisdictionId = shipownerRow.jurisdiction_id as string;
+        jurisdictionId = shipownerRow.jurisdiction_id ?? null;
     } else {
         // Staff path — use the uncached impl to avoid React cache() in API routes
         try {
@@ -63,7 +68,7 @@ export async function GET() {
 
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-    const { data: tariffRow } = await supabase
+    const { data: tariffRow, error: tariffError } = await supabase
         .from('tariffs')
         .select('rate_per_tco2, currency')
         .eq('jurisdiction_id', jurisdictionId)
@@ -75,9 +80,14 @@ export async function GET() {
         .limit(1)
         .maybeSingle();
 
+    if (tariffError) {
+        console.error('[tariff] tariffs query failed', tariffError);
+        return NextResponse.json({ jurisdictionId, ratePerTco2: null, currency: 'USD' });
+    }
+
     return NextResponse.json({
         jurisdictionId,
-        ratePerTco2: tariffRow ? (tariffRow.rate_per_tco2 as number) : null,
-        currency: (tariffRow?.currency as string | undefined) ?? 'USD',
+        ratePerTco2: tariffRow ? Number(tariffRow.rate_per_tco2) : null,
+        currency: tariffRow?.currency ?? 'USD',
     });
 }
