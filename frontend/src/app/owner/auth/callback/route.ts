@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect into the portal with the cookies set on `response`.
-    const redirectResp = NextResponse.redirect(`${origin}/owner/dashboard`);
+    const redirectResp = NextResponse.redirect(`${origin}/dashboard`);
     response.cookies.getAll().forEach((c) => {
         redirectResp.cookies.set(c.name, c.value, c);
     });
