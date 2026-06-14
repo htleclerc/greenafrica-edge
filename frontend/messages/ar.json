@@ -2540,7 +2540,12 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Wallet",
+      "simulator": "Tax Simulator",
+      "tco": "TCO Dashboard",
+      "disputes": "Disputes",
+      "notifications": "Notifications"
     },
     "login": {
       "title": "Sign in with your email",

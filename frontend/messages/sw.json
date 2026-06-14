@@ -2534,10 +2534,15 @@
     "brand": "Shipowner Portal",
     "nav": {
       "dashboard": "Dashboard",
-      "vessels": "Vessels",
-      "invoices": "Invoices",
-      "alerts": "Alerts",
-      "signOut": "Sign out"
+      "vessels": "Meli",
+      "invoices": "Ankara",
+      "alerts": "Tahadhari",
+      "signOut": "Toka",
+      "wallet": "Mkoba",
+      "simulator": "Kikokotoo cha Kodi",
+      "tco": "Dashibodi ya TCO",
+      "disputes": "Migogoro",
+      "notifications": "Arifa"
     },
     "login": {
       "title": "Sign in with your email",

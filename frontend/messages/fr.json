@@ -2743,7 +2743,8 @@
       "wallet": "Portefeuille",
       "simulator": "Simulateur de taxe",
       "tco": "Tableau TCO",
-      "disputes": "Litiges"
+      "disputes": "Litiges",
+      "notifications": "Notifications"
     },
     "disputes": {
       "empty": "Vous n'avez ouvert aucun litige pour le moment."

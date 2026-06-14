@@ -2773,7 +2773,8 @@
       "wallet": "Wallet",
       "simulator": "Tax Simulator",
       "tco": "TCO Dashboard",
-      "disputes": "Disputes"
+      "disputes": "Disputes",
+      "notifications": "Notifications"
     },
     "disputes": {
       "empty": "You haven't opened any disputes yet."

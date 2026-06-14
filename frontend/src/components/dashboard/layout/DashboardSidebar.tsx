@@ -7,6 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
+    LayoutDashboard, Bell,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -14,6 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { JurisdictionSwitcher } from './JurisdictionSwitcher';
+import { OPERATOR_NAV, type OperatorNavItem } from '@/lib/auth/operatorNav';
 
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_EXPANDED  = 220;
@@ -51,6 +53,18 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'jurisdictions', icon: <Globe2 className="w-5 h-5" />,      href: '/admin/jurisdictions',   labelKey: 'nav_jurisdictions', section: 'admin' },
 ];
 
+// Icon map for operator nav items. Keyed by OperatorNavItem.key.
+const OPERATOR_ICONS: Record<string, React.ReactNode> = {
+    dashboard:     <LayoutDashboard className="w-5 h-5" />,
+    vessels:       <Ship className="w-5 h-5" />,
+    invoices:      <FileText className="w-5 h-5" />,
+    wallet:        <Wallet className="w-5 h-5" />,
+    simulator:     <Calculator className="w-5 h-5" />,
+    tco:           <DollarSign className="w-5 h-5" />,
+    disputes:      <Scale className="w-5 h-5" />,
+    notifications: <Bell className="w-5 h-5" />,
+};
+
 interface DashboardSidebarProps {
     activePage?: string;
     expanded: boolean;
@@ -60,15 +74,131 @@ interface DashboardSidebarProps {
     onMobileClose?: () => void;
 }
 
+// ── Principal detection ───────────────────────────────────────────────────────
+//
+// We cannot rely on RoleContext to detect operators: RoleContext only resolves
+// staff sessions (via the `profiles` table). Operators have no profiles row, so
+// RoleContext falls back to its default PORT_OFFICER sentinel — not reliable.
+//
+// Instead we call GET /api/me/principal (a thin server route that checks the
+// `shipowners` table) and cache the result in React state. While the fetch is
+// in flight we render a neutral skeleton to avoid a nav flash (staff nav
+// briefly visible before the operator nav kicks in). Once resolved:
+//   kind === 'operator' → flat OPERATOR_NAV, no JurisdictionSwitcher
+//   kind === 'staff'    → existing RBAC-filtered nav, unchanged
+//
+// Error / network failure → assume 'staff' (safe fallback: staff nav is a
+// superset for the restricted pages operators would actually visit).
+
+type PrincipalKind = 'operator' | 'staff';
+
+function usePrincipalKind(): { kind: PrincipalKind | null } {
+    const [kind, setKind] = React.useState<PrincipalKind | null>(null);
+
+    React.useEffect(() => {
+        let cancelled = false;
+        fetch('/api/me/principal')
+            .then((r) => r.json())
+            .then((data: { kind?: PrincipalKind }) => {
+                if (!cancelled) setKind(data.kind === 'operator' ? 'operator' : 'staff');
+            })
+            .catch(() => {
+                if (!cancelled) setKind('staff');
+            });
+        return () => { cancelled = true; };
+    }, []);
+
+    return { kind };
+}
+
 export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0, mobileOpen = false, onMobileClose }: DashboardSidebarProps) {
     const t = useTranslations('Dashboard');
+    const tOwner = useTranslations('OwnerPortal');
     const { role } = useRole();
+    const { kind } = usePrincipalKind();
+
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
     const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
         .map((item) => item.key === 'validations' && pendingRegistrations > 0
             ? { ...item, badge: pendingRegistrations }
             : item
         );
+
+    // ── Skeleton nav (while principal kind is resolving) ──────────────────────
+    // Render 8 placeholder rows to match the operator nav height and avoid the
+    // layout jumping between a staff nav (many items) and operator nav (8 items).
+    const renderSkeletonNav = () => (
+        <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5 mt-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                    key={i}
+                    className="flex items-center gap-2.5 px-2.5 rounded-xl"
+                    style={{ minHeight: 40 }}
+                >
+                    <span
+                        className="w-5 h-5 rounded flex-shrink-0 animate-pulse"
+                        style={{ backgroundColor: 'var(--os-border)', minWidth: 20 }}
+                    />
+                    {(expanded || mobileOpen) && (
+                        <span
+                            className="h-3 rounded animate-pulse"
+                            style={{ width: 80, backgroundColor: 'var(--os-border)' }}
+                        />
+                    )}
+                </div>
+            ))}
+        </nav>
+    );
+
+    // ── Operator nav ──────────────────────────────────────────────────────────
+    const renderOperatorNav = () => (
+        <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
+            {OPERATOR_NAV.map((item) => (
+                <OperatorNavButton
+                    key={item.key}
+                    item={item}
+                    icon={OPERATOR_ICONS[item.key]}
+                    isActive={activePage === item.key}
+                    expanded={expanded || mobileOpen}
+                    t={tOwner}
+                    onNavigate={onMobileClose}
+                />
+            ))}
+        </nav>
+    );
+
+    // ── Staff nav (existing behaviour, unchanged) ─────────────────────────────
+    const renderStaffNav = () => (
+        <>
+            {/* Jurisdiction switcher (staff with >1 jurisdiction) */}
+            <JurisdictionSwitcher expanded={expanded || mobileOpen} />
+
+            <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
+                {(expanded || mobileOpen) && (
+                    <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
+                        {t('section_operations')}
+                    </p>
+                )}
+                {opsItems.map((item) => (
+                    <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
+                ))}
+
+                {adminItems.length > 0 && (
+                    <>
+                        <div className="h-px my-2 mx-1 flex-shrink-0" style={{ backgroundColor: 'var(--os-border)' }} />
+                        {(expanded || mobileOpen) && (
+                            <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
+                                {t('section_administration')}
+                            </p>
+                        )}
+                        {adminItems.map((item) => (
+                            <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
+                        ))}
+                    </>
+                )}
+            </nav>
+        </>
+    );
 
     return (
         <>
@@ -129,34 +259,13 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                     </div>
                 </Link>
 
-                {/* Jurisdiction switcher (staff with >1 jurisdiction) */}
-                <JurisdictionSwitcher expanded={expanded || mobileOpen} />
-
-                {/* Nav */}
-                <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
-                    {(expanded || mobileOpen) && (
-                        <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
-                            {t('section_operations')}
-                        </p>
-                    )}
-                    {opsItems.map((item) => (
-                        <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
-                    ))}
-
-                    {adminItems.length > 0 && (
-                        <>
-                            <div className="h-px my-2 mx-1 flex-shrink-0" style={{ backgroundColor: 'var(--os-border)' }} />
-                            {(expanded || mobileOpen) && (
-                                <p className="text-[9px] font-bold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--os-text-muted)' }}>
-                                    {t('section_administration')}
-                                </p>
-                            )}
-                            {adminItems.map((item) => (
-                                <NavButton key={item.key} item={item} isActive={activePage === item.key} expanded={expanded || mobileOpen} t={t} onNavigate={onMobileClose} />
-                            ))}
-                        </>
-                    )}
-                </nav>
+                {/* Nav — three states: resolving (skeleton) | operator | staff */}
+                {kind === null
+                    ? renderSkeletonNav()
+                    : kind === 'operator'
+                        ? renderOperatorNav()
+                        : renderStaffNav()
+                }
 
                 {/* Bottom: Settings + logout + status */}
                 <div className="flex flex-col gap-1 px-1.5 mt-2 flex-shrink-0">
@@ -258,7 +367,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     );
 }
 
-// ── NavButton ─────────────────────────────────────────────────────────────────
+// ── NavButton (staff) ─────────────────────────────────────────────────────────
 
 interface NavButtonProps {
     item: NavItem;
@@ -335,6 +444,61 @@ function NavButton({ item, isActive, expanded, t, onNavigate }: NavButtonProps) 
                     }}
                 >
                     {label}{item.badge ? ` (${item.badge})` : ''}
+                </span>
+            )}
+        </Link>
+    );
+}
+
+// ── OperatorNavButton ─────────────────────────────────────────────────────────
+
+interface OperatorNavButtonProps {
+    item: OperatorNavItem;
+    icon: React.ReactNode;
+    isActive: boolean;
+    expanded: boolean;
+    t: (key: string) => string;
+    onNavigate?: () => void;
+}
+
+function OperatorNavButton({ item, icon, isActive, expanded, t, onNavigate }: OperatorNavButtonProps) {
+    const label = t(item.labelKey);
+    return (
+        <Link
+            href={item.href}
+            onClick={onNavigate}
+            title={expanded ? undefined : label}
+            className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group"
+            style={{
+                color: isActive ? '#10B981' : 'var(--os-text-muted)',
+                backgroundColor: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
+                boxShadow: isActive ? 'inset 2px 0 0 #10B981' : 'none',
+                minHeight: 40,
+            }}
+        >
+            <span className="w-5 h-5 flex items-center justify-center flex-shrink-0" style={{ minWidth: 20 }}>
+                {icon}
+            </span>
+            <span
+                className="text-xs font-medium whitespace-nowrap overflow-hidden"
+                style={{
+                    maxWidth: expanded ? 140 : 0,
+                    opacity: expanded ? 1 : 0,
+                    transition: 'max-width 220ms cubic-bezier(0.4,0,0.2,1), opacity 150ms ease',
+                }}
+            >
+                {label}
+            </span>
+            {!expanded && (
+                <span
+                    className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg whitespace-nowrap text-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50"
+                    style={{
+                        backgroundColor: 'var(--os-surface-3)',
+                        border: '1px solid var(--os-border)',
+                        color: 'var(--os-text-primary)',
+                    }}
+                >
+                    {label}
                 </span>
             )}
         </Link>

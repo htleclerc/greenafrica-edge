@@ -2537,7 +2537,12 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Carteira",
+      "simulator": "Simulador Fiscal",
+      "tco": "Painel TCO",
+      "disputes": "Disputas",
+      "notifications": "Notificações"
     },
     "login": {
       "title": "Sign in with your email",
