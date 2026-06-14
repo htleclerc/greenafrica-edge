@@ -1069,7 +1069,10 @@
     "simulator_cat_ferry": "Ferry passagers",
     "simulator_unit_knots": "nœuds",
     "simulator_unit_hours": "heures",
-    "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions."
+    "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions.",
+    "simulator_official_rate": "Tarif officiel : {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Aucun tarif publié",
+    "simulator_no_tariff_body": "Aucun tarif actif n'a été publié pour cette juridiction. Le calcul est indisponible — veuillez contacter l'administration."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
