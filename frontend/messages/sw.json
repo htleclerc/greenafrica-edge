@@ -2776,5 +2776,28 @@
       "mismatched": "{count} miamala isiyolingana"
     },
     "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Muhtasari wa meli wa wakati halisi — kusoma tu",
+    "modeBoth": "Njia zote",
+    "modeMaritime": "Bahari",
+    "modeAir": "Anga",
+    "kpi": {
+      "atPort": "Bandarini",
+      "approaching": "Inakaribia",
+      "paidLast7d": "Zilizolipwa (siku 7)",
+      "unpaidInProgress": "Hazijalipwa zinazoendelea"
+    },
+    "departures": {
+      "title": "Kuondoka hivi karibuni",
+      "subtitle": "Waliacha EEZ katika siku 7 zilizopita",
+      "empty": "Hakuna kuondoka kulikorekodi katika siku 7 zilizopita"
+    },
+    "table": {
+      "ref": "Kumb.",
+      "mode": "Hali",
+      "departedAt": "Kuondoka"
+    }
   }
 }

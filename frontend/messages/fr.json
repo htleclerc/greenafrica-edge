@@ -3547,5 +3547,28 @@
       "mismatched": "{count} tx incorrectes"
     },
     "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantané flotte en direct — lecture seule",
+    "modeBoth": "Tous modes",
+    "modeMaritime": "Maritime",
+    "modeAir": "Aérien",
+    "kpi": {
+      "atPort": "Au port",
+      "approaching": "En approche",
+      "paidLast7d": "Payées (7j)",
+      "unpaidInProgress": "Impayées en cours"
+    },
+    "departures": {
+      "title": "Derniers départs",
+      "subtitle": "Ont quitté la ZEE dans les 7 derniers jours",
+      "empty": "Aucun départ enregistré dans les 7 derniers jours"
+    },
+    "table": {
+      "ref": "Réf.",
+      "mode": "Mode",
+      "departedAt": "Départ"
+    }
   }
 }

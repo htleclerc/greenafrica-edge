@@ -2776,5 +2776,28 @@
       "mismatched": "{count} tx incorretas"
     },
     "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantâneo da frota em tempo real — apenas leitura",
+    "modeBoth": "Todos os modos",
+    "modeMaritime": "Marítimo",
+    "modeAir": "Aéreo",
+    "kpi": {
+      "atPort": "No porto",
+      "approaching": "Em aproximação",
+      "paidLast7d": "Pagas (7d)",
+      "unpaidInProgress": "Não pagas em curso"
+    },
+    "departures": {
+      "title": "Saídas recentes",
+      "subtitle": "Saíram da ZEE nos últimos 7 dias",
+      "empty": "Nenhuma saída registada nos últimos 7 dias"
+    },
+    "table": {
+      "ref": "Ref.",
+      "mode": "Modo",
+      "departedAt": "Saída"
+    }
   }
 }

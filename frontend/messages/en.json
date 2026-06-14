@@ -3577,5 +3577,28 @@
       "mismatched": "{count} mismatched tx"
     },
     "modesDisclosure": "Gates new detections and billing — in-flight voyages complete; the calc API stays open for reconciliation."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Live fleet snapshot — read only",
+    "modeBoth": "All modes",
+    "modeMaritime": "Maritime",
+    "modeAir": "Air",
+    "kpi": {
+      "atPort": "At port",
+      "approaching": "Approaching",
+      "paidLast7d": "Paid (7d)",
+      "unpaidInProgress": "Unpaid in progress"
+    },
+    "departures": {
+      "title": "Recent departures",
+      "subtitle": "Left EEZ in the last 7 days",
+      "empty": "No departures recorded in the last 7 days"
+    },
+    "table": {
+      "ref": "Ref.",
+      "mode": "Mode",
+      "departedAt": "Departed"
+    }
   }
 }
