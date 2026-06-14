@@ -13,7 +13,6 @@ const STAFF_ROLES = new Set<string>([
     UserRole.SUPERADMIN,
     UserRole.FINANCE_ADMIN,
     UserRole.PORT_OFFICER,
-    UserRole.MANAGER,
 ]);
 
 // GET → { url } : short-lived signed URL for proof file #idx of a transaction.

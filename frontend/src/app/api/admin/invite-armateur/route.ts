@@ -6,9 +6,7 @@
 // with a signed login link → /auth/sl establishes a Supabase session →
 // /auth/setup-password lets them choose a password → /dashboard.
 //
-// Allowed roles: MANAGER, PORT_OFFICER, SUPERADMIN.
-//   - MANAGER respects the "no money, no RBAC" principle: this endpoint can
-//     ONLY create SHIPPING_AGENT accounts. Role escalation impossible by design.
+// Allowed roles: PORT_OFFICER, SUPERADMIN.
 //   - The created profile is is_active=true (the invitation IS the approval —
 //     skip the registration_requests review queue).
 //
@@ -24,7 +22,7 @@ import { UserRole } from '@/types/secure';
 import { sendArmateurInviteEmail } from '@/services/emailService';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 
-const INVITER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER];
+const INVITER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER];
 
 const inviteSchema = z.object({
     email: z.email(),

@@ -4,7 +4,7 @@ import { requireRole } from '@/lib/auth/requireRole';
 import { adminScopedClient } from '@/lib/auth/adminTenant';
 import { UserRole } from '@/types/secure';
 
-const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.MANAGER];
+const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN];
 
 export async function GET(
     _req: NextRequest,
