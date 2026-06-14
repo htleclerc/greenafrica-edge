@@ -612,6 +612,7 @@
     "role_finance_admin": "Admin Financier",
     "role_shipping_agent": "Armateur / Agent",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Manager Opérations",
     "notif_noncompliant_title": "Navire non-conforme",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — action requise",
     "notif_payment_due_title": "Paiement dû",

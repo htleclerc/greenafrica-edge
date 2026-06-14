@@ -17,6 +17,7 @@ import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { JurisdictionSwitcher } from './JurisdictionSwitcher';
 import { ModeSwitcher } from './ModeSwitcher';
 import { OPERATOR_NAV, type OperatorNavItem } from '@/lib/auth/operatorNav';
+import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_EXPANDED  = 220;
@@ -80,38 +81,12 @@ interface DashboardSidebarProps {
 //
 // We cannot rely on RoleContext to detect operators: RoleContext only resolves
 // staff sessions (via the `profiles` table). Operators have no profiles row, so
-// RoleContext falls back to its default PORT_OFFICER sentinel — not reliable.
-//
-// Instead we call GET /api/me/principal (a thin server route that checks the
-// `shipowners` table) and cache the result in React state. While the fetch is
-// in flight we render a neutral skeleton to avoid a nav flash (staff nav
-// briefly visible before the operator nav kicks in). Once resolved:
+// Operator vs staff is resolved via the shared usePrincipalKind hook (GET
+// /api/me/principal). While the fetch is in flight we render a neutral skeleton
+// to avoid a nav flash (staff nav briefly visible before the operator nav kicks
+// in). Once resolved:
 //   kind === 'operator' → flat OPERATOR_NAV, no JurisdictionSwitcher
 //   kind === 'staff'    → existing RBAC-filtered nav, unchanged
-//
-// Error / network failure → assume 'staff' (safe fallback: staff nav is a
-// superset for the restricted pages operators would actually visit).
-
-type PrincipalKind = 'operator' | 'staff';
-
-function usePrincipalKind(): { kind: PrincipalKind | null } {
-    const [kind, setKind] = React.useState<PrincipalKind | null>(null);
-
-    React.useEffect(() => {
-        let cancelled = false;
-        fetch('/api/me/principal')
-            .then((r) => r.json())
-            .then((data: { kind?: PrincipalKind }) => {
-                if (!cancelled) setKind(data.kind === 'operator' ? 'operator' : 'staff');
-            })
-            .catch(() => {
-                if (!cancelled) setKind('staff');
-            });
-        return () => { cancelled = true; };
-    }, []);
-
-    return { kind };
-}
 
 export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0, mobileOpen = false, onMobileClose }: DashboardSidebarProps) {
     const t = useTranslations('Dashboard');

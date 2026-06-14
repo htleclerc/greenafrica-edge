@@ -601,6 +601,7 @@
     "role_finance_admin": "Msimamizi wa Fedha",
     "role_shipping_agent": "Mmiliki wa Meli / Wakala",
     "role_superadmin": "Msimamizi Mkuu",
+    "role_operations_manager": "Meneja wa Uendeshaji",
     "notif_noncompliant_title": "Meli isiyozingatia",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — hatua inahitajika",
     "notif_payment_due_title": "Malipo yanayostahili",

@@ -602,6 +602,7 @@
     "role_finance_admin": "مسؤول المالية",
     "role_shipping_agent": "مالك السفينة / وكيل",
     "role_superadmin": "المدير الأعلى",
+    "role_operations_manager": "مدير العمليات",
     "notif_noncompliant_title": "سفينة غير ممتثلة",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — إجراء مطلوب",
     "notif_payment_due_title": "دفع مستحق",
