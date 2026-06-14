@@ -8,67 +8,71 @@ import { UserRole } from '@/types/secure';
 /**
  * Maps each nav key to the list of roles that can access it.
  *
- * RBAC Matrix (post-migration 020 with MANAGER):
+ * RBAC Matrix (post-simplification: MANAGER = vision-board only):
  * ┌──────────────────┬──────────────┬──────────────┬───────────────┬──────────────┬──────────┐
  * │ Page             │ PORT_OFFICER │ FINANCE_ADMIN│ SHIPPING_AGENT│ SUPERADMIN   │ MANAGER  │
  * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
- * │ map (Dashboard)  │ ✓            │ ✓            │ ✓             │ ✓            │ ✓        │
- * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │ ✓        │
- * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │ ✓        │
- * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │ read     │
- * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │ read     │
+ * │ vision           │ ✗            │ ✗            │ ✗             │ ✓            │ ✓        │
+ * │ map (Dashboard)  │ ✓            │ ✓            │ ✓             │ ✓            │ ✗        │
+ * │ simulator        │ ✓            │ ✗            │ ✓             │ ✓            │ ✗        │
+ * │ vessels          │ ✓            │ read         │ ✓ (own fleet) │ ✓            │ ✗        │
+ * │ invoices         │ ✓            │ ✓            │ ✓ (own)       │ ✓            │ ✗        │
+ * │ disputes         │ ✓            │ ✓            │ ✓             │ ✓            │ ✗        │
  * │ my-fleet         │ ✗            │ ✗            │ ✓             │ ✓            │ ✗        │
  * │ green-ledger     │ ✓            │ ✗            │ ✗             │ ✓            │ ✗        │
- * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │ ✓        │
+ * │ alerts           │ ✓            │ ✗            │ ✓             │ ✓            │ ✗        │
  * │ analytics        │ ✓            │ ✓            │ ✗             │ ✓            │ ✗        │
- * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │ ✓        │
- * │ inspector        │ ✓            │ ✗            │ ✗             │ ✓            │ ✓        │
- * │ audit            │ ✓            │ ✗            │ ✗             │ ✓            │ read     │
+ * │ validations      │ ✓            │ ✗            │ ✗             │ ✓            │ ✗        │
+ * │ inspector        │ ✓            │ ✗            │ ✗             │ ✓            │ ✗        │
+ * │ audit            │ ✓            │ ✗            │ ✗             │ ✓            │ ✗        │
  * ├──── money rail ──┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
  * │ tax-settings     │ read         │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ origin-port-prop │ ✓            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
- * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │ ✓        │
+ * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │ ✗        │
  * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┴──────────┘
  *
- * MANAGER principle: "no money, no RBAC" — runs daily ops, never touches
- * money-rail or user/role administration.
+ * MANAGER principle (simplified): read-only live fleet view via vision board,
+ * zero access to ops/money/admin pages.
  */
 const NAV_PERMISSIONS: Record<string, UserRole[]> = {
+    // Vision board — MANAGER's single entry point (read-only live snapshot)
+    'vision':       [UserRole.MANAGER, UserRole.SUPERADMIN],
+
     // Ops
-    'map':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'map':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'simulator':    [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'vessels':      [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'invoices':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'disputes':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'my-fleet':     [UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
-    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'tco':          [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
     'green-ledger': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
-    'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'alerts':       [UserRole.PORT_OFFICER, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
+    'inspector':    [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
     'analytics':    [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Audit
-    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'audit':        [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
 
-    // Admin (ops side — MANAGER allowed)
-    'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
-    'registrations': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN, UserRole.MANAGER],
+    // Admin
+    'validations':  [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
+    'registrations': [UserRole.PORT_OFFICER, UserRole.SUPERADMIN],
 
-    // Money rail (MANAGER explicitly excluded — see MONEY_RAIL_KEYS below)
+    // Money rail
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'origin-port-proposals': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'refunds':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'cash-desk':    [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.PORT_OFFICER],
-    'wallets':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.MANAGER],
+    'wallets':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'jurisdictions': [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
-    // Settings — everyone
-    'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN, UserRole.MANAGER],
+    // Settings
+    'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
 };
 
 /**
@@ -101,10 +105,7 @@ export const MONEY_RAIL_KEYS = new Set<string>([
 const READ_ONLY_ROLES: Record<string, UserRole[]> = {
     'tax-settings': [UserRole.PORT_OFFICER],   // PORT_OFFICER reads, cannot modify rates/exemptions
     'revenue':      [UserRole.PORT_OFFICER],   // same posture for revenue dashboard
-    'invoices':     [UserRole.MANAGER],        // MANAGER reads invoices, no issuance
-    'disputes':     [UserRole.MANAGER],        // MANAGER reads disputes; resolve = money action, denied
-    'audit':        [UserRole.MANAGER],        // MANAGER reads audit, never writes
-    'registrations': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads registrations, actions require MANAGER role
+    'registrations': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads registrations, actions require higher role
 };
 
 /**
