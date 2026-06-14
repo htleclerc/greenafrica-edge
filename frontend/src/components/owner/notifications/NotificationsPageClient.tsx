@@ -4,7 +4,7 @@
 // NotificationsPageClient — interactive notifications list page
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Mounts under /owner/(portal)/notifications. Reuses <NotificationList> from
+// Mounts under /owner/notifications. Reuses <NotificationList> from
 // the bell dropdown and the GET /api/owner/notifications route for paginated
 // reads (offset/limit). Holds three pieces of state:
 //   - rows: accumulated NotificationRow[]

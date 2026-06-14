@@ -4,7 +4,7 @@
 // Staff continue to use their own client-side AlertsPage component.
 
 import type { Principal } from '@/lib/auth/requirePrincipal';
-import { AlertsTable, type AlertRow } from '@/app/owner/(portal)/alerts/AlertsTable';
+import { AlertsTable, type AlertRow } from '@/components/owner/alerts/AlertsTable';
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;

@@ -4,7 +4,7 @@
 // (requireOwner or requirePrincipal); this component only renders the client UI.
 
 import type { Principal } from '@/lib/auth/requirePrincipal';
-import { NotificationsPageClient } from '@/app/owner/(portal)/notifications/NotificationsPageClient';
+import { NotificationsPageClient } from '@/components/owner/notifications/NotificationsPageClient';
 
 // Principal prop is accepted for consistency with the delegation pattern even
 // though the client component talks to /api/owner/notifications directly.

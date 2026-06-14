@@ -6,7 +6,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
 import { signInvoiceRef } from '@/services/invoiceService';
-import { InvoicesTable, type InvoiceRow } from '@/app/owner/(portal)/invoices/InvoicesTable';
+import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/InvoicesTable';
 
 interface RawTxn {
     id: string;

@@ -4,7 +4,7 @@
 
 import type { Principal } from '@/lib/auth/requirePrincipal';
 import { getDisputesBySubmitter } from '@/services/disputeService';
-import { OwnerDisputesList, type OwnerDisputeRow } from '@/app/owner/(portal)/disputes/OwnerDisputesList';
+import { OwnerDisputesList, type OwnerDisputeRow } from '@/components/owner/disputes/OwnerDisputesList';
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;

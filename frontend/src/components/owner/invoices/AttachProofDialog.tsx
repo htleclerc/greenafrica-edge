@@ -1,4 +1,4 @@
-// frontend/src/app/owner/(portal)/invoices/AttachProofDialog.tsx
+// frontend/src/components/owner/invoices/AttachProofDialog.tsx
 'use client';
 
 import * as React from 'react';

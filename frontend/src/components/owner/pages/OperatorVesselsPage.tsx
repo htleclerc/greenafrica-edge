@@ -4,8 +4,8 @@
 // so RLS is scoped to the authenticated shipowner — never a platform client.
 
 import type { Principal } from '@/lib/auth/requirePrincipal';
-import { VesselsTable, type VesselRow } from '@/app/owner/(portal)/vessels/VesselsTable';
-import { AircraftTable, type AircraftRow } from '@/app/owner/(portal)/vessels/AircraftTable';
+import { VesselsTable, type VesselRow } from '@/components/owner/vessels/VesselsTable';
+import { AircraftTable, type AircraftRow } from '@/components/owner/vessels/AircraftTable';
 import { ModeBadge } from '@/components/owner/ModeBadge';
 import { ApproxFlag } from '@/components/owner/ApproxFlag';
 

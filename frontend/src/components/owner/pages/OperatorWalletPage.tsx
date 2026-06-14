@@ -7,7 +7,7 @@ import type { Principal } from '@/lib/auth/requirePrincipal';
 import { createTenantClient } from '@/lib/supabase/tenant';
 import { getWalletForOwner, listLedgerEntries, predictNextTax } from '@/services/walletService';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
-import { WalletPageClient } from '@/app/owner/(portal)/wallet/WalletPageClient';
+import { WalletPageClient } from '@/components/owner/Wallet/WalletPageClient';
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
