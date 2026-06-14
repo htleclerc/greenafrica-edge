@@ -89,10 +89,11 @@ describe('createEquasisProposal', () => {
         if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
-    it('allows MANAGER', async () => {
+    it('rejects MANAGER (vision-only role, not in allow-list)', async () => {
         callerProfile = { role: 'MANAGER' };
         const r = await createEquasisProposal(validInput);
-        expect(r.ok).toBe(true);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
     it('refuses empty proposals (no owner/manager/email/country)', async () => {

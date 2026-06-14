@@ -115,7 +115,7 @@ vi.mock('@/lib/supabase/tenant', () => ({
     createTenantClient: () => buildAdminMock(),
 }));
 
-// Non-SUPERADMIN (MANAGER) staff-isolation resolves the acting admin's jurisdiction here.
+// Staff-isolation mock — getServerJurisdictionId resolves the acting admin's jurisdiction.
 vi.mock('@/lib/auth/tenantContext', () => ({
     getServerJurisdictionId: vi.fn(async () => '00000000-0000-4000-8000-00000000534f'),
 }));
@@ -160,17 +160,18 @@ describe('inviteShipowner', () => {
         if (!r.ok) expect(r.reason).toMatch(/not authenticated/i);
     });
 
-    it('rejects PORT_OFFICER (not in SUPERADMIN | MANAGER allow-list)', async () => {
+    it('rejects PORT_OFFICER (not in SUPERADMIN allow-list)', async () => {
         callerProfile = { role: 'PORT_OFFICER' };
         const r = await inviteShipowner(validInput);
         expect(r.ok).toBe(false);
         if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
-    it('allows MANAGER', async () => {
+    it('rejects MANAGER (vision-only role)', async () => {
         callerProfile = { role: 'MANAGER' };
         const r = await inviteShipowner(validInput);
-        expect(r.ok).toBe(true);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
     it('rejects malformed email', async () => {
