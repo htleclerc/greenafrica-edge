@@ -677,7 +677,8 @@
     "footer_government": "حكومة صوماليلاند",
     "footer_copyright": "© 2025 أفريقرين",
     "footer_encrypted": "مشفّر",
-    "nav_jurisdictions": "الولايات القضائية"
+    "nav_jurisdictions": "الولايات القضائية",
+    "nav_vision": "لوحة الرؤية"
   },
   "DashboardPages": {
     "alerts_title": "التنبيهات والاستثناءات",

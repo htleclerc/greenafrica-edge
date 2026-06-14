@@ -692,7 +692,8 @@
     "nav_registrations": "Inscriptions",
     "nav_wallets": "Portefeuilles",
     "nav_refunds": "Remboursements",
-    "nav_jurisdictions": "Juridictions"
+    "nav_jurisdictions": "Juridictions",
+    "nav_vision": "Tableau de bord"
   },
   "Auth": {
     "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",

@@ -814,7 +814,8 @@
     "nav_registrations": "Registrations",
     "nav_wallets": "Wallets",
     "nav_refunds": "Refunds",
-    "nav_jurisdictions": "Jurisdictions"
+    "nav_jurisdictions": "Jurisdictions",
+    "nav_vision": "Vision Board"
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",

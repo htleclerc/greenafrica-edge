@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell,
+    LayoutDashboard, Bell, Eye,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -31,6 +31,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+    { key: 'vision',       icon: <Eye className="w-5 h-5" />,           href: '/dashboard/vision',      labelKey: 'nav_vision',       section: 'ops' },
     { key: 'map',          icon: <Map className="w-5 h-5" />,           href: '/dashboard',             labelKey: 'nav_map',          section: 'ops' },
     { key: 'simulator',    icon: <Calculator className="w-5 h-5" />,    href: '/dashboard/simulator',   labelKey: 'nav_simulator',    section: 'ops' },
     { key: 'vessels',      icon: <Ship className="w-5 h-5" />,          href: '/dashboard/vessels',     labelKey: 'nav_vessels',      section: 'ops' },

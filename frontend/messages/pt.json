@@ -676,7 +676,8 @@
     "footer_government": "GOVERNO DE SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CRIPTOGRAFADO",
-    "nav_jurisdictions": "Jurisdições"
+    "nav_jurisdictions": "Jurisdições",
+    "nav_vision": "Painel de Visão"
   },
   "DashboardPages": {
     "alerts_title": "Alertas e Exceções",
