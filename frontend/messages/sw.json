@@ -2801,5 +2801,12 @@
       "mode": "Hali",
       "departedAt": "Kuondoka"
     }
+  },
+  "OwnerRegister": {
+    "title": "Usajili wa opereta",
+    "subtitle": "Tuambie kuhusu kampuni yako. Tutakagua na kukuandikia ndani ya masaa 48.",
+    "closed_title": "Usajili umefungwa",
+    "closed_body": "Usajili wa waendeshaji kwa sasa ni kwa mwaliko tu. Wasiliana na utawala.",
+    "back_to_login": "Rudi kwenye kuingia"
   }
 }

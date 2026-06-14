@@ -3174,7 +3174,10 @@
     },
     "proof_document": "Document de preuve",
     "doc_type": "Type de document",
-    "preferred_language": "Langue préférée"
+    "preferred_language": "Langue préférée",
+    "closed_title": "Inscription fermée",
+    "closed_body": "Les inscriptions opérateur sont actuellement sur invitation uniquement. Contactez l'administration.",
+    "back_to_login": "Retour à la connexion"
   },
   "OwnerOnboarding": {
     "step1": {

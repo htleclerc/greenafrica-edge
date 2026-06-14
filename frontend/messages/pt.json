@@ -2801,5 +2801,12 @@
       "mode": "Modo",
       "departedAt": "Saída"
     }
+  },
+  "OwnerRegister": {
+    "title": "Registo de operador",
+    "subtitle": "Diga-nos sobre a sua empresa. Avaliaremos e responderemos por e-mail em 48h.",
+    "closed_title": "Registo encerrado",
+    "closed_body": "Os registos de operadores estão actualmente por convite. Contacte a administração.",
+    "back_to_login": "Voltar ao início de sessão"
   }
 }

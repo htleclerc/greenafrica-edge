@@ -3204,7 +3204,10 @@
     },
     "proof_document": "Proof document",
     "doc_type": "Document type",
-    "preferred_language": "Preferred language"
+    "preferred_language": "Preferred language",
+    "closed_title": "Registration closed",
+    "closed_body": "Operator registrations are currently by invitation only. Please contact the administration.",
+    "back_to_login": "Back to login"
   },
   "OwnerOnboarding": {
     "step1": {
