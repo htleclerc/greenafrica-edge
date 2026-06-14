@@ -2704,6 +2704,14 @@
     "error": "Não foi possível mudar",
     "retry": "Tentar novamente"
   },
+  "ModeSwitcher": {
+    "label": "Modo de transporte",
+    "both": "Ambos",
+    "maritime": "Marítimo",
+    "air": "Aéreo",
+    "error": "Não foi possível mudar o modo",
+    "retry": "Tentar novamente"
+  },
   "DashboardError": {
     "title": "Algo correu mal",
     "jurisdictionHint": "Se opera em várias jurisdições, selecione a sua jurisdição ativa na barra lateral e tente novamente.",

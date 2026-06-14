@@ -2704,6 +2704,14 @@
     "error": "Imeshindwa kubadilisha",
     "retry": "Jaribu tena"
   },
+  "ModeSwitcher": {
+    "label": "Hali ya usafiri",
+    "both": "Zote mbili",
+    "maritime": "Baharini",
+    "air": "Angani",
+    "error": "Imeshindwa kubadilisha hali",
+    "retry": "Jaribu tena"
+  },
   "DashboardError": {
     "title": "Kitu kimekwenda vibaya",
     "jurisdictionHint": "Ukifanya kazi katika mamlaka nyingi, chagua mamlaka yako hai katika upau wa kando kisha ujaribu tena.",
