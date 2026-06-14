@@ -211,7 +211,10 @@ export function TaxSimulatorPage() {
 
     React.useEffect(() => {
         fetch('/api/simulator/tariff')
-            .then((r) => r.json())
+            .then((r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
             .then((data: { ratePerTco2: number | null; currency: string }) => {
                 setTariff({ ratePerTco2: data.ratePerTco2, currency: data.currency, loading: false });
             })
