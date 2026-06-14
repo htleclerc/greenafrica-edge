@@ -12,11 +12,11 @@ export interface LoginPrincipal {
  * role (an operator never lands in the staff shell). SUPERADMIN goes through
  * the impersonation step; every other staff role goes straight to /dashboard.
  *
- * NOTE (Phase 1): operators still route to the legacy /owner shell. Phase 2
- * merges the shells and changes the operator destination to /dashboard.
+ * Phase 2: operators now land on /dashboard (same shell as staff, operator-aware
+ * nav). The legacy /owner/dashboard redirects to /dashboard via middleware.
  */
 export function loginDestination({ isOperator, role }: LoginPrincipal): string {
-    if (isOperator) return '/owner/dashboard';
+    if (isOperator) return '/dashboard';
     if (role === UserRole.SUPERADMIN) return '/post-login';
     return '/dashboard';
 }
