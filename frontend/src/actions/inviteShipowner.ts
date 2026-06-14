@@ -10,16 +10,15 @@ const schema = z.object({
     email: z.email(),
 });
 
-const ALLOWED_ROLES = ['SUPERADMIN', 'MANAGER'] as const;
+const ALLOWED_ROLES = ['SUPERADMIN'] as const;
 
 export type InviteShipownerResult =
     | { ok: true; userId: string; alreadyExisted: boolean }
     | { ok: false; reason: string };
 
 /**
- * Grant portal access to a shipowner. Only SUPERADMIN and MANAGER can
- * invite — gating is intentionally stricter than the page itself
- * (which PORT_OFFICER can also access for the mappings work).
+ * Grant portal access to a shipowner. Only SUPERADMIN can
+ * invite — gating is intentionally strict (SUPERADMIN only).
  *
  * Flow:
  *   1. Load shipowners row, refuse if account_state='ACTIVE' (already in)

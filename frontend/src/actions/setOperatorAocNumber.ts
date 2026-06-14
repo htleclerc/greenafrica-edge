@@ -10,13 +10,13 @@ const schema = z.object({
     aocNumber: z.string().trim().min(2).max(64),
 });
 
-const ALLOWED_ROLES = ['SUPERADMIN', 'MANAGER'] as const;
+const ALLOWED_ROLES = ['SUPERADMIN'] as const;
 
 export type SetOperatorAocResult = { ok: true } | { ok: false; reason: string };
 
 /**
  * Pre-seed (or update) the expected AOC number on an operator. Admin-only
- * (SUPERADMIN / MANAGER). Non-SUPERADMIN admins are confined to their own
+ * (SUPERADMIN). Non-SUPERADMIN admins are confined to their own
  * jurisdiction. This is the value the air self-service auto-claim matches against.
  */
 export async function setOperatorAocNumber(raw: unknown): Promise<SetOperatorAocResult> {
