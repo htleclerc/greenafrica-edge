@@ -18,5 +18,6 @@ export interface LoginPrincipal {
 export function loginDestination({ isOperator, role }: LoginPrincipal): string {
     if (isOperator) return '/dashboard';
     if (role === UserRole.SUPERADMIN) return '/post-login';
+    if (role === UserRole.MANAGER) return '/dashboard/vision';
     return '/dashboard';
 }

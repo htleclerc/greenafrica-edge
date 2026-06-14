@@ -15,9 +15,13 @@ describe('loginDestination', () => {
     });
 
     it('routes other staff roles to the staff dashboard', () => {
-        for (const role of [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.MANAGER]) {
+        for (const role of [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN]) {
             expect(loginDestination({ isOperator: false, role })).toBe('/dashboard');
         }
+    });
+
+    it('routes MANAGER to the vision board', () => {
+        expect(loginDestination({ isOperator: false, role: UserRole.MANAGER })).toBe('/dashboard/vision');
     });
 
     it('falls back to the staff dashboard when role is unknown', () => {
