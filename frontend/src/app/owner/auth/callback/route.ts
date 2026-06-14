@@ -14,7 +14,7 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
  *      row is in INVITED state, flip account_state to ACTIVE.
  *   4. Redirect to /owner/dashboard.
  *
- * Errors during exchange route the user back to /owner/login with an
+ * Errors during exchange route the user back to /login with an
  * error code so they can request a fresh link.
  */
 export async function GET(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // magiclink | invite | recovery | email
 
     if (!code && !tokenHash) {
-        return NextResponse.redirect(`${origin}/owner/login?error=callback_failed`);
+        return NextResponse.redirect(`${origin}/login?error=callback_failed`);
     }
 
     const response = NextResponse.next({ request });
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error || !data.user) {
-            return NextResponse.redirect(`${origin}/owner/login?error=callback_failed`);
+            return NextResponse.redirect(`${origin}/login?error=callback_failed`);
         }
         userId = data.user.id;
     } else if (tokenHash && type) {
@@ -64,13 +64,13 @@ export async function GET(request: NextRequest) {
             type: type as 'magiclink' | 'invite' | 'recovery' | 'email',
         });
         if (error || !data.user) {
-            return NextResponse.redirect(`${origin}/owner/login?error=callback_failed`);
+            return NextResponse.redirect(`${origin}/login?error=callback_failed`);
         }
         userId = data.user.id;
     }
 
     if (!userId) {
-        return NextResponse.redirect(`${origin}/owner/login?error=callback_failed`);
+        return NextResponse.redirect(`${origin}/login?error=callback_failed`);
     }
 
     // Flip INVITED → ACTIVE on first successful redeem. Use the service role:

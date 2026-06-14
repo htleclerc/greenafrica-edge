@@ -52,7 +52,7 @@ export function OwnerShell({ ownerName, email, kycComplete, children }: OwnerShe
         setSigningOut(true);
         const supabase = createClient();
         await supabase.auth.signOut();
-        router.push('/owner/login');
+        router.push('/login');
     }
 
     return (
