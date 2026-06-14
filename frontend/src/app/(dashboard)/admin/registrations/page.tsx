@@ -11,7 +11,7 @@ export default async function AdminRegistrationsPage({
     const params = await searchParams;
     const filter = params.status ?? 'PENDING_REVIEW';
 
-    // Check auth - PORT_OFFICER role can also view, but only SUPERADMIN/MANAGER can act
+    // Check auth - PORT_OFFICER role can also view, but only SUPERADMIN can act
     const supabase = await createClient();
     const { data: authUser } = await supabase.auth.getUser();
     if (!authUser?.user) {
@@ -24,7 +24,7 @@ export default async function AdminRegistrationsPage({
         .eq('id', authUser.user.id)
         .single();
 
-    const allowedRoles = ['SUPERADMIN', 'MANAGER', 'PORT_OFFICER'];
+    const allowedRoles = ['SUPERADMIN', 'PORT_OFFICER'];
     if (!profile || !allowedRoles.includes(profile.role)) {
         throw new Error('Forbidden');
     }
@@ -56,7 +56,7 @@ export default async function AdminRegistrationsPage({
                     </a>
                 ))}
             </div>
-            <RegistrationsTable rows={rows ?? []} status={filter} canAction={['SUPERADMIN', 'MANAGER'].includes(profile.role)} />
+            <RegistrationsTable rows={rows ?? []} status={filter} canAction={profile.role === 'SUPERADMIN'} />
         </div>
     );
 }

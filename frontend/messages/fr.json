@@ -612,6 +612,7 @@
     "role_finance_admin": "Admin Financier",
     "role_shipping_agent": "Armateur / Agent",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Manager Opérations",
     "notif_noncompliant_title": "Navire non-conforme",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — action requise",
     "notif_payment_due_title": "Paiement dû",
@@ -692,7 +693,8 @@
     "nav_registrations": "Inscriptions",
     "nav_wallets": "Portefeuilles",
     "nav_refunds": "Remboursements",
-    "nav_jurisdictions": "Juridictions"
+    "nav_jurisdictions": "Juridictions",
+    "nav_vision": "Tableau de bord"
   },
   "Auth": {
     "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",
@@ -2743,7 +2745,8 @@
       "wallet": "Portefeuille",
       "simulator": "Simulateur de taxe",
       "tco": "Tableau TCO",
-      "disputes": "Litiges"
+      "disputes": "Litiges",
+      "notifications": "Notifications"
     },
     "disputes": {
       "empty": "Vous n'avez ouvert aucun litige pour le moment."
@@ -3474,6 +3477,14 @@
     "error": "Échec du changement",
     "retry": "Réessayer"
   },
+  "ModeSwitcher": {
+    "label": "Mode de transport",
+    "both": "Les deux",
+    "maritime": "Maritime",
+    "air": "Aérien",
+    "error": "Échec du changement de mode",
+    "retry": "Réessayer"
+  },
   "DashboardError": {
     "title": "Une erreur s'est produite",
     "jurisdictionHint": "Si vous opérez dans plusieurs juridictions, sélectionnez votre juridiction active dans la barre latérale puis réessayez.",
@@ -3538,5 +3549,28 @@
       "mismatched": "{count} tx incorrectes"
     },
     "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantané flotte en direct — lecture seule",
+    "modeBoth": "Tous modes",
+    "modeMaritime": "Maritime",
+    "modeAir": "Aérien",
+    "kpi": {
+      "atPort": "Au port",
+      "approaching": "En approche",
+      "paidLast7d": "Payées (7j)",
+      "unpaidInProgress": "Impayées en cours"
+    },
+    "departures": {
+      "title": "Derniers départs",
+      "subtitle": "Ont quitté la ZEE dans les 7 derniers jours",
+      "empty": "Aucun départ enregistré dans les 7 derniers jours"
+    },
+    "table": {
+      "ref": "Réf.",
+      "mode": "Mode",
+      "departedAt": "Départ"
+    }
   }
 }

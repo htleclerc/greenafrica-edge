@@ -110,7 +110,17 @@ export async function applyWallet(input: { transactionId: string; amountMinor: n
     }
 
     // Recompute transaction status
-    await admin.rpc('recompute_transaction_status', { p_transaction_id: parsed.transactionId });
+    const { error: rpcErr } = await admin.rpc('recompute_transaction_status', {
+        p_txn_id: parsed.transactionId,
+    });
+    if (rpcErr) {
+        // Payments trigger recomputes too — log, don't roll back the apply.
+        log.error('recompute_transaction_status_failed', {
+            transactionId: parsed.transactionId,
+            walletId: wallet.id,
+            error: rpcErr.message,
+        });
+    }
 
     log.info('wallet_applied', {
         transactionId: parsed.transactionId,

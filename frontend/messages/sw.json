@@ -601,6 +601,7 @@
     "role_finance_admin": "Msimamizi wa Fedha",
     "role_shipping_agent": "Mmiliki wa Meli / Wakala",
     "role_superadmin": "Msimamizi Mkuu",
+    "role_operations_manager": "Meneja wa Uendeshaji",
     "notif_noncompliant_title": "Meli isiyozingatia",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — hatua inahitajika",
     "notif_payment_due_title": "Malipo yanayostahili",
@@ -676,7 +677,8 @@
     "footer_government": "SERIKALI YA SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "IMESIMBWA",
-    "nav_jurisdictions": "Mamlaka"
+    "nav_jurisdictions": "Mamlaka",
+    "nav_vision": "Ubao wa Maono"
   },
   "DashboardPages": {
     "alerts_title": "Tahadhari na Kasoro",
@@ -2534,10 +2536,15 @@
     "brand": "Shipowner Portal",
     "nav": {
       "dashboard": "Dashboard",
-      "vessels": "Vessels",
-      "invoices": "Invoices",
-      "alerts": "Alerts",
-      "signOut": "Sign out"
+      "vessels": "Meli",
+      "invoices": "Ankara",
+      "alerts": "Tahadhari",
+      "signOut": "Toka",
+      "wallet": "Mkoba",
+      "simulator": "Kikokotoo cha Kodi",
+      "tco": "Dashibodi ya TCO",
+      "disputes": "Migogoro",
+      "notifications": "Arifa"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2699,6 +2706,14 @@
     "error": "Imeshindwa kubadilisha",
     "retry": "Jaribu tena"
   },
+  "ModeSwitcher": {
+    "label": "Hali ya usafiri",
+    "both": "Zote mbili",
+    "maritime": "Baharini",
+    "air": "Angani",
+    "error": "Imeshindwa kubadilisha hali",
+    "retry": "Jaribu tena"
+  },
   "DashboardError": {
     "title": "Kitu kimekwenda vibaya",
     "jurisdictionHint": "Ukifanya kazi katika mamlaka nyingi, chagua mamlaka yako hai katika upau wa kando kisha ujaribu tena.",
@@ -2763,5 +2778,28 @@
       "mismatched": "{count} miamala isiyolingana"
     },
     "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Muhtasari wa meli wa wakati halisi — kusoma tu",
+    "modeBoth": "Njia zote",
+    "modeMaritime": "Bahari",
+    "modeAir": "Anga",
+    "kpi": {
+      "atPort": "Bandarini",
+      "approaching": "Inakaribia",
+      "paidLast7d": "Zilizolipwa (siku 7)",
+      "unpaidInProgress": "Hazijalipwa zinazoendelea"
+    },
+    "departures": {
+      "title": "Kuondoka hivi karibuni",
+      "subtitle": "Waliacha EEZ katika siku 7 zilizopita",
+      "empty": "Hakuna kuondoka kulikorekodi katika siku 7 zilizopita"
+    },
+    "table": {
+      "ref": "Kumb.",
+      "mode": "Hali",
+      "departedAt": "Kuondoka"
+    }
   }
 }

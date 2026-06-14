@@ -87,6 +87,9 @@ interface DashboardTopBarProps {
     user: SecureUser;
     kpis: DashboardKpis;
     breadcrumb?: string;
+    /** Show the staff command-center KPI strip. Defaults to true; the layout
+     *  passes false for operators and MANAGER (vision-only "dirigeant"). */
+    showKpis?: boolean;
     notifications?: import('@/hooks/useNotifications').AppNotification[];
     unreadCount?: number;
     onMarkRead?: (id: string) => void;
@@ -94,7 +97,7 @@ interface DashboardTopBarProps {
     onMobileMenuToggle?: () => void;
 }
 
-export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead, onMobileMenuToggle }: DashboardTopBarProps) {
+export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead, onMobileMenuToggle }: DashboardTopBarProps) {
     const t = useTranslations('Dashboard');
     const isOnline   = kpis.systemStatus === 'ONLINE';
     const isDegraded = kpis.systemStatus === 'DEGRADED';
@@ -127,8 +130,11 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
     }
 
     const flag      = countryFlag(user.countryCode);
-    const roleColor = ROLE_COLOR[user.role];
-    const roleLabel = t(ROLE_LABEL_KEY[user.role]);
+    // Operators carry role 'SHIPOWNER' (outside the staff UserRole enum), so the
+    // keyed lookups miss — fall back to the operator label/colour instead of
+    // rendering a broken key.
+    const roleColor = ROLE_COLOR[user.role] ?? '#3B82F6';
+    const roleLabel = t(ROLE_LABEL_KEY[user.role] ?? 'role_shipping_agent');
     const initials  = user.fullName
         .split(' ')
         .map((w) => w.charAt(0))
@@ -167,13 +173,17 @@ export function DashboardTopBar({ user, kpis, breadcrumb, notifications: externa
                 )}
             </div>
 
-            {/* KPI Pills — center (hidden on mobile) */}
-            <div className="dashboard-kpi-pills flex-1 items-center justify-center gap-1 overflow-x-auto">
-                <KpiPill label={t('kpi_monthly_revenue')} value={formatUsd(kpis.monthlyRevenueUsd)} accent />
-                <KpiPill label={t('kpi_vessels_processed')} value={String(kpis.vesselsProcessed)} />
-                <KpiPill label={t('kpi_est_co2')} value={formatTons(kpis.estCo2TrackingTons)} />
-                <KpiPill label={t('kpi_credits_retired')} value={formatTons(kpis.creditsRetiredTons)} />
-            </div>
+            {/* KPI Pills — center (staff-ops only; hidden on mobile) */}
+            {showKpis ? (
+                <div className="dashboard-kpi-pills flex-1 items-center justify-center gap-1 overflow-x-auto">
+                    <KpiPill label={t('kpi_monthly_revenue')} value={formatUsd(kpis.monthlyRevenueUsd)} accent />
+                    <KpiPill label={t('kpi_vessels_processed')} value={String(kpis.vesselsProcessed)} />
+                    <KpiPill label={t('kpi_est_co2')} value={formatTons(kpis.estCo2TrackingTons)} />
+                    <KpiPill label={t('kpi_credits_retired')} value={formatTons(kpis.creditsRetiredTons)} />
+                </div>
+            ) : (
+                <div className="flex-1" />
+            )}
 
             {/* Right: system status + notifications + user */}
             <div className="flex items-center gap-2 flex-shrink-0 ml-auto">

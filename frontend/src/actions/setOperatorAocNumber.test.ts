@@ -43,9 +43,8 @@ describe('setOperatorAocNumber', () => {
         expect(written).toBe('AOC-9Z');
     });
 
-    it('blocks a non-SUPERADMIN from another jurisdiction', async () => {
+    it('rejects MANAGER at role gate (vision-only role)', async () => {
         mockServer.from.mockReturnValue(selectSingle({ role: 'MANAGER' }));
-        mockPlatform.from.mockReturnValue(selectSingle({ id: 'op-1', jurisdiction_id: 'jur-OTHER' }));
         const { setOperatorAocNumber } = await import('./setOperatorAocNumber');
         const r = await setOperatorAocNumber({ operatorId: '00000000-0000-4000-8000-000000000001', aocNumber: 'AOC1' });
         expect(r.ok).toBe(false);

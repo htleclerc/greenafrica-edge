@@ -602,6 +602,7 @@
     "role_finance_admin": "مسؤول المالية",
     "role_shipping_agent": "مالك السفينة / وكيل",
     "role_superadmin": "المدير الأعلى",
+    "role_operations_manager": "مدير العمليات",
     "notif_noncompliant_title": "سفينة غير ممتثلة",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — إجراء مطلوب",
     "notif_payment_due_title": "دفع مستحق",
@@ -677,7 +678,8 @@
     "footer_government": "حكومة صوماليلاند",
     "footer_copyright": "© 2025 أفريقرين",
     "footer_encrypted": "مشفّر",
-    "nav_jurisdictions": "الولايات القضائية"
+    "nav_jurisdictions": "الولايات القضائية",
+    "nav_vision": "لوحة الرؤية"
   },
   "DashboardPages": {
     "alerts_title": "التنبيهات والاستثناءات",
@@ -2540,7 +2542,12 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Wallet",
+      "simulator": "Tax Simulator",
+      "tco": "TCO Dashboard",
+      "disputes": "Disputes",
+      "notifications": "Notifications"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2702,6 +2709,14 @@
     "error": "تعذر تغيير الولاية",
     "retry": "إعادة المحاولة"
   },
+  "ModeSwitcher": {
+    "label": "وضع النقل",
+    "both": "الاثنان معاً",
+    "maritime": "بحري",
+    "air": "جوي",
+    "error": "تعذر تغيير الوضع",
+    "retry": "إعادة المحاولة"
+  },
   "DashboardError": {
     "title": "حدث خطأ ما",
     "jurisdictionHint": "إذا كنت تعمل في عدة ولايات قضائية، حدد ولايتك النشطة في الشريط الجانبي ثم أعد المحاولة.",
@@ -2766,5 +2781,28 @@
       "mismatched": "{count} معاملات غير متطابقة"
     },
     "modesDisclosure": "يشترط الكشوفات الجديدة والفوترة — الرحلات الجارية تكتمل؛ تبقى واجهة برمجة الحساب مفتوحة للمطابقة."
+  },
+  "Vision": {
+    "pageTitle": "لوحة الرؤية",
+    "pageSubtitle": "لقطة الأسطول المباشرة — قراءة فقط",
+    "modeBoth": "جميع الأوضاع",
+    "modeMaritime": "بحري",
+    "modeAir": "جوي",
+    "kpi": {
+      "atPort": "في الميناء",
+      "approaching": "في الاقتراب",
+      "paidLast7d": "مدفوعة (٧ أيام)",
+      "unpaidInProgress": "غير مدفوعة قيد التنفيذ"
+    },
+    "departures": {
+      "title": "المغادرات الأخيرة",
+      "subtitle": "غادرت المنطقة الاقتصادية الخالصة في آخر ٧ أيام",
+      "empty": "لم تُسجَّل أي مغادرات في آخر ٧ أيام"
+    },
+    "table": {
+      "ref": "المرجع",
+      "mode": "الوضع",
+      "departedAt": "وقت المغادرة"
+    }
   }
 }

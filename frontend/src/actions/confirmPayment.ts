@@ -59,7 +59,17 @@ export async function confirmPayment(input: { paymentId: string }) {
 
     if (updated.transaction_id) {
         await splitOverpayment(admin, updated, auth.user.id);
-        await admin.rpc('recompute_transaction_status', { p_transaction_id: updated.transaction_id });
+        const { error: rpcErr } = await admin.rpc('recompute_transaction_status', {
+            p_txn_id: updated.transaction_id,
+        });
+        if (rpcErr) {
+            // Payments trigger recomputes too — log, don't roll back the confirmation.
+            log.error('recompute_transaction_status_failed', {
+                paymentId: updated.id,
+                transactionId: updated.transaction_id,
+                error: rpcErr.message,
+            });
+        }
     }
 
     log.info('payment_confirmed', {

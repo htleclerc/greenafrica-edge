@@ -9,7 +9,7 @@ const schema = z.object({
     reason: z.string().trim().min(3).max(500),
 });
 
-const ALLOWED_ROLES = ['PORT_OFFICER', 'MANAGER', 'SUPERADMIN'] as const;
+const ALLOWED_ROLES = ['PORT_OFFICER', 'SUPERADMIN'] as const;
 
 export type RejectEquasisProposalResult =
     | { ok: true }

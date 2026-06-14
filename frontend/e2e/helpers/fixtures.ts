@@ -34,11 +34,12 @@ export function uniqueTag(): string {
     return `e2e-${Date.now()}-${randomBytes(4).toString('hex')}`;
 }
 
-/** 7-digit IMO number padded from cryptographic random — won't collide with real IMOs starting with 1-9. */
 export function fakeImo(prefix: string = '99'): string {
-    const tail = randomBytes(3).readUIntBE(0, 3).toString().padStart(7, '0').slice(-5);
+    const tailLength = 7 - prefix.length;
+    const tail = randomBytes(3).readUIntBE(0, 3).toString().padStart(7, '0').slice(-tailLength);
     return `${prefix}${tail}`;
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // shipowners
@@ -72,7 +73,7 @@ export async function seedShipowner(opts: {
         id,
         imo_company_no: opts.imoCompanyNo ?? fakeImo('9'),
         name: opts.name ?? `${tag}-shipowner`,
-        official_email: opts.officialEmail ?? `${tag}@e2e.test`,
+        official_email: opts.officialEmail ?? `${tag}@e2e-test.com`,
         account_state: opts.state ?? 'GHOST',
     };
     const { error } = await admin.from('shipowners').insert(row);

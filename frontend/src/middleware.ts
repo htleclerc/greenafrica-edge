@@ -8,10 +8,37 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 // invitation link is expired or the cookies were cleared; bounce to /login.
 const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/auth/setup-password'];
 
-// Owner portal: same gate, but unauthenticated visits go to /owner/login
-// (NOT /login — staff and owner entry points are deliberately separate).
+// Owner portal: same gate; unauthenticated visits redirect to the unified /login.
+// /owner/login is kept in OWNER_PUBLIC_PATHS so it stays reachable as a server
+// redirect that preserves legacy invitation links.
 const OWNER_PROTECTED_PREFIX = '/owner';
-const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/auth/callback', '/owner/reset-password'];
+const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/onboarding', '/owner/auth/callback', '/owner/reset-password'];
+
+// Phase 2 — /owner/* surface relocation.
+//
+// The operator shell has been merged into /dashboard. Bookmarked /owner/* URLs
+// and any links still stored in emails or the DB now receive a permanent (301)
+// redirect to the canonical /dashboard/* path.
+//
+// Excluded from redirection (kept functional at their original paths):
+//   /owner/register        — onboarding self-service entry point
+//   /owner/onboarding/*   — multi-step onboarding wizard
+//   /owner/reset-password — password reset flow
+//   /owner/auth/callback  — OAuth / magic-link callback
+//   /owner/login          — legacy login (still used by invitation emails)
+//
+// Order matters: longer/more-specific patterns first.
+const OWNER_REDIRECTS: Array<[string, string]> = [
+    ['/owner/dashboard',      '/dashboard'],
+    ['/owner/vessels',        '/dashboard/vessels'],
+    ['/owner/invoices',       '/dashboard/invoices'],
+    ['/owner/alerts',         '/dashboard/alerts'],
+    ['/owner/disputes',       '/dashboard/disputes'],
+    ['/owner/wallet',         '/dashboard/wallet'],
+    ['/owner/notifications',  '/dashboard/notifications'],
+    ['/owner/simulator',      '/dashboard/simulator'],
+    ['/owner/tco',            '/dashboard/tco'],
+];
 
 // Plan 7H-1 Task 5.4 — master switch for the owner portal.
 //
@@ -26,6 +53,11 @@ const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/auth/call
 // the kill switch is a soft, operator-driven flag; a misconfigured DB read
 // should not lock the whole portal out of mid-session users. A genuine
 // emergency kill = redeploy with this middleware hard-coded.
+//
+// Note (Phase 2): this gate now covers only the /owner/* paths that were NOT
+// relocated to /dashboard (register, onboarding, login, reset-password, auth
+// callback). The main operator surfaces are now under /dashboard and are
+// protected by the standard auth gate — they are not behind this feature flag.
 let _flagCache: { portalV1Enabled: boolean; expiresAt: number } | null = null;
 const FLAG_CACHE_TTL_MS = 60_000;
 
@@ -59,67 +91,6 @@ async function getPortalV1FlagCached(): Promise<boolean> {
     }
 }
 
-// Active-shipowner detection cache (module-scoped, per Edge instance).
-//
-// Staff console (/dashboard/*) is the LEGACY v6 surface; the v7 PayDialog and
-// the rest of Plan 7 live under /owner/*. A shipowner who lands on
-// /dashboard/invoices hits paymentService.createPaymentRequest() — which
-// silently returns {status:'failed'} when no provider API key is set, ending
-// with the client error "No checkout URL or wire instructions returned".
-// Block the entire legacy shell for active shipowners and bounce them to the
-// owner portal.
-//
-// Detection: shipowners.profile_id = user.id AND account_state = 'ACTIVE'.
-// Cache: 5 min TTL keyed by userId, bounded by Edge instance lifetime.
-// Failure mode: fail-CLOSED (assume NOT shipowner). Staff retain access on
-// transient DB errors; a legit shipowner gets one bad page-load and retries.
-const _shipownerCache = new Map<string, { isActive: boolean; expiresAt: number }>();
-const SHIPOWNER_CACHE_TTL_MS = 5 * 60_000;
-
-async function isActiveShipowner(userId: string): Promise<boolean> {
-    const now = Date.now();
-    const cached = _shipownerCache.get(userId);
-    if (cached && cached.expiresAt > now) return cached.isActive;
-
-    // Routing lookup by globally-unique profile_id, with no jurisdiction context
-    // in middleware — the UNSCOPED platform factory is correct (a shipowner is
-    // detected regardless of which State they belong to). It throws on missing
-    // env; that and any read error fail-CLOSED (assume NOT a shipowner).
-    try {
-        const admin = createPlatformClient();
-        const { data, error } = await admin
-            .from('shipowners')
-            .select('id')
-            .eq('profile_id', userId)
-            .eq('account_state', 'ACTIVE')
-            .limit(1);
-        if (error) return false;
-        const isActive = (data?.length ?? 0) > 0;
-        _shipownerCache.set(userId, { isActive, expiresAt: now + SHIPOWNER_CACHE_TTL_MS });
-        return isActive;
-    } catch {
-        return false;
-    }
-}
-
-// Legacy /dashboard/* → owner portal mapping for active shipowners.
-// Routes without a direct equivalent (simulator, tco, disputes, reports,
-// inspector, projects, audit, validations, settings) fall through to
-// /owner/dashboard. Order-sensitive: longer prefixes first.
-const LEGACY_TO_OWNER_MAP: Array<[string, string]> = [
-    ['/dashboard/invoices', '/owner/invoices'],
-    ['/dashboard/vessels', '/owner/vessels'],
-    ['/dashboard/my-fleet', '/owner/vessels'],
-    ['/dashboard/alerts', '/owner/alerts'],
-];
-
-function mapLegacyToOwner(pathname: string): string {
-    for (const [from, to] of LEGACY_TO_OWNER_MAP) {
-        if (pathname === from || pathname.startsWith(`${from}/`)) return to;
-    }
-    return '/owner/dashboard';
-}
-
 // Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
 const AUTH_ROUTES = ['/login', '/post-login'];
 
@@ -128,6 +99,19 @@ const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-app
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    // ── Phase 2: permanent redirects for relocated /owner/* surfaces ──────────
+    // Apply before any auth check so even unauthenticated bookmarks land on the
+    // right URL (they'll be bounced to /login from /dashboard if not logged in).
+    for (const [from, to] of OWNER_REDIRECTS) {
+        if (pathname === from || pathname.startsWith(`${from}/`)) {
+            const url = request.nextUrl.clone();
+            // Preserve any sub-path suffix (e.g. /owner/vessels/123 → /dashboard/vessels/123)
+            url.pathname = to + pathname.slice(from.length);
+            url.search = request.nextUrl.search;
+            return NextResponse.redirect(url, 301);
+        }
+    }
 
     // Plan 7H-1 Task 5.4 — master switch for the owner portal.
     // When `feature.shipowner_portal_v1_enabled` is false, all /owner/* paths
@@ -178,10 +162,10 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse;
     }
 
-    // Owner portal — unauthenticated visits redirect to /owner/login (not /login)
+    // Owner portal — unauthenticated visits go to the unified /login.
     if (isOwnerProtected && !user) {
         const url = request.nextUrl.clone();
-        url.pathname = '/owner/login';
+        url.pathname = '/login';
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
     }
@@ -192,20 +176,6 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/login';
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
-    }
-
-    // Active shipowner on legacy /dashboard/* → bounce to /owner/*. Skip demo
-    // sessions (mock data, no DB shipowner row) and any user already inside
-    // the owner portal. /admin/* is left alone — those pages have their own
-    // role gates and shipowners shouldn't pass them anyway.
-    if (user && !isDemo && pathname.startsWith('/dashboard')) {
-        const isShipowner = await isActiveShipowner(user.id);
-        if (isShipowner) {
-            const url = request.nextUrl.clone();
-            url.pathname = mapLegacyToOwner(pathname);
-            url.search = '';
-            return NextResponse.redirect(url);
-        }
     }
 
     // Already logged in → skip auth pages, go to dashboard

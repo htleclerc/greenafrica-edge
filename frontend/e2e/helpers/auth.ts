@@ -112,6 +112,19 @@ export async function createTestUser(opts: {
         throw new Error(`[e2e/auth] profile upsert failed: ${upsertErr.message}`);
     }
 
+    // 2b. Map staff/admin users to the default Somaliland jurisdiction so RLS allows access.
+    if (role !== 'SHIPOWNER') {
+        const { error: jurErr } = await admin
+            .from('user_jurisdictions')
+            .upsert({
+                user_id: userId,
+                jurisdiction_id: '00000000-0000-4000-8000-00000000534f',
+            });
+        if (jurErr) {
+            throw new Error(`[e2e/auth] user_jurisdictions upsert failed: ${jurErr.message}`);
+        }
+    }
+
     // 3. Optionally link to a pre-seeded shipowner row.
     if (opts.shipownerId) {
         const { error: linkErr } = await admin

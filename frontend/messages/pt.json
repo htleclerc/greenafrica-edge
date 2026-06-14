@@ -601,6 +601,7 @@
     "role_finance_admin": "Admin Financeiro",
     "role_shipping_agent": "Armador / Agente",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Gerente de Operações",
     "notif_noncompliant_title": "Navio não conforme",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — ação necessária",
     "notif_payment_due_title": "Pagamento devido",
@@ -676,7 +677,8 @@
     "footer_government": "GOVERNO DE SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CRIPTOGRAFADO",
-    "nav_jurisdictions": "Jurisdições"
+    "nav_jurisdictions": "Jurisdições",
+    "nav_vision": "Painel de Visão"
   },
   "DashboardPages": {
     "alerts_title": "Alertas e Exceções",
@@ -2537,7 +2539,12 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Carteira",
+      "simulator": "Simulador Fiscal",
+      "tco": "Painel TCO",
+      "disputes": "Disputas",
+      "notifications": "Notificações"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2699,6 +2706,14 @@
     "error": "Não foi possível mudar",
     "retry": "Tentar novamente"
   },
+  "ModeSwitcher": {
+    "label": "Modo de transporte",
+    "both": "Ambos",
+    "maritime": "Marítimo",
+    "air": "Aéreo",
+    "error": "Não foi possível mudar o modo",
+    "retry": "Tentar novamente"
+  },
   "DashboardError": {
     "title": "Algo correu mal",
     "jurisdictionHint": "Se opera em várias jurisdições, selecione a sua jurisdição ativa na barra lateral e tente novamente.",
@@ -2763,5 +2778,28 @@
       "mismatched": "{count} tx incorretas"
     },
     "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantâneo da frota em tempo real — apenas leitura",
+    "modeBoth": "Todos os modos",
+    "modeMaritime": "Marítimo",
+    "modeAir": "Aéreo",
+    "kpi": {
+      "atPort": "No porto",
+      "approaching": "Em aproximação",
+      "paidLast7d": "Pagas (7d)",
+      "unpaidInProgress": "Não pagas em curso"
+    },
+    "departures": {
+      "title": "Saídas recentes",
+      "subtitle": "Saíram da ZEE nos últimos 7 dias",
+      "empty": "Nenhuma saída registada nos últimos 7 dias"
+    },
+    "table": {
+      "ref": "Ref.",
+      "mode": "Modo",
+      "departedAt": "Saída"
+    }
   }
 }

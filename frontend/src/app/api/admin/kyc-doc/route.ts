@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * Proxy route to serve KYC documents to authorized admins.
  * Generates a signed URL from Supabase storage and redirects.
- * Requires SUPERADMIN or MANAGER role.
+ * Requires SUPERADMIN role.
  */
 export async function GET(req: NextRequest) {
     // Check auth
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         .eq('id', authUser.user.id)
         .single();
 
-    const allowedRoles = ['SUPERADMIN', 'MANAGER'];
+    const allowedRoles = ['SUPERADMIN'];
     if (!profile || !allowedRoles.includes(profile.role)) {
         return new NextResponse('Forbidden', { status: 403 });
     }
