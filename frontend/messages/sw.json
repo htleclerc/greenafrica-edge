@@ -678,7 +678,27 @@
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "IMESIMBWA",
     "nav_jurisdictions": "Mamlaka",
-    "nav_vision": "Ubao wa Maono"
+    "nav_vision": "Ubao wa Maono",
+    "nav_staff": "Usimamizi wa Wafanyakazi"
+  },
+  "AdminStaff": {
+    "page_title": "Usimamizi wa Wafanyakazi",
+    "page_subtitle": "Alika wafanyakazi wa serikali na ugawanye mamlaka yao.",
+    "form_title": "Alika mfanyakazi",
+    "label_email": "Anwani ya barua pepe",
+    "label_full_name": "Jina kamili",
+    "label_role": "Jukumu",
+    "label_jurisdictions": "Mamlaka",
+    "placeholder_email": "mfanyakazi@mfano.gov",
+    "placeholder_full_name": "Jina la kwanza na la mwisho",
+    "role_port_officer": "Afisa wa Bandari",
+    "role_finance_admin": "Msimamizi wa Fedha",
+    "role_manager": "Meneja",
+    "btn_invite": "Tuma mwaliko",
+    "btn_sending": "Inatuma…",
+    "success_new": "Mwaliko umetumwa kwa {email}.",
+    "success_existing": "{email} tayari ana akaunti — jukumu na mamlaka zimesasishwa.",
+    "error_prefix": "Hitilafu: "
   },
   "DashboardPages": {
     "alerts_title": "Tahadhari na Kasoro",

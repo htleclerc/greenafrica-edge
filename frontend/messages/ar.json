@@ -679,7 +679,27 @@
     "footer_copyright": "© 2025 أفريقرين",
     "footer_encrypted": "مشفّر",
     "nav_jurisdictions": "الولايات القضائية",
-    "nav_vision": "لوحة الرؤية"
+    "nav_vision": "لوحة الرؤية",
+    "nav_staff": "إدارة الموظفين"
+  },
+  "AdminStaff": {
+    "page_title": "إدارة الموظفين",
+    "page_subtitle": "ادعُ موظفي الحكومة وخصّص لهم الولايات القضائية.",
+    "form_title": "دعوة موظف",
+    "label_email": "عنوان البريد الإلكتروني",
+    "label_full_name": "الاسم الكامل",
+    "label_role": "الدور",
+    "label_jurisdictions": "الولايات القضائية",
+    "placeholder_email": "موظف@مثال.gov",
+    "placeholder_full_name": "الاسم الأول والأخير",
+    "role_port_officer": "ضابط ميناء",
+    "role_finance_admin": "مسؤول مالي",
+    "role_manager": "مدير",
+    "btn_invite": "إرسال الدعوة",
+    "btn_sending": "جارٍ الإرسال…",
+    "success_new": "تم إرسال الدعوة إلى {email}.",
+    "success_existing": "{email} لديه حساب بالفعل — تم تحديث الدور والولايات القضائية.",
+    "error_prefix": "خطأ: "
   },
   "DashboardPages": {
     "alerts_title": "التنبيهات والاستثناءات",

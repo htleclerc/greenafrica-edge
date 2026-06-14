@@ -678,7 +678,27 @@
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CRIPTOGRAFADO",
     "nav_jurisdictions": "Jurisdições",
-    "nav_vision": "Painel de Visão"
+    "nav_vision": "Painel de Visão",
+    "nav_staff": "Gestão de Pessoal"
+  },
+  "AdminStaff": {
+    "page_title": "Gestão de Pessoal",
+    "page_subtitle": "Convide membros da equipa governamental e atribua as suas jurisdições.",
+    "form_title": "Convidar um membro da equipa",
+    "label_email": "Endereço de e-mail",
+    "label_full_name": "Nome completo",
+    "label_role": "Função",
+    "label_jurisdictions": "Jurisdições",
+    "placeholder_email": "pessoal@exemplo.gov",
+    "placeholder_full_name": "Primeiro e último nome",
+    "role_port_officer": "Oficial de Porto",
+    "role_finance_admin": "Admin Financeiro",
+    "role_manager": "Gestor",
+    "btn_invite": "Enviar convite",
+    "btn_sending": "A enviar…",
+    "success_new": "Convite enviado para {email}.",
+    "success_existing": "{email} já tem uma conta — função e jurisdições atualizadas.",
+    "error_prefix": "Erro: "
   },
   "DashboardPages": {
     "alerts_title": "Alertas e Exceções",
