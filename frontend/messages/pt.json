@@ -2803,10 +2803,69 @@
     }
   },
   "OwnerRegister": {
-    "title": "Registo de operador",
+    "title": "Registo de operador marítimo",
     "subtitle": "Diga-nos sobre a sua empresa. Avaliaremos e responderemos por e-mail em 48h.",
+    "email": "Email de contacto",
+    "company_name": "Nome da empresa",
+    "imo_company": "Número IMO da empresa (7 dígitos)",
+    "country": "País (ISO-2)",
+    "address": "Morada registada",
+    "vessel_imo": "IMO de um dos seus navios",
+    "phone_optional": "Telefone (opcional, E.164)",
+    "submit": "Enviar candidatura",
+    "submitting": "A enviar...",
+    "thanks_title": "Obrigado",
+    "doc_types": {
+      "TRADE_REGISTER": "Registo comercial",
+      "CERT_INCORPORATION": "Certidão de constituição",
+      "MOA": "Estatutos",
+      "OTHER": "Outro"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Por favor, carregue um documento comprovatório",
+      "upload_failed": "Falha no carregamento do ficheiro. Tente novamente."
+    },
+    "proof_document": "Documento comprovatório",
+    "doc_type": "Tipo de documento",
+    "preferred_language": "Língua preferida",
     "closed_title": "Registo encerrado",
     "closed_body": "Os registos de operadores estão actualmente por convite. Contacte a administração.",
     "back_to_login": "Voltar ao início de sessão"
+  },
+  "AirRegister": {
+    "title": "Registo de operador aéreo",
+    "subtitle": "Reivindique a sua conta de operador com o seu número AOC e uma das suas aeronaves.",
+    "tab_maritime": "Marítimo",
+    "tab_air": "Aéreo",
+    "email": "Email oficial",
+    "company_name": "Nome da empresa operadora",
+    "aoc_number": "Número AOC",
+    "aircraft_ident": "Matrícula da aeronave ou código icao24",
+    "country": "País (ISO-2)",
+    "address": "Morada registada",
+    "proof_document": "Certificado AOC (PDF/imagem)",
+    "phone_optional": "Telefone (opcional)",
+    "preferred_language": "Língua preferida",
+    "submit": "Enviar pedido",
+    "submitting": "A enviar…",
+    "thanks_title": "Pedido recebido",
+    "errors": {
+      "no_file": "Por favor, anexe o seu certificado AOC.",
+      "upload_failed": "Falha no carregamento, tente novamente."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
   }
 }

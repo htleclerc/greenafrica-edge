@@ -2803,10 +2803,69 @@
     }
   },
   "OwnerRegister": {
-    "title": "Usajili wa opereta",
+    "title": "Usajili wa opereta wa baharini",
     "subtitle": "Tuambie kuhusu kampuni yako. Tutakagua na kukuandikia ndani ya masaa 48.",
+    "email": "Barua pepe ya mawasiliano",
+    "company_name": "Jina la kampuni",
+    "imo_company": "Nambari ya IMO ya Kampuni (tarakimu 7)",
+    "country": "Nchi (ISO-2)",
+    "address": "Anwani iliyosajiliwa",
+    "vessel_imo": "IMO ya chombo chako kimoja",
+    "phone_optional": "Simu (si lazima, E.164)",
+    "submit": "Wasilisha ombi",
+    "submitting": "Inatuma...",
+    "thanks_title": "Asante",
+    "doc_types": {
+      "TRADE_REGISTER": "Daftari la biashara",
+      "CERT_INCORPORATION": "Cheti cha usajili",
+      "MOA": "Hati ya chama",
+      "OTHER": "Nyingine"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Tafadhali pakia hati ya uthibitisho",
+      "upload_failed": "Upakiaji wa faili umeshindwa. Jaribu tena."
+    },
+    "proof_document": "Hati ya uthibitisho",
+    "doc_type": "Aina ya hati",
+    "preferred_language": "Lugha unayopendelea",
     "closed_title": "Usajili umefungwa",
     "closed_body": "Usajili wa waendeshaji kwa sasa ni kwa mwaliko tu. Wasiliana na utawala.",
     "back_to_login": "Rudi kwenye kuingia"
+  },
+  "AirRegister": {
+    "title": "Usajili wa opereta wa anga",
+    "subtitle": "Dai akaunti yako ya opereta kwa kutumia nambari yako ya AOC na ndege moja ya msafara wako.",
+    "tab_maritime": "Baharini",
+    "tab_air": "Anga",
+    "email": "Barua pepe rasmi",
+    "company_name": "Jina la kampuni ya uendeshaji",
+    "aoc_number": "Nambari ya AOC",
+    "aircraft_ident": "Usajili wa ndege au msimbo wa icao24",
+    "country": "Nchi (ISO-2)",
+    "address": "Anwani iliyosajiliwa",
+    "proof_document": "Cheti cha AOC (PDF/picha)",
+    "phone_optional": "Simu (si lazima)",
+    "preferred_language": "Lugha unayopendelea",
+    "submit": "Wasilisha ombi",
+    "submitting": "Inatuma…",
+    "thanks_title": "Ombi limepokelewa",
+    "errors": {
+      "no_file": "Tafadhali ambatanisha cheti chako cha AOC.",
+      "upload_failed": "Upakiaji umeshindwa, tafadhali jaribu tena."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
   }
 }
