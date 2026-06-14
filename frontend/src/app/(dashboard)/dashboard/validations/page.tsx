@@ -6,7 +6,7 @@ export const metadata = {
     title: 'Validation des agents — AIS Portal',
 };
 
-const ALLOWED_ROLES = new Set(['SUPERADMIN', 'PORT_OFFICER', 'MANAGER']);
+const ALLOWED_ROLES = new Set(['SUPERADMIN', 'PORT_OFFICER']);
 
 export default async function ValidationsRoute() {
     const supabase = await createClient();

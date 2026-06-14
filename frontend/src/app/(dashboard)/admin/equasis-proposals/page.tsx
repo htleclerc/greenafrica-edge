@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_ROLES = new Set(['SUPERADMIN', 'PORT_OFFICER', 'MANAGER']);
+const ALLOWED_ROLES = new Set(['SUPERADMIN', 'PORT_OFFICER']);
 
 export default async function EquasisProposalsRoute() {
     const supabase = await createClient();
