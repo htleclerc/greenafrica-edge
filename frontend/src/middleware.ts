@@ -21,7 +21,7 @@ const OWNER_PUBLIC_PATHS = ['/owner/login', '/owner/register', '/owner/onboardin
 // redirect to the canonical /dashboard/* path.
 //
 // Excluded from redirection (kept functional at their original paths):
-//   /owner/register        — onboarding self-service entry point
+//   /owner/register        — 301 relay to /signup (kept for legacy links)
 //   /owner/onboarding/*   — multi-step onboarding wizard
 //   /owner/reset-password — password reset flow
 //   /owner/auth/callback  — OAuth / magic-link callback
