@@ -6,8 +6,7 @@
 // an authenticated SHIPOWNER linked to a shipowners row in ACTIVE state.
 //
 // Differs from requireRole() in three ways:
-//   1. Redirects to /owner/login (not /login) on auth failure — staff and
-//      owner portals must not bleed into each other.
+//   1. Redirects to /login (the unified sign-in) on auth failure.
 //   2. Returns the shipowner record alongside the user, so pages don't have
 //      to re-query.
 //   3. Asserts account_state='ACTIVE' — INVITED owners who haven't redeemed
@@ -32,7 +31,7 @@ export async function requireOwner(): Promise<OwnerSession> {
     const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) redirect('/owner/login');
+    if (authError || !user) redirect('/login');
 
     // Look up the shipowners row attached to this profile. Single source of
     // truth — RLS ensures we can only see our own row.
@@ -46,14 +45,14 @@ export async function requireOwner(): Promise<OwnerSession> {
         // Either profile_id wasn't set (corrupt invite) or auth user has no
         // matching shipowner — log out and bounce.
         await supabase.auth.signOut();
-        redirect('/owner/login?error=no_owner_record');
+        redirect('/login?error=no_owner_record');
     }
 
     if (shipowner.account_state !== 'ACTIVE') {
         // Invitation issued but never redeemed, or admin revoked access.
         // Sign out so refresh doesn't loop, then send to login with hint.
         await supabase.auth.signOut();
-        redirect(`/owner/login?error=state_${shipowner.account_state.toLowerCase()}`);
+        redirect(`/login?error=state_${shipowner.account_state.toLowerCase()}`);
     }
 
     return {
