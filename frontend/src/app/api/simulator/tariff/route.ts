@@ -8,9 +8,11 @@
 //
 // Resolution order:
 //   1. No session → 401
-//   2. Active shipowners row → operator; use shipowners.jurisdiction_id
-//   3. No shipowners row → staff; call _getServerJurisdictionIdImpl (uncached
-//      raw impl, avoids React cache() which does not work in API routes)
+//   2. Shipowners row exists for this user:
+//        ACTIVE   → operator path; use shipowners.jurisdiction_id
+//        otherwise → fail-closed (no cross-path fallback); return null tariff
+//   3. No shipowners row → staff path; call _getServerJurisdictionIdImpl
+//        (uncached raw impl, avoids React cache() which does not work in API routes)
 //   4. Jurisdiction resolution throws → { ratePerTco2: null, jurisdictionId: null }
 //   5. Query tariffs for (jurisdictionId, MARITIME, ACTIVE, today in range)
 //
@@ -36,12 +38,11 @@ export async function GET() {
 
     // ── Step 1: resolve jurisdiction ──────────────────────────────────────────
 
-    // Check if caller is an active operator
+    // Check if caller has a shipowner row (any state)
     const { data: shipownerRow, error: shipownerError } = await supabase
         .from('shipowners')
-        .select('jurisdiction_id')
+        .select('jurisdiction_id, account_state')
         .eq('profile_id', user.id)
-        .eq('account_state', 'ACTIVE')
         .maybeSingle();
 
     if (shipownerError) {
@@ -51,8 +52,11 @@ export async function GET() {
 
     let jurisdictionId: string | null = null;
 
-    if (shipownerRow?.jurisdiction_id) {
-        // Operator path
+    if (shipownerRow) {
+        // Operator path — ACTIVE required; no fallback to staff for non-ACTIVE operators
+        if (shipownerRow.account_state !== 'ACTIVE') {
+            return NextResponse.json({ jurisdictionId: null, ratePerTco2: null, currency: 'USD' });
+        }
         jurisdictionId = shipownerRow.jurisdiction_id ?? null;
     } else {
         // Staff path — use the uncached impl to avoid React cache() in API routes

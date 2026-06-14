@@ -3,19 +3,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Hoisted mock state shared between vi.mock factory and test bodies.
 const mocks = vi.hoisted(() => ({
     user: null as { id: string } | null,
-    shipownerRow: null as { jurisdiction_id: string } | null,
+    shipownerRow: null as { jurisdiction_id: string; account_state: string } | null,
     tariffRow: null as { rate_per_tco2: number; currency: string } | null,
     jurisdictionIdFromImpl: null as string | null,
     jurisdictionImplThrows: false,
 }));
 
 vi.mock('@/lib/supabase/server', () => {
-    // Thenable helper — returns the value when awaited at the end of a chain.
-    const thenable = <T>(value: T) => ({
-        then: (resolve: (v: { data: T; error: null }) => void) =>
-            resolve({ data: value, error: null }),
-    });
-
     return {
         createClient: vi.fn(async () => ({
             auth: {
@@ -29,11 +23,9 @@ vi.mock('@/lib/supabase/server', () => {
                     return {
                         select: vi.fn(() => ({
                             eq: vi.fn(() => ({
-                                eq: vi.fn(() => ({
-                                    maybeSingle: vi.fn(async () => ({
-                                        data: mocks.shipownerRow,
-                                        error: null,
-                                    })),
+                                maybeSingle: vi.fn(async () => ({
+                                    data: mocks.shipownerRow,
+                                    error: null,
                                 })),
                             })),
                         })),
@@ -100,13 +92,23 @@ describe('GET /api/simulator/tariff', () => {
 
     it('returns 200 with rate for operator with active tariff', async () => {
         mocks.user = { id: 'user-1' };
-        mocks.shipownerRow = { jurisdiction_id: 'jid-sl' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
         mocks.tariffRow = { rate_per_tco2: 40, currency: 'USD' };
 
         const res = await GET();
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: 'jid-sl', ratePerTco2: 40, currency: 'USD' });
+    });
+
+    it('returns 200 with null rate for non-ACTIVE operator (no staff fallback)', async () => {
+        mocks.user = { id: 'user-suspended' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'SUSPENDED' };
+
+        const res = await GET();
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json).toEqual({ jurisdictionId: null, ratePerTco2: null, currency: 'USD' });
     });
 
     it('returns 200 with rate for staff when _getServerJurisdictionIdImpl resolves', async () => {
@@ -123,7 +125,7 @@ describe('GET /api/simulator/tariff', () => {
 
     it('returns 200 with null rate when no active tariff found', async () => {
         mocks.user = { id: 'user-3' };
-        mocks.shipownerRow = { jurisdiction_id: 'jid-sl' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
         mocks.tariffRow = null; // no active tariff
 
         const res = await GET();
