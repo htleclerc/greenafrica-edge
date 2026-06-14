@@ -16,7 +16,7 @@
  * shipowner → vessel.
  *
  * Real-world UI selectors used here come from
- * `src/app/owner/register/RegisterForm.tsx` (which renders OsInput
+ * `src/components/auth/operator-register/RegisterForm.tsx` (which renders OsInput
  * children whose `name` attribute matches the API contract); the recaptcha
  * step is short-circuited in non-production by registerShipowner via
  * `process.env.NODE_ENV !== 'production'` so RECAPTCHA_SECRET_KEY does not
@@ -102,7 +102,7 @@ test('signup auto-claim: matching IMO company flips GHOST shipowner to ACTIVE', 
         }
     });
 
-    await page.goto('/owner/register');
+    await page.goto('/signup');
 
     // OsInput labels aren't associated with the underlying input via htmlFor,
     // so we target the inputs by their `name` attribute — that's the public

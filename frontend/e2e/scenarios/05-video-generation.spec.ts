@@ -156,7 +156,7 @@ test('run humanized video walkthrough', async ({ page }) => {
 
     // ─── Scene 2: Owner Onboarding ──────────────────────────────────────────
     console.log('Scene 2: Onboarding Owner Registration...');
-    await page.goto('/owner/register');
+    await page.goto('/signup');
     await page.waitForTimeout(1500);
 
     await typeSlowly('input[name="email"]', 'demo-armateur-register@e2e-test.com');
