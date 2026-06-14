@@ -8,6 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
 import { OsStatCard } from '@/components/ui/OsStatCard';
 import { getOwnerCounters, formatUsd } from '@/services/ownerPortalService';
+import { KycCBanner } from '@/components/owner/KycCBanner';
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
@@ -19,6 +20,7 @@ export async function OperatorDashboardPage({ principal }: Props) {
 
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
+            <KycCBanner kycComplete={!!principal.shipowner.kyc_level_c_completed_at} />
             <header className="mb-6">
                 <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">
                     {principal.shipowner.name}
