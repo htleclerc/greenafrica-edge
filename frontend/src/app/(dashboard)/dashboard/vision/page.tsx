@@ -15,6 +15,11 @@ export default async function VisionPage() {
         redirect('/dashboard');
     }
 
+    // Vision board is reserved for MANAGER and SUPERADMIN only.
+    if (principal.user.role !== 'MANAGER' && principal.user.role !== 'SUPERADMIN') {
+        redirect('/dashboard');
+    }
+
     const mode = await getServerActiveMode();
     const counters = await getVisionCounters(principal.supabase, {
         mode: modeFilter(mode),
