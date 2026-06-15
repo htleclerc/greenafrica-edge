@@ -41,23 +41,3 @@ export async function getNextPendingTransaction(client: Client): Promise<Transac
         .maybeSingle();
     return data ? rowToTransaction(data as TransactionRow) : null;
 }
-
-export async function createTransaction(
-    client: Client,
-    input: Record<string, unknown>,
-): Promise<Transaction | null> {
-    const { data } = await client.from('transactions').insert(input).select().single();
-    return data ? rowToTransaction(data as TransactionRow) : null;
-}
-
-export async function updateTransactionStatus(
-    client: Client,
-    id: string,
-    status: string,
-    paidAt?: string,
-): Promise<Transaction | null> {
-    const update: Record<string, unknown> = { status };
-    if (paidAt) update.paid_at = paidAt;
-    const { data } = await client.from('transactions').update(update).eq('id', id).select().single();
-    return data ? rowToTransaction(data as TransactionRow) : null;
-}

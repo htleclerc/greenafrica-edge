@@ -954,7 +954,10 @@
     "simulator_cat_ferry": "عبّارة ركاب",
     "simulator_unit_knots": "عقدة",
     "simulator_unit_hours": "ساعات",
-    "simulator_legacy_rates_notice": "محاكاة استرشادية — جدول معدلات قديم؛ التعريفات الرسمية متاحة في الإدارة ← الولايات القضائية."
+    "simulator_legacy_rates_notice": "محاكاة استرشادية — جدول معدلات قديم؛ التعريفات الرسمية متاحة في الإدارة ← الولايات القضائية.",
+    "simulator_official_rate": "السعر الرسمي: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "لم يتم نشر أي تعريفة",
+    "simulator_no_tariff_body": "لم يتم نشر أي تعريفة سارية لهذه الولاية القضائية. الحساب غير متاح — يرجى الاتصال بالإدارة."
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",

@@ -954,7 +954,10 @@
     "simulator_unit_hours": "masaa",
     "simulator_legacy_rates_notice": "Uigaji wa dalili — jedwali la viwango vya zamani ; viwango rasmi vipo katika Admin → Mamlaka.",
     "settings_visual_theme": "Mandhari ya Kuona",
-    "settings_visual_theme_desc": "Chagua muonekano wa kuona wa kiolesura cha jukwaa."
+    "settings_visual_theme_desc": "Chagua muonekano wa kuona wa kiolesura cha jukwaa.",
+    "simulator_official_rate": "Kiwango rasmi: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Hakuna kiwango kilichochapishwa",
+    "simulator_no_tariff_body": "Hakuna kiwango cha sasa kilichochapishwa kwa mamlaka hii. Hesabu haipatikani — tafadhali wasiliana na utawala."
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
