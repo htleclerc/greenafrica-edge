@@ -21,6 +21,7 @@ import { createSignedLoginUrl } from '@/lib/auth/signedLink';
 import { UserRole } from '@/types/secure';
 import { sendArmateurInviteEmail } from '@/services/emailService';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { getJurisdictionDefaults } from '@/lib/jurisdiction-defaults';
 
 const INVITER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER];
 
@@ -96,6 +97,13 @@ export async function POST(request: NextRequest) {
     // 3. Upsert profile — invited = approved (is_active=true)
     //    SUPERADMIN sees this in the audit log; the invite trail is in
     //    user_metadata.invited_by for traceability.
+    const isDjibouti = jurisdiction === 'Djibouti';
+    const countryCode = isDjibouti ? 'DJ' : 'SO';
+    // Resolve jurisdiction UUID → derive the correct default site and timezone.
+    const jurisdictionId = isDjibouti
+        ? '00000000-0000-4000-8000-00000000444a'  // DJ (mig 080 seed)
+        : '00000000-0000-4000-8000-00000000534f'; // SO Somaliland (mig 071 seed)
+    const { defaultSite, defaultTimezone } = getJurisdictionDefaults(jurisdictionId);
     const { error: profileError } = await adminClient
         .from('profiles')
         .upsert({
@@ -103,9 +111,9 @@ export async function POST(request: NextRequest) {
             email,
             full_name: fullName,
             role: 'SHIPPING_AGENT',
-            operational_site: 'BERBERA_PORT',
-            country_code: jurisdiction === 'Djibouti' ? 'DJ' : 'SO',
-            timezone: 'Africa/Mogadishu',
+            operational_site: defaultSite,
+            country_code: countryCode,
+            timezone: defaultTimezone,
             preferred_language: 'en',
             is_active: true,
             is_demo: false,
