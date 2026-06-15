@@ -43,7 +43,7 @@ export async function addVesselManually(
     if (!profile) return { ok: false, reason: 'profile not found' };
 
     const isArmateur = profile.role === 'SHIPPING_AGENT';
-    const isStaff = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN', 'MANAGER'].includes(profile.role);
+    const isStaff = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'].includes(profile.role);
     if (!isArmateur && !isStaff) {
         return { ok: false, reason: 'role not allowed to register vessels' };
     }

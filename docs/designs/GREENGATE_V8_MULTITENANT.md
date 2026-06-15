@@ -203,7 +203,7 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 1. ✅ **LIVRÉ W3** ~~`jurisdiction_mode_config.enabled` non consulté par la détection/billing~~ — enforcement complet : `disabled = stop nouvelles détections/alertes ; voyages en cours complètent ; API calc ouverte ; ligne matrice absente = désactivé`. Le pg 085 teste le trigger de stamping `transactions_stamp_split_rule` ; les preuves « désactivé → zéro alerte » sont les tests Go (corridor/tracker) + les tests vitest de la route ADS-B. **Note ops** : les alertes DETECTED/PROFORMA_SENT créées avant un disable restent actives jusqu'au prochain voyage — comportement attendu.
 2. **Simulateur staff lit `tax_configurations` (table legacy)** — bannière posée dans l'UI ; convergence vers la table `tariffs` = follow-up.
 3. **Visibilité multi-juridiction des vessels** — `vessels.jurisdiction_id` est scopé SO par défaut ; les opérateurs DJ sont onboardés en pattern admin AOC (pas de self-service public cross-pays).
-4. **Corridor stamping PROVISOIRE** — nearest-port ≤ 500nm ; ré-résolution par destination matching à prévoir (follow-up).
+4. **Corridor stamping PROVISOIRE** — nearest-port ≤ 500nm ; ✅ **GARDE LIVRÉE W4** : flag `jurisdiction_provisional` + reconcile (mismatch → VOID + ré-émission) — voir « Wedge 4 — LIVRÉ ».
 5. **Signup public multi-pays différé** — opérateurs Djibouti = onboarding admin pattern AOC (même chemin que l'aérien Somaliland).
 6. **Analytics pan-africain différé** — agrégats cross-juridiction non implémentés (§9 NOT in scope v8 initial).
 7. ✅ **FONDATIONS LIVRÉES W3** ~~Settlement du revenue split différé~~ — snapshot `split_rule_id` à l'émission (mig 085 + trigger backfill) ; vue `v_revenue_split_settlement` avec buckets gross/attributed/unattributed/mismatched exposée sur `/admin/jurisdictions`. Décaissement TOUJOURS différé — escrow Min. Finance hors scope v8.
@@ -230,6 +230,33 @@ Index chauds existants recréés préfixés `jurisdiction_id` (`CREATE INDEX CON
 ### Note de déploiement
 
 **Migs 085-086 AVANT ou avec le déploiement du backend Go.** Le package `internal/modeconfig` lit `jurisdiction_mode_config`, table existante depuis la mig 071 — matrice absente/vide = tout DÉSACTIVÉ (fail-closed : aucune nouvelle alerte) — le contrat explicite de `internal/modeconfig`. En pratique, la table existe depuis la mig 071, donc le Go lit toujours la matrice réelle. Même release recommandée : `supabase db push` → deploy Go.
+
+---
+
+## Wedge 4 — LIVRÉ (2026-06-12)
+
+Blindage fiscal & continuité : ferme les 7 P0 de la [revue générale post-W3](../reviews/2026-06-12-revue-generale-post-w3.md).
+
+- **PDF souverain** — lib `jurisdictionName` dans les 4 routes PDF legacy + ProFormaModal (fini le « Republic of Somaliland » hardcodé sur une facture DJ) ; ventilation 75/20/5 fictive supprimée (taxe carbone = une seule ligne) ; `content_hash`/`verify_signature` first-write-only.
+- **Webhook paiement** — refonte multi-provider sur le rail payments-row + recompute (modèle Stripe) : ref exacte, montant validé ±$0.01, USD only, juridiction stampée ; index unique provider:ref (mig 087).
+- **RLS rail argent** — mig 087 : policies juridiction sur `wallets`/`wallet_ledger`/`refunds`/`owner_notifications` (pattern mig 073).
+- **Invariants tarifaires in-table** — mig 088 : anti rétro-activation, anti round-trip ACTIVE→DRAFT→ACTIVE, gardes DELETE/TRUNCATE ; hatch `SET LOCAL app.tariffs_allow_retro` pour les migrations d'onboarding.
+- **Transactions immuables** — mig 089 : colonnes fiscales gelées post-INSERT (42/42 colonnes classées gelées/opérationnelles) ; mig 090 : VOID terminal ; hatch `app.transactions_allow_backfill`.
+- **Garde corridor inter-États** — stamp `jurisdiction_provisional` à l'émission ; au reconcile, mismatch → VOID + ré-émission idempotente sous la juridiction réelle ; dead-letter pgmq à `read_ct > 5` ; wrappers pgmq verrouillés service_role.
+- **Backup/DR** — runbook `docs/runbooks/2026-backup-dr.md` + `scripts/backup/restore-test.sh` (restore testé contre l'hébergé, tip=086) ; runbook canary rafraîchi.
+
+### Déviations assumées
+
+1. **Webhook : pas de payments-row REJECTED sur mismatch** (montant/devise) — éviterait d'occuper l'index unique provider:id avec une row morte ; le webhook log + audite + ack 200 sans effet, la proforma reste due.
+2. **Wave désactivé** — settle XOF/SOS uniquement, pas de compte USD ; conditions de réactivation (politique FX XOF↔USD + parser `body.data.*` + tests sandbox) documentées en commentaire dans la route webhook. Signature toujours vérifiée (pas d'endpoint 200-ack non authentifié).
+
+### Sémantique « proforma PAYÉE mismatchée » (corridor)
+
+Pas de VOID d'un document payé : le FINAL est émis sous la **juridiction réelle**, flaggé `jurisdiction_mismatch_paid_proforma` (jsonb `breakdown_json`) + `log.error` ; la correction inter-États (argent encaissé sous l'autre État) est **manuelle** — la vue settlement mig 086 reste inchangée et fait apparaître l'écart.
+
+### Note de déploiement
+
+**Migs 087-090 AVANT le deploy Go** (le workflow l'enforce : `needs: [ci, migrations]`). Zéro changement backend Go prod — seulement des fixtures de test (hatch mig 088).
 
 ---
 

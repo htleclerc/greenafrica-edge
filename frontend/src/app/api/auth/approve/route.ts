@@ -8,16 +8,11 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
  * POST /api/auth/approve
  * Body: { requestId: string, reviewNote?: string }
  *
- * Called by SUPERADMIN / PORT_OFFICER / MANAGER to approve a registration
+ * Called by SUPERADMIN / PORT_OFFICER to approve a registration
  * request. Sets profiles.is_active = true for the user matching the
  * registration email. Updates registration_requests.status = 'APPROVED'.
- *
- * MANAGER is allowed because registration approval is an operational task,
- * not a money-rail action — the actual role assignment is mechanical
- * (read from registration_requests.requested_role, not chosen by the
- * approver).
  */
-const APPROVER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER];
+const APPROVER_ROLES = [UserRole.SUPERADMIN, UserRole.PORT_OFFICER];
 
 export async function POST(request: NextRequest) {
     const auth = await requireRole(APPROVER_ROLES);

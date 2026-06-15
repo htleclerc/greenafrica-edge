@@ -29,13 +29,13 @@ export async function rejectShipownerRegistration(input: unknown) {
     const { data: authUser } = await supabase.auth.getUser();
     if (!authUser?.user) return { ok: false, message: 'not authenticated' };
 
-    // 2. Check role (SUPERADMIN or MANAGER)
+    // 2. Check role (SUPERADMIN only)
     const { data: profile } = await supabase
         .from('profiles')
         .select('role, full_name')
         .eq('id', authUser.user.id)
         .single();
-    const ALLOWED_ROLES = ['SUPERADMIN', 'MANAGER'];
+    const ALLOWED_ROLES = ['SUPERADMIN'];
     if (!profile || !ALLOWED_ROLES.includes(profile.role)) {
         return { ok: false, message: 'insufficient role' };
     }

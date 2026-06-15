@@ -33,7 +33,7 @@ export default async function OwnerAgentMappingsPage() {
             .order('full_name'),
     ]);
 
-    const canInvite = ['SUPERADMIN', 'MANAGER'].includes(profile.role);
+    const canInvite = profile.role === 'SUPERADMIN';
     const t = await getTranslations('AdminMappings');
 
     return (

@@ -669,6 +669,7 @@
     "bottom_aes": "AES-256",
     "site_berbera": "Berbera Port Terminal",
     "site_national_hq": "National HQ (Hargeisa)",
+    "site_djibouti": "Port of Djibouti",
     "forgot_title": "Reset Your Password",
     "forgot_subtitle": "Enter the email address associated with your account and we'll send you a secure reset link.",
     "forgot_info": "A password reset link will be sent to your registered government or professional email.",
@@ -734,6 +735,7 @@
     "role_finance_admin": "Finance Admin",
     "role_shipping_agent": "Shipowner / Agent",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Operations Manager",
     "notif_noncompliant_title": "Non-compliant vessel",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — action required",
     "notif_payment_due_title": "Payment due",
@@ -814,7 +816,28 @@
     "nav_registrations": "Registrations",
     "nav_wallets": "Wallets",
     "nav_refunds": "Refunds",
-    "nav_jurisdictions": "Jurisdictions"
+    "nav_jurisdictions": "Jurisdictions",
+    "nav_vision": "Vision Board",
+    "nav_staff": "Staff Management"
+  },
+  "AdminStaff": {
+    "page_title": "Staff Management",
+    "page_subtitle": "Invite government staff members and assign their jurisdictions.",
+    "form_title": "Invite a staff member",
+    "label_email": "Email address",
+    "label_full_name": "Full name",
+    "label_role": "Role",
+    "label_jurisdictions": "Jurisdictions",
+    "placeholder_email": "staff@example.gov",
+    "placeholder_full_name": "First and last name",
+    "role_port_officer": "Port Officer",
+    "role_finance_admin": "Finance Admin",
+    "role_manager": "Manager",
+    "btn_invite": "Send invitation",
+    "btn_sending": "Sending…",
+    "success_new": "Invitation sent to {email}.",
+    "success_existing": "{email} already has an account — role and jurisdictions updated.",
+    "error_prefix": "Error: "
   },
   "DashboardPages": {
     "alerts_title": "Alerts & Exceptions",
@@ -983,6 +1006,8 @@
     "settings_site_berbera": "Port of Berbera",
     "settings_site_national_hq": "National Headquarters — Hargeisa",
     "settings_site_zeila": "Port of Zeila",
+    "settings_site_djibouti": "Port of Djibouti",
+    "settings_coming_soon": "Coming soon",
     "simulator_title": "Carbon Tax Simulator",
     "simulator_subtitle": "Estimate your tax burden before entering the Somaliland EEZ — based on official rates in effect.",
     "simulator_official_rates": "Official rates as of 01/01/2025 — IMO DCS certified",
@@ -1047,7 +1072,10 @@
     "simulator_cat_ferry": "Passenger Ferry",
     "simulator_unit_knots": "knots",
     "simulator_unit_hours": "hours",
-    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions."
+    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions.",
+    "simulator_official_rate": "Official rate: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "No tariff published",
+    "simulator_no_tariff_body": "No active tariff has been published for this jurisdiction. Calculation is unavailable — please contact the administration."
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",
@@ -2773,7 +2801,8 @@
       "wallet": "Wallet",
       "simulator": "Tax Simulator",
       "tco": "TCO Dashboard",
-      "disputes": "Disputes"
+      "disputes": "Disputes",
+      "notifications": "Notifications"
     },
     "disputes": {
       "empty": "You haven't opened any disputes yet."
@@ -3201,7 +3230,10 @@
     },
     "proof_document": "Proof document",
     "doc_type": "Document type",
-    "preferred_language": "Preferred language"
+    "preferred_language": "Preferred language",
+    "closed_title": "Registration closed",
+    "closed_body": "Operator registrations are currently by invitation only. Please contact the administration.",
+    "back_to_login": "Back to login"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -3504,6 +3536,14 @@
     "error": "Could not switch",
     "retry": "Retry"
   },
+  "ModeSwitcher": {
+    "label": "Transport mode",
+    "both": "Both",
+    "maritime": "Maritime",
+    "air": "Air",
+    "error": "Could not switch mode",
+    "retry": "Retry"
+  },
   "DashboardError": {
     "title": "Something went wrong",
     "jurisdictionHint": "If you operate multiple jurisdictions, select your active jurisdiction in the sidebar and retry.",
@@ -3568,5 +3608,28 @@
       "mismatched": "{count} mismatched tx"
     },
     "modesDisclosure": "Gates new detections and billing — in-flight voyages complete; the calc API stays open for reconciliation."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Live fleet snapshot — read only",
+    "modeBoth": "All modes",
+    "modeMaritime": "Maritime",
+    "modeAir": "Air",
+    "kpi": {
+      "atPort": "At port",
+      "approaching": "Approaching",
+      "paidLast7d": "Paid (7d)",
+      "unpaidInProgress": "Unpaid in progress"
+    },
+    "departures": {
+      "title": "Recent departures",
+      "subtitle": "Left EEZ in the last 7 days",
+      "empty": "No departures recorded in the last 7 days"
+    },
+    "table": {
+      "ref": "Ref.",
+      "mode": "Mode",
+      "departedAt": "Departed"
+    }
   }
 }

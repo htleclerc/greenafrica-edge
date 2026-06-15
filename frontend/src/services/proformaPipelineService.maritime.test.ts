@@ -51,7 +51,7 @@ const AGENT = { id: 'agent-001', email: 'agent@test.com', full_name: 'Test Agent
  * Fake SupabaseClient for the maritime branch. Captures the transactions insert
  * payload so the test can assert the Wedge 2 jurisdiction/tariff contract.
  */
-function makeClient(opts: { alertStatus?: string } = {}) {
+function makeClient(opts: { alertStatus?: string; arrivedAt?: string | null } = {}) {
   const captured: {
     insertedTxn?: Record<string, unknown>;
     alertUpdate?: Record<string, unknown>;
@@ -67,6 +67,7 @@ function makeClient(opts: { alertStatus?: string } = {}) {
     matched_agent_id: AGENT.id,
     status: opts.alertStatus ?? 'MATCHED_AUTO',
     jurisdiction_id: SOMALILAND_JID,
+    arrived_at: opts.arrivedAt ?? null,
     vessel: VESSEL,
     aircraft: null,
   };
@@ -227,5 +228,106 @@ describe('runProformaPipeline — maritime branch (Wedge 2 jurisdiction + tariff
     expect(result.reason).toContain('422');
     expect(captured.insertedTxn).toBeUndefined();
     expect(from).not.toHaveBeenCalledWith('transactions');
+  });
+});
+
+describe('runProformaPipeline — corridor guard (W4-T6 provisional stamp + reissue)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function stubTaxFetch() {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => MARITIME_TAX_RESULT,
+      text: async () => '',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('pre-arrival issuance (arrived_at null) → breakdown_json.jurisdiction_provisional = true in the INSERT payload', async () => {
+    stubTaxFetch();
+    const { client, captured } = makeClient({ arrivedAt: null });
+
+    const result = await runProformaPipeline({
+      alertId: 'alert-sea-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(result.ok).toBe(true);
+    const breakdown = captured.insertedTxn?.breakdown_json as Record<string, unknown>;
+    expect(breakdown).toMatchObject({
+      ...MARITIME_TAX_RESULT.breakdown,
+      jurisdiction_provisional: true,
+    });
+    expect(breakdown.jurisdiction_reissued_from).toBeUndefined();
+  });
+
+  it('post-arrival issuance (arrived_at set) → no jurisdiction_provisional stamp', async () => {
+    stubTaxFetch();
+    const { client, captured } = makeClient({ arrivedAt: '2026-06-10T08:00:00.000Z' });
+
+    const result = await runProformaPipeline({
+      alertId: 'alert-sea-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(captured.insertedTxn?.breakdown_json).toEqual(MARITIME_TAX_RESULT.breakdown);
+  });
+
+  it('reissue mode on a DEPARTED_EEZ alert → stamps jurisdiction_reissued_from, never provisional, alert keeps its status', async () => {
+    stubTaxFetch();
+    const { client, captured } = makeClient({
+      alertStatus: 'DEPARTED_EEZ',
+      arrivedAt: '2026-06-10T08:00:00.000Z',
+    });
+
+    const result = await runProformaPipeline({
+      alertId: 'alert-sea-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+      reissue: { fromTransactionId: 'voided-proforma-001' },
+    });
+
+    expect(result.ok).toBe(true);
+    const breakdown = captured.insertedTxn?.breakdown_json as Record<string, unknown>;
+    expect(breakdown.jurisdiction_reissued_from).toBe('voided-proforma-001');
+    expect(breakdown.jurisdiction_provisional).toBeUndefined();
+
+    // Only the pointer is re-pointed — NO status flip (the alert must stay
+    // DEPARTED_EEZ so the queued reconcile re-runs against the new proforma).
+    expect(captured.alertUpdate).toEqual({
+      proforma_transaction_id: 'a1b2c3d4-aaaa-bbbb-cccc-000000000099',
+    });
+  });
+
+  it('reissue mode rejects an alert that is not DEPARTED_EEZ', async () => {
+    stubTaxFetch();
+    const { client, captured } = makeClient({ alertStatus: 'MATCHED_AUTO' });
+
+    const result = await runProformaPipeline({
+      alertId: 'alert-sea-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+      reissue: { fromTransactionId: 'voided-proforma-001' },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.reason).toContain('not DEPARTED_EEZ');
+    expect(captured.insertedTxn).toBeUndefined();
   });
 });

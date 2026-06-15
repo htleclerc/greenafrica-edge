@@ -7,7 +7,7 @@
 
 import { test } from '@playwright/test';
 
-test.describe.skip('Refund WALLET happy path [pending Plan 7G PR #28 merge]', () => {
+test.describe('Refund WALLET happy path [pending Plan 7G PR #28 merge]', () => {
     test('admin executes WALLET refund, ledger credited, owner notified', async () => {
         // ─── Prerequisites (Plan 7G ships these) ───────────────────────────
         //   - mig 066: auto-INSERT into `refunds` table when a transactions

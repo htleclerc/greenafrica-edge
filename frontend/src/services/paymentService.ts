@@ -460,7 +460,11 @@ export async function createPaymentRequest(
 }
 
 /**
- * Confirm payment: mark transaction PAID + vessel COMPLIANT.
+ * @deprecated Direct status flip without amount validation or payments-row insert.
+ * Callers should use the payments-row + recompute_transaction_status rail instead
+ * (see /api/webhooks/payment/route.ts for the correct pattern).
+ * Only retained because no other caller in this codebase currently uses this function.
+ * Safe to delete once confirmed unused.
  */
 export async function confirmPayment(
   client: SupabaseClient,

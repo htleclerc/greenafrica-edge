@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_ROLES = new Set(['SUPERADMIN', 'FINANCE_ADMIN', 'MANAGER']);
+const ALLOWED_ROLES = new Set(['SUPERADMIN', 'FINANCE_ADMIN']);
 
 interface WalletRecord {
     id: string;

@@ -8,6 +8,10 @@ import {
     type PaymentProvider,
     type PaymentRequest,
 } from '@/services/paymentService';
+import { fetchJurisdictionName } from '@/lib/jurisdictionName';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('payments-create');
 
 /**
  * POST /api/payments/create
@@ -77,6 +81,8 @@ export async function POST(request: NextRequest) {
         .select(`
             id,
             jurisdiction_id,
+            shipowner_id,
+            invoice_ref,
             vessel_id,
             vessel_name,
             vessel_imo,
@@ -99,6 +105,17 @@ export async function POST(request: NextRequest) {
     if (tx.status === 'PAID') {
         return NextResponse.json(
             { error: 'Transaction is already PAID', alreadyPaid: true },
+            { status: 409 },
+        );
+    }
+
+    // I3 — NULL shipowner blocks at initiation: never take money we can't record.
+    // A transaction without a shipowner has no owner to credit; the webhook would
+    // receive a confirmed payment with nowhere to attach it.
+    if (!tx.shipowner_id) {
+        log.error('payments_create_no_shipowner', { transactionId: tx.id });
+        return NextResponse.json(
+            { error: 'transaction has no shipowner; online checkout unavailable' },
             { status: 409 },
         );
     }
@@ -126,11 +143,60 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    // 3. Build the canonical invoice ref (matches ProFormaModal logic)
+    // 3. Resolve (or mint + persist) the canonical invoice ref.
+    // The provider echoes this ref back; the webhook matches transactions.invoice_ref
+    // EXACTLY — never mint a divergent ref.
+    // Format mirrors invoices/generate: INV-{year}-{first-uuid-segment-8hex}{4hex-entropy}
+    // If invoice_ref is already set on the transaction (e.g. from invoice generation),
+    // reuse it verbatim. If NULL, mint a fresh one using the same format and persist it
+    // on the transaction row so the webhook can match it later.
     const createdAt = new Date(tx.created_at);
-    const invoiceRef = `INV-${createdAt.getFullYear()}-${tx.id.split('-')[1].toUpperCase()}`;
+    let invoiceRef = (tx as { invoice_ref?: string | null }).invoice_ref ?? null;
+    if (!invoiceRef) {
+        const uuidSeg = tx.id.split('-')[0].toLowerCase();
+        const entropy = Math.floor(Math.random() * 0xFFFF).toString(16).padStart(4, '0');
+        invoiceRef = `INV-${createdAt.getFullYear()}-${uuidSeg}${entropy}`;
+        // Race guard: only write if still NULL (another concurrent checkout may have
+        // won the race and already persisted its own ref — the conditional UPDATE is a
+        // no-op in that case, and we then adopt the winner's ref below).
+        const { error: refPersistErr } = await platform
+            .from('transactions')
+            .update({ invoice_ref: invoiceRef })
+            .eq('id', tx.id)
+            .is('invoice_ref', null);
+        if (refPersistErr) {
+            log.error('payments_create_ref_persist_failed', {
+                transactionId: tx.id,
+                error: refPersistErr.message,
+            });
+            return NextResponse.json(
+                { error: 'Failed to persist invoice reference; payment aborted' },
+                { status: 500 },
+            );
+        }
+        // Re-read the authoritative stored ref. If we lost the race, adopt the
+        // winner's ref so both requests drive the provider with the same reference
+        // that the webhook will later match.
+        const { data: reRead } = await platform
+            .from('transactions')
+            .select('invoice_ref')
+            .eq('id', tx.id)
+            .single();
+        if (!reRead?.invoice_ref) {
+            log.error('payments_create_ref_reread_null', { transactionId: tx.id });
+            return NextResponse.json(
+                { error: 'Failed to persist invoice reference; payment aborted' },
+                { status: 500 },
+            );
+        }
+        invoiceRef = reRead.invoice_ref as string;
+    }
 
     // 4. Build the PaymentRequest
+    const jurisdictionName = await fetchJurisdictionName(
+        admin,
+        (tx as { jurisdiction_id?: string | null }).jurisdiction_id,
+    );
     const paymentRequest: PaymentRequest = {
         transactionId: tx.id,
         amount: Number(tx.tax_amount_usd),
@@ -141,7 +207,8 @@ export async function POST(request: NextRequest) {
             vesselImo: tx.vessel_imo,
             vesselName: tx.vessel_name,
             ownerEntity,
-            jurisdiction: 'Republic of Somaliland',
+            // Sovereign name from the transaction's jurisdiction_id — never hardcoded.
+            jurisdiction: jurisdictionName,
             taxPeriod: createdAt.toISOString().slice(0, 7),
         },
         customerEmail,

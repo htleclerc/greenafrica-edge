@@ -17,6 +17,7 @@ export enum OperationalSite {
     BERBERA_PORT    = 'BERBERA_PORT',
     NATIONAL_HQ     = 'NATIONAL_HQ',
     ZEILA_PORT      = 'ZEILA_PORT',
+    DJIBOUTI_PORT   = 'DJIBOUTI_PORT',
 }
 
 export interface SecureUser {
@@ -135,6 +136,8 @@ export interface Transaction {
     portCall: string;
     createdAt: string;          // ISO datetime
     paidAt: string | null;
+    /** W2+: jurisdiction this transaction belongs to. Null for pre-W2 rows. */
+    jurisdictionId?: string | null;
     // HMAC fields exposed so the armateur "Voir la proforma" button can
     // construct the signed download URL without an extra round-trip.
     // Null until /api/invoices/generate has been called by staff.

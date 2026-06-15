@@ -11,13 +11,18 @@ const ALL_ROLES = [
 ] as const;
 
 describe('canAccess', () => {
+  // MANAGER no longer has broad ops access — only 'vision'
   const universalPages = ['map', 'vessels', 'invoices', 'settings', 'disputes'];
+  const nonManagerRoles = ALL_ROLES.filter((r) => r !== UserRole.MANAGER);
 
   universalPages.forEach((page) => {
-    it(`allows core roles to access "${page}"`, () => {
-      ALL_ROLES.forEach((role) => {
+    it(`allows core roles (excl. MANAGER) to access "${page}"`, () => {
+      nonManagerRoles.forEach((role) => {
         expect(canAccess(page, role)).toBe(true);
       });
+    });
+    it(`denies MANAGER access to "${page}" (vision-only role)`, () => {
+      expect(canAccess(page, UserRole.MANAGER)).toBe(false);
     });
   });
 
@@ -101,9 +106,8 @@ describe('canAccess', () => {
     it('grants SUPERADMIN access to audit', () => {
       expect(canAccess('audit', UserRole.SUPERADMIN)).toBe(true);
     });
-    it('grants MANAGER access to audit (read-only)', () => {
-      expect(canAccess('audit', UserRole.MANAGER)).toBe(true);
-      expect(canEdit('audit', UserRole.MANAGER)).toBe(false);
+    it('denies MANAGER access to audit (vision-only role)', () => {
+      expect(canAccess('audit', UserRole.MANAGER)).toBe(false);
     });
     it('denies SHIPPING_AGENT access to audit', () => {
       expect(canAccess('audit', UserRole.SHIPPING_AGENT)).toBe(false);
@@ -113,33 +117,31 @@ describe('canAccess', () => {
     });
   });
 
-  // ── MANAGER role — the new role from PR-1 ──
-  describe('MANAGER role — ops access', () => {
-    const allowedOpsKeys = [
-      'map', 'simulator', 'vessels', 'invoices', 'disputes', 'tco',
-      'alerts', 'inspector', 'audit', 'validations', 'settings',
-    ];
-    allowedOpsKeys.forEach((key) => {
-      it(`grants MANAGER access to ops key "${key}"`, () => {
-        expect(canAccess(key, UserRole.MANAGER)).toBe(true);
-      });
+  // ── MANAGER role — vision board only ──
+  describe('MANAGER role — vision board access', () => {
+    it('grants MANAGER access to vision', () => {
+      expect(canAccess('vision', UserRole.MANAGER)).toBe(true);
+    });
+
+    it('denies PORT_OFFICER access to vision (staff-only entry)', () => {
+      expect(canAccess('vision', UserRole.PORT_OFFICER)).toBe(false);
+    });
+
+    it('grants SUPERADMIN access to vision', () => {
+      expect(canAccess('vision', UserRole.SUPERADMIN)).toBe(true);
     });
   });
 
-  describe('MANAGER role — money-rail denials (no money, no RBAC)', () => {
-    const moneyRail = ['tax-settings', 'revenue', 'payments'];
-    moneyRail.forEach((key) => {
-      it(`denies MANAGER access to money-rail key "${key}"`, () => {
+  describe('MANAGER role — denied everywhere else', () => {
+    const deniedKeys = [
+      'map', 'simulator', 'vessels', 'invoices', 'disputes', 'tco',
+      'alerts', 'inspector', 'audit', 'validations', 'settings',
+      'tax-settings', 'revenue', 'payments', 'my-fleet', 'green-ledger',
+    ];
+    deniedKeys.forEach((key) => {
+      it(`denies MANAGER access to "${key}"`, () => {
         expect(canAccess(key, UserRole.MANAGER)).toBe(false);
       });
-    });
-
-    it('denies MANAGER access to my-fleet (shipping-only)', () => {
-      expect(canAccess('my-fleet', UserRole.MANAGER)).toBe(false);
-    });
-
-    it('denies MANAGER access to green-ledger (analyst-only)', () => {
-      expect(canAccess('green-ledger', UserRole.MANAGER)).toBe(false);
     });
   });
 
@@ -185,25 +187,43 @@ describe('canEdit (read vs write distinction)', () => {
     expect(canEdit('revenue', UserRole.SHIPPING_AGENT)).toBe(false);
   });
 
-  // ── MANAGER read-only on sensitive pages ──
-  it('denies MANAGER edit on invoices (read-only)', () => {
-    expect(canAccess('invoices', UserRole.MANAGER)).toBe(true);
+  // ── MANAGER has no access to ops pages — canEdit returns false for all of them ──
+  it('denies MANAGER edit on invoices (no access)', () => {
+    expect(canAccess('invoices', UserRole.MANAGER)).toBe(false);
     expect(canEdit('invoices', UserRole.MANAGER)).toBe(false);
   });
 
-  it('denies MANAGER edit on disputes (read-only — resolve = money action)', () => {
-    expect(canAccess('disputes', UserRole.MANAGER)).toBe(true);
+  it('denies MANAGER edit on disputes (no access)', () => {
+    expect(canAccess('disputes', UserRole.MANAGER)).toBe(false);
     expect(canEdit('disputes', UserRole.MANAGER)).toBe(false);
   });
 
-  it('denies MANAGER edit on audit (read-only)', () => {
-    expect(canAccess('audit', UserRole.MANAGER)).toBe(true);
+  it('denies MANAGER edit on audit (no access)', () => {
+    expect(canAccess('audit', UserRole.MANAGER)).toBe(false);
     expect(canEdit('audit', UserRole.MANAGER)).toBe(false);
   });
 
-  it('grants MANAGER edit on validations (ops write)', () => {
-    expect(canAccess('validations', UserRole.MANAGER)).toBe(true);
-    expect(canEdit('validations', UserRole.MANAGER)).toBe(true);
+  it('denies MANAGER edit on validations (no access)', () => {
+    expect(canAccess('validations', UserRole.MANAGER)).toBe(false);
+    expect(canEdit('validations', UserRole.MANAGER)).toBe(false);
+  });
+});
+
+describe('staff nav key — SUPERADMIN only', () => {
+  it('grants SUPERADMIN access to staff', () => {
+    expect(canAccess('staff', UserRole.SUPERADMIN)).toBe(true);
+  });
+  it('denies PORT_OFFICER access to staff', () => {
+    expect(canAccess('staff', UserRole.PORT_OFFICER)).toBe(false);
+  });
+  it('denies FINANCE_ADMIN access to staff', () => {
+    expect(canAccess('staff', UserRole.FINANCE_ADMIN)).toBe(false);
+  });
+  it('denies MANAGER access to staff', () => {
+    expect(canAccess('staff', UserRole.MANAGER)).toBe(false);
+  });
+  it('denies SHIPPING_AGENT access to staff', () => {
+    expect(canAccess('staff', UserRole.SHIPPING_AGENT)).toBe(false);
   });
 });
 
@@ -245,11 +265,16 @@ describe('filterNavItems', () => {
     expect(result).toHaveLength(allItems.length);
   });
 
-  it('filters out money-rail and shipping-only items for MANAGER', () => {
-    const result = filterNavItems(allItems, UserRole.MANAGER);
+  it('filters all items except vision for MANAGER (vision-only role)', () => {
+    const itemsWithVision = [
+      ...allItems,
+      { key: 'vision', label: 'Vision Board' },
+    ];
+    const result = filterNavItems(itemsWithVision, UserRole.MANAGER);
     const keys = result.map((item) => item.key);
-    expect(keys).toContain('map');
-    expect(keys).toContain('settings');
+    expect(keys).toContain('vision');
+    expect(keys).not.toContain('map');
+    expect(keys).not.toContain('settings');
     expect(keys).not.toContain('tax-settings');
     expect(keys).not.toContain('my-fleet');
     expect(keys).not.toContain('green-ledger');

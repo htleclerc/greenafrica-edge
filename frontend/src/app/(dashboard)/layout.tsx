@@ -12,7 +12,9 @@ import { useTranslations } from 'next-intl';
 import { RoleProvider, useRole } from '@/lib/RoleContext';
 import { SkinProvider } from '@/lib/SkinContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { UserRole } from '@/types/secure';
 
 const SIDEBAR_COLLAPSED = 56;
 const SIDEBAR_EXPANDED  = 220;
@@ -24,8 +26,11 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/invoices'))    return { key: 'invoices',     label: 'Factures & Paiements' };
     if (pathname.startsWith('/dashboard/disputes'))    return { key: 'disputes',     label: 'Contestations' };
     if (pathname.startsWith('/dashboard/my-fleet'))    return { key: 'my-fleet',     label: 'Ma Flotte' };
-    if (pathname.startsWith('/dashboard/tco'))         return { key: 'tco',          label: 'Co\u00fbt Total (TCO)' };
-    if (pathname.startsWith('/dashboard/inspector'))    return { key: 'inspector',    label: 'Inspections Terrain' };
+    if (pathname.startsWith('/dashboard/tco'))           return { key: 'tco',           label: 'Co\u00fbt Total (TCO)' };
+    if (pathname.startsWith('/dashboard/wallet'))        return { key: 'wallet',        label: 'Portefeuille' };
+    if (pathname.startsWith('/dashboard/notifications')) return { key: 'notifications', label: 'Notifications' };
+    if (pathname.startsWith('/dashboard/vision'))        return { key: 'vision',        label: 'Vision Board' };
+    if (pathname.startsWith('/dashboard/inspector'))     return { key: 'inspector',     label: 'Inspections Terrain' };
     if (pathname.startsWith('/dashboard/projects'))    return { key: 'green-ledger', label: 'Green Ledger' };
     if (pathname.startsWith('/dashboard/alerts'))      return { key: 'alerts',       label: 'Alertes & Exceptions' };
     if (pathname.startsWith('/dashboard/reports'))     return { key: 'analytics',    label: 'Analytics & Rapports' };
@@ -98,7 +103,18 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { key, label } = resolveNav(pathname);
     const { user, isDemo, ready } = useRole();
+    const { kind: principalKind } = usePrincipalKind();
     const { data: kpis } = useKpis();
+
+    // Command-center chrome (staff KPI strip + "Command Center" breadcrumb) is a
+    // staff-ops concept. Operators have their own overview; a MANAGER is a
+    // read-only "dirigeant" on the vision board. Hide it for both. While the
+    // principal is resolving (null) we hide it too — operators must never flash
+    // the staff KPI strip; staff get it as soon as the fetch resolves.
+    const isOpsStaff = principalKind === 'staff' && user.role !== UserRole.MANAGER;
+    // The /dashboard root falls back to the staff "Command Center" label; for an
+    // operator that root IS their own overview, so use a neutral breadcrumb.
+    const breadcrumb = principalKind === 'operator' && pathname === '/dashboard' ? 'Tableau de bord' : label;
     const { notifications, pendingRegistrations, unreadCount, markRead, markAllRead } = useNotifications();
 
     // Sidebar state — default EXPANDED (the role/nav matrix is wide enough that
@@ -153,7 +169,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             <DashboardTopBar
                 user={user}
                 kpis={kpis}
-                breadcrumb={label}
+                breadcrumb={breadcrumb}
+                showKpis={isOpsStaff}
                 notifications={notifications}
                 unreadCount={unreadCount}
                 onMarkRead={markRead}

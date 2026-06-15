@@ -23,7 +23,7 @@ export async function requestRegistrationCompletion(input: unknown) {
     }
     const { shipownerId, missingItems } = parsed.data;
 
-    const auth = await requireRole([UserRole.SUPERADMIN, UserRole.MANAGER]);
+    const auth = await requireRole([UserRole.SUPERADMIN]);
     if (auth.error) return { ok: false, message: 'insufficient role' };
 
     // Load the shipowner (regardless of tenant) + confine the acting admin to its

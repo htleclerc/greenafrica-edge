@@ -145,7 +145,7 @@ describe('requireRole — MANAGER guard on money-rail endpoints', () => {
     expect(result.error!.status).toBe(403);
   });
 
-  it('allows MANAGER on an ops endpoint that includes MANAGER (e.g. approve)', async () => {
+  it('allows MANAGER when MANAGER is explicitly included in the allowed set (generic requireRole invariant)', async () => {
     mockAuthGetUser.mockResolvedValue({
       data: { user: { id: 'mgr-456', last_sign_in_at: null } },
       error: null,

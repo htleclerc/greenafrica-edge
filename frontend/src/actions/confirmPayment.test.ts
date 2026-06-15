@@ -157,7 +157,9 @@ describe('confirmPayment', () => {
         await confirmPayment({ paymentId: '123e4567-e89b-12d3-a456-426614174001' });
         expect(updateCalls[0]).toMatchObject({ status: 'CONFIRMED', confirmed_by: 'admin-1' });
         expect(updateCalls[0].confirmed_at).toBeTruthy();
-        expect(rpcCalls.find(c => c.fn === 'recompute_transaction_status')).toBeDefined();
+        const recompute = rpcCalls.find(c => c.fn === 'recompute_transaction_status');
+        expect(recompute).toBeDefined();
+        expect(recompute!.args).toEqual({ p_txn_id: 't-1' });
         expect(auditCalls[0]).toMatchObject({
             action: 'TRANSACTION_UPDATED',
             entity_type: 'Payment',

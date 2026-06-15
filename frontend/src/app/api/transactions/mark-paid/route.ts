@@ -12,6 +12,7 @@ import {
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { acquireIdempotency } from '@/app/api/lib/idempotency';
+import { fetchJurisdictionName } from '@/lib/jurisdictionName';
 
 /**
  * POST /api/transactions/mark-paid
@@ -128,7 +129,7 @@ async function processMarkPaid(
         .update({ status: 'PAID', paid_at: paidAt })
         .eq('id', body.transactionId)
         .neq('status', 'PAID')
-        .select('id, vessel_id, vessel_name, vessel_imo, tax_amount_usd, invoice_pdf_url, created_at')
+        .select('id, vessel_id, vessel_name, vessel_imo, tax_amount_usd, invoice_pdf_url, created_at, jurisdiction_id')
         .single();
 
     if (txErr || !tx) {
@@ -219,6 +220,8 @@ async function processMarkPaid(
     //    This is the proof-of-payment document, separate from the pro-forma.
     const paidAtDate = new Date(paidAt);
     const receiptRef = buildReceiptRef(tx.id, paidAtDate);
+    const txRecord = tx as typeof tx & { jurisdiction_id?: string | null };
+    const jurisdictionName = await fetchJurisdictionName(admin, txRecord.jurisdiction_id);
     const receiptData: ReceiptData = {
         receiptRef,
         invoiceRef,
@@ -226,7 +229,9 @@ async function processMarkPaid(
         vesselImo: tx.vessel_imo,
         vesselMmsi: '',  // not in select, fall back to empty
         ownerName: ownerProfile?.full_name || 'Unassigned shipping agent',
-        jurisdiction: 'Republic of Somaliland',
+        // Sovereign name resolved from the transaction's jurisdiction_id — never
+        // hardcoded so Djibouti receipts name Djibouti, not Somaliland.
+        jurisdiction: jurisdictionName,
         amountUsd: Number(tx.tax_amount_usd),
         paidAt: paidAtDate.toLocaleString('en-GB', {
             day: '2-digit', month: 'long', year: 'numeric',

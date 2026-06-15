@@ -30,6 +30,8 @@ vi.mock('@/services/paymentService', () => ({
 const txRow = {
     id: '11111111-2222-3333-4444-555555555555',
     jurisdiction_id: 'jur-somaliland',
+    shipowner_id: 'so-abc',
+    invoice_ref: null as string | null, // nullable; set per test to exercise C1 paths
     vessel_id: null, // null → skip the optional owner-email lookup
     vessel_name: 'MV Test',
     vessel_imo: '1234567',
@@ -41,15 +43,57 @@ const txRow = {
 };
 
 const auditInsertSpy = vi.fn(async () => ({ error: null }));
+// Capture UPDATE calls on transactions (first-write invoice_ref persist)
+const platformUpdateSpy = vi.fn();
+
+// Controls for the new race-guard scenarios:
+// - platformUpdateError: if set, the UPDATE+IS chain returns this error
+// - platformReReadRef: if non-null, the re-read SELECT returns this instead of
+//   the written patch (simulates race-lost: another request won and stored a
+//   different ref). When null, the re-read reflects the patch written by UPDATE
+//   (the normal "we won" path).
+let platformUpdateError: { message: string } | null = null;
+let platformReReadRef: string | null = null;
+// Tracks how many SELECT calls the platform transactions mock has seen
+let platformSelectCallCount = 0;
+// Holds the last patch written via UPDATE so the re-read can reflect it
+let lastWrittenRef: string | null = null;
 
 const platformMock = {
     from(table: string) {
         if (table === 'transactions') {
             return {
-                select: () => ({
-                    eq: () => ({
-                        single: async () => ({ data: txRow, error: null }),
-                    }),
+                select: (cols?: string) => {
+                    void cols;
+                    return {
+                        eq: () => {
+                            platformSelectCallCount++;
+                            const callIndex = platformSelectCallCount;
+                            return {
+                                // First SELECT = full tx fetch; subsequent = re-read for invoice_ref
+                                single: async () => {
+                                    if (callIndex === 1) return { data: txRow, error: null };
+                                    // re-read after UPDATE: override wins, else reflect written ref
+                                    return {
+                                        data: { invoice_ref: platformReReadRef ?? lastWrittenRef },
+                                        error: null,
+                                    };
+                                },
+                            };
+                        },
+                    };
+                },
+                // first-write: UPDATE invoice_ref when NULL
+                update: (patch: Record<string, unknown>) => ({
+                    eq: (col: string, val: string) => {
+                        void col; void val;
+                        platformUpdateSpy(patch);
+                        // Track what was written so re-read can reflect it (normal path)
+                        lastWrittenRef = (patch as { invoice_ref?: string }).invoice_ref ?? null;
+                        return {
+                            is: () => Promise.resolve({ error: platformUpdateError }),
+                        };
+                    },
                 }),
             };
         }
@@ -60,8 +104,16 @@ const platformMock = {
 const tenantMock = {
     from(table: string) {
         if (table === 'audit_logs') return { insert: auditInsertSpy };
-        if (table === 'vessels' || table === 'profiles') {
-            return { select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }) };
+        if (table === 'vessels' || table === 'profiles' || table === 'jurisdictions') {
+            const singleMock = async () => ({ data: null });
+            return {
+                select: () => ({
+                    eq: () => ({
+                        single: singleMock,
+                        maybeSingle: singleMock,
+                    }),
+                }),
+            };
         }
         throw new Error(`Unexpected tenant table: ${table}`);
     },
@@ -75,6 +127,14 @@ function buildReq(body: object): NextRequest {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // Reset mutable fixture state
+    txRow.invoice_ref = null;
+    txRow.shipowner_id = 'so-abc';
+    platformUpdateSpy.mockClear();
+    platformUpdateError = null;
+    platformReReadRef = null;
+    platformSelectCallCount = 0;
+    lastWrittenRef = null;
     // Default: an authorized SHIPPING_AGENT session.
     mocks.requireRoleSpy.mockImplementation(async () => ({
         user: { id: 'agent-1', fullName: 'Agent One', role: 'SHIPPING_AGENT' },
@@ -143,5 +203,104 @@ describe('POST /api/payments/create — authentication gate', () => {
         const body = await res.json();
         expect(body.success).toBe(true);
         expect(body.checkoutUrl).toBe('https://checkout.example/session');
+    });
+});
+
+// ── C1 — canonical invoice_ref ────────────────────────────────────────────────
+
+describe('POST /api/payments/create — canonical invoice_ref (C1)', () => {
+    it('uses the stored invoice_ref when the transaction already has one', async () => {
+        txRow.invoice_ref = 'INV-2026-11111111abcd';
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+        expect(res.status).toBe(200);
+
+        // The paymentRequest passed to createPaymentRequest must carry the stored ref
+        expect(mocks.createPaymentRequestSpy).toHaveBeenCalledTimes(1);
+        const [, paymentRequest] = mocks.createPaymentRequestSpy.mock.calls[0] as [unknown, { invoiceRef: string }];
+        expect(paymentRequest.invoiceRef).toBe('INV-2026-11111111abcd');
+
+        // No UPDATE call — ref was already present
+        expect(platformUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    it('mints a fresh ref and persists it when invoice_ref is NULL', async () => {
+        txRow.invoice_ref = null;
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+        expect(res.status).toBe(200);
+
+        expect(mocks.createPaymentRequestSpy).toHaveBeenCalledTimes(1);
+        const [, paymentRequest] = mocks.createPaymentRequestSpy.mock.calls[0] as [unknown, { invoiceRef: string }];
+        const mintedRef = paymentRequest.invoiceRef;
+
+        // Format: INV-{year}-{8 hex}{4 hex}  (same as invoices/generate)
+        expect(mintedRef).toMatch(/^INV-\d{4}-[0-9a-f]{12}$/);
+
+        // UPDATE was called to persist the minted ref
+        expect(platformUpdateSpy).toHaveBeenCalledTimes(1);
+        expect(platformUpdateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ invoice_ref: mintedRef }),
+        );
+    });
+
+    it('minted ref starts with the first UUID segment of the transaction id', async () => {
+        txRow.invoice_ref = null;
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+        expect(res.status).toBe(200);
+
+        const [, paymentRequest] = mocks.createPaymentRequestSpy.mock.calls[0] as [unknown, { invoiceRef: string }];
+        const mintedRef = paymentRequest.invoiceRef;
+        // txRow.id = '11111111-2222-3333-4444-555555555555' → first segment = '11111111'
+        const year = new Date().getFullYear();
+        expect(mintedRef.startsWith(`INV-${year}-11111111`)).toBe(true);
+    });
+});
+
+// ── C1-R — race-guard: persist failure + race-lost adoption ───────────────────
+
+describe('POST /api/payments/create — invoice_ref race guard (C1-R)', () => {
+    it('returns 500 and does NOT call the provider when UPDATE to persist invoice_ref fails', async () => {
+        txRow.invoice_ref = null;
+        platformUpdateError = { message: 'DB write error' };
+
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+
+        expect(res.status).toBe(500);
+        const body = await res.json();
+        expect(body.error).toMatch(/Failed to persist invoice reference/);
+        // Provider must NOT have been called — money rail is aborted
+        expect(mocks.createPaymentRequestSpy).not.toHaveBeenCalled();
+        expect(auditInsertSpy).not.toHaveBeenCalled();
+    });
+
+    it('adopts the race-winner ref when the conditional UPDATE was a no-op', async () => {
+        txRow.invoice_ref = null;
+        // UPDATE is a no-op (another request already wrote a ref); re-read returns winner's ref
+        platformUpdateError = null;
+        platformReReadRef = 'INV-2026-deadbeef1234';
+
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+
+        expect(res.status).toBe(200);
+        expect(mocks.createPaymentRequestSpy).toHaveBeenCalledTimes(1);
+        const [, paymentRequest] = mocks.createPaymentRequestSpy.mock.calls[0] as [unknown, { invoiceRef: string }];
+        // Must use the stored winner ref, not the locally-minted one
+        expect(paymentRequest.invoiceRef).toBe('INV-2026-deadbeef1234');
+    });
+});
+
+// ── I3 — NULL shipowner blocks at initiation ──────────────────────────────────
+
+describe('POST /api/payments/create — null shipowner guard (I3)', () => {
+    it('returns 409 before calling any provider when shipowner_id is NULL', async () => {
+        txRow.shipowner_id = null as unknown as string;
+        const res = await POST(buildReq({ transactionId: txRow.id }));
+
+        expect(res.status).toBe(409);
+        const body = await res.json();
+        expect(body.error).toMatch(/no shipowner/);
+        // Provider must NOT have been called
+        expect(mocks.createPaymentRequestSpy).not.toHaveBeenCalled();
+        // No audit log written for this early exit
+        expect(auditInsertSpy).not.toHaveBeenCalled();
     });
 });

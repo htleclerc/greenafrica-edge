@@ -179,7 +179,8 @@ function ModePill({ jid, mode, config, canToggle, onRefresh }: ModePillProps) {
                     <button
                         onClick={handleToggle}
                         disabled={loading}
-                        className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] border border-[#00D97E]/30 text-[#00D97E] hover:bg-[rgba(0,217,126,0.08)] transition-colors disabled:opacity-50"
+                        className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--os-surface-3)] hover:bg-[rgba(0,217,126,0.08)] transition-colors disabled:opacity-50"
+                        style={{ color: 'var(--os-brand-green)', border: '1px solid rgba(0,217,126,0.30)' }}
                     >
                         {loading ? '…' : t('mode.confirm')}
                     </button>
@@ -190,7 +191,7 @@ function ModePill({ jid, mode, config, canToggle, onRefresh }: ModePillProps) {
                         {t('mode.cancel')}
                     </button>
                     {err && (
-                        <span role="alert" className="text-[10px] text-[#EF4444]">{err}</span>
+                        <span role="alert" className="text-[10px]" style={{ color: 'var(--os-red)' }}>{err}</span>
                     )}
                 </>
             )}
@@ -261,7 +262,8 @@ function NewTariffForm({ jid, defaultMode, onSuccess, onCancel }: NewTariffFormP
             {error && (
                 <div
                     role="alert"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#EF4444]/40 bg-[rgba(239,68,68,0.05)] text-xs text-[#EF4444]"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgba(239,68,68,0.05)] text-xs"
+                    style={{ color: 'var(--os-red)', border: '1px solid rgba(239,68,68,0.40)' }}
                 >
                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                     {error}
@@ -276,7 +278,7 @@ function NewTariffForm({ jid, defaultMode, onSuccess, onCancel }: NewTariffFormP
                     <select
                         value={mode}
                         onChange={(e) => setMode(e.target.value as 'MARITIME' | 'AIR')}
-                        className="h-9 rounded-xl px-3 bg-[var(--os-surface-3)] border border-[var(--os-border)] text-xs text-[var(--os-text-primary)] focus:outline-none focus:border-[#00D97E]/60 appearance-none"
+                        className="h-9 rounded-xl px-3 bg-[var(--os-surface-3)] border border-[var(--os-border)] text-xs text-[var(--os-text-primary)] focus:outline-none focus:border-[var(--os-brand-green)] appearance-none"
                     >
                         <option value="MARITIME">MARITIME</option>
                         <option value="AIR">AIR</option>
@@ -445,7 +447,7 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
                                 {/* M2: show the scheduled upcoming version */}
                                 {active && isScheduled && (
                                     <div className="flex flex-wrap items-center gap-3 text-xs mb-1">
-                                        <span className="font-mono font-bold text-[#F59E0B]">
+                                        <span className="font-mono font-bold" style={{ color: 'var(--os-yellow)' }}>
                                             {Number(active.rate_per_tco2).toFixed(2)} {active.currency}/tCO₂
                                         </span>
                                         <span className="text-[var(--os-text-muted)]">
@@ -462,7 +464,7 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
                                 {billing && isScheduled && (
                                     <div className="flex flex-wrap items-center gap-3 text-xs">
                                         <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">{t('tariff.currentlyBilling')}</span>
-                                        <span className="font-mono font-bold text-[#00D97E]">
+                                        <span className="font-mono font-bold" style={{ color: 'var(--os-brand-green)' }}>
                                             {Number(billing.rate_per_tco2).toFixed(2)} {billing.currency}/tCO₂
                                         </span>
                                         <span className="text-[var(--os-text-muted)]">
@@ -474,7 +476,7 @@ function TariffSection({ jid, tariffs, canEdit, onRefresh }: TariffSectionProps)
                                 {active && !isScheduled && (
                                     <div className="flex flex-wrap items-center gap-3 text-xs">
                                         {/* M3: use row's currency instead of hardcoded '$' */}
-                                        <span className="font-mono font-bold text-[#00D97E]">
+                                        <span className="font-mono font-bold" style={{ color: 'var(--os-brand-green)' }}>
                                             {Number(active.rate_per_tco2).toFixed(2)} {active.currency}/tCO₂
                                         </span>
                                         <span className="text-[var(--os-text-muted)]">
@@ -808,7 +810,7 @@ export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitR
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <Globe2 className="w-5 h-5 text-[#00D97E]" />
+                    <Globe2 className="w-5 h-5" style={{ color: 'var(--os-brand-green)' }} />
                     <div>
                         <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('title')}</h1>
                         <p className="text-xs text-[var(--os-text-muted)] mt-0.5">{t('subtitle')}</p>

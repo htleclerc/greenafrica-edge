@@ -612,6 +612,7 @@
     "role_finance_admin": "Admin Financier",
     "role_shipping_agent": "Armateur / Agent",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Manager Opérations",
     "notif_noncompliant_title": "Navire non-conforme",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — action requise",
     "notif_payment_due_title": "Paiement dû",
@@ -692,7 +693,28 @@
     "nav_registrations": "Inscriptions",
     "nav_wallets": "Portefeuilles",
     "nav_refunds": "Remboursements",
-    "nav_jurisdictions": "Juridictions"
+    "nav_jurisdictions": "Juridictions",
+    "nav_vision": "Tableau de bord",
+    "nav_staff": "Gestion du personnel"
+  },
+  "AdminStaff": {
+    "page_title": "Gestion du personnel",
+    "page_subtitle": "Invitez des agents gouvernementaux et assignez leurs juridictions.",
+    "form_title": "Inviter un agent",
+    "label_email": "Adresse e-mail",
+    "label_full_name": "Nom complet",
+    "label_role": "Rôle",
+    "label_jurisdictions": "Juridictions",
+    "placeholder_email": "agent@example.gov",
+    "placeholder_full_name": "Prénom et nom",
+    "role_port_officer": "Officier de port",
+    "role_finance_admin": "Admin financier",
+    "role_manager": "Manager",
+    "btn_invite": "Envoyer l'invitation",
+    "btn_sending": "Envoi…",
+    "success_new": "Invitation envoyée à {email}.",
+    "success_existing": "{email} a déjà un compte — rôle et juridictions mis à jour.",
+    "error_prefix": "Erreur : "
   },
   "Auth": {
     "owner_portal_link": "Armateur ? Connectez-vous à l'espace armateur",
@@ -779,6 +801,7 @@
     "bottom_aes": "AES-256",
     "site_berbera": "Terminal Portuaire de Berbera",
     "site_national_hq": "QG National (Hargeisa)",
+    "site_djibouti": "Port de Djibouti",
     "forgot_title": "Réinitialiser votre mot de passe",
     "forgot_subtitle": "Entrez l'adresse email associée à votre compte et nous vous enverrons un lien de réinitialisation sécurisé.",
     "forgot_info": "Un lien de réinitialisation sera envoyé à votre email gouvernemental ou professionnel enregistré.",
@@ -983,6 +1006,8 @@
     "settings_site_berbera": "Port de Berbera",
     "settings_site_national_hq": "Siège National — Hargeisa",
     "settings_site_zeila": "Port de Zeïla",
+    "settings_site_djibouti": "Port de Djibouti",
+    "settings_coming_soon": "Bientôt disponible",
     "simulator_title": "Simulateur de Taxe Carbone",
     "simulator_subtitle": "Estimez votre charge fiscale avant d'entrer dans la ZEE de Somaliland — basé sur les taux officiels en vigueur.",
     "simulator_official_rates": "Taux officiels au 01/01/2025 — IMO DCS certifié",
@@ -1047,7 +1072,10 @@
     "simulator_cat_ferry": "Ferry passagers",
     "simulator_unit_knots": "nœuds",
     "simulator_unit_hours": "heures",
-    "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions."
+    "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions.",
+    "simulator_official_rate": "Tarif officiel : {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Aucun tarif publié",
+    "simulator_no_tariff_body": "Aucun tarif actif n'a été publié pour cette juridiction. Le calcul est indisponible — veuillez contacter l'administration."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -1229,6 +1257,36 @@
     "filter_clear": "Effacer"
   },
   "Disputes": {
+    "title": "Contestations & Remédiation",
+    "subtitle": "Suivez et gérez les contestations de calcul d'émissions — examinez les preuves, approuvez ou rejetez les factures contestées.",
+    "kpi_review": "En Examen",
+    "tab_all": "Tous",
+    "tab_open": "Ouvertes",
+    "tab_under_review": "En Examen",
+    "tab_accepted": "Acceptées",
+    "tab_rejected": "Rejetées",
+    "no_disputes": "Aucune contestation trouvée",
+    "detail_description": "Description",
+    "detail_evidence": "Preuves",
+    "detail_timeline": "Chronologie",
+    "detail_original_amount": "Montant Original",
+    "detail_revised_amount": "Montant Révisé",
+    "detail_submitted_by": "Soumis Par",
+    "detail_submitted_at": "Soumis le",
+    "detail_reviewer": "Réviseur",
+    "detail_review_note": "Note de révision",
+    "action_accept": "Accepter la contestation",
+    "action_reject": "Rejeter la contestation",
+    "action_escalate": "Escalader",
+    "form_title": "Soumettre une contestation",
+    "form_select_transaction": "Sélectionner une transaction",
+    "form_reason": "Motif",
+    "form_description": "Décrivez le problème en détail",
+    "form_evidence": "URL des preuves (optionnel)",
+    "form_submit": "Soumettre la contestation",
+    "form_cancel": "Annuler",
+    "contest_button": "Contester",
+    "disputed_filter": "Contesté",
     "kpi_total": "Total Contestations",
     "kpi_open": "Ouvertes",
     "kpi_under_review": "En Examen",
@@ -2743,7 +2801,8 @@
       "wallet": "Portefeuille",
       "simulator": "Simulateur de taxe",
       "tco": "Tableau TCO",
-      "disputes": "Litiges"
+      "disputes": "Litiges",
+      "notifications": "Notifications"
     },
     "disputes": {
       "empty": "Vous n'avez ouvert aucun litige pour le moment."
@@ -3171,7 +3230,10 @@
     },
     "proof_document": "Document de preuve",
     "doc_type": "Type de document",
-    "preferred_language": "Langue préférée"
+    "preferred_language": "Langue préférée",
+    "closed_title": "Inscription fermée",
+    "closed_body": "Les inscriptions opérateur sont actuellement sur invitation uniquement. Contactez l'administration.",
+    "back_to_login": "Retour à la connexion"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -3474,6 +3536,14 @@
     "error": "Échec du changement",
     "retry": "Réessayer"
   },
+  "ModeSwitcher": {
+    "label": "Mode de transport",
+    "both": "Les deux",
+    "maritime": "Maritime",
+    "air": "Aérien",
+    "error": "Échec du changement de mode",
+    "retry": "Réessayer"
+  },
   "DashboardError": {
     "title": "Une erreur s'est produite",
     "jurisdictionHint": "Si vous opérez dans plusieurs juridictions, sélectionnez votre juridiction active dans la barre latérale puis réessayez.",
@@ -3538,5 +3608,28 @@
       "mismatched": "{count} tx incorrectes"
     },
     "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantané flotte en direct — lecture seule",
+    "modeBoth": "Tous modes",
+    "modeMaritime": "Maritime",
+    "modeAir": "Aérien",
+    "kpi": {
+      "atPort": "Au port",
+      "approaching": "En approche",
+      "paidLast7d": "Payées (7j)",
+      "unpaidInProgress": "Impayées en cours"
+    },
+    "departures": {
+      "title": "Derniers départs",
+      "subtitle": "Ont quitté la ZEE dans les 7 derniers jours",
+      "empty": "Aucun départ enregistré dans les 7 derniers jours"
+    },
+    "table": {
+      "ref": "Réf.",
+      "mode": "Mode",
+      "departedAt": "Départ"
+    }
   }
 }

@@ -1,4 +1,388 @@
 {
+  "AdminRefunds": {
+    "pageTitle": "Reembolsos",
+    "refresh": "Atualizar",
+    "loading": "Carregando…",
+    "empty": "Nenhum reembolso nesta categoria",
+    "tabs": {
+      "requested": "A arbitrar",
+      "approved": "Aprovados",
+      "executed": "Executados",
+      "rejected": "Rejeitados"
+    },
+    "table": {
+      "invoice": "Fatura",
+      "owner": "Armador",
+      "amount": "Valor",
+      "requestedAt": "Solicitado",
+      "rail": "Método",
+      "status": "Status"
+    },
+    "drawer": {
+      "title": "Detalhes do reembolso",
+      "status": "Status",
+      "invoice": "Fatura",
+      "vessel": "Embarcação",
+      "owner": "Armador",
+      "amount": "Valor",
+      "requestedAt": "Solicitado em",
+      "rail": "Método",
+      "railPicker": "Método de reembolso",
+      "railLabels": {
+        "WALLET": "Carteira do armador (instantâneo)",
+        "WIRE_TRANSFER": "Transferência bancária",
+        "STRIPE": "Reembolso Stripe",
+        "CASH": "Dinheiro",
+        "CHEQUE": "Cheque",
+        "MOBILE_MONEY": "Mobile money",
+        "THIRD_PARTY": "Terceiro pagador",
+        "BANK_GUARANTEE": "Garantia bancária",
+        "NETTING": "Compensação",
+        "LETTER_OF_CREDIT": "Carta de crédito"
+      },
+      "ibanReveal": "Revelar IBAN",
+      "revealing": "Revelando…",
+      "ibanRevealed": "IBAN: {iban}",
+      "proofUpload": "Caminho do comprovante bancário (opcional)",
+      "rejectReason": "Motivo da rejeição (mín. 5 caracteres)",
+      "rejectReasonPlaceholder": "Por que este reembolso está sendo rejeitado?",
+      "executedAt": "Executado em",
+      "details": "Detalhes",
+      "rejectedReason": "Motivo da rejeição",
+      "previouslyApprovedBy": "Aprovado por",
+      "executing": "Executando…",
+      "approving": "Aprovando…",
+      "rejecting": "Rejeitando…",
+      "actions": {
+        "approve": "Aprovar",
+        "execute": "Executar reembolso",
+        "executeWallet": "Reembolsar na carteira",
+        "reject": "Rejeitar",
+        "confirmReject": "Confirmar rejeição",
+        "cancelReject": "Cancelar"
+      }
+    },
+    "error": {
+      "reasonTooShort": "O motivo deve ter pelo menos 5 caracteres"
+    }
+  },
+  "About": {
+    "hero_badge": "SOLIDE TECHNOLOGY — 100% AFRICANA",
+    "hero_title_line1": "Um Poderoso Player Africano",
+    "hero_title_line2": "para a Estratégia de Carbono da África",
+    "hero_subtitle": "A Solide Technology, por meio de sua plataforma digital Green Gate, reafirma aos governos do continente sua credibilidade como parceiro estratégico na valorização dos recursos ambientais e verdes.",
+    "stat_african_dna_value": "100%",
+    "stat_african_dna_label": "DNA Africano",
+    "stat_countries_value": "54",
+    "stat_countries_label": "Países-Alvo",
+    "stat_blockchain_value": "Blockchain",
+    "stat_blockchain_label": "Infraestrutura Segura",
+    "stat_sovereignty_value": "Soberana",
+    "stat_sovereignty_label": "Independência de Dados",
+    "mission_badge": "NOSSA MISSÃO",
+    "mission_title": "Expertise Endógena para Padrões Internacionais",
+    "mission_desc": "Em um mercado de carbono em rápida transformação no continente africano, a estruturação de expertise endógena capaz de atender aos padrões internacionais é essencial. O Green Gate incorpora essa nova geração de liderança africana.",
+    "pillar_african_title": "DNA Africano",
+    "pillar_african_desc": "Nossa identidade exclusivamente africana vai além do simbolismo. Ela reflete a crescente conscientização de uma nova geração de líderes africanos que assumem a responsabilidade histórica de permitir que a África decida por si mesma, propondo um modelo para o resto do mundo.",
+    "pillar_sovereignty_title": "Soberania de Dados",
+    "pillar_sovereignty_desc": "Uma solução digital que garante rastreabilidade, independência e soberania no acesso e gerenciamento de dados. Esta ferramenta estratégica fortalece a credibilidade internacional das políticas de gestão soberana de ativos ambientais.",
+    "pillar_expertise_title": "Expertise Local",
+    "pillar_expertise_desc": "Esta singularidade confere à expertise uma compreensão mais profunda das realidades socioeconômicas locais, garantindo soluções mais eficazes e adaptadas ao contexto para governos e operadores africanos.",
+    "founders_badge": "LIDERANÇA",
+    "founders_title": "Os Fundadores",
+    "founders_desc": "Esta solução de otimização de ativos ambientais nasceu da sinergia de experiência, conhecimento e expertise de três indivíduos visionários.",
+    "founder_kpatchavi_name": "Noel Hiverto KPATCHAVI",
+    "founder_kpatchavi_role": "CEO — Solide Technology",
+    "founder_kpatchavi_bio": "CEO da Solide Technology, muito ativo há muitos anos em grandes projetos PPP (Parcerias Público-Privadas) e na transferência de tecnologia e expertise para o continente africano.",
+    "founder_radji_name": "Safiou RADJI",
+    "founder_radji_role": "Contador — Pioneiro das Finanças Sustentáveis",
+    "founder_radji_bio": "Contador, pioneiro das finanças sustentáveis na África e especialista em inovação digital. Profundamente envolvido em projetos de Parceria Público-Privada e transferência de expertise no continente.",
+    "founder_dia_name": "Leclerc HOUNMENOU",
+    "founder_dia_role": "Parceiro Técnico — Implementação da Plataforma",
+    "founder_dia_bio": "Parceiro técnico para a implementação da plataforma, contribuindo com liderança em engenharia de software e profunda expertise na construção e operação da infraestrutura digital que alimenta o Green Gate.",
+    "blockchain_badge": "TECNOLOGIA",
+    "blockchain_title": "Confiabilidade Alimentada por Blockchain",
+    "blockchain_desc": "O Green Gate oferece uma solução digital baseada em processos blockchain, garantindo o mais alto nível de confiabilidade para a gestão soberana de ativos ambientais.",
+    "blockchain_traceability_title": "Rastreabilidade Total",
+    "blockchain_traceability_desc": "Cada transação, cada avaliação de emissão e cada pagamento é registrado permanentemente em um livro-razão imutável, fornecendo uma trilha de auditoria completa desde a entrada da embarcação até a arrecadação de impostos.",
+    "blockchain_transparency_title": "Transparência Radical",
+    "blockchain_transparency_desc": "Todas as partes interessadas — governos, operadores, auditores — podem verificar independentemente a integridade dos dados sem depender de uma autoridade central, construindo confiança em todo o ecossistema.",
+    "blockchain_antifraud_title": "Proteção Anti-Fraude",
+    "blockchain_antifraud_desc": "Garantias criptográficas protegem contra falsificação de dados, garantindo que avaliações de impostos ambientais e créditos de carbono não possam ser manipulados ou falsificados.",
+    "blockchain_sovereignty_title": "Independência Soberana",
+    "blockchain_sovereignty_desc": "Os Estados africanos mantêm controle total sobre seus dados ambientais. Sem dependência externa, sem residência de dados estrangeiros — soberania digital completa para o continente.",
+    "vision_badge": "NOSSA VISÃO",
+    "vision_title": "Um Observatório Africano para Recursos Climáticos",
+    "vision_desc": "Na visão da Solide Technology, a plataforma Green Gate poderia se tornar uma das primeiras ferramentas harmonizadas para a coleta de impostos de carbono e ambientais em todo o continente africano.",
+    "vision_observatory": "Propondo um verdadeiro observatório africano para questões relacionadas à mobilização de recursos para enfrentar os desafios das mudanças climáticas — permitindo que cada Estado africano otimize seus ativos ambientais por meio de ferramentas digitais estratégicas inovadoras.",
+    "vision_cta": "Descubra o Green Gate Digital System"
+  },
+  "OwnerOnboarding": {
+    "step1": {
+      "title": "Informações da Empresa"
+    },
+    "step2": {
+      "title": "Dados Bancários",
+      "disclaimer": "Suas informações bancárias são armazenadas com segurança e usadas apenas para processamento de reembolsos."
+    },
+    "step3": {
+      "title": "Aceitar Termos"
+    },
+    "legal_name": "Razão social",
+    "address_line1": "Endereço linha 1",
+    "address_line2": "Endereço linha 2 (opcional)",
+    "city": "Cidade",
+    "postal_code": "CEP",
+    "country_code": "País",
+    "vat_optional": "CNPJ/NIF (opcional)",
+    "bank_name": "Nome do banco",
+    "cgv_label_prefix": "Aceito os",
+    "cgv_link": "termos e condições",
+    "next": "Próximo",
+    "back": "Voltar",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "banner": {
+      "text": "Complete seu perfil empresarial para desbloquear todas as funcionalidades.",
+      "cta": "Completar perfil"
+    }
+  },
+  "AdminRegistrations": {
+    "title": "Cadastros de Armadores",
+    "filters": {
+      "PENDING_REVIEW": "Pendente",
+      "REJECTED": "Rejeitado",
+      "ACTIVE": "Ativo"
+    },
+    "cols": {
+      "received": "Recebido",
+      "name": "Nome",
+      "imo": "IMO",
+      "country": "País",
+      "email": "E-mail",
+      "proof": "Comprovante"
+    },
+    "actions": {
+      "review": "Revisar",
+      "approve": "Aprovar",
+      "reject": "Rejeitar",
+      "request_completion": "Solicitar complementação"
+    },
+    "placeholders": {
+      "reject": "Motivo da rejeição…",
+      "request": "Quais informações estão faltando?"
+    },
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "empty": "Nenhum cadastro encontrado",
+    "back": "Voltar",
+    "close": "Fechar",
+    "view_only": "Somente visualização",
+    "submitting": "Processando…"
+  },
+  "Cgv": {
+    "title": "Termos e Condições",
+    "placeholder_p1": "Os termos e condições completos da plataforma Green Gate serão exibidos aqui.",
+    "placeholder_p2": "Por favor, leia atentamente antes de aceitar.",
+    "draft_notice": "Documento em preparação — entre em contato com seu administrador para obter a versão atual."
+  },
+  "AdminPayments": {
+    "title": "Pagamentos",
+    "subtitle": "Revise e gerencie as declarações de pagamento dos armadores.",
+    "refresh": "Atualizar",
+    "recordManual": "Registrar pagamento manual",
+    "filterStatus": "Filtrar por status",
+    "filterRail": "Filtrar por método",
+    "loading": "Carregando…",
+    "empty": "Nenhum pagamento encontrado",
+    "col": {
+      "id": "ID",
+      "rail": "Método",
+      "amount": "Valor",
+      "status": "Status",
+      "created": "Data",
+      "ref": "Referência"
+    },
+    "recordDialog": {
+      "title": "Registrar um Pagamento",
+      "subtitle": "Registre um pagamento declarado por um armador.",
+      "back": "Voltar",
+      "next": "Próximo",
+      "submit": "Enviar",
+      "submitting": "Enviando…",
+      "step1": {
+        "intro": "Selecione o armador e o método de pagamento.",
+        "rail": "Método de pagamento",
+        "shipowner": "Armador",
+        "shipownerPlaceholder": "Buscar armador…",
+        "transaction": "Transação (opcional)",
+        "transactionNone": "Sem transação vinculada"
+      },
+      "step2": {
+        "amount": "Valor",
+        "currency": "Moeda",
+        "proofs": "Documentos comprobatórios",
+        "proofsCta": "Adicionar documento",
+        "hint": {
+          "cash": "Informe o número do recibo e o nome do caixa.",
+          "cheque": "Informe número do cheque, banco e data.",
+          "letter_of_credit": "Informe número da LC, banco emissor e data de validade.",
+          "netting": "Informe nome da contraparte e referência de liquidação líquida.",
+          "third_party": "Informe nome do pagador, relacionamento e referência externa.",
+          "bank_guarantee": "Informe o número da garantia."
+        },
+        "field": {
+          "receiptNumber": "Número do recibo",
+          "cashier": "Nome do caixa",
+          "chequeNumber": "Número do cheque",
+          "bankName": "Nome do banco",
+          "chequeDate": "Data do cheque",
+          "lcNumber": "Número da LC",
+          "issuingBank": "Banco emissor",
+          "expiryDate": "Data de validade",
+          "counterparty": "Contraparte",
+          "netSettlementRef": "Referência de liquidação líquida",
+          "payerName": "Nome do pagador",
+          "payerRelationship": "Relacionamento",
+          "externalReference": "Referência externa",
+          "guaranteeNumber": "Número da garantia"
+        }
+      },
+      "summary": {
+        "rail": "Método",
+        "shipowner": "Armador",
+        "transaction": "Transação",
+        "noTransaction": "Nenhuma",
+        "amount": "Valor",
+        "proofs": "Comprovantes",
+        "details": "Detalhes",
+        "confirmImmediately": "Este pagamento será confirmado imediatamente.",
+        "fourEyesRequired": "Este pagamento requer uma segunda aprovação."
+      },
+      "errors": {
+        "railRequired": "O método de pagamento é obrigatório",
+        "shipownerRequired": "O armador é obrigatório",
+        "amountInvalid": "Valor inválido",
+        "fileTooBig": "Arquivo muito grande (máx. 10 MB)",
+        "fileMime": "Tipo de arquivo inválido",
+        "invalidState": "Estado inválido",
+        "required": {
+          "receipt_number": "O número do recibo é obrigatório",
+          "cashier": "O nome do caixa é obrigatório",
+          "cheque_number": "O número do cheque é obrigatório",
+          "bank_name": "O nome do banco é obrigatório",
+          "lc_number": "O número da LC é obrigatório",
+          "issuing_bank": "O banco emissor é obrigatório",
+          "counterparty": "A contraparte é obrigatória",
+          "net_settlement_ref": "A referência de liquidação líquida é obrigatória",
+          "payer_name": "O nome do pagador é obrigatório",
+          "guarantee_number": "O número da garantia é obrigatório"
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "Revisão de Pagamento",
+      "loading": "Carregando…",
+      "status": "Status",
+      "rail": "Método",
+      "amount": "Valor",
+      "transaction": "Transação",
+      "declaredBy": "Declarado por",
+      "createdAt": "Data",
+      "details": "Detalhes",
+      "proofs": "Comprovantes",
+      "confirm": "Confirmar pagamento",
+      "confirming": "Confirmando…",
+      "reject": "Rejeitar",
+      "rejecting": "Rejeitando…",
+      "confirmReject": "Confirmar rejeição",
+      "cancelReject": "Cancelar",
+      "rejectReason": "Motivo da rejeição",
+      "rejectReasonPlaceholder": "Por que este pagamento está sendo rejeitado?",
+      "errors": {
+        "reasonRequired": "O motivo da rejeição é obrigatório"
+      },
+      "downloadReceipt": "Baixar recibo"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "Caixa",
+    "subtitle": "Registre um pagamento em dinheiro diretamente no porto.",
+    "field": {
+      "shipowner": "Armador",
+      "shipownerPlaceholder": "Buscar armador…",
+      "transaction": "Transação",
+      "transactionNone": "Sem transação vinculada",
+      "amount": "Valor",
+      "currency": "Moeda",
+      "receiptNumber": "Número do recibo",
+      "regen": "Regenerar",
+      "proof": "Documento comprobatório",
+      "proofCta": "Anexar documento",
+      "proofRemove": "Remover"
+    },
+    "reset": "Redefinir",
+    "submit": "Registrar pagamento",
+    "submitting": "Registrando…",
+    "fourEyesNote": "Este pagamento requerirá uma segunda aprovação antes de ser confirmado.",
+    "success": {
+      "title": "Pagamento registrado",
+      "body": "O pagamento em dinheiro foi registrado com sucesso.",
+      "dismiss": "OK"
+    },
+    "errors": {
+      "shipownerRequired": "O armador é obrigatório",
+      "amountInvalid": "Valor inválido",
+      "receiptRequired": "O número do recibo é obrigatório",
+      "fileTooBig": "Arquivo muito grande (máx. 10 MB)",
+      "fileMime": "Tipo de arquivo inválido",
+      "submitFailed": "Falha no registro — tente novamente"
+    }
+  },
+  "AdminWallets": {
+    "title": "Carteiras",
+    "subtitle": "Gerencie os saldos das carteiras dos armadores e o histórico de transações.",
+    "refresh": "Atualizar",
+    "empty": "Nenhuma carteira encontrada",
+    "autoApply": {
+      "on": "Aplicação automática ativada",
+      "off": "Aplicação automática desativada"
+    },
+    "col": {
+      "owner": "Proprietário",
+      "balance": "Saldo",
+      "autoApply": "Aplicação automática",
+      "lastActivity": "Última atividade"
+    },
+    "drawer": {
+      "title": "Detalhes da carteira",
+      "loading": "Carregando…",
+      "owner": "Proprietário",
+      "balance": "Saldo",
+      "adjustNotice": "Os ajustes são registrados e requerem justificativa.",
+      "adjustCta": "Ajustar saldo",
+      "ledgerTitle": "Histórico de transações"
+    },
+    "adjust": {
+      "title": "Ajustar Saldo",
+      "subtitle": "Credite ou debite a carteira com justificativa.",
+      "warning": "Esta operação é irreversível e será registrada.",
+      "credit": "Crédito",
+      "debit": "Débito",
+      "amount": "Valor",
+      "justification": "Justificativa",
+      "justificationPlaceholder": "Motivo do ajuste…",
+      "cancel": "Cancelar",
+      "submit": "Aplicar ajuste",
+      "submitting": "Aplicando…",
+      "errors": {
+        "amountInvalid": "Valor inválido",
+        "justificationRequired": "A justificativa é obrigatória",
+        "wouldGoNegative": "Este débito tornaria o saldo negativo",
+        "failed": "Falha no ajuste — tente novamente"
+      }
+    }
+  },
   "Common": {
     "title": "Portal AIS",
     "description": "Assegurando a Riqueza Climática Marítima da África",
@@ -121,7 +505,17 @@
     "teaser_greengate_badge": "PRIMEIRA IMPLANTAÇÃO — SOMALILÂNDIA",
     "teaser_greengate_title": "O Sistema Digital Green Gate",
     "teaser_greengate_desc": "Uma plataforma revolucionária baseada em blockchain que permite aos estados africanos adotarem uma solução digital para a coleta de impostos de carbono e ambientais — primeira implantação em parceria com o jovem estado da Somalilândia.",
-    "teaser_greengate_cta": "Descubra a Parceria"
+    "teaser_greengate_cta": "Descubra a Parceria",
+    "teaser_about_badge": "SOLIDE TECHNOLOGY",
+    "teaser_about_title": "Quem Somos",
+    "teaser_about_desc": "A Solide Technology é uma empresa 100% africana que reafirma aos governos do continente sua credibilidade como parceiro estratégico na valorização dos recursos ambientais e verdes. Nosso DNA exclusivamente africano vai além do simbolismo.",
+    "teaser_about_cta": "Saiba mais sobre nossa missão",
+    "teaser_african_title": "DNA 100% Africano",
+    "teaser_african_desc": "Uma nova geração de líderes africanos assumindo a responsabilidade histórica de permitir que a África decida por si mesma.",
+    "teaser_blockchain_title": "Protegido por Blockchain",
+    "teaser_blockchain_desc": "Rastreabilidade, independência e soberania no acesso a dados — garantidos contra fraude e falsificação.",
+    "teaser_expertise_title": "Expertise Local",
+    "teaser_expertise_desc": "Compreensão mais profunda das realidades socioeconômicas locais para soluções mais eficazes e adaptadas."
   },
   "Calculator": {
     "title": "Calculadora de Emissões e Pagamento de Compensação",
@@ -174,7 +568,10 @@
     "terms_of_service": "Termos de Serviço",
     "security_audit": "Auditoria de Segurança",
     "copyright": "© 2024 Portal AIS. Todos os direitos reservados. República de Somaliland.",
-    "order_status": "Status do pedido: Sandbox"
+    "order_status": "Status do pedido: Sandbox",
+    "company": "Empresa",
+    "about": "Sobre a Solide Technology",
+    "partnership": "Parceria Green Gate"
   },
   "CarbonTax": {
     "hero_badge": "CENTRO DE COMANDO DO IMPOSTO DE CARBONO MARÍTIMO",
@@ -536,6 +933,7 @@
     "bottom_aes": "AES-256",
     "site_berbera": "Terminal Portuário de Berbera",
     "site_national_hq": "QG Nacional (Hargeisa)",
+    "site_djibouti": "Porto de Djibouti",
     "forgot_title": "Redefinir sua senha",
     "forgot_subtitle": "Insira o endereço de email associado à sua conta e enviaremos um link de redefinição seguro.",
     "forgot_info": "Um link de redefinição será enviado para o seu email governamental ou profissional registrado.",
@@ -571,7 +969,9 @@
     "pending_step4_title": "Conta ativada",
     "pending_step4_desc": "Após aprovação, você receberá um email com instruções de acesso.",
     "pending_info_title": "Por que isso leva tempo?",
-    "pending_info_desc": "Todas as contas são verificadas manualmente por pessoal governamental autorizado para garantir a segurança da plataforma."
+    "pending_info_desc": "Todas as contas são verificadas manualmente por pessoal governamental autorizado para garantir a segurança da plataforma.",
+    "owner_portal_link": "Armador? Entre no portal do armador",
+    "error_database": "Serviço temporariamente indisponível. Tente novamente em alguns minutos."
   },
   "Dashboard": {
     "breadcrumb_command_center": "Centro de Comando",
@@ -601,6 +1001,7 @@
     "role_finance_admin": "Admin Financeiro",
     "role_shipping_agent": "Armador / Agente",
     "role_superadmin": "Super Admin",
+    "role_operations_manager": "Gerente de Operações",
     "notif_noncompliant_title": "Navio não conforme",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — ação necessária",
     "notif_payment_due_title": "Pagamento devido",
@@ -676,7 +1077,33 @@
     "footer_government": "GOVERNO DE SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "CRIPTOGRAFADO",
-    "nav_jurisdictions": "Jurisdições"
+    "nav_jurisdictions": "Jurisdições",
+    "nav_vision": "Painel de Visão",
+    "nav_staff": "Gestão de Pessoal",
+    "nav_origin_port_proposals": "Propostas de porto de origem",
+    "nav_cash_desk": "Caixa",
+    "nav_registrations": "Cadastros",
+    "nav_wallets": "Carteiras",
+    "nav_refunds": "Reembolsos"
+  },
+  "AdminStaff": {
+    "page_title": "Gestão de Pessoal",
+    "page_subtitle": "Convide membros da equipa governamental e atribua as suas jurisdições.",
+    "form_title": "Convidar um membro da equipa",
+    "label_email": "Endereço de e-mail",
+    "label_full_name": "Nome completo",
+    "label_role": "Função",
+    "label_jurisdictions": "Jurisdições",
+    "placeholder_email": "pessoal@exemplo.gov",
+    "placeholder_full_name": "Primeiro e último nome",
+    "role_port_officer": "Oficial de Porto",
+    "role_finance_admin": "Admin Financeiro",
+    "role_manager": "Gestor",
+    "btn_invite": "Enviar convite",
+    "btn_sending": "A enviar…",
+    "success_new": "Convite enviado para {email}.",
+    "success_existing": "{email} já tem uma conta — função e jurisdições atualizadas.",
+    "error_prefix": "Erro: "
   },
   "DashboardPages": {
     "alerts_title": "Alertas e Exceções",
@@ -843,6 +1270,8 @@
     "settings_site_berbera": "Porto de Berbera",
     "settings_site_national_hq": "Sede Nacional — Hargeisa",
     "settings_site_zeila": "Porto de Zeila",
+    "settings_site_djibouti": "Porto de Djibouti",
+    "settings_coming_soon": "Em breve",
     "simulator_title": "Simulador de Imposto de Carbono",
     "simulator_subtitle": "Estime sua carga tributária antes de entrar na ZEE de Somaliland — baseado nas taxas oficiais em vigor.",
     "simulator_official_rates": "Taxas oficiais em 01/01/2025 — IMO DCS certificado",
@@ -907,7 +1336,12 @@
     "simulator_cat_ferry": "Balsa de Passageiros",
     "simulator_unit_knots": "nós",
     "simulator_unit_hours": "horas",
-    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições."
+    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições.",
+    "settings_visual_theme": "Tema Visual",
+    "settings_visual_theme_desc": "Escolha a aparência visual da interface da plataforma.",
+    "simulator_official_rate": "Tarifa oficial: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Nenhuma tarifa publicada",
+    "simulator_no_tariff_body": "Nenhuma tarifa ativa foi publicada para esta jurisdição. O cálculo está indisponível — por favor, contacte a administração."
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",
@@ -992,7 +1426,8 @@
     "status_overdue": "ATRASADO",
     "status_disputed": "CONTESTADO",
     "detail_view_payments": "Ver Pagamentos",
-    "detail_simulate": "Simular"
+    "detail_simulate": "Simular",
+    "action_pay_proforma_for": "Pagar pro-forma: {name}"
   },
   "InvoicesPage": {
     "status_paid": "PAGO",
@@ -1080,7 +1515,12 @@
     "contest_invoice": "Contestar",
     "export_csv": "Exportar CSV",
     "filter_by_vessel": "Filtrado por embarcação IMO {imo}",
-    "filter_clear": "Limpar"
+    "filter_clear": "Limpar",
+    "proof_section_title": "Comprovante de pagamento (MT103)",
+    "proof_submitted_label": "Comprovantes de pagamento ({count})",
+    "view_proforma_pdf": "Ver Pro-forma (PDF)",
+    "pay_now_short": "Pagar ${amount}",
+    "demo_generate_disabled": "Modo demo — geração de pro-forma desativada. Defina NEXT_PUBLIC_DEMO_ALLOWED=false em frontend/.env.local e entre com uma conta real para gerar."
   },
   "Disputes": {
     "kpi_total": "Total de Disputas",
@@ -1134,7 +1574,37 @@
     "evidence_url_placeholder": "https://docs.exemplo.com/prova.pdf",
     "evidence_optional": "Opcional — link para documentos comprovativos",
     "cancel": "Cancelar",
-    "submit_dispute": "Submeter"
+    "submit_dispute": "Submeter",
+    "title": "Contestações & Remediação",
+    "subtitle": "Acompanhe e gerencie contestações de cálculo de emissões — revise evidências, aprove ou rejeite faturas contestadas.",
+    "kpi_review": "Em Análise",
+    "tab_all": "Todos",
+    "tab_open": "Abertos",
+    "tab_under_review": "Em Análise",
+    "tab_accepted": "Aceitos",
+    "tab_rejected": "Rejeitados",
+    "no_disputes": "Nenhuma contestação encontrada",
+    "detail_description": "Descrição",
+    "detail_evidence": "Evidências",
+    "detail_timeline": "Linha do tempo",
+    "detail_original_amount": "Valor Original",
+    "detail_revised_amount": "Valor Revisado",
+    "detail_submitted_by": "Enviado Por",
+    "detail_submitted_at": "Enviado em",
+    "detail_reviewer": "Revisor",
+    "detail_review_note": "Nota de revisão",
+    "action_accept": "Aceitar Contestação",
+    "action_reject": "Rejeitar Contestação",
+    "action_escalate": "Escalar",
+    "form_title": "Enviar uma Contestação",
+    "form_select_transaction": "Selecionar Transação",
+    "form_reason": "Motivo",
+    "form_description": "Descreva o problema em detalhes",
+    "form_evidence": "URL de evidências (opcional)",
+    "form_submit": "Enviar Contestação",
+    "form_cancel": "Cancelar",
+    "contest_button": "Contestar",
+    "disputed_filter": "Contestado"
   },
   "MyFleet": {
     "status_compliant": "COMPLIANT",
@@ -1229,7 +1699,31 @@
     "drawer_emissions_tax": "Emissões e Impostos",
     "drawer_estimated_emissions": "{value} tCO₂ estimadas",
     "generate_proforma": "Gerar Pro-forma →",
-    "close": "Fechar"
+    "close": "Fechar",
+    "action_pay_proforma": "Pagar pro-forma →",
+    "action_view_proforma": "Ver pro-forma →",
+    "drawer_documents": "Pro-formas e Faturas",
+    "doc_reference": "Referência",
+    "doc_issued": "Emitido",
+    "doc_status": "Status",
+    "doc_amount": "Valor",
+    "doc_pay": "Pagar",
+    "doc_view_invoice": "Ver fatura",
+    "doc_view": "Ver",
+    "pay_proforma": "Pagar pro-forma →",
+    "add_vessel_title": "Registrar embarcação",
+    "add_vessel_subtitle": "Adicione manualmente uma embarcação à sua frota",
+    "add_vessel_imo": "Número IMO",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Nome da embarcação",
+    "add_vessel_call_sign": "Indicativo de chamada",
+    "add_vessel_flag": "Bandeira (ISO-2)",
+    "add_vessel_type": "Tipo",
+    "add_vessel_dwt": "TPB (tonelagem bruta)",
+    "add_vessel_cancel": "Cancelar",
+    "add_vessel_submit": "Registrar embarcação",
+    "add_vessel_submitting": "Registrando…",
+    "add_vessel_error_dwt": "O TPB deve ser um número positivo"
   },
   "GreenLedgerPage": {
     "page_title": "Registro Verde",
@@ -1377,7 +1871,10 @@
     "review": "Revisar",
     "request_exemption": "Solicitar Isenção",
     "revenue_trend": "Tendência de Receita",
-    "full_report": "Relatório Completo →"
+    "full_report": "Relatório Completo →",
+    "tax_rate_moved_title": "As tarifas por jurisdição foram movidas",
+    "tax_rate_moved_desc": "As alíquotas de imposto de carbono agora são gerenciadas por jurisdição no registro de Jurisdições. O faturamento lê as linhas de tarifa versionadas diretamente — a superfície de taxa global antiga foi aposentada.",
+    "tax_rate_moved_link": "Ir para Jurisdições →"
   },
   "ValidationsPage": {
     "title": "Validação de Agentes",
@@ -2447,7 +2944,9 @@
       "validFrom": "Valid from",
       "validUntil": "Valid until",
       "active": "Active",
-      "actions": "Actions"
+      "actions": "Actions",
+      "email": "E-mail",
+      "portalState": "Estado do portal"
     },
     "form": {
       "shipowner": "Shipowner",
@@ -2462,7 +2961,32 @@
     "deactivating": "Deactivating…",
     "deactivated": "Deactivated",
     "active": "Active",
-    "empty": "No mappings yet. Add one to enable cascade A."
+    "empty": "No mappings yet. Add one to enable cascade A.",
+    "mappingsSectionTitle": "Contas de operadores",
+    "shipownersSectionTitle": "Armadores",
+    "shipownersSectionSubtitle": "Gerencie o acesso ao portal e os estados KYC de cada armador registrado.",
+    "emptyShipowners": "Nenhum armador registrado",
+    "state": {
+      "ghost": "Não convidado",
+      "invited": "Convidado",
+      "active": "Ativo"
+    },
+    "invite": "Convidar",
+    "reinvite": "Reconvidar",
+    "inviteDialogTitle": "Convidar armador ao portal",
+    "inviteDialogSubtitle": "Um e-mail de convite será enviado para o endereço de e-mail deste armador.",
+    "sendInvite": "Enviar convite",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "aoc": {
+      "col": "Número AOC",
+      "set": "Definir AOC",
+      "dialogTitle": "Definir número AOC",
+      "dialogSubtitle": "Defina o número do Certificado de Operador Aéreo para este operador.",
+      "placeholder": "ex. SL-AOC-001",
+      "save": "Salvar",
+      "saving": "Salvando…"
+    }
   },
   "AdminOriginPort": {
     "title": "Origin port proposals",
@@ -2520,7 +3044,12 @@
       "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
       "feature_shipowner_portal_enabled": "Shipowner portal",
       "queue_worker_url": "Queue worker URL",
-      "queue_worker_secret": "Queue worker secret"
+      "queue_worker_secret": "Queue worker secret",
+      "feature_shipowner_portal_v1_enabled": "Portal do armador v1",
+      "feature_shipowner_self_service_enabled": "Registro self-service",
+      "feature_online_payment_stripe_enabled": "Pagamento online (Stripe)",
+      "feature_wallet_topup_enabled": "Recarga de carteira",
+      "feature_notification_sms_enabled": "Notificações SMS"
     },
     "save": "Save",
     "saving": "Saving…",
@@ -2537,7 +3066,12 @@
       "vessels": "Vessels",
       "invoices": "Invoices",
       "alerts": "Alerts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "wallet": "Carteira",
+      "simulator": "Simulador Fiscal",
+      "tco": "Painel TCO",
+      "disputes": "Disputas",
+      "notifications": "Notificações"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2552,8 +3086,16 @@
         "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
         "ghost": "Your account has not been invited to the portal yet.",
         "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
-        "generic": "Sign-in failed. Try again."
-      }
+        "generic": "Sign-in failed. Try again.",
+        "invalidCredentials": "E-mail ou senha inválidos"
+      },
+      "passwordLabel": "Senha",
+      "passwordSubmit": "Entrar",
+      "signingIn": "Entrando…",
+      "useMagicLink": "Usar link mágico",
+      "setPassword": "Definir uma senha",
+      "resetSent": "Link de redefinição enviado — verifique seu e-mail",
+      "noPasswordHint": "Ainda não tem senha? Use o link mágico ou defina uma senha."
     },
     "dashboard": {
       "subtitle": "Snapshot of your fleet and obligations.",
@@ -2627,6 +3169,10 @@
           "VESSEL_DATA": "Vessel data",
           "OTHER": "Other"
         }
+      },
+      "stripeReturn": {
+        "success": "Pagamento concluído — sua fatura será atualizada em breve.",
+        "cancel": "Pagamento cancelado — você pode tentar novamente."
       }
     },
     "alerts": {
@@ -2636,6 +3182,268 @@
       "openSection": "Open ({count})",
       "closedSection": "Closed ({count})",
       "emptyOpen": "No active alerts."
+    },
+    "payDialog": {
+      "title": "Declarar pagamento",
+      "subtitle": "Informe a referência da transferência bancária para a pro-forma {ref} ({amount}). O setor financeiro irá conciliar com o extrato bancário e confirmar.",
+      "referenceLabel": "Referência bancária",
+      "referencePlaceholder": "WIRE-2026-00123",
+      "notesLabel": "Observações (opcional)",
+      "notesPlaceholder": "Banco remetente, nome do pagador…",
+      "cancel": "Cancelar",
+      "submit": "Enviar declaração",
+      "submitting": "Enviando…",
+      "stripeTitle": "Pagar com cartão",
+      "stripeSubtitle": "Você será redirecionado para o Stripe para concluir o pagamento de {ref} ({amount}).",
+      "stripeCta": "Pagar com Stripe →",
+      "stripeRedirecting": "Redirecionando…",
+      "tabWire": "Transferência bancária",
+      "tabStripe": "Cartão / Stripe",
+      "topupTitle": "Recarregar carteira",
+      "topupSubtitle": "Adicione créditos à sua carteira para aplicação automática em faturas futuras.",
+      "topupDisabled": "A recarga de carteira está temporariamente desativada.",
+      "back": "Voltar",
+      "next": "Próximo",
+      "loadingRails": "Carregando métodos de pagamento…",
+      "chooseRail": "Escolha um método de pagamento",
+      "railNotAvailable": "Não disponível",
+      "noRailEligible": "Nenhum método de pagamento disponível para esta fatura.",
+      "rail": {
+        "wire": {
+          "label": "Transferência Bancária",
+          "hint": "Transferência banco a banco"
+        },
+        "momo": {
+          "label": "Dinheiro Móvel",
+          "hint": "Pagar via carteira móvel"
+        },
+        "third": {
+          "label": "Terceiros",
+          "hint": "Pagamento via terceiros"
+        },
+        "wallet": {
+          "label": "Carteira do Armador",
+          "hint": "Use seu saldo disponível na carteira"
+        },
+        "stripe": {
+          "label": "Cartão de Crédito / Débito",
+          "hint": "Pagamento online seguro"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "Forneça sua referência de transferência bancária.",
+        "mobile_money": "Forneça os detalhes da transação de dinheiro móvel.",
+        "third_party": "Forneça os detalhes do pagador terceiro.",
+        "wallet": "Seu saldo na carteira será utilizado.",
+        "stripe": "Você será redirecionado para uma página de pagamento segura."
+      },
+      "field": {
+        "bankReference": "Referência bancária",
+        "bankName": "Nome do banco",
+        "notes": "Notas (opcional)",
+        "phoneNumber": "Número de telefone",
+        "operatorReference": "Referência do operador",
+        "viaProvider": "Via provedor",
+        "payerName": "Nome do pagador",
+        "payerRelationship": "Relação com o armador",
+        "externalReference": "Referência externa",
+        "walletConfirm": "Confirmo o débito da minha carteira",
+        "topupAmount": "Valor da recarga"
+      },
+      "summary": {
+        "invoice": "Fatura",
+        "amount": "Valor",
+        "rail": "Método",
+        "provider": "Provedor",
+        "details": "Detalhes",
+        "disclaimer": "Ao enviar, você confirma que os detalhes do pagamento estão corretos."
+      },
+      "errors": {
+        "bankReferenceRequired": "Referência bancária é obrigatória",
+        "phoneRequired": "Número de telefone é obrigatório",
+        "payerNameRequired": "Nome do pagador é obrigatório",
+        "noRail": "Por favor, selecione um método de pagamento",
+        "amountRequired": "Valor é obrigatório",
+        "noTransactionForWallet": "Nenhuma transação disponível para pagamento via carteira"
+      },
+      "reason": {
+        "wallet_empty": "Carteira vazia",
+        "wallet_insufficient": "Saldo insuficiente na carteira",
+        "no_active_provider": "Nenhum provedor de pagamento ativo"
+      },
+      "mode": {
+        "topup": {
+          "title": "Recarregar carteira",
+          "subtitle": "Adicionar fundos à sua carteira.",
+          "amountLabel": "Valor a adicionar",
+          "success": "Recarga enviada — sua carteira será atualizada após confirmação.",
+          "summaryLabel": "Recarga",
+          "summaryValue": "Carteira do armador",
+          "disabledTitle": "Recarga não disponível",
+          "disabledBody": "A recarga de carteira não está habilitada para sua conta."
+        }
+      },
+      "proofStep": {
+        "created": "Solicitação de pagamento criada",
+        "intro": "Faça upload de um comprovante de pagamento (opcional, mas recomendado).",
+        "done": "Pronto — seu pagamento está aguardando revisão."
+      }
+    },
+    "proofUpload": {
+      "title": "Enviar comprovante de pagamento (MT103)",
+      "subtitle": "Anexe o comprovante de pagamento para a fatura {ref}.",
+      "dropzone": "Arraste e solte ou clique para selecionar",
+      "accepted": "PDF, PNG, JPG — máx. 10 MB",
+      "submit": "Enviar comprovante",
+      "submitting": "Enviando…",
+      "cancel": "Cancelar",
+      "success": "Comprovante enviado com sucesso.",
+      "error": "Falha no envio — tente novamente.",
+      "addButton": "Adicionar comprovante",
+      "hint": "PDF, JPG, PNG — máx. 5 MB",
+      "dialogTitle": "Enviar comprovante de pagamento",
+      "intro": "Anexe seu recibo de transferência bancária, mensagem SWIFT MT103 ou confirmação de dinheiro móvel.",
+      "removeAria": "Remover arquivo",
+      "errors": {
+        "tooLarge": "Arquivo muito grande (máx. 5 MB)",
+        "uploadFailed": "Falha no upload — tente novamente",
+        "deleteFailed": "Falha ao excluir — tente novamente"
+      }
+    },
+    "wallet": {
+      "title": "Minha Carteira",
+      "balance": "Saldo disponível",
+      "autoApply": "Aplicação automática em faturas",
+      "autoApplyOn": "Ativada",
+      "autoApplyOff": "Desativada",
+      "ledgerTitle": "Histórico de transações",
+      "empty": "Nenhuma transação ainda.",
+      "topupCta": "Recarregar carteira",
+      "loadFailed": "Falha ao carregar carteira: {error}",
+      "balanceCard": {
+        "title": "Saldo da Carteira",
+        "autoApply": "Aplicar automaticamente às faturas",
+        "autoApplyOn": "Ativado",
+        "autoApplyOff": "Desativado",
+        "topupCta": "Recarregar"
+      },
+      "predictionCard": {
+        "title": "Previsão de 30 dias",
+        "estimate30d": "Gasto estimado",
+        "confidence": "Confiança",
+        "confidenceLevel": {
+          "low": "Baixa",
+          "medium": "Média",
+          "high": "Alta"
+        },
+        "notEnoughData": "Dados insuficientes para previsão",
+        "insufficientWarning": "Seu saldo pode não cobrir as próximas faturas"
+      },
+      "ledger": {
+        "title": "Histórico de Transações",
+        "empty": "Nenhuma transação ainda",
+        "col": {
+          "date": "Data",
+          "amount": "Valor",
+          "kind": "Tipo",
+          "note": "Nota"
+        },
+        "kind": {
+          "TOPUP": "Recarga",
+          "OVERPAYMENT_CREDIT": "Crédito por pagamento a maior",
+          "REFUND_CREDIT": "Crédito de reembolso",
+          "PROFORMA_APPLY": "Pagamento de fatura",
+          "ADMIN_ADJUSTMENT": "Ajuste administrativo",
+          "FX_DIFFERENCE": "Diferença cambial"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Notificações",
+      "empty": "Nenhuma notificação.",
+      "loadFailed": "Falha ao carregar notificações: {error}",
+      "markRead": "Marcar como lida",
+      "markAllRead": "Marcar todas como lidas",
+      "bellAria": "Notificações",
+      "viewAll": "Ver todas",
+      "pageTitle": "Todas as Notificações",
+      "unreadLabel": "não lidas",
+      "filterAria": "Filtrar notificações",
+      "filterAll": "Todas",
+      "filterUnread": "Não lidas",
+      "loading": "Carregando…",
+      "emptyUnread": "Sem notificações não lidas",
+      "loadMore": "Carregar mais",
+      "loadingMore": "Carregando…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "KYC Aprovado",
+          "body": "Sua verificação de identidade foi aprovada."
+        },
+        "KYC_REJECTED": {
+          "title": "KYC Rejeitado",
+          "body": "Sua verificação de identidade foi rejeitada. Entre em contato com o suporte."
+        },
+        "KYC_C_REQUIRED": {
+          "title": "Informações Adicionais Necessárias",
+          "body": "Documentos adicionais são necessários para completar sua verificação."
+        },
+        "ALERT_DETECTED": {
+          "title": "Alerta Detectado",
+          "body": "Um alerta foi detectado em sua conta."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "Pro-forma Emitida",
+          "body": "Uma nova fatura pro-forma foi emitida para sua frota."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "Lembrete de Pagamento",
+          "body": "Você tem uma fatura pro-forma pendente com vencimento em breve."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "Pagamento Recebido",
+          "body": "Seu pagamento foi recebido e está sendo processado."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "Pagamento Rejeitado",
+          "body": "Seu pagamento foi rejeitado. Revise e reenvie."
+        },
+        "FINAL_ISSUED": {
+          "title": "Fatura Final Emitida",
+          "body": "Sua fatura final foi emitida."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "Fatura Complementar Emitida",
+          "body": "Uma fatura complementar foi emitida."
+        },
+        "REFUND_ISSUED": {
+          "title": "Reembolso Emitido",
+          "body": "Um reembolso foi emitido para sua conta."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "Carteira Recarregada",
+          "body": "Sua carteira foi recarregada com sucesso."
+        },
+        "WALLET_APPLIED": {
+          "title": "Carteira Aplicada",
+          "body": "Fundos da carteira foram aplicados a uma fatura."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "Saldo Baixo na Carteira",
+          "body": "O saldo da sua carteira está baixo."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "Disputa Atualizada",
+          "body": "Sua disputa foi atualizada."
+        },
+        "OWNER_ESCALATION": {
+          "title": "Aviso de Escalonamento",
+          "body": "Sua conta foi sinalizada para revisão."
+        }
+      }
+    },
+    "disputes": {
+      "empty": "Nenhuma contestação encontrada."
     }
   },
   "AdminEquasis": {
@@ -2697,6 +3505,14 @@
     "label": "Jurisdição",
     "select": "Selecionar jurisdição…",
     "error": "Não foi possível mudar",
+    "retry": "Tentar novamente"
+  },
+  "ModeSwitcher": {
+    "label": "Modo de transporte",
+    "both": "Ambos",
+    "maritime": "Marítimo",
+    "air": "Aéreo",
+    "error": "Não foi possível mudar o modo",
     "retry": "Tentar novamente"
   },
   "DashboardError": {
@@ -2763,5 +3579,94 @@
       "mismatched": "{count} tx incorretas"
     },
     "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Instantâneo da frota em tempo real — apenas leitura",
+    "modeBoth": "Todos os modos",
+    "modeMaritime": "Marítimo",
+    "modeAir": "Aéreo",
+    "kpi": {
+      "atPort": "No porto",
+      "approaching": "Em aproximação",
+      "paidLast7d": "Pagas (7d)",
+      "unpaidInProgress": "Não pagas em curso"
+    },
+    "departures": {
+      "title": "Saídas recentes",
+      "subtitle": "Saíram da ZEE nos últimos 7 dias",
+      "empty": "Nenhuma saída registada nos últimos 7 dias"
+    },
+    "table": {
+      "ref": "Ref.",
+      "mode": "Modo",
+      "departedAt": "Saída"
+    }
+  },
+  "OwnerRegister": {
+    "title": "Registo de operador marítimo",
+    "subtitle": "Diga-nos sobre a sua empresa. Avaliaremos e responderemos por e-mail em 48h.",
+    "email": "Email de contacto",
+    "company_name": "Nome da empresa",
+    "imo_company": "Número IMO da empresa (7 dígitos)",
+    "country": "País (ISO-2)",
+    "address": "Morada registada",
+    "vessel_imo": "IMO de um dos seus navios",
+    "phone_optional": "Telefone (opcional, E.164)",
+    "submit": "Enviar candidatura",
+    "submitting": "A enviar...",
+    "thanks_title": "Obrigado",
+    "doc_types": {
+      "TRADE_REGISTER": "Registo comercial",
+      "CERT_INCORPORATION": "Certidão de constituição",
+      "MOA": "Estatutos",
+      "OTHER": "Outro"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Por favor, carregue um documento comprovatório",
+      "upload_failed": "Falha no carregamento do ficheiro. Tente novamente."
+    },
+    "proof_document": "Documento comprovatório",
+    "doc_type": "Tipo de documento",
+    "preferred_language": "Língua preferida",
+    "closed_title": "Registo encerrado",
+    "closed_body": "Os registos de operadores estão actualmente por convite. Contacte a administração.",
+    "back_to_login": "Voltar ao início de sessão"
+  },
+  "AirRegister": {
+    "title": "Registo de operador aéreo",
+    "subtitle": "Reivindique a sua conta de operador com o seu número AOC e uma das suas aeronaves.",
+    "tab_maritime": "Marítimo",
+    "tab_air": "Aéreo",
+    "email": "Email oficial",
+    "company_name": "Nome da empresa operadora",
+    "aoc_number": "Número AOC",
+    "aircraft_ident": "Matrícula da aeronave ou código icao24",
+    "country": "País (ISO-2)",
+    "address": "Morada registada",
+    "proof_document": "Certificado AOC (PDF/imagem)",
+    "phone_optional": "Telefone (opcional)",
+    "preferred_language": "Língua preferida",
+    "submit": "Enviar pedido",
+    "submitting": "A enviar…",
+    "thanks_title": "Pedido recebido",
+    "errors": {
+      "no_file": "Por favor, anexe o seu certificado AOC.",
+      "upload_failed": "Falha no carregamento, tente novamente."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
   }
 }

@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
         vesselImo: '— pre-estimate —',
         vesselMmsi: '— pre-estimate —',
         ownerName: 'Prospective Vessel Operator',
-        jurisdiction: 'Republic of Somaliland (simulation)',
+        // Neutral label — no sovereign named; simulator has no jurisdiction context.
+        jurisdiction: 'Carbon tax estimate (simulation)',
         periodStart: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }),
         periodEnd: 'Estimate only — not a binding invoice',
         emissionsTco2: body.totalCo2Tons,

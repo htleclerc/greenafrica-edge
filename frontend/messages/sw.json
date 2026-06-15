@@ -121,7 +121,17 @@
     "teaser_greengate_badge": "USAMBAZAJI WA KWANZA — SOMALILAND",
     "teaser_greengate_title": "Mfumo wa Dijiti wa Green Gate",
     "teaser_greengate_desc": "Jukwaa la mapinduzi lililojengwa kwenye blockchain linalowezesha mataifa ya Afrika kuchukua suluhisho la kidijiti la kukusanya kodi za kaboni na kimazingira — limesambazwa kwa mara ya kwanza kwa ushirikiano na nchi changa ya Somaliland.",
-    "teaser_greengate_cta": "Gundua Ushirikiano"
+    "teaser_greengate_cta": "Gundua Ushirikiano",
+    "teaser_about_badge": "SOLIDE TECHNOLOGY",
+    "teaser_about_title": "Sisi Ni Nani",
+    "teaser_about_desc": "Solide Technology ni kampuni ya 100% ya Kiafrika inayothibitishia serikali za bara uaminifu wake kama mshirika wa kimkakati katika kuongeza thamani ya rasilimali za mazingira na kijani. DNA yetu ya kipekee ya Kiafrika inazidi ishara tu.",
+    "teaser_about_cta": "Jifunze zaidi kuhusu dhamira yetu",
+    "teaser_african_title": "DNA 100% ya Kiafrika",
+    "teaser_african_desc": "Kizazi kipya cha viongozi wa Afrika wanaochukua jukumu la kihistoria kuwezesha Afrika kujiamua yenyewe.",
+    "teaser_blockchain_title": "Inalindwa na Blockchain",
+    "teaser_blockchain_desc": "Ufuatiliaji, uhuru na utawala katika upatikanaji wa data — dhamana dhidi ya udanganyifu na upotoshaji.",
+    "teaser_expertise_title": "Utaalamu wa Ndani",
+    "teaser_expertise_desc": "Uelewa wa kina zaidi wa hali za kiuchumi na kijamii za ndani kwa suluhisho zinazofaa na kulingana zaidi."
   },
   "Calculator": {
     "title": "Kikokotoo cha Uzalishaji na Malipo ya Fidia",
@@ -174,7 +184,10 @@
     "terms_of_service": "Masharti ya Huduma",
     "security_audit": "Ukaguzi wa Usalama",
     "copyright": "© 2024 AIS Portal. Haki zote zimehifadhiwa. Republic of Somaliland.",
-    "order_status": "Hali ya agizo: Sandbox"
+    "order_status": "Hali ya agizo: Sandbox",
+    "company": "Kampuni",
+    "about": "Kuhusu Solide Technology",
+    "partnership": "Ushirikiano wa Green Gate"
   },
   "CarbonTax": {
     "hero_badge": "KITUO CHA AMRI CHA KODI YA KABONI YA BAHARI",
@@ -536,6 +549,7 @@
     "bottom_aes": "AES-256",
     "site_berbera": "Kituo cha Bandari ya Berbera",
     "site_national_hq": "Makao Makuu ya Taifa (Hargeisa)",
+    "site_djibouti": "Bandari ya Djibouti",
     "forgot_title": "Weka upya nenosiri lako",
     "forgot_subtitle": "Weka anwani ya barua pepe inayohusiana na akaunti yako na tutakutumia kiungo salama cha kuweka upya.",
     "forgot_info": "Kiungo cha kuweka upya kitatumwa kwa barua pepe yako rasmi iliyosajiliwa.",
@@ -571,7 +585,9 @@
     "pending_step4_title": "Akaunti imeamilishwa",
     "pending_step4_desc": "Baada ya kupitishwa, utapokea barua pepe na maagizo ya ufikiaji.",
     "pending_info_title": "Kwa nini hii inachukua muda?",
-    "pending_info_desc": "Akaunti zote zinathibitishwa kwa mkono na wafanyakazi wa serikali walioidhinishwa ili kuhakikisha usalama wa jukwaa."
+    "pending_info_desc": "Akaunti zote zinathibitishwa kwa mkono na wafanyakazi wa serikali walioidhinishwa ili kuhakikisha usalama wa jukwaa.",
+    "owner_portal_link": "Mmiliki wa meli? Ingia kwenye portal ya mmiliki",
+    "error_database": "Huduma haipatikani kwa sasa. Tafadhali jaribu tena baadaye."
   },
   "Dashboard": {
     "breadcrumb_command_center": "Kituo cha Amri",
@@ -601,6 +617,7 @@
     "role_finance_admin": "Msimamizi wa Fedha",
     "role_shipping_agent": "Mmiliki wa Meli / Wakala",
     "role_superadmin": "Msimamizi Mkuu",
+    "role_operations_manager": "Meneja wa Uendeshaji",
     "notif_noncompliant_title": "Meli isiyozingatia",
     "notif_noncompliant_msg": "{vessel} (IMO {imo}) — hatua inahitajika",
     "notif_payment_due_title": "Malipo yanayostahili",
@@ -676,7 +693,33 @@
     "footer_government": "SERIKALI YA SOMALILAND",
     "footer_copyright": "© 2025 GREEN GATE",
     "footer_encrypted": "IMESIMBWA",
-    "nav_jurisdictions": "Mamlaka"
+    "nav_jurisdictions": "Mamlaka",
+    "nav_vision": "Ubao wa Maono",
+    "nav_staff": "Usimamizi wa Wafanyakazi",
+    "nav_origin_port_proposals": "Mapendekezo ya bandari ya asili",
+    "nav_cash_desk": "Kasisi",
+    "nav_registrations": "Usajili",
+    "nav_wallets": "Pochi",
+    "nav_refunds": "Marejesho"
+  },
+  "AdminStaff": {
+    "page_title": "Usimamizi wa Wafanyakazi",
+    "page_subtitle": "Alika wafanyakazi wa serikali na ugawanye mamlaka yao.",
+    "form_title": "Alika mfanyakazi",
+    "label_email": "Anwani ya barua pepe",
+    "label_full_name": "Jina kamili",
+    "label_role": "Jukumu",
+    "label_jurisdictions": "Mamlaka",
+    "placeholder_email": "mfanyakazi@mfano.gov",
+    "placeholder_full_name": "Jina la kwanza na la mwisho",
+    "role_port_officer": "Afisa wa Bandari",
+    "role_finance_admin": "Msimamizi wa Fedha",
+    "role_manager": "Meneja",
+    "btn_invite": "Tuma mwaliko",
+    "btn_sending": "Inatuma…",
+    "success_new": "Mwaliko umetumwa kwa {email}.",
+    "success_existing": "{email} tayari ana akaunti — jukumu na mamlaka zimesasishwa.",
+    "error_prefix": "Hitilafu: "
   },
   "DashboardPages": {
     "alerts_title": "Tahadhari na Kasoro",
@@ -843,6 +886,8 @@
     "settings_site_berbera": "Bandari ya Berbera",
     "settings_site_national_hq": "Makao Makuu ya Taifa — Hargeisa",
     "settings_site_zeila": "Bandari ya Zeila",
+    "settings_site_djibouti": "Bandari ya Djibouti",
+    "settings_coming_soon": "Hivi karibuni",
     "simulator_title": "Kiigaji cha Kodi ya Kaboni",
     "simulator_subtitle": "Kadiria mzigo wako wa kodi kabla ya kuingia ZEE ya Somaliland — kulingana na viwango rasmi vinavyotumika.",
     "simulator_official_rates": "Viwango rasmi kuanzia 01/01/2025 — IMO DCS iliyothibitishwa",
@@ -907,7 +952,12 @@
     "simulator_cat_ferry": "Feri ya Abiria",
     "simulator_unit_knots": "noti",
     "simulator_unit_hours": "masaa",
-    "simulator_legacy_rates_notice": "Uigaji wa dalili — jedwali la viwango vya zamani ; viwango rasmi vipo katika Admin → Mamlaka."
+    "simulator_legacy_rates_notice": "Uigaji wa dalili — jedwali la viwango vya zamani ; viwango rasmi vipo katika Admin → Mamlaka.",
+    "settings_visual_theme": "Mandhari ya Kuona",
+    "settings_visual_theme_desc": "Chagua muonekano wa kuona wa kiolesura cha jukwaa.",
+    "simulator_official_rate": "Kiwango rasmi: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Hakuna kiwango kilichochapishwa",
+    "simulator_no_tariff_body": "Hakuna kiwango cha sasa kilichochapishwa kwa mamlaka hii. Hesabu haipatikani — tafadhali wasiliana na utawala."
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
@@ -992,7 +1042,8 @@
     "status_overdue": "IMECHELEWA",
     "status_disputed": "INAPINGWA",
     "detail_view_payments": "Ona Malipo",
-    "detail_simulate": "Jaribu"
+    "detail_simulate": "Jaribu",
+    "action_pay_proforma_for": "Lipa pro-forma: {name}"
   },
   "InvoicesPage": {
     "status_paid": "IMELIPWA",
@@ -1080,7 +1131,12 @@
     "contest_invoice": "Contest",
     "export_csv": "Hamisha CSV",
     "filter_by_vessel": "Imechujwa kwa meli IMO {imo}",
-    "filter_clear": "Futa"
+    "filter_clear": "Futa",
+    "proof_section_title": "Uthibitisho wa malipo (MT103)",
+    "proof_submitted_label": "Uthibitisho wa malipo ({count})",
+    "view_proforma_pdf": "Tazama Pro-forma (PDF)",
+    "pay_now_short": "Lipa ${amount}",
+    "demo_generate_disabled": "Hali ya maonyesho — uzalishaji wa pro-forma umezimwa. Weka NEXT_PUBLIC_DEMO_ALLOWED=false katika frontend/.env.local na ingia na akaunti halisi kuzalisha."
   },
   "Disputes": {
     "kpi_total": "Jumla ya Migogoro",
@@ -1134,7 +1190,37 @@
     "evidence_url_placeholder": "https://docs.mfano.com/ushahidi.pdf",
     "evidence_optional": "Si lazima — kiungo cha hati za uthibitisho",
     "cancel": "Ghairi",
-    "submit_dispute": "Wasilisha"
+    "submit_dispute": "Wasilisha",
+    "title": "Migogoro na Utatuzi",
+    "subtitle": "Fuatilia na simamia migogoro ya mahesabu ya uzalishaji — kagua ushahidi, kubali au kataa ankara zilizopingwa.",
+    "kpi_review": "Inakaguliwa",
+    "tab_all": "Yote",
+    "tab_open": "Wazi",
+    "tab_under_review": "Inakaguliwa",
+    "tab_accepted": "Imekubaliwa",
+    "tab_rejected": "Imekataliwa",
+    "no_disputes": "Hakuna migogoro iliyopatikana",
+    "detail_description": "Maelezo",
+    "detail_evidence": "Ushahidi",
+    "detail_timeline": "Mstari wa wakati",
+    "detail_original_amount": "Kiasi cha Asili",
+    "detail_revised_amount": "Kiasi Kilichorekebishwa",
+    "detail_submitted_by": "Imewasilishwa Na",
+    "detail_submitted_at": "Imewasilishwa",
+    "detail_reviewer": "Mkaguzi",
+    "detail_review_note": "Kumbuka ya ukaguzi",
+    "action_accept": "Kubali Mgogoro",
+    "action_reject": "Kataa Mgogoro",
+    "action_escalate": "Panda ngazi",
+    "form_title": "Wasilisha Mgogoro",
+    "form_select_transaction": "Chagua Muamala",
+    "form_reason": "Sababu",
+    "form_description": "Elezea tatizo kwa kina",
+    "form_evidence": "URL ya ushahidi (hiari)",
+    "form_submit": "Wasilisha Mgogoro",
+    "form_cancel": "Ghairi",
+    "contest_button": "Pinga",
+    "disputed_filter": "Inayopingwa"
   },
   "MyFleet": {
     "status_compliant": "COMPLIANT",
@@ -1229,7 +1315,31 @@
     "drawer_emissions_tax": "Uzalishaji na Kodi",
     "drawer_estimated_emissions": "tCO₂ {value} inakadiriwa",
     "generate_proforma": "Tengeneza Pro-forma →",
-    "close": "Funga"
+    "close": "Funga",
+    "action_pay_proforma": "Lipa pro-forma →",
+    "action_view_proforma": "Tazama pro-forma →",
+    "drawer_documents": "Pro-forma na Ankara",
+    "doc_reference": "Marejeo",
+    "doc_issued": "Ilitolewa",
+    "doc_status": "Hali",
+    "doc_amount": "Kiasi",
+    "doc_pay": "Lipa",
+    "doc_view_invoice": "Tazama ankara",
+    "doc_view": "Tazama",
+    "pay_proforma": "Lipa pro-forma →",
+    "add_vessel_title": "Sajili meli",
+    "add_vessel_subtitle": "Ongeza meli kwenye meli yako kwa mkono",
+    "add_vessel_imo": "Nambari ya IMO",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "Jina la meli",
+    "add_vessel_call_sign": "Ishara ya simu",
+    "add_vessel_flag": "Bendera (ISO-2)",
+    "add_vessel_type": "Aina",
+    "add_vessel_dwt": "DWT (tani ya jumla)",
+    "add_vessel_cancel": "Ghairi",
+    "add_vessel_submit": "Sajili meli",
+    "add_vessel_submitting": "Inasajili…",
+    "add_vessel_error_dwt": "DWT lazima iwe nambari chanya"
   },
   "GreenLedgerPage": {
     "page_title": "Daftari la Kijani",
@@ -1377,7 +1487,10 @@
     "review": "Kagua",
     "request_exemption": "Omba Msamaha",
     "revenue_trend": "Mwenendo wa Mapato",
-    "full_report": "Ripoti Kamili →"
+    "full_report": "Ripoti Kamili →",
+    "tax_rate_moved_title": "Viwango vya kila mamlaka vimehamishwa",
+    "tax_rate_moved_desc": "Viwango vya kodi ya kaboni sasa vinasimamiwakwa kila mamlaka katika rejista ya Mamlaka. Bili inasoma moja kwa moja safu za bei zilizohesabiwa — uso wa zamani wa kiwango cha kimataifa umestaafu.",
+    "tax_rate_moved_link": "Nenda kwa Mamlaka →"
   },
   "ValidationsPage": {
     "title": "Uthibitishaji wa Mawakala",
@@ -2447,7 +2560,9 @@
       "validFrom": "Valid from",
       "validUntil": "Valid until",
       "active": "Active",
-      "actions": "Actions"
+      "actions": "Actions",
+      "email": "Barua pepe",
+      "portalState": "Hali ya portal"
     },
     "form": {
       "shipowner": "Shipowner",
@@ -2462,7 +2577,32 @@
     "deactivating": "Deactivating…",
     "deactivated": "Deactivated",
     "active": "Active",
-    "empty": "No mappings yet. Add one to enable cascade A."
+    "empty": "No mappings yet. Add one to enable cascade A.",
+    "mappingsSectionTitle": "Akaunti za waendeshaji",
+    "shipownersSectionTitle": "Wamiliki wa meli",
+    "shipownersSectionSubtitle": "Simamia upatikanaji wa portal na hali za KYC kwa kila mmiliki wa meli aliyesajiliwa.",
+    "emptyShipowners": "Hakuna wamiliki wa meli waliosailiwa",
+    "state": {
+      "ghost": "Hajakualikwa",
+      "invited": "Amealikwa",
+      "active": "Hai"
+    },
+    "invite": "Alika",
+    "reinvite": "Alika tena",
+    "inviteDialogTitle": "Alika mmiliki wa meli kwenye portal",
+    "inviteDialogSubtitle": "Barua pepe ya mwaliko itatumwa kwa anwani ya barua pepe ya mmiliki wa meli huyu.",
+    "sendInvite": "Tuma mwaliko",
+    "sending": "Inatuma…",
+    "cancel": "Ghairi",
+    "aoc": {
+      "col": "Nambari ya AOC",
+      "set": "Weka AOC",
+      "dialogTitle": "Weka nambari ya AOC",
+      "dialogSubtitle": "Weka nambari ya Cheti cha Mwendeshaji wa Anga kwa mwendeshaji huyu.",
+      "placeholder": "mfano SL-AOC-001",
+      "save": "Hifadhi",
+      "saving": "Inahifadhi…"
+    }
   },
   "AdminOriginPort": {
     "title": "Origin port proposals",
@@ -2520,7 +2660,12 @@
       "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
       "feature_shipowner_portal_enabled": "Shipowner portal",
       "queue_worker_url": "Queue worker URL",
-      "queue_worker_secret": "Queue worker secret"
+      "queue_worker_secret": "Queue worker secret",
+      "feature_shipowner_portal_v1_enabled": "Portal ya mmiliki wa meli v1",
+      "feature_shipowner_self_service_enabled": "Usajili wa kujitegemea",
+      "feature_online_payment_stripe_enabled": "Malipo ya mtandaoni (Stripe)",
+      "feature_wallet_topup_enabled": "Kujaza pochi",
+      "feature_notification_sms_enabled": "Arifa za SMS"
     },
     "save": "Save",
     "saving": "Saving…",
@@ -2534,10 +2679,15 @@
     "brand": "Shipowner Portal",
     "nav": {
       "dashboard": "Dashboard",
-      "vessels": "Vessels",
-      "invoices": "Invoices",
-      "alerts": "Alerts",
-      "signOut": "Sign out"
+      "vessels": "Meli",
+      "invoices": "Ankara",
+      "alerts": "Tahadhari",
+      "signOut": "Toka",
+      "wallet": "Mkoba",
+      "simulator": "Kikokotoo cha Kodi",
+      "tco": "Dashibodi ya TCO",
+      "disputes": "Migogoro",
+      "notifications": "Arifa"
     },
     "login": {
       "title": "Sign in with your email",
@@ -2552,8 +2702,16 @@
         "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
         "ghost": "Your account has not been invited to the portal yet.",
         "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
-        "generic": "Sign-in failed. Try again."
-      }
+        "generic": "Sign-in failed. Try again.",
+        "invalidCredentials": "Barua pepe au nenosiri batili"
+      },
+      "passwordLabel": "Nenosiri",
+      "passwordSubmit": "Ingia",
+      "signingIn": "Inaingia…",
+      "useMagicLink": "Tumia kiungo cha kichawi",
+      "setPassword": "Weka nenosiri",
+      "resetSent": "Kiungo cha kuweka upya kimetumwa — angalia barua pepe yako",
+      "noPasswordHint": "Bado huna nenosiri? Tumia kiungo cha kichawi au weka nenosiri."
     },
     "dashboard": {
       "subtitle": "Snapshot of your fleet and obligations.",
@@ -2627,6 +2785,10 @@
           "VESSEL_DATA": "Vessel data",
           "OTHER": "Other"
         }
+      },
+      "stripeReturn": {
+        "success": "Malipo yamekamilika — ankara yako itasasishwa hivi karibuni.",
+        "cancel": "Malipo yameghairiwa — unaweza jaribu tena."
       }
     },
     "alerts": {
@@ -2636,6 +2798,234 @@
       "openSection": "Open ({count})",
       "closedSection": "Closed ({count})",
       "emptyOpen": "No active alerts."
+    },
+    "disputes": {
+      "empty": "Hakuna migogoro bado"
+    },
+    "payDialog": {
+      "title": "Lipa Ankara",
+      "subtitle": "Chagua njia ya malipo na jaza maelezo.",
+      "back": "Rudi",
+      "next": "Ifuatayo",
+      "submit": "Wasilisha",
+      "submitting": "Inawasilisha…",
+      "loadingRails": "Inapakia njia za malipo…",
+      "chooseRail": "Chagua njia ya malipo",
+      "railNotAvailable": "Haipatikani",
+      "noRailEligible": "Hakuna njia ya malipo inayopatikana kwa ankara hii.",
+      "rail": {
+        "wire": {
+          "label": "Uhamisho wa Benki",
+          "hint": "Uhamisho benki kwa benki"
+        },
+        "momo": {
+          "label": "Pesa ya Simu",
+          "hint": "Lipa kupitia pochi ya simu"
+        },
+        "third": {
+          "label": "Mtu wa Tatu",
+          "hint": "Malipo kupitia mlipaji wa tatu"
+        },
+        "wallet": {
+          "label": "Pochi ya Mmiliki",
+          "hint": "Tumia salio linalopo kwenye pochi yako"
+        },
+        "stripe": {
+          "label": "Kadi ya Mkopo / Debit",
+          "hint": "Malipo salama ya mtandaoni"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "Toa marejeo ya uhamisho wa benki.",
+        "mobile_money": "Toa maelezo ya muamala wa pesa ya simu.",
+        "third_party": "Toa maelezo ya mlipaji wa tatu.",
+        "wallet": "Salio la pochi yako litatumika.",
+        "stripe": "Utaelekezwa kwenye ukurasa salama wa malipo."
+      },
+      "field": {
+        "bankReference": "Marejeo ya benki",
+        "bankName": "Jina la benki",
+        "notes": "Maelezo (hiari)",
+        "phoneNumber": "Nambari ya simu",
+        "operatorReference": "Marejeo ya mwendeshaji",
+        "viaProvider": "Kupitia mtoa huduma",
+        "payerName": "Jina la mlipaji",
+        "payerRelationship": "Uhusiano na mmiliki",
+        "externalReference": "Marejeo ya nje",
+        "walletConfirm": "Nathibitisha kutoa kutoka kwenye pochi yangu",
+        "topupAmount": "Kiasi cha kujaza"
+      },
+      "summary": {
+        "invoice": "Ankara",
+        "amount": "Kiasi",
+        "rail": "Njia",
+        "provider": "Mtoa huduma",
+        "details": "Maelezo",
+        "disclaimer": "Kwa kuwasilisha, unathibitisha kuwa maelezo ya malipo ni sahihi."
+      },
+      "errors": {
+        "bankReferenceRequired": "Marejeo ya benki yanahitajika",
+        "phoneRequired": "Nambari ya simu inahitajika",
+        "payerNameRequired": "Jina la mlipaji linahitajika",
+        "noRail": "Tafadhali chagua njia ya malipo",
+        "amountRequired": "Kiasi kinahitajika",
+        "noTransactionForWallet": "Hakuna muamala unaopatikana kwa malipo ya pochi"
+      },
+      "reason": {
+        "wallet_empty": "Pochi ni tupu",
+        "wallet_insufficient": "Salio la pochi haitoshi",
+        "no_active_provider": "Hakuna mtoa huduma wa malipo anayefanya kazi"
+      },
+      "mode": {
+        "topup": {
+          "title": "Jaza pochi",
+          "subtitle": "Ongeza fedha kwenye pochi ya mmiliki.",
+          "amountLabel": "Kiasi cha kuongeza",
+          "success": "Kujaza kumewasilishwa — pochi yako itasasishwa baada ya uthibitisho.",
+          "summaryLabel": "Kujaza",
+          "summaryValue": "Pochi ya mmiliki",
+          "disabledTitle": "Kujaza hakupatikani",
+          "disabledBody": "Kujaza pochi hakujawezeshwa kwa akaunti yako."
+        }
+      },
+      "proofStep": {
+        "created": "Ombi la malipo limeundwa",
+        "intro": "Pakia uthibitisho wa malipo (hiari lakini inashauriwa).",
+        "done": "Imekamilika — malipo yako yanasubiri ukaguzi."
+      }
+    },
+    "proofUpload": {
+      "addButton": "Ongeza uthibitisho",
+      "hint": "PDF, JPG, PNG — upeo MB 5",
+      "dialogTitle": "Pakia uthibitisho wa malipo",
+      "intro": "Ambatisha risiti ya uhamisho wa benki, ujumbe wa SWIFT MT103, au uthibitisho wa pesa ya simu.",
+      "removeAria": "Ondoa faili",
+      "errors": {
+        "tooLarge": "Faili kubwa mno (upeo MB 5)",
+        "uploadFailed": "Upakiaji umeshindwa — jaribu tena",
+        "deleteFailed": "Kufuta kumeshindwa — jaribu tena"
+      }
+    },
+    "wallet": {
+      "balanceCard": {
+        "title": "Salio la Pochi",
+        "autoApply": "Tumia otomatiki kwa ankara",
+        "autoApplyOn": "Imewashwa",
+        "autoApplyOff": "Imezimwa",
+        "topupCta": "Jaza"
+      },
+      "predictionCard": {
+        "title": "Utabiri wa Siku 30",
+        "estimate30d": "Matumizi ya kukadiriwa",
+        "confidence": "Imani",
+        "confidenceLevel": {
+          "low": "Chini",
+          "medium": "Wastani",
+          "high": "Juu"
+        },
+        "notEnoughData": "Data haitoshi kwa utabiri",
+        "insufficientWarning": "Salio lako linaweza kutokutosha kwa ankara zinazokuja"
+      },
+      "ledger": {
+        "title": "Historia ya Miamala",
+        "empty": "Hakuna miamala bado",
+        "col": {
+          "date": "Tarehe",
+          "amount": "Kiasi",
+          "kind": "Aina",
+          "note": "Kumbuka"
+        },
+        "kind": {
+          "TOPUP": "Kujaza",
+          "OVERPAYMENT_CREDIT": "Mkopo wa malipo ya ziada",
+          "REFUND_CREDIT": "Mkopo wa urejeshaji",
+          "PROFORMA_APPLY": "Malipo ya ankara",
+          "ADMIN_ADJUSTMENT": "Marekebisho ya msimamizi",
+          "FX_DIFFERENCE": "Tofauti ya sarafu"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Arifa",
+      "bellAria": "Arifa",
+      "markAllRead": "Weka zote kama zilizosomwa",
+      "viewAll": "Tazama zote",
+      "empty": "Hakuna arifa",
+      "pageTitle": "Arifa Zote",
+      "unreadLabel": "hazijasomwa",
+      "filterAria": "Chuja arifa",
+      "filterAll": "Zote",
+      "filterUnread": "Hazijasomwa",
+      "loading": "Inapakia…",
+      "emptyUnread": "Hakuna arifa zisizosomwa",
+      "loadMore": "Pakia zaidi",
+      "loadingMore": "Inapakia…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "KYC Imeidhinishwa",
+          "body": "Uthibitisho wako wa utambulisho umeidhinishwa."
+        },
+        "KYC_REJECTED": {
+          "title": "KYC Imekataliwa",
+          "body": "Uthibitisho wako wa utambulisho ulikataliwa. Tafadhali wasiliana na msaada."
+        },
+        "KYC_C_REQUIRED": {
+          "title": "Taarifa Zaidi Zinahitajika",
+          "body": "Nyaraka za ziada zinahitajika kukamilisha uthibitisho wako."
+        },
+        "ALERT_DETECTED": {
+          "title": "Tahadhari Imegunduliwa",
+          "body": "Tahadhari imegunduliwa kwenye akaunti yako."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "Pro-forma Imetolewa",
+          "body": "Pro-forma mpya imetolewa kwa meli yako."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "Ukumbusho wa Malipo",
+          "body": "Una ankara ya pro-forma inayosubiri iliyokaribia tarehe ya mwisho."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "Malipo Yamepokelewa",
+          "body": "Malipo yako yamepokelewa na yanashughulikiwa."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "Malipo Yamekataliwa",
+          "body": "Malipo yako yalikataliwa. Tafadhali kagua na utume tena."
+        },
+        "FINAL_ISSUED": {
+          "title": "Ankara ya Mwisho Imetolewa",
+          "body": "Ankara yako ya mwisho imetolewa."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "Ankara ya Ziada Imetolewa",
+          "body": "Ankara ya ziada imetolewa."
+        },
+        "REFUND_ISSUED": {
+          "title": "Urejeshaji Umetolewa",
+          "body": "Urejeshaji umetolewa kwa akaunti yako."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "Pochi Imejazwa",
+          "body": "Pochi yako imejazwa kwa mafanikio."
+        },
+        "WALLET_APPLIED": {
+          "title": "Pochi Imetumika",
+          "body": "Fedha za pochi zimetumika kwa ankara."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "Salio Chini la Pochi",
+          "body": "Salio la pochi yako linaisha."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "Mgogoro Umesasishwa",
+          "body": "Mgogoro wako umesasishwa."
+        },
+        "OWNER_ESCALATION": {
+          "title": "Notisi ya Kupanda Ngazi",
+          "body": "Akaunti yako imewekwa bendera kwa ukaguzi."
+        }
+      }
     }
   },
   "AdminEquasis": {
@@ -2697,6 +3087,14 @@
     "label": "Mamlaka",
     "select": "Chagua mamlaka…",
     "error": "Imeshindwa kubadilisha",
+    "retry": "Jaribu tena"
+  },
+  "ModeSwitcher": {
+    "label": "Hali ya usafiri",
+    "both": "Zote mbili",
+    "maritime": "Baharini",
+    "air": "Angani",
+    "error": "Imeshindwa kubadilisha hali",
     "retry": "Jaribu tena"
   },
   "DashboardError": {
@@ -2763,5 +3161,478 @@
       "mismatched": "{count} miamala isiyolingana"
     },
     "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho."
+  },
+  "Vision": {
+    "pageTitle": "Vision Board",
+    "pageSubtitle": "Muhtasari wa meli wa wakati halisi — kusoma tu",
+    "modeBoth": "Njia zote",
+    "modeMaritime": "Bahari",
+    "modeAir": "Anga",
+    "kpi": {
+      "atPort": "Bandarini",
+      "approaching": "Inakaribia",
+      "paidLast7d": "Zilizolipwa (siku 7)",
+      "unpaidInProgress": "Hazijalipwa zinazoendelea"
+    },
+    "departures": {
+      "title": "Kuondoka hivi karibuni",
+      "subtitle": "Waliacha EEZ katika siku 7 zilizopita",
+      "empty": "Hakuna kuondoka kulikorekodi katika siku 7 zilizopita"
+    },
+    "table": {
+      "ref": "Kumb.",
+      "mode": "Hali",
+      "departedAt": "Kuondoka"
+    }
+  },
+  "OwnerRegister": {
+    "title": "Usajili wa opereta wa baharini",
+    "subtitle": "Tuambie kuhusu kampuni yako. Tutakagua na kukuandikia ndani ya masaa 48.",
+    "email": "Barua pepe ya mawasiliano",
+    "company_name": "Jina la kampuni",
+    "imo_company": "Nambari ya IMO ya Kampuni (tarakimu 7)",
+    "country": "Nchi (ISO-2)",
+    "address": "Anwani iliyosajiliwa",
+    "vessel_imo": "IMO ya chombo chako kimoja",
+    "phone_optional": "Simu (si lazima, E.164)",
+    "submit": "Wasilisha ombi",
+    "submitting": "Inatuma...",
+    "thanks_title": "Asante",
+    "doc_types": {
+      "TRADE_REGISTER": "Daftari la biashara",
+      "CERT_INCORPORATION": "Cheti cha usajili",
+      "MOA": "Hati ya chama",
+      "OTHER": "Nyingine"
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    },
+    "errors": {
+      "no_file": "Tafadhali pakia hati ya uthibitisho",
+      "upload_failed": "Upakiaji wa faili umeshindwa. Jaribu tena."
+    },
+    "proof_document": "Hati ya uthibitisho",
+    "doc_type": "Aina ya hati",
+    "preferred_language": "Lugha unayopendelea",
+    "closed_title": "Usajili umefungwa",
+    "closed_body": "Usajili wa waendeshaji kwa sasa ni kwa mwaliko tu. Wasiliana na utawala.",
+    "back_to_login": "Rudi kwenye kuingia"
+  },
+  "AirRegister": {
+    "title": "Usajili wa opereta wa anga",
+    "subtitle": "Dai akaunti yako ya opereta kwa kutumia nambari yako ya AOC na ndege moja ya msafara wako.",
+    "tab_maritime": "Baharini",
+    "tab_air": "Anga",
+    "email": "Barua pepe rasmi",
+    "company_name": "Jina la kampuni ya uendeshaji",
+    "aoc_number": "Nambari ya AOC",
+    "aircraft_ident": "Usajili wa ndege au msimbo wa icao24",
+    "country": "Nchi (ISO-2)",
+    "address": "Anwani iliyosajiliwa",
+    "proof_document": "Cheti cha AOC (PDF/picha)",
+    "phone_optional": "Simu (si lazima)",
+    "preferred_language": "Lugha unayopendelea",
+    "submit": "Wasilisha ombi",
+    "submitting": "Inatuma…",
+    "thanks_title": "Ombi limepokelewa",
+    "errors": {
+      "no_file": "Tafadhali ambatanisha cheti chako cha AOC.",
+      "upload_failed": "Upakiaji umeshindwa, tafadhali jaribu tena."
+    },
+    "langs": {
+      "en": "English",
+      "fr": "Français",
+      "ar": "العربية",
+      "pt": "Português",
+      "sw": "Kiswahili"
+    }
+  },
+  "AdminRefunds": {
+    "pageTitle": "Marejesho",
+    "refresh": "Onyesha upya",
+    "loading": "Inapakia…",
+    "empty": "Hakuna marejesho katika kategoria hii",
+    "tabs": {
+      "requested": "Kuamuliwa",
+      "approved": "Imeidhinishwa",
+      "executed": "Imetekelezwa",
+      "rejected": "Imekataliwa"
+    },
+    "table": {
+      "invoice": "Ankara",
+      "owner": "Mmiliki wa meli",
+      "amount": "Kiasi",
+      "requestedAt": "Imeombwa",
+      "rail": "Njia",
+      "status": "Hali"
+    },
+    "drawer": {
+      "title": "Maelezo ya urejeshaji",
+      "status": "Hali",
+      "invoice": "Ankara",
+      "vessel": "Meli",
+      "owner": "Mmiliki wa meli",
+      "amount": "Kiasi",
+      "requestedAt": "Imeombwa tarehe",
+      "rail": "Njia",
+      "railPicker": "Njia ya urejeshaji",
+      "railLabels": {
+        "WALLET": "Pochi ya mmiliki (papo hapo)",
+        "WIRE_TRANSFER": "Uhamisho wa benki",
+        "STRIPE": "Urejeshaji wa Stripe",
+        "CASH": "Pesa taslimu",
+        "CHEQUE": "Hundi",
+        "MOBILE_MONEY": "Pesa ya simu",
+        "THIRD_PARTY": "Mlipaji wa tatu",
+        "BANK_GUARANTEE": "Dhamana ya benki",
+        "NETTING": "Kukokotoa",
+        "LETTER_OF_CREDIT": "Barua ya mkopo"
+      },
+      "ibanReveal": "Onyesha IBAN",
+      "revealing": "Inaonyesha…",
+      "ibanRevealed": "IBAN: {iban}",
+      "proofUpload": "Njia ya hati ya benki (hiari)",
+      "rejectReason": "Sababu ya kukataa (angalau herufi 5)",
+      "rejectReasonPlaceholder": "Kwa nini urejeshaji huu unakataliwa?",
+      "executedAt": "Imetekelezwa tarehe",
+      "details": "Maelezo",
+      "rejectedReason": "Sababu ya kukataa",
+      "previouslyApprovedBy": "Imeidhinishwa na",
+      "executing": "Inatekeleza…",
+      "approving": "Inaidhinisha…",
+      "rejecting": "Inakataa…",
+      "actions": {
+        "approve": "Idhinisha",
+        "execute": "Tekeleza urejeshaji",
+        "executeWallet": "Rejesha kwenye pochi",
+        "reject": "Kataa",
+        "confirmReject": "Thibitisha kukataa",
+        "cancelReject": "Ghairi"
+      }
+    },
+    "error": {
+      "reasonTooShort": "Sababu lazima iwe na angalau herufi 5"
+    }
+  },
+  "About": {
+    "hero_badge": "SOLIDE TECHNOLOGY — 100% YA KIAFRIKA",
+    "hero_title_line1": "Mchezaji Mwenye Nguvu wa Afrika",
+    "hero_title_line2": "kwa Mkakati wa Kaboni wa Afrika",
+    "hero_subtitle": "Solide Technology, kupitia jukwaa lake la kidijitali la Green Gate, inaithibitishia serikali za bara uaminifu wake kama mshirika wa kimkakati katika kuongeza thamani ya rasilimali za mazingira na kijani.",
+    "stat_african_dna_value": "100%",
+    "stat_african_dna_label": "DNA ya Kiafrika",
+    "stat_countries_value": "54",
+    "stat_countries_label": "Nchi Zinazolengwa",
+    "stat_blockchain_value": "Blockchain",
+    "stat_blockchain_label": "Miundombinu Salama",
+    "stat_sovereignty_value": "Huru",
+    "stat_sovereignty_label": "Uhuru wa Data",
+    "mission_badge": "DHAMIRA YETU",
+    "mission_title": "Utaalamu wa Ndani kwa Viwango vya Kimataifa",
+    "mission_desc": "Katika soko la kaboni linalobadilika kwa kasi barani Afrika, kuimarisha utaalamu wa ndani unaoweza kukidhi viwango vya kimataifa ni muhimu. Green Gate inawakilisha kizazi hiki kipya cha uongozi wa Kiafrika.",
+    "pillar_african_title": "DNA ya Kiafrika",
+    "pillar_african_desc": "Utambulisho wetu wa kipekee wa Kiafrika unazidi alama tu. Unaonyesha uelewa unaokua wa kizazi kipya cha viongozi wa Afrika wanaochukua jukumu la kihistoria kuwezesha Afrika kujiamua yenyewe, na kupendekeza mfano kwa ulimwengu wote.",
+    "pillar_sovereignty_title": "Uhuru wa Data",
+    "pillar_sovereignty_desc": "Suluhisho la kidijitali linalonakili, uhuru na utawala katika upatikanaji na usimamizi wa data. Chombo hiki cha kimkakati kinaimarisha uaminifu wa kimataifa wa sera za usimamizi wa mali za mazingira za nchi.",
+    "pillar_expertise_title": "Utaalamu wa Ndani",
+    "pillar_expertise_desc": "Upekee huu unatoa utaalamu ulio na uelewa wa kina wa hali za kiuchumi na kijamii za ndani, kuhakikisha suluhisho zinazofaa zaidi na kulingana na muktadha kwa serikali na waendeshaji wa Afrika.",
+    "founders_badge": "UONGOZI",
+    "founders_title": "Waanzilishi",
+    "founders_desc": "Suluhisho hili la kuboresha mali za mazingira liliibuka kutokana na mchanganyiko wa uzoefu, ujuzi na utaalamu wa watu watatu wenye maono.",
+    "founder_kpatchavi_name": "Noel Hiverto KPATCHAVI",
+    "founder_kpatchavi_role": "Mkurugenzi Mtendaji — Solide Technology",
+    "founder_kpatchavi_bio": "Mkurugenzi Mtendaji wa Solide Technology, amekuwa akifanya kazi kwa bidii kwa miaka mingi katika miradi mikubwa ya PPP (Ushirikiano wa Umma na Sekta Binafsi) na katika uhamishaji wa teknolojia na utaalamu kwa bara la Afrika.",
+    "founder_radji_name": "Safiou RADJI",
+    "founder_radji_role": "Mhasibu — Mbunifu wa Fedha Endelevu",
+    "founder_radji_bio": "Mhasibu, mbunifu wa fedha endelevu barani Afrika na mtaalamu wa uvumbuzi wa kidijitali. Amehusika sana katika miradi ya Ushirikiano wa Umma na Sekta Binafsi na uhamishaji wa utaalamu barani.",
+    "founder_dia_name": "Leclerc HOUNMENOU",
+    "founder_dia_role": "Mshirika wa Kiufundi — Utekelezaji wa Jukwaa",
+    "founder_dia_bio": "Mshirika wa kiufundi kwa utekelezaji wa jukwaa, anachangia uongozi wa uhandisi wa programu na utaalamu wa kina katika kujenga na kuendesha miundombinu ya kidijitali inayotoa nguvu Green Gate.",
+    "blockchain_badge": "TEKNOLOJIA",
+    "blockchain_title": "Uaminifu Unaotokana na Blockchain",
+    "blockchain_desc": "Green Gate inatoa suluhisho la kidijitali kulingana na michakato ya blockchain, kuhakikisha kiwango cha juu zaidi cha uaminifu kwa usimamizi wa nchi wa mali za mazingira.",
+    "blockchain_traceability_title": "Ufuatiliaji Kamili",
+    "blockchain_traceability_desc": "Kila muamala, kila tathmini ya uzalishaji na kila malipo yameandikwa kudumu kwenye daftari lisiloweza kubadilishwa, kutoa njia kamili ya ukaguzi kuanzia kuingia kwa meli hadi ukusanyaji wa kodi.",
+    "blockchain_transparency_title": "Uwazi Kamili",
+    "blockchain_transparency_desc": "Washiriki wote — serikali, waendeshaji, wakaguzi — wanaweza kuthibitisha kwa kujitegemea uadilifu wa data bila kutegemea mamlaka kuu, kujenga imani katika mfumo.",
+    "blockchain_antifraud_title": "Ulinzi dhidi ya Udanganyifu",
+    "blockchain_antifraud_desc": "Dhamana za kriptografia hulinda dhidi ya upotoshaji wa data, kuhakikisha tathmini za kodi za mazingira na mikopo ya kaboni haiwezi kudhibitiwa au kughoshiwa.",
+    "blockchain_sovereignty_title": "Uhuru wa Nchi",
+    "blockchain_sovereignty_desc": "Mataifa ya Afrika yana udhibiti kamili wa data zao za mazingira. Hakuna utegemezi wa nje, hakuna makazi ya data za kigeni — uhuru kamili wa kidijitali kwa bara.",
+    "vision_badge": "MAONO YETU",
+    "vision_title": "Kiangalizi cha Afrika kwa Rasilimali za Tabianchi",
+    "vision_desc": "Katika maono ya Solide Technology, jukwaa la Green Gate linaweza kuwa mojawapo ya zana za kwanza zilizosawazishwa za kukusanya kodi za kaboni na mazingira barani Afrika.",
+    "vision_observatory": "Kupendekeza kiangalizi cha kweli cha Kiafrika kwa masuala yanayohusiana na uhamasishaji wa rasilimali kukabiliana na changamoto za mabadiliko ya tabianchi — kuwezesha kila nchi ya Afrika kuboresha mali zake za mazingira kupitia zana za kidijitali za kimkakati na za kisasa.",
+    "vision_cta": "Gundua Mfumo wa Kidijitali wa Green Gate"
+  },
+  "OwnerOnboarding": {
+    "step1": {
+      "title": "Taarifa za Kampuni"
+    },
+    "step2": {
+      "title": "Maelezo ya Benki",
+      "disclaimer": "Taarifa zako za benki zimehifadhiwa salama na zinatumiwa tu kwa usindikaji wa marejesho."
+    },
+    "step3": {
+      "title": "Kubali Masharti"
+    },
+    "legal_name": "Jina la kisheria la kampuni",
+    "address_line1": "Mstari wa kwanza wa anwani",
+    "address_line2": "Mstari wa pili wa anwani (hiari)",
+    "city": "Mji",
+    "postal_code": "Nambari ya posta",
+    "country_code": "Nchi",
+    "vat_optional": "Nambari ya VAT (hiari)",
+    "bank_name": "Jina la benki",
+    "cgv_label_prefix": "Nakubali",
+    "cgv_link": "masharti na vigezo",
+    "next": "Ifuatayo",
+    "back": "Rudi",
+    "submit": "Wasilisha",
+    "submitting": "Inawasilisha…",
+    "banner": {
+      "text": "Kamilisha wasifu wa kampuni yako kufungua vipengele vyote.",
+      "cta": "Kamilisha wasifu"
+    }
+  },
+  "AdminRegistrations": {
+    "title": "Usajili wa Wamiliki wa Meli",
+    "filters": {
+      "PENDING_REVIEW": "Inasubiri",
+      "REJECTED": "Imekataliwa",
+      "ACTIVE": "Hai"
+    },
+    "cols": {
+      "received": "Ilipokelewa",
+      "name": "Jina",
+      "imo": "IMO",
+      "country": "Nchi",
+      "email": "Barua pepe",
+      "proof": "Uthibitisho"
+    },
+    "actions": {
+      "review": "Kagua",
+      "approve": "Idhinisha",
+      "reject": "Kataa",
+      "request_completion": "Omba ukamilishaji"
+    },
+    "placeholders": {
+      "reject": "Sababu ya kukataa…",
+      "request": "Taarifa gani zinakosekana?"
+    },
+    "confirm": "Thibitisha",
+    "cancel": "Ghairi",
+    "empty": "Hakuna usajili uliopatikana",
+    "back": "Rudi",
+    "close": "Funga",
+    "view_only": "Tazama tu",
+    "submitting": "Inashughulikia…"
+  },
+  "Cgv": {
+    "title": "Masharti na Vigezo",
+    "placeholder_p1": "Masharti na vigezo kamili ya jukwaa la Green Gate yataonyeshwa hapa.",
+    "placeholder_p2": "Tafadhali soma kwa makini kabla ya kukubali.",
+    "draft_notice": "Hati ipo katika utayarishaji — wasiliana na msimamizi wako kwa toleo la sasa."
+  },
+  "AdminPayments": {
+    "title": "Malipo",
+    "subtitle": "Kagua na usimamie matangazo ya malipo kutoka kwa wamiliki wa meli.",
+    "refresh": "Onyesha upya",
+    "recordManual": "Rekodi malipo ya mkono",
+    "filterStatus": "Chuja kwa hali",
+    "filterRail": "Chuja kwa njia",
+    "loading": "Inapakia…",
+    "empty": "Hakuna malipo yaliyopatikana",
+    "col": {
+      "id": "Kitambulisho",
+      "rail": "Njia",
+      "amount": "Kiasi",
+      "status": "Hali",
+      "created": "Tarehe",
+      "ref": "Marejeo"
+    },
+    "recordDialog": {
+      "title": "Rekodi Malipo",
+      "subtitle": "Rekodi malipo yaliyotangazwa na mmiliki wa meli.",
+      "back": "Rudi",
+      "next": "Ifuatayo",
+      "submit": "Wasilisha",
+      "submitting": "Inawasilisha…",
+      "step1": {
+        "intro": "Chagua mmiliki wa meli na njia ya malipo.",
+        "rail": "Njia ya malipo",
+        "shipowner": "Mmiliki wa meli",
+        "shipownerPlaceholder": "Tafuta mmiliki wa meli…",
+        "transaction": "Muamala (hiari)",
+        "transactionNone": "Hakuna muamala uliounganishwa"
+      },
+      "step2": {
+        "amount": "Kiasi",
+        "currency": "Sarafu",
+        "proofs": "Nyaraka za uthibitisho",
+        "proofsCta": "Ongeza hati",
+        "hint": {
+          "cash": "Toa nambari ya risiti na jina la mhesabu.",
+          "cheque": "Toa nambari ya hundi, benki na tarehe.",
+          "letter_of_credit": "Toa nambari ya LC, benki iliyotoa na tarehe ya mwisho.",
+          "netting": "Toa jina la upande mwingine na marejeo ya makubaliano ya wavu.",
+          "third_party": "Toa jina la mlipaji, uhusiano na marejeo ya nje.",
+          "bank_guarantee": "Toa nambari ya dhamana."
+        },
+        "field": {
+          "receiptNumber": "Nambari ya risiti",
+          "cashier": "Jina la mhesabu",
+          "chequeNumber": "Nambari ya hundi",
+          "bankName": "Jina la benki",
+          "chequeDate": "Tarehe ya hundi",
+          "lcNumber": "Nambari ya LC",
+          "issuingBank": "Benki iliyotoa",
+          "expiryDate": "Tarehe ya mwisho",
+          "counterparty": "Upande mwingine",
+          "netSettlementRef": "Marejeo ya makubaliano ya wavu",
+          "payerName": "Jina la mlipaji",
+          "payerRelationship": "Uhusiano",
+          "externalReference": "Marejeo ya nje",
+          "guaranteeNumber": "Nambari ya dhamana"
+        }
+      },
+      "summary": {
+        "rail": "Njia",
+        "shipowner": "Mmiliki wa meli",
+        "transaction": "Muamala",
+        "noTransaction": "Hakuna",
+        "amount": "Kiasi",
+        "proofs": "Uthibitisho",
+        "details": "Maelezo",
+        "confirmImmediately": "Malipo haya yatathibitishwa mara moja.",
+        "fourEyesRequired": "Malipo haya yanahitaji idhini ya pili."
+      },
+      "errors": {
+        "railRequired": "Njia ya malipo inahitajika",
+        "shipownerRequired": "Mmiliki wa meli anahitajika",
+        "amountInvalid": "Kiasi batili",
+        "fileTooBig": "Faili kubwa mno (upeo MB 10)",
+        "fileMime": "Aina ya faili batili",
+        "invalidState": "Hali batili",
+        "required": {
+          "receipt_number": "Nambari ya risiti inahitajika",
+          "cashier": "Jina la mhesabu linahitajika",
+          "cheque_number": "Nambari ya hundi inahitajika",
+          "bank_name": "Jina la benki linahitajika",
+          "lc_number": "Nambari ya LC inahitajika",
+          "issuing_bank": "Benki iliyotoa inahitajika",
+          "counterparty": "Upande mwingine unahitajika",
+          "net_settlement_ref": "Marejeo ya makubaliano ya wavu yanahitajika",
+          "payer_name": "Jina la mlipaji linahitajika",
+          "guarantee_number": "Nambari ya dhamana inahitajika"
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "Ukaguzi wa Malipo",
+      "loading": "Inapakia…",
+      "status": "Hali",
+      "rail": "Njia",
+      "amount": "Kiasi",
+      "transaction": "Muamala",
+      "declaredBy": "Imetangazwa na",
+      "createdAt": "Tarehe",
+      "details": "Maelezo",
+      "proofs": "Uthibitisho",
+      "confirm": "Thibitisha malipo",
+      "confirming": "Inathibitisha…",
+      "reject": "Kataa",
+      "rejecting": "Inakataa…",
+      "confirmReject": "Thibitisha kukataa",
+      "cancelReject": "Ghairi",
+      "rejectReason": "Sababu ya kukataa",
+      "rejectReasonPlaceholder": "Kwa nini malipo haya yanakataliwa?",
+      "errors": {
+        "reasonRequired": "Sababu ya kukataa inahitajika"
+      },
+      "downloadReceipt": "Pakua risiti"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "Kasisi",
+    "subtitle": "Rekodi malipo ya taslimu moja kwa moja bandarini.",
+    "field": {
+      "shipowner": "Mmiliki wa meli",
+      "shipownerPlaceholder": "Tafuta mmiliki wa meli…",
+      "transaction": "Muamala",
+      "transactionNone": "Hakuna muamala uliounganishwa",
+      "amount": "Kiasi",
+      "currency": "Sarafu",
+      "receiptNumber": "Nambari ya risiti",
+      "regen": "Tengeneza upya",
+      "proof": "Hati ya uthibitisho",
+      "proofCta": "Ambatisha hati",
+      "proofRemove": "Ondoa"
+    },
+    "reset": "Weka upya",
+    "submit": "Rekodi malipo",
+    "submitting": "Inarekodiwa…",
+    "fourEyesNote": "Malipo haya yatahitaji idhini ya pili kabla ya kuthibitishwa.",
+    "success": {
+      "title": "Malipo yamerekodiwa",
+      "body": "Malipo ya taslimu yamerekodiwa kwa mafanikio.",
+      "dismiss": "Sawa"
+    },
+    "errors": {
+      "shipownerRequired": "Mmiliki wa meli anahitajika",
+      "amountInvalid": "Kiasi batili",
+      "receiptRequired": "Nambari ya risiti inahitajika",
+      "fileTooBig": "Faili kubwa mno (upeo MB 10)",
+      "fileMime": "Aina ya faili batili",
+      "submitFailed": "Kurekodi kumeshindwa — jaribu tena"
+    }
+  },
+  "AdminWallets": {
+    "title": "Pochi",
+    "subtitle": "Simamia salio za pochi za wamiliki wa meli na historia ya miamala.",
+    "refresh": "Onyesha upya",
+    "empty": "Hakuna pochi zilizopatikana",
+    "autoApply": {
+      "on": "Utumiaji otomatiki umewashwa",
+      "off": "Utumiaji otomatiki umezimwa"
+    },
+    "col": {
+      "owner": "Mmiliki",
+      "balance": "Salio",
+      "autoApply": "Utumiaji otomatiki",
+      "lastActivity": "Shughuli ya mwisho"
+    },
+    "drawer": {
+      "title": "Maelezo ya pochi",
+      "loading": "Inapakia…",
+      "owner": "Mmiliki",
+      "balance": "Salio",
+      "adjustNotice": "Marekebisho yanarekodiwa na yanahitaji uhalalisho.",
+      "adjustCta": "Rekebisha salio",
+      "ledgerTitle": "Historia ya miamala"
+    },
+    "adjust": {
+      "title": "Rekebisha Salio",
+      "subtitle": "Ongeza au toa kwenye pochi kwa uhalalisho.",
+      "warning": "Operesheni hii haiwezi kubatilishwa na itarekodiwa.",
+      "credit": "Mkopo",
+      "debit": "Deni",
+      "amount": "Kiasi",
+      "justification": "Uhalalisho",
+      "justificationPlaceholder": "Sababu ya marekebisho…",
+      "cancel": "Ghairi",
+      "submit": "Tumia marekebisho",
+      "submitting": "Inatumia…",
+      "errors": {
+        "amountInvalid": "Kiasi batili",
+        "justificationRequired": "Uhalalisho unahitajika",
+        "wouldGoNegative": "Deni hili lingelifanya salio liwe hasi",
+        "failed": "Marekebisho yameshindwa — jaribu tena"
+      }
+    }
   }
 }

@@ -50,7 +50,9 @@ export async function generatePaymentReceipt(
         .select('id, transaction_id, shipowner_id, amount_usd_minor, amount_minor, currency, rail, external_reference, confirmed_at, confirmed_by, receipt_ref, receipt_storage_path, receipt_generated_at, rail_details')
         .eq('id', paymentId)
         .single();
-    if (payErr || !payment) throw new Error(`Payment ${paymentId} not found`);
+    if (payErr || !payment) {
+        throw new Error(`Payment ${paymentId} not found: ${payErr ? JSON.stringify(payErr) : 'no row returned'}`);
+    }
 
     // Idempotency
     if (payment.receipt_generated_at) {
@@ -66,15 +68,43 @@ export async function generatePaymentReceipt(
     }
 
     // 2. Load related rows
-    const [{ data: tx }, { data: owner }, { data: confirmer }] = await Promise.all([
-        client.from('transactions').select('id, invoice_ref, vessel_name, vessel_imo, vessel_mmsi').eq('id', payment.transaction_id).single(),
-        client.from('shipowners').select('id, name, jurisdiction_country').eq('id', payment.shipowner_id).single(),
+    const [txRes, ownerRes, confirmerRes] = await Promise.all([
+        client.from('transactions').select('id, invoice_ref, vessel_name, vessel_imo, vessel_id').eq('id', payment.transaction_id).single(),
+        client.from('shipowners').select('id, name, country_code').eq('id', payment.shipowner_id).single(),
         payment.confirmed_by
             ? client.from('profiles').select('id, full_name').eq('id', payment.confirmed_by).single()
-            : Promise.resolve({ data: null }),
+            : Promise.resolve({ data: null, error: null }),
     ]);
-    if (!tx) throw new Error(`Transaction ${payment.transaction_id} not found for payment ${paymentId}`);
-    if (!owner) throw new Error(`Shipowner ${payment.shipowner_id} not found for payment ${paymentId}`);
+    if (txRes.error) {
+        console.error(`[receiptService] tx lookup error:`, txRes.error);
+    }
+    if (ownerRes.error) {
+        console.error(`[receiptService] owner lookup error:`, ownerRes.error);
+    }
+    if (confirmerRes.error) {
+        console.error(`[receiptService] confirmer lookup error:`, confirmerRes.error);
+    }
+    const tx = txRes.data;
+    const owner = ownerRes.data;
+    const confirmer = confirmerRes.data;
+
+    if (!tx) throw new Error(`Transaction ${payment.transaction_id} not found for payment ${paymentId} (error: ${JSON.stringify(txRes.error)})`);
+    if (!owner) throw new Error(`Shipowner ${payment.shipowner_id} not found for payment ${paymentId} (error: ${JSON.stringify(ownerRes.error)})`);
+
+    let vesselMmsi = '0';
+    if (tx.vessel_id) {
+        const { data: vessel, error: vesErr } = await client
+            .from('vessels')
+            .select('mmsi')
+            .eq('id', tx.vessel_id)
+            .maybeSingle();
+        if (vesErr) {
+            console.error(`[receiptService] vessel lookup error:`, vesErr);
+        }
+        if (vessel?.mmsi) {
+            vesselMmsi = vessel.mmsi;
+        }
+    }
 
     // 3. Build refs and timestamps
     const paidAt = payment.confirmed_at ? new Date(payment.confirmed_at as string) : new Date();
@@ -86,9 +116,9 @@ export async function generatePaymentReceipt(
         invoiceRef: tx.invoice_ref ?? `TX-${(tx.id as string).slice(0, 8)}`,
         vesselName: tx.vessel_name as string,
         vesselImo: tx.vessel_imo as string,
-        vesselMmsi: (tx.vessel_mmsi as string | null) ?? '0',
+        vesselMmsi,
         ownerName: owner.name as string,
-        jurisdiction: (owner.jurisdiction_country as string | null) ?? '—',
+        jurisdiction: (owner.country_code as string | null) ?? '—',
         amountUsd: (payment.amount_usd_minor as number) / 100,
         paidAt: paidAt.toLocaleString('en-US', { year: 'numeric', month: 'long', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' }),
         paymentMethod: RAIL_DISPLAY[payment.rail as string] ?? (payment.rail as string),
