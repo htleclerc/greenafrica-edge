@@ -136,6 +136,19 @@ function SaveBar({ onSave, saved }: { onSave: () => void; saved: boolean }) {
     );
 }
 
+function PreferencesSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+    return (
+        <select
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
+            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
+        >
+            {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+    );
+}
+
 // ── Tabs content ──────────────────────────────────────────────────────────────
 
 function ProfileTab() {
@@ -417,25 +430,12 @@ function PreferencesTab() {
 
     function save() { setSaved(true); setTimeout(() => setSaved(false), 3000); }
 
-    function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
-        return (
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none"
-                style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
-            >
-                {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-        );
-    }
-
     return (
         <div className="flex flex-col gap-8">
             <Section title={t('settings_lang_region')}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_interface_language')}>
-                        <Select value={lang} onChange={setLang} options={[
+                        <PreferencesSelect value={lang} onChange={setLang} options={[
                             { value: 'fr', label: 'Français' },
                             { value: 'en', label: 'English' },
                             { value: 'so', label: 'Soomaali' },
@@ -443,14 +443,14 @@ function PreferencesTab() {
                         ]} />
                     </Field>
                     <Field label={t('settings_date_format')}>
-                        <Select value={dateFormat} onChange={setDateFmt} options={[
+                        <PreferencesSelect value={dateFormat} onChange={setDateFmt} options={[
                             { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (Europe)' },
                             { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (US)' },
                             { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
                         ]} />
                     </Field>
                     <Field label={t('settings_display_currency')}>
-                        <Select value={currency} onChange={setCurrency} options={[
+                        <PreferencesSelect value={currency} onChange={setCurrency} options={[
                             { value: 'USD', label: 'USD — Dollar américain' },
                             { value: 'EUR', label: 'EUR — Euro' },
                             { value: 'SOS', label: 'SOS — Shilling somalien' },
