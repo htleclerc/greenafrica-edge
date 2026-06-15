@@ -23,9 +23,10 @@ const ROLE_I18N_KEY: Record<UserRole, string> = {
 };
 
 const SITE_I18N_KEY: Record<OperationalSite, string> = {
-    [OperationalSite.BERBERA_PORT]: 'settings_site_berbera',
-    [OperationalSite.NATIONAL_HQ]:  'settings_site_national_hq',
-    [OperationalSite.ZEILA_PORT]:   'settings_site_zeila',
+    [OperationalSite.BERBERA_PORT]:  'settings_site_berbera',
+    [OperationalSite.NATIONAL_HQ]:   'settings_site_national_hq',
+    [OperationalSite.ZEILA_PORT]:    'settings_site_zeila',
+    [OperationalSite.DJIBOUTI_PORT]: 'settings_site_djibouti',
 };
 
 const TAB_I18N_KEY: Record<string, string> = {
