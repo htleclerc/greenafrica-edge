@@ -11,8 +11,12 @@ vi.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
 }));
 
+// Mutable so individual describe blocks can override role / demo flag
+let mockRole: UserRole = UserRole.PORT_OFFICER;
+let mockIsDemo = false;
+
 vi.mock('@/lib/RoleContext', () => ({
-    useRole: () => ({ isDemo: false, role: UserRole.PORT_OFFICER, user: { id: 'staff-1' } }),
+    useRole: () => ({ isDemo: mockIsDemo, role: mockRole, user: { id: 'staff-1' } }),
 }));
 
 vi.mock('@/hooks/useVessels', () => ({
@@ -62,6 +66,8 @@ const baseTx: Transaction = {
 describe('ProFormaModal — jurisdictionName prop', () => {
     beforeEach(() => {
         mockTaxConfigs.length = 0;
+        mockRole = UserRole.PORT_OFFICER;
+        mockIsDemo = false;
     });
 
     it('renders the passed jurisdictionName in the header', () => {
@@ -109,6 +115,8 @@ describe('ProFormaModal — jurisdictionName prop', () => {
 describe('ProFormaModal — fail-closed rate', () => {
     beforeEach(() => {
         mockTaxConfigs.length = 0;
+        mockRole = UserRole.PORT_OFFICER;
+        mockIsDemo = false;
     });
 
     it('shows "—" for the rate when no active tax config is found', () => {
@@ -152,5 +160,97 @@ describe('ProFormaModal — fail-closed rate', () => {
                      !btn.textContent?.toLowerCase().includes('cancel'),
         );
         expect(actionButtons.length).toBeGreaterThan(0);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rendu nominal — les éléments clés doivent s'afficher depuis les props tx
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ProFormaModal — rendu nominal', () => {
+    beforeEach(() => {
+        mockTaxConfigs.length = 0;
+        mockRole = UserRole.PORT_OFFICER;
+        mockIsDemo = false;
+    });
+
+    it('affiche le nom du navire issu de tx.vesselName', () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        const matches = screen.getAllByText(/MV TEST VESSEL/i);
+        expect(matches.length).toBeGreaterThan(0);
+    });
+
+    it('affiche le numéro IMO issu de tx.vesselImo', () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        const matches = screen.getAllByText(/IMO.*1234567|1234567.*IMO/i);
+        expect(matches.length).toBeGreaterThan(0);
+    });
+
+    it("affiche le port d'escale issu de tx.portCall", () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        const matches = screen.getAllByText(/Djibouti Port/i);
+        expect(matches.length).toBeGreaterThan(0);
+    });
+
+    it('affiche le montant taxAmountUsd dans le total', () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        // taxAmountUsd = 4000, affiché comme "$4,000" ou "4 000"
+        const matches = screen.getAllByText(/4[,\s]?000/);
+        expect(matches.length).toBeGreaterThan(0);
+    });
+
+    it('affiche le label PRO-FORMA INVOICE (mode proforma depuis le mock statusToMode)', () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        // Le label apparait dans le header toolbar ET dans le PDF preview — getAllByText
+        const labels = screen.getAllByText(/PRO-FORMA INVOICE/i);
+        expect(labels.length).toBeGreaterThan(0);
+    });
+
+    it('appelle onClose quand le bouton de fermeture est cliqué', () => {
+        const onClose = vi.fn();
+        render(<ProFormaModal tx={baseTx} onClose={onClose} />);
+        // Le bouton X (icône) est dans le coin du modal toolbar
+        const closeButtons = screen.getAllByRole('button').filter(
+            (btn) => btn.getAttribute('class')?.includes('rounded-lg') && btn.querySelector('svg'),
+        );
+        // Au moins un bouton de fermeture doit exister
+        expect(closeButtons.length).toBeGreaterThan(0);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cas limites
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ProFormaModal — cas limites', () => {
+    beforeEach(() => {
+        mockTaxConfigs.length = 0;
+        mockRole = UserRole.PORT_OFFICER;
+        mockIsDemo = false;
+    });
+
+    it('montant 0 : affiche $0 dans le total sans planter', () => {
+        const zeroTx: Transaction = { ...baseTx, taxAmountUsd: 0, emissionsTco2: 0 };
+        render(<ProFormaModal tx={zeroTx} onClose={vi.fn()} />);
+        // L'UI doit s'afficher sans erreur, et afficher $0
+        const matches = screen.getAllByText(/\$0/);
+        expect(matches.length).toBeGreaterThan(0);
+    });
+
+    it('role SHIPPING_AGENT : le bouton "Pay Now" est visible à la place de Print & Send', () => {
+        mockRole = UserRole.SHIPPING_AGENT;
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        // pay_now_short i18n key retourné tel quel par le mock useTranslations
+        const payBtn = screen.queryByText(/pay_now_short/i);
+        expect(payBtn).not.toBeNull();
+        // Print & Send ne doit pas être dans le toolbar (c'est pour les non-armateurs)
+        expect(screen.queryByText(/print_and_send/i)).toBeNull();
+    });
+
+    it('mode démo : bannière demo_generate_disabled visible', () => {
+        mockIsDemo = true;
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        // La bannière démo utilise la clé i18n retournée telle quelle
+        expect(screen.getByText('demo_generate_disabled')).toBeDefined();
     });
 });

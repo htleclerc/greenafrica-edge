@@ -121,7 +121,17 @@
     "teaser_greengate_badge": "أول نشر — أرض الصومال",
     "teaser_greengate_title": "نظام Green Gate الرقمي",
     "teaser_greengate_desc": "منصة ثورية قائمة على البلوكتشين تمكّن الدول الأفريقية من اعتماد حل رقمي لجمع ضرائب الكربون والبيئة — تم نشرها لأول مرة بشراكة مع دولة أرض الصومال الفتية.",
-    "teaser_greengate_cta": "اكتشف الشراكة"
+    "teaser_greengate_cta": "اكتشف الشراكة",
+    "teaser_about_badge": "سوليد تكنولوجي",
+    "teaser_about_title": "من نحن",
+    "teaser_about_desc": "سوليد تكنولوجي شركة أفريقية 100% تؤكد للحكومات في القارة مصداقيتها كشريك استراتيجي في تعزيز قيمة الموارد البيئية والخضراء. حمضنا النووي الأفريقي الحصري يتجاوز الرمزية.",
+    "teaser_about_cta": "تعرف أكثر على مهمتنا",
+    "teaser_african_title": "حمض نووي أفريقي 100%",
+    "teaser_african_desc": "جيل جديد من القادة الأفارقة يتحمل المسؤولية التاريخية لتمكين أفريقيا من اتخاذ قراراتها بنفسها.",
+    "teaser_blockchain_title": "محمي بالبلوكشين",
+    "teaser_blockchain_desc": "إمكانية التتبع والاستقلالية والسيادة في الوصول إلى البيانات — مضمونة ضد الاحتيال والتزوير.",
+    "teaser_expertise_title": "الخبرة المحلية",
+    "teaser_expertise_desc": "فهم أعمق للواقع الاجتماعي والاقتصادي المحلي لحلول أكثر فعالية وملاءمة."
   },
   "Calculator": {
     "title": "حاسبة الانبعاثات ودفع التعويض",
@@ -174,7 +184,10 @@
     "terms_of_service": "شروط الخدمة",
     "security_audit": "تدقيق الأمان",
     "copyright": "© 2024 بوابة AIS. جميع الحقوق محفوظة. جمهورية صوماليلاند.",
-    "order_status": "حالة الطلب: بيئة تجريبية"
+    "order_status": "حالة الطلب: بيئة تجريبية",
+    "company": "الشركة",
+    "about": "عن سوليد تكنولوجي",
+    "partnership": "شراكة Green Gate"
   },
   "CarbonTax": {
     "hero_badge": "مركز قيادة ضريبة الكربون البحرية",
@@ -537,6 +550,7 @@
     "bottom_aes": "AES-256",
     "site_berbera": "محطة ميناء بربرة",
     "site_national_hq": "المقر الوطني (هرجيسا)",
+    "site_djibouti": "ميناء جيبوتي",
     "forgot_title": "إعادة تعيين كلمة المرور",
     "forgot_subtitle": "أدخل عنوان البريد الإلكتروني المرتبط بحسابك وسنرسل لك رابط إعادة تعيين آمن.",
     "forgot_info": "سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني الحكومي أو المهني المسجل.",
@@ -572,7 +586,8 @@
     "pending_step4_title": "تفعيل الحساب",
     "pending_step4_desc": "بمجرد الموافقة، ستتلقى بريداً إلكترونياً يتضمن تعليمات الوصول.",
     "pending_info_title": "لماذا يستغرق هذا وقتاً؟",
-    "pending_info_desc": "يتم التحقق من جميع الحسابات يدوياً بواسطة موظفين حكوميين مصرح لهم لضمان أمان المنصة والامتثال للوائح حماية البيانات السيادية."
+    "pending_info_desc": "يتم التحقق من جميع الحسابات يدوياً بواسطة موظفين حكوميين مصرح لهم لضمان أمان المنصة والامتثال للوائح حماية البيانات السيادية.",
+    "owner_portal_link": "مالك سفينة؟ سجّل الدخول إلى بوابة المالك"
   },
   "Dashboard": {
     "breadcrumb_command_center": "مركز القيادة",
@@ -680,7 +695,12 @@
     "footer_encrypted": "مشفّر",
     "nav_jurisdictions": "الولايات القضائية",
     "nav_vision": "لوحة الرؤية",
-    "nav_staff": "إدارة الموظفين"
+    "nav_staff": "إدارة الموظفين",
+    "nav_origin_port_proposals": "مقترحات ميناء المنشأ",
+    "nav_cash_desk": "الصندوق",
+    "nav_registrations": "التسجيلات",
+    "nav_wallets": "المحافظ",
+    "nav_refunds": "المبالغ المستردة"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -868,6 +888,8 @@
     "settings_site_berbera": "ميناء بربرة",
     "settings_site_national_hq": "المقر الوطني — هرجيسا",
     "settings_site_zeila": "ميناء زيلع",
+    "settings_site_djibouti": "ميناء جيبوتي",
+    "settings_coming_soon": "قريباً",
     "simulator_title": "محاكي ضريبة الكربون",
     "simulator_subtitle": "قدّر عبءك الضريبي قبل الدخول إلى المنطقة الاقتصادية الخالصة لصوماليلاند — بناءً على المعدلات الرسمية السارية.",
     "simulator_official_rates": "المعدلات الرسمية اعتباراً من 01/01/2025 — معتمدة من IMO DCS",
@@ -1020,7 +1042,8 @@
     "status_overdue": "متأخر",
     "status_disputed": "متنازع عليه",
     "detail_view_payments": "عرض المدفوعات",
-    "detail_simulate": "محاكاة"
+    "detail_simulate": "محاكاة",
+    "action_pay_proforma_for": "دفع الفاتورة المبدئية: {name}"
   },
   "InvoicesPage": {
     "status_paid": "مدفوع",
@@ -1108,7 +1131,12 @@
     "contest_invoice": "نزاع",
     "export_csv": "تصدير CSV",
     "filter_by_vessel": "تمت التصفية حسب IMO السفينة {imo}",
-    "filter_clear": "مسح"
+    "filter_clear": "مسح",
+    "proof_section_title": "إثبات الدفع (MT103)",
+    "proof_submitted_label": "إثباتات الدفع ({count})",
+    "view_proforma_pdf": "عرض الفاتورة المبدئية (PDF)",
+    "pay_now_short": "ادفع ${amount}",
+    "demo_generate_disabled": "وضع العرض — إنشاء الفاتورة المبدئية معطّل. اضبط NEXT_PUBLIC_DEMO_ALLOWED=false في frontend/.env.local وسجّل الدخول بحساب حقيقي للإنشاء."
   },
   "Disputes": {
     "kpi_total": "إجمالي النزاعات",
@@ -1162,7 +1190,37 @@
     "evidence_url_placeholder": "https://docs.example.com/evidence.pdf",
     "evidence_optional": "اختياري — رابط للمستندات الداعمة",
     "cancel": "إلغاء",
-    "submit_dispute": "تقديم"
+    "submit_dispute": "تقديم",
+    "title": "النزاعات والمعالجة",
+    "subtitle": "تتبع وأدر نزاعات حساب الانبعاثات — راجع الأدلة، وافق أو ارفض الفواتير المتنازع عليها.",
+    "kpi_review": "قيد المراجعة",
+    "tab_all": "الكل",
+    "tab_open": "مفتوح",
+    "tab_under_review": "قيد المراجعة",
+    "tab_accepted": "مقبول",
+    "tab_rejected": "مرفوض",
+    "no_disputes": "لا توجد نزاعات",
+    "detail_description": "الوصف",
+    "detail_evidence": "الأدلة",
+    "detail_timeline": "الجدول الزمني",
+    "detail_original_amount": "المبلغ الأصلي",
+    "detail_revised_amount": "المبلغ المراجَع",
+    "detail_submitted_by": "مُقدَّم بواسطة",
+    "detail_submitted_at": "تاريخ التقديم",
+    "detail_reviewer": "المراجع",
+    "detail_review_note": "ملاحظة المراجعة",
+    "action_accept": "قبول النزاع",
+    "action_reject": "رفض النزاع",
+    "action_escalate": "التصعيد",
+    "form_title": "تقديم نزاع",
+    "form_select_transaction": "اختر المعاملة",
+    "form_reason": "السبب",
+    "form_description": "صف المشكلة بالتفصيل",
+    "form_evidence": "رابط الأدلة (اختياري)",
+    "form_submit": "تقديم النزاع",
+    "form_cancel": "إلغاء",
+    "contest_button": "اعتراض",
+    "disputed_filter": "متنازع عليه"
   },
   "MyFleet": {
     "status_compliant": "COMPLIANT",
@@ -1257,7 +1315,31 @@
     "drawer_emissions_tax": "الانبعاثات والضرائب",
     "drawer_estimated_emissions": "{value} طن CO₂ مقدرة",
     "generate_proforma": "إنشاء فاتورة أولية →",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "action_pay_proforma": "دفع الفاتورة المبدئية ←",
+    "action_view_proforma": "عرض الفاتورة المبدئية ←",
+    "drawer_documents": "الفواتير المبدئية والفواتير",
+    "doc_reference": "المرجع",
+    "doc_issued": "تاريخ الإصدار",
+    "doc_status": "الحالة",
+    "doc_amount": "المبلغ",
+    "doc_pay": "دفع",
+    "doc_view_invoice": "عرض الفاتورة",
+    "doc_view": "عرض",
+    "pay_proforma": "دفع الفاتورة المبدئية ←",
+    "add_vessel_title": "تسجيل سفينة",
+    "add_vessel_subtitle": "أضف سفينة إلى أسطولك يدويًا",
+    "add_vessel_imo": "رقم IMO",
+    "add_vessel_mmsi": "MMSI",
+    "add_vessel_name": "اسم السفينة",
+    "add_vessel_call_sign": "إشارة النداء",
+    "add_vessel_flag": "العلم (ISO-2)",
+    "add_vessel_type": "النوع",
+    "add_vessel_dwt": "حمولة الوزن الميت (DWT)",
+    "add_vessel_cancel": "إلغاء",
+    "add_vessel_submit": "تسجيل السفينة",
+    "add_vessel_submitting": "جارٍ التسجيل…",
+    "add_vessel_error_dwt": "يجب أن يكون DWT رقمًا موجبًا"
   },
   "GreenLedgerPage": {
     "page_title": "السجل الأخضر",
@@ -1405,7 +1487,10 @@
     "review": "مراجعة",
     "request_exemption": "طلب إعفاء",
     "revenue_trend": "اتجاه الإيرادات",
-    "full_report": "التقرير الكامل →"
+    "full_report": "التقرير الكامل →",
+    "tax_rate_moved_title": "تم نقل التعريفات الجمركية",
+    "tax_rate_moved_desc": "تم نقل أسعار ضريبة الكربون الآن وإدارتها لكل ولاية قضائية في سجل الولايات القضائية. تقرأ الفواتير صفوف التعريفات ذات الإصدارات مباشرةً — تم إيقاف سطح الأسعار العالمي القديم.",
+    "tax_rate_moved_link": "اذهب إلى الولايات القضائية ←"
   },
   "ValidationsPage": {
     "title": "تحقق الوكلاء",
@@ -2475,7 +2560,9 @@
       "validFrom": "Valid from",
       "validUntil": "Valid until",
       "active": "Active",
-      "actions": "Actions"
+      "actions": "Actions",
+      "email": "البريد الإلكتروني",
+      "portalState": "حالة البوابة"
     },
     "form": {
       "shipowner": "Shipowner",
@@ -2490,7 +2577,32 @@
     "deactivating": "Deactivating…",
     "deactivated": "Deactivated",
     "active": "Active",
-    "empty": "No mappings yet. Add one to enable cascade A."
+    "empty": "No mappings yet. Add one to enable cascade A.",
+    "mappingsSectionTitle": "حسابات المشغلين",
+    "shipownersSectionTitle": "ملاك السفن",
+    "shipownersSectionSubtitle": "أدر وصول البوابة وحالات KYC لكل مالك سفينة مسجّل.",
+    "emptyShipowners": "لا يوجد ملاك سفن مسجلون",
+    "state": {
+      "ghost": "لم تتم الدعوة",
+      "invited": "تمت الدعوة",
+      "active": "نشط"
+    },
+    "invite": "دعوة",
+    "reinvite": "إعادة الدعوة",
+    "inviteDialogTitle": "دعوة مالك السفينة إلى البوابة",
+    "inviteDialogSubtitle": "سيُرسَل بريد إلكتروني بالدعوة إلى عنوان البريد الإلكتروني لهذا المالك.",
+    "sendInvite": "إرسال الدعوة",
+    "sending": "جارٍ الإرسال…",
+    "cancel": "إلغاء",
+    "aoc": {
+      "col": "رقم AOC",
+      "set": "تعيين AOC",
+      "dialogTitle": "تعيين رقم AOC",
+      "dialogSubtitle": "عيّن رقم شهادة مشغل الطيران لهذا المشغل.",
+      "placeholder": "مثال: SL-AOC-001",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…"
+    }
   },
   "AdminOriginPort": {
     "title": "Origin port proposals",
@@ -2548,7 +2660,12 @@
       "feature_vessel_detention_enabled": "Vessel detention (post-MVP)",
       "feature_shipowner_portal_enabled": "Shipowner portal",
       "queue_worker_url": "Queue worker URL",
-      "queue_worker_secret": "Queue worker secret"
+      "queue_worker_secret": "Queue worker secret",
+      "feature_shipowner_portal_v1_enabled": "بوابة مالك السفينة v1",
+      "feature_shipowner_self_service_enabled": "التسجيل الذاتي",
+      "feature_online_payment_stripe_enabled": "الدفع الإلكتروني (Stripe)",
+      "feature_wallet_topup_enabled": "شحن المحفظة",
+      "feature_notification_sms_enabled": "إشعارات SMS"
     },
     "save": "Save",
     "saving": "Saving…",
@@ -2585,8 +2702,16 @@
         "invited": "Your invitation is still pending — please open the magic link from your invitation email.",
         "ghost": "Your account has not been invited to the portal yet.",
         "callbackFailed": "The sign-in link has expired or was already used. Request a new one below.",
-        "generic": "Sign-in failed. Try again."
-      }
+        "generic": "Sign-in failed. Try again.",
+        "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+      },
+      "passwordLabel": "كلمة المرور",
+      "passwordSubmit": "تسجيل الدخول",
+      "signingIn": "جارٍ تسجيل الدخول…",
+      "useMagicLink": "استخدام الرابط السحري",
+      "setPassword": "تعيين كلمة مرور",
+      "resetSent": "تم إرسال رابط إعادة التعيين — تحقق من بريدك الإلكتروني",
+      "noPasswordHint": "لم تُعيَّن كلمة مرور بعد؟ استخدم الرابط السحري أو عيّن كلمة مرور."
     },
     "dashboard": {
       "subtitle": "Snapshot of your fleet and obligations.",
@@ -2660,6 +2785,10 @@
           "VESSEL_DATA": "Vessel data",
           "OTHER": "Other"
         }
+      },
+      "stripeReturn": {
+        "success": "تم الدفع بنجاح — سيتم تحديث فاتورتك قريبًا.",
+        "cancel": "تم إلغاء الدفع — يمكنك المحاولة مرة أخرى."
       }
     },
     "alerts": {
@@ -2669,6 +2798,234 @@
       "openSection": "Open ({count})",
       "closedSection": "Closed ({count})",
       "emptyOpen": "No active alerts."
+    },
+    "disputes": {
+      "empty": "لا توجد نزاعات بعد"
+    },
+    "payDialog": {
+      "title": "دفع الفاتورة",
+      "subtitle": "اختر طريقة دفع واملأ التفاصيل.",
+      "back": "رجوع",
+      "next": "التالي",
+      "submit": "إرسال",
+      "submitting": "جارٍ الإرسال…",
+      "loadingRails": "جارٍ تحميل طرق الدفع…",
+      "chooseRail": "اختر طريقة دفع",
+      "railNotAvailable": "غير متاح",
+      "noRailEligible": "لا توجد طريقة دفع متاحة لهذه الفاتورة.",
+      "rail": {
+        "wire": {
+          "label": "تحويل مصرفي",
+          "hint": "تحويل من بنك إلى بنك"
+        },
+        "momo": {
+          "label": "نقود الجوال",
+          "hint": "الدفع عبر المحفظة الإلكترونية"
+        },
+        "third": {
+          "label": "طرف ثالث",
+          "hint": "الدفع عبر طرف ثالث"
+        },
+        "wallet": {
+          "label": "محفظة المالك",
+          "hint": "استخدم رصيد محفظتك المتاح"
+        },
+        "stripe": {
+          "label": "بطاقة ائتمان / خصم",
+          "hint": "دفع إلكتروني آمن"
+        }
+      },
+      "paramsHint": {
+        "wire_transfer": "أدخل مرجع التحويل المصرفي.",
+        "mobile_money": "أدخل تفاصيل معاملة نقود الجوال.",
+        "third_party": "أدخل تفاصيل الطرف الثالث الدافع.",
+        "wallet": "سيُستخدم رصيد محفظتك.",
+        "stripe": "ستتم إعادة توجيهك إلى صفحة دفع آمنة."
+      },
+      "field": {
+        "bankReference": "المرجع المصرفي",
+        "bankName": "اسم البنك",
+        "notes": "ملاحظات (اختياري)",
+        "phoneNumber": "رقم الهاتف",
+        "operatorReference": "مرجع المشغل",
+        "viaProvider": "عبر المزود",
+        "payerName": "اسم الدافع",
+        "payerRelationship": "صلة الدافع بالمالك",
+        "externalReference": "المرجع الخارجي",
+        "walletConfirm": "أؤكد الخصم من محفظتي",
+        "topupAmount": "مبلغ الشحن"
+      },
+      "summary": {
+        "invoice": "الفاتورة",
+        "amount": "المبلغ",
+        "rail": "الطريقة",
+        "provider": "المزود",
+        "details": "التفاصيل",
+        "disclaimer": "بالإرسال، تؤكد أن تفاصيل الدفع صحيحة."
+      },
+      "errors": {
+        "bankReferenceRequired": "المرجع المصرفي مطلوب",
+        "phoneRequired": "رقم الهاتف مطلوب",
+        "payerNameRequired": "اسم الدافع مطلوب",
+        "noRail": "يرجى اختيار طريقة دفع",
+        "amountRequired": "المبلغ مطلوب",
+        "noTransactionForWallet": "لا توجد معاملة متاحة للدفع بالمحفظة"
+      },
+      "reason": {
+        "wallet_empty": "المحفظة فارغة",
+        "wallet_insufficient": "رصيد المحفظة غير كافٍ",
+        "no_active_provider": "لا يوجد مزود دفع نشط"
+      },
+      "mode": {
+        "topup": {
+          "title": "شحن المحفظة",
+          "subtitle": "أضف أموالًا إلى محفظة المالك.",
+          "amountLabel": "المبلغ المراد إضافته",
+          "success": "تم تقديم طلب الشحن — ستُحدَّث محفظتك بعد التأكيد.",
+          "summaryLabel": "شحن",
+          "summaryValue": "محفظة المالك",
+          "disabledTitle": "الشحن غير متاح",
+          "disabledBody": "شحن المحفظة غير مفعّل لحسابك."
+        }
+      },
+      "proofStep": {
+        "created": "تم إنشاء طلب الدفع",
+        "intro": "ارفع إثبات الدفع (اختياري لكن يُنصح به).",
+        "done": "تم — دفعتك قيد المراجعة."
+      }
+    },
+    "proofUpload": {
+      "addButton": "إضافة إثبات",
+      "hint": "PDF, JPG, PNG — حد أقصى 5 ميغابايت",
+      "dialogTitle": "رفع إثبات الدفع",
+      "intro": "أرفق إيصال التحويل المصرفي أو رسالة SWIFT MT103 أو تأكيد نقود الجوال.",
+      "removeAria": "إزالة الملف",
+      "errors": {
+        "tooLarge": "الملف كبير جدًا (حد أقصى 5 ميغابايت)",
+        "uploadFailed": "فشل الرفع — يرجى المحاولة مرة أخرى",
+        "deleteFailed": "فشل الحذف — يرجى المحاولة مرة أخرى"
+      }
+    },
+    "wallet": {
+      "balanceCard": {
+        "title": "رصيد المحفظة",
+        "autoApply": "التطبيق التلقائي على الفواتير",
+        "autoApplyOn": "مفعّل",
+        "autoApplyOff": "معطّل",
+        "topupCta": "شحن"
+      },
+      "predictionCard": {
+        "title": "توقعات 30 يومًا",
+        "estimate30d": "الإنفاق المقدّر",
+        "confidence": "الثقة",
+        "confidenceLevel": {
+          "low": "منخفض",
+          "medium": "متوسط",
+          "high": "مرتفع"
+        },
+        "notEnoughData": "بيانات غير كافية للتوقع",
+        "insufficientWarning": "قد لا يكفي رصيدك لتغطية الفواتير القادمة"
+      },
+      "ledger": {
+        "title": "سجل المعاملات",
+        "empty": "لا توجد معاملات بعد",
+        "col": {
+          "date": "التاريخ",
+          "amount": "المبلغ",
+          "kind": "النوع",
+          "note": "ملاحظة"
+        },
+        "kind": {
+          "TOPUP": "شحن",
+          "OVERPAYMENT_CREDIT": "رصيد الدفع الزائد",
+          "REFUND_CREDIT": "رصيد الاسترداد",
+          "PROFORMA_APPLY": "دفع فاتورة",
+          "ADMIN_ADJUSTMENT": "تعديل إداري",
+          "FX_DIFFERENCE": "فرق العملة"
+        }
+      }
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "bellAria": "الإشعارات",
+      "markAllRead": "وضع علامة مقروء على الكل",
+      "viewAll": "عرض الكل",
+      "empty": "لا توجد إشعارات",
+      "pageTitle": "جميع الإشعارات",
+      "unreadLabel": "غير مقروءة",
+      "filterAria": "تصفية الإشعارات",
+      "filterAll": "الكل",
+      "filterUnread": "غير مقروءة",
+      "loading": "جارٍ التحميل…",
+      "emptyUnread": "لا توجد إشعارات غير مقروءة",
+      "loadMore": "تحميل المزيد",
+      "loadingMore": "جارٍ التحميل…",
+      "kind": {
+        "KYC_APPROVED": {
+          "title": "تم اعتماد KYC",
+          "body": "تم اعتماد التحقق من هويتك."
+        },
+        "KYC_REJECTED": {
+          "title": "تم رفض KYC",
+          "body": "تم رفض التحقق من هويتك. يرجى التواصل مع الدعم."
+        },
+        "KYC_C_REQUIRED": {
+          "title": "معلومات إضافية مطلوبة",
+          "body": "وثائق إضافية مطلوبة لإتمام التحقق."
+        },
+        "ALERT_DETECTED": {
+          "title": "تم اكتشاف تنبيه",
+          "body": "تم اكتشاف تنبيه في حسابك."
+        },
+        "PROFORMA_ISSUED": {
+          "title": "تم إصدار فاتورة مبدئية",
+          "body": "تم إصدار فاتورة مبدئية جديدة لأسطولك."
+        },
+        "PROFORMA_REMINDER": {
+          "title": "تذكير بالدفع",
+          "body": "لديك فاتورة مبدئية معلّقة موعد استحقاقها قريب."
+        },
+        "PAYMENT_RECEIVED": {
+          "title": "تم استلام الدفعة",
+          "body": "تم استلام دفعتك وهي قيد المعالجة."
+        },
+        "PAYMENT_REJECTED": {
+          "title": "تم رفض الدفعة",
+          "body": "تم رفض دفعتك. يرجى المراجعة وإعادة التقديم."
+        },
+        "FINAL_ISSUED": {
+          "title": "تم إصدار الفاتورة النهائية",
+          "body": "تم إصدار فاتورتك النهائية."
+        },
+        "COMPLEMENT_ISSUED": {
+          "title": "تم إصدار فاتورة تكميلية",
+          "body": "تم إصدار فاتورة تكميلية."
+        },
+        "REFUND_ISSUED": {
+          "title": "تم إصدار استرداد",
+          "body": "تم إصدار استرداد لحسابك."
+        },
+        "WALLET_TOPPED_UP": {
+          "title": "تم شحن المحفظة",
+          "body": "تم شحن محفظتك بنجاح."
+        },
+        "WALLET_APPLIED": {
+          "title": "تم تطبيق المحفظة",
+          "body": "تم تطبيق أموال المحفظة على فاتورة."
+        },
+        "WALLET_LOW_BALANCE": {
+          "title": "رصيد منخفض في المحفظة",
+          "body": "رصيد محفظتك منخفض."
+        },
+        "DISPUTE_UPDATED": {
+          "title": "تم تحديث النزاع",
+          "body": "تم تحديث نزاعك."
+        },
+        "OWNER_ESCALATION": {
+          "title": "إشعار تصعيد",
+          "body": "تمت الإشارة إلى حسابك للمراجعة."
+        }
+      }
     }
   },
   "AdminEquasis": {
@@ -2892,6 +3249,390 @@
       "ar": "العربية",
       "pt": "Português",
       "sw": "Kiswahili"
+    }
+  },
+  "AdminRefunds": {
+    "pageTitle": "المبالغ المستردة",
+    "refresh": "تحديث",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد مبالغ مستردة في هذه الفئة",
+    "tabs": {
+      "requested": "للتحكيم",
+      "approved": "معتمد",
+      "executed": "منفذ",
+      "rejected": "مرفوض"
+    },
+    "table": {
+      "invoice": "الفاتورة",
+      "owner": "مالك السفينة",
+      "amount": "المبلغ",
+      "requestedAt": "تاريخ الطلب",
+      "rail": "الطريقة",
+      "status": "الحالة"
+    },
+    "drawer": {
+      "title": "تفاصيل الاسترداد",
+      "status": "الحالة",
+      "invoice": "الفاتورة",
+      "vessel": "السفينة",
+      "owner": "مالك السفينة",
+      "amount": "المبلغ",
+      "requestedAt": "تاريخ الطلب",
+      "rail": "الطريقة",
+      "railPicker": "طريقة الاسترداد",
+      "railLabels": {
+        "WALLET": "محفظة المالك (فوري)",
+        "WIRE_TRANSFER": "تحويل مصرفي",
+        "STRIPE": "استرداد Stripe",
+        "CASH": "نقد",
+        "CHEQUE": "شيك",
+        "MOBILE_MONEY": "نقود الجوال",
+        "THIRD_PARTY": "طرف ثالث",
+        "BANK_GUARANTEE": "ضمان مصرفي",
+        "NETTING": "مقاصة",
+        "LETTER_OF_CREDIT": "خطاب اعتماد"
+      },
+      "ibanReveal": "كشف IBAN",
+      "revealing": "جارٍ الكشف…",
+      "ibanRevealed": "IBAN: {iban}",
+      "proofUpload": "مسار إيصال البنك (اختياري)",
+      "rejectReason": "سبب الرفض (5 أحرف على الأقل)",
+      "rejectReasonPlaceholder": "لماذا يتم رفض هذا الاسترداد؟",
+      "executedAt": "تاريخ التنفيذ",
+      "details": "التفاصيل",
+      "rejectedReason": "سبب الرفض",
+      "previouslyApprovedBy": "اعتمد من قِبل",
+      "executing": "جارٍ التنفيذ…",
+      "approving": "جارٍ الاعتماد…",
+      "rejecting": "جارٍ الرفض…",
+      "actions": {
+        "approve": "اعتماد",
+        "execute": "تنفيذ الاسترداد",
+        "executeWallet": "الاسترداد إلى المحفظة",
+        "reject": "رفض",
+        "confirmReject": "تأكيد الرفض",
+        "cancelReject": "إلغاء"
+      }
+    },
+    "error": {
+      "reasonTooShort": "يجب أن يكون السبب 5 أحرف على الأقل"
+    }
+  },
+  "About": {
+    "hero_badge": "سوليد تكنولوجي — 100% أفريقية",
+    "hero_title_line1": "لاعب أفريقي قوي",
+    "hero_title_line2": "لاستراتيجية الكربون في أفريقيا",
+    "hero_subtitle": "تؤكد شركة سوليد تكنولوجي، من خلال منصتها الرقمية Green Gate، مصداقيتها للحكومات في القارة بوصفها شريكًا استراتيجيًا في تعزيز قيمة الموارد البيئية والخضراء.",
+    "stat_african_dna_value": "100%",
+    "stat_african_dna_label": "الحمض النووي الأفريقي",
+    "stat_countries_value": "54",
+    "stat_countries_label": "الدول المستهدفة",
+    "stat_blockchain_value": "بلوكشين",
+    "stat_blockchain_label": "بنية تحتية آمنة",
+    "stat_sovereignty_value": "سيادي",
+    "stat_sovereignty_label": "استقلالية البيانات",
+    "mission_badge": "مهمتنا",
+    "mission_title": "خبرة محلية بمعايير دولية",
+    "mission_desc": "في سوق الكربون المتحول بسرعة في القارة الأفريقية، يعد تهيكل خبرة محلية قادرة على تلبية المعايير الدولية أمرًا جوهريًا. تجسّد Green Gate هذا الجيل الجديد من القيادة الأفريقية.",
+    "pillar_african_title": "الحمض النووي الأفريقي",
+    "pillar_african_desc": "هويتنا الأفريقية الحصرية تتجاوز الرمزية. تعكس الوعي المتنامي لجيل جديد من القادة الأفارقة الذين يتحملون المسؤولية التاريخية لتمكين أفريقيا من اتخاذ قراراتها بنفسها، واقتراح نموذج لبقية العالم.",
+    "pillar_sovereignty_title": "سيادة البيانات",
+    "pillar_sovereignty_desc": "حل رقمي يضمن إمكانية التتبع والاستقلالية والسيادة في الوصول إلى البيانات وإدارتها. تعزز هذه الأداة الاستراتيجية المصداقية الدولية لسياسات إدارة الأصول البيئية السيادية.",
+    "pillar_expertise_title": "الخبرة المحلية",
+    "pillar_expertise_desc": "يمنح هذا التفرد خبرة أعمق فهمًا للواقع الاجتماعي والاقتصادي المحلي، مما يضمن حلولًا أكثر فعالية وملاءمة للسياق لحكومات وعملاء أفريقيا.",
+    "founders_badge": "القيادة",
+    "founders_title": "المؤسسون",
+    "founders_desc": "وُلد هذا الحل لتحسين الأصول البيئية من تآزر خبرة ومعرفة وكفاءة ثلاثة أشخاص ذوي رؤية.",
+    "founder_kpatchavi_name": "Noel Hiverto KPATCHAVI",
+    "founder_kpatchavi_role": "الرئيس التنفيذي — سوليد تكنولوجي",
+    "founder_kpatchavi_bio": "الرئيس التنفيذي لسوليد تكنولوجي، نشط منذ سنوات في مشاريع PPP الكبرى (الشراكة بين القطاعين العام والخاص) وفي نقل التكنولوجيا والخبرة إلى القارة الأفريقية.",
+    "founder_radji_name": "Safiou RADJI",
+    "founder_radji_role": "محاسب قانوني — رائد التمويل المستدام",
+    "founder_radji_bio": "محاسب قانوني، رائد التمويل المستدام في أفريقيا ومتخصص في الابتكار الرقمي. منخرط بعمق في مشاريع الشراكة بين القطاعين العام والخاص ونقل الخبرات في القارة.",
+    "founder_dia_name": "Leclerc HOUNMENOU",
+    "founder_dia_role": "شريك تقني — تنفيذ المنصة",
+    "founder_dia_bio": "شريك تقني لتنفيذ المنصة، يساهم بقيادة هندسة البرمجيات وخبرة عميقة في بناء وتشغيل البنية التحتية الرقمية التي تشغّل Green Gate.",
+    "blockchain_badge": "التكنولوجيا",
+    "blockchain_title": "موثوقية مدعومة بالبلوكشين",
+    "blockchain_desc": "تقدم Green Gate حلًا رقميًا مبنيًا على عمليات البلوكشين، مما يضمن أعلى مستوى من الموثوقية لإدارة الأصول البيئية السيادية.",
+    "blockchain_traceability_title": "تتبع كامل",
+    "blockchain_traceability_desc": "كل معاملة وكل تقييم للانبعاثات وكل دفعة مسجلة بشكل دائم في دفتر أستاذ غير قابل للتعديل، مما يوفر مسار تدقيق كاملًا من دخول السفينة حتى جمع الضرائب.",
+    "blockchain_transparency_title": "شفافية جذرية",
+    "blockchain_transparency_desc": "يمكن لجميع أصحاب المصلحة — الحكومات والمشغلين والمدققين — التحقق باستقلالية من سلامة البيانات دون الاعتماد على سلطة مركزية، مما يبني الثقة في النظام البيئي.",
+    "blockchain_antifraud_title": "حماية من الاحتيال",
+    "blockchain_antifraud_desc": "تحمي الضمانات التشفيرية من تزوير البيانات، مما يضمن عدم إمكانية التلاعب بتقييمات الضرائب البيئية وأرصدة الكربون أو تزويرها.",
+    "blockchain_sovereignty_title": "الاستقلالية السيادية",
+    "blockchain_sovereignty_desc": "تحتفظ الدول الأفريقية بالسيطرة الكاملة على بياناتها البيئية. لا اعتماد خارجي، لا إقامة بيانات أجنبية — سيادة رقمية كاملة للقارة.",
+    "vision_badge": "رؤيتنا",
+    "vision_title": "مرصد أفريقي للموارد المناخية",
+    "vision_desc": "في رؤية سوليد تكنولوجي، يمكن أن تصبح منصة Green Gate أحد أوائل الأدوات المنسقة لجمع الضرائب الكربونية والبيئية في القارة الأفريقية.",
+    "vision_observatory": "اقتراح مرصد أفريقي حقيقي لقضايا تعبئة الموارد لمواجهة تحديات تغير المناخ — تمكين كل دولة أفريقية من تحسين أصولها البيئية من خلال أدوات رقمية استراتيجية مبتكرة.",
+    "vision_cta": "اكتشف نظام Green Gate الرقمي"
+  },
+  "OwnerOnboarding": {
+    "step1": {
+      "title": "معلومات الشركة"
+    },
+    "step2": {
+      "title": "التفاصيل المصرفية",
+      "disclaimer": "يتم تخزين معلوماتك المصرفية بأمان وتُستخدم فقط لمعالجة المبالغ المستردة."
+    },
+    "step3": {
+      "title": "قبول الشروط"
+    },
+    "legal_name": "الاسم القانوني للشركة",
+    "address_line1": "سطر العنوان الأول",
+    "address_line2": "سطر العنوان الثاني (اختياري)",
+    "city": "المدينة",
+    "postal_code": "الرمز البريدي",
+    "country_code": "الدولة",
+    "vat_optional": "رقم ضريبة القيمة المضافة (اختياري)",
+    "bank_name": "اسم البنك",
+    "cgv_label_prefix": "أوافق على",
+    "cgv_link": "الشروط والأحكام",
+    "next": "التالي",
+    "back": "رجوع",
+    "submit": "إرسال",
+    "submitting": "جارٍ الإرسال…",
+    "banner": {
+      "text": "أكمل ملف الشركة لإلغاء تأمين جميع الميزات.",
+      "cta": "إكمال الملف"
+    }
+  },
+  "AdminRegistrations": {
+    "title": "تسجيلات ملاك السفن",
+    "filters": {
+      "PENDING_REVIEW": "قيد المراجعة",
+      "REJECTED": "مرفوض",
+      "ACTIVE": "نشط"
+    },
+    "cols": {
+      "received": "تاريخ الاستلام",
+      "name": "الاسم",
+      "imo": "IMO",
+      "country": "الدولة",
+      "email": "البريد الإلكتروني",
+      "proof": "الإثبات"
+    },
+    "actions": {
+      "review": "مراجعة",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "request_completion": "طلب استكمال"
+    },
+    "placeholders": {
+      "reject": "سبب الرفض…",
+      "request": "ما المعلومات المفقودة؟"
+    },
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "empty": "لا توجد تسجيلات",
+    "back": "رجوع",
+    "close": "إغلاق",
+    "view_only": "عرض فقط",
+    "submitting": "جارٍ المعالجة…"
+  },
+  "Cgv": {
+    "title": "الشروط والأحكام",
+    "placeholder_p1": "سيتم عرض الشروط والأحكام الكاملة لمنصة Green Gate هنا.",
+    "placeholder_p2": "يرجى القراءة بعناية قبل القبول.",
+    "draft_notice": "الوثيقة قيد الإعداد — تواصل مع مديرك للحصول على النسخة الحالية."
+  },
+  "AdminPayments": {
+    "title": "المدفوعات",
+    "subtitle": "راجع وأدر إعلانات المدفوعات من ملاك السفن.",
+    "refresh": "تحديث",
+    "recordManual": "تسجيل دفعة يدوية",
+    "filterStatus": "تصفية حسب الحالة",
+    "filterRail": "تصفية حسب الطريقة",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد مدفوعات",
+    "col": {
+      "id": "المعرف",
+      "rail": "الطريقة",
+      "amount": "المبلغ",
+      "status": "الحالة",
+      "created": "التاريخ",
+      "ref": "المرجع"
+    },
+    "recordDialog": {
+      "title": "تسجيل دفعة",
+      "subtitle": "سجّل دفعة أعلن عنها مالك السفينة.",
+      "back": "رجوع",
+      "next": "التالي",
+      "submit": "إرسال",
+      "submitting": "جارٍ الإرسال…",
+      "step1": {
+        "intro": "اختر مالك السفينة وطريقة الدفع.",
+        "rail": "طريقة الدفع",
+        "shipowner": "مالك السفينة",
+        "shipownerPlaceholder": "ابحث عن مالك السفينة…",
+        "transaction": "المعاملة (اختياري)",
+        "transactionNone": "لا توجد معاملة مرتبطة"
+      },
+      "step2": {
+        "amount": "المبلغ",
+        "currency": "العملة",
+        "proofs": "وثائق الإثبات",
+        "proofsCta": "إضافة وثيقة",
+        "hint": {
+          "cash": "أدخل رقم الإيصال واسم الصراف.",
+          "cheque": "أدخل رقم الشيك والبنك والتاريخ.",
+          "letter_of_credit": "أدخل رقم خطاب الاعتماد والبنك المُصدِر وتاريخ الانتهاء.",
+          "netting": "أدخل اسم الطرف المقابل ومرجع التسوية الصافية.",
+          "third_party": "أدخل اسم الدافع والعلاقة والمرجع الخارجي.",
+          "bank_guarantee": "أدخل رقم الضمان."
+        },
+        "field": {
+          "receiptNumber": "رقم الإيصال",
+          "cashier": "اسم الصراف",
+          "chequeNumber": "رقم الشيك",
+          "bankName": "اسم البنك",
+          "chequeDate": "تاريخ الشيك",
+          "lcNumber": "رقم خطاب الاعتماد",
+          "issuingBank": "البنك المُصدِر",
+          "expiryDate": "تاريخ الانتهاء",
+          "counterparty": "الطرف المقابل",
+          "netSettlementRef": "مرجع التسوية الصافية",
+          "payerName": "اسم الدافع",
+          "payerRelationship": "صلة الدافع بالمالك",
+          "externalReference": "المرجع الخارجي",
+          "guaranteeNumber": "رقم الضمان"
+        }
+      },
+      "summary": {
+        "rail": "الطريقة",
+        "shipowner": "مالك السفينة",
+        "transaction": "المعاملة",
+        "noTransaction": "لا شيء",
+        "amount": "المبلغ",
+        "proofs": "الإثباتات",
+        "details": "التفاصيل",
+        "confirmImmediately": "ستُؤكَّد هذه الدفعة فورًا.",
+        "fourEyesRequired": "تتطلب هذه الدفعة موافقة ثانية."
+      },
+      "errors": {
+        "railRequired": "طريقة الدفع مطلوبة",
+        "shipownerRequired": "مالك السفينة مطلوب",
+        "amountInvalid": "مبلغ غير صحيح",
+        "fileTooBig": "الملف كبير جدًا (حد أقصى 10 ميغابايت)",
+        "fileMime": "نوع الملف غير صحيح",
+        "invalidState": "حالة غير صحيحة",
+        "required": {
+          "receipt_number": "رقم الإيصال مطلوب",
+          "cashier": "اسم الصراف مطلوب",
+          "cheque_number": "رقم الشيك مطلوب",
+          "bank_name": "اسم البنك مطلوب",
+          "lc_number": "رقم خطاب الاعتماد مطلوب",
+          "issuing_bank": "البنك المُصدِر مطلوب",
+          "counterparty": "الطرف المقابل مطلوب",
+          "net_settlement_ref": "مرجع التسوية الصافية مطلوب",
+          "payer_name": "اسم الدافع مطلوب",
+          "guarantee_number": "رقم الضمان مطلوب"
+        }
+      }
+    },
+    "reviewDrawer": {
+      "title": "مراجعة الدفعة",
+      "loading": "جارٍ التحميل…",
+      "status": "الحالة",
+      "rail": "الطريقة",
+      "amount": "المبلغ",
+      "transaction": "المعاملة",
+      "declaredBy": "أُعلن بواسطة",
+      "createdAt": "التاريخ",
+      "details": "التفاصيل",
+      "proofs": "الإثباتات",
+      "confirm": "تأكيد الدفعة",
+      "confirming": "جارٍ التأكيد…",
+      "reject": "رفض",
+      "rejecting": "جارٍ الرفض…",
+      "confirmReject": "تأكيد الرفض",
+      "cancelReject": "إلغاء",
+      "rejectReason": "سبب الرفض",
+      "rejectReasonPlaceholder": "لماذا يتم رفض هذه الدفعة؟",
+      "errors": {
+        "reasonRequired": "سبب الرفض مطلوب"
+      },
+      "downloadReceipt": "تنزيل الإيصال"
+    }
+  },
+  "AdminCashDesk": {
+    "title": "الصندوق",
+    "subtitle": "سجّل دفعة نقدية مباشرة في الميناء.",
+    "field": {
+      "shipowner": "مالك السفينة",
+      "shipownerPlaceholder": "ابحث عن مالك السفينة…",
+      "transaction": "المعاملة",
+      "transactionNone": "لا توجد معاملة مرتبطة",
+      "amount": "المبلغ",
+      "currency": "العملة",
+      "receiptNumber": "رقم الإيصال",
+      "regen": "إعادة إنشاء",
+      "proof": "وثيقة الإثبات",
+      "proofCta": "إرفاق وثيقة",
+      "proofRemove": "إزالة"
+    },
+    "reset": "إعادة ضبط",
+    "submit": "تسجيل الدفعة",
+    "submitting": "جارٍ التسجيل…",
+    "fourEyesNote": "ستتطلب هذه الدفعة موافقة ثانية قبل تأكيدها.",
+    "success": {
+      "title": "تم تسجيل الدفعة",
+      "body": "تم تسجيل الدفعة النقدية بنجاح.",
+      "dismiss": "موافق"
+    },
+    "errors": {
+      "shipownerRequired": "مالك السفينة مطلوب",
+      "amountInvalid": "مبلغ غير صحيح",
+      "receiptRequired": "رقم الإيصال مطلوب",
+      "fileTooBig": "الملف كبير جدًا (حد أقصى 10 ميغابايت)",
+      "fileMime": "نوع الملف غير صحيح",
+      "submitFailed": "فشل التسجيل — يرجى المحاولة مرة أخرى"
+    }
+  },
+  "AdminWallets": {
+    "title": "المحافظ",
+    "subtitle": "أدر أرصدة محافظ ملاك السفن وسجل المعاملات.",
+    "refresh": "تحديث",
+    "empty": "لا توجد محافظ",
+    "autoApply": {
+      "on": "التطبيق التلقائي مفعّل",
+      "off": "التطبيق التلقائي معطّل"
+    },
+    "col": {
+      "owner": "المالك",
+      "balance": "الرصيد",
+      "autoApply": "التطبيق التلقائي",
+      "lastActivity": "آخر نشاط"
+    },
+    "drawer": {
+      "title": "تفاصيل المحفظة",
+      "loading": "جارٍ التحميل…",
+      "owner": "المالك",
+      "balance": "الرصيد",
+      "adjustNotice": "يتم تسجيل التعديلات وتستلزم مبررًا.",
+      "adjustCta": "تعديل الرصيد",
+      "ledgerTitle": "سجل المعاملات"
+    },
+    "adjust": {
+      "title": "تعديل الرصيد",
+      "subtitle": "اعتمد أو اخصم من المحفظة مع مبرر.",
+      "warning": "هذه العملية لا رجعة فيها وسيتم تسجيلها.",
+      "credit": "إضافة",
+      "debit": "خصم",
+      "amount": "المبلغ",
+      "justification": "المبرر",
+      "justificationPlaceholder": "سبب التعديل…",
+      "cancel": "إلغاء",
+      "submit": "تطبيق التعديل",
+      "submitting": "جارٍ التطبيق…",
+      "errors": {
+        "amountInvalid": "مبلغ غير صحيح",
+        "justificationRequired": "المبرر مطلوب",
+        "wouldGoNegative": "هذا الخصم سيجعل الرصيد سالبًا",
+        "failed": "فشل التعديل — يرجى المحاولة مرة أخرى"
+      }
     }
   }
 }

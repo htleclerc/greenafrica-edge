@@ -421,7 +421,7 @@ export interface Database {
 // ── Enum string unions (match PostgreSQL enums) ─────────────────────────────
 
 export type DbUserRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'SHIPPING_AGENT' | 'SUPERADMIN';
-export type DbOperationalSite = 'BERBERA_PORT' | 'NATIONAL_HQ' | 'ZEILA_PORT';
+export type DbOperationalSite = 'BERBERA_PORT' | 'NATIONAL_HQ' | 'ZEILA_PORT' | 'DJIBOUTI_PORT';
 export type DbVesselCategory = 'CONTAINER' | 'CARGO' | 'TANKER' | 'BULK_CARRIER' | 'FERRY' | 'NAVAL' | 'SCIENTIFIC';
 export type DbComplianceStatus = 'COMPLIANT' | 'PAYMENT_DUE' | 'PROCESSING' | 'NON_COMPLIANT' | 'APPROACHING' | 'EXEMPT';
 export type DbJurisdictionZone = 'EEZ' | 'PORT_VICINITY' | 'TRANSIT_LANE';

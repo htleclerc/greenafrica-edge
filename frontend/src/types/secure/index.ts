@@ -17,6 +17,7 @@ export enum OperationalSite {
     BERBERA_PORT    = 'BERBERA_PORT',
     NATIONAL_HQ     = 'NATIONAL_HQ',
     ZEILA_PORT      = 'ZEILA_PORT',
+    DJIBOUTI_PORT   = 'DJIBOUTI_PORT',
 }
 
 export interface SecureUser {
