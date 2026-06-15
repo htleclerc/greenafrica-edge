@@ -929,7 +929,10 @@
     "simulator_cat_ferry": "Balsa de Passageiros",
     "simulator_unit_knots": "nós",
     "simulator_unit_hours": "horas",
-    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições."
+    "simulator_legacy_rates_notice": "Simulação indicativa — tabela de taxas legada ; tarifas oficiais disponíveis em Admin → Jurisdições.",
+    "simulator_official_rate": "Tarifa oficial: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "Nenhuma tarifa publicada",
+    "simulator_no_tariff_body": "Nenhuma tarifa ativa foi publicada para esta jurisdição. O cálculo está indisponível — por favor, contacte a administração."
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",

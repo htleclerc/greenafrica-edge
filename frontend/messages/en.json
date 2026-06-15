@@ -1069,7 +1069,10 @@
     "simulator_cat_ferry": "Passenger Ferry",
     "simulator_unit_knots": "knots",
     "simulator_unit_hours": "hours",
-    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions."
+    "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions.",
+    "simulator_official_rate": "Official rate: {rate} {currency}/tCO₂",
+    "simulator_no_tariff_title": "No tariff published",
+    "simulator_no_tariff_body": "No active tariff has been published for this jurisdiction. Calculation is unavailable — please contact the administration."
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",

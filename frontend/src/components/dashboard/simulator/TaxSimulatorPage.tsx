@@ -6,8 +6,7 @@ import {
     Calculator, Ship, RefreshCw, FileText, Info, ChevronDown,
     AlertTriangle, CheckCircle2, Anchor, Navigation, HelpCircle,
 } from 'lucide-react';
-import { useTaxConfigs } from '@/hooks/useTaxConfigs';
-import { VesselCategory, JurisdictionZone, TaxConfiguration } from '@/types/secure';
+import { VesselCategory } from '@/types/secure';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -79,55 +78,40 @@ interface SimResult {
     effectiveRate: number;        // USD/tCO2 blended
 }
 
-function calculate(inputs: SimInputs, taxConfigs: TaxConfiguration[]): SimResult {
-    const sfoc       = SFOC_BY_CATEGORY[inputs.category] ?? 185;
-    const co2Factor  = inputs.fuelType === 'HFO' ? CO2_FACTOR_HFO : CO2_FACTOR_MDO;
+function calculate(inputs: SimInputs, ratePerTco2: number): SimResult {
+    const sfoc      = SFOC_BY_CATEGORY[inputs.category] ?? 185;
+    const co2Factor = inputs.fuelType === 'HFO' ? CO2_FACTOR_HFO : CO2_FACTOR_MDO;
 
     // EEZ transit
-    const eezHours   = inputs.speedKnots > 0 ? inputs.eezDistanceNm / inputs.speedKnots : 0;
-    const eezFuel    = (inputs.enginePowerKw * LOAD_FACTOR_SEA * sfoc * eezHours) / 1_000_000; // tons
+    const eezHours  = inputs.speedKnots > 0 ? inputs.eezDistanceNm / inputs.speedKnots : 0;
+    const eezFuel   = (inputs.enginePowerKw * LOAD_FACTOR_SEA * sfoc * eezHours) / 1_000_000;
     const eezCo2    = eezFuel * co2Factor;
-
-    const eezConfig  = taxConfigs.find(
-        (c) => c.jurisdictionZone === JurisdictionZone.EEZ && c.vesselCategory === inputs.category && c.status === 'ACTIVE'
-    );
-    const eezRate    = eezConfig?.baseRateUsdPerTco2 ?? 20;
-    const eezMult    = eezConfig?.multiplier ?? 1.0;
-    const eezTax     = eezCo2 * eezRate * eezMult;
+    const eezTax    = eezCo2 * ratePerTco2;
 
     // Port stay
-    const portFuel   = (inputs.enginePowerKw * LOAD_FACTOR_PORT * sfoc * inputs.portStayHours) / 1_000_000;
-    const portCo2    = portFuel * co2Factor;
+    const portFuel  = (inputs.enginePowerKw * LOAD_FACTOR_PORT * sfoc * inputs.portStayHours) / 1_000_000;
+    const portCo2   = portFuel * co2Factor;
+    const portTax   = inputs.includePortVicinity ? portCo2 * ratePerTco2 : 0;
+    const portCo2Taxed = inputs.includePortVicinity ? portCo2 : 0;
 
-    const portConfig = taxConfigs.find(
-        (c) => c.jurisdictionZone === JurisdictionZone.PORT_VICINITY && c.vesselCategory === inputs.category && c.status === 'ACTIVE'
-    ) ?? taxConfigs.find(
-        (c) => c.jurisdictionZone === JurisdictionZone.PORT_VICINITY && c.status === 'ACTIVE'
-    );
-    const portRate   = portConfig?.baseRateUsdPerTco2 ?? 15;
-    const portMult   = portConfig?.multiplier ?? 1.0;
-    const portTax    = inputs.includePortVicinity ? portCo2 * portRate * portMult : 0;
-    const portTaxCo2 = inputs.includePortVicinity ? portCo2 : 0;
-
-    const totalCo2   = eezCo2 + portTaxCo2;
-    const totalTax   = eezTax + portTax;
-    const effective  = totalCo2 > 0 ? totalTax / totalCo2 : 0;
+    const totalCo2  = eezCo2 + portCo2Taxed;
+    const totalTax  = eezTax + portTax;
 
     return {
         eezTransitHours: eezHours,
         eezFuelTons: eezFuel,
         eezCo2Tons: eezCo2,
-        eezRate,
-        eezMultiplier: eezMult,
+        eezRate: ratePerTco2,
+        eezMultiplier: 1,
         eezTaxUsd: eezTax,
         portFuelTons: portFuel,
         portCo2Tons: portCo2,
-        portRate,
-        portMultiplier: portMult,
+        portRate: ratePerTco2,
+        portMultiplier: 1,
         portTaxUsd: portTax,
         totalCo2Tons: totalCo2,
         totalTaxUsd: totalTax,
-        effectiveRate: effective,
+        effectiveRate: ratePerTco2,
     };
 }
 
@@ -218,7 +202,27 @@ const PRESETS = [
 
 export function TaxSimulatorPage() {
     const t = useTranslations('DashboardPages');
-    const { data: taxConfigs } = useTaxConfigs();
+
+    const [tariff, setTariff] = React.useState<{ ratePerTco2: number | null; currency: string; loading: boolean }>({
+        ratePerTco2: null,
+        currency: 'USD',
+        loading: true,
+    });
+
+    React.useEffect(() => {
+        fetch('/api/simulator/tariff')
+            .then((r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then((data: { ratePerTco2: number | null; currency: string }) => {
+                setTariff({ ratePerTco2: data.ratePerTco2, currency: data.currency, loading: false });
+            })
+            .catch(() => {
+                setTariff({ ratePerTco2: null, currency: 'USD', loading: false });
+            });
+    }, []);
+
     const [inputs, setInputs] = React.useState<SimInputs>({
         category:            VesselCategory.CONTAINER,
         enginePowerKw:       12_000,
@@ -230,7 +234,10 @@ export function TaxSimulatorPage() {
         fuelType:            'HFO',
     });
 
-    const result = React.useMemo(() => calculate(inputs, taxConfigs), [inputs, taxConfigs]);
+    const result = React.useMemo(
+        () => tariff.ratePerTco2 !== null ? calculate(inputs, tariff.ratePerTco2) : null,
+        [inputs, tariff.ratePerTco2],
+    );
 
     function set<K extends keyof SimInputs>(key: K, value: SimInputs[K]) {
         setInputs((prev) => ({ ...prev, [key]: value }));
@@ -246,7 +253,8 @@ export function TaxSimulatorPage() {
         }));
     }
 
-    const riskLevel = result.totalTaxUsd < 2_000 ? 'low' : result.totalTaxUsd < 8_000 ? 'medium' : 'high';
+    const totalTaxUsd = result?.totalTaxUsd ?? 0;
+    const riskLevel = totalTaxUsd < 2_000 ? 'low' : totalTaxUsd < 8_000 ? 'medium' : 'high';
     const riskColor = { low: '#22C55E', medium: '#F59E0B', high: '#EF4444' }[riskLevel];
     const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
@@ -255,7 +263,7 @@ export function TaxSimulatorPage() {
     const [pdfError, setPdfError]   = React.useState<string | null>(null);
 
     async function handleGenerateEstimatePdf() {
-        if (pdfStatus === 'generating') return;
+        if (!result || pdfStatus === 'generating') return;
         setPdfStatus('generating');
         setPdfError(null);
 
@@ -280,7 +288,7 @@ export function TaxSimulatorPage() {
                     eezRate: result.eezRate,
                     portRate: result.portRate,
                     effectiveRate: result.effectiveRate,
-                    riskLevel,
+                    riskLevel: result.totalTaxUsd < 2_000 ? 'low' : result.totalTaxUsd < 8_000 ? 'medium' : 'high',
                 }),
             });
 
@@ -322,18 +330,16 @@ export function TaxSimulatorPage() {
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
                         {t('simulator_subtitle')}
                     </p>
-                    {/* I3b: legacy rate surfaces notice */}
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--os-text-muted)', opacity: 0.7 }}>
-                        {t('simulator_legacy_rates_notice')}
-                    </p>
                 </div>
-                <div
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-                    style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
-                >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {t('simulator_official_rates')}
-                </div>
+                {tariff.ratePerTco2 !== null && !tariff.loading && (
+                    <div
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+                        style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
+                    >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {t('simulator_official_rate', { rate: tariff.ratePerTco2, currency: tariff.currency })}
+                    </div>
+                )}
             </div>
 
             {/* Notice */}
@@ -346,6 +352,20 @@ export function TaxSimulatorPage() {
                     {t('simulator_notice')}
                 </p>
             </div>
+
+            {/* No-tariff banner */}
+            {!tariff.loading && tariff.ratePerTco2 === null && (
+                <div
+                    className="flex items-start gap-3 p-4 rounded-xl text-xs"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
+                >
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#EF4444' }} />
+                    <div>
+                        <p className="font-semibold" style={{ color: '#EF4444' }}>{t('simulator_no_tariff_title')}</p>
+                        <p className="mt-0.5" style={{ color: 'var(--os-text-muted)' }}>{t('simulator_no_tariff_body')}</p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_360px_280px] gap-3 sm:gap-4 lg:gap-6">
 
@@ -472,7 +492,7 @@ export function TaxSimulatorPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {[
+                                    {result ? [
                                         {
                                             zone: 'ZEE', cat: CATEGORY_I18N_KEY[inputs.category] ? t(CATEGORY_I18N_KEY[inputs.category] as Parameters<typeof t>[0]) : inputs.category,
                                             base: result.eezRate, mult: result.eezMultiplier,
@@ -491,7 +511,11 @@ export function TaxSimulatorPage() {
                                             <td className="py-2 text-right tabular-nums" style={{ color: 'var(--os-text-muted)' }}>×{row.mult.toFixed(1)}</td>
                                             <td className="py-2 text-right tabular-nums font-bold" style={{ color: '#10B981' }}>${(row.effective).toFixed(2)}/tCO₂</td>
                                         </tr>
-                                    ))}
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="py-4 text-center" style={{ color: 'var(--os-text-muted)' }}>—</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -517,8 +541,8 @@ export function TaxSimulatorPage() {
                                 {riskLabel}
                             </span>
                         </div>
-                        <p className="text-4xl font-bold tabular-nums mt-2" style={{ color: riskColor }}>
-                            {fmtUsd(result.totalTaxUsd)}
+                        <p className="text-4xl font-bold tabular-nums mt-2" style={{ color: result ? riskColor : 'var(--os-text-muted)' }}>
+                            {result ? fmtUsd(result.totalTaxUsd) : '—'}
                         </p>
                         <p className="text-xs mt-1" style={{ color: 'var(--os-text-muted)' }}>
                             {t('simulator_total_estimated')}
@@ -529,17 +553,21 @@ export function TaxSimulatorPage() {
                         <div className="mt-4 flex flex-col gap-2 text-xs" style={{ color: 'var(--os-text-muted)' }}>
                             <div className="flex justify-between">
                                 <span>{t('simulator_eez_tax')}</span>
-                                <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>{fmtUsd(result.eezTaxUsd)}</span>
+                                <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>
+                                    {result ? fmtUsd(result.eezTaxUsd) : '—'}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span>{t('simulator_port_tax')}</span>
                                 <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>
-                                    {inputs.includePortVicinity ? fmtUsd(result.portTaxUsd) : '—'}
+                                    {result ? (inputs.includePortVicinity ? fmtUsd(result.portTaxUsd) : '—') : '—'}
                                 </span>
                             </div>
                             <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--os-border)' }}>
                                 <span>{t('simulator_blended_rate')}</span>
-                                <span className="font-bold" style={{ color: '#10B981' }}>${fmt(result.effectiveRate, 2)} / tCO₂</span>
+                                <span className="font-bold" style={{ color: '#10B981' }}>
+                                    {result ? `$${fmt(result.effectiveRate, 2)} / tCO₂` : '—'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -548,19 +576,19 @@ export function TaxSimulatorPage() {
                     <SectionCard title={t('simulator_emissions_detail')} icon={<Anchor className="w-3.5 h-3.5" />}>
                         <MetricRow
                             label={t('simulator_eez_transit_duration')}
-                            value={`${fmt(result.eezTransitHours, 1)} h`}
+                            value={result ? `${fmt(result.eezTransitHours, 1)} h` : '—'}
                             sub={`${fmt(inputs.eezDistanceNm, 0)} NM @ ${fmt(inputs.speedKnots, 1)} ${t('simulator_unit_knots')}`}
                         />
                         <MetricRow
                             label={t('simulator_eez_consumption')}
-                            value={`${fmt(result.eezFuelTons, 2)} t`}
+                            value={result ? `${fmt(result.eezFuelTons, 2)} t` : '—'}
                             sub={t('simulator_sfoc_formula')}
                         />
                         <MetricRow
                             label={t('simulator_eez_emissions')}
-                            value={`${fmt(result.eezCo2Tons, 2)} tCO₂`}
+                            value={result ? `${fmt(result.eezCo2Tons, 2)} tCO₂` : '—'}
                         />
-                        {inputs.includePortVicinity && (
+                        {inputs.includePortVicinity && result && (
                             <>
                                 <MetricRow
                                     label={t('simulator_port_consumption')}
@@ -575,7 +603,7 @@ export function TaxSimulatorPage() {
                         )}
                         <MetricRow
                             label={t('simulator_total_emissions')}
-                            value={`${fmt(result.totalCo2Tons, 2)} tCO₂`}
+                            value={result ? `${fmt(result.totalCo2Tons, 2)} tCO₂` : '—'}
                             highlight
                         />
                     </SectionCard>
@@ -595,7 +623,7 @@ export function TaxSimulatorPage() {
                     <div className="flex flex-col gap-2">
                         <button
                             onClick={handleGenerateEstimatePdf}
-                            disabled={pdfStatus === 'generating'}
+                            disabled={pdfStatus === 'generating' || result === null}
                             className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                             style={{ backgroundColor: '#10B981', color: '#fff' }}
                         >
