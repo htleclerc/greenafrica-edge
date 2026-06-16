@@ -4,9 +4,10 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
     Calculator, Ship, RefreshCw, FileText, Info, ChevronDown,
-    AlertTriangle, CheckCircle2, Anchor, Navigation, HelpCircle,
+    AlertTriangle, CheckCircle2, Anchor, Navigation, HelpCircle, Plane,
 } from 'lucide-react';
 import { VesselCategory } from '@/types/secure';
+import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,53 @@ function calculate(inputs: SimInputs, ratePerTco2: number): SimResult {
     };
 }
 
+// ── Aerial calculation engine (ICAO LTO) ───────────────────────────────────────
+//
+// Methodology: the ICAO Landing & Take-Off (LTO) cycle bundles taxi-out, take-off,
+// climb-out, approach and taxi-in below 3000 ft. Each aircraft type has a fixed
+// CO₂ mass per LTO cycle (kg, real seeded ICAO factors). Total emissions in tCO₂
+// are simply cycles × (kgPerLto / 1000), then taxed at the active AIR rate.
+
+interface AircraftPreset {
+    icaoType: string;       // ICAO aircraft type designator
+    label: string;
+    co2KgPerLto: number;    // kg CO₂ per LTO cycle
+}
+
+// Real ICAO LTO factors (kg CO₂ / cycle), aligned with air_emission_factors seed.
+const AIRCRAFT_PRESETS: AircraftPreset[] = [
+    { icaoType: 'A320', label: 'Airbus A320',     co2KgPerLto: 2600 },
+    { icaoType: 'B738', label: 'Boeing 737-800',  co2KgPerLto: 2800 },
+    { icaoType: 'A20N', label: 'Airbus A320neo',  co2KgPerLto: 2150 },
+    { icaoType: 'A321', label: 'Airbus A321',     co2KgPerLto: 2950 },
+    { icaoType: 'B788', label: 'Boeing 787-8',    co2KgPerLto: 6500 },
+    { icaoType: 'DH8D', label: 'Dash 8 Q400',     co2KgPerLto: 650 },
+];
+
+interface AirInputs {
+    icaoType: string;       // selected aircraft preset
+    ltoCycles: number;      // number of LTO cycles (integer ≥ 0)
+}
+
+interface AirResult {
+    co2KgPerLto: number;
+    emissionsTco2: number;
+    rate: number;           // USD/tCO₂
+    taxUsd: number;
+}
+
+function calculateAir(inputs: AirInputs, ratePerTco2: number): AirResult {
+    const preset = AIRCRAFT_PRESETS.find((p) => p.icaoType === inputs.icaoType) ?? AIRCRAFT_PRESETS[0];
+    const cycles = Math.max(0, Math.floor(inputs.ltoCycles));
+    const emissionsTco2 = cycles * (preset.co2KgPerLto / 1000);
+    return {
+        co2KgPerLto: preset.co2KgPerLto,
+        emissionsTco2,
+        rate: ratePerTco2,
+        taxUsd: emissionsTco2 * ratePerTco2,
+    };
+}
+
 // ── UI helpers ────────────────────────────────────────────────────────────────
 
 function fmt(n: number, dec = 1) {
@@ -200,7 +248,7 @@ const PRESETS = [
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function TaxSimulatorPage() {
+function MaritimeSimulator() {
     const t = useTranslations('DashboardPages');
 
     const [tariff, setTariff] = React.useState<{ ratePerTco2: number | null; currency: string; loading: boolean }>({
@@ -210,7 +258,7 @@ export function TaxSimulatorPage() {
     });
 
     React.useEffect(() => {
-        fetch('/api/simulator/tariff')
+        fetch('/api/simulator/tariff?mode=MARITIME')
             .then((r) => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
@@ -664,6 +712,283 @@ export function TaxSimulatorPage() {
                     <FaqPanel />
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ── Aerial simulator ────────────────────────────────────────────────────────
+
+function AirSimulator() {
+    const t = useTranslations('DashboardPages');
+
+    const [tariff, setTariff] = React.useState<{ ratePerTco2: number | null; currency: string; loading: boolean }>({
+        ratePerTco2: null,
+        currency: 'USD',
+        loading: true,
+    });
+
+    React.useEffect(() => {
+        fetch('/api/simulator/tariff?mode=AIR')
+            .then((r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then((data: { ratePerTco2: number | null; currency: string }) => {
+                setTariff({ ratePerTco2: data.ratePerTco2, currency: data.currency, loading: false });
+            })
+            .catch(() => {
+                setTariff({ ratePerTco2: null, currency: 'USD', loading: false });
+            });
+    }, []);
+
+    const [inputs, setInputs] = React.useState<AirInputs>({
+        icaoType:  AIRCRAFT_PRESETS[0].icaoType,
+        ltoCycles: 100,
+    });
+
+    const result = React.useMemo(
+        () => tariff.ratePerTco2 !== null ? calculateAir(inputs, tariff.ratePerTco2) : null,
+        [inputs, tariff.ratePerTco2],
+    );
+
+    const totalTaxUsd = result?.taxUsd ?? 0;
+    const riskLevel = totalTaxUsd < 2_000 ? 'low' : totalTaxUsd < 8_000 ? 'medium' : 'high';
+    const riskColor = { low: '#22C55E', medium: '#F59E0B', high: '#EF4444' }[riskLevel];
+    const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
+
+    const selectedPreset = AIRCRAFT_PRESETS.find((p) => p.icaoType === inputs.icaoType) ?? AIRCRAFT_PRESETS[0];
+
+    return (
+        <div className="px-3 sm:px-6 py-3 sm:py-6 flex flex-col gap-6">
+
+            {/* Header */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--os-text-primary)' }}>
+                        <Plane className="w-5 h-5 text-emerald-500" />
+                        {t('simulator_title')}
+                    </h1>
+                    <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
+                        {t('simulator_air_methodology_note')}
+                    </p>
+                </div>
+                {tariff.ratePerTco2 !== null && !tariff.loading && (
+                    <div
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+                        style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
+                    >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {t('simulator_official_rate', { rate: tariff.ratePerTco2, currency: tariff.currency })}
+                    </div>
+                )}
+            </div>
+
+            {/* Notice */}
+            <div
+                className="flex items-start gap-3 p-4 rounded-xl text-xs"
+                style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}
+            >
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+                <p style={{ color: 'var(--os-text-muted)' }}>
+                    {t('simulator_notice')}
+                </p>
+            </div>
+
+            {/* No-tariff banner — fail-closed */}
+            {!tariff.loading && tariff.ratePerTco2 === null && (
+                <div
+                    className="flex items-start gap-3 p-4 rounded-xl text-xs"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
+                >
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#EF4444' }} />
+                    <div>
+                        <p className="font-semibold" style={{ color: '#EF4444' }}>{t('simulator_no_tariff_title')}</p>
+                        <p className="mt-0.5" style={{ color: 'var(--os-text-muted)' }}>{t('simulator_no_tariff_body')}</p>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3 sm:gap-4 lg:gap-6">
+
+                {/* ── Left: Inputs ── */}
+                <div className="flex flex-col gap-4">
+                    <SectionCard title={t('simulator_air_aircraft_type')} icon={<Plane className="w-3.5 h-3.5" />}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            {/* Aircraft type */}
+                            <div>
+                                <Label>{t('simulator_air_aircraft_type')}</Label>
+                                <select
+                                    value={inputs.icaoType}
+                                    onChange={(e) => setInputs((prev) => ({ ...prev, icaoType: e.target.value }))}
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
+                                    style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
+                                >
+                                    {AIRCRAFT_PRESETS.map((p) => (
+                                        <option key={p.icaoType} value={p.icaoType}>{p.label} ({p.icaoType})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* LTO cycles */}
+                            <div>
+                                <Label>{t('simulator_air_lto_cycles')}</Label>
+                                <NumberInput
+                                    value={inputs.ltoCycles}
+                                    onChange={(v) => setInputs((prev) => ({ ...prev, ltoCycles: Math.max(0, Math.floor(v)) }))}
+                                    min={0}
+                                    step={1}
+                                />
+                            </div>
+                        </div>
+
+                        <p className="text-[11px] mt-4 flex items-start gap-2" style={{ color: 'var(--os-text-muted)' }}>
+                            <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+                            {t('simulator_air_methodology_note')}
+                        </p>
+                    </SectionCard>
+                </div>
+
+                {/* ── Right: Results ── */}
+                <div className="flex flex-col gap-4">
+                    {/* Total */}
+                    <div
+                        className="rounded-2xl p-5"
+                        style={{ backgroundColor: 'var(--os-surface)', border: `1px solid ${riskColor}40` }}
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
+                                {t('simulator_estimated_tax')}
+                            </p>
+                            <span
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: `${riskColor}18`, color: riskColor }}
+                            >
+                                {riskLabel}
+                            </span>
+                        </div>
+                        <p className="text-4xl font-bold tabular-nums mt-2" style={{ color: result ? riskColor : 'var(--os-text-muted)' }}>
+                            {result ? fmtUsd(result.taxUsd) : '—'}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: 'var(--os-text-muted)' }}>
+                            {t('simulator_total_estimated')}
+                        </p>
+
+                        <div className="mt-4 h-px" style={{ backgroundColor: 'var(--os-border)' }} />
+
+                        <div className="mt-4 flex flex-col gap-2 text-xs" style={{ color: 'var(--os-text-muted)' }}>
+                            <div className="flex justify-between">
+                                <span>{t('simulator_air_emissions_label')}</span>
+                                <span className="font-semibold tabular-nums" style={{ color: 'var(--os-text-primary)' }}>
+                                    {result ? `${fmt(result.emissionsTco2, 2)} tCO₂` : '—'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--os-border)' }}>
+                                <span>{t('simulator_blended_rate')}</span>
+                                <span className="font-bold" style={{ color: '#10B981' }}>
+                                    {result ? `$${fmt(result.rate, 2)} / tCO₂` : '—'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Emissions breakdown */}
+                    <SectionCard title={t('simulator_emissions_detail')} icon={<Plane className="w-3.5 h-3.5" />}>
+                        <MetricRow
+                            label={t('simulator_air_aircraft_type')}
+                            value={`${selectedPreset.label} (${selectedPreset.icaoType})`}
+                        />
+                        <MetricRow
+                            label={t('simulator_air_lto_cycles')}
+                            value={fmt(Math.max(0, Math.floor(inputs.ltoCycles)), 0)}
+                            sub={`${fmt(selectedPreset.co2KgPerLto, 0)} kg CO₂ / LTO`}
+                        />
+                        <MetricRow
+                            label={t('simulator_air_emissions_label')}
+                            value={result ? `${fmt(result.emissionsTco2, 2)} tCO₂` : '—'}
+                            highlight
+                        />
+                    </SectionCard>
+
+                    {/* Methodology note */}
+                    <div
+                        className="rounded-xl p-3 text-[11px] flex items-start gap-2"
+                        style={{ backgroundColor: 'var(--os-surface)', border: '1px solid var(--os-border)' }}
+                    >
+                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--os-text-muted)' }} />
+                        <p style={{ color: 'var(--os-text-muted)' }}>
+                            <strong style={{ color: 'var(--os-text-primary)' }}>ICAO LTO</strong> — {t('simulator_air_methodology_note')}
+                        </p>
+                    </div>
+
+                    {/* Reset */}
+                    <button
+                        className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold transition-all cursor-pointer hover:bg-[var(--os-surface-2)] hover:text-[var(--os-text-primary)] active:scale-[0.98]"
+                        style={{ backgroundColor: 'var(--os-surface)', color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
+                        onClick={() => setInputs({ icaoType: AIRCRAFT_PRESETS[0].icaoType, ltoCycles: 100 })}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        {t('simulator_reset')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Mode tabs + entry point ─────────────────────────────────────────────────
+
+type SimMode = 'MARITIME' | 'AIR';
+
+/** Initial tab: AIR-only operators land on AIR, everyone else defaults to MARITIME. */
+function initialMode(modes: ('MARITIME' | 'AIR')[]): SimMode {
+    return modes.includes('AIR') && !modes.includes('MARITIME') ? 'AIR' : 'MARITIME';
+}
+
+export function TaxSimulatorPage() {
+    const t = useTranslations('DashboardPages');
+    const { modes } = usePrincipalKind();
+
+    const [mode, setMode] = React.useState<SimMode>('MARITIME');
+    // Once principal modes resolve, snap an AIR-only operator onto the AIR tab.
+    const [autoSelected, setAutoSelected] = React.useState(false);
+    React.useEffect(() => {
+        if (!autoSelected && modes.length > 0) {
+            setMode(initialMode(modes));
+            setAutoSelected(true);
+        }
+    }, [modes, autoSelected]);
+
+    return (
+        <div className="flex flex-col">
+            {/* Mode tabs */}
+            <div className="px-3 sm:px-6 pt-3 sm:pt-6">
+                <div className="inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
+                    <button
+                        onClick={() => setMode('MARITIME')}
+                        className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                        style={{
+                            backgroundColor: mode === 'MARITIME' ? 'rgba(16,185,129,0.12)' : 'transparent',
+                            color: mode === 'MARITIME' ? '#10B981' : 'var(--os-text-muted)',
+                        }}
+                    >
+                        <Ship className="w-4 h-4" />
+                        {t('simulator_mode_maritime')}
+                    </button>
+                    <button
+                        onClick={() => setMode('AIR')}
+                        className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                        style={{
+                            backgroundColor: mode === 'AIR' ? 'rgba(16,185,129,0.12)' : 'transparent',
+                            color: mode === 'AIR' ? '#10B981' : 'var(--os-text-muted)',
+                        }}
+                    >
+                        <Plane className="w-4 h-4" />
+                        {t('simulator_mode_air')}
+                    </button>
+                </div>
+            </div>
+
+            {mode === 'AIR' ? <AirSimulator /> : <MaritimeSimulator />}
         </div>
     );
 }

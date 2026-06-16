@@ -1,10 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/simulator/tariff — active MARITIME tariff for the caller's jurisdiction
+// GET /api/simulator/tariff — active tariff for the caller's jurisdiction + mode
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Auth strategy: inline (NOT requirePrincipal) so the route can return a clean
 // 401 JSON response instead of triggering Next.js redirect() which cannot be
 // caught in API route tests.
+//
+// Query params:
+//   ?mode=MARITIME|AIR — which tariff matrix to read. Defaults to MARITIME when
+//   absent or invalid (backwards compatible with the maritime-only simulator).
 //
 // Resolution order:
 //   1. No session → 401
@@ -14,18 +18,25 @@
 //   3. No shipowners row → staff path; call _getServerJurisdictionIdImpl
 //        (uncached raw impl, avoids React cache() which does not work in API routes)
 //   4. Jurisdiction resolution throws → { ratePerTco2: null, jurisdictionId: null }
-//   5. Query tariffs for (jurisdictionId, MARITIME, ACTIVE, today in range)
+//   5. Query tariffs for (jurisdictionId, mode, ACTIVE, today in range)
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { _getServerJurisdictionIdImpl } from '@/lib/auth/tenantContext';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+/** Parse and validate the ?mode= param; defaults to MARITIME. */
+function resolveMode(request: NextRequest): 'MARITIME' | 'AIR' {
+    const raw = request.nextUrl.searchParams.get('mode');
+    return raw === 'AIR' ? 'AIR' : 'MARITIME';
+}
+
+export async function GET(request: NextRequest) {
+    const mode = resolveMode(request);
     const supabase = await createClient();
 
     const {
@@ -68,7 +79,7 @@ export async function GET() {
         }
     }
 
-    // ── Step 2: query active MARITIME tariff ──────────────────────────────────
+    // ── Step 2: query active tariff for the requested mode ─────────────────────
 
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
@@ -76,7 +87,7 @@ export async function GET() {
         .from('tariffs')
         .select('rate_per_tco2, currency')
         .eq('jurisdiction_id', jurisdictionId)
-        .eq('mode', 'MARITIME')
+        .eq('mode', mode)
         .eq('status', 'ACTIVE')
         .lte('effective_from', today)
         .or(`effective_to.is.null,effective_to.gte.${today}`)
