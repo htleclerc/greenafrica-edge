@@ -957,7 +957,13 @@
     "simulator_legacy_rates_notice": "محاكاة استرشادية — جدول معدلات قديم؛ التعريفات الرسمية متاحة في الإدارة ← الولايات القضائية.",
     "simulator_official_rate": "السعر الرسمي: {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "لم يتم نشر أي تعريفة",
-    "simulator_no_tariff_body": "لم يتم نشر أي تعريفة سارية لهذه الولاية القضائية. الحساب غير متاح — يرجى الاتصال بالإدارة."
+    "simulator_no_tariff_body": "لم يتم نشر أي تعريفة سارية لهذه الولاية القضائية. الحساب غير متاح — يرجى الاتصال بالإدارة.",
+    "simulator_mode_maritime": "بحري",
+    "simulator_mode_air": "جوي",
+    "simulator_air_aircraft_type": "نوع الطائرة",
+    "simulator_air_lto_cycles": "دورات الإقلاع والهبوط",
+    "simulator_air_methodology_note": "منهجية ICAO LTO: الانبعاثات لكل دورة إقلاع وهبوط (السير، الإقلاع، الصعود، الاقتراب تحت 3000 قدم).",
+    "simulator_air_emissions_label": "الانبعاثات المقدرة"
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",
@@ -2680,6 +2686,8 @@
     "nav": {
       "dashboard": "Dashboard",
       "vessels": "Vessels",
+      "aircraft": "الطائرات",
+      "fleet": "الأسطول",
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",

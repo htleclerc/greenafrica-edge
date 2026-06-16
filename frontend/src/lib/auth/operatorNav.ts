@@ -14,6 +14,27 @@ export interface OperatorNavItem {
     labelKey: string;
 }
 
+export type OperatorMode = 'MARITIME' | 'AIR';
+
+/**
+ * Picks the label key for the "vessels" nav entry based on the operator's modes:
+ *   - AIR only            → nav.aircraft
+ *   - both MARITIME + AIR → nav.fleet
+ *   - MARITIME / unknown  → nav.vessels (default, backwards compatible)
+ */
+export function vesselsNavLabelKey(modes: OperatorMode[]): string {
+    const hasAir = modes.includes('AIR');
+    const hasMaritime = modes.includes('MARITIME');
+    if (hasAir && !hasMaritime) return 'nav.aircraft';
+    if (hasAir && hasMaritime) return 'nav.fleet';
+    return 'nav.vessels';
+}
+
+/** True when the operator flies only — used to swap the Ship icon for a Plane. */
+export function isAirOnly(modes: OperatorMode[]): boolean {
+    return modes.includes('AIR') && !modes.includes('MARITIME');
+}
+
 export const OPERATOR_NAV: OperatorNavItem[] = [
     { key: 'dashboard',     href: '/dashboard',               labelKey: 'nav.dashboard' },
     { key: 'vessels',       href: '/dashboard/vessels',       labelKey: 'nav.vessels' },
