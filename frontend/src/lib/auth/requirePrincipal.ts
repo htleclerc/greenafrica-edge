@@ -25,6 +25,8 @@ import { OperationalSite, UserRole, type SecureUser } from '@/types/secure';
 
 // ── Discriminated union ───────────────────────────────────────────────────────
 
+export type OperatorMode = 'MARITIME' | 'AIR';
+
 export type Principal =
     | {
           kind: 'operator';
@@ -33,6 +35,8 @@ export type Principal =
           shipowner: ShipownerListRow;
           /** The operator's home jurisdiction. Pass to createTenantClient(). */
           jurisdictionId: string;
+          /** Modes this operator is allowed to act in. Defaults to ['MARITIME']. */
+          applicableModes: OperatorMode[];
           supabase: SupabaseClient;
       }
     | {
@@ -40,6 +44,21 @@ export type Principal =
           user: SecureUser;
           supabase: SupabaseClient;
       };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Normalises a raw `applicable_modes` value (text[] from Postgres) into a typed
+ * OperatorMode[]. Filters out unknown values; falls back to ['MARITIME'] when the
+ * column is null/empty so legacy maritime operators keep working unchanged.
+ */
+export function normaliseOperatorModes(raw: unknown): OperatorMode[] {
+    if (!Array.isArray(raw)) return ['MARITIME'];
+    const modes = raw.filter(
+        (m): m is OperatorMode => m === 'MARITIME' || m === 'AIR',
+    );
+    return modes.length > 0 ? modes : ['MARITIME'];
+}
 
 // ── Guard ─────────────────────────────────────────────────────────────────────
 
@@ -54,7 +73,7 @@ export async function requirePrincipal(): Promise<Principal> {
     const { data: shipowner, error: shipownerError } = await supabase
         .from('shipowners')
         .select(
-            'id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, aoc_number, jurisdiction_id',
+            'id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, aoc_number, jurisdiction_id, applicable_modes',
         )
         .eq('profile_id', user.id)
         .maybeSingle();
@@ -66,14 +85,18 @@ export async function requirePrincipal(): Promise<Principal> {
         }
 
         const shipownerRow = shipowner as ShipownerListRow;
-        const jurisdictionId = (shipowner as unknown as { jurisdiction_id: string }).jurisdiction_id;
+        const extra = shipowner as unknown as {
+            jurisdiction_id: string;
+            applicable_modes: unknown;
+        };
 
         return {
             kind: 'operator',
             userId: user.id,
             email: user.email ?? shipowner.official_email ?? '',
             shipowner: shipownerRow,
-            jurisdictionId,
+            jurisdictionId: extra.jurisdiction_id,
+            applicableModes: normaliseOperatorModes(extra.applicable_modes),
             supabase,
         };
     }
