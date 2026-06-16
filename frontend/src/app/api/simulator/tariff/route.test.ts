@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
     tariffRow: null as { rate_per_tco2: number; currency: string } | null,
     jurisdictionIdFromImpl: null as string | null,
     jurisdictionImplThrows: false,
+    // Captures the mode value passed to .eq('mode', <value>) on the tariffs query.
+    capturedMode: null as string | null,
 }));
 
 vi.mock('@/lib/supabase/server', () => {
@@ -32,25 +34,31 @@ vi.mock('@/lib/supabase/server', () => {
                     };
                 }
                 if (table === 'tariffs') {
-                    return {
-                        select: vi.fn(() => ({
-                            eq: vi.fn(() => ({
-                                eq: vi.fn(() => ({
-                                    eq: vi.fn(() => ({
-                                        lte: vi.fn(() => ({
-                                            or: vi.fn(() => ({
-                                                order: vi.fn(() => ({
-                                                    limit: vi.fn(() => ({
-                                                        maybeSingle: vi.fn(async () => ({
-                                                            data: mocks.tariffRow,
-                                                            error: null,
-                                                        })),
-                                                    })),
-                                                })),
+                    const tail = {
+                        eq: vi.fn(() => ({
+                            lte: vi.fn(() => ({
+                                or: vi.fn(() => ({
+                                    order: vi.fn(() => ({
+                                        limit: vi.fn(() => ({
+                                            maybeSingle: vi.fn(async () => ({
+                                                data: mocks.tariffRow,
+                                                error: null,
                                             })),
                                         })),
                                     })),
                                 })),
+                            })),
+                        })),
+                    };
+                    return {
+                        select: vi.fn(() => ({
+                            // .eq('jurisdiction_id', ...)
+                            eq: vi.fn(() => ({
+                                // .eq('mode', <value>) — capture the mode filter
+                                eq: vi.fn((_col: string, value: string) => {
+                                    mocks.capturedMode = value;
+                                    return tail;
+                                }),
                             })),
                         })),
                     };
@@ -70,7 +78,16 @@ vi.mock('@/lib/auth/tenantContext', () => ({
     }),
 }));
 
+import type { NextRequest } from 'next/server';
 import { GET } from './route';
+
+// Minimal NextRequest stub: GET() only reads request.nextUrl.searchParams.get('mode').
+function makeRequest(mode?: string): NextRequest {
+    const url = mode
+        ? `http://localhost/api/simulator/tariff?mode=${mode}`
+        : 'http://localhost/api/simulator/tariff';
+    return { nextUrl: new URL(url) } as unknown as NextRequest;
+}
 
 describe('GET /api/simulator/tariff', () => {
     beforeEach(() => {
@@ -79,12 +96,13 @@ describe('GET /api/simulator/tariff', () => {
         mocks.tariffRow = null;
         mocks.jurisdictionIdFromImpl = null;
         mocks.jurisdictionImplThrows = false;
+        mocks.capturedMode = null;
         vi.clearAllMocks();
     });
 
     it('returns 401 when not authenticated', async () => {
         mocks.user = null;
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(401);
         const json = await res.json();
         expect(json).toEqual({ error: 'Unauthorized' });
@@ -95,7 +113,7 @@ describe('GET /api/simulator/tariff', () => {
         mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
         mocks.tariffRow = { rate_per_tco2: 40, currency: 'USD' };
 
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: 'jid-sl', ratePerTco2: 40, currency: 'USD' });
@@ -105,7 +123,7 @@ describe('GET /api/simulator/tariff', () => {
         mocks.user = { id: 'user-suspended' };
         mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'SUSPENDED' };
 
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: null, ratePerTco2: null, currency: 'USD' });
@@ -117,7 +135,7 @@ describe('GET /api/simulator/tariff', () => {
         mocks.jurisdictionIdFromImpl = 'jid-sl';
         mocks.tariffRow = { rate_per_tco2: 40, currency: 'USD' };
 
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: 'jid-sl', ratePerTco2: 40, currency: 'USD' });
@@ -128,7 +146,7 @@ describe('GET /api/simulator/tariff', () => {
         mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
         mocks.tariffRow = null; // no active tariff
 
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: 'jid-sl', ratePerTco2: null, currency: 'USD' });
@@ -139,9 +157,40 @@ describe('GET /api/simulator/tariff', () => {
         mocks.shipownerRow = null; // not an operator
         mocks.jurisdictionImplThrows = true;
 
-        const res = await GET();
+        const res = await GET(makeRequest());
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json).toEqual({ jurisdictionId: null, ratePerTco2: null, currency: 'USD' });
+    });
+
+    // ── ?mode= param (CHANTIER 3) ─────────────────────────────────────────────
+
+    it('defaults to MARITIME tariff when ?mode is absent', async () => {
+        mocks.user = { id: 'user-1' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
+        mocks.tariffRow = { rate_per_tco2: 40, currency: 'USD' };
+
+        await GET(makeRequest());
+        expect(mocks.capturedMode).toBe('MARITIME');
+    });
+
+    it('queries the AIR tariff matrix when ?mode=AIR', async () => {
+        mocks.user = { id: 'user-air' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
+        mocks.tariffRow = { rate_per_tco2: 35, currency: 'USD' };
+
+        const res = await GET(makeRequest('AIR'));
+        expect(mocks.capturedMode).toBe('AIR');
+        const json = await res.json();
+        expect(json).toEqual({ jurisdictionId: 'jid-sl', ratePerTco2: 35, currency: 'USD' });
+    });
+
+    it('falls back to MARITIME for an invalid ?mode value', async () => {
+        mocks.user = { id: 'user-1' };
+        mocks.shipownerRow = { jurisdiction_id: 'jid-sl', account_state: 'ACTIVE' };
+        mocks.tariffRow = { rate_per_tco2: 40, currency: 'USD' };
+
+        await GET(makeRequest('SPACE'));
+        expect(mocks.capturedMode).toBe('MARITIME');
     });
 });

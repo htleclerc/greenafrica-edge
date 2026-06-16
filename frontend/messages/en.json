@@ -1075,7 +1075,13 @@
     "simulator_legacy_rates_notice": "Indicative simulation — legacy rate table; official tariffs live in Admin → Jurisdictions.",
     "simulator_official_rate": "Official rate: {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "No tariff published",
-    "simulator_no_tariff_body": "No active tariff has been published for this jurisdiction. Calculation is unavailable — please contact the administration."
+    "simulator_no_tariff_body": "No active tariff has been published for this jurisdiction. Calculation is unavailable — please contact the administration.",
+    "simulator_mode_maritime": "Maritime",
+    "simulator_mode_air": "Air",
+    "simulator_air_aircraft_type": "Aircraft type",
+    "simulator_air_lto_cycles": "LTO cycles",
+    "simulator_air_methodology_note": "ICAO LTO methodology: emissions per Landing & Take-Off cycle (taxi, take-off, climb, approach below 3000 ft).",
+    "simulator_air_emissions_label": "Estimated emissions"
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",
@@ -2795,6 +2801,8 @@
     "nav": {
       "dashboard": "Dashboard",
       "vessels": "Vessels",
+      "aircraft": "Aircraft",
+      "fleet": "Fleet",
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",

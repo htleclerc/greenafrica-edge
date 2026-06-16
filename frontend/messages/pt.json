@@ -1341,7 +1341,13 @@
     "settings_visual_theme_desc": "Escolha a aparência visual da interface da plataforma.",
     "simulator_official_rate": "Tarifa oficial: {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "Nenhuma tarifa publicada",
-    "simulator_no_tariff_body": "Nenhuma tarifa ativa foi publicada para esta jurisdição. O cálculo está indisponível — por favor, contacte a administração."
+    "simulator_no_tariff_body": "Nenhuma tarifa ativa foi publicada para esta jurisdição. O cálculo está indisponível — por favor, contacte a administração.",
+    "simulator_mode_maritime": "Marítimo",
+    "simulator_mode_air": "Aéreo",
+    "simulator_air_aircraft_type": "Tipo de aeronave",
+    "simulator_air_lto_cycles": "Ciclos LTO",
+    "simulator_air_methodology_note": "Metodologia ICAO LTO: emissões por ciclo de aterragem e descolagem (taxiamento, descolagem, subida, aproximação abaixo de 3000 pés).",
+    "simulator_air_emissions_label": "Emissões estimadas"
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",
@@ -3064,6 +3070,8 @@
     "nav": {
       "dashboard": "Dashboard",
       "vessels": "Vessels",
+      "aircraft": "Aeronaves",
+      "fleet": "Frota",
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",

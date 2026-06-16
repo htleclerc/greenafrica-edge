@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye,
+    LayoutDashboard, Bell, Eye, Plane,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { JurisdictionSwitcher } from './JurisdictionSwitcher';
 import { ModeSwitcher } from './ModeSwitcher';
-import { OPERATOR_NAV, type OperatorNavItem } from '@/lib/auth/operatorNav';
+import { OPERATOR_NAV, vesselsNavLabelKey, isAirOnly, type OperatorNavItem } from '@/lib/auth/operatorNav';
 import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 
 export const SIDEBAR_COLLAPSED = 56;
@@ -93,7 +93,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     const t = useTranslations('Dashboard');
     const tOwner = useTranslations('OwnerPortal');
     const { role } = useRole();
-    const { kind } = usePrincipalKind();
+    const { kind, modes } = usePrincipalKind();
 
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
     const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
@@ -129,19 +129,27 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     );
 
     // ── Operator nav ──────────────────────────────────────────────────────────
+    // The "vessels" entry adapts to the operator's mode(s): an AIR-only operator
+    // sees "Aircraft" + a Plane icon, a multi-mode operator sees "Fleet", and a
+    // maritime operator keeps "Vessels" + Ship icon (default, unchanged).
+    const vesselsLabelKey = vesselsNavLabelKey(modes);
+    const airOnly = isAirOnly(modes);
     const renderOperatorNav = () => (
         <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
-            {OPERATOR_NAV.map((item) => (
-                <OperatorNavButton
-                    key={item.key}
-                    item={item}
-                    icon={OPERATOR_ICONS[item.key]}
-                    isActive={activePage === item.key}
-                    expanded={expanded || mobileOpen}
-                    t={tOwner}
-                    onNavigate={onMobileClose}
-                />
-            ))}
+            {OPERATOR_NAV.map((item) => {
+                const isVessels = item.key === 'vessels';
+                return (
+                    <OperatorNavButton
+                        key={item.key}
+                        item={isVessels ? { ...item, labelKey: vesselsLabelKey } : item}
+                        icon={isVessels && airOnly ? <Plane className="w-5 h-5" /> : OPERATOR_ICONS[item.key]}
+                        isActive={activePage === item.key}
+                        expanded={expanded || mobileOpen}
+                        t={tOwner}
+                        onNavigate={onMobileClose}
+                    />
+                );
+            })}
         </nav>
     );
 
