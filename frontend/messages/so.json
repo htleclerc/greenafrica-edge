@@ -1075,7 +1075,13 @@
     "simulator_legacy_rates_notice": "Xisaab tilmaanayaal ah — jadwalka heerarka hore; tarifada rasmi ah waxay ku nool tahay Maamulka → Xukunka.",
     "simulator_official_rate": "Heerka rasmi ah: {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "Tarifad la'aan",
-    "simulator_no_tariff_body": "Tarifad firfircoon oo loo daabacay xukunkani ma jirto. Xisaabta lama heli karo — fadlan la xiriir maamulka."
+    "simulator_no_tariff_body": "Tarifad firfircoon oo loo daabacay xukunkani ma jirto. Xisaabta lama heli karo — fadlan la xiriir maamulka.",
+    "simulator_mode_maritime": "Badeed",
+    "simulator_mode_air": "Hawada",
+    "simulator_air_aircraft_type": "Nooca diyaaradda",
+    "simulator_air_lto_cycles": "Wareegyada LTO",
+    "simulator_air_methodology_note": "Habka LTO ee ICAO: qiiqa wareeg kasta oo Soo-degid & Kac (taxi, kicid, fuulid, iyo soo-dhowaansho ka hooseeya 3000 ft).",
+    "simulator_air_emissions_label": "Qiiqa la qiyaasay"
   },
   "Overview": {
     "kpi_active_vessels": "Maraakiibta Firfircoon ee EEZ",
@@ -2795,6 +2801,8 @@
     "nav": {
       "dashboard": "Xaashida Guud",
       "vessels": "Maraakiibta",
+      "aircraft": "Diyaaradaha",
+      "fleet": "Ciidanka",
       "invoices": "Biillada",
       "alerts": "Ogeysiisyada",
       "signOut": "Ka bixi",
