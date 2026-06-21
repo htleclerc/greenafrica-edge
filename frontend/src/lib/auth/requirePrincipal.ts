@@ -103,7 +103,7 @@ export async function requirePrincipal(): Promise<Principal> {
         operationalSite: (profile.operational_site as OperationalSite) ?? OperationalSite.BERBERA_PORT,
         countryCode: (profile.country_code as string) ?? 'SO',
         timezone: (profile.timezone as string) ?? 'Africa/Mogadishu',
-        preferredLanguage: (profile.preferred_language as 'en' | 'fr' | 'so' | 'ar') ?? 'en',
+        preferredLanguage: (profile.preferred_language as 'en' | 'fr' | 'pt' | 'sw' | 'ar' | 'so') ?? 'en',
         lastLogin: user.last_sign_in_at ?? '',
         ipAddress: (profile.ip_address as string) ?? '',
         isActive: profile.is_active as boolean,
