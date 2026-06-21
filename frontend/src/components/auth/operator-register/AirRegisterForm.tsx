@@ -9,7 +9,7 @@ interface Props {
     recaptchaSiteKey: string;
 }
 
-const LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
+const LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
 
 export function AirRegisterForm({ recaptchaSiteKey }: Props) {
     const t = useTranslations('AirRegister');

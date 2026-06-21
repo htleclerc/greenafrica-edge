@@ -3217,7 +3217,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     },
     "errors": {
       "no_file": "Tafadhali pakia hati ya uthibitisho",
@@ -3256,7 +3257,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     }
   },
   "AdminRefunds": {

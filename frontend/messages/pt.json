@@ -3635,7 +3635,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     },
     "errors": {
       "no_file": "Por favor, carregue um documento comprovatório",
@@ -3674,7 +3675,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     }
   }
 }

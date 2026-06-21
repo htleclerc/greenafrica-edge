@@ -412,6 +412,8 @@ function PreferencesTab() {
                             <PreferencesSelect value={lang} onChange={setLang} options={[
                                 { value: 'fr', label: 'Français' },
                                 { value: 'en', label: 'English' },
+                                { value: 'pt', label: 'Português' },
+                                { value: 'sw', label: 'Kiswahili' },
                                 { value: 'so', label: 'Soomaali' },
                                 { value: 'ar', label: 'العربية' },
                             ]} />

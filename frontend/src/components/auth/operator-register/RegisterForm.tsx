@@ -9,7 +9,7 @@ interface Props {
     recaptchaSiteKey: string;
 }
 
-const LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
+const LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
 const DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
 
 declare global {

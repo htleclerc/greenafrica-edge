@@ -6,7 +6,7 @@ import { enforceRateLimit } from '@/lib/rateLimit';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 
-const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
+const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
 const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
 
 const registerShipownerSchema = z.object({
