@@ -6,7 +6,7 @@ import { enforceRateLimit } from '@/lib/rateLimit';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 
-const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw'] as const;
+const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
 
 const registerAirOperatorSchema = z.object({
     email: z.string().email().max(254),

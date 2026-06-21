@@ -28,7 +28,7 @@ export interface SecureUser {
     operationalSite: OperationalSite;
     countryCode: string;        // ISO 3166-1 alpha-2
     timezone: string;           // e.g. 'Africa/Djibouti'
-    preferredLanguage: 'en' | 'fr' | 'so' | 'ar';
+    preferredLanguage: 'en' | 'fr' | 'pt' | 'sw' | 'ar' | 'so';
     lastLogin: string;          // ISO datetime
     ipAddress: string;
     isActive: boolean;

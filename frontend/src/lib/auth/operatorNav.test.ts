@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { OPERATOR_NAV } from './operatorNav';
+import { OPERATOR_NAV, vesselsNavLabelKey, isAirOnly, type OperatorMode } from './operatorNav';
 
 describe('OPERATOR_NAV', () => {
     it('has exactly 8 items', () => {
@@ -35,5 +35,33 @@ describe('OPERATOR_NAV', () => {
             'disputes',
             'notifications',
         ]);
+    });
+});
+
+describe('vesselsNavLabelKey', () => {
+    it('AIR only → nav.aircraft', () => {
+        expect(vesselsNavLabelKey(['AIR'])).toBe('nav.aircraft');
+    });
+
+    it('MARITIME only → nav.vessels', () => {
+        expect(vesselsNavLabelKey(['MARITIME'])).toBe('nav.vessels');
+    });
+
+    it('both modes → nav.fleet (order independent)', () => {
+        expect(vesselsNavLabelKey(['MARITIME', 'AIR'])).toBe('nav.fleet');
+        expect(vesselsNavLabelKey(['AIR', 'MARITIME'])).toBe('nav.fleet');
+    });
+
+    it('empty / unknown → nav.vessels (default, backwards compatible)', () => {
+        expect(vesselsNavLabelKey([])).toBe('nav.vessels');
+    });
+});
+
+describe('isAirOnly', () => {
+    it('true only when AIR present and MARITIME absent', () => {
+        expect(isAirOnly(['AIR'])).toBe(true);
+        expect(isAirOnly(['MARITIME', 'AIR'] satisfies OperatorMode[])).toBe(false);
+        expect(isAirOnly(['MARITIME'])).toBe(false);
+        expect(isAirOnly([])).toBe(false);
     });
 });

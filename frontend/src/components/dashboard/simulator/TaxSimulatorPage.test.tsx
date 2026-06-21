@@ -9,8 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { VesselCategory } from '@/types/secure';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stubs
@@ -18,6 +17,13 @@ import { VesselCategory } from '@/types/secure';
 
 vi.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
+}));
+
+// usePrincipalKind drives the mode tabs auto-selection. Default: maritime operator
+// so existing maritime tests keep their behaviour; AIR tests override via mockModes.
+const mockModes = vi.hoisted(() => ({ value: ['MARITIME'] as ('MARITIME' | 'AIR')[] }));
+vi.mock('@/hooks/usePrincipalKind', () => ({
+    usePrincipalKind: () => ({ kind: 'operator', modes: mockModes.value }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,6 +76,9 @@ function mockFetchTariffError(status = 500): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('TaxSimulatorPage — fetch tariff + calcul (post-merge #68)', () => {
+    beforeEach(() => {
+        mockModes.value = ['MARITIME'];
+    });
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -198,5 +207,100 @@ describe('TaxSimulatorPage — fetch tariff + calcul (post-merge #68)', () => {
         // Les deux taux effectifs doivent être identiques au taux unique
         expect(eezTax / eezCo2).toBeCloseTo(rate, 5);
         expect(portTax / portCo2).toBeCloseTo(rate, 5);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Simulateur AÉRIEN (CHANTIER 3)
+// Méthodo ICAO LTO : emissions_tco2 = cycles × (co2KgPerLto / 1000) ; tax = ×taux.
+// Presets seedés : A320=2600, B738=2800, A20N=2150, A321=2950, B788=6500, DH8D=650.
+// État initial AIR : icaoType=A320 (2600 kg/LTO), ltoCycles=100.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('TaxSimulatorPage — mode AÉRIEN (ICAO LTO)', () => {
+    beforeEach(() => {
+        mockModes.value = ['AIR']; // opérateur aérien : onglet Aérien auto-sélectionné
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // ── Formule pure ─────────────────────────────────────────────────────────
+
+    it('arithmétique pure — A320 (2600 kg/LTO) × 100 cycles = 260 tCO₂', () => {
+        const co2KgPerLto = 2600;
+        const cycles = 100;
+        const emissionsTco2 = cycles * (co2KgPerLto / 1000);
+        expect(emissionsTco2).toBe(260);
+    });
+
+    it('arithmétique pure — tax = emissions × taux (260 tCO₂ × 35 = 9100 USD)', () => {
+        const emissionsTco2 = 100 * (2600 / 1000);
+        const rate = 35;
+        expect(emissionsTco2 * rate).toBe(9100);
+    });
+
+    it('arithmétique pure — 0 cycle ⇒ 0 émission ⇒ 0 tax', () => {
+        const emissionsTco2 = 0 * (2600 / 1000);
+        expect(emissionsTco2).toBe(0);
+        expect(emissionsTco2 * 40).toBe(0);
+    });
+
+    // ── Rendu : taux disponible ──────────────────────────────────────────────
+
+    it('AIR — opérateur aérien : onglet Aérien actif, émissions calculées affichées', async () => {
+        mockFetchTariff({ ratePerTco2: 35 });
+        render(<TaxSimulatorPage />);
+
+        // 260 tCO₂ formaté fr-FR à 2 décimales
+        const emissions = (100 * (2600 / 1000)).toLocaleString('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        await waitFor(() => {
+            expect(document.body.textContent).toContain(emissions);
+        });
+    });
+
+    // ── Fail-closed : pas de tarif ───────────────────────────────────────────
+
+    it('AIR — ratePerTco2=null : bannière « tarif non publié » + montant "—"', async () => {
+        mockFetchTariff({ ratePerTco2: null });
+        render(<TaxSimulatorPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText('simulator_no_tariff_title')).toBeDefined();
+            expect(document.body.textContent).toContain('—');
+        });
+    });
+
+    it('AIR — fetch erreur HTTP : fail-closed comme ratePerTco2=null', async () => {
+        mockFetchTariffError(503);
+        render(<TaxSimulatorPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText('simulator_no_tariff_title')).toBeDefined();
+        });
+    });
+
+    // ── Onglets ──────────────────────────────────────────────────────────────
+
+    it('onglets — opérateur double mode : défaut Maritime, bascule vers Aérien possible', async () => {
+        mockModes.value = ['MARITIME', 'AIR'];
+        mockFetchTariff({ ratePerTco2: 40 });
+        render(<TaxSimulatorPage />);
+
+        // Défaut maritime : les deux onglets sont rendus
+        await waitFor(() => {
+            expect(screen.getByText('simulator_mode_maritime')).toBeDefined();
+            expect(screen.getByText('simulator_mode_air')).toBeDefined();
+        });
+
+        // Clic sur l'onglet Aérien → le libellé cycles LTO apparaît
+        fireEvent.click(screen.getByText('simulator_mode_air'));
+        await waitFor(() => {
+            expect(screen.getAllByText('simulator_air_lto_cycles').length).toBeGreaterThan(0);
+        });
     });
 });

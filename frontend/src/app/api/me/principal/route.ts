@@ -16,8 +16,13 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { normaliseOperatorModes, type OperatorMode } from '@/lib/auth/requirePrincipal';
 
 export const dynamic = 'force-dynamic';
+
+type PrincipalResponse =
+    | { kind: 'operator'; modes: OperatorMode[] }
+    | { kind: 'staff' };
 
 export async function GET() {
     const supabase = await createClient();
@@ -32,14 +37,17 @@ export async function GET() {
 
     const { data: shipowner } = await supabase
         .from('shipowners')
-        .select('id')
+        .select('id, applicable_modes')
         .eq('profile_id', user.id)
         .eq('account_state', 'ACTIVE')
         .maybeSingle();
 
     if (shipowner) {
-        return NextResponse.json({ kind: 'operator' } satisfies { kind: 'operator' | 'staff' });
+        const modes = normaliseOperatorModes(
+            (shipowner as { applicable_modes: unknown }).applicable_modes,
+        );
+        return NextResponse.json({ kind: 'operator', modes } satisfies PrincipalResponse);
     }
 
-    return NextResponse.json({ kind: 'staff' } satisfies { kind: 'operator' | 'staff' });
+    return NextResponse.json({ kind: 'staff' } satisfies PrincipalResponse);
 }

@@ -957,7 +957,13 @@
     "settings_visual_theme_desc": "Chagua muonekano wa kuona wa kiolesura cha jukwaa.",
     "simulator_official_rate": "Kiwango rasmi: {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "Hakuna kiwango kilichochapishwa",
-    "simulator_no_tariff_body": "Hakuna kiwango cha sasa kilichochapishwa kwa mamlaka hii. Hesabu haipatikani — tafadhali wasiliana na utawala."
+    "simulator_no_tariff_body": "Hakuna kiwango cha sasa kilichochapishwa kwa mamlaka hii. Hesabu haipatikani — tafadhali wasiliana na utawala.",
+    "simulator_mode_maritime": "Baharini",
+    "simulator_mode_air": "Anga",
+    "simulator_air_aircraft_type": "Aina ya ndege",
+    "simulator_air_lto_cycles": "Mizunguko ya LTO",
+    "simulator_air_methodology_note": "Mbinu ya ICAO LTO: utoaji wa hewa kwa kila mzunguko wa kutua na kupaa (kutembea, kupaa, kupanda, kukaribia chini ya futi 3000).",
+    "simulator_air_emissions_label": "Utoaji uliokadiriwa"
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
@@ -2680,6 +2686,8 @@
     "nav": {
       "dashboard": "Dashboard",
       "vessels": "Meli",
+      "aircraft": "Ndege",
+      "fleet": "Meli na ndege",
       "invoices": "Ankara",
       "alerts": "Tahadhari",
       "signOut": "Toka",
@@ -3209,7 +3217,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     },
     "errors": {
       "no_file": "Tafadhali pakia hati ya uthibitisho",
@@ -3248,7 +3257,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     }
   },
   "AdminRefunds": {

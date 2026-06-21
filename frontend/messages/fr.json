@@ -1075,7 +1075,13 @@
     "simulator_legacy_rates_notice": "Simulation indicative — table de taux historique ; les tarifs officiels sont dans Admin → Juridictions.",
     "simulator_official_rate": "Tarif officiel : {rate} {currency}/tCO₂",
     "simulator_no_tariff_title": "Aucun tarif publié",
-    "simulator_no_tariff_body": "Aucun tarif actif n'a été publié pour cette juridiction. Le calcul est indisponible — veuillez contacter l'administration."
+    "simulator_no_tariff_body": "Aucun tarif actif n'a été publié pour cette juridiction. Le calcul est indisponible — veuillez contacter l'administration.",
+    "simulator_mode_maritime": "Maritime",
+    "simulator_mode_air": "Aérien",
+    "simulator_air_aircraft_type": "Type d'avion",
+    "simulator_air_lto_cycles": "Cycles LTO",
+    "simulator_air_methodology_note": "Méthodologie ICAO LTO : émissions par cycle atterrissage-décollage (roulage, décollage, montée, approche sous 3000 ft).",
+    "simulator_air_emissions_label": "Émissions estimées"
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -2795,6 +2801,8 @@
     "nav": {
       "dashboard": "Tableau de bord",
       "vessels": "Navires",
+      "aircraft": "Aéronefs",
+      "fleet": "Flotte",
       "invoices": "Factures",
       "alerts": "Alertes",
       "signOut": "Se déconnecter",
@@ -3222,7 +3230,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     },
     "errors": {
       "no_file": "Veuillez joindre un document de preuve",
@@ -3527,7 +3536,8 @@
       "fr": "Français",
       "ar": "العربية",
       "pt": "Português",
-      "sw": "Kiswahili"
+      "sw": "Kiswahili",
+      "so": "Soomaali"
     }
   },
   "JurisdictionSwitcher": {
