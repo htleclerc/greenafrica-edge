@@ -5,10 +5,10 @@ import { Globe } from 'lucide-react';
 
 const LOCALES = [
     { code: 'en', label: 'EN' },
+    { code: 'so', label: 'SO' },
     { code: 'fr', label: 'FR' },
     { code: 'pt', label: 'PT' },
     { code: 'sw', label: 'SW' },
-    { code: 'so', label: 'SO' },
     { code: 'ar', label: 'العربية' },
 ] as const;
 
