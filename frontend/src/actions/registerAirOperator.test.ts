@@ -77,6 +77,37 @@ describe('registerAirOperator decision tree', () => {
         expect(mockSupabase.auth.admin.inviteUserByEmail).toHaveBeenCalled();
     });
 
+    it('AUTO-CLAIM persists official_email + AGENT_CLAIM source (so proforma reminders can reach the operator)', async () => {
+        const capturedUpdates: Record<string, unknown>[] = [];
+        mockSupabase.from.mockImplementation((table: string) => {
+            if (table === 'aircraft') return aircraftStub([{ id: 'ac1', operator_id: 'op1' }]);
+            if (table === 'shipowners') return {
+                ...operatorReadStub({ id: 'op1', account_state: 'GHOST', aoc_number: 'so-aoc-001' }),
+                update: (payload: Record<string, unknown>) => {
+                    capturedUpdates.push(payload);
+                    return { eq: () => ({ eq: () => ({ select: async () => ({ data: [{ id: 'op1' }], error: null }) }) }) };
+                },
+            };
+            if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
+                return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
+            }
+            return operatorReadStub(null);
+        });
+        mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({
+            data: { user: { id: 'uid', email: validInput.email } }, error: null,
+        });
+
+        const { registerAirOperator } = await import('./registerAirOperator');
+        const r = await registerAirOperator(validInput, '127.0.0.1');
+        expect(r.ok).toBe(true);
+
+        const claimUpdate = capturedUpdates.find((u) => u.account_state === 'ACTIVE');
+        expect(claimUpdate).toMatchObject({
+            official_email: validInput.email,
+            official_email_source: 'AGENT_CLAIM',
+        });
+    });
+
     it('PENDING_REVIEW when GHOST but AOC mismatch', async () => {
         let pendingInserted = false;
         mockSupabase.from.mockImplementation((table: string) => {

@@ -7,6 +7,7 @@ import {
   type InvoiceData,
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
+import { notifyOwner } from './notificationService';
 
 /**
  * Pro-forma pipeline — the orchestrator.
@@ -588,7 +589,29 @@ async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionN
     pdfPath = path;
   }
 
-  // ── 6. (no email — air alerts have no matched agent / recipient) ─────────
+  // ── 6. No agent email (air alerts have no matched agent). Instead notify ─
+  //      the linked operator in-app so the proforma is visible in their portal
+  //      immediately, and reaches them by email via the reminder loop once
+  //      they onboard. Best-effort — must never block proforma issuance.
+  if (aircraft.operator_id) {
+    try {
+      await notifyOwner(db, {
+        shipownerId: aircraft.operator_id,
+        kind: 'PROFORMA_ISSUED',
+        params: {
+          invoice_ref: invoiceRef,
+          amount_usd: tax.usd_amount,
+          vessel_name: assetName,
+        },
+        deepLink: `/owner/invoices?focus=${txn.id}`,
+      });
+    } catch (err) {
+      console.warn(
+        '[proformaPipeline] air operator notification failed:',
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
 
   // ── 7. Persist pdf_url + flip alert to PROFORMA_SENT ─────────────────────
   if (pdfPath) {
