@@ -411,10 +411,10 @@ function PreferencesTab() {
                         <Field label={t('settings_interface_language')}>
                             <PreferencesSelect value={lang} onChange={setLang} options={[
                                 { value: 'fr', label: 'Français' },
+                                { value: 'so', label: 'Soomaali' },
                                 { value: 'en', label: 'English' },
                                 { value: 'pt', label: 'Português' },
                                 { value: 'sw', label: 'Kiswahili' },
-                                { value: 'so', label: 'Soomaali' },
                                 { value: 'ar', label: 'العربية' },
                             ]} />
                         </Field>
