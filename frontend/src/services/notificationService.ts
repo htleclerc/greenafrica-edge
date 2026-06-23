@@ -3,6 +3,7 @@ import {
     sendPaymentConfirmationEmail,
     sendPaymentRejectedEmail,
     sendProformaReminderEmail,
+    sendProformaIssuedEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
     sendRefundIssuedEmail,
@@ -125,6 +126,15 @@ export async function notifyOwner(
                             invoiceRef: String(input.params.invoice_ref ?? '—'),
                             amountUsd: Number(input.params.amount_usd ?? 0),
                             ageDays: Number(input.params.age_days ?? 3),
+                        });
+                        break;
+                    case 'PROFORMA_ISSUED':
+                        result = await sendProformaIssuedEmail({
+                            to: ownerEmail,
+                            recipientName: ownerName,
+                            invoiceRef: String(input.params.invoice_ref ?? '—'),
+                            amountUsd: Number(input.params.amount_usd ?? 0),
+                            vesselName: input.params.vessel_name as string | undefined,
                         });
                         break;
                     case 'WALLET_TOPPED_UP':

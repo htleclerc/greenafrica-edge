@@ -90,6 +90,39 @@ describe('registerShipowner decision tree', () => {
         expect(mockSupabase.auth.admin.inviteUserByEmail).toHaveBeenCalled();
     });
 
+    it('AUTO-CLAIM persists official_email + AGENT_CLAIM source (so proforma reminders can reach the operator)', async () => {
+        const capturedUpdates: Record<string, unknown>[] = [];
+        mockSupabase.from.mockImplementation((table: string) => {
+            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
+            if (table === 'shipowners') return {
+                ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '1234567' }),
+                update: (payload: Record<string, unknown>) => {
+                    capturedUpdates.push(payload);
+                    return { eq: () => ({ eq: () => ({ select: async () => ({ data: [{ id: 'so1' }], error: null }) }) }) };
+                },
+                upsert: async () => ({ error: null }),
+                insert: async () => ({ error: null }),
+            };
+            if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
+                return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
+            }
+            return chainableSelect(null);
+        });
+        mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({
+            data: { user: { id: 'uid', email: validInput.email } }, error: null,
+        });
+
+        const { registerShipowner } = await import('./registerShipowner');
+        const r = await registerShipowner(validInput, '127.0.0.1');
+        expect(r.ok).toBe(true);
+
+        const claimUpdate = capturedUpdates.find((u) => u.account_state === 'ACTIVE');
+        expect(claimUpdate).toMatchObject({
+            official_email: validInput.email,
+            official_email_source: 'AGENT_CLAIM',
+        });
+    });
+
     it('PENDING_REVIEW when vessel→GHOST imo_company mismatch (generic msg)', async () => {
         let pendingInserted = false;
         mockSupabase.from.mockImplementation((table: string) => {

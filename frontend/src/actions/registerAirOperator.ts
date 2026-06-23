@@ -133,6 +133,12 @@ async function autoClaimAir(
             country_code: data.country_code,
             phone_e164: data.phone_e164 ?? null,
             preferred_language: data.preferred_language,
+            // Persist the operator's email on the shipowners row: the proforma
+            // reminder cron (mig 065) + notification-email-loop resolve the
+            // recipient via shipowners.official_email — without this, an
+            // auto-claimed operator never receives any proforma email.
+            official_email: data.email,
+            official_email_source: 'AGENT_CLAIM',
             proof_doc_url: data.proof_doc_storage_path,
             proof_doc_type: 'AOC',
             kyc_level_b_completed_at: new Date().toISOString(),
