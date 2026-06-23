@@ -17,7 +17,7 @@
  * dispatcher:
  *   - KYC_APPROVED: activation email lives at the call site (full role /
  *     operationalSite / activationUrl context).
- *   - WALLET_APPLIED, ALERT_DETECTED, KYC_C_REQUIRED, PROFORMA_ISSUED,
+ *   - WALLET_APPLIED, ALERT_DETECTED, KYC_C_REQUIRED,
  *     FINAL_ISSUED, COMPLEMENT_ISSUED, WALLET_LOW_BALANCE,
  *     DISPUTE_UPDATED, OWNER_ESCALATION: not yet wired to a templated
  *     email — Plan 7H-2+ scope.
@@ -27,6 +27,7 @@ import {
     sendPaymentConfirmationEmail,
     sendPaymentRejectedEmail,
     sendProformaReminderEmail,
+    sendProformaIssuedEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
     sendRefundIssuedEmail,
@@ -78,6 +79,15 @@ export async function dispatchNotificationEmail(
                 ageDays: Number(bodyParams.age_days ?? 3),
             });
 
+        case 'PROFORMA_ISSUED':
+            return sendProformaIssuedEmail({
+                to: ownerEmail,
+                recipientName: ownerName,
+                invoiceRef: String(bodyParams.invoice_ref ?? '—'),
+                amountUsd: Number(bodyParams.amount_usd ?? 0),
+                vesselName: bodyParams.vessel_name as string | undefined,
+            });
+
         case 'WALLET_TOPPED_UP':
             return sendWalletTopupEmail({
                 to: ownerEmail,
@@ -107,7 +117,6 @@ export async function dispatchNotificationEmail(
         case 'KYC_APPROVED':
         case 'KYC_C_REQUIRED':
         case 'ALERT_DETECTED':
-        case 'PROFORMA_ISSUED':
         case 'FINAL_ISSUED':
         case 'COMPLEMENT_ISSUED':
         case 'WALLET_APPLIED':

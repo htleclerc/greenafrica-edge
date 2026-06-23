@@ -5,6 +5,7 @@ vi.mock('@/services/emailService', () => ({
     sendPaymentConfirmationEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendPaymentRejectedEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendProformaReminderEmail: vi.fn().mockResolvedValue({ ok: true }),
+    sendProformaIssuedEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendWalletTopupEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendRegistrationApprovalEmail: vi.fn().mockResolvedValue({ ok: true }),
     sendKycRejectedEmail: vi.fn().mockResolvedValue({ ok: true }),
@@ -59,6 +60,19 @@ describe('notifyOwner', () => {
         });
         const { sendPaymentRejectedEmail } = await import('@/services/emailService');
         expect(sendPaymentRejectedEmail).toHaveBeenCalled();
+    });
+
+    it('dispatches sendProformaIssuedEmail for PROFORMA_ISSUED kind', async () => {
+        const client = makeClient({ ownerEmail: 'owner@test' });
+        await notifyOwner(client, {
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            kind: 'PROFORMA_ISSUED',
+            params: { invoice_ref: 'PRO-2026-1', amount_usd: 104, vessel_name: '6O-GGA' },
+        });
+        const { sendProformaIssuedEmail } = await import('@/services/emailService');
+        expect(sendProformaIssuedEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ to: 'owner@test', invoiceRef: 'PRO-2026-1', amountUsd: 104 }),
+        );
     });
 
     it('skips email when options.skipEmail = true', async () => {
