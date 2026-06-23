@@ -16,6 +16,11 @@ vi.mock('./emailService', () => ({
   sendInvoiceEmail: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+// The air path notifies the linked operator in-app (it has no agent to email).
+vi.mock('./notificationService', () => ({
+  notifyOwner: vi.fn().mockResolvedValue({ id: 'notif-air-1' }),
+}));
+
 import { runProformaPipeline } from './proformaPipelineService';
 
 const SOMALILAND_JID = '00000000-0000-4000-8000-00000000534f';
@@ -44,7 +49,7 @@ const AIRCRAFT = {
   icao_type: 'A320',
   engine_type: 'CFM56-5B',
   mtow_kg: 78000,
-  operator_id: 'op-ghost-1',
+  operator_id: 'op-ghost-1' as string | null,
   // Intentionally different from the alert's jurisdiction_id — proves that the
   // transaction jurisdiction_id comes from the ALERT (billing event), not the asset.
   jurisdiction_id: 'decoy-aircraft-jid',
@@ -214,6 +219,50 @@ describe('runProformaPipeline — AIR branch (W1-C-2)', () => {
     // ── Email never dispatched on the air path ────────────────────────────
     const { sendInvoiceEmail } = await import('./emailService');
     expect(sendInvoiceEmail).not.toHaveBeenCalled();
+
+    // ── But the linked operator IS notified in-app (PROFORMA_ISSUED) ───────
+    const { notifyOwner } = await import('./notificationService');
+    expect(notifyOwner).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ shipownerId: 'op-ghost-1', kind: 'PROFORMA_ISSUED' }),
+    );
+  });
+
+  it('notifies the linked operator with the invoice ref + amount + a deep link', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => AIR_TAX_RESULT, text: async () => '' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client } = makeClient();
+    const result = await runProformaPipeline({
+      alertId: 'alert-air-1', adminClient: client, taxApiUrl: 'http://tax.test',
+      dryRunEmail: true, dryRunStorage: true,
+    });
+    expect(result.ok).toBe(true);
+
+    const { notifyOwner } = await import('./notificationService');
+    const call = (notifyOwner as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(call).toMatchObject({
+      shipownerId: 'op-ghost-1',
+      kind: 'PROFORMA_ISSUED',
+      params: expect.objectContaining({ amount_usd: 104.0 }),
+    });
+    expect(String(call.params.invoice_ref)).toMatch(/^PRO-/);
+    expect(String(call.deepLink)).toContain('/owner/invoices');
+  });
+
+  it('skips the operator notification when the aircraft has no operator (nothing to notify)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => AIR_TAX_RESULT, text: async () => '' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client } = makeClient({ aircraft: { ...AIRCRAFT, operator_id: null } });
+    const result = await runProformaPipeline({
+      alertId: 'alert-air-1', adminClient: client, taxApiUrl: 'http://tax.test',
+      dryRunEmail: true, dryRunStorage: true,
+    });
+    expect(result.ok).toBe(true);
+
+    const { notifyOwner } = await import('./notificationService');
+    expect(notifyOwner).not.toHaveBeenCalled();
   });
 
   it('fail-closed: a non-OK air tax response → ok:false, NO transaction inserted', async () => {

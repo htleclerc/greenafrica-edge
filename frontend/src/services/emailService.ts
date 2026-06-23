@@ -628,6 +628,49 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
     });
 }
 
+// ── 10b. Pro-forma ISSUED email (issuance-time notice) ─────────────────────
+// Sent when a pro-forma is first issued. On the AIR path there is no matched
+// agent, so this is how the operator is emailed about a freshly-billed
+// proforma (dispatched via notifyOwner / notification-email-loop).
+
+export interface ProformaIssuedParams {
+    to: string;
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    vesselName?: string;
+}
+
+export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<EmailResult> {
+    const subject = `Pro-forma invoice ${p.invoiceRef} — $${p.amountUsd.toLocaleString()}`;
+    const assetRow = p.vesselName
+        ? `<div class="meta-row"><span class="meta-label">Asset</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        : '';
+    const content = `
+        <h1>Pro-forma Invoice Issued</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>A pro-forma carbon-tax invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been issued for your account.</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${assetRow}
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+
+        <div class="alert alert-warn">Please review and settle this pro-forma invoice from your portal. Late settlement may incur port-clearance delays and interest.</div>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">View Invoice →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} issued — $${p.amountUsd.toLocaleString()}` }),
+        text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+    });
+}
+
 // ── 11. Wallet top-up email (Plan 7F) ──────────────────────────────────────
 
 export interface WalletTopupParams {

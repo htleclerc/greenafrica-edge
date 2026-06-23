@@ -13,6 +13,7 @@ vi.mock('resend', () => ({
 import {
     sendPaymentRejectedEmail,
     sendProformaReminderEmail,
+    sendProformaIssuedEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
 } from './emailService';
@@ -56,6 +57,25 @@ describe('sendProformaReminderEmail', () => {
         expect(call.subject).toContain('PRO-2026-0002');
         expect(call.subject).toContain('7 days');
         expect(call.html).toContain('Payment Reminder');
+    });
+});
+
+describe('sendProformaIssuedEmail', () => {
+    it('sends with invoice ref + amount in subject and escapes the name', async () => {
+        const result = await sendProformaIssuedEmail({
+            to: 'operator@example.com',
+            recipientName: '<b>Air Co</b>',
+            invoiceRef: 'PRO-2026-0099',
+            amountUsd: 5040,
+            vesselName: '6O-GGA',
+        });
+        expect(result.success).toBe(true);
+        const call = sendMock.mock.calls[0][0];
+        expect(call.subject).toContain('PRO-2026-0099');
+        expect(call.html).toContain('Pro-forma Invoice Issued');
+        expect(call.html).toMatch(/\$5[,.\s]?040/); // locale-agnostic amount check
+        expect(call.html).toContain('&lt;b&gt;');
+        expect(call.html).not.toContain('<b>Air Co');
     });
 });
 
