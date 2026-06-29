@@ -12,7 +12,6 @@ const COLOR_MAP: Record<string, { bg: string; border: string; borderHover: strin
 const FOUNDERS = [
     { key: 'kpatchavi', color: 'emerald' },
     { key: 'radji', color: 'yellow' },
-    { key: 'dia', color: 'blue' },
 ];
 
 export function AboutFoundersSection() {
@@ -33,7 +32,7 @@ export function AboutFoundersSection() {
                 </div>
 
                 {/* Founder cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                     {FOUNDERS.map(({ key, color }) => (
                         <div
                             key={key}
