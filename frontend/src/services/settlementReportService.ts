@@ -157,3 +157,24 @@ export function settlementFilename(filters: SettlementFilters): string {
     const period = filters.from ? `-${formatMonth(filters.from)}` : '';
     return `greengate-settlement${scope}${period}.csv`;
 }
+
+/**
+ * Persist a settlement CSV to the private `documents` bucket under
+ * `settlement-reports/<YYYY-MM>.csv`. Returns the storage path on success or
+ * throws on upload failure. Used by the monthly cron to leave a durable,
+ * timestamped artifact of each ministerial report. `admin` must be a
+ * service-role client.
+ */
+export async function storeSettlementCsv(
+    admin: SupabaseClient,
+    monthBucket: string,
+    csv: string,
+): Promise<string> {
+    const path = `settlement-reports/${formatMonth(monthBucket)}.csv`;
+    const { error } = await admin.storage.from('documents').upload(path, csv, {
+        contentType: 'text/csv; charset=utf-8',
+        upsert: true,
+    });
+    if (error) throw new Error(error.message);
+    return path;
+}
