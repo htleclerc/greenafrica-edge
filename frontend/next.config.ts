@@ -33,6 +33,11 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
+    // NOTE: script-src/style-src still carry 'unsafe-inline' (+ 'unsafe-eval').
+    // Tailwind and recharts inject inline styles, and Next's runtime needs inline
+    // bootstrap scripts, so removing these requires a nonce-based rollout wired
+    // through middleware + a full browser QA pass — tracked as a follow-up, not
+    // done blind here. The directives below are the safe, no-regression hardening.
     value: [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -40,9 +45,13 @@ const securityHeaders = [
       `img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.supabase.co${localSupabaseAllow}`,
       "font-src 'self' data:",
       `connect-src 'self' https://*.supabase.co wss://*.supabase.co${localSupabaseAllow}`,
+      "object-src 'none'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      // Upgrade http subresources to https in prod only — dev talks to the local
+      // Supabase over http://127.0.0.1, which this directive would otherwise break.
+      ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
     ].join('; '),
   },
 ];
