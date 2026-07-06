@@ -1434,6 +1434,16 @@
     "no_projects_hint": "Adjust your filters or submit a new project."
   },
   "GovReportsPage": {
+    "settlement_list_title": "Monthly settlement reports",
+    "settlement_list_desc": "Live concessionaire / sovereign split generated from paid transactions.",
+    "settlement_col_month": "Month",
+    "settlement_col_tx": "Tx",
+    "settlement_col_total": "Total",
+    "settlement_col_concessionaire": "Concessionaire",
+    "settlement_col_sovereign": "Sovereign",
+    "settlement_list_loading": "Loading reports…",
+    "settlement_list_empty": "No settlement data yet.",
+    "settlement_list_error": "Could not load reports.",
     "settlement_title": "Settlement report (authority)",
     "settlement_desc": "Official concessionaire / sovereign revenue split on paid transactions.",
     "settlement_period_label": "Period",

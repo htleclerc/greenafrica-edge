@@ -1518,6 +1518,16 @@
     "no_projects_hint": "Modifiez vos filtres ou soumettez un nouveau projet."
   },
   "GovReportsPage": {
+    "settlement_list_title": "Rapports de settlement mensuels",
+    "settlement_list_desc": "Partage concessionnaire / souverain en direct, calculé sur les transactions payées.",
+    "settlement_col_month": "Mois",
+    "settlement_col_tx": "Tx",
+    "settlement_col_total": "Total",
+    "settlement_col_concessionaire": "Concessionnaire",
+    "settlement_col_sovereign": "Souverain",
+    "settlement_list_loading": "Chargement des rapports…",
+    "settlement_list_empty": "Aucune donnée de settlement pour l'instant.",
+    "settlement_list_error": "Impossible de charger les rapports.",
     "settlement_title": "Rapport de settlement (autorité)",
     "settlement_desc": "Partage officiel concessionnaire / souverain sur les transactions payées.",
     "settlement_period_label": "Période",
