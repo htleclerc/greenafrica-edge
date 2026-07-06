@@ -6,10 +6,15 @@ const mocks = vi.hoisted(() => ({
     settlementRows: [] as unknown[],
     fetchError: null as Error | null,
     auditInsert: vi.fn(async () => ({ error: null })),
+    rlAllowed: true,
 }));
 
 vi.mock('@/lib/auth/requireRole', () => ({
     requireRole: vi.fn(async () => mocks.requireResult),
+}));
+
+vi.mock('@/lib/rateLimit', () => ({
+    enforceRateLimit: vi.fn(async () => ({ allowed: mocks.rlAllowed, skipped: true })),
 }));
 
 vi.mock('@/lib/supabase/tenant', () => ({
@@ -55,7 +60,14 @@ describe('GET /api/admin/reports/settlement', () => {
         mocks.settlementRows = [makeRow()];
         mocks.fetchError = null;
         mocks.auditInsert = vi.fn(async () => ({ error: null }));
+        mocks.rlAllowed = true;
         vi.clearAllMocks();
+    });
+
+    it('returns 429 when the admin export rate limit is exceeded', async () => {
+        mocks.rlAllowed = false;
+        const res = await GET(new Request('http://x/api/admin/reports/settlement') as never);
+        expect(res.status).toBe(429);
     });
 
     it('returns the 403/401 response from requireRole when unauthorized', async () => {

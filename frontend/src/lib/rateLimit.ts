@@ -23,7 +23,14 @@ import { Redis } from '@upstash/redis';
  * provisioned in prod — see docs/runbooks and .env.example.
  */
 
-type LimiterKey = 'verify' | 'invoice-download' | 'signup' | 'signup-shipowner' | 'signup-air-operator';
+type LimiterKey =
+    | 'verify'
+    | 'invoice-download'
+    | 'signup'
+    | 'signup-shipowner'
+    | 'signup-air-operator'
+    | 'admin-read'
+    | 'admin-export';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -56,6 +63,15 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // Same caps as signup-shipowner — air operator self-service shares the same
     // account-takeover risk profile (AOC enumeration). W1-E spec §4.2.
     'signup-air-operator': { perMinute: 2, perHour: 10, perDay: 3 },
+
+    // Authenticated admin browsing/enumeration (e.g. shipowner search). Keyed by
+    // user id, not IP. Generous — a human admin clicks around freely — but caps a
+    // compromised/abused admin session scraping the full dataset.
+    'admin-read': { perMinute: 60, perHour: 600 },
+
+    // Admin data exports (settlement CSV) — heavier responses over cross-
+    // jurisdiction fiscal data, so a tighter envelope than plain reads.
+    'admin-export': { perMinute: 20, perHour: 120 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.

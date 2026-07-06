@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
+import { enforceRateLimit } from '@/lib/rateLimit';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import {
     fetchSettlement,
@@ -40,6 +41,12 @@ function cleanDate(raw: string | null): string | null {
 export async function GET(req: NextRequest) {
     const auth = await requireRole(ADMIN_ROLES);
     if (auth.error) return auth.error;
+
+    // Cap mass export of cross-jurisdiction fiscal data (per-admin).
+    const rl = await enforceRateLimit('admin-export', auth.user.id);
+    if (!rl.allowed) {
+        return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     const url = new URL(req.url);
     const modeRaw = url.searchParams.get('mode');
