@@ -1434,6 +1434,11 @@
     "no_projects_hint": "Adjust your filters or submit a new project."
   },
   "GovReportsPage": {
+    "settlement_title": "Settlement report (authority)",
+    "settlement_desc": "Official concessionaire / sovereign revenue split on paid transactions.",
+    "settlement_period_label": "Period",
+    "settlement_all_periods": "All periods",
+    "settlement_download_csv": "Download CSV",
     "title": "Government Reports & Analytics",
     "subtitle": "Official reporting portal — Ministry of Finance · Somaliland Maritime Authority",
     "print_summary": "Print Summary",

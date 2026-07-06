@@ -1784,6 +1784,11 @@
     "no_projects_hint": "Ajuste seus filtros ou submeta um novo projeto."
   },
   "GovReportsPage": {
+    "settlement_title": "Relatório de settlement (autoridade)",
+    "settlement_desc": "Divisão oficial de receita concessionária / soberana sobre transações pagas.",
+    "settlement_period_label": "Período",
+    "settlement_all_periods": "Todos os períodos",
+    "settlement_download_csv": "Baixar CSV",
     "title": "Relatórios Governamentais & Análises",
     "subtitle": "Portal oficial de relatórios — Ministério das Finanças · Autoridade Marítima da Somalilândia",
     "print_summary": "Imprimir Resumo",

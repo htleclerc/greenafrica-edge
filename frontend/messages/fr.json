@@ -1518,6 +1518,11 @@
     "no_projects_hint": "Modifiez vos filtres ou soumettez un nouveau projet."
   },
   "GovReportsPage": {
+    "settlement_title": "Rapport de settlement (autorité)",
+    "settlement_desc": "Partage officiel concessionnaire / souverain sur les transactions payées.",
+    "settlement_period_label": "Période",
+    "settlement_all_periods": "Toutes les périodes",
+    "settlement_download_csv": "Télécharger le CSV",
     "title": "Rapports gouvernementaux & Analyses",
     "subtitle": "Portail de rapports officiels — Ministère des Finances · Autorité Maritime du Somaliland",
     "print_summary": "Imprimer le résumé",

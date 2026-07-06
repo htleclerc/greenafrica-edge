@@ -1403,6 +1403,11 @@
     "no_projects_hint": "عدّل الفلاتر أو قدّم مشروعاً جديداً."
   },
   "GovReportsPage": {
+    "settlement_title": "تقرير التسوية (الجهة المختصة)",
+    "settlement_desc": "التقسيم الرسمي للإيرادات بين صاحب الامتياز والدولة على المعاملات المدفوعة.",
+    "settlement_period_label": "الفترة",
+    "settlement_all_periods": "كل الفترات",
+    "settlement_download_csv": "تنزيل CSV",
     "title": "التقارير والتحليلات الحكومية",
     "subtitle": "بوابة التقارير الرسمية — وزارة المالية · السلطة البحرية لصوماليلاند",
     "print_summary": "طباعة الملخص",

@@ -1403,6 +1403,11 @@
     "no_projects_hint": "Rekebisha vichujio vyako au wasilisha mradi mpya."
   },
   "GovReportsPage": {
+    "settlement_title": "Ripoti ya settlement (mamlaka)",
+    "settlement_desc": "Mgawanyo rasmi wa mapato kati ya mkandarasi na serikali kwa miamala iliyolipwa.",
+    "settlement_period_label": "Kipindi",
+    "settlement_all_periods": "Vipindi vyote",
+    "settlement_download_csv": "Pakua CSV",
     "title": "Ripoti za Serikali & Uchambuzi",
     "subtitle": "Tovuti rasmi ya ripoti — Wizara ya Fedha · Mamlaka ya Bahari ya Somaliland",
     "print_summary": "Chapisha Muhtasari",

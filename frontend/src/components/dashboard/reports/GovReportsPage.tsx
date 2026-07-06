@@ -12,6 +12,7 @@ import {
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { OsButton } from '@/components/ui/OsButton';
+import { SettlementExportCard } from './SettlementExportCard';
 import { useKpis } from '@/hooks/useKpis';
 
 // Static chart data — will be replaced by /api/revenue/analytics in V2
@@ -184,6 +185,9 @@ export function GovReportsPage() {
                     {t('print_summary')}
                 </OsButton>
             </div>
+
+            {/* Live authority settlement export (L8) — real, downloadable report */}
+            <SettlementExportCard />
 
             {/* KPI row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

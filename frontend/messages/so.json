@@ -1434,6 +1434,11 @@
     "no_projects_hint": "Hagaaji filtarradaada ama gudbi mashruuc cusub."
   },
   "GovReportsPage": {
+    "settlement_title": "Warbixinta settlement (mas'uuliyadda)",
+    "settlement_desc": "Qaybinta rasmiga ah ee dakhliga u dhexeeya shatiga iyo dawladda ee macaamilada la bixiyay.",
+    "settlement_period_label": "Muddada",
+    "settlement_all_periods": "Dhammaan muddooyinka",
+    "settlement_download_csv": "Soo dejiso CSV",
     "title": "Warbixinnada Dowladda & Falanqaynta",
     "subtitle": "Bogga warbixinnada rasmiiga ah — Wasaaradda Maaliyadda · Hay'adda Maritime ee Somaliland",
     "print_summary": "Daabac Koobbada",
