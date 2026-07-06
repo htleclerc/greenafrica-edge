@@ -11,12 +11,16 @@ import { Redis } from '@upstash/redis';
  * the endpoints to exhaust our Supabase request budget. This module caps
  * the per-IP traffic at the edge.
  *
- * Graceful degradation: if `UPSTASH_REDIS_REST_URL` /
- * `UPSTASH_REDIS_REST_TOKEN` are not set, `allow()` is a no-op that always
- * returns `{ allowed: true, skipped: true }`. That keeps local dev frictionless
- * and prevents hard failures if the Upstash project is temporarily unreachable.
- * Set `RATE_LIMIT_STRICT=true` to turn the absence of the env vars into a hard
- * failure (recommended in production — prevents silent downgrade to unlimited).
+ * Degradation policy: if `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+ * are not set —
+ *   • outside production → fail OPEN (`{ allowed: true, skipped: true }`) so
+ *     local dev and CI stay frictionless;
+ *   • in production → fail CLOSED (`{ allowed: false, reason: 'no_redis_strict' }`)
+ *     so a missing/unreachable Upstash can never silently downgrade the app to
+ *     unlimited traffic. This is the secure default.
+ * Opt out of the production fail-closed behaviour with `RATE_LIMIT_STRICT=false`
+ * (a deploy that intentionally runs without Upstash). Requires Upstash to be
+ * provisioned in prod — see docs/runbooks and .env.example.
  */
 
 type LimiterKey = 'verify' | 'invoice-download' | 'signup' | 'signup-shipowner' | 'signup-air-operator';
@@ -101,8 +105,11 @@ export interface RateLimitResult {
 }
 
 function requireEnvInProd(): RateLimitResult | null {
+    // Secure by default: in production, a missing Redis fails CLOSED unless the
+    // operator explicitly opts out with RATE_LIMIT_STRICT=false. Non-production
+    // always returns null (caller then fails open) to keep dev/CI frictionless.
     if (process.env.NODE_ENV !== 'production') return null;
-    if (process.env.RATE_LIMIT_STRICT !== 'true') return null;
+    if (process.env.RATE_LIMIT_STRICT === 'false') return null;
     return {
         allowed: false,
         reason: 'no_redis_strict',
