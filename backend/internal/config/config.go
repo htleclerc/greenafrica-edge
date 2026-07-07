@@ -14,6 +14,8 @@ type Config struct {
 	AISStreamAPIKey string
 	APISecret       string // internal API auth
 	AllowedOrigins  []string
+	SentryDSN       string // empty → monitoring disabled (no-op)
+	SentryEnv       string // Sentry environment tag (e.g. production)
 }
 
 func Load() *Config {
@@ -35,6 +37,8 @@ func Load() *Config {
 		AISStreamAPIKey: os.Getenv("AISSTREAM_API_KEY"),
 		APISecret:       os.Getenv("API_SECRET"),
 		AllowedOrigins:  origins,
+		SentryDSN:       os.Getenv("SENTRY_DSN"),
+		SentryEnv:       os.Getenv("SENTRY_ENVIRONMENT"),
 	}
 }
 
