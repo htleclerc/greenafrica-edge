@@ -1434,6 +1434,12 @@
     "no_projects_hint": "Hagaaji filtarradaada ama gudbi mashruuc cusub."
   },
   "GovReportsPage": {
+    "kpi_total_revenue": "Wadarta dakhliga",
+    "kpi_concessionaire_share": "Qaybta shatiga",
+    "kpi_sovereign_share": "Qaybta dawladda",
+    "kpi_transactions": "Macaamilada",
+    "chart_revenue_by_month": "Dakhliga bishii",
+    "chart_revenue_by_month_desc": "Wax-ku-biirinta kaarboon ee la bixiyay, la xisaabtamay bishii.",
     "settlement_list_title": "Warbixinada settlement bishii",
     "settlement_list_desc": "Qaybinta shatiga / dawladda oo si toos ah looga soo saaray macaamilada la bixiyay.",
     "settlement_col_month": "Bisha",

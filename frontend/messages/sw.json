@@ -1403,6 +1403,12 @@
     "no_projects_hint": "Rekebisha vichujio vyako au wasilisha mradi mpya."
   },
   "GovReportsPage": {
+    "kpi_total_revenue": "Mapato ya jumla",
+    "kpi_concessionaire_share": "Sehemu ya mkandarasi",
+    "kpi_sovereign_share": "Sehemu ya serikali",
+    "kpi_transactions": "Miamala",
+    "chart_revenue_by_month": "Mapato kwa mwezi",
+    "chart_revenue_by_month_desc": "Mchango wa kaboni uliolipwa, kwa mwezi.",
     "settlement_list_title": "Ripoti za settlement za kila mwezi",
     "settlement_list_desc": "Mgawanyo wa mkandarasi / serikali moja kwa moja kutoka miamala iliyolipwa.",
     "settlement_col_month": "Mwezi",

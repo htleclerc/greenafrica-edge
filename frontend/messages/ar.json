@@ -1403,6 +1403,12 @@
     "no_projects_hint": "عدّل الفلاتر أو قدّم مشروعاً جديداً."
   },
   "GovReportsPage": {
+    "kpi_total_revenue": "إجمالي الإيرادات",
+    "kpi_concessionaire_share": "حصة صاحب الامتياز",
+    "kpi_sovereign_share": "حصة الدولة",
+    "kpi_transactions": "المعاملات",
+    "chart_revenue_by_month": "الإيرادات حسب الشهر",
+    "chart_revenue_by_month_desc": "مساهمة الكربون المدفوعة، مسوّاة شهريًا.",
     "settlement_list_title": "تقارير التسوية الشهرية",
     "settlement_list_desc": "تقسيم صاحب الامتياز / الدولة مباشرةً من المعاملات المدفوعة.",
     "settlement_col_month": "الشهر",
