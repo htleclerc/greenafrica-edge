@@ -1784,6 +1784,12 @@
     "no_projects_hint": "Ajuste seus filtros ou submeta um novo projeto."
   },
   "GovReportsPage": {
+    "kpi_total_revenue": "Receita total",
+    "kpi_concessionaire_share": "Parte concessionária",
+    "kpi_sovereign_share": "Parte soberana",
+    "kpi_transactions": "Transações",
+    "chart_revenue_by_month": "Receita por mês",
+    "chart_revenue_by_month_desc": "Contribuição de carbono paga, liquidada por mês.",
     "settlement_list_title": "Relatórios de settlement mensais",
     "settlement_list_desc": "Divisão concessionária / soberana em tempo real, calculada sobre transações pagas.",
     "settlement_col_month": "Mês",
