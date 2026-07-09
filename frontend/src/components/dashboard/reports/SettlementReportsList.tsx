@@ -3,78 +3,22 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Download } from 'lucide-react';
-import type { SettlementRow } from '@/services/settlementReportService';
 import { formatMonth } from '@/services/settlementReportService';
+import type { MonthlySettlement } from '@/lib/settlement';
+import type { SettlementLoadState } from '@/hooks/useSettlementSummary';
 import { settlementExportHref } from './SettlementExportCard';
-
-// ── Pure aggregation (unit-tested) ────────────────────────────────────────────
-
-export interface MonthlySettlement {
-    month: string; // YYYY-MM-01 bucket
-    txCount: number;
-    totalUsd: number;
-    concessionaireUsd: number;
-    sovereignUsd: number;
-}
-
-/** Collapse the per-(jurisdiction, mode) view rows into one row per month, most recent first. */
-export function groupSettlementByMonth(rows: SettlementRow[]): MonthlySettlement[] {
-    const byMonth = new Map<string, MonthlySettlement>();
-    for (const r of rows) {
-        const cur = byMonth.get(r.month) ?? {
-            month: r.month, txCount: 0, totalUsd: 0, concessionaireUsd: 0, sovereignUsd: 0,
-        };
-        cur.txCount += Number(r.tx_count ?? 0);
-        cur.totalUsd += Number(r.total_usd ?? 0);
-        cur.concessionaireUsd += Number(r.concessionaire_usd ?? 0);
-        cur.sovereignUsd += Number(r.sovereign_usd ?? 0);
-        byMonth.set(r.month, cur);
-    }
-    return Array.from(byMonth.values()).sort((a, b) => (a.month < b.month ? 1 : -1));
-}
 
 function usd(n: number): string {
     return '$' + Math.round(n).toLocaleString('en-US');
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-type LoadState = 'loading' | 'ready' | 'error';
-
 /**
- * Real monthly settlement reports, replacing the former static mock catalogue.
- * Fetches the live split from /api/admin/reports/settlement (JSON), one
- * downloadable CSV per month. The endpoint is admin-gated + rate-limited, so a
- * non-admin who reaches this gets an error state, not data.
+ * Real monthly settlement reports (L8), replacing the former static mock
+ * catalogue. Presentational — data comes from useSettlementSummary (shared with
+ * the KPIs and chart), one downloadable CSV per month.
  */
-export function SettlementReportsList({ onCount }: { onCount?: (n: number) => void }) {
+export function SettlementReportsList({ months, state }: { months: MonthlySettlement[]; state: SettlementLoadState }) {
     const t = useTranslations('GovReportsPage');
-    const [state, setState] = React.useState<LoadState>('loading');
-    const [months, setMonths] = React.useState<MonthlySettlement[]>([]);
-
-    // Keep the latest callback without making it an effect dependency (an inline
-    // parent callback would otherwise re-trigger the fetch on every render).
-    const onCountRef = React.useRef(onCount);
-    onCountRef.current = onCount;
-
-    React.useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            try {
-                const res = await fetch('/api/admin/reports/settlement?format=json');
-                if (!res.ok) throw new Error(String(res.status));
-                const json = await res.json();
-                const grouped = groupSettlementByMonth((json.rows ?? []) as SettlementRow[]);
-                if (cancelled) return;
-                setMonths(grouped);
-                setState('ready');
-                onCountRef.current?.(grouped.length);
-            } catch {
-                if (!cancelled) setState('error');
-            }
-        })();
-        return () => { cancelled = true; };
-    }, []);
 
     return (
         <div className="os-card overflow-hidden">
