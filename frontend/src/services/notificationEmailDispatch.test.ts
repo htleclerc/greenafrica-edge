@@ -29,6 +29,39 @@ describe('dispatchNotificationEmail', () => {
         expect(res).not.toBeNull();
     });
 
+    it('routes PROFORMA_REMINDER to sendProformaReminderEmail with mapped fields (pg_cron replay path)', async () => {
+        const res = await dispatchNotificationEmail({
+            kind: 'PROFORMA_REMINDER',
+            ownerEmail: 'owner@test',
+            ownerName: 'Ship Co',
+            bodyParams: { invoice_ref: 'PRO-2026-7', amount_usd: 250, age_days: 7 },
+        });
+        const { sendProformaReminderEmail } = await import('@/services/emailService');
+        expect(sendProformaReminderEmail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                to: 'owner@test',
+                recipientName: 'Ship Co',
+                invoiceRef: 'PRO-2026-7',
+                amountUsd: 250,
+                ageDays: 7,
+            }),
+        );
+        expect(res).not.toBeNull();
+    });
+
+    it('defaults PROFORMA_REMINDER ageDays to 3 when age_days is absent', async () => {
+        await dispatchNotificationEmail({
+            kind: 'PROFORMA_REMINDER',
+            ownerEmail: 'owner@test',
+            ownerName: 'Ship Co',
+            bodyParams: { invoice_ref: 'PRO-2026-8', amount_usd: 100 },
+        });
+        const { sendProformaReminderEmail } = await import('@/services/emailService');
+        expect(sendProformaReminderEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ ageDays: 3, amountUsd: 100 }),
+        );
+    });
+
     it('returns null for an unwired kind', async () => {
         const res = await dispatchNotificationEmail({
             kind: 'WALLET_APPLIED',
