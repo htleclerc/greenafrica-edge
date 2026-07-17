@@ -484,7 +484,14 @@ export function mapPaiement(
         // USD, donc jamais 1 ici.
         fx_rate: null,
         rail: 'WIRE_TRANSFER',
+        // seed_ref (= p.id, ex. "pay-001") est la clé de dédup utilisée par
+        // Task 7 (scripts/seed-onboarding.ts) au 2e run : `external_reference`
+        // est nullable (paiement cash sans référence bancaire) et ne peut donc
+        // pas servir seul de clé d'idempotence — un paiement sans référence
+        // serait ré-inséré à chaque run. rail_details n'a pas de contrainte de
+        // forme (JSONB, migration 048), donc porter seed_ref ici ne casse rien.
         rail_details: {
+            seed_ref: p.id,
             reference_bancaire: p.reference_bancaire,
             banque_emettrice: p.banque_emettrice,
             notes: p.notes,

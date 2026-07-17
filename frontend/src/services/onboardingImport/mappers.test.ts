@@ -383,6 +383,21 @@ describe('onboardingImport mappers', () => {
         expect(row.external_reference).toBe('SWIFT-20260508-STL-001');
         expect(row.transaction_id).toBe('ffffffff-0000-4000-8000-000000000001');
         expect(row.shipowner_id).toBe('cccccccc-0000-4000-8000-000000000001');
+        expect((row.rail_details as { seed_ref: string }).seed_ref).toBe('pay-001');
+    });
+
+    it('mapPaiement porte le seed id dans rail_details.seed_ref même sans référence bancaire (dédup 2e run)', () => {
+        const txnIdByProformaSeedId = new Map([['pf-mar-064001', {
+            transactionId: 'ffffffff-0000-4000-8000-000000000001',
+            shipownerId: 'cccccccc-0000-4000-8000-000000000001',
+        }]]);
+        const row = mapPaiement({
+            id: 'pay-002', proforma_id: 'pf-mar-064001', montant_usd: 500,
+            date_recu: '2026-05-09', methode: 'CASH', reference_bancaire: null,
+            banque_emettrice: null, confirmation_pdf: null, notes: 'Paiement cash sans référence',
+        }, txnIdByProformaSeedId, 'ffffffff-0000-4000-8000-000000000099');
+        expect(row.external_reference).toBeNull();
+        expect((row.rail_details as { seed_ref: string }).seed_ref).toBe('pay-002');
     });
 
     it('mapPaiement throw si la proforma référencée est absente de la map', () => {

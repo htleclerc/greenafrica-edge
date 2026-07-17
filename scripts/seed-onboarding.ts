@@ -120,7 +120,20 @@ async function insertBatched(
  * CONFLICT specification`. On sélectionne donc les clés déjà présentes puis on
  * n'insère que le manquant — idempotent par construction, et applicable
  * uniformément (même pattern que les transactions plus bas, pour une raison
- * différente : là c'est le trigger d'immutabilité, ici l'index partiel). */
+ * apparentée mais pas identique : là c'est le trigger d'immutabilité (mig 089)
+ * ET, indépendamment, le fait que `idx_txn_invoice_ref` (migration 017) est
+ * LUI AUSSI un unique index partiel (`WHERE invoice_ref IS NOT NULL`) — un
+ * upsert `ON CONFLICT(invoice_ref)` échouerait pour la même raison PostgREST
+ * que ci-dessus, même si `transactions` n'était pas immuable ; ici c'est
+ * l'index partiel).
+ *
+ * Hypothèse mono-processus : ce script est un batch à exécution unique (pas de
+ * lock, pas de transaction englobante). Le pré-filtrage select-puis-insert
+ * n'offre aucune protection TOCTOU si deux exécutions tournent en parallèle
+ * sur la même base — deux runs concurrents peuvent tous deux voir une clé
+ * absente et tenter le même insert, l'un des deux échouant alors sur la
+ * contrainte unique. Non traité ici : le brief suppose une exécution
+ * ponctuelle et supervisée, pas un import concurrent. */
 async function insertMissingByKey(
     db: Db,
     table: WritableTable,
@@ -194,6 +207,26 @@ async function selectAircraftByOperators(db: Db, operatorIds: string[]): Promise
     return out;
 }
 
+/** Sélectionne les `rail_details.seed_ref` déjà présents en base pour `payments`
+ * — dédup client-side car PostgREST ne sait pas filtrer/indexer un champ JSONB
+ * arbitraire via `.in()` (pas d'index dédié sur `rail_details->>'seed_ref'`, et
+ * ça ne vaudrait pas le coût d'une migration pour un script d'import ponctuel).
+ * Volumes faibles à l'import (dizaines de paiements attendues, pas de pagination
+ * nécessaire) — un `select('rail_details')` complet suffit largement ici,
+ * contrairement à `selectExistingSet` qui batch par prudence sur des colonnes
+ * indexées et potentiellement plus volumineuses (shipowners/vessels/transactions). */
+async function selectExistingPaymentSeedRefs(db: Db): Promise<Set<string>> {
+    const { data, error } = await db.from('payments').select('rail_details');
+    if (error) throw new Error(`select payments.rail_details: ${error.message}`);
+    const out = new Set<string>();
+    for (const row of (data ?? []) as { rail_details: unknown }[]) {
+        const details = row.rail_details as Record<string, unknown> | null;
+        const seedRef = details?.seed_ref;
+        if (typeof seedRef === 'string') out.add(seedRef);
+    }
+    return out;
+}
+
 async function selectTransactions(db: Db, invoiceRefs: string[]): Promise<TransactionRow[]> {
     const out: TransactionRow[] = [];
     for (const batch of chunk(invoiceRefs)) {
@@ -230,10 +263,38 @@ async function main(): Promise<void> {
         if (process.env.PURGE_CONFIRM !== 'TABLE_RASE') {
             throw new Error('--purge exige PURGE_CONFIRM=TABLE_RASE');
         }
-        for (const table of PURGE_TABLES) {
-            const { error } = await db.from(table).delete().not('id', 'is', null);
-            if (error) throw new Error(`purge ${table}: ${error.message}`);
-            console.log(`purge ${table} OK`);
+        // Validation up-front, AVANT tout DELETE : `transactions` est
+        // structurellement non purgeable (trigger transactions_no_delete,
+        // migration 089 — DELETE interdit à quiconque, y compris service_role,
+        // voir note sur PURGE_TABLES ci-dessus). Si des transactions existent
+        // déjà, un `--purge` serait de toute façon incomplet (les FK vers
+        // vessels/shipowners resteraient bloquées en cascade au milieu de la
+        // boucle) : on échoue tôt et lisiblement plutôt que de purger
+        // partiellement puis buter sur `vessels`.
+        const { count: txnCount, error: txnCountError } = await db
+            .from('transactions').select('id', { count: 'exact', head: true });
+        if (txnCountError) throw new Error(`purge : count transactions: ${txnCountError.message}`);
+        if ((txnCount ?? 0) > 0) {
+            throw new Error(
+                `purge impossible : ${txnCount} transactions immuables présentes — la remise à ` +
+                `zéro des transactions exige une opération DBA dédiée (voir rapport Task 7) ; ` +
+                `aucune table n'a été touchée`,
+            );
+        }
+        let purgedCount = 0;
+        try {
+            for (const table of PURGE_TABLES) {
+                const { error } = await db.from(table).delete().not('id', 'is', null);
+                if (error) throw new Error(`${table}: ${error.message}`);
+                purgedCount += 1;
+                console.log(`purge ${table} OK`);
+            }
+        } catch (e) {
+            const detail = e instanceof Error ? e.message : String(e);
+            throw new Error(
+                `purge interrompue : ${purgedCount}/${PURGE_TABLES.length} tables purgées, ` +
+                `arrêt sur ${detail}`,
+            );
         }
     }
 
@@ -364,14 +425,18 @@ async function main(): Promise<void> {
     await insertMissingByKey(db, 'collection_reminders', 'seed_ref', reminderRows as unknown as Record<string, unknown>[]);
     console.log(`collection_reminders : ${reminderRows.length} lignes attendues (insert-si-manquant, idempotent)`);
 
+    // Dédup par `rail_details.seed_ref` (pas par `external_reference`) : ce
+    // dernier est nullable (paiement cash sans référence bancaire), donc
+    // `!r.external_reference || !existingExternalRefs.has(...)` ré-insérerait
+    // TOUJOURS les paiements sans référence à chaque run. mapPaiement (Task 6/7
+    // review) porte désormais le seed id (`pay-001`…) dans `rail_details.seed_ref`
+    // — clé stable et toujours présente, quel que soit le rail de paiement.
     const paymentRows: PaymentInsert[] = paiements.map((p) => mapPaiement(p, txnIdByProformaSeedId, confirmedBy));
-    const externalRefs = paymentRows
-        .map((r) => r.external_reference)
-        .filter((r): r is string => Boolean(r));
-    const existingExternalRefs = await selectExistingSet(db, 'payments', 'external_reference', externalRefs);
-    const paymentRowsToInsert = paymentRows.filter(
-        (r) => !r.external_reference || !existingExternalRefs.has(r.external_reference),
-    );
+    const existingPaymentSeedRefs = await selectExistingPaymentSeedRefs(db);
+    const paymentRowsToInsert = paymentRows.filter((r) => {
+        const seedRef = (r.rail_details as { seed_ref?: unknown }).seed_ref;
+        return typeof seedRef !== 'string' || !existingPaymentSeedRefs.has(seedRef);
+    });
     await insertBatched(db, 'payments', paymentRowsToInsert as unknown as Record<string, unknown>[]);
     console.log(`payments : ${paymentRowsToInsert.length} nouveaux (${paymentRows.length} attendus au total, ` +
         `${paymentRows.length - paymentRowsToInsert.length} déjà présents)`);
