@@ -6,9 +6,11 @@
  *
  * Colonnes cibles : migrations 003 (vessels/transactions de base + enum
  * vessel_category), 017 (invoice_ref), 024/047 (shipowners de base), 026
- * (transactions PROFORMA/breakdown_json), 048 (payments), 071/077 (mode
- * MARITIME/AIR + aircraft_id), 092 (shipowners sanctions/aviation), 093 (vessels
- * seed extensions), 094 (collection_reminders).
+ * (transactions PROFORMA/breakdown_json), 048 (payments), 071 (jurisdiction_id
+ * sur transactions/vessels + mode MARITIME/AIR), 072 (jurisdiction_id sur
+ * shipowners/payments), 074 (jurisdiction_id sur aircraft), 077 (aircraft_id),
+ * 092 (shipowners sanctions/aviation), 093 (vessels seed extensions), 094
+ * (collection_reminders).
  */
 import type {
     SeedArmateur, SeedCompagnie, SeedNavire, SeedVoyage,
@@ -28,9 +30,23 @@ export type DbShipownerAccountState =
 // ── transport_mode (migration 071) ───────────────────────────────────────────
 export type DbTransportMode = 'MARITIME' | 'AIR';
 
+/**
+ * DEFAULT transitoire posé par les migrations 071/072/074 sur
+ * `jurisdiction_id` (`transactions`/`arrival_alerts`/`vessels` en 071,
+ * `shipowners`/`payments`/`wallets`/`wallet_ledger`/`refunds`/
+ * `owner_notifications` en 072, `aircraft` en 074) — "expand step" à
+ * destination des lignes déjà existantes lors du déploiement. Chaque
+ * commentaire de colonne documente explicitement : "drop it in the contract
+ * migration once every write path sets jurisdiction_id explicitly." Cet
+ * import est un write path : il pose donc la valeur Somaliland
+ * explicitement plutôt que de compter sur le DEFAULT (seul déploiement du
+ * mode AIR à date, docs/onboarding/seeds/*).
+ */
+export const SOMALILAND_JURISDICTION_ID = '00000000-0000-4000-8000-00000000534f';
+
 // ── *Insert : interfaces locales alignées sur les colonnes DB ────────────────
 
-/** shipowners (024 + 047 + 092) — champs peuplés par l'import onboarding. */
+/** shipowners (024 + 047 + 072 + 092) — champs peuplés par l'import onboarding. */
 export interface ShipownerInsert {
     seed_ref: string;
     name: string;
@@ -49,9 +65,10 @@ export interface ShipownerInsert {
     is_ofac_sdn: boolean;
     is_un_prohibited: boolean;
     account_state: DbShipownerAccountState;
+    jurisdiction_id: string;
 }
 
-/** vessels (003 + 024 + 093) — champs peuplés par l'import onboarding. */
+/** vessels (003 + 024 + 071 + 093) — champs peuplés par l'import onboarding. */
 export interface VesselInsert {
     seed_ref: string;
     imo_number: string;
@@ -66,6 +83,7 @@ export interface VesselInsert {
     previous_names: string[];
     wave_tag: string | null;
     shipowner_id: string | null;
+    jurisdiction_id: string;
 }
 
 /** transactions (003 + 017 + 026 + 071 + 077) — pro-forma d'entrée MARITIME/AIR. */
@@ -86,6 +104,7 @@ export interface TransactionInsert {
     collections_status: 'CURRENT';
     created_at: string;
     breakdown_json: Record<string, unknown>;
+    jurisdiction_id: string;
 }
 
 /** collection_reminders (094). */
@@ -102,7 +121,10 @@ export interface CollectionReminderInsert {
     escalated_bailiff: boolean;
 }
 
-/** payments (048). */
+/** payments (048 + 072) — jurisdiction_id ajouté par la 072 (même DEFAULT
+ * transitoire Somaliland que shipowners/vessels/transactions, voir
+ * SOMALILAND_JURISDICTION_ID) : ce write path le pose donc lui aussi
+ * explicitement. */
 export interface PaymentInsert {
     transaction_id: string;
     shipowner_id: string;
@@ -117,6 +139,7 @@ export interface PaymentInsert {
     confirmed_by: string;
     confirmed_at: string;
     declared_by: string;
+    jurisdiction_id: string;
 }
 
 /**
@@ -234,6 +257,7 @@ export function mapArmateurToShipowner(a: SeedArmateur): ShipownerInsert {
         // Toujours GHOST : l'invitation (transition vers INVITED) est un acte
         // admin explicite post-import, jamais automatique depuis le seed.
         account_state: 'GHOST',
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }
 
@@ -256,6 +280,7 @@ export function mapCompagnieToShipowner(c: SeedCompagnie): ShipownerInsert {
         is_ofac_sdn: false,
         is_un_prohibited: false,
         account_state: 'GHOST',
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }
 
@@ -320,6 +345,7 @@ export function mapNavireToVessel(
         // absent de la map (pas encore importé / hors lot) donne un navire
         // orphelin plutôt qu'un échec de tout l'import.
         shipowner_id: shipownerIdBySeedRef.get(n.armateur_id) ?? null,
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }
 
@@ -393,6 +419,7 @@ export function mapProformaMaritime(
                 date_depart: voyage.date_depart ? parseSeedDateOrRaw(voyage.date_depart) : null,
             },
         },
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }
 
@@ -430,6 +457,7 @@ export function mapProformaAviation(
             source: 'onboarding_seed_v2',
             vol: p.vol_details,
         },
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }
 
@@ -503,5 +531,6 @@ export function mapPaiement(
         // Postgres à minuit UTC — pas de reformatage nécessaire côté mapper.
         confirmed_at: p.date_recu,
         declared_by: confirmedBy,
+        jurisdiction_id: SOMALILAND_JURISDICTION_ID,
     };
 }

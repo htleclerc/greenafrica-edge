@@ -39,7 +39,8 @@ COMMENT ON COLUMN public.shipowners.is_un_prohibited IS
 COMMENT ON COLUMN public.shipowners.seed_ref IS
   'Référence du package onboarding_armateurs (arm-XXX / avi-XXX). Clé d''idempotence de scripts/seed-onboarding.ts.';
 
--- Valeur d'audit pour les refus de contact sanctions (utilisée par Task 5)
+-- Valeur d'audit pour les refus de contact sanctions (utilisée par l'action
+-- inviteShipowner et les envois sortants)
 ALTER TYPE public.audit_action ADD VALUE IF NOT EXISTS 'SANCTIONS_CONTACT_BLOCKED';
 
 -- DOWN:

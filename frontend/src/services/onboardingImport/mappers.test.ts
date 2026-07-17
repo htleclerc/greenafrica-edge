@@ -7,6 +7,7 @@ import {
     parseSeedDate, mapVesselCategory, mapArmateurToShipowner,
     mapCompagnieToShipowner, mapNavireToVessel, mapProformaMaritime,
     mapProformaAviation, mapRelance, mapPaiement, isSyntheticImo,
+    SOMALILAND_JURISDICTION_ID,
 } from './mappers';
 import { proformasFileSchema, armateursFileSchema } from './seedSchemas';
 
@@ -60,6 +61,7 @@ describe('onboardingImport mappers', () => {
         expect(row.is_ofac_sdn).toBe(true);
         expect(row.account_state).toBe('GHOST');
         expect(row.seed_ref).toBe('arm-007');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('armateur normal mappe tous les champs de base', () => {
@@ -82,6 +84,7 @@ describe('onboardingImport mappers', () => {
         expect(row.aliases).toEqual(['H&P Cyprus', 'HP Ship Mgmt']);
         expect(row.equasis_id).toBe('HP-MGT-2019-0341');
         expect(row.account_state).toBe('GHOST');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('armateur avec email_principal null → official_email null', () => {
@@ -106,6 +109,7 @@ describe('onboardingImport mappers', () => {
         expect(row.official_email).toBe('ops@flydubai.com');
         expect(row.account_state).toBe('GHOST');
         expect(row.seed_ref).toBe('avi-002');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('mapNavireToVessel résout le shipowner_id via armateur_id et mmsi "—" → null', () => {
@@ -121,6 +125,7 @@ describe('onboardingImport mappers', () => {
         expect(row.flag_code).toBe('TO');
         expect(row.category).toBe('BULK_CARRIER');
         expect(row.seed_ref).toBe('nav-001');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('mapNavireToVessel: pavillon null/"—" → flag_code "XX"', () => {
@@ -143,6 +148,8 @@ describe('onboardingImport mappers', () => {
         }, shipownerIdBySeedRef);
         expect(rowDashFlag.flag_code).toBe('XX');
         expect(rowDashFlag.mmsi).toBe('376985000');
+        expect(rowNullFlag.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
+        expect(rowDashFlag.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('isSyntheticImo distingue un IMO synthétique d\'un IMO réel', () => {
@@ -157,6 +164,7 @@ describe('onboardingImport mappers', () => {
             annee_construction: null, status: 'ACTIVE', previous_names: [], wave_tag: 'W5',
         }, new Map());
         expect(row.shipowner_id).toBeNull();
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('pro-forma maritime → transaction ENTRY_TAX/PROFORMA avec breakdown_json.voyage', () => {
@@ -197,6 +205,7 @@ describe('onboardingImport mappers', () => {
         expect(txn.collections_status).toBe('CURRENT');
         expect(txn.created_at).toBe('2026-04-26');
         expect(txn.invoice_ref).toBe('PRO-2026-064001');
+        expect(txn.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
         const breakdown = txn.breakdown_json as Record<string, unknown>;
         expect(breakdown.source).toBe('onboarding_seed_v2');
         expect(breakdown.wave_tag).toBe('W1-3');
@@ -315,6 +324,7 @@ describe('onboardingImport mappers', () => {
         expect(txn.vessel_name).toBe('ET-309');
         expect(txn.vessel_imo).toBe('B737-800');
         expect(txn.document_type).toBe('PROFORMA');
+        expect(txn.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
         const breakdown = txn.breakdown_json as Record<string, unknown>;
         expect(breakdown.source).toBe('onboarding_seed_v2');
         expect(breakdown.vol).toBeTruthy();
@@ -392,6 +402,7 @@ describe('onboardingImport mappers', () => {
         expect(row.transaction_id).toBe('ffffffff-0000-4000-8000-000000000001');
         expect(row.shipowner_id).toBe('cccccccc-0000-4000-8000-000000000001');
         expect((row.rail_details as { seed_ref: string }).seed_ref).toBe('pay-001');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('mapPaiement porte le seed id dans rail_details.seed_ref même sans référence bancaire (dédup 2e run)', () => {
@@ -406,6 +417,7 @@ describe('onboardingImport mappers', () => {
         }, txnIdByProformaSeedId, 'ffffffff-0000-4000-8000-000000000099');
         expect(row.external_reference).toBeNull();
         expect((row.rail_details as { seed_ref: string }).seed_ref).toBe('pay-002');
+        expect(row.jurisdiction_id).toBe(SOMALILAND_JURISDICTION_ID);
     });
 
     it('mapPaiement throw si la proforma référencée est absente de la map', () => {

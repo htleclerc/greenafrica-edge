@@ -25,6 +25,7 @@ import type { SeedVoyage, SeedProforma } from '../frontend/src/services/onboardi
 import {
     mapArmateurToShipowner, mapCompagnieToShipowner, mapNavireToVessel,
     mapProformaMaritime, mapProformaAviation, mapRelance, mapPaiement,
+    SOMALILAND_JURISDICTION_ID,
 } from '../frontend/src/services/onboardingImport/mappers';
 import type {
     ShipownerInsert, VesselInsert, TransactionInsert, CollectionReminderInsert,
@@ -172,6 +173,30 @@ interface VesselRow { id: string; seed_ref: string | null; name: string; imo_num
 interface AircraftRow { id: string; operator_id: string | null; icao_type: string | null }
 interface TransactionRow { id: string; invoice_ref: string | null; shipowner_id: string | null }
 
+interface ShipownerSanctionFlags { is_ofac_sdn: boolean; is_un_prohibited: boolean }
+
+/** Sélectionne les flags sanctions des shipowners déjà en base pour les
+ * seed_ref donnés — utilisé pour détecter une divergence (drift) entre un
+ * package ré-émis et une ligne déjà importée. L'import étant insert-si-
+ * manquant (jamais d'UPDATE sur une ligne existante, voir insertMissingByKey),
+ * un flip is_ofac_sdn/is_un_prohibited entre deux runs serait sinon silencieux. */
+async function selectExistingShipownerSanctionFlags(
+    db: Db,
+    seedRefs: string[],
+): Promise<Map<string, ShipownerSanctionFlags>> {
+    const out = new Map<string, ShipownerSanctionFlags>();
+    for (const batch of chunk(seedRefs)) {
+        if (batch.length === 0) continue;
+        const { data, error } = await db.from('shipowners')
+            .select('seed_ref, is_ofac_sdn, is_un_prohibited').in('seed_ref', batch);
+        if (error) throw new Error(`select shipowners (sanctions drift): ${error.message}`);
+        for (const row of (data ?? []) as { seed_ref: string | null; is_ofac_sdn: boolean; is_un_prohibited: boolean }[]) {
+            if (row.seed_ref) out.set(row.seed_ref, { is_ofac_sdn: row.is_ofac_sdn, is_un_prohibited: row.is_un_prohibited });
+        }
+    }
+    return out;
+}
+
 async function selectShipowners(db: Db, seedRefs: string[]): Promise<ShipownerRow[]> {
     const out: ShipownerRow[] = [];
     for (const batch of chunk(seedRefs)) {
@@ -211,12 +236,19 @@ async function selectAircraftByOperators(db: Db, operatorIds: string[]): Promise
  * — dédup client-side car PostgREST ne sait pas filtrer/indexer un champ JSONB
  * arbitraire via `.in()` (pas d'index dédié sur `rail_details->>'seed_ref'`, et
  * ça ne vaudrait pas le coût d'une migration pour un script d'import ponctuel).
- * Volumes faibles à l'import (dizaines de paiements attendues, pas de pagination
- * nécessaire) — un `select('rail_details')` complet suffit largement ici,
- * contrairement à `selectExistingSet` qui batch par prudence sur des colonnes
- * indexées et potentiellement plus volumineuses (shipowners/vessels/transactions). */
+ * `.not('rail_details->>seed_ref', 'is', null)` exclut les paiements réels des
+ * rails Plan 7 (qui n'ont jamais de `seed_ref`) AVANT le plafond implicite
+ * PostgREST de 1000 lignes par requête — sans ce filtre, une base avec >1000
+ * paiements réels pouvait faire disparaître les seed_ref au-delà de la ligne
+ * 1000 côté client et casser la dédup silencieusement. Volumes faibles pour
+ * les paiements *du seed* (dizaines), donc pas de pagination nécessaire une
+ * fois le bruit filtré côté serveur — contrairement à `selectExistingSet` qui
+ * batch par prudence sur des colonnes indexées et potentiellement plus
+ * volumineuses (shipowners/vessels/transactions). */
 async function selectExistingPaymentSeedRefs(db: Db): Promise<Set<string>> {
-    const { data, error } = await db.from('payments').select('rail_details');
+    const { data, error } = await db.from('payments')
+        .select('rail_details')
+        .not('rail_details->>seed_ref', 'is', null);
     if (error) throw new Error(`select payments.rail_details: ${error.message}`);
     const out = new Set<string>();
     for (const row of (data ?? []) as { rail_details: unknown }[]) {
@@ -303,8 +335,28 @@ async function main(): Promise<void> {
         ...armateurs.map(mapArmateurToShipowner),
         ...compagnies.map(mapCompagnieToShipowner),
     ];
-    await insertMissingByKey(db, 'shipowners', 'seed_ref', shipownerRows as unknown as Record<string, unknown>[]);
     const shipownerSeedRefs = shipownerRows.map((r) => r.seed_ref);
+
+    // Détection de drift sanctions AVANT l'insert-si-manquant : l'idempotence
+    // insert-only ne touche jamais une ligne déjà présente, donc un package
+    // ré-émis qui change is_ofac_sdn/is_un_prohibited pour un armateur déjà
+    // importé serait sinon silencieusement ignoré (voir finding review branche).
+    const existingSanctionFlags = await selectExistingShipownerSanctionFlags(db, shipownerSeedRefs);
+    let sanctionsDriftCount = 0;
+    for (const row of shipownerRows) {
+        const existing = existingSanctionFlags.get(row.seed_ref);
+        if (!existing) continue;
+        if (existing.is_ofac_sdn !== row.is_ofac_sdn || existing.is_un_prohibited !== row.is_un_prohibited) {
+            sanctionsDriftCount += 1;
+            console.error(
+                `⚠️ SANCTIONS DRIFT: ${row.seed_ref} ${row.name} — seed dit ` +
+                `ofac=${row.is_ofac_sdn}/un=${row.is_un_prohibited}, DB dit ` +
+                `ofac=${existing.is_ofac_sdn}/un=${existing.is_un_prohibited} — mise à jour manuelle requise`,
+            );
+        }
+    }
+
+    await insertMissingByKey(db, 'shipowners', 'seed_ref', shipownerRows as unknown as Record<string, unknown>[]);
     const shipownerDbRows = await selectShipowners(db, shipownerSeedRefs);
     const shipownerIdBySeedRef = new Map<string, string>();
     for (const row of shipownerDbRows) {
@@ -353,7 +405,13 @@ async function main(): Promise<void> {
         const operatorId = shipownerIdBySeedRef.get(compagnieId) ?? null;
         const dbKey = `${operatorId}/${icaoType}`;
         if (operatorId && !aircraftIdByDbKey.has(dbKey)) {
-            aircraftToInsert.push({ registration: null, icao_type: icaoType, operator_id: operatorId });
+            aircraftToInsert.push({
+                registration: null, icao_type: icaoType, operator_id: operatorId,
+                // jurisdiction_id (migration 074) porte le même DEFAULT transitoire
+                // Somaliland que shipowners/vessels/transactions/payments — ce write
+                // path le pose explicitement (voir SOMALILAND_JURISDICTION_ID).
+                jurisdiction_id: SOMALILAND_JURISDICTION_ID,
+            });
         }
     }
     if (aircraftToInsert.length > 0) {
@@ -443,6 +501,16 @@ async function main(): Promise<void> {
 
     // ── 7. Vérification finale chiffrée ─────────────────────────────────────────
     await verify(db);
+
+    // Un drift sanctions ne doit JAMAIS passer inaperçu — même si verify() est
+    // OK par ailleurs, le run se termine en échec (exit 1) pour forcer une
+    // relecture humaine des flags is_ofac_sdn/is_un_prohibited divergents.
+    if (sanctionsDriftCount > 0) {
+        throw new Error(
+            `${sanctionsDriftCount} armateur(s)/compagnie(s) avec drift sanctions détecté(s) ` +
+            `(voir warnings ⚠️ SANCTIONS DRIFT ci-dessus) — mise à jour manuelle requise avant de considérer ce run complet.`,
+        );
+    }
 }
 
 async function verify(db: Db): Promise<void> {
@@ -477,42 +545,60 @@ async function verify(db: Db): Promise<void> {
         'vessels');
     await check('vessels', vesselsCount, 100);
 
+    // ── Scope transactions/collection_reminders/payments aux lignes PRODUITES
+    // PAR CE SCRIPT — pas un count(*) absolu. Une base non vierge (ex.
+    // l'hébergé, qui porte déjà 2 pro-formas AIR de démo reliées à Demo
+    // Airways, structurellement indélébiles — mig 089) ne peut jamais faire
+    // correspondre un compteur absolu à la taille exacte du seed. Filtre :
+    // `breakdown_json->>'source' = 'onboarding_seed_v2'` (posé par
+    // mapProformaMaritime/mapProformaAviation) pour transactions,
+    // `seed_ref IS NOT NULL` pour collection_reminders, `rail_details->>
+    // 'seed_ref' IS NOT NULL` pour payments — mêmes clés que la dédup
+    // d'idempotence côté import, donc garanties absentes des données hors
+    // périmètre de ce script.
     const proformaCount = headCount(
         await db.from('transactions').select('id', { count: 'exact', head: true })
-            .eq('document_type', 'PROFORMA'),
+            .eq('document_type', 'PROFORMA').eq('breakdown_json->>source', 'onboarding_seed_v2'),
         'transactions PROFORMA');
     await check('transactions PROFORMA', proformaCount, 458);
 
     const maritimeCount = headCount(
         await db.from('transactions').select('id', { count: 'exact', head: true })
-            .eq('document_type', 'PROFORMA').eq('mode', 'MARITIME'),
+            .eq('document_type', 'PROFORMA').eq('mode', 'MARITIME')
+            .eq('breakdown_json->>source', 'onboarding_seed_v2'),
         'transactions PROFORMA MARITIME');
     await check('transactions PROFORMA MARITIME', maritimeCount, 100);
 
     const airCount = headCount(
         await db.from('transactions').select('id', { count: 'exact', head: true })
-            .eq('document_type', 'PROFORMA').eq('mode', 'AIR'),
+            .eq('document_type', 'PROFORMA').eq('mode', 'AIR')
+            .eq('breakdown_json->>source', 'onboarding_seed_v2'),
         'transactions PROFORMA AIR');
     await check('transactions PROFORMA AIR', airCount, 358);
 
     const { data: sumData, error: sumError } = await db
-        .from('transactions').select('tax_amount_usd').eq('document_type', 'PROFORMA');
+        .from('transactions').select('tax_amount_usd')
+        .eq('document_type', 'PROFORMA').eq('breakdown_json->>source', 'onboarding_seed_v2');
     if (sumError) throw new Error(`sum transactions: ${sumError.message}`);
     const taxSum = ((sumData ?? []) as { tax_amount_usd: number }[])
         .reduce((s, r) => s + Number(r.tax_amount_usd), 0);
     await check('SUM(tax_amount_usd)', taxSum, 2604886.34, 0.01);
 
     const remindersCount = headCount(
-        await db.from('collection_reminders').select('id', { count: 'exact', head: true }),
+        await db.from('collection_reminders').select('id', { count: 'exact', head: true })
+            .not('seed_ref', 'is', null),
         'collection_reminders');
     await check('collection_reminders', remindersCount, 40);
 
     const paymentsCount = headCount(
-        await db.from('payments').select('id', { count: 'exact', head: true }), 'payments');
+        await db.from('payments').select('id', { count: 'exact', head: true })
+            .not('rail_details->>seed_ref', 'is', null),
+        'payments');
     await check('payments', paymentsCount, 3);
 
     const { data: paymentSumData, error: paymentSumError } = await db
-        .from('payments').select('amount_usd_minor');
+        .from('payments').select('amount_usd_minor')
+        .not('rail_details->>seed_ref', 'is', null);
     if (paymentSumError) throw new Error(`sum payments: ${paymentSumError.message}`);
     const paymentsSum = ((paymentSumData ?? []) as { amount_usd_minor: number }[])
         .reduce((s, r) => s + Number(r.amount_usd_minor), 0) / 100;
