@@ -444,4 +444,33 @@ describe('seeds réels — intégrité', () => {
         const blocked = armateurs.filter((a) => a.is_ofac_sdn || a.is_un_prohibited);
         expect(blocked.map((a) => a.id).sort()).toEqual(['arm-007', 'arm-012', 'arm-013']);
     });
+
+    it('les 198 pro-formas de l\'extension aviation mai 2026 (04b) totalisent USD 146 004.00', () => {
+        const raw: unknown = JSON.parse(
+            readFileSync(join(SEEDS, '04b_proformas_aviation_mai_extension.json'), 'utf-8'),
+        );
+        const { proformas } = proformasFileSchema.parse(raw);
+        expect(proformas).toHaveLength(198);
+        expect(proformas.every((p) => p.type === 'AVIATION')).toBe(true);
+        const total = proformas.reduce((s, p) => s + p.total_usd, 0);
+        expect(total).toBeCloseTo(146004.0, 2);
+    });
+
+    it('04 + 04b combinés totalisent 656 pro-formas et USD 2 750 890.34', () => {
+        const raw04: unknown = JSON.parse(readFileSync(join(SEEDS, '04_proformas.json'), 'utf-8'));
+        const raw04b: unknown = JSON.parse(
+            readFileSync(join(SEEDS, '04b_proformas_aviation_mai_extension.json'), 'utf-8'),
+        );
+        const proformas04 = proformasFileSchema.parse(raw04).proformas;
+        const proformas04b = proformasFileSchema.parse(raw04b).proformas;
+        const combined = [...proformas04, ...proformas04b];
+        expect(combined).toHaveLength(656);
+        const total = combined.reduce((s, p) => s + p.total_usd, 0);
+        expect(total).toBeCloseTo(2750890.34, 2);
+        // Aucune collision d'id/référence entre les deux fichiers.
+        const ids = new Set(combined.map((p) => p.id));
+        const refs = new Set(combined.map((p) => p.reference));
+        expect(ids.size).toBe(656);
+        expect(refs.size).toBe(656);
+    });
 });

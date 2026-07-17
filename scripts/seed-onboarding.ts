@@ -272,11 +272,28 @@ async function selectTransactions(db: Db, invoiceRefs: string[]): Promise<Transa
 }
 
 async function main(): Promise<void> {
-    // 1. Parse + validation Zod des 7 seeds (échoue AVANT tout write)
+    // 1. Parse + validation Zod des 8 seeds (échoue AVANT tout write) — 04b
+    // (extension aviation mai 2026) est concaténé à 04 juste après, avant le
+    // calcul de totalUsd/le log ci-dessous.
     const armateurs = armateursFileSchema.parse(loadJson('01_armateurs.json')).armateurs;
     const navires = naviresFileSchema.parse(loadJson('02_navires.json')).navires;
     const voyages = voyagesFileSchema.parse(loadJson('03_voyages.json')).voyages;
-    const proformas = proformasFileSchema.parse(loadJson('04_proformas.json')).proformas;
+    // 04b : extension complémentaire aviation mai 2026 (198 pro-formas, 146
+    // 004.00 USD, références AVI-MAI-2026-XXXX — aucune collision id/reference
+    // avec 04_proformas.json, vérifié). Même schéma (proformaAviationSchema,
+    // `.loose()`) donc les 3 champs informatifs propres à 04b (`flight_date`,
+    // `wave_tag`, `status`) passent tels quels sans être lus par le mapper.
+    // Concaténée à 04 AVANT le mapping/insert aviation : les aircraft
+    // synthétiques se dédupliquent déjà par compagnie/icao_type, donc les
+    // vols de mai 2026 réutilisent les mêmes lignes `aircraft` que 04 sans
+    // logique supplémentaire.
+    const proformasMai = proformasFileSchema.parse(
+        loadJson('04b_proformas_aviation_mai_extension.json'),
+    ).proformas;
+    const proformas = [
+        ...proformasFileSchema.parse(loadJson('04_proformas.json')).proformas,
+        ...proformasMai,
+    ];
     const relances = relancesFileSchema.parse(loadJson('05_relances.json')).relances;
     const paiements = paiementsFileSchema.parse(loadJson('06_paiements.json')).paiements;
     const compagnies = compagniesFileSchema.parse(loadJson('07_compagnies_aeriennes.json')).compagnies;
@@ -560,7 +577,7 @@ async function verify(db: Db): Promise<void> {
         await db.from('transactions').select('id', { count: 'exact', head: true })
             .eq('document_type', 'PROFORMA').eq('breakdown_json->>source', 'onboarding_seed_v2'),
         'transactions PROFORMA');
-    await check('transactions PROFORMA', proformaCount, 458);
+    await check('transactions PROFORMA', proformaCount, 656);
 
     const maritimeCount = headCount(
         await db.from('transactions').select('id', { count: 'exact', head: true })
@@ -574,7 +591,7 @@ async function verify(db: Db): Promise<void> {
             .eq('document_type', 'PROFORMA').eq('mode', 'AIR')
             .eq('breakdown_json->>source', 'onboarding_seed_v2'),
         'transactions PROFORMA AIR');
-    await check('transactions PROFORMA AIR', airCount, 358);
+    await check('transactions PROFORMA AIR', airCount, 556);
 
     const { data: sumData, error: sumError } = await db
         .from('transactions').select('tax_amount_usd')
@@ -582,7 +599,7 @@ async function verify(db: Db): Promise<void> {
     if (sumError) throw new Error(`sum transactions: ${sumError.message}`);
     const taxSum = ((sumData ?? []) as { tax_amount_usd: number }[])
         .reduce((s, r) => s + Number(r.tax_amount_usd), 0);
-    await check('SUM(tax_amount_usd)', taxSum, 2604886.34, 0.01);
+    await check('SUM(tax_amount_usd)', taxSum, 2750890.34, 0.01);
 
     const remindersCount = headCount(
         await db.from('collection_reminders').select('id', { count: 'exact', head: true })

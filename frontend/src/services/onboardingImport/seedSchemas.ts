@@ -108,7 +108,12 @@ export const voyagesFileSchema = z.object({
 }).loose();
 export type SeedVoyagesFile = z.infer<typeof voyagesFileSchema>;
 
-// ── proformas[] (04_proformas.json) — MARITIME | AVIATION ────────────────────
+// ── proformas[] (04_proformas.json, 04b_proformas_aviation_mai_extension.json)
+// — MARITIME | AVIATION ────────────────────────────────────────────────────
+// proformaAviationSchema est déjà `.loose()` (comme tous les schémas de ce
+// fichier) : les 3 champs informatifs propres à 04b (`flight_date`,
+// `wave_tag`, `status`) passent tels quels sans déclaration explicite — ils
+// ne sont lus par aucun mapper, seule leur tolérance par le schéma compte.
 export const volDetailsSchema = z.object({
     flight_no: z.string(),
     route: z.string(),
