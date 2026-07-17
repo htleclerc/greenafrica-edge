@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+import { join } from 'node:path';
 import {
     parseSeedDate, mapVesselCategory, mapArmateurToShipowner,
     mapCompagnieToShipowner, mapNavireToVessel, mapProformaMaritime,
     mapProformaAviation, mapRelance, mapPaiement, isSyntheticImo,
 } from './mappers';
+import { proformasFileSchema, armateursFileSchema } from './seedSchemas';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SEEDS = join(__dirname, '../../../../docs/onboarding/seeds');
 
 describe('onboardingImport mappers', () => {
     it('parseSeedDate accepte DD/MM/YYYY et ISO', () => {
@@ -406,5 +414,22 @@ describe('onboardingImport mappers', () => {
             date_recu: '2026-05-08', methode: 'SWIFT', reference_bancaire: 'REF-1',
             banque_emettrice: 'Bank', confirmation_pdf: null, notes: null,
         }, new Map(), 'confirmed-by-id')).toThrow();
+    });
+});
+
+describe('seeds réels — intégrité', () => {
+    it('les 458 pro-formas totalisent USD 2 604 886.34', () => {
+        const raw: unknown = JSON.parse(readFileSync(join(SEEDS, '04_proformas.json'), 'utf-8'));
+        const { proformas } = proformasFileSchema.parse(raw);
+        expect(proformas).toHaveLength(458);
+        const total = proformas.reduce((s, p) => s + p.total_usd, 0);
+        expect(total).toBeCloseTo(2604886.34, 2);
+    });
+
+    it('exactement 3 armateurs sous sanctions, tous sans invitation possible', () => {
+        const raw: unknown = JSON.parse(readFileSync(join(SEEDS, '01_armateurs.json'), 'utf-8'));
+        const { armateurs } = armateursFileSchema.parse(raw);
+        const blocked = armateurs.filter((a) => a.is_ofac_sdn || a.is_un_prohibited);
+        expect(blocked.map((a) => a.id).sort()).toEqual(['arm-007', 'arm-012', 'arm-013']);
     });
 });
