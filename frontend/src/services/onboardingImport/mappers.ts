@@ -109,7 +109,7 @@ export interface PaymentInsert {
     amount_minor: number;
     currency: string;
     amount_usd_minor: number;
-    fx_rate: number;
+    fx_rate: number | null;
     rail: 'WIRE_TRANSFER';
     rail_details: Record<string, unknown>;
     external_reference: string | null;
@@ -163,13 +163,29 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  * proformas seed) et retourne toujours `YYYY-MM-DD`. Rejette (throw) toute
  * autre forme plutôt que de laisser passer une date invalide en DB.
  */
+/**
+ * Vérifie que année/mois/jour forment une date calendaire réelle (rejette
+ * `32/13/2026` ou `29/02/2026` sur une année non bissextile) en reconstruisant
+ * une Date UTC à partir des composants et en s'assurant qu'ils ressortent
+ * identiques — `Date.UTC` déborde silencieusement sinon (ex. jour 32 → mois+1).
+ */
+function assertValidCalendarDate(iso: string, year: number, month: number, day: number): void {
+    const d = new Date(Date.UTC(year, month - 1, day));
+    if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
+        throw new Error(`parseSeedDate: date calendaire invalide: "${iso}"`);
+    }
+}
+
 export function parseSeedDate(s: string): string {
     if (ISO_DATE_RE.test(s)) {
+        const [year, month, day] = s.split('-').map(Number);
+        assertValidCalendarDate(s, year, month, day);
         return s;
     }
     const match = DDMMYYYY_RE.exec(s);
     if (match) {
         const [, day, month, year] = match;
+        assertValidCalendarDate(s, Number(year), Number(month), Number(day));
         return `${year}-${month}-${day}`;
     }
     throw new Error(`parseSeedDate: format de date non reconnu: "${s}" (attendu DD/MM/YYYY ou YYYY-MM-DD)`);
@@ -263,6 +279,14 @@ function resolveMmsi(mmsi: string | null): string | null {
     return mmsi;
 }
 
+/** Préfixe des IMO synthétiques (placeholder quand le seed n'a pas d'IMO réel). */
+export const SYNTHETIC_IMO_PREFIX = 'UNVERIFIED-';
+
+/** Détecte un IMO synthétique produit par `resolveImoNumber` (pas un vrai IMO). */
+export function isSyntheticImo(imo: string): boolean {
+    return imo.startsWith(SYNTHETIC_IMO_PREFIX);
+}
+
 function resolveImoNumber(n: SeedNavire): string {
     if (n.imo && n.imo !== '—') {
         return n.imo;
@@ -272,7 +296,7 @@ function resolveImoNumber(n: SeedNavire): string {
     // imo=null (source Equasis/VesselFinder incomplète). On synthétise un
     // placeholder stable et unique à partir du seed id plutôt que d'échouer
     // l'import ou d'inventer un faux IMO plausible.
-    return `UNVERIFIED-${n.id}`;
+    return `${SYNTHETIC_IMO_PREFIX}${n.id}`;
 }
 
 export function mapNavireToVessel(
@@ -436,7 +460,10 @@ export function mapPaiement(
         amount_minor: amountMinor,
         currency: 'USD',
         amount_usd_minor: amountMinor,
-        fx_rate: 1,
+        // CHECK payments_currency_amount_consistent (migration 048) exige
+        // fx_rate IS NULL quand currency='USD' — ce mapper ne produit que du
+        // USD, donc jamais 1 ici.
+        fx_rate: null,
         rail: 'WIRE_TRANSFER',
         rail_details: {
             reference_bancaire: p.reference_bancaire,

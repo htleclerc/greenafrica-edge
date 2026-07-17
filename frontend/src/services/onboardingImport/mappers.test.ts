@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     parseSeedDate, mapVesselCategory, mapArmateurToShipowner,
     mapCompagnieToShipowner, mapNavireToVessel, mapProformaMaritime,
-    mapProformaAviation, mapRelance, mapPaiement,
+    mapProformaAviation, mapRelance, mapPaiement, isSyntheticImo,
 } from './mappers';
 
 describe('onboardingImport mappers', () => {
@@ -14,6 +14,16 @@ describe('onboardingImport mappers', () => {
     it('parseSeedDate rejette une date non reconnue', () => {
         expect(() => parseSeedDate('not-a-date')).toThrow();
         expect(() => parseSeedDate('2026/04/26')).toThrow();
+    });
+
+    it('parseSeedDate rejette une date calendaire invalide', () => {
+        expect(() => parseSeedDate('32/13/2026')).toThrow();
+        // 2026 n'est pas bissextile.
+        expect(() => parseSeedDate('29/02/2026')).toThrow();
+    });
+
+    it('parseSeedDate accepte le 29 février d\'une année bissextile', () => {
+        expect(parseSeedDate('29/02/2024')).toBe('2024-02-29');
     });
 
     it('mapVesselCategory couvre les 11 types du seed avec fallback CARGO', () => {
@@ -125,6 +135,11 @@ describe('onboardingImport mappers', () => {
         }, shipownerIdBySeedRef);
         expect(rowDashFlag.flag_code).toBe('XX');
         expect(rowDashFlag.mmsi).toBe('376985000');
+    });
+
+    it('isSyntheticImo distingue un IMO synthétique d\'un IMO réel', () => {
+        expect(isSyntheticImo('UNVERIFIED-nav-014')).toBe(true);
+        expect(isSyntheticImo('9235957')).toBe(false);
     });
 
     it('mapNavireToVessel: shipowner_id absent de la map → null (pas de throw)', () => {
@@ -357,7 +372,9 @@ describe('onboardingImport mappers', () => {
         expect(row.amount_minor).toBe(398512);
         expect(row.amount_usd_minor).toBe(398512);
         expect(row.currency).toBe('USD');
-        expect(row.fx_rate).toBe(1);
+        // CHECK payments_currency_amount_consistent (migration 048) exige
+        // fx_rate NULL quand currency='USD'.
+        expect(row.fx_rate).toBeNull();
         expect(row.rail).toBe('WIRE_TRANSFER');
         expect(row.status).toBe('CONFIRMED');
         expect(row.confirmed_by).toBe('ffffffff-0000-4000-8000-000000000099');
