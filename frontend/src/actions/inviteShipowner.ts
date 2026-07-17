@@ -80,7 +80,7 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
         assertContactAllowed(sanctionFlags);
     } catch (e) {
         if (e instanceof SanctionedContactError) {
-            await platform.from('audit_logs').insert({
+            const { error: auditErr } = await platform.from('audit_logs').insert({
                 user_id: auth.user.id,
                 user_full_name: auth.user.email ?? 'unknown',
                 action: 'SANCTIONS_CONTACT_BLOCKED',
@@ -89,6 +89,12 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
                 entity_id: parsed.data.shipownerId,
                 details_json: { code: e.code, attempted: 'PORTAL_INVITE', email },
             });
+            if (auditErr) {
+                // Non-fatal: the block itself must still take effect even if the
+                // audit write fails, but a CRITICAL sanctions event silently
+                // dropped from the trail is worth surfacing.
+                console.error('Sanctions audit log failed:', auditErr);
+            }
             return { ok: false, reason: `sanctioned: ${e.message}` };
         }
         throw e;
