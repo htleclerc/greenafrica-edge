@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
+import { assertContactAllowed, SanctionedContactError } from '@/domain/sanctions/contactGuard';
 
 const schema = z.object({
     shipownerId: z.string().uuid(),
@@ -57,12 +58,40 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
     const platform = createPlatformClient();
     const { data: owner, error: ownerErr } = await platform
         .from('shipowners')
-        .select('id, name, account_state, profile_id, official_email, official_email_source, jurisdiction_id')
+        .select(
+            'id, name, account_state, profile_id, official_email, official_email_source, jurisdiction_id, is_ofac_sdn, is_un_prohibited',
+        )
         .eq('id', parsed.data.shipownerId)
         .single();
     if (ownerErr || !owner) return { ok: false, reason: 'shipowner not found' };
     if (owner.account_state === 'ACTIVE') {
         return { ok: false, reason: 'shipowner is already active in the portal' };
+    }
+
+    // Sanctions guard — absolute business rule: an OFAC SDN / UN-prohibited
+    // shipowner must never receive direct portal contact (see
+    // domain/sanctions/contactGuard.ts). Must run before any invite/write below.
+    const sanctionFlags = owner as {
+        is_ofac_sdn: boolean;
+        is_un_prohibited: boolean;
+        name: string;
+    };
+    try {
+        assertContactAllowed(sanctionFlags);
+    } catch (e) {
+        if (e instanceof SanctionedContactError) {
+            await platform.from('audit_logs').insert({
+                user_id: auth.user.id,
+                user_full_name: auth.user.email ?? 'unknown',
+                action: 'SANCTIONS_CONTACT_BLOCKED',
+                severity: 'CRITICAL',
+                entity_type: 'Shipowner',
+                entity_id: parsed.data.shipownerId,
+                details_json: { code: e.code, attempted: 'PORTAL_INVITE', email },
+            });
+            return { ok: false, reason: `sanctioned: ${e.message}` };
+        }
+        throw e;
     }
 
     // Staff isolation: a non-SUPERADMIN inviter is confined to their own jurisdiction.

@@ -37,6 +37,8 @@ let mockOwner: {
     official_email: string | null;
     official_email_source: string | null;
     jurisdiction_id: string;
+    is_ofac_sdn: boolean;
+    is_un_prohibited: boolean;
 } | null = {
     id: 'owner-uuid',
     name: 'Acme Maritime',
@@ -45,7 +47,21 @@ let mockOwner: {
     official_email: null,
     official_email_source: null,
     jurisdiction_id: '00000000-0000-4000-8000-00000000534f',
+    is_ofac_sdn: false,
+    is_un_prohibited: false,
 };
+
+interface AuditLogPayload {
+    user_id?: string;
+    user_full_name?: string;
+    action?: string;
+    severity?: string;
+    entity_type?: string;
+    entity_id?: string;
+    details_json?: Record<string, unknown>;
+}
+
+const auditLogInsertSpy = vi.fn((_: AuditLogPayload) => Promise.resolve({ error: null }));
 
 vi.mock('@/lib/supabase/server', () => ({
     createClient: () =>
@@ -105,6 +121,11 @@ function buildAdminMock() {
                     },
                 };
             }
+            if (table === 'audit_logs') {
+                return {
+                    insert: (payload: AuditLogPayload) => auditLogInsertSpy(payload),
+                };
+            }
             throw new Error(`unexpected table on admin client: ${table}`);
         },
     };
@@ -126,6 +147,7 @@ beforeEach(() => {
     profileUpsertSpy.mockClear();
     shipownerUpdateSpy.mockClear();
     inviteSpy.mockClear();
+    auditLogInsertSpy.mockClear();
     inviteSpy.mockImplementation((_email: string) =>
         Promise.resolve({ data: { user: { id: 'new-user-uuid' } }, error: null }),
     );
@@ -139,6 +161,8 @@ beforeEach(() => {
         official_email: null,
         official_email_source: null,
         jurisdiction_id: '00000000-0000-4000-8000-00000000534f',
+        is_ofac_sdn: false,
+        is_un_prohibited: false,
     };
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test.local';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk_test';
@@ -236,5 +260,44 @@ describe('inviteShipowner', () => {
         expect(inviteSpy.mock.calls[0]![0]).toBe('owner@example.com');
         const profilePayload = profileUpsertSpy.mock.calls[0]![0] as { email: string };
         expect(profilePayload.email).toBe('owner@example.com');
+    });
+
+    it('blocks the invite and audit-logs a CRITICAL entry for an OFAC SDN shipowner', async () => {
+        mockOwner = { ...mockOwner!, is_ofac_sdn: true };
+        const r = await inviteShipowner(validInput);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.reason).toMatch(/sanctioned/i);
+        expect(inviteSpy).not.toHaveBeenCalled();
+        expect(profileUpsertSpy).not.toHaveBeenCalled();
+        expect(shipownerUpdateSpy).not.toHaveBeenCalled();
+
+        expect(auditLogInsertSpy).toHaveBeenCalledTimes(1);
+        const auditPayload = auditLogInsertSpy.mock.calls[0]![0];
+        expect(auditPayload).toMatchObject({
+            user_id: 'admin-uuid',
+            action: 'SANCTIONS_CONTACT_BLOCKED',
+            severity: 'CRITICAL',
+            entity_type: 'Shipowner',
+            entity_id: validInput.shipownerId,
+            details_json: {
+                code: 'OFAC_SDN',
+                attempted: 'PORTAL_INVITE',
+                email: 'owner@example.com',
+            },
+        });
+    });
+
+    it('blocks the invite for a UN-prohibited shipowner', async () => {
+        mockOwner = { ...mockOwner!, is_un_prohibited: true };
+        const r = await inviteShipowner(validInput);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.reason).toMatch(/sanctioned/i);
+        expect(inviteSpy).not.toHaveBeenCalled();
+
+        const auditPayload = auditLogInsertSpy.mock.calls[0]![0];
+        expect(auditPayload).toMatchObject({
+            action: 'SANCTIONS_CONTACT_BLOCKED',
+            details_json: expect.objectContaining({ code: 'UN_PROHIBITED' }),
+        });
     });
 });
