@@ -65,6 +65,13 @@ fly scale count -a africgreen-prod api=1 scraper=0
 
 L'app `africgreen` existante devient de fait le **staging** — vérifier que ses secrets pointent bien sur le projet Supabase existant (staging).
 
+**Defense-in-depth — tokens Fly scopés par app.** L'isolation staging/prod repose sur le flag `--app` dans les workflows. Pour qu'un token ne puisse pas déployer sur la mauvaise app même en cas d'erreur de flag, créer un **token de déploiement par app** plutôt qu'un token org réutilisé, et les stocker comme `FLY_API_TOKEN` de chaque environnement (étape 4) :
+
+```bash
+fly tokens create deploy -a africgreen       # → FLY_API_TOKEN de l'env staging
+fly tokens create deploy -a africgreen-prod  # → FLY_API_TOKEN de l'env production
+```
+
 ### 4. Créer les GitHub Environments + secrets
 
 Deux environnements, chacun avec le même jeu de secrets/variable :
@@ -93,7 +100,11 @@ gh variable set VERCEL_ENABLED   -e production -R $REPO --body "true"          #
 
 > Note : `BACKEND_URL` est aussi lu au niveau repo par d'autres jobs. Les valeurs d'environnement (ci-dessus) priment quand un job déclare `environment:`. On peut laisser les anciens secrets repo-level en secours, ou les retirer une fois les deux environnements en place.
 >
-> Optionnel mais recommandé : ajouter une **protection rule** sur l'environnement `production` (required reviewers) pour un contrôle humain avant tout déploiement prod.
+> Le **CI Gate** (`ci.yml`, appelé par les deux workflows) n'a **pas** d'`environment:` : il n'utilise que les secrets repo-level `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (build front) et un Supabase local éphémère pour les tests d'intégration — inchangé par cette bascule, rien à dupliquer par environnement.
+>
+> Après avoir posé `VERCEL_ENABLED` par environnement, faire une **vérification ponctuelle** : activer la variable dans un seul environnement et confirmer que seul le job Vercel de cet environnement tourne (les `vars` scopés par environnement sont résolus après la déclaration `environment:` du job).
+>
+> Optionnel mais recommandé : ajouter une **protection rule** sur l'environnement `production` (required reviewers) pour un contrôle humain avant tout déploiement prod (Settings → Environments → production → Required reviewers, via l'UI GitHub).
 
 ### 5. Configurer Vercel par environnement
 
