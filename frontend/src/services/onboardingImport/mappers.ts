@@ -325,6 +325,25 @@ export function mapNavireToVessel(
 
 // ── mapProformaMaritime / mapProformaAviation ─────────────────────────────────
 
+/**
+ * breakdown_json est un instantané libre (colonne JSONB, pas de contrainte de
+ * forme) — 26/100 voyages du seed portent un `date_depart` en texte libre
+ * ("à confirmer", "still at port (cycle 2)", "08/05/2026 (cycle 2)"), et
+ * 4/100 un `date_arrivee` composite ("25/04/2026 + 06/05/2026 (2 cycles)")
+ * pour les voyages multi-escales ou encore en cours. On tente le parsing
+ * strict et on retombe sur la chaîne brute plutôt que de faire échouer tout
+ * l'import pour un champ purement informatif du snapshot — contrairement à
+ * `date_emission` (colonne `created_at`, toujours une date propre dans le
+ * seed réel), qui reste strict.
+ */
+function parseSeedDateOrRaw(s: string): string {
+    try {
+        return parseSeedDate(s);
+    } catch {
+        return s;
+    }
+}
+
 export function mapProformaMaritime(
     p: SeedProformaMaritime,
     ctx: MaritimeProformaContext,
@@ -370,8 +389,8 @@ export function mapProformaMaritime(
             wave_tag: p.wave_tag,
             voyage: {
                 ...voyage,
-                date_arrivee: parseSeedDate(voyage.date_arrivee),
-                date_depart: voyage.date_depart ? parseSeedDate(voyage.date_depart) : null,
+                date_arrivee: parseSeedDateOrRaw(voyage.date_arrivee),
+                date_depart: voyage.date_depart ? parseSeedDateOrRaw(voyage.date_depart) : null,
             },
         },
     };
