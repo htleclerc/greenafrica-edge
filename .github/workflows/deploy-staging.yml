@@ -3,7 +3,7 @@ name: Deploy — Staging (develop)
 # Mirror of deploy-production.yml, targeting the STAGING environment.
 # Branch → environment mapping:
 #   develop → staging  (existing Supabase project + Fly app 'africgreen')
-#   main    → production (new Supabase project + Fly app 'africgreen-prod')
+#   main    → production (new Supabase project + Fly app 'greengate-prod')
 # Each GitHub Environment (staging / production) holds its OWN values for the
 # same secret names (SUPABASE_DB_URL, FLY_API_TOKEN, BACKEND_URL,
 # PRODUCTION_URL, VERCEL_TOKEN) and the VERCEL_ENABLED variable, so the YAML
