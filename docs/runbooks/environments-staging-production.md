@@ -11,6 +11,9 @@ Mise en place de **deux projets Supabase** et d'un pipeline CI/CD par environnem
 
 Le flux de promotion reste `develop → main`. Un push sur `develop` déploie le staging ; un push sur `main` (via PR) déploie la prod.
 
+### Modèle de livraison — repo chez le Prestataire, prod sur le compte du Client
+Le **repo GitHub reste sur le compte dev/staging** (source unique de vérité) ; la **prod tourne sur un autre compte** (Supabase / Fly / Vercel du Client). Rien n'est dupliqué sauf les services qui tournent : le CI (dans ce repo) déploie vers l'infra prod de l'autre compte grâce aux **tokens scopés** portés par le GitHub Environment `production`. Aucun transfert ni miroir de repo n'est nécessaire ; le propriétaire prod peut être ajouté en **collaborateur** GitHub pour l'audit. Le déploiement Vercel cross-compte passe par `VERCEL_TOKEN` + `VERCEL_ORG_ID` + `VERCEL_PROJECT_ID` (pas d'intégration Git native requise). Migrer/transférer le repo plus tard reste possible sans toucher à cette mécanique.
+
 ## Principe CI/CD
 
 Les deux workflows sont **identiques à l'`environment:` près**. On utilise deux **GitHub Environments** (`staging`, `production`) qui portent les **mêmes noms de secrets** avec des valeurs différentes. Le YAML ne connaît donc que `secrets.SUPABASE_DB_URL`, `secrets.FLY_API_TOKEN`, etc. — c'est l'environnement du job qui résout la bonne valeur. Aucun secret suffixé `_PROD` à disperser dans les workflows.
@@ -86,6 +89,8 @@ gh secret set FLY_API_TOKEN      -e staging -R $REPO --body "<fly token>"
 gh secret set BACKEND_URL        -e staging -R $REPO --body "https://africgreen.fly.dev"
 gh secret set PRODUCTION_URL     -e staging -R $REPO --body "<url frontend staging>"
 gh secret set VERCEL_TOKEN       -e staging -R $REPO --body "<vercel token>"   # si Vercel via CI
+gh secret set VERCEL_ORG_ID      -e staging -R $REPO --body "<vercel org/team id>"
+gh secret set VERCEL_PROJECT_ID  -e staging -R $REPO --body "<vercel project id>"
 gh variable set VERCEL_ENABLED   -e staging -R $REPO --body "false"            # frontend via intégration Git Vercel
 
 # --- PRODUCTION (nouveau projet Supabase, app Fly greengate-prod) ---
@@ -94,7 +99,9 @@ gh secret set SUPABASE_DB_URL   -e production -R $REPO --body "<prod pooler url>
 gh secret set FLY_API_TOKEN      -e production -R $REPO --body "<fly token>"
 gh secret set BACKEND_URL        -e production -R $REPO --body "https://greengate-prod.fly.dev"
 gh secret set PRODUCTION_URL     -e production -R $REPO --body "https://greengate.africa"
-gh secret set VERCEL_TOKEN       -e production -R $REPO --body "<vercel token>"
+gh secret set VERCEL_TOKEN       -e production -R $REPO --body "<vercel token du compte prod>"
+gh secret set VERCEL_ORG_ID      -e production -R $REPO --body "<vercel org/team id du compte prod>"
+gh secret set VERCEL_PROJECT_ID  -e production -R $REPO --body "<vercel project id du compte prod>"
 gh variable set VERCEL_ENABLED   -e production -R $REPO --body "true"          # ou false si Vercel via intégration Git
 ```
 
@@ -114,6 +121,13 @@ Dans le projet Vercel (Settings → Environment Variables), scoper les variables
 - **Preview** (branches, dont `develop`) → mêmes clés → pointant sur le projet Supabase **existant** (staging) + `https://africgreen.fly.dev`.
 
 Le domaine `greengate.africa` reste assigné à la Production Vercel.
+
+**Prod sur un compte Vercel distinct (livraison Client).** Le repo reste sur le compte dev ; la prod tourne sur le compte du Client via déploiement par token (pas d'intégration Git native requise). Récupérer les IDs du **projet prod du Client** :
+```bash
+vercel login                 # se connecter au compte Vercel prod
+cd frontend && vercel link   # crée .vercel/project.json → orgId + projectId
+```
+(ou Dashboard : Project Settings → General = `PROJECT_ID` ; Account/Team Settings = `ORG_ID`). Les mettre dans les secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` de l'env `production` (étape 4), avec `VERCEL_ENABLED=true`. Le domaine `greengate.africa` s'attache au projet prod du Client (un domaine = un seul projet à la fois ; re-vérification TXT si cross-compte).
 
 ---
 

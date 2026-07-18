@@ -87,6 +87,12 @@ jobs:
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
+    # VERCEL_ORG_ID / VERCEL_PROJECT_ID let the CLI target the right project on
+    # the production Vercel account (possibly a different account than staging)
+    # without interactive linking — required for token-based cross-account deploy.
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v5
