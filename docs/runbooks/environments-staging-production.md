@@ -138,11 +138,53 @@ cd frontend && vercel link   # crée .vercel/project.json → orgId + projectId
 
 Le CI (`ci.yml`) continue de tourner sur toute PR/commit `main`/`develop` (lint, tsc, tests, build, migrations locales éphémères) — inchangé.
 
+---
+
+## Import du portefeuille réel (item 3 de la checklist)
+
+Le script `scripts/seed-onboarding.ts` (branche `feat/onboarding-fondations-db` / PR #85) importe les 8 seeds `docs/onboarding/seeds/` dans le projet cible. Il est **idempotent** (pré-filtrage) et **vérifie** les totaux en fin de run (exit 1 si écart).
+
+### Prérequis
+1. Migrations appliquées sur le projet cible (checklist §2).
+2. Un **profil SUPERADMIN** existe (utilisé pour les 3 paiements historiques) — récupérer son UUID :
+   ```sql
+   SELECT id, email, role FROM profiles WHERE role = 'SUPERADMIN' LIMIT 1;
+   ```
+   Si le projet est vierge : créer le compte admin (`/signup` puis `UPDATE profiles SET role='SUPERADMIN' WHERE email='…'`) et reprendre son `id`.
+3. Dépendances — ⚠️ `@supabase/supabase-js` et `zod` doivent être dans le `node_modules` **de la racine** (la résolution Node ne remonte pas latéralement vers `frontend/node_modules` depuis `scripts/`) :
+   ```bash
+   npm install @supabase/supabase-js zod   # à la RACINE du repo
+   cd frontend && npm ci && cd ..           # imports relatifs des mappers
+   ```
+
+### 1) Dry-run (aucune écriture — toujours en premier)
+```bash
+SUPABASE_URL="https://<ref-prod>.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<service_role prod>" \
+SEED_ADMIN_PROFILE_ID="<uuid superadmin>" \
+npx tsx scripts/seed-onboarding.ts
+```
+PowerShell : poser d'abord `$env:SUPABASE_URL=…`, `$env:SUPABASE_SERVICE_ROLE_KEY=…`, `$env:SEED_ADMIN_PROFILE_ID=…` puis `npx tsx scripts/seed-onboarding.ts`.
+
+Attendu :
+```
+Seeds OK : 20 armateurs, 6 compagnies, 100 navires, 100 voyages, 656 pro-formas, 40 relances, 3 paiements — total USD 2750890.34
+Dry-run : aucun write. Relancer avec --execute.
+```
+
+### 2) Import réel
+Même commande **+ `--execute`**. `verify()` attendu (exit 0) : **26 shipowners · 100 vessels · 656 transactions PROFORMA** (100 MARITIME + 556 AIR) · somme `tax_amount_usd` = **2 750 890,34** · 40 collection_reminders · 3 payments (12 055,57) · 3 débiteurs sanctionnés. Relancer une 2ᵉ fois = 0 insert (idempotent).
+
+- **Projet prod neuf = pas de `--purge`** (base vierge). Ne jamais poser `PURGE_CONFIRM=TABLE_RASE` sur la prod.
+- `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` : Dashboard du projet → Settings → API. Ne pas laisser la `service_role` traîner dans l'historique shell.
+
+---
+
 ## Checklist de bascule prod (jour J)
 
 1. [ ] Nouveau projet Supabase créé, PITR activé, buckets/extensions/Auth configurés.
 2. [ ] Migrations appliquées au nouveau projet (`supabase db push --db-url`).
-3. [ ] Import du portefeuille réel : `scripts/seed-onboarding.ts --execute` contre le nouveau projet → `verify()` = 656 pro-formas / 2 750 890,34 USD.
+3. [ ] Import du portefeuille réel (procédure complète ci-dessus) : dry-run → `--execute` → `verify()` = 656 pro-formas / 2 750 890,34 USD.
 4. [ ] App Fly `greengate-prod` créée + secrets + 1 machine api.
 5. [ ] GitHub Environments `staging` + `production` avec leurs secrets.
 6. [ ] Vercel : variables Production → nouveau projet ; Preview → projet existant.
