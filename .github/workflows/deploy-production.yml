@@ -56,11 +56,11 @@ jobs:
       # `--config backend/fly.toml` resolved to backend/backend/fly.toml →
       # flyctl fell back to an empty config ("missing app name") — this job
       # had NEVER succeeded. The Dockerfile expects build context = backend/.
-      # `--app africgreen-prod` overrides `app = 'africgreen'` in fly.toml so
+      # `--app greengate-prod` overrides `app = 'africgreen'` in fly.toml so
       # the same config deploys to the dedicated production Fly app (staging
       # keeps the original 'africgreen' app — see deploy-staging.yml).
       - name: Deploy backend
-        run: flyctl deploy --remote-only --app africgreen-prod --config fly.toml --dockerfile Dockerfile
+        run: flyctl deploy --remote-only --app greengate-prod --config fly.toml --dockerfile Dockerfile
         working-directory: backend
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

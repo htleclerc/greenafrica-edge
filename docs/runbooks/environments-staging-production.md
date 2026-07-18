@@ -7,7 +7,7 @@ Mise en place de **deux projets Supabase** et d'un pipeline CI/CD par environnem
 | Branche Git | Environnement | Supabase | Frontend (Vercel) | Backend (Fly.io) | Workflow |
 |---|---|---|---|---|---|
 | `develop` | **Staging** | projet **existant** (`dyjolepwxxsedwngkfox`) | Preview / staging | app `africgreen` | `deploy-staging.yml` |
-| `main` | **Production** | **nouveau** projet (à créer) | Production (`greengate.africa`) | app `africgreen-prod` | `deploy-production.yml` |
+| `main` | **Production** | **nouveau** projet (à créer) | Production (`greengate.africa`) | app `greengate-prod` | `deploy-production.yml` |
 
 Le flux de promotion reste `develop → main`. Un push sur `develop` déploie le staging ; un push sur `main` (via PR) déploie la prod.
 
@@ -49,9 +49,9 @@ supabase db push --db-url "<SUPABASE_DB_URL de prod>" --yes
 ### 3. Créer l'app Fly.io de production
 
 ```bash
-fly apps create africgreen-prod
+fly apps create greengate-prod
 # Secrets backend prod (valeurs de PROD) :
-fly secrets set -a africgreen-prod \
+fly secrets set -a greengate-prod \
   SUPABASE_DB_URL="<prod pooler url>" \
   SUPABASE_URL="https://<ref>.supabase.co" \
   SUPABASE_SERVICE_ROLE_KEY="<prod service_role>" \
@@ -60,7 +60,7 @@ fly secrets set -a africgreen-prod \
   APP_URL="https://greengate.africa" \
   SENTRY_DSN="<dsn>" SENTRY_ENVIRONMENT="production"
 # Provisionner 1 machine api (scraper à 0 par défaut) :
-fly scale count -a africgreen-prod api=1 scraper=0
+fly scale count -a greengate-prod api=1 scraper=0
 ```
 
 L'app `africgreen` existante devient de fait le **staging** — vérifier que ses secrets pointent bien sur le projet Supabase existant (staging).
@@ -69,7 +69,7 @@ L'app `africgreen` existante devient de fait le **staging** — vérifier que se
 
 ```bash
 fly tokens create deploy -a africgreen       # → FLY_API_TOKEN de l'env staging
-fly tokens create deploy -a africgreen-prod  # → FLY_API_TOKEN de l'env production
+fly tokens create deploy -a greengate-prod  # → FLY_API_TOKEN de l'env production
 ```
 
 ### 4. Créer les GitHub Environments + secrets
@@ -88,11 +88,11 @@ gh secret set PRODUCTION_URL     -e staging -R $REPO --body "<url frontend stagi
 gh secret set VERCEL_TOKEN       -e staging -R $REPO --body "<vercel token>"   # si Vercel via CI
 gh variable set VERCEL_ENABLED   -e staging -R $REPO --body "false"            # frontend via intégration Git Vercel
 
-# --- PRODUCTION (nouveau projet Supabase, app Fly africgreen-prod) ---
+# --- PRODUCTION (nouveau projet Supabase, app Fly greengate-prod) ---
 gh api -X PUT repos/$REPO/environments/production
 gh secret set SUPABASE_DB_URL   -e production -R $REPO --body "<prod pooler url>"
 gh secret set FLY_API_TOKEN      -e production -R $REPO --body "<fly token>"
-gh secret set BACKEND_URL        -e production -R $REPO --body "https://africgreen-prod.fly.dev"
+gh secret set BACKEND_URL        -e production -R $REPO --body "https://greengate-prod.fly.dev"
 gh secret set PRODUCTION_URL     -e production -R $REPO --body "https://greengate.africa"
 gh secret set VERCEL_TOKEN       -e production -R $REPO --body "<vercel token>"
 gh variable set VERCEL_ENABLED   -e production -R $REPO --body "true"          # ou false si Vercel via intégration Git
@@ -110,7 +110,7 @@ gh variable set VERCEL_ENABLED   -e production -R $REPO --body "true"          #
 
 Dans le projet Vercel (Settings → Environment Variables), scoper les variables :
 
-- **Production** (branche `main`) → toutes les `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `AFRICGREEN_API_URL` (= `https://africgreen-prod.fly.dev`), `NEXT_PUBLIC_BACKEND_URL`, `CRON_SECRET`, `QUEUE_WORKER_SECRET`, `INVOICE_SIGNING_SECRET`, `RESEND_API_KEY`, `STRIPE_*`, `NEXT_PUBLIC_SENTRY_ENV=production`, etc. → pointant sur le **nouveau** projet Supabase + backend prod.
+- **Production** (branche `main`) → toutes les `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `AFRICGREEN_API_URL` (= `https://greengate-prod.fly.dev`), `NEXT_PUBLIC_BACKEND_URL`, `CRON_SECRET`, `QUEUE_WORKER_SECRET`, `INVOICE_SIGNING_SECRET`, `RESEND_API_KEY`, `STRIPE_*`, `NEXT_PUBLIC_SENTRY_ENV=production`, etc. → pointant sur le **nouveau** projet Supabase + backend prod.
 - **Preview** (branches, dont `develop`) → mêmes clés → pointant sur le projet Supabase **existant** (staging) + `https://africgreen.fly.dev`.
 
 Le domaine `greengate.africa` reste assigné à la Production Vercel.
@@ -120,7 +120,7 @@ Le domaine `greengate.africa` reste assigné à la Production Vercel.
 ## Ce qui se passe ensuite (automatique)
 
 - **Push `develop`** → `deploy-staging.yml` : migrations sur le projet existant, backend sur `africgreen`, health checks staging.
-- **Merge PR → `main`** → `deploy-production.yml` : migrations sur le nouveau projet prod, backend sur `africgreen-prod`, frontend Vercel prod, health checks prod.
+- **Merge PR → `main`** → `deploy-production.yml` : migrations sur le nouveau projet prod, backend sur `greengate-prod`, frontend Vercel prod, health checks prod.
 
 Le CI (`ci.yml`) continue de tourner sur toute PR/commit `main`/`develop` (lint, tsc, tests, build, migrations locales éphémères) — inchangé.
 
@@ -129,7 +129,7 @@ Le CI (`ci.yml`) continue de tourner sur toute PR/commit `main`/`develop` (lint,
 1. [ ] Nouveau projet Supabase créé, PITR activé, buckets/extensions/Auth configurés.
 2. [ ] Migrations appliquées au nouveau projet (`supabase db push --db-url`).
 3. [ ] Import du portefeuille réel : `scripts/seed-onboarding.ts --execute` contre le nouveau projet → `verify()` = 656 pro-formas / 2 750 890,34 USD.
-4. [ ] App Fly `africgreen-prod` créée + secrets + 1 machine api.
+4. [ ] App Fly `greengate-prod` créée + secrets + 1 machine api.
 5. [ ] GitHub Environments `staging` + `production` avec leurs secrets.
 6. [ ] Vercel : variables Production → nouveau projet ; Preview → projet existant.
 7. [ ] PR `develop → main` mergée → `deploy-production` vert (migrations + Fly + Vercel + health checks).
