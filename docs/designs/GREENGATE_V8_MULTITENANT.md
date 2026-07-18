@@ -8,7 +8,7 @@
 
 ## 1. Contexte & problème
 
-AfricGreen v7 = plateforme fiscale-carbone B2G **mono-tenant (Somaliland), mono-mode (maritime), USD figé**. Vision GreenGate (cf. `docs/Decisions_Tranchees_GreenGate_v2026-04-19.md`, `docs/NOTE_CONCEPTUELLE_GREENGATE_PANAFRICAIN_2026-05-09.md`) : ouvrir à plusieurs pays de la sous-région + ajouter l'aviation. **2 pays signés pour maritime ET aviation ; aviation Somaliland prioritaire ; chaque juridiction active maritime / aérien / les deux selon son accord.**
+Green-Gate v7 = plateforme fiscale-carbone B2G **mono-tenant (Somaliland), mono-mode (maritime), USD figé**. Vision GreenGate (cf. `docs/Decisions_Tranchees_GreenGate_v2026-04-19.md`, `docs/NOTE_CONCEPTUELLE_GREENGATE_PANAFRICAIN_2026-05-09.md`) : ouvrir à plusieurs pays de la sous-région + ajouter l'aviation. **2 pays signés pour maritime ET aviation ; aviation Somaliland prioritaire ; chaque juridiction active maritime / aérien / les deux selon son accord.**
 
 **Concept clé : tenant = juridiction-concession (un pays). Mode (maritime/aérien) = axe orthogonal. Activation = matrice configurable.**
 

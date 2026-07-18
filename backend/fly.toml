@@ -1,4 +1,4 @@
-# Fly.io deployment config for AfricgreenOS Go backend
+# Fly.io deployment config for Green-Gate OS Go backend
 # Deploy: fly deploy --config backend/fly.toml
 #
 # Two process groups in one Fly app:

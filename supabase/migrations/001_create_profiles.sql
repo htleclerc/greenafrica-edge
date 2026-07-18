@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — User Profiles & RBAC
+-- Green-Gate — User Profiles & RBAC
 -- Migration 001 : Table profiles liée à auth.users
 -- ─────────────────────────────────────────────────────────────────────────────
 

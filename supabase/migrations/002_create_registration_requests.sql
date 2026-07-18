@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Registration Requests
+-- Green-Gate — Registration Requests
 -- Migration 002 : Table des demandes d'inscription à valider par un admin
 -- ─────────────────────────────────────────────────────────────────────────────
 

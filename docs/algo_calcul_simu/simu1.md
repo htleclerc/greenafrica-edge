@@ -2,7 +2,7 @@ C'est une étape cruciale. Puisque vous n'avez pas accès aux compteurs de carbu
 
 La solution technologique que vous déployez doit calculer automatiquement les distances parcourues et les émissions estimées pour générer l'assiette de contribution.
 
-Voici l'algorithme détaillé et le modèle mathématique à implémenter dans le backend de **Africgreen OS**.
+Voici l'algorithme détaillé et le modèle mathématique à implémenter dans le backend de **Green-Gate OS**.
 
 ### 1. Le Modèle Mathématique (Méthode de la Loi Cubique)
 
@@ -90,9 +90,9 @@ def calculer_emissions_trajet(historique_positions_ais, profil_navire):
 
 ```
 
-### 4. Conseil d'implémentation pour Africgreen
+### 4. Conseil d'implémentation pour Green-Gate
 
-Dans un premier temps (Phase 1), l'objectif d'Africgreen est de garantir un recouvrement rapide et d'éviter les lourdeurs administratives.
+Dans un premier temps (Phase 1), l'objectif de Green-Gate est de garantir un recouvrement rapide et d'éviter les lourdeurs administratives.
 
 **Mon conseil :** Ne bloquez pas le lancement de votre produit si vous n'avez pas immédiatement accès à la "Puissance Moteur ($P_{max}$)" exacte de chaque navire.
 

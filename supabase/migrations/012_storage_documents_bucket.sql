@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Storage: documents bucket + RLS policies
+-- Green-Gate — Storage: documents bucket + RLS policies
 -- Migration 012 : Bucket for invoice PDFs, audit reports, etc.
 -- ─────────────────────────────────────────────────────────────────────────────
 

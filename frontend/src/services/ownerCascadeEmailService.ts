@@ -70,7 +70,7 @@ En tant que propriétaire enregistré, vous êtes tenu responsable selon le déc
 La facture pro-forma originale est jointe à titre de référence. Pour les instructions de paiement ou pour contester ce montant, veuillez répondre à cet email ou contacter compliance@africgreen.example.
 
 Cordialement,
-Équipe de conformité — Taxe carbone AfricGreen`;
+Équipe de conformité — Taxe carbone Green-Gate`;
     }
     return `Dear ${input.ownerName},
 
@@ -81,7 +81,7 @@ You are liable as the registered owner under Decree [REF] for any carbon-tax bal
 The original pro-forma PDF is attached for reference. For payment instructions or to dispute this charge, reply to this email or contact compliance@africgreen.example.
 
 Regards,
-AfricGreen Carbon Tax Compliance Team`;
+Green-Gate Carbon Tax Compliance Team`;
 }
 
 export async function sendOwnerCascadeEmail(

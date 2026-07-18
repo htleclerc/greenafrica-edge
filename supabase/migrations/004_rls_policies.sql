@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Row Level Security Policies
+-- Green-Gate — Row Level Security Policies
 -- Migration 004 : RLS for all domain tables
 -- ─────────────────────────────────────────────────────────────────────────────
 

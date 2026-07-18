@@ -1,6 +1,6 @@
 # E2E Tests (Playwright)
 
-Browser-driven smoke suite for the AfricGreen frontend. Targets the real Next.js dev server and hits the (currently hosted) Supabase project. Tests run sequentially, share the DB, and clean up after themselves.
+Browser-driven smoke suite for the Green-Gate frontend. Targets the real Next.js dev server and hits the (currently hosted) Supabase project. Tests run sequentially, share the DB, and clean up after themselves.
 
 ## Quick start
 
