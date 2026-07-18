@@ -1,4 +1,4 @@
-# Project Instructions: AfricGreen
+# Project Instructions: Green-Gate
 
 ## Core Principles
 1. **Internationalization (i18n)**: All texts MUST be localized. No hardcoded strings in views.

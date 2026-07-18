@@ -1,8 +1,8 @@
-# AfricGreen Comprehensive Requirements & Economic Model Document
+# Green-Gate Comprehensive Requirements & Economic Model Document
 
 ## EXECUTIVE SUMMARY
 
-**Platform Name:** AfricGreen (Sovereign Ecological Governance Platform - AIS Portal)
+**Platform Name:** Green-Gate (Sovereign Ecological Governance Platform - AIS Portal)
 **Target:** African coastal governments (Somaliland, Djibouti, Gabon priority markets)
 **Core Mission:** Automated carbon tax collection on maritime traffic + sovereign green credit registry
 **Development Timeline:** MVP (6-8 weeks), V1 (3-6 months), Full Platform (24-36 months)
@@ -12,7 +12,7 @@
 
 ## 1. EXACT FUNCTIONALITIES DESCRIBED
 
-### 1.1 Current Version Scope (MVP - AfricGreen AIS Portal V2.2)
+### 1.1 Current Version Scope (MVP - Green-Gate AIS Portal V2.2)
 
 #### Module 1: Command Center Maritime (Surveillance Opérationnelle)
 - **Real-time Maritime Tracking ("The Eye")**
@@ -106,7 +106,7 @@
 
 **No Upfront Government Investment**
 
-The AfricGreen model is designed to be budget-neutral for governments:
+The Green-Gate model is designed to be budget-neutral for governments:
 
 #### Component 1: Retainer Fee
 - **Amount:** {XX} million USD (single payment at signature)
@@ -123,7 +123,7 @@ The AfricGreen model is designed to be budget-neutral for governments:
   - Carbon credit pre-sales
   - Registered offset transactions
 
-**Alignment Incentive:** More state revenue = More AfricGreen income = Mutual success
+**Alignment Incentive:** More state revenue = More Green-Gate income = Mutual success
 
 ### 2.3 Revenue Projections & Timeline
 
@@ -152,7 +152,7 @@ The AfricGreen model is designed to be budget-neutral for governments:
 
 #### Phase 4 (Year 5+): Technology Transfer
 - **Model:** Progressive transfer of competencies and royalties to State
-- **End Goal:** Sovereign operation with AfricGreen as technology partner
+- **End Goal:** Sovereign operation with Green-Gate as technology partner
 
 ### 2.4 Competitive Positioning Strategy
 
@@ -438,7 +438,7 @@ Transition to OMI algorithm in Phase 3 when:
 
 3. **Data Sovereignty**
    - All vessel and emission data remains under government control
-   - AfricGreen operates as technology service provider only
+   - Green-Gate operates as technology service provider only
    - Government retains right to audit and override all calculations
 
 ### 7.3 MoU (Memorandum of Understanding) Components
@@ -463,7 +463,7 @@ Transition to OMI algorithm in Phase 3 when:
 | **PUBLIC** | External visitor, no authentication | Public Portal, Simulator | View public info, run simulation calculator |
 | **PORT_OFFICER** | Port/Coast Guard officer | Command Center, Vessel Details | View vessel list, see compliance status, print pro-forma invoices |
 | **FINANCE_ADMIN** | Ministry of Finance official | Tax Management, Transaction Logs | Configure tax rates, view revenue dashboards, manage exemptions |
-| **SUPERADMIN** | AfricGreen platform administrator | All modules | Full system configuration, user management, audit logs |
+| **SUPERADMIN** | Green-Gate platform administrator | All modules | Full system configuration, user management, audit logs |
 | **VESSEL_AGENT** | Shipping agent/shipowner | Payment Portal (future) | View vessel status, download invoices, submit payment (Phase 2) |
 
 ### 8.2 RBAC (Role-Based Access Control) Matrix - MVP
@@ -621,7 +621,7 @@ User {
 **Module A: Public Portal**
 - Landing page with hero section and KPIs
 - Interactive simulator (vessel type → tax estimation)
-- Public information about AfricGreen program
+- Public information about Green-Gate program
 
 **Module B: AIS Command Center (Protected)**
 - Login/onboarding flow

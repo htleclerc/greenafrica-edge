@@ -1,5 +1,5 @@
 # PRODUCT REQUIREMENTS DOCUMENT (PRD) - V2.2
-**Produit :** AfricGreen (Sovereign Ecological Governance Platform - AIS Portal)
+**Produit :** Green-Gate (Sovereign Ecological Governance Platform - AIS Portal)
 **Version :** 2.2 (Plateforme Unique Centralisée, Multi-Pays, IA)
 **Cible Principale :** Gouvernements africains (Finances, Environnement, Autorités Portuaires)
 **Date :** Mars 2026
@@ -7,7 +7,7 @@
 ---
 
 ## 1. Vision et Objectifs Stratégiques
-AfricGreen est la plateforme souveraine panafricaine ("GovTech") permettant aux États de valoriser et taxer leur espace environnemental. 
+Green-Gate est la plateforme souveraine panafricaine ("GovTech") permettant aux États de valoriser et taxer leur espace environnemental. 
 
 Contrairement à une ébauche passée, la décision architecturale de la V2.2 est de **bâtir une SEULE plateforme Web mutualisée (le AIS Portal)**. Ce portail unifié adapte dynamiquement son interface et ses modules en fonction du profil de l'utilisateur de l'État (RBAC).
 
@@ -20,7 +20,7 @@ Contrairement à une ébauche passée, la décision architecturale de la V2.2 es
 
 ## 2. Périmètre Fonctionnel : Les Modules de l'AIS Portal
 
-Le SI AfricGreen se découpe en fonctionnalités métier accessibles par droits :
+Le SI Green-Gate se découpe en fonctionnalités métier accessibles par droits :
 
 ### Module 1 : Command Center Maritime (Surveillance Opérationnelle)
 *Design UI : "Dark Ops", haute performance, focus temps réel.*

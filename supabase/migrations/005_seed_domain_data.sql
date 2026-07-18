@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Migration 005 (retired, content moved to supabase/seed.sql)
+-- Green-Gate — Migration 005 (retired, content moved to supabase/seed.sql)
 -- ─────────────────────────────────────────────────────────────────────────────
 --
 -- This migration previously seeded demo vessels, transactions, tax configs,
