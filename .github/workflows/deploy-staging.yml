@@ -89,6 +89,10 @@ jobs:
     environment:
       name: staging
       url: ${{ steps.deploy.outputs.url }}
+    # Targets the staging Vercel project without interactive linking (parity with prod).
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v5
