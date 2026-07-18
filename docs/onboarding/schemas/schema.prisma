@@ -1,0 +1,320 @@
+// ============================================================
+// Green-Gate Platform — Prisma Schema
+// Version: 1.0
+// Date: 2026-07-12
+// Author: Green-Gate Programme
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum VerificationStatus {
+  PENDING_LOOKUP
+  PENDING_VERIFICATION
+  VERIFIED
+  BLOCKED
+}
+
+enum OnboardingStage {
+  IDENTIFICATION
+  PENDING_INVITE
+  INVITED
+  KYC
+  SIGNED
+  ACTIVE
+  BLOCKED_OFAC
+  BLOCKED_UN
+  SUSPENDED
+}
+
+enum VesselType {
+  BULK_CARRIER
+  CONTAINER_SHIP
+  GENERAL_CARGO
+  CHEMICAL_TANKER
+  LIVESTOCK_CARRIER
+  OIL_TANKER
+  RO_RO
+  OTHER
+}
+
+enum VesselStatus {
+  ACTIVE
+  EXPECTED
+  SCRAPPED
+  RENAMED
+  INACTIVE
+}
+
+enum FuelType {
+  HFO
+  MDO
+  LNG
+  METHANOL
+  AMMONIA
+}
+
+enum VoyageStatus {
+  EXPECTED
+  ARRIVED
+  AT_PORT
+  DEPARTED
+  CANCELLED
+}
+
+enum ProformaType {
+  MARITIME
+  AVIATION
+}
+
+enum PaymentStatus {
+  DRAFT
+  PENDING
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  DISPUTED
+  WRITE_OFF
+}
+
+enum SendMethod {
+  EMAIL
+  POSTAL
+  IN_REM
+  BAILIFF_NOTICE
+}
+
+enum RelanceTier {
+  J15
+  J30
+  J45
+  BAILIFF
+  JUDICIAL
+}
+
+enum ArmateurResponseType {
+  SILENT
+  ACKNOWLEDGE
+  DISPUTE
+  PAYMENT_PROMISE
+  PARTIAL_PAYMENT
+  PAID
+  REFUSED
+}
+
+enum PaymentMethod {
+  SWIFT
+  WIRE
+  CHECK
+  ASCR_TOKEN
+  CASH
+  OTHER
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model Armateur {
+  id                    String              @id @default(cuid())
+  nom_legal             String
+  alias                 String[]
+  pays_hq               String?             @db.VarChar(2)
+  adresse_hq            String?             @db.Text
+  email_principal       String?             @unique
+  email_ops             String?
+  telephone             String?
+  is_ofac_sdn           Boolean             @default(false)
+  is_un_prohibited      Boolean             @default(false)
+  verification_status   VerificationStatus  @default(PENDING_VERIFICATION)
+  onboarding_stage      OnboardingStage     @default(PENDING_INVITE)
+  equasis_id            String?
+  imo_manager_id        String?
+  notes                 String?             @db.Text
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  navires               Navire[]
+  proformas             Proforma[]
+
+  @@index([verification_status])
+  @@index([onboarding_stage])
+  @@index([pays_hq])
+}
+
+model CompagnieAerienne {
+  id                    String              @id @default(cuid())
+  nom_legal             String
+  iata_code             String?             @unique @db.VarChar(3)
+  icao_code             String?             @unique @db.VarChar(3)
+  hub_principal         String              @db.VarChar(3)
+  pays_hq               String?             @db.VarChar(2)
+  email_ops             String?
+  email_finance         String?
+  onboarding_stage      OnboardingStage     @default(PENDING_INVITE)
+  notes                 String?             @db.Text
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  proformas             Proforma[]
+
+  @@index([onboarding_stage])
+}
+
+model Navire {
+  id                    String              @id @default(cuid())
+  armateur_id           String
+  armateur              Armateur            @relation(fields: [armateur_id], references: [id])
+  nom                   String
+  imo                   String?             @unique @db.VarChar(7)
+  mmsi                  String?             @db.VarChar(9)
+  pavillon              String?             @db.VarChar(2)
+  type_navire           VesselType
+  gt                    Int
+  dwt                   Int?
+  annee_construction    Int?
+  status                VesselStatus        @default(ACTIVE)
+  previous_names        String[]
+  wave_tag              String?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  voyages               Voyage[]
+  proformas             Proforma[]
+
+  @@index([armateur_id])
+  @@index([imo])
+  @@index([status])
+}
+
+model Voyage {
+  id                    String              @id @default(cuid())
+  navire_id             String
+  navire                Navire              @relation(fields: [navire_id], references: [id])
+  port_origine          String
+  port_destination      String              @default("Berbera")
+  date_arrivee          DateTime
+  date_depart           DateTime?
+  distance_nm           Int
+  vitesse_kn            Float
+  voyage_days           Float
+  carburant_type        FuelType            @default(HFO)
+  fuel_consumed_t       Float
+  co2_voyage_tco2       Float
+  co2_facturable_tco2   Float
+  contribution_usd      Decimal             @db.Decimal(10, 2)
+  wave_tag              String?
+  status                VoyageStatus        @default(EXPECTED)
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  proformas             Proforma[]
+
+  @@index([navire_id])
+  @@index([status])
+  @@index([wave_tag])
+  @@index([date_arrivee])
+}
+
+model Proforma {
+  id                    String              @id @default(cuid())
+  reference             String              @unique
+  type                  ProformaType
+  armateur_id           String?
+  armateur              Armateur?           @relation(fields: [armateur_id], references: [id])
+  compagnie_id          String?
+  compagnie             CompagnieAerienne?  @relation(fields: [compagnie_id], references: [id])
+  navire_id             String?
+  navire                Navire?             @relation(fields: [navire_id], references: [id])
+  voyages               Voyage[]
+  vol_details           Json?
+  total_usd             Decimal             @db.Decimal(10, 2)
+  total_paye_usd        Decimal             @default(0) @db.Decimal(10, 2)
+  outstanding_usd       Decimal             @db.Decimal(10, 2)
+  date_emission         DateTime
+  date_echeance         DateTime
+  payment_status        PaymentStatus       @default(DRAFT)
+  pdf_url               String?
+  sent_at               DateTime?
+  sent_method           SendMethod?
+  is_erratum            Boolean             @default(false)
+  original_proforma_id  String?
+  original_proforma     Proforma?           @relation("Erratum", fields: [original_proforma_id], references: [id])
+  errata                Proforma[]          @relation("Erratum")
+  wave_tag              String?
+  relances              Relance[]
+  paiements             Paiement[]
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+
+  @@index([armateur_id])
+  @@index([compagnie_id])
+  @@index([payment_status])
+  @@index([date_emission])
+  @@index([date_echeance])
+}
+
+model Relance {
+  id                        String                  @id @default(cuid())
+  proforma_id               String
+  proforma                  Proforma                @relation(fields: [proforma_id], references: [id])
+  tier                      RelanceTier
+  sent_at                   DateTime
+  sent_email                String
+  cc_emails                 String[]
+  template_used             String
+  armateur_response_at      DateTime?
+  armateur_response_type    ArmateurResponseType    @default(SILENT)
+  escalated_bailiff         Boolean                 @default(false)
+  created_at                DateTime                @default(now())
+
+  @@index([proforma_id])
+  @@index([tier])
+}
+
+model Paiement {
+  id                    String              @id @default(cuid())
+  proforma_id           String
+  proforma              Proforma            @relation(fields: [proforma_id], references: [id])
+  montant_usd           Decimal             @db.Decimal(10, 2)
+  date_recu             DateTime
+  methode               PaymentMethod
+  reference_bancaire    String
+  banque_emettrice      String?
+  confirmation_pdf      String?
+  notes                 String?             @db.Text
+  created_at            DateTime            @default(now())
+
+  @@index([proforma_id])
+  @@index([date_recu])
+}
+
+model User {
+  id                    String              @id @default(cuid())
+  email                 String              @unique
+  nom                   String
+  role                  String              // ADMIN / OPS / FINANCE / READONLY
+  actif                 Boolean             @default(true)
+  created_at            DateTime            @default(now())
+}
+
+model AuditLog {
+  id                    String              @id @default(cuid())
+  user_id               String?
+  entity_type           String              // "Armateur" / "Proforma" / etc.
+  entity_id             String
+  action                String              // "CREATE" / "UPDATE" / "DELETE" / "SEND"
+  changes               Json?
+  created_at            DateTime            @default(now())
+
+  @@index([entity_type, entity_id])
+  @@index([user_id])
+  @@index([created_at])
+}
