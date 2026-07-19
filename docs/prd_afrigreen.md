@@ -1,12 +1,12 @@
 # PRODUCT REQUIREMENTS DOCUMENT (PRD)
-**Produit :** Africgreen (Sovereign Climate Platform)
+**Produit :** Green-Gate (Sovereign Climate Platform)
 **Version :** 1.1 (Incluant la stratégie MVP / Sandbox)
 **Cible :** Gouvernement du Somaliland (Port de Berbera)
 
 ---
 
 ## 1. Vision et Objectifs du Produit
-Africgreen est une plateforme technologique "GovTech" permettant au Somaliland de monétiser ses atouts climatiques et maritimes. Elle vise à automatiser la collecte d'une contribution carbone (principe pollueur-payeur) auprès des navires transitant ou accostant dans sa ZEE, tout en préparant un registre de crédits carbone souverains.
+Green-Gate est une plateforme technologique "GovTech" permettant au Somaliland de monétiser ses atouts climatiques et maritimes. Elle vise à automatiser la collecte d'une contribution carbone (principe pollueur-payeur) auprès des navires transitant ou accostant dans sa ZEE, tout en préparant un registre de crédits carbone souverains.
 
 **Objectifs clés :**
 - Générer des revenus immédiats et autofinancés pour l'État sans investissement public lourd.
@@ -17,7 +17,7 @@ Africgreen est une plateforme technologique "GovTech" permettant au Somaliland d
 - **L'Officier Portuaire (Berbera) :** Vérifie le statut de paiement des navires via une interface simple pour accorder ou bloquer la "Clearance" (départ).
 - **L'Agent Maritime / Armateur :** Reçoit les factures pro-forma, effectue les paiements et obtient le certificat de conformité.
 - **Le Ministère des Finances / MoECC :** Supervise les recettes fiscales et l'impact écologique via un "Command Center" (Dashboard).
-- **L'Administrateur Africgreen :** Gère les configurations techniques, les taux et le registre carbone.
+- **L'Administrateur Green-Gate :** Gère les configurations techniques, les taux et le registre carbone.
 
 ## 3. Périmètre Fonctionnel (Modules Clés)
 

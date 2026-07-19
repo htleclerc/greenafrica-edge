@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Seed : Comptes démo génériques
+-- Green-Gate — Seed : Comptes démo génériques
 -- ─────────────────────────────────────────────────────────────────────────────
 --
 -- Ce script crée des comptes démo dans Supabase Auth + profiles.

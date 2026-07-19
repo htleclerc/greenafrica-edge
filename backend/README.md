@@ -1,3 +1,3 @@
-# Africgreen Backend
+# Green-Gate Backend
 
-This directory contains the backend for the Africgreen project.
+This directory contains the backend for the Green-Gate project.

@@ -132,9 +132,9 @@ function emailLayout(content: string, options?: { previewText?: string }): strin
         <div class="accent-bar"></div>
         <div class="header">
             <div class="brand">
-                <div class="logo-box">A</div>
+                <div class="logo-box">G</div>
                 <div>
-                    <div class="brand-text">AFRICGREEN</div>
+                    <div class="brand-text">GREEN-GATE</div>
                     <div class="brand-sub">SOVEREIGN CARBON PLATFORM</div>
                 </div>
             </div>

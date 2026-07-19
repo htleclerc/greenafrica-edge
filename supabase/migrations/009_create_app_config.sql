@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — App Configuration
+-- Green-Gate — App Configuration
 -- Migration 009 : Global settings and feature toggles
 -- ─────────────────────────────────────────────────────────────────────────────
 

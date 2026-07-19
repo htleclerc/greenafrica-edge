@@ -1,0 +1,42 @@
+{
+  "$schema": "https://greengate.so/schemas/paiements-v1.json",
+  "version": "1.0",
+  "generated_at": "2026-07-12T00:00:00Z",
+  "count": 3,
+  "note": "Échantillon paiements réels historiques (3 exemples)",
+  "paiements": [
+    {
+      "id": "pay-001",
+      "proforma_id": "pf-mar-064001",
+      "montant_usd": 3985.12,
+      "date_recu": "2026-05-08",
+      "methode": "SWIFT",
+      "reference_bancaire": "SWIFT-20260508-STL-001",
+      "banque_emettrice": "Bank of Cyprus Ltd",
+      "confirmation_pdf": "https://greengate.so/payments/pay-001.pdf",
+      "notes": "Premier paiement historique — pilote H&P Ship Management"
+    },
+    {
+      "id": "pay-002",
+      "proforma_id": "pf-mar-064006",
+      "montant_usd": 5620.45,
+      "date_recu": "2026-05-12",
+      "methode": "SWIFT",
+      "reference_bancaire": "SWIFT-20260512-STL-002",
+      "banque_emettrice": "Emirates NBD",
+      "confirmation_pdf": "https://greengate.so/payments/pay-002.pdf",
+      "notes": "Overseas Marine — paiement partiel"
+    },
+    {
+      "id": "pay-003",
+      "proforma_id": "pf-mar-064011",
+      "montant_usd": 2450.0,
+      "date_recu": "2026-05-20",
+      "methode": "WIRE",
+      "reference_bancaire": "WIRE-20260520-STL-003",
+      "banque_emettrice": "Salaam African Bank",
+      "confirmation_pdf": "https://greengate.so/payments/pay-003.pdf",
+      "notes": "Al Manar Shipping — premier client Djibouti"
+    }
+  ]
+}

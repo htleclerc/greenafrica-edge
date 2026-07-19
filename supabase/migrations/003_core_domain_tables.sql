@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Africgreen — Core Domain Tables
+-- Green-Gate — Core Domain Tables
 -- Migration 003 : Vessels, Transactions, Tax Configs, Exemptions, Audit, Projects
 -- ─────────────────────────────────────────────────────────────────────────────
 

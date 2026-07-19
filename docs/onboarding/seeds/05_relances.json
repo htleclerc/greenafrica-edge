@@ -1,0 +1,569 @@
+{
+  "$schema": "https://greengate.so/schemas/relances-v1.json",
+  "version": "1.0",
+  "generated_at": "2026-07-12T00:00:00Z",
+  "count": 40,
+  "note": "Échantillon historique Wave 1-3 (données de test)",
+  "relances": [
+    {
+      "id": "rel-0001",
+      "proforma_id": "pf-mar-064001",
+      "tier": "J15",
+      "sent_at": "2026-05-15T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0002",
+      "proforma_id": "pf-mar-064001",
+      "tier": "J30",
+      "sent_at": "2026-05-30T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0004",
+      "proforma_id": "pf-mar-064002",
+      "tier": "J15",
+      "sent_at": "2026-05-16T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0005",
+      "proforma_id": "pf-mar-064002",
+      "tier": "J30",
+      "sent_at": "2026-05-31T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0007",
+      "proforma_id": "pf-mar-064003",
+      "tier": "J15",
+      "sent_at": "2026-05-17T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0008",
+      "proforma_id": "pf-mar-064003",
+      "tier": "J30",
+      "sent_at": "2026-06-01T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0010",
+      "proforma_id": "pf-mar-064004",
+      "tier": "J15",
+      "sent_at": "2026-05-18T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0011",
+      "proforma_id": "pf-mar-064004",
+      "tier": "J30",
+      "sent_at": "2026-06-02T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0013",
+      "proforma_id": "pf-mar-064005",
+      "tier": "J15",
+      "sent_at": "2026-05-19T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0014",
+      "proforma_id": "pf-mar-064005",
+      "tier": "J30",
+      "sent_at": "2026-06-03T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0016",
+      "proforma_id": "pf-mar-064006",
+      "tier": "J15",
+      "sent_at": "2026-05-20T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0017",
+      "proforma_id": "pf-mar-064006",
+      "tier": "J30",
+      "sent_at": "2026-06-04T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0019",
+      "proforma_id": "pf-mar-064007",
+      "tier": "J15",
+      "sent_at": "2026-05-21T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0020",
+      "proforma_id": "pf-mar-064007",
+      "tier": "J30",
+      "sent_at": "2026-06-05T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0022",
+      "proforma_id": "pf-mar-064008",
+      "tier": "J15",
+      "sent_at": "2026-05-22T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0023",
+      "proforma_id": "pf-mar-064008",
+      "tier": "J30",
+      "sent_at": "2026-06-06T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0025",
+      "proforma_id": "pf-mar-064009",
+      "tier": "J15",
+      "sent_at": "2026-05-23T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0026",
+      "proforma_id": "pf-mar-064009",
+      "tier": "J30",
+      "sent_at": "2026-06-07T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0028",
+      "proforma_id": "pf-mar-064010",
+      "tier": "J15",
+      "sent_at": "2026-05-24T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0029",
+      "proforma_id": "pf-mar-064010",
+      "tier": "J30",
+      "sent_at": "2026-06-08T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0031",
+      "proforma_id": "pf-mar-064011",
+      "tier": "J15",
+      "sent_at": "2026-05-25T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0032",
+      "proforma_id": "pf-mar-064011",
+      "tier": "J30",
+      "sent_at": "2026-06-09T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0034",
+      "proforma_id": "pf-mar-064012",
+      "tier": "J15",
+      "sent_at": "2026-05-26T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0035",
+      "proforma_id": "pf-mar-064012",
+      "tier": "J30",
+      "sent_at": "2026-06-10T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0037",
+      "proforma_id": "pf-mar-064013",
+      "tier": "J15",
+      "sent_at": "2026-05-27T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0038",
+      "proforma_id": "pf-mar-064013",
+      "tier": "J30",
+      "sent_at": "2026-06-11T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0040",
+      "proforma_id": "pf-mar-064014",
+      "tier": "J15",
+      "sent_at": "2026-05-28T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0041",
+      "proforma_id": "pf-mar-064014",
+      "tier": "J30",
+      "sent_at": "2026-06-12T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0043",
+      "proforma_id": "pf-mar-064015",
+      "tier": "J15",
+      "sent_at": "2026-05-29T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0044",
+      "proforma_id": "pf-mar-064015",
+      "tier": "J30",
+      "sent_at": "2026-06-13T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0046",
+      "proforma_id": "pf-mar-064016",
+      "tier": "J15",
+      "sent_at": "2026-05-30T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0047",
+      "proforma_id": "pf-mar-064016",
+      "tier": "J30",
+      "sent_at": "2026-06-14T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0049",
+      "proforma_id": "pf-mar-064017",
+      "tier": "J15",
+      "sent_at": "2026-05-31T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0050",
+      "proforma_id": "pf-mar-064017",
+      "tier": "J30",
+      "sent_at": "2026-06-15T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0052",
+      "proforma_id": "pf-mar-064018",
+      "tier": "J15",
+      "sent_at": "2026-06-01T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0053",
+      "proforma_id": "pf-mar-064018",
+      "tier": "J30",
+      "sent_at": "2026-06-16T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0055",
+      "proforma_id": "pf-mar-064019",
+      "tier": "J15",
+      "sent_at": "2026-06-02T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0056",
+      "proforma_id": "pf-mar-064019",
+      "tier": "J30",
+      "sent_at": "2026-06-17T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0058",
+      "proforma_id": "pf-mar-064020",
+      "tier": "J15",
+      "sent_at": "2026-06-03T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J15_amicale_reminder.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    },
+    {
+      "id": "rel-0059",
+      "proforma_id": "pf-mar-064020",
+      "tier": "J30",
+      "sent_at": "2026-06-18T09:00:00Z",
+      "sent_email": "operations@example-armateur.com",
+      "cc_emails": [
+        "n.kpatchavi@solidetechnology.com"
+      ],
+      "template_used": "J30_formelle_notice.html",
+      "armateur_response_at": null,
+      "armateur_response_type": "SILENT",
+      "escalated_bailiff": false
+    }
+  ]
+}

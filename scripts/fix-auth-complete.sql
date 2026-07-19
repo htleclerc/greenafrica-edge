@@ -1,5 +1,5 @@
 -- ============================================================================
--- AfricGreenOS — COMPLETE Auth Fix
+-- Green-Gate OS — COMPLETE Auth Fix
 --
 -- INSTRUCTIONS:
 -- 1. Go to: https://supabase.com/dashboard/project/dyjolepwxxsedwngkfox/sql/new

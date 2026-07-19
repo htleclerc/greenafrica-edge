@@ -1,6 +1,6 @@
-# AfricGreen Developer Skills
+# Green-Gate Developer Skills
 
-This document outlines the specialized skills required for an agent working on AfricGreen.
+This document outlines the specialized skills required for an agent working on Green-Gate.
 
 ## 1. Carbon Tax Domain Expert
 - Understands carbon emission factors.

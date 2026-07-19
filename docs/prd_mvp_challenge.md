@@ -1,4 +1,4 @@
-# AfricGreen — PRD Challenge & Recommandations MVP
+# Green-Gate — PRD Challenge & Recommandations MVP
 **Auteur :** Analyse stratégique Claude
 **Date :** Mars 2026
 **Statut :** DOCUMENT DE TRAVAIL — À valider avant démarrage du développement
@@ -89,11 +89,11 @@ Avant de coder avec Claude Code, ces décisions doivent être prises :
 
 ---
 
-## 3. PRD MVP — AfricGreen AIS Portal (Version Recommandée)
+## 3. PRD MVP — Green-Gate AIS Portal (Version Recommandée)
 
 ### 3.1 Vision du MVP
 
-> Livrer en 6-8 semaines une démo interactive et crédible du portail AfricGreen permettant à un représentant gouvernemental du Somaliland de visualiser le trafic maritime dans sa ZEE, de configurer un taux de taxe carbone, de générer une facture PDF pour un navire, et de consulter les revenus estimés — le tout avec des données simulées réalistes.
+> Livrer en 6-8 semaines une démo interactive et crédible du portail Green-Gate permettant à un représentant gouvernemental du Somaliland de visualiser le trafic maritime dans sa ZEE, de configurer un taux de taxe carbone, de générer une facture PDF pour un navire, et de consulter les revenus estimés — le tout avec des données simulées réalistes.
 
 **L'objectif du MVP n'est pas la production. C'est la signature du MoU.**
 
@@ -106,7 +106,7 @@ Avant de coder avec Claude Code, ces décisions doivent être prises :
 *Accès :* Public, sans authentification
 
 **Écrans :**
-1. **Landing Page** — Hero, pitch AfricGreen, KPIs de démonstration, appel à l'action "Demander l'accès"
+1. **Landing Page** — Hero, pitch Green-Gate, KPIs de démonstration, appel à l'action "Demander l'accès"
 2. **Simulateur Interactif** — Formulaire (type navire, tonnage, durée transit, taux carbone) → résultat en USD avec estimation CO2. Basé sur l'algo OMI forfaitaire (simu1.md).
 
 **Données :** 100% calculées côté client (Next.js), aucun appel API.
@@ -129,7 +129,7 @@ Avant de coder avec Claude Code, ces décisions doivent être prises :
 ---
 
 #### ✅ MODULE C — Tax Management (Portail Admin)
-*Pour qui :* Ministère des Finances, Administrateur AfricGreen
+*Pour qui :* Ministère des Finances, Administrateur Green-Gate
 *Accès :* Authentifié — rôle `FINANCE_ADMIN` ou `SUPERADMIN`
 
 **Écrans :**
@@ -269,7 +269,7 @@ Pour maximiser la productivité avec Claude Code, respecter ces principes :
 Pour chaque feature, structurer les prompts ainsi :
 
 ```
-[CONTEXTE] Je développe AfricGreen, un portail GovTech de taxe carbone maritime.
+[CONTEXTE] Je développe Green-Gate, un portail GovTech de taxe carbone maritime.
 [RÈGLES] DDD, i18n (next-intl), Tailwind, no hardcoded strings, TypeScript strict.
 [TÂCHE] Crée le composant VesselCard qui affiche les données d'un navire...
 [DONNÉES] Voici le type Vessel et le mock data correspondant : [...]
@@ -280,7 +280,7 @@ Pour chaque feature, structurer les prompts ainsi :
 ### 4.4 Fichier CLAUDE.md Recommandé (à créer à la racine)
 
 ```markdown
-# AfricGreen — Rules for Claude Code
+# Green-Gate — Rules for Claude Code
 
 ## Stack
 - Frontend: Next.js 16, React 19, TypeScript, TailwindCSS v4
