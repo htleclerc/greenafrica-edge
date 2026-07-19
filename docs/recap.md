@@ -1,7 +1,7 @@
-# AfricGreen Project Recap
+# Green-Gate Project Recap
 
 ## [2026-03-02 15:30] Initial Project Request
-- **Platform Name**: AfricGreen
+- **Platform Name**: Green-Gate
 - **Objective**: Carbon tax calculation for the government (simulation, information, real fee payment).
 - **Frontend Stack**: React (Next.js)
 - **Backend Stack**: Go, Supabase (PostgreSQL)
@@ -25,7 +25,7 @@
   3. Protocol for identifying vessels and enforcing tax payments to respective countries.
 
 ## [2026-06-12 00:10] Video Demo Preparation & QA Setup
-- **Objective**: Prepare for a video demonstration of the sovereign climate governance platform (AfricGreen).
+- **Objective**: Prepare for a video demonstration of the sovereign climate governance platform (Green-Gate).
 - **Actions & Diagnostics**:
   1. Built the Next.js workspace successfully to verify compile.
   2. Booted the local Next.js dev server on port 3300.

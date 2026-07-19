@@ -1,5 +1,5 @@
 -- ============================================================================
--- AfricGreenOS — Fix trigger + Bootstrap SuperAdmin
+-- Green-Gate OS — Fix trigger + Bootstrap SuperAdmin
 -- Coller ce script ENTIER dans le SQL Editor de Supabase Dashboard
 -- URL: https://supabase.com/dashboard/project/dyjolepwxxsedwngkfox/sql/new
 -- ============================================================================
@@ -83,7 +83,7 @@ VALUES (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(),
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    '{"full_name": "AfricGreen SuperAdmin", "role": "SUPERADMIN", "is_active": true}'::jsonb,
+    '{"full_name": "Green-Gate SuperAdmin", "role": "SUPERADMIN", "is_active": true}'::jsonb,
     NOW(),
     NOW(),
     '',

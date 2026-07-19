@@ -1,4 +1,5 @@
-# fly.toml app configuration file generated for greengate-prod on 2026-07-18T17:34:52Z
+# Fly.io deployment config for Green-Gate OS Go backend
+# Deploy: fly deploy --config backend/fly.toml
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #

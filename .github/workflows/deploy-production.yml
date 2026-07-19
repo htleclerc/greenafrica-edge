@@ -20,6 +20,8 @@ jobs:
     name: Supabase Migrations
     runs-on: ubuntu-latest
     needs: [ci]
+    # Resolves SUPABASE_DB_URL to the PRODUCTION Supabase project's secret.
+    environment: production
 
     steps:
       - uses: actions/checkout@v5
@@ -42,6 +44,8 @@ jobs:
     name: Fly.io Backend
     runs-on: ubuntu-latest
     needs: [ci, migrations] # tariffs/geofences migrations MUST land before the fail-closed Go deploy (W2)
+    # Resolves FLY_API_TOKEN / BACKEND_URL to the PRODUCTION secrets.
+    environment: production
 
     steps:
       - uses: actions/checkout@v5
@@ -52,8 +56,11 @@ jobs:
       # `--config backend/fly.toml` resolved to backend/backend/fly.toml →
       # flyctl fell back to an empty config ("missing app name") — this job
       # had NEVER succeeded. The Dockerfile expects build context = backend/.
+      # `--app greengate-prod` overrides `app = 'africgreen'` in fly.toml so
+      # the same config deploys to the dedicated production Fly app (staging
+      # keeps the original 'africgreen' app — see deploy-staging.yml).
       - name: Deploy backend
-        run: flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
+        run: flyctl deploy --remote-only --app greengate-prod --config fly.toml --dockerfile Dockerfile
         working-directory: backend
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
@@ -109,6 +116,8 @@ jobs:
     runs-on: ubuntu-latest
     # frontend deploys via the native Vercel integration; the PRODUCTION_URL check below is still valid
     needs: [backend]
+    # Resolves PRODUCTION_URL / BACKEND_URL to the PRODUCTION secrets.
+    environment: production
 
     steps:
       - name: Wait for deploy propagation

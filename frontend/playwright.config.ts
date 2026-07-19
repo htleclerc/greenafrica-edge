@@ -11,7 +11,7 @@ import path from 'node:path';
 loadEnv({ path: path.resolve(__dirname, '.env.local'), override: false });
 
 /**
- * Playwright E2E config for the AfricGreen frontend.
+ * Playwright E2E config for the Green-Gate frontend.
  *
  * Tests share rows on the hosted Supabase DB, so we keep them sequential
  * (fullyParallel: false, workers: 1). Aggressive per-test cleanup is

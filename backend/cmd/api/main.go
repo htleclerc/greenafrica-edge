@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/htleclerc/africgreen/backend/internal/ais"
 	"github.com/htleclerc/africgreen/backend/internal/alerts"
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
@@ -26,6 +27,23 @@ import (
 
 func main() {
 	cfg := config.Load()
+
+	// ── Sentry (monitoring) — inert unless SENTRY_DSN is set ────────────────
+	sentryEnabled := false
+	if cfg.SentryDSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:            cfg.SentryDSN,
+			Environment:    cfg.SentryEnv,
+			EnableTracing:  false,
+			SendDefaultPII: false, // fiscal platform — no PII to a third party
+		}); err != nil {
+			log.Printf("[sentry] init failed: %v (continuing without monitoring)", err)
+		} else {
+			sentryEnabled = true
+			defer sentry.Flush(2 * time.Second)
+			log.Println("[sentry] monitoring enabled")
+		}
+	}
 
 	// ── Database ───────────────────────────────────────────────────────────
 	db, err := supadb.Open(cfg.SupabaseDBURL)
@@ -94,12 +112,16 @@ func main() {
 	}()
 
 	// Middleware
-	handler := middleware.Chain(
-		mux,
+	mws := []middleware.Middleware{
 		middleware.CORS(cfg.AllowedOrigins),
 		middleware.Logger,
 		middleware.Auth(cfg.APISecret),
-	)
+	}
+	if sentryEnabled {
+		// Outermost (index 0 = first executed) so it catches panics in every handler.
+		mws = append([]middleware.Middleware{middleware.Sentry()}, mws...)
+	}
+	handler := middleware.Chain(mux, mws...)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
