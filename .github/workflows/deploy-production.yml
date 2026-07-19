@@ -80,9 +80,12 @@ jobs:
     name: Vercel Production
     runs-on: ubuntu-latest
     # Opt-in: skips cleanly until VERCEL_TOKEN/ORG_ID/PROJECT_ID secrets are configured.
-    # Enable with: gh variable set VERCEL_ENABLED --body "true" -R htleclerc/africgreen
+    # Gated on a REPO-level variable (not environment-scoped): a job-level `if:` is
+    # evaluated before the job's environment resolves, so an environment-scoped
+    # variable is invisible here and the job would always skip. Enable with:
+    #   gh variable set VERCEL_PROD_ENABLED --body "true" -R htleclerc/africgreen
     # Note: `healthcheck` depends on `backend` only and runs regardless of this job.
-    if: ${{ vars.VERCEL_ENABLED == 'true' }}
+    if: ${{ vars.VERCEL_PROD_ENABLED == 'true' }}
     needs: [ci, migrations]
     environment:
       name: production

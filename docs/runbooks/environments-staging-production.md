@@ -91,7 +91,9 @@ gh secret set PRODUCTION_URL     -e staging -R $REPO --body "<url frontend stagi
 gh secret set VERCEL_TOKEN       -e staging -R $REPO --body "<vercel token>"   # si Vercel via CI
 gh secret set VERCEL_ORG_ID      -e staging -R $REPO --body "<vercel org/team id>"
 gh secret set VERCEL_PROJECT_ID  -e staging -R $REPO --body "<vercel project id>"
-gh variable set VERCEL_ENABLED   -e staging -R $REPO --body "false"            # frontend via intégration Git Vercel
+# Activer le job Vercel staging = variable REPO-level dédiée (un `if:` de job ne voit
+# PAS une variable scopée -e). Laisser non défini = job skippé (intégration Git native).
+# gh variable set VERCEL_STAGING_ENABLED -R $REPO --body "true"
 
 # --- PRODUCTION (nouveau projet Supabase, app Fly greengate-prod) ---
 gh api -X PUT repos/$REPO/environments/production
@@ -102,14 +104,15 @@ gh secret set PRODUCTION_URL     -e production -R $REPO --body "https://greengat
 gh secret set VERCEL_TOKEN       -e production -R $REPO --body "<vercel token du compte prod>"
 gh secret set VERCEL_ORG_ID      -e production -R $REPO --body "<vercel org/team id du compte prod>"
 gh secret set VERCEL_PROJECT_ID  -e production -R $REPO --body "<vercel project id du compte prod>"
-gh variable set VERCEL_ENABLED   -e production -R $REPO --body "true"          # ou false si Vercel via intégration Git
+# Activer le job Vercel prod = variable REPO-level dédiée (PAS -e). Séparée du staging.
+gh variable set VERCEL_PROD_ENABLED -R $REPO --body "true"
 ```
 
 > Note : `BACKEND_URL` est aussi lu au niveau repo par d'autres jobs. Les valeurs d'environnement (ci-dessus) priment quand un job déclare `environment:`. On peut laisser les anciens secrets repo-level en secours, ou les retirer une fois les deux environnements en place.
 >
 > Le **CI Gate** (`ci.yml`, appelé par les deux workflows) n'a **pas** d'`environment:` : il n'utilise que les secrets repo-level `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (build front) et un Supabase local éphémère pour les tests d'intégration — inchangé par cette bascule, rien à dupliquer par environnement.
 >
-> Après avoir posé `VERCEL_ENABLED` par environnement, faire une **vérification ponctuelle** : activer la variable dans un seul environnement et confirmer que seul le job Vercel de cet environnement tourne (les `vars` scopés par environnement sont résolus après la déclaration `environment:` du job).
+> ⚠️ Le gate des jobs Vercel utilise des **variables REPO-level** (`VERCEL_PROD_ENABLED`, `VERCEL_STAGING_ENABLED`), **pas** des variables scopées environnement : un `if:` de job est évalué avant que l'environnement du job ne soit résolu, donc une variable `-e` y est invisible et le job skippe toujours. Une par workflow pour qu'activer l'un ne déclenche jamais l'autre.
 >
 > Optionnel mais recommandé : ajouter une **protection rule** sur l'environnement `production` (required reviewers) pour un contrôle humain avant tout déploiement prod (Settings → Environments → production → Required reviewers, via l'UI GitHub).
 
@@ -127,7 +130,7 @@ Le domaine `greengate.africa` reste assigné à la Production Vercel.
 vercel login                 # se connecter au compte Vercel prod
 cd frontend && vercel link   # crée .vercel/project.json → orgId + projectId
 ```
-(ou Dashboard : Project Settings → General = `PROJECT_ID` ; Account/Team Settings = `ORG_ID`). Les mettre dans les secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` de l'env `production` (étape 4), avec `VERCEL_ENABLED=true`. Le domaine `greengate.africa` s'attache au projet prod du Client (un domaine = un seul projet à la fois ; re-vérification TXT si cross-compte).
+(ou Dashboard : Project Settings → General = `PROJECT_ID` ; Account/Team Settings = `ORG_ID`). Les mettre dans les secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` de l'env `production` (étape 4), et activer la variable **repo-level** `VERCEL_PROD_ENABLED=true`. Le domaine `greengate.africa` s'attache au projet prod du Client (un domaine = un seul projet à la fois ; re-vérification TXT si cross-compte).
 
 ---
 

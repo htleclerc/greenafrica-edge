@@ -5,9 +5,10 @@ name: Deploy — Staging (develop)
 #   develop → staging  (existing Supabase project + Fly app 'africgreen')
 #   main    → production (new Supabase project + Fly app 'greengate-prod')
 # Each GitHub Environment (staging / production) holds its OWN values for the
-# same secret names (SUPABASE_DB_URL, FLY_API_TOKEN, BACKEND_URL,
-# PRODUCTION_URL, VERCEL_TOKEN) and the VERCEL_ENABLED variable, so the YAML
-# differs from production only by the `environment:` name and the Fly app.
+# same secret names (SUPABASE_DB_URL, FLY_API_TOKEN, BACKEND_URL, PRODUCTION_URL,
+# VERCEL_*), so the YAML differs from production only by the `environment:` name,
+# the Fly app, and the repo-level Vercel gate variable (VERCEL_STAGING_ENABLED
+# vs VERCEL_PROD_ENABLED).
 
 on:
   push:
@@ -81,10 +82,12 @@ jobs:
   deploy:
     name: Vercel Staging
     runs-on: ubuntu-latest
-    # Opt-in: skips cleanly until the staging environment's Vercel secrets are set.
-    # The frontend also auto-deploys `develop` via Vercel's native git integration;
-    # this job is here for parity with production and can stay disabled.
-    if: ${{ vars.VERCEL_ENABLED == 'true' }}
+    # Opt-in via a REPO-level variable (environment-scoped vars are invisible to a
+    # job-level `if:`). Separate from production's VERCEL_PROD_ENABLED so enabling
+    # one never triggers the other. The frontend also auto-deploys `develop` via
+    # Vercel's native git integration; this job can stay disabled.
+    #   gh variable set VERCEL_STAGING_ENABLED --body "true" -R htleclerc/africgreen
+    if: ${{ vars.VERCEL_STAGING_ENABLED == 'true' }}
     needs: [ci, migrations]
     environment:
       name: staging
