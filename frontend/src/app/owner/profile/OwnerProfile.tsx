@@ -354,7 +354,7 @@ export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
                 <div className="flex flex-col gap-2 text-sm">
                     {profile.proof_doc_url ? (
                         <a
-                            href={`/api/admin/kyc-doc?path=${encodeURIComponent(profile.proof_doc_url)}`}
+                            href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.proof_doc_url)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="underline hover:no-underline text-[var(--os-highlight)]"
@@ -366,7 +366,7 @@ export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
                     )}
                     {profile.billing_proof_doc_url ? (
                         <a
-                            href={`/api/admin/kyc-doc?path=${encodeURIComponent(profile.billing_proof_doc_url)}`}
+                            href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.billing_proof_doc_url)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="underline hover:no-underline text-[var(--os-highlight)]"
