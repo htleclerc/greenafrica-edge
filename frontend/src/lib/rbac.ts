@@ -74,6 +74,9 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     // Staff management — SUPERADMIN only
     'staff':        [UserRole.SUPERADMIN],
 
+    // Shipowners cockpit (collections) — same audience as jurisdictions
+    'armateurs':    [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+
     // Settings
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],
 };
