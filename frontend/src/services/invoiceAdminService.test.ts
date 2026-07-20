@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseInvoiceFilters } from './invoiceAdminService';
+import { describe, it, expect, vi } from 'vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { parseInvoiceFilters, listInvoicesAdmin, listInvoiceFilterOptions } from './invoiceAdminService';
 
 describe('parseInvoiceFilters', () => {
     it('applique les défauts page=1 pageSize=25 quand rien n’est fourni', () => {
@@ -49,5 +50,82 @@ describe('parseInvoiceFilters', () => {
 
     it('prend la première valeur si le param est un tableau', () => {
         expect(parseInvoiceFilters({ mode: ['AIR', 'MARITIME'] }).mode).toBe('AIR');
+    });
+});
+
+// Chaîne de query builder mockée ; le terminal .range() résout {data,count,error}.
+function makeChain(result: { data: unknown[]; count: number | null }) {
+    const chain: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'gt', 'gte', 'lte', 'or', 'order']) {
+        chain[m] = vi.fn(() => chain);
+    }
+    chain.range = vi.fn(() => Promise.resolve({ data: result.data, count: result.count, error: null }));
+    return chain;
+}
+
+describe('listInvoicesAdmin', () => {
+    it('interroge la vue, applique les filtres et pagine via range', async () => {
+        const chain = makeChain({ data: [], count: 0 });
+        const db = { from: vi.fn(() => chain) } as unknown as SupabaseClient;
+        await listInvoicesAdmin(db, {
+            mode: 'AIR', dueOnly: true, search: 'ABC', page: 2, pageSize: 10,
+        });
+        expect(db.from).toHaveBeenCalledWith('v_invoice_admin');
+        expect(chain.eq).toHaveBeenCalledWith('mode', 'AIR');
+        expect(chain.gt).toHaveBeenCalledWith('outstanding_usd', 0);
+        expect(chain.or).toHaveBeenCalled();
+        // page 2, pageSize 10 => range(10, 19)
+        expect(chain.range).toHaveBeenCalledWith(10, 19);
+    });
+
+    it('renvoie total depuis le count et normalise les nombres', async () => {
+        const chain = makeChain({
+            data: [{
+                id: 'tx-1', invoice_ref: 'INV-1', content_hash: null, verify_signature: null,
+                document_type: 'PROFORMA', mode: 'MARITIME', status: 'PENDING',
+                tax_amount_usd: '100.5', partial_paid_usd: '40', outstanding_usd: '60.5',
+                created_at: '2026-05-01T00:00:00Z', due_date: null, paid_at: null,
+                vessel_name: 'MV Test', vessel_imo: 'UNVERIFIED-1', shipowner_id: 'so-1',
+                debtor_name: 'Acme', flag_country: 'SO', jurisdiction_id: 'j-1',
+                jurisdiction_code: 'SOMALILAND', jurisdiction_name: 'Somaliland', is_aviation: false,
+            }],
+            count: 87,
+        });
+        const db = { from: vi.fn(() => chain) } as unknown as SupabaseClient;
+        const res = await listInvoicesAdmin(db, { page: 1, pageSize: 25 });
+        expect(res.total).toBe(87);
+        expect(res.page).toBe(1);
+        expect(res.rows[0].tax_amount_usd).toBe(100.5);
+        expect(res.rows[0].outstanding_usd).toBe(60.5);
+    });
+
+    it('n’applique pas de filtre eq quand les champs sont absents', async () => {
+        const chain = makeChain({ data: [], count: 0 });
+        const db = { from: vi.fn(() => chain) } as unknown as SupabaseClient;
+        await listInvoicesAdmin(db, { page: 1, pageSize: 25 });
+        expect(chain.eq).not.toHaveBeenCalled();
+        expect(chain.gt).not.toHaveBeenCalled();
+        expect(chain.or).not.toHaveBeenCalled();
+    });
+});
+
+describe('listInvoiceFilterOptions', () => {
+    it('charge les juridictions et déduplique les pavillons', async () => {
+        const jchain = {
+            select: vi.fn(() => jchain),
+            order: vi.fn(() => Promise.resolve({ data: [{ id: 'j-1', name: 'Somaliland' }], error: null })),
+        };
+        const fchain = {
+            select: vi.fn(() => Promise.resolve({
+                data: [{ flag_country: 'SO' }, { flag_country: 'SO' }, { flag_country: 'DJ' }, { flag_country: null }],
+                error: null,
+            })),
+        };
+        const db = {
+            from: vi.fn((t: string) => (t === 'jurisdictions' ? jchain : fchain)),
+        } as unknown as SupabaseClient;
+        const res = await listInvoiceFilterOptions(db);
+        expect(res.jurisdictions).toEqual([{ id: 'j-1', name: 'Somaliland' }]);
+        expect(res.flagCountries.sort()).toEqual(['DJ', 'SO']);
     });
 });
