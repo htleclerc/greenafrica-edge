@@ -3695,6 +3695,7 @@
     "pagination": "{start}–{end} kati ya {total}",
     "prev": "Iliyotangulia",
     "next": "Ifuatayo"
+  },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",
     "subtitle": "Dashibodi ya urejeshaji madeni — hali, vikwazo na kiasi kwa kila mmiliki wa meli.",

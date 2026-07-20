@@ -3729,6 +3729,7 @@
     "pagination": "{start}–{end} de {total}",
     "prev": "Anterior",
     "next": "Seguinte"
+  },
   "AdminArmateurs": {
     "title": "Armadores",
     "subtitle": "Painel de cobrança — status, sanções e valores por armador.",

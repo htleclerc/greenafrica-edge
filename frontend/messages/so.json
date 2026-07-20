@@ -816,7 +816,7 @@
     "nav_jurisdictions": "Xuduudaha Sharciga",
     "nav_vision": "Saxiix Muraayadda",
     "nav_staff": "Maamulidda Shaqaalaha",
-    "nav_admin_invoices": "Biilasha"
+    "nav_admin_invoices": "Biilasha",
     "nav_armateurs": "Milkiilayaasha Markabka"
   },
   "AdminStaff": {
@@ -3692,6 +3692,7 @@
     "pagination": "{start}–{end} ee {total}",
     "prev": "Hore",
     "next": "Xiga"
+  },
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",
     "subtitle": "Cockpit-ka soo-ururinta — xaalada, cunaqabatayntada iyo lacagaha milkiile kasta.",
