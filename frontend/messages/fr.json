@@ -3306,6 +3306,54 @@
       "cta": "Compléter le profil"
     }
   },
+  "OwnerProfile": {
+    "save": "Enregistrer",
+    "status": {
+      "title": "Statut KYC",
+      "done": "Complété",
+      "pending": "En attente",
+      "reverifNotice": "Certains identifiants ont changé — la vérification KYC-B est relancée.",
+      "completeBilling": "Complétez votre profil de facturation"
+    },
+    "identity": {
+      "title": "Identité",
+      "subtitle": "Identifiants de l'entreprise et coordonnées utilisés pour la vérification KYC.",
+      "imoCompanyNo": "Numéro IMO Company",
+      "aocNumber": "Numéro AOC",
+      "address": "Adresse",
+      "phone": "Téléphone",
+      "preferredLanguage": "Langue préférée",
+      "opsEmail": "Email opérations",
+      "financeEmail": "Email finance",
+      "reverifWarning": "Modifier ces identifiants relance la vérification KYC.",
+      "saveError": "Échec de l'enregistrement des informations d'identité. Veuillez réessayer."
+    },
+    "billing": {
+      "title": "Facturation & banque",
+      "subtitle": "Adresse de facturation légale et coordonnées bancaires utilisées pour les règlements.",
+      "legalName": "Raison sociale de facturation",
+      "addressLine1": "Adresse ligne 1",
+      "addressLine2": "Adresse ligne 2",
+      "city": "Ville",
+      "postalCode": "Code postal",
+      "countryCode": "Pays (ISO-2)",
+      "vatNumber": "Numéro de TVA",
+      "currentIban": "IBAN actuel",
+      "noIban": "Aucun IBAN enregistré",
+      "newIban": "Nouvel IBAN",
+      "newIbanHint": "Saisissez un IBAN complet pour remplacer celui enregistré.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "Nom de la banque",
+      "saveError": "Échec de l'enregistrement des informations bancaires. Veuillez réessayer."
+    },
+    "documents": {
+      "title": "Documents",
+      "proofB": "Voir le justificatif KYC-B",
+      "proofC": "Voir le justificatif de facturation",
+      "noProofB": "Aucun document KYC-B enregistré",
+      "noProofC": "Aucun document de facturation enregistré"
+    }
+  },
   "AdminRegistrations": {
     "title": "Demandes d'inscription",
     "filters": {

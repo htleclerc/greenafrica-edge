@@ -3306,6 +3306,54 @@
       "cta": "Complete profile"
     }
   },
+  "OwnerProfile": {
+    "save": "Save",
+    "status": {
+      "title": "KYC status",
+      "done": "Completed",
+      "pending": "Pending",
+      "reverifNotice": "Some identifiers changed — KYC-B verification is being redone.",
+      "completeBilling": "Complete your billing profile"
+    },
+    "identity": {
+      "title": "Identity",
+      "subtitle": "Company identifiers and contact details used for KYC verification.",
+      "imoCompanyNo": "IMO Company Number",
+      "aocNumber": "AOC number",
+      "address": "Address",
+      "phone": "Phone",
+      "preferredLanguage": "Preferred language",
+      "opsEmail": "Operations email",
+      "financeEmail": "Finance email",
+      "reverifWarning": "Changing this identifier restarts KYC verification.",
+      "saveError": "Could not save identity details. Please try again."
+    },
+    "billing": {
+      "title": "Billing & banking",
+      "subtitle": "Legal billing address and bank details used for settlements.",
+      "legalName": "Legal billing name",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "postalCode": "Postal code",
+      "countryCode": "Country (ISO-2)",
+      "vatNumber": "VAT number",
+      "currentIban": "Current IBAN",
+      "noIban": "No IBAN on file",
+      "newIban": "New IBAN",
+      "newIbanHint": "Enter a full IBAN to replace the one on file.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "Bank name",
+      "saveError": "Could not save billing details. Please try again."
+    },
+    "documents": {
+      "title": "Documents",
+      "proofB": "View KYC-B proof document",
+      "proofC": "View billing proof document",
+      "noProofB": "No KYC-B document on file",
+      "noProofC": "No billing document on file"
+    }
+  },
   "AdminRegistrations": {
     "title": "Pending registrations",
     "filters": {

@@ -156,6 +156,54 @@
       "cta": "Completar perfil"
     }
   },
+  "OwnerProfile": {
+    "save": "Guardar",
+    "status": {
+      "title": "Estado KYC",
+      "done": "Concluído",
+      "pending": "Pendente",
+      "reverifNotice": "Alguns identificadores foram alterados — a verificação KYC-B está a ser refeita.",
+      "completeBilling": "Complete o seu perfil de faturação"
+    },
+    "identity": {
+      "title": "Identidade",
+      "subtitle": "Identificadores da empresa e dados de contacto usados para a verificação KYC.",
+      "imoCompanyNo": "Número IMO Company",
+      "aocNumber": "Número AOC",
+      "address": "Morada",
+      "phone": "Telefone",
+      "preferredLanguage": "Idioma preferido",
+      "opsEmail": "Email de operações",
+      "financeEmail": "Email financeiro",
+      "reverifWarning": "Alterar este identificador reinicia a verificação KYC.",
+      "saveError": "Não foi possível guardar os dados de identidade. Tente novamente."
+    },
+    "billing": {
+      "title": "Faturação & banco",
+      "subtitle": "Morada de faturação legal e dados bancários usados para os pagamentos.",
+      "legalName": "Nome legal de faturação",
+      "addressLine1": "Morada linha 1",
+      "addressLine2": "Morada linha 2",
+      "city": "Cidade",
+      "postalCode": "Código postal",
+      "countryCode": "País (ISO-2)",
+      "vatNumber": "Número de IVA",
+      "currentIban": "IBAN atual",
+      "noIban": "Nenhum IBAN registado",
+      "newIban": "Novo IBAN",
+      "newIbanHint": "Introduza um IBAN completo para substituir o registado.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "Nome do banco",
+      "saveError": "Não foi possível guardar os dados bancários. Tente novamente."
+    },
+    "documents": {
+      "title": "Documentos",
+      "proofB": "Ver documento comprovativo KYC-B",
+      "proofC": "Ver documento comprovativo de faturação",
+      "noProofB": "Nenhum documento KYC-B registado",
+      "noProofC": "Nenhum documento de faturação registado"
+    }
+  },
   "AdminRegistrations": {
     "title": "Cadastros de Armadores",
     "filters": {
