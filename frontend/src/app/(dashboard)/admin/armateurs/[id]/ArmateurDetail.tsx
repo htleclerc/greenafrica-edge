@@ -153,29 +153,32 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
             key: 'links',
             header: t('col.actions'),
             className: 'text-right',
-            render: (p) =>
-                p.invoice_ref ? (
-                    <div className="flex justify-end gap-3" onClick={(e) => e.stopPropagation()}>
-                        <a
-                            href={`/verify/${encodeURIComponent(p.invoice_ref)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[#00D97E] hover:underline"
-                        >
-                            {t('verify')}
-                        </a>
-                        <a
-                            href={`/api/invoices/${encodeURIComponent(p.invoice_ref)}/download`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[#00D97E] hover:underline"
-                        >
-                            {t('download')}
-                        </a>
-                    </div>
-                ) : (
-                    <span className="text-xs text-[var(--os-text-muted)]">—</span>
-                ),
+            render: (p) => {
+                if (p.invoice_ref && p.content_hash && p.verify_signature) {
+                    const qs = `?h=${encodeURIComponent(p.content_hash)}&s=${encodeURIComponent(p.verify_signature)}`;
+                    return (
+                        <div className="flex justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                            <a
+                                href={`/verify/${encodeURIComponent(p.invoice_ref)}${qs}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-[#00D97E] hover:underline"
+                            >
+                                {t('verify')}
+                            </a>
+                            <a
+                                href={`/api/invoices/${encodeURIComponent(p.invoice_ref)}/download${qs}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-[#00D97E] hover:underline"
+                            >
+                                {t('download')}
+                            </a>
+                        </div>
+                    );
+                }
+                return <span className="text-xs text-[var(--os-text-muted)]">{orDash(p.invoice_ref)}</span>;
+            },
         },
     ];
 

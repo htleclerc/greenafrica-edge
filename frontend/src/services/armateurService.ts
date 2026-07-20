@@ -53,6 +53,8 @@ export interface ArmateurProformaRow {
     tax_amount_usd: number;
     partial_paid_usd: number;
     status: string;
+    content_hash: string | null;
+    verify_signature: string | null;
 }
 
 export interface ArmateurVesselRow {
@@ -120,7 +122,7 @@ export async function getArmateurDetail(db: SupabaseClient, id: string): Promise
 
     const [vesselsRes, txRes] = await Promise.all([
         db.from('vessels').select('id, imo_number, name, category, gross_tonnage_dwt, flag_code').eq('shipowner_id', id),
-        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status')
+        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, content_hash, verify_signature')
           .eq('shipowner_id', id).eq('document_type', 'PROFORMA').eq('mode', 'MARITIME')
           .order('created_at', { ascending: false }),
     ]);
@@ -173,6 +175,8 @@ export async function getArmateurDetail(db: SupabaseClient, id: string): Promise
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
             partial_paid_usd: Number(t.partial_paid_usd ?? 0), status: t.status as string,
+            content_hash: (t.content_hash as string | null) ?? null,
+            verify_signature: (t.verify_signature as string | null) ?? null,
         })),
         payments: ((payRes.data ?? []) as Record<string, unknown>[]).map((p) => ({
             id: p.id as string, amount_usd_minor: Number(p.amount_usd_minor),

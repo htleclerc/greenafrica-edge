@@ -85,6 +85,7 @@ describe.skipIf(!ENV_OK)('getArmateurDetail', () => {
         expect(d!.name).toBe('ARM Detail');
         expect(d!.vessels.map((v) => v.imo_number)).toContain('DET-VESSEL-1');
         expect(d!.proformas.find((p) => p.id === txId)?.invoice_ref).toBe('PRO-DET-0001');
+        expect(d!.proformas.find((p) => p.id === txId)?.content_hash).toBeNull();
     });
 
     it('renvoie null pour un id inconnu', async () => {
