@@ -80,15 +80,26 @@ describe.skipIf(!ENV_OK)('getArmateurDetail', () => {
     });
 
     it('agrège identité + navires + proformas', async () => {
-        const d = await getArmateurDetail(admin, armId);
+        const d = await getArmateurDetail(admin, armId, true);
         expect(d).not.toBeNull();
         expect(d!.name).toBe('ARM Detail');
+        expect(d!.iban_masked).toBeNull();
         expect(d!.vessels.map((v) => v.imo_number)).toContain('DET-VESSEL-1');
         expect(d!.proformas.find((p) => p.id === txId)?.invoice_ref).toBe('PRO-DET-0001');
         expect(d!.proformas.find((p) => p.id === txId)?.content_hash).toBeNull();
     });
 
     it('renvoie null pour un id inconnu', async () => {
-        expect(await getArmateurDetail(admin, '00000000-0000-4000-8000-000000000000')).toBeNull();
+        expect(await getArmateurDetail(admin, '00000000-0000-4000-8000-000000000000', true)).toBeNull();
+    });
+
+    it('renvoie null pour une compagnie aviation (iata_code non nul)', async () => {
+        const aviId = '66666666-6666-4666-8666-666666666666';
+        await admin.from('shipowners').insert({ id: aviId, name: 'AVI Detail', iata_code: 'ZZ' });
+        try {
+            expect(await getArmateurDetail(admin, aviId, true)).toBeNull();
+        } finally {
+            await admin.from('shipowners').delete().eq('id', aviId);
+        }
     });
 });

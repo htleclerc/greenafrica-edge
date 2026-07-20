@@ -12,7 +12,6 @@ import { OsInput } from '@/components/ui/OsInput';
 import { inviteShipowner } from '@/actions/inviteShipowner';
 import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
 import {
-    maskIban,
     type ArmateurDetail as ArmateurDetailType,
     type ArmateurVesselRow,
     type ArmateurProformaRow,
@@ -255,7 +254,7 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
                     <Field label={t('detail.billingCity')} value={orDash(detail.billing_city)} />
                     <Field label={t('detail.billingCountry')} value={orDash(detail.billing_country_code)} />
                     <Field label={t('detail.vatNumber')} value={orDash(detail.vat_number)} />
-                    <Field label={t('detail.iban')} value={orDash(maskIban(detail.iban))} />
+                    {detail.iban_masked && <Field label={t('detail.iban')} value={detail.iban_masked} />}
                     <Field label={t('detail.swiftBic')} value={orDash(detail.swift_bic)} />
                     <Field label={t('detail.bankName')} value={orDash(detail.bank_name)} />
                 </dl>

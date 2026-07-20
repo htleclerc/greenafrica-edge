@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { decryptIban } from './kycService';
 
 export interface ArmateurCockpitRow {
     id: string;
@@ -107,7 +108,7 @@ export interface ArmateurDetail {
     billing_city: string | null;
     billing_country_code: string | null;
     vat_number: string | null;
-    iban: string | null;
+    iban_masked: string | null;
     swift_bic: string | null;
     bank_name: string | null;
     vessels: ArmateurVesselRow[];
@@ -116,8 +117,12 @@ export interface ArmateurDetail {
     reminders: ArmateurReminderRow[];
 }
 
-export async function getArmateurDetail(db: SupabaseClient, id: string): Promise<ArmateurDetail | null> {
-    const { data: s } = await db.from('shipowners').select('*').eq('id', id).maybeSingle();
+export async function getArmateurDetail(
+    db: SupabaseClient,
+    id: string,
+    canViewBilling: boolean,
+): Promise<ArmateurDetail | null> {
+    const { data: s } = await db.from('shipowners').select('*').eq('id', id).is('iata_code', null).maybeSingle();
     if (!s) return null;
 
     const [vesselsRes, txRes] = await Promise.all([
@@ -139,6 +144,18 @@ export async function getArmateurDetail(db: SupabaseClient, id: string): Promise
     // Narrowing explicite depuis les lignes shipowners (types manuels — pas de any).
     const row = s as Record<string, unknown>;
     const str = (k: string) => (row[k] as string | null) ?? null;
+
+    // L'IBAN est chiffré au repos (mig 047) — jamais renvoyé brut au client.
+    // Déchiffré + masqué côté serveur, et seulement pour les rôles habilités à voir la facturation.
+    let iban_masked: string | null = null;
+    if (canViewBilling && typeof row.iban === 'string' && row.iban) {
+        try {
+            iban_masked = maskIban(await decryptIban(row.iban));
+        } catch {
+            iban_masked = null;
+        }
+    }
+
     return {
         id: row.id as string,
         name: row.name as string,
@@ -163,7 +180,7 @@ export async function getArmateurDetail(db: SupabaseClient, id: string): Promise
         billing_city: str('billing_city'),
         billing_country_code: str('billing_country_code'),
         vat_number: str('vat_number'),
-        iban: str('iban'),
+        iban_masked,
         swift_bic: str('swift_bic'),
         bank_name: str('bank_name'),
         vessels: (vesselsRes.data ?? []).map((v) => ({

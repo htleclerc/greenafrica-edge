@@ -13,7 +13,8 @@ export default async function ArmateurDetailPage({ params }: { params: Promise<{
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', auth.user.id).single();
     if (!profile || !['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'].includes(profile.role)) redirect('/dashboard');
 
-    const detail = await getArmateurDetail(supabase, id);
+    const canViewBilling = ['SUPERADMIN', 'FINANCE_ADMIN'].includes(profile.role);
+    const detail = await getArmateurDetail(supabase, id, canViewBilling);
     if (!detail) notFound();
     return <ArmateurDetail detail={detail} canInvite={profile.role === 'SUPERADMIN'} />;
 }
