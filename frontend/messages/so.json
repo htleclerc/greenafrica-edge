@@ -816,6 +816,7 @@
     "nav_jurisdictions": "Xuduudaha Sharciga",
     "nav_vision": "Saxiix Muraayadda",
     "nav_staff": "Maamulidda Shaqaalaha",
+    "nav_admin_invoices": "Biilasha"
     "nav_armateurs": "Milkiilayaasha Markabka"
   },
   "AdminStaff": {
@@ -3661,6 +3662,36 @@
       "departedAt": "Waqtiga Bixitaanka"
     }
   },
+  "AdminInvoices": {
+    "title": "Biilasha",
+    "subtitle": "Dhammaan dukumentiyada pro-forma, kama dambeeys, dheeraad iyo celin lacageed, badda iyo hawada.",
+    "all": "Dhammaan",
+    "col_ref": "Tixraac",
+    "col_type": "Nooc",
+    "col_mode": "Hab",
+    "col_debtor": "Deyn qaade",
+    "col_flag": "Calan",
+    "col_jurisdiction": "Xukun",
+    "col_created": "La soo saaray",
+    "col_amount": "Qadar",
+    "col_due": "La sugayo",
+    "col_status": "Xaalad",
+    "action_pdf": "PDF",
+    "action_verify": "Xaqiiji",
+    "f_type": "Nooca dukumentiga",
+    "f_mode": "Hab",
+    "f_status": "Xaalad",
+    "f_jurisdiction": "Xukun",
+    "f_flag": "Dalka calanka",
+    "f_date_from": "Laga bilaabo",
+    "f_date_to": "Ilaa",
+    "f_due_only": "Kaliya la sugayo",
+    "f_search": "Raadi",
+    "f_search_ph": "Tixraac, markab, IMO ama deyn qaade…",
+    "empty": "Ma jiro biil ku habboon shaandhaynta.",
+    "pagination": "{start}–{end} ee {total}",
+    "prev": "Hore",
+    "next": "Xiga"
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",
     "subtitle": "Cockpit-ka soo-ururinta — xaalada, cunaqabatayntada iyo lacagaha milkiile kasta.",

@@ -816,6 +816,7 @@
     "nav_jurisdictions": "Jurisdictions",
     "nav_vision": "Vision Board",
     "nav_staff": "Staff Management",
+    "nav_admin_invoices": "Invoices"
     "nav_armateurs": "Shipowners"
   },
   "AdminStaff": {
@@ -3661,6 +3662,36 @@
       "departedAt": "Departed"
     }
   },
+  "AdminInvoices": {
+    "title": "Invoices",
+    "subtitle": "All pro-forma, final, complement and refund documents across maritime and aviation.",
+    "all": "All",
+    "col_ref": "Reference",
+    "col_type": "Type",
+    "col_mode": "Mode",
+    "col_debtor": "Debtor",
+    "col_flag": "Flag",
+    "col_jurisdiction": "Jurisdiction",
+    "col_created": "Issued",
+    "col_amount": "Amount",
+    "col_due": "Outstanding",
+    "col_status": "Status",
+    "action_pdf": "PDF",
+    "action_verify": "Verify",
+    "f_type": "Document type",
+    "f_mode": "Mode",
+    "f_status": "Status",
+    "f_jurisdiction": "Jurisdiction",
+    "f_flag": "Flag country",
+    "f_date_from": "From",
+    "f_date_to": "To",
+    "f_due_only": "Outstanding only",
+    "f_search": "Search",
+    "f_search_ph": "Reference, vessel, IMO or debtor…",
+    "empty": "No invoices match these filters.",
+    "pagination": "{start}–{end} of {total}",
+    "prev": "Previous",
+    "next": "Next"
   "AdminArmateurs": {
     "title": "Shipowners",
     "subtitle": "Collections cockpit — status, sanctions and amounts per shipowner.",
