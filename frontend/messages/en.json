@@ -816,7 +816,7 @@
     "nav_jurisdictions": "Jurisdictions",
     "nav_vision": "Vision Board",
     "nav_staff": "Staff Management",
-    "nav_admin_invoices": "Invoices"
+    "nav_admin_invoices": "Invoices",
     "nav_armateurs": "Shipowners"
   },
   "AdminStaff": {
@@ -3692,6 +3692,7 @@
     "pagination": "{start}–{end} of {total}",
     "prev": "Previous",
     "next": "Next"
+  },
   "AdminArmateurs": {
     "title": "Shipowners",
     "subtitle": "Collections cockpit — status, sanctions and amounts per shipowner.",
