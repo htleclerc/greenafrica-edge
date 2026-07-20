@@ -128,4 +128,35 @@ describe('listInvoiceFilterOptions', () => {
         expect(res.jurisdictions).toEqual([{ id: 'j-1', name: 'Somaliland' }]);
         expect(res.flagCountries.sort()).toEqual(['DJ', 'SO']);
     });
+
+    it('rejette quand la requête jurisdictions échoue au lieu de renvoyer des listes vides', async () => {
+        const jchain = {
+            select: vi.fn(() => jchain),
+            order: vi.fn(() => Promise.resolve({ data: null, error: { message: 'boom' } })),
+        };
+        const fchain = {
+            select: vi.fn(() => Promise.resolve({
+                data: [{ flag_country: 'SO' }],
+                error: null,
+            })),
+        };
+        const db = {
+            from: vi.fn((t: string) => (t === 'jurisdictions' ? jchain : fchain)),
+        } as unknown as SupabaseClient;
+        await expect(listInvoiceFilterOptions(db)).rejects.toThrow();
+    });
+
+    it('rejette quand la requête v_invoice_admin (pavillons) échoue', async () => {
+        const jchain = {
+            select: vi.fn(() => jchain),
+            order: vi.fn(() => Promise.resolve({ data: [{ id: 'j-1', name: 'Somaliland' }], error: null })),
+        };
+        const fchain = {
+            select: vi.fn(() => Promise.resolve({ data: null, error: { message: 'boom' } })),
+        };
+        const db = {
+            from: vi.fn((t: string) => (t === 'jurisdictions' ? jchain : fchain)),
+        } as unknown as SupabaseClient;
+        await expect(listInvoiceFilterOptions(db)).rejects.toThrow();
+    });
 });

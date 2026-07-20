@@ -182,14 +182,18 @@ export interface InvoiceFilterOptions {
 }
 
 export async function listInvoiceFilterOptions(db: Client): Promise<InvoiceFilterOptions> {
-    const { data: jData } = await db
+    const { data: jData, error: jError } = await db
         .from('jurisdictions')
         .select('id, name')
         .order('name', { ascending: true });
 
-    const { data: fData } = await db
+    if (jError) throw new Error(`listInvoiceFilterOptions(jurisdictions): ${jError.message}`);
+
+    const { data: fData, error: fError } = await db
         .from('v_invoice_admin')
         .select('flag_country');
+
+    if (fError) throw new Error(`listInvoiceFilterOptions(flags): ${fError.message}`);
 
     const flagSet = new Set<string>();
     for (const row of (fData ?? []) as { flag_country: string | null }[]) {
