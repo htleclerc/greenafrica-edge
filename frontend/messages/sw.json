@@ -3419,6 +3419,18 @@
     "country_code": "Nchi",
     "vat_optional": "Nambari ya VAT (hiari)",
     "bank_name": "Jina la benki",
+    "proof_document": "Hati ya uthibitisho (hiari)",
+    "proof_document_hint": "PDF au picha inayothibitisha taarifa zako za benki. Hiari — unaweza kuiongeza baadaye.",
+    "proof_doc_type": "Aina ya hati",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Cheti cha usajili wa kampuni",
+      "BANK_STATEMENT": "Taarifa ya benki",
+      "RIB": "Maelezo ya akaunti ya benki (RIB)",
+      "OTHER": "Nyingine"
+    },
+    "proof_uploading": "Inapakia…",
+    "proof_uploaded": "Hati imeambatishwa",
+    "proof_upload_error": "Kupakia kumeshindwa — unaweza kuendelea bila hati na kuiongeza baadaye.",
     "cgv_label_prefix": "Nakubali",
     "cgv_link": "masharti na vigezo",
     "next": "Ifuatayo",
@@ -3428,6 +3440,54 @@
     "banner": {
       "text": "Kamilisha wasifu wa kampuni yako kufungua vipengele vyote.",
       "cta": "Kamilisha wasifu"
+    }
+  },
+  "OwnerProfile": {
+    "save": "Hifadhi",
+    "status": {
+      "title": "Hali ya KYC",
+      "done": "Imekamilika",
+      "pending": "Inasubiri",
+      "reverifNotice": "Baadhi ya vitambulisho vimebadilika — uthibitishaji wa KYC-B unafanywa upya.",
+      "completeBilling": "Kamilisha wasifu wako wa malipo"
+    },
+    "identity": {
+      "title": "Utambulisho",
+      "subtitle": "Vitambulisho vya kampuni na maelezo ya mawasiliano yanayotumika kwa uthibitishaji wa KYC.",
+      "imoCompanyNo": "Nambari ya IMO Company",
+      "aocNumber": "Nambari ya AOC",
+      "address": "Anwani",
+      "phone": "Simu",
+      "preferredLanguage": "Lugha pendwa",
+      "opsEmail": "Barua pepe ya uendeshaji",
+      "financeEmail": "Barua pepe ya fedha",
+      "reverifWarning": "Kubadilisha kitambulisho hiki kunaanzisha upya uthibitishaji wa KYC.",
+      "saveError": "Imeshindwa kuhifadhi maelezo ya utambulisho. Tafadhali jaribu tena."
+    },
+    "billing": {
+      "title": "Malipo na benki",
+      "subtitle": "Anwani ya kisheria ya malipo na maelezo ya benki yanayotumika kwa malipo.",
+      "legalName": "Jina rasmi la malipo",
+      "addressLine1": "Anwani mstari wa 1",
+      "addressLine2": "Anwani mstari wa 2",
+      "city": "Mji",
+      "postalCode": "Msimbo wa posta",
+      "countryCode": "Nchi (ISO-2)",
+      "vatNumber": "Nambari ya VAT",
+      "currentIban": "IBAN ya sasa",
+      "noIban": "Hakuna IBAN iliyosajiliwa",
+      "newIban": "IBAN mpya",
+      "newIbanHint": "Weka IBAN kamili ili kubadilisha iliyosajiliwa.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "Jina la benki",
+      "saveError": "Imeshindwa kuhifadhi maelezo ya benki. Tafadhali jaribu tena."
+    },
+    "documents": {
+      "title": "Nyaraka",
+      "proofB": "Ona hati ya uthibitisho wa KYC-B",
+      "proofC": "Ona hati ya uthibitisho wa malipo",
+      "noProofB": "Hakuna hati ya KYC-B iliyosajiliwa",
+      "noProofC": "Hakuna hati ya malipo iliyosajiliwa"
     }
   },
   "AdminRegistrations": {

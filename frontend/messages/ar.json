@@ -3419,6 +3419,18 @@
     "country_code": "الدولة",
     "vat_optional": "رقم ضريبة القيمة المضافة (اختياري)",
     "bank_name": "اسم البنك",
+    "proof_document": "مستند إثبات (اختياري)",
+    "proof_document_hint": "ملف PDF أو صورة تؤكد بياناتك المصرفية. اختياري — يمكنك إضافته لاحقًا.",
+    "proof_doc_type": "نوع المستند",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "شهادة التأسيس",
+      "BANK_STATEMENT": "كشف حساب بنكي",
+      "RIB": "بيانات الحساب المصرفي (RIB)",
+      "OTHER": "أخرى"
+    },
+    "proof_uploading": "جارٍ الرفع…",
+    "proof_uploaded": "تم إرفاق المستند",
+    "proof_upload_error": "فشل الرفع — يمكنك المتابعة بدون مستند وإضافته لاحقًا.",
     "cgv_label_prefix": "أوافق على",
     "cgv_link": "الشروط والأحكام",
     "next": "التالي",
@@ -3428,6 +3440,54 @@
     "banner": {
       "text": "أكمل ملف الشركة لإلغاء تأمين جميع الميزات.",
       "cta": "إكمال الملف"
+    }
+  },
+  "OwnerProfile": {
+    "save": "حفظ",
+    "status": {
+      "title": "حالة KYC",
+      "done": "مكتمل",
+      "pending": "قيد الانتظار",
+      "reverifNotice": "تم تغيير بعض بيانات الهوية — يُعاد إجراء التحقق من KYC-B.",
+      "completeBilling": "أكمل ملف الفوترة الخاص بك"
+    },
+    "identity": {
+      "title": "الهوية",
+      "subtitle": "معرّفات الشركة وبيانات الاتصال المستخدمة للتحقق من KYC.",
+      "imoCompanyNo": "رقم شركة IMO",
+      "aocNumber": "رقم AOC",
+      "address": "العنوان",
+      "phone": "الهاتف",
+      "preferredLanguage": "اللغة المفضلة",
+      "opsEmail": "بريد العمليات الإلكتروني",
+      "financeEmail": "بريد المالية الإلكتروني",
+      "reverifWarning": "تغيير هذا المعرّف يعيد بدء التحقق من KYC.",
+      "saveError": "تعذّر حفظ بيانات الهوية. يرجى المحاولة مرة أخرى."
+    },
+    "billing": {
+      "title": "الفوترة والبنك",
+      "subtitle": "عنوان الفوترة القانوني وبيانات البنك المستخدمة للتسويات.",
+      "legalName": "الاسم القانوني للفوترة",
+      "addressLine1": "العنوان - السطر 1",
+      "addressLine2": "العنوان - السطر 2",
+      "city": "المدينة",
+      "postalCode": "الرمز البريدي",
+      "countryCode": "الدولة (ISO-2)",
+      "vatNumber": "رقم ضريبة القيمة المضافة",
+      "currentIban": "IBAN الحالي",
+      "noIban": "لا يوجد IBAN مسجل",
+      "newIban": "IBAN جديد",
+      "newIbanHint": "أدخل رقم IBAN كاملاً لاستبدال الرقم المسجل.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "اسم البنك",
+      "saveError": "تعذّر حفظ بيانات الفوترة. يرجى المحاولة مرة أخرى."
+    },
+    "documents": {
+      "title": "المستندات",
+      "proofB": "عرض مستند إثبات KYC-B",
+      "proofC": "عرض مستند إثبات الفوترة",
+      "noProofB": "لا يوجد مستند KYC-B مسجل",
+      "noProofC": "لا يوجد مستند فوترة مسجل"
     }
   },
   "AdminRegistrations": {

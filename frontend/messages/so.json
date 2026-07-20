@@ -3284,6 +3284,18 @@
     "country_code": "Dalka (ISO-2)",
     "vat_optional": "Lambarka VAT (ikhtiyaari)",
     "bank_name": "Magaca bangiga",
+    "proof_document": "Dukumeenti caddaynaya (ikhtiyaari)",
+    "proof_document_hint": "PDF ama sawir xaqiijinaya xogta bangigaaga. Ikhtiyaari — waad ku dari kartaa mar dambe.",
+    "proof_doc_type": "Nooca dukumeentiga",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Shahaadada aasaaska shirkadda",
+      "BANK_STATEMENT": "Bayaanka bangiga",
+      "RIB": "Xogta akoonka bangiga (RIB)",
+      "OTHER": "Kale"
+    },
+    "proof_uploading": "Waa la soo gudbinayaa…",
+    "proof_uploaded": "Dukumeentiga waa la lifaaqay",
+    "proof_upload_error": "Gudbintu way fashilantay — waad sii wadi kartaa dukumeenti la'aan oo waxaad ku dari kartaa mar dambe.",
     "cgv_label_prefix": "Waxaan aqbalayaa",
     "cgv_link": "Shuruudaha & Xaaladaha",
     "next": "Xiga",
@@ -3293,6 +3305,54 @@
     "banner": {
       "text": "Dhammaystir xogta biilnimadaada kahor lacag bixintaada koowaad.",
       "cta": "Dhammaystir xogta"
+    }
+  },
+  "OwnerProfile": {
+    "save": "Kaydi",
+    "status": {
+      "title": "Xaaladda KYC",
+      "done": "Dhammaystiran",
+      "pending": "Sugaya",
+      "reverifNotice": "Aqoonsiyo qaar ayaa isbedelay — xaqiijinta KYC-B ayaa dib loo samaynayaa.",
+      "completeBilling": "Dhammaystir profile-ka lacag-bixintaada"
+    },
+    "identity": {
+      "title": "Aqoonsi",
+      "subtitle": "Aqoonsiyada shirkadda iyo macluumaadka xiriirka ee loo isticmaalo xaqiijinta KYC.",
+      "imoCompanyNo": "Lambarka IMO Company",
+      "aocNumber": "Lambarka AOC",
+      "address": "Cinwaanka",
+      "phone": "Telefoonka",
+      "preferredLanguage": "Luqadda la doorbiday",
+      "opsEmail": "Iimaylka hawlgalka",
+      "financeEmail": "Iimaylka maaliyadda",
+      "reverifWarning": "Bedelidda aqoonsigan waxay dib u bilaabaysaa xaqiijinta KYC.",
+      "saveError": "Waa lagu guuldareystay kaydinta macluumaadka aqoonsiga. Fadlan isku day mar kale."
+    },
+    "billing": {
+      "title": "Lacag-bixin & bangi",
+      "subtitle": "Cinwaanka sharciga ah ee lacag-bixinta iyo macluumaadka bangiga ee loo isticmaalo xisaabaynta.",
+      "legalName": "Magaca sharciga ah ee lacag-bixinta",
+      "addressLine1": "Cinwaanka xariiqda 1",
+      "addressLine2": "Cinwaanka xariiqda 2",
+      "city": "Magaalada",
+      "postalCode": "Lambarka boostada",
+      "countryCode": "Waddanka (ISO-2)",
+      "vatNumber": "Lambarka VAT",
+      "currentIban": "IBAN-ka hadda",
+      "noIban": "Ma jiro IBAN diiwaan gashan",
+      "newIban": "IBAN cusub",
+      "newIbanHint": "Geli IBAN buuxa si aad u bedesho ta diiwaan gashan.",
+      "swiftBic": "SWIFT/BIC",
+      "bankName": "Magaca bangiga",
+      "saveError": "Waa lagu guuldareystay kaydinta macluumaadka bangiga. Fadlan isku day mar kale."
+    },
+    "documents": {
+      "title": "Dukumeentiyada",
+      "proofB": "Fiiri dukumeentiga caddaynta KYC-B",
+      "proofC": "Fiiri dukumeentiga caddaynta lacag-bixinta",
+      "noProofB": "Ma jiro dukumeenti KYC-B ah oo diiwaan gashan",
+      "noProofC": "Ma jiro dukumeenti lacag-bixin ah oo diiwaan gashan"
     }
   },
   "AdminRegistrations": {
