@@ -694,6 +694,7 @@
     "nav_vision": "Tableau de bord",
     "nav_staff": "Gestion du personnel",
     "nav_armateurs": "Armateurs",
+    "nav_admin_invoices": "Factures",
     "nav_airlines": "Compagnies"
   },
   "AdminStaff": {
@@ -3661,6 +3662,37 @@
       "mode": "Mode",
       "departedAt": "Départ"
     }
+  },
+  "AdminInvoices": {
+    "title": "Factures",
+    "subtitle": "Tous les documents pro-forma, finaux, complémentaires et avoirs, maritime et aviation.",
+    "all": "Tous",
+    "col_ref": "Référence",
+    "col_type": "Type",
+    "col_mode": "Mode",
+    "col_debtor": "Débiteur",
+    "col_flag": "Pavillon",
+    "col_jurisdiction": "Juridiction",
+    "col_created": "Émission",
+    "col_amount": "Montant",
+    "col_due": "Dû",
+    "col_status": "Statut",
+    "action_pdf": "PDF",
+    "action_verify": "Vérifier",
+    "f_type": "Type de document",
+    "f_mode": "Mode",
+    "f_status": "Statut",
+    "f_jurisdiction": "Juridiction",
+    "f_flag": "Pays du pavillon",
+    "f_date_from": "Du",
+    "f_date_to": "Au",
+    "f_due_only": "Dû uniquement",
+    "f_search": "Recherche",
+    "f_search_ph": "Référence, navire, OMI ou débiteur…",
+    "empty": "Aucune facture ne correspond à ces filtres.",
+    "pagination": "{start}–{end} sur {total}",
+    "prev": "Précédent",
+    "next": "Suivant"
   },
   "AdminArmateurs": {
     "title": "Armateurs",

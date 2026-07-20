@@ -1083,7 +1083,8 @@
     "nav_cash_desk": "Caixa",
     "nav_registrations": "Cadastros",
     "nav_wallets": "Carteiras",
-    "nav_refunds": "Reembolsos"
+    "nav_refunds": "Reembolsos",
+    "nav_admin_invoices": "Faturas"
   },
   "AdminStaff": {
     "page_title": "Gestão de Pessoal",
@@ -3698,6 +3699,37 @@
       "sw": "Kiswahili",
       "so": "Soomaali"
     }
+  },
+  "AdminInvoices": {
+    "title": "Faturas",
+    "subtitle": "Todos os documentos pró-forma, finais, complementares e reembolsos, marítimo e aviação.",
+    "all": "Todos",
+    "col_ref": "Referência",
+    "col_type": "Tipo",
+    "col_mode": "Modo",
+    "col_debtor": "Devedor",
+    "col_flag": "Bandeira",
+    "col_jurisdiction": "Jurisdição",
+    "col_created": "Emissão",
+    "col_amount": "Montante",
+    "col_due": "Em dívida",
+    "col_status": "Estado",
+    "action_pdf": "PDF",
+    "action_verify": "Verificar",
+    "f_type": "Tipo de documento",
+    "f_mode": "Modo",
+    "f_status": "Estado",
+    "f_jurisdiction": "Jurisdição",
+    "f_flag": "País da bandeira",
+    "f_date_from": "De",
+    "f_date_to": "Até",
+    "f_due_only": "Apenas em dívida",
+    "f_search": "Pesquisar",
+    "f_search_ph": "Referência, navio, IMO ou devedor…",
+    "empty": "Nenhuma fatura corresponde a estes filtros.",
+    "pagination": "{start}–{end} de {total}",
+    "prev": "Anterior",
+    "next": "Seguinte"
   },
   "AdminArmateurs": {
     "title": "Armadores",
