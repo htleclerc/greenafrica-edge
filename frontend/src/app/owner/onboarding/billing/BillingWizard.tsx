@@ -111,7 +111,8 @@ export function BillingWizard({ shipownerName, shipownerId }: { shipownerName: s
         setUploadError(null);
         try {
             const supabase = createClient();
-            const path = `kyc-c/${shipownerId}/${Date.now()}-${file.name}`;
+            const safeName = file.name.replace(/[^\w.\-]/g, '_');
+            const path = `kyc-c/${shipownerId}/${Date.now()}-${safeName}`;
             const { error } = await supabase.storage.from('shipowner-kyc').upload(path, file);
             if (error) throw error;
             update('billing_proof_doc_storage_path', path);

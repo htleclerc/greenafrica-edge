@@ -22,24 +22,31 @@ export async function submitKycC(input: KycCInput) {
     // explicit .eq('id', …) below). audit_logs is global → passes through.
     const admin = createTenantClient(session.jurisdictionId);
 
-    // Update shipowner with KYC Level C details.
+    // Update shipowner with KYC Level C details. The billing proof fields are only
+    // included when a new document was uploaded, so a re-submission without a new
+    // file never overwrites a previously stored proof with null.
+    const updatePayload: Record<string, unknown> = {
+        billing_legal_name: data.billing_legal_name,
+        billing_address_line1: data.billing_address_line1,
+        billing_address_line2: data.billing_address_line2 ?? null,
+        billing_city: data.billing_city,
+        billing_postal_code: data.billing_postal_code,
+        billing_country_code: data.billing_country_code,
+        vat_number: data.vat_number ?? null,
+        iban: ibanStored,
+        swift_bic: data.swift_bic,
+        bank_name: data.bank_name,
+        kyc_level_c_completed_at: new Date().toISOString(),
+    };
+
+    if (data.billing_proof_doc_storage_path) {
+        updatePayload.billing_proof_doc_url = data.billing_proof_doc_storage_path;
+        updatePayload.billing_proof_doc_type = data.billing_proof_doc_type ?? null;
+    }
+
     const { error: updateError } = await admin
         .from('shipowners')
-        .update({
-            billing_legal_name: data.billing_legal_name,
-            billing_address_line1: data.billing_address_line1,
-            billing_address_line2: data.billing_address_line2 ?? null,
-            billing_city: data.billing_city,
-            billing_postal_code: data.billing_postal_code,
-            billing_country_code: data.billing_country_code,
-            vat_number: data.vat_number ?? null,
-            iban: ibanStored,
-            swift_bic: data.swift_bic,
-            bank_name: data.bank_name,
-            billing_proof_doc_url: data.billing_proof_doc_storage_path ?? null,
-            billing_proof_doc_type: data.billing_proof_doc_type ?? null,
-            kyc_level_c_completed_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', session.shipowner.id);
 
     if (updateError) throw updateError;
