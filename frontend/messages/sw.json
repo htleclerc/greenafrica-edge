@@ -3418,6 +3418,18 @@
     "country_code": "Nchi",
     "vat_optional": "Nambari ya VAT (hiari)",
     "bank_name": "Jina la benki",
+    "proof_document": "Hati ya uthibitisho (hiari)",
+    "proof_document_hint": "PDF au picha inayothibitisha taarifa zako za benki. Hiari — unaweza kuiongeza baadaye.",
+    "proof_doc_type": "Aina ya hati",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Cheti cha usajili wa kampuni",
+      "BANK_STATEMENT": "Taarifa ya benki",
+      "RIB": "Maelezo ya akaunti ya benki (RIB)",
+      "OTHER": "Nyingine"
+    },
+    "proof_uploading": "Inapakia…",
+    "proof_uploaded": "Hati imeambatishwa",
+    "proof_upload_error": "Kupakia kumeshindwa — unaweza kuendelea bila hati na kuiongeza baadaye.",
     "cgv_label_prefix": "Nakubali",
     "cgv_link": "masharti na vigezo",
     "next": "Ifuatayo",

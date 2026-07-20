@@ -3283,6 +3283,18 @@
     "country_code": "Pays (ISO-2)",
     "vat_optional": "Numéro de TVA (optionnel)",
     "bank_name": "Nom de la banque",
+    "proof_document": "Pièce justificative (optionnel)",
+    "proof_document_hint": "PDF ou image confirmant vos coordonnées bancaires. Optionnel — vous pourrez l'ajouter plus tard.",
+    "proof_doc_type": "Type de document",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Certificat d'incorporation",
+      "BANK_STATEMENT": "Relevé bancaire",
+      "RIB": "Relevé d'identité bancaire (RIB)",
+      "OTHER": "Autre"
+    },
+    "proof_uploading": "Envoi en cours...",
+    "proof_uploaded": "Document joint",
+    "proof_upload_error": "Échec de l'envoi — vous pouvez continuer sans document et l'ajouter plus tard.",
     "cgv_label_prefix": "J'accepte les",
     "cgv_link": "Conditions Générales",
     "next": "Suivant",

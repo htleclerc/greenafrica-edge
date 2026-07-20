@@ -133,6 +133,18 @@
     "country_code": "País",
     "vat_optional": "CNPJ/NIF (opcional)",
     "bank_name": "Nome do banco",
+    "proof_document": "Documento comprobatório (opcional)",
+    "proof_document_hint": "PDF ou imagem confirmando seus dados bancários. Opcional — você pode adicioná-lo depois.",
+    "proof_doc_type": "Tipo de documento",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Certificado de constituição",
+      "BANK_STATEMENT": "Extrato bancário",
+      "RIB": "Comprovante bancário (RIB)",
+      "OTHER": "Outro"
+    },
+    "proof_uploading": "Enviando…",
+    "proof_uploaded": "Documento anexado",
+    "proof_upload_error": "Falha no envio — você pode continuar sem o documento e adicioná-lo depois.",
     "cgv_label_prefix": "Aceito os",
     "cgv_link": "termos e condições",
     "next": "Próximo",

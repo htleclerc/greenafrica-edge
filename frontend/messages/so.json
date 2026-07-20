@@ -3283,6 +3283,18 @@
     "country_code": "Dalka (ISO-2)",
     "vat_optional": "Lambarka VAT (ikhtiyaari)",
     "bank_name": "Magaca bangiga",
+    "proof_document": "Dukumeenti caddaynaya (ikhtiyaari)",
+    "proof_document_hint": "PDF ama sawir xaqiijinaya xogta bangigaaga. Ikhtiyaari — waad ku dari kartaa mar dambe.",
+    "proof_doc_type": "Nooca dukumeentiga",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Shahaadada aasaaska shirkadda",
+      "BANK_STATEMENT": "Bayaanka bangiga",
+      "RIB": "Xogta akoonka bangiga (RIB)",
+      "OTHER": "Kale"
+    },
+    "proof_uploading": "Waa la soo gudbinayaa…",
+    "proof_uploaded": "Dukumeentiga waa la lifaaqay",
+    "proof_upload_error": "Gudbintu way fashilantay — waad sii wadi kartaa dukumeenti la'aan oo waxaad ku dari kartaa mar dambe.",
     "cgv_label_prefix": "Waxaan aqbalayaa",
     "cgv_link": "Shuruudaha & Xaaladaha",
     "next": "Xiga",

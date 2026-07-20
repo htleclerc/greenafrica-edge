@@ -9,7 +9,7 @@ export default async function OwnerBillingOnboardingPage() {
     }
     return (
         <div className="p-6 max-w-2xl mx-auto">
-            <BillingWizard shipownerName={session.shipowner.name} />
+            <BillingWizard shipownerName={session.shipowner.name} shipownerId={session.shipowner.id} />
         </div>
     );
 }

@@ -3283,6 +3283,18 @@
     "country_code": "Country (ISO-2)",
     "vat_optional": "VAT number (optional)",
     "bank_name": "Bank name",
+    "proof_document": "Supporting document (optional)",
+    "proof_document_hint": "PDF or image confirming your bank details. Optional — you can add it later.",
+    "proof_doc_type": "Document type",
+    "proof_doc_types": {
+      "CERTIFICATE_OF_INCORPORATION": "Certificate of incorporation",
+      "BANK_STATEMENT": "Bank statement",
+      "RIB": "Bank details (RIB)",
+      "OTHER": "Other"
+    },
+    "proof_uploading": "Uploading...",
+    "proof_uploaded": "Document attached",
+    "proof_upload_error": "Upload failed — you can continue without a document and add it later.",
     "cgv_label_prefix": "I accept the",
     "cgv_link": "Terms & Conditions",
     "next": "Next",
