@@ -700,7 +700,8 @@
     "nav_cash_desk": "Kasisi",
     "nav_registrations": "Usajili",
     "nav_wallets": "Pochi",
-    "nav_refunds": "Marejesho"
+    "nav_refunds": "Marejesho",
+    "nav_admin_invoices": "Ankara"
   },
   "AdminStaff": {
     "page_title": "Usimamizi wa Wafanyakazi",
@@ -3662,5 +3663,36 @@
         "failed": "Marekebisho yameshindwa — jaribu tena"
       }
     }
+  },
+  "AdminInvoices": {
+    "title": "Ankara",
+    "subtitle": "Nyaraka zote za pro-forma, za mwisho, za nyongeza na marejesho, baharini na anga.",
+    "all": "Zote",
+    "col_ref": "Rejea",
+    "col_type": "Aina",
+    "col_mode": "Njia",
+    "col_debtor": "Mdaiwa",
+    "col_flag": "Bendera",
+    "col_jurisdiction": "Mamlaka",
+    "col_created": "Ilitolewa",
+    "col_amount": "Kiasi",
+    "col_due": "Inayodaiwa",
+    "col_status": "Hali",
+    "action_pdf": "PDF",
+    "action_verify": "Thibitisha",
+    "f_type": "Aina ya hati",
+    "f_mode": "Njia",
+    "f_status": "Hali",
+    "f_jurisdiction": "Mamlaka",
+    "f_flag": "Nchi ya bendera",
+    "f_date_from": "Kuanzia",
+    "f_date_to": "Hadi",
+    "f_due_only": "Inayodaiwa pekee",
+    "f_search": "Tafuta",
+    "f_search_ph": "Rejea, meli, IMO au mdaiwa…",
+    "empty": "Hakuna ankara zinazolingana na vichujio hivi.",
+    "pagination": "{start}–{end} kati ya {total}",
+    "prev": "Iliyotangulia",
+    "next": "Ifuatayo"
   }
 }

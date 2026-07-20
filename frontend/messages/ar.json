@@ -700,7 +700,8 @@
     "nav_cash_desk": "الصندوق",
     "nav_registrations": "التسجيلات",
     "nav_wallets": "المحافظ",
-    "nav_refunds": "المبالغ المستردة"
+    "nav_refunds": "المبالغ المستردة",
+    "nav_admin_invoices": "الفواتير"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -3662,5 +3663,36 @@
         "failed": "فشل التعديل — يرجى المحاولة مرة أخرى"
       }
     }
+  },
+  "AdminInvoices": {
+    "title": "الفواتير",
+    "subtitle": "جميع مستندات الفاتورة الأولية والنهائية والتكميلية والمبالغ المستردة، بحري وطيران.",
+    "all": "الكل",
+    "col_ref": "المرجع",
+    "col_type": "النوع",
+    "col_mode": "الوضع",
+    "col_debtor": "المدين",
+    "col_flag": "العلم",
+    "col_jurisdiction": "الولاية",
+    "col_created": "الإصدار",
+    "col_amount": "المبلغ",
+    "col_due": "المستحق",
+    "col_status": "الحالة",
+    "action_pdf": "PDF",
+    "action_verify": "تحقق",
+    "f_type": "نوع المستند",
+    "f_mode": "الوضع",
+    "f_status": "الحالة",
+    "f_jurisdiction": "الولاية",
+    "f_flag": "بلد العلم",
+    "f_date_from": "من",
+    "f_date_to": "إلى",
+    "f_due_only": "المستحق فقط",
+    "f_search": "بحث",
+    "f_search_ph": "المرجع أو السفينة أو IMO أو المدين…",
+    "empty": "لا توجد فواتير مطابقة لهذه المرشحات.",
+    "pagination": "{start}–{end} من {total}",
+    "prev": "السابق",
+    "next": "التالي"
   }
 }
