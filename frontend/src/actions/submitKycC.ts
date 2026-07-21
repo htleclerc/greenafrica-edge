@@ -8,7 +8,7 @@
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { encryptIban, isInsecureStrategy } from '@/services/kycService';
 import { createTenantClient } from '@/lib/supabase/tenant';
-import { kycCSchema, type KycCInput } from '@/lib/kyc/kycSchema';
+import { kycCSchema, CGV_VERSION, type KycCInput } from '@/lib/kyc/kycSchema';
 
 export async function submitKycC(input: KycCInput) {
     const session = await requireOwner();
@@ -42,6 +42,9 @@ export async function submitKycC(input: KycCInput) {
         swift_bic: data.swift_bic,
         bank_name: data.bank_name,
         kyc_level_c_completed_at: new Date().toISOString(),
+        // Consentement CGV versionné (RGPD Art. 7 — preuve opposable).
+        cgv_accepted_at: new Date().toISOString(),
+        cgv_version: CGV_VERSION,
     };
 
     if (data.billing_proof_doc_storage_path) {
