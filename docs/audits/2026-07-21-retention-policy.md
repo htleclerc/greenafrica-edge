@@ -44,10 +44,16 @@ Trois classes de traitement :
 
 Une demande d'effacement d'un owner ne peut pas supprimer les `transactions` (fiscal/immuable), mais DOIT pouvoir **anonymiser les champs non-fiscaux** : `shipowners.address`, `ops_email`, `finance_email`, `phone_e164`, `name`→pseudonyme, `iban`/`swift`/`bank`→effacés, proof docs→supprimés du storage, `profiles.email`/`full_name`→pseudonymisés. Ce mécanisme reste **à implémenter** (cf. audit finding C4/Art.17) — il est le pendant « suppression » de cette politique de rétention.
 
-## Prochaines étapes
+## Implémenté (mig 102)
 
-1. **Valider les durées** ci-dessus avec DPO / juridique (bloquant pour toute purge auto).
-2. Implémenter les fonctions de purge (désactivées + dry_run) + la minimisation IP au write.
-3. Implémenter l'anonymisation Art. 17 (effacement partiel owner).
-4. Documenter la procédure DBA pour transactions/audit_logs.
-5. Référencer cette politique dans la politique de confidentialité (section « durée de conservation »).
+- **Minimisation IP au write (option 2a)** : trigger `BEFORE INSERT` sur `audit_logs` et `BEFORE INSERT/UPDATE OF ip_address` sur `profiles` → l'IP est tronquée à `/24` (IPv4) / `/48` (IPv6) dès l'écriture (`192.168.44.55` → `192.168.44.0/24`). L'IP complète n'est plus jamais persistée. (Les lignes `audit_logs` existantes ne sont pas rétro-minimisées — append-only ; procédure DBA si nécessaire.)
+- **Fonctions de purge DÉSACTIVÉES + dry_run** : `rgpd_purge_arrival_alerts(p_days, p_dry_run)` et `rgpd_purge_owner_notifications(p_days, p_dry_run)` (service_role uniquement, dry_run par défaut, **aucun `cron.schedule`**). `collection_reminders` volontairement exclu (pas de statut « créance close » fiable).
+
+## Prochaines étapes (décision / à faire)
+
+1. **Valider les durées** ci-dessus avec DPO / juridique (bloquant pour l'ACTIVATION des purges — les fonctions existent mais ne tournent pas).
+2. Activer les purges : `cron.schedule(...)` en `p_dry_run=true` d'abord, puis `false` après contrôle des volumes.
+3. Définir « créance close » pour `collection_reminders` puis ajouter sa fonction de purge.
+4. Implémenter l'**anonymisation Art. 17** (effacement partiel owner) — pendant « suppression ».
+5. Documenter la procédure DBA pour `transactions`/`audit_logs` (immuables/append-only).
+6. Référencer cette politique dans la politique de confidentialité (section « durée de conservation »).
