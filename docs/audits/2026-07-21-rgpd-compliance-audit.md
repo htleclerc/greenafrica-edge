@@ -49,8 +49,7 @@ Trois policies **non scopées par juridiction** (contrairement au reste, mig 073
 - **C3c — `profiles`** "admins read all" (`021:44-49`) → email/full_name/ip_address de toutes juridictions. → **CORRIGÉ : `mig 101`**. Vérification faite : **les owners (SHIPPING_AGENT/SHIPOWNER) n'ont PAS de ligne `user_jurisdictions`** → policy conçue avec deux branches (staff via `user_jurisdictions`, owner via `shipowners.profile_id`+`jurisdiction_id`), SUPERADMIN inconditionnel, self-read préservé, ensemble de rôles inchangé. Résidu : un profil owner sans `shipowners` lié reste invisible au staff scopé (pas au SUPERADMIN). ✅
 
 ### C4 — Aucun mécanisme d'effacement / anonymisation (Art. 17)
-Aucun `delete`/`anonymize`/`deleted_at` pour les shipowners ni leurs données. La politique documente le droit mais **aucun outil technique** (même pseudonymisation des champs non-comptables : `address`, `ops_email`, `phone_e164`). Conflit à arbitrer avec l'immuabilité des `transactions` (mig 089).
-**Fix :** définir une procédure d'effacement/anonymisation partielle (champs non fiscaux) + la documenter ; a minima une procédure manuelle DPO. Art. 17.
+→ **CORRIGÉ** : `mig 103` (`shipowners.anonymized_at`) + action `anonymizeOwner` (SUPERADMIN, auditée CRITICAL, idempotente) — efface contact + bancaire (`iban/swift/bank, emails, phone, address, billing_*, proof docs, notes, aliases`) + anonymise le profil lié (placeholders), **conserve l'identité légale/fiscale** (`name, billing_legal_name, imo/iata/aoc, country`) et **les flags sanctions** (exception Art. 17(3)(b) ; un sanctionné ne peut s'effacer de la liste). Revue sécurité : Ready, 0 Critical. Résidus (follow-up) : secret Vault IBAN non supprimé (pas de RPC confirmée) ; câblage UI (bouton+confirmation) différé ; valeur d'enum audit `SHIPOWNER_ANONYMIZED` dédiée à ajouter.
 
 ---
 
