@@ -28,22 +28,25 @@ Le projet cible **Somaliland / Djibouti** (hors UE). Le RGPD ne s'impose **de pl
 
 ---
 
+> **Mise à jour post-vérification (2026-07-21) :** après investigation du rayon d'impact, **C1 est un FAUX POSITIF** et **C3a est corrigé**. Voir les notes de statut ci-dessous. C2 a reçu un premier durcissement non bloquant.
+
 ## 2. CRITICAL (à corriger en priorité)
 
-### C1 — Bucket `documents` public + lecture anonyme
-`supabase/migrations/012_storage_documents_bucket.sql:11` (`public=true`) + policy `documents_read_public TO anon` (l.28-31). Le bucket contient des **factures nominatives** (montants, noms) avec URLs partageables/prévisibles → accès sans authentification si l'URL est connue/devinée.
-**Fix :** passer le bucket en privé + servir via **signed URLs** (patron déjà utilisé pour `payment-proofs`/`shipowner-kyc`). Art. 32.
+### ~~C1 — Bucket `documents` public + lecture anonyme~~ → FAUX POSITIF (résolu depuis mig 017)
+L'agent d'audit avait lu `012_storage_documents_bucket.sql` isolément. La migration **`017_invoice_security.sql`** (postérieure) fait déjà `UPDATE storage.buckets SET public=false WHERE id='documents'` + `DROP POLICY documents_read_public`. Le bucket **est privé aujourd'hui** ; factures/reçus servis via **signed URLs** (`api/invoices/[ref]/download` HMAC 300s, `api/receipts/[ref]/download` rôle/ownership). **Aucune action requise.**
+- Résidu **Minor** : le chemin legacy `generateAndStoreReceipt()` (via `mark-paid`) appelle encore `getPublicUrl()` → lien « Download Receipt Online » **mort (403)** dans l'email de confirmation. Atténué (le PDF est aussi en pièce jointe). Fix : faire pointer `receiptUrl` vers `/api/receipts/[ref]/download` (`invoiceService.ts`, `mark-paid/route.ts`, `emailService.ts`).
 
 ### C2 — Chiffrement IBAN factice/non garanti + fallback plaintext non bloquant
 `frontend/src/services/kycService.ts` : chaîne `vault → pgsodium → plaintext`. La voie **pgsodium est un placeholder base64** (commentaire l.41,69 ; fonction `056_kyc_iban_helpers.sql`), **trivialement réversible** ; la voie **plaintext** écrit l'IBAN en clair. `isInsecureStrategy()` **ne bloque rien** — `submitKycC.ts:64` écrit quand même et se contente d'un flag `INSECURE_DEBT` dans l'audit.
-**Fix :** (1) confirmer que **`supabase_vault` est bien actif en prod** (sinon les IBAN ne sont pas chiffrés au sens Art. 32) ; (2) transformer `isInsecureStrategy()` en **gate bloquant** (refuser l'écriture / alerte) ; (3) retirer le placeholder base64. Art. 32.
+**Fix :** (1) confirmer que **`supabase_vault` est bien actif en prod** (sinon les IBAN ne sont pas chiffrés au sens Art. 32 — vérifier via `select * from pg_extension where extname in ('supabase_vault','pgsodium')` sur le projet prod) ; (2) transformer `isInsecureStrategy()` en **gate bloquant** ; (3) retirer le placeholder base64. Art. 32.
+> **Statut : durcissement partiel livré** — `updateOwnerKycProfile` ne signalait AUCUNE stratégie insecure (gap de mon code Sprint 2) : ajout du flag d'audit `iban_encryption` + log critique ops `[KYC][INSECURE]` dans **les deux** writers (`submitKycC`, `updateOwnerKycProfile`), **non bloquant**. Le **gate bloquant** (throw sur `plaintext`/`pgsodium`) est **suspendu à la confirmation PO que Vault est actif en prod** — sinon il casserait l'onboarding.
 
 ### C3 — Fuites cross-tenant RLS sur données sensibles
-Trois policies **non scopées par juridiction** (contrairement au reste, mig 073) :
-- `audit_logs` SELECT (`004_rls_policies.sql:148`) → tout staff voit les logs (incl. révélations d'IBAN) de **toutes** les juridictions.
-- `profiles` "admins read all" (`021_fix_rls_recursion.sql:44-49`) → email/full_name/ip_address de toutes juridictions.
-- `collection_reminders` staff (`094_collection_reminders.sql:48-51`) : `USING (is_admin_or_officer())` **sans** filtre juridiction — alors que le commentaire du fichier revendique le pattern mig 073.
-**Fix :** ajouter `AND jurisdiction_id = ANY(current_jurisdiction_ids())` (ajouter la colonne si absente sur `audit_logs`) ; auditer toutes les policies utilisant `is_admin_or_officer()` seul. Art. 5(1)(f)/32.
+Trois policies **non scopées par juridiction** (contrairement au reste, mig 073). `current_jurisdiction_ids()` (mig 071) exempte déjà SUPERADMIN (renvoie toutes les juridictions) → pas de cas spécial à écrire.
+
+- **C3a — `collection_reminders`** staff (`094:48-51`) : `USING (is_admin_or_officer())` sans filtre — le commentaire du fichier revendiquait pourtant le pattern mig 073. → **CORRIGÉ : `mig 099_collection_reminders_jurisdiction_rls.sql`** (scoping par jointure `transaction_id → transactions.jurisdiction_id`, aucun changement de schéma). ✅
+- **C3b — `audit_logs`** SELECT (`004:148`) → tout staff voit les logs (incl. révélations d'IBAN) de toutes juridictions. **PAS de colonne `jurisdiction_id`**, `entity_id` polymorphe → fix = **ajouter une colonne nullable + backfill best-effort + MAJ de `writeAuditLog` et de tous les call sites + policy tolérante au NULL**. Mini-chantier ⇒ **PR dédiée à cadrer** (risque : un `NOT NULL` sans default casse les inserts). À trancher.
+- **C3c — `profiles`** "admins read all" (`021:44-49`) → email/full_name/ip_address de toutes juridictions. **PAS de `jurisdiction_id`** (relation via `user_jurisdictions`). Fix = `EXISTS (SELECT 1 FROM user_jurisdictions uj WHERE uj.user_id=profiles.id AND uj.jurisdiction_id = ANY(current_jurisdiction_ids()))`. **RISQUE : un profil sans ligne `user_jurisdictions` (ex. owners/SHIPPING_AGENT ?) deviendrait invisible même pour SUPERADMIN** → vérifier le modèle de données avant. **À trancher** (ne pas shipper à l'aveugle).
 
 ### C4 — Aucun mécanisme d'effacement / anonymisation (Art. 17)
 Aucun `delete`/`anonymize`/`deleted_at` pour les shipowners ni leurs données. La politique documente le droit mais **aucun outil technique** (même pseudonymisation des champs non-comptables : `address`, `ops_email`, `phone_e164`). Conflit à arbitrer avec l'immuabilité des `transactions` (mig 089).
