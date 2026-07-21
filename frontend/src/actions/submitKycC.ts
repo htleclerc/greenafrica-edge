@@ -8,7 +8,7 @@
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { encryptIban, isInsecureStrategy } from '@/services/kycService';
 import { createTenantClient } from '@/lib/supabase/tenant';
-import { kycCSchema, type KycCInput } from '@/lib/kyc/kycSchema';
+import { kycCSchema, CGV_VERSION, type KycCInput } from '@/lib/kyc/kycSchema';
 
 export async function submitKycC(input: KycCInput) {
     const session = await requireOwner();
@@ -16,6 +16,11 @@ export async function submitKycC(input: KycCInput) {
 
     // Encrypt IBAN before persisting.
     const ibanStored = await encryptIban(data.iban);
+    const ibanInsecure = isInsecureStrategy();
+    if (ibanInsecure) {
+        // RGPD/Art.32 : IBAN écrit sans chiffrement fort (Vault indisponible) — alerte ops.
+        console.error(`[KYC][INSECURE] IBAN écrit sans chiffrement fort (submitKycC) shipowner=${session.shipowner.id}`);
+    }
 
     // Owner-context: scope to the operator's home jurisdiction so the shipowners
     // UPDATE is auto-filtered by jurisdiction_id (defense in depth on top of the
@@ -37,6 +42,9 @@ export async function submitKycC(input: KycCInput) {
         swift_bic: data.swift_bic,
         bank_name: data.bank_name,
         kyc_level_c_completed_at: new Date().toISOString(),
+        // Consentement CGV versionné (RGPD Art. 7 — preuve opposable).
+        cgv_accepted_at: new Date().toISOString(),
+        cgv_version: CGV_VERSION,
     };
 
     if (data.billing_proof_doc_storage_path) {
@@ -59,9 +67,10 @@ export async function submitKycC(input: KycCInput) {
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: session.shipowner.id,
+        jurisdiction_id: session.jurisdictionId,
         details_json: {
             event: 'SHIPOWNER_KYC_C_COMPLETED',
-            iban_encryption: isInsecureStrategy() ? 'INSECURE_DEBT' : 'ENCRYPTED',
+            iban_encryption: ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED',
             cgv_accepted_at: new Date().toISOString(),
         },
     });

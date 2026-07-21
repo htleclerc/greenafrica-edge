@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** Version courante des CGV — persistée à l'acceptation (RGPD Art. 7, preuve de consentement). */
+export const CGV_VERSION = '2026-07-01';
+
 export const ALLOWED_DOC_TYPES = ['CERTIFICATE_OF_INCORPORATION', 'BANK_STATEMENT', 'RIB', 'OTHER'] as const;
 export const ALLOWED_LANGS = ['en', 'fr', 'so', 'pt', 'ar', 'sw'] as const;
 

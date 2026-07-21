@@ -1960,6 +1960,14 @@
     "section_07_li3": "<strong>Mamlaka za Ulinzi wa Pwani za Jirani (Djibouti, Eritrea):</strong> Data ya nafasi ya meli zinazochunguzwa kwa kutokuzingatia, kulingana na makubaliano ya baharini ya nchi mbili.",
     "section_07_li4": "<strong>Wizara ya Sheria:</strong> Rekodi za ukaguzi na rekodi za kifedha katika muktadha wa uchunguzi wa jinai, kwa mujibu wa hati ya mahakama.",
     "section_07_li5": "<strong>Wachakataji Wadogo wa Kiufundi:</strong> Miundombinu ya wingu na huduma za hifadhidata zinazofanya kazi ndani ya eneo la Somaliland (BER-DC1) au zinazokidhi mifumo ya kutosha ya ulinzi wa data. Wachakataji wadogo wote wamefungwa na Makubaliano ya Uchakataji wa Data (DPAs).",
+    "section_07_li6": "<strong>Wakala wa ukusanyaji wa madeni (kampuni ya kisheria/afisa mtekelezaji):</strong> Iwapo kodi ya kaboni ya baharini au ankara ya pro-forma haijalipwa baada ya ratiba ya kawaida ya vikumbusho, data inayohitajika tu (utambulisho wa mmiliki/mwendeshaji wa meli, maelezo ya mawasiliano, historia ya malipo) inaweza kushirikiwa na kampuni ya nje ya ukusanyaji wa madeni, inayowekwa nakala kwenye vikumbusho vya siku ya 45, kwa msingi wa maslahi halali na/au utekelezaji wa mkataba (ukusanyaji wa kiasi kinachodaiwa).",
+    "section_07_processors_label": "Wachakataji Wadogo (processors)",
+    "section_07_processors_li1": "<strong>Supabase:</strong> Uwekaji wa hifadhidata, uhifadhi wa faili, na uthibitishaji.",
+    "section_07_processors_li2": "<strong>Vercel:</strong> Uwekaji wa programu ya wavuti ya Green Gate.",
+    "section_07_processors_li3": "<strong>Resend:</strong> Utumaji wa barua pepe za miamala (ankara, arifa, vikumbusho).",
+    "section_07_processors_li4": "<strong>Stripe:</strong> Uchakataji wa malipo ya kadi.",
+    "section_07_processors_li5": "<strong>Sentry:</strong> Ufuatiliaji wa makosa ya programu, bila taarifa binafsi zinazoweza kutambulika (PII).",
+    "section_07_processors_p1": "Kila mmoja wa watoa huduma hawa hufanya kazi kama mchakataji wa data chini ya kanuni zinazotumika. Mahusiano haya yanaongozwa na Makubaliano ya Uchakataji wa Data (DPA) yanayoainisha wajibu wa usiri, usalama, na taarifa ya uvunjaji wa data.",
     "section_07_warning": "<strong>Uhamisho wa kimataifa nje ya Afrika:</strong> Uhamisho wowote wa data ya kibinafsi kwa nchi ambazo hazitambuliwi kutoa ulinzi wa kutosha unahitaji Vifungu vya Mkataba wa Kawaida (SCCs) na unakabiliwa na idhini ya SDPC. Hakuna uhamisho mkubwa wa data ya wamiliki au waendeshaji wa meli unaofanywa kwa nchi za wahusika wengine bila ulinzi wa kutosha bila idhini ya wazi.",
     "section_08_p1": "Kulingana na sheria inayotumika ya Somaliland na vikwazo vya uendeshaji, wahusika wa data wana haki zifuatazo. Haki fulani zinaweza kupunguzwa ambapo zingeingilia wajibu wa lazima wa uchakataji wa kisheria (mfano, utekelezaji wa kodi, kutobadilika kwa ukaguzi):",
     "section_08_table_header_right": "Haki",
@@ -3444,6 +3452,7 @@
   },
   "OwnerProfile": {
     "save": "Hifadhi",
+    "exportData": "Hamisha data yangu",
     "status": {
       "title": "Hali ya KYC",
       "done": "Imekamilika",
@@ -3850,7 +3859,14 @@
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
-      "actionsTitle": "Vitendo"
+      "actionsTitle": "Vitendo",
+      "anonymizeTitle": "Ondoa utambulisho (GDPR)",
+      "anonymizeButton": "Ondoa utambulisho",
+      "anonymizeWarning": "Kitendo kisichoweza kutenduliwa: kinafuta data ya mawasiliano na benki; utambulisho wa kisheria/kodi unabaki.",
+      "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
+      "anonymizeConfirmKeyword": "FUTA",
+      "anonymizeCta": "Ondoa utambulisho kabisa",
+      "anonymizedAt": "Utambulisho umeondolewa {date}"
     }
   },
   "AdminAirlines": {
@@ -3951,7 +3967,14 @@
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
-      "actionsTitle": "Vitendo"
+      "actionsTitle": "Vitendo",
+      "anonymizeTitle": "Ondoa utambulisho (GDPR)",
+      "anonymizeButton": "Ondoa utambulisho",
+      "anonymizeWarning": "Kitendo kisichoweza kutenduliwa: kinafuta data ya mawasiliano na benki; utambulisho wa kisheria/kodi unabaki.",
+      "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
+      "anonymizeConfirmKeyword": "FUTA",
+      "anonymizeCta": "Ondoa utambulisho kabisa",
+      "anonymizedAt": "Utambulisho umeondolewa {date}"
     }
   }
 }

@@ -84,6 +84,7 @@ export async function toggleJurisdictionMode(
             severity: 'INFO',
             entity_type: 'Jurisdiction',
             entity_id: jurisdictionId,
+            jurisdiction_id: jurisdictionId,
             details_json: { event: 'MODE_TOGGLED', mode, enabled },
         });
     } catch {

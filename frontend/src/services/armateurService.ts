@@ -111,6 +111,7 @@ export interface ArmateurDetail {
     iban_masked: string | null;
     swift_bic: string | null;
     bank_name: string | null;
+    anonymized_at: string | null;
     vessels: ArmateurVesselRow[];
     proformas: ArmateurProformaRow[];
     payments: ArmateurPaymentRow[];
@@ -183,6 +184,7 @@ export async function getArmateurDetail(
         iban_masked,
         swift_bic: str('swift_bic'),
         bank_name: str('bank_name'),
+        anonymized_at: str('anonymized_at'),
         vessels: (vesselsRes.data ?? []).map((v) => ({
             id: v.id as string, imo_number: v.imo_number as string, name: v.name as string,
             category: v.category as string, gross_tonnage_dwt: Number(v.gross_tonnage_dwt),

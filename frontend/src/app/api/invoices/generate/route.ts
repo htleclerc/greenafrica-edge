@@ -356,6 +356,7 @@ export async function POST(request: NextRequest) {
             severity: 'INFO',
             entity_type: 'Transaction',
             entity_id: transactionId,
+            jurisdiction_id: jurisdictionId,
             details_json: {
                 vesselName: tx.vessel_name,
                 invoiceRef,
@@ -412,6 +413,7 @@ export async function POST(request: NextRequest) {
                 severity: 'INFO',
                 entity_type: 'Transaction',
                 entity_id: transactionId,
+                jurisdiction_id: jurisdictionId,
                 details_json: {
                     vesselName: tx.vessel_name,
                     invoiceRef,

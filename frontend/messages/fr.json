@@ -2075,6 +2075,14 @@
     "section_07_li3": "<strong>Autorités de garde-côtes voisines (Djibouti, Érythrée) :</strong> Données de position des navires faisant l'objet d'une enquête pour non-conformité, conformément aux accords maritimes bilatéraux.",
     "section_07_li4": "<strong>Ministère de la Justice :</strong> Journaux d'audit et registres financiers dans le cadre d'enquêtes pénales, sous réserve de mandat judiciaire.",
     "section_07_li5": "<strong>Sous-traitants techniques :</strong> Infrastructure cloud et services de base de données opérant sur le territoire du Somaliland (BER-DC1) ou soumis à des cadres de protection des données adéquats. Tous les sous-traitants sont liés par des Accords de traitement des données (DPA).",
+    "section_07_li6": "<strong>Cabinet de recouvrement (cabinet d'avocats / d'huissier) :</strong> Lorsqu'une taxe carbone maritime ou une facture pro-forma demeure impayée après le calendrier de relance standard, les données strictement nécessaires (identité de l'armateur/opérateur, coordonnées, historique de facturation) peuvent être transmises à un cabinet externe de recouvrement, mis en copie des relances à J+45, sur le fondement de l'intérêt légitime et/ou de l'exécution du contrat (recouvrement des créances dues).",
+    "section_07_processors_label": "Sous-traitants (processors)",
+    "section_07_processors_li1": "<strong>Supabase :</strong> Hébergement de la base de données, du stockage de fichiers et de l'authentification.",
+    "section_07_processors_li2": "<strong>Vercel :</strong> Hébergement de l'application web Green Gate.",
+    "section_07_processors_li3": "<strong>Resend :</strong> Envoi des e-mails transactionnels (factures, notifications, relances).",
+    "section_07_processors_li4": "<strong>Stripe :</strong> Traitement des paiements par carte bancaire.",
+    "section_07_processors_li5": "<strong>Sentry :</strong> Supervision des erreurs applicatives, sans donnée personnelle identifiante (PII).",
+    "section_07_processors_p1": "Chacun de ces prestataires agit en tant que sous-traitant au sens de la réglementation applicable. Ces relations sont encadrées par des Accords de traitement des données (Data Processing Agreements — DPA) définissant les obligations de confidentialité, de sécurité et de notification en cas de violation de données.",
     "section_07_warning": "<strong>Transferts internationaux hors d'Afrique :</strong> Tout transfert de données personnelles vers des pays non reconnus comme offrant une protection adéquate nécessite des clauses contractuelles types (CCT) et est soumis à l'approbation du SDPC. Aucun transfert en masse de données de propriétaires ou d'opérateurs de navires n'est effectué vers des pays tiers inadéquats sans autorisation explicite.",
     "section_08_p1": "Sous réserve du droit applicable du Somaliland et des contraintes opérationnelles, les personnes concernées disposent des droits suivants. Certains droits peuvent être limités lorsqu'ils interfèreraient avec des obligations de traitement légal obligatoires (par ex., application fiscale, immutabilité de l'audit) :",
     "section_08_table_header_right": "Droit",
@@ -3309,6 +3317,7 @@
   },
   "OwnerProfile": {
     "save": "Enregistrer",
+    "exportData": "Exporter mes données",
     "status": {
       "title": "Statut KYC",
       "done": "Complété",
@@ -3847,7 +3856,14 @@
       "remindersTitle": "Relances",
       "noReminders": "Aucune relance.",
       "escalatedBailiff": "Escaladé — huissier",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymiser (RGPD)",
+      "anonymizeButton": "Anonymiser",
+      "anonymizeWarning": "Action irréversible : efface les données de contact et bancaires ; l'identité légale/fiscale est conservée.",
+      "anonymizeConfirmLabel": "Tapez {keyword} pour confirmer",
+      "anonymizeConfirmKeyword": "ANONYMISER",
+      "anonymizeCta": "Anonymiser définitivement",
+      "anonymizedAt": "Anonymisé le {date}"
     }
   },
   "AdminAirlines": {
@@ -3948,7 +3964,14 @@
       "remindersTitle": "Relances",
       "noReminders": "Aucune relance.",
       "escalatedBailiff": "Escaladé — huissier",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymiser (RGPD)",
+      "anonymizeButton": "Anonymiser",
+      "anonymizeWarning": "Action irréversible : efface les données de contact et bancaires ; l'identité légale/fiscale est conservée.",
+      "anonymizeConfirmLabel": "Tapez {keyword} pour confirmer",
+      "anonymizeConfirmKeyword": "ANONYMISER",
+      "anonymizeCta": "Anonymiser définitivement",
+      "anonymizedAt": "Anonymisé le {date}"
     }
   }
 }

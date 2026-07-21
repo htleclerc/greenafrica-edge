@@ -101,6 +101,7 @@ export async function approveRefund(input: {
         severity: 'INFO',
         entity_type: 'Refund',
         entity_id: parsed.refundId,
+        jurisdiction_id: refund.jurisdiction_id,
         details_json: { event: 'REFUND_APPROVED', rail: parsed.refundRail },
     });
 

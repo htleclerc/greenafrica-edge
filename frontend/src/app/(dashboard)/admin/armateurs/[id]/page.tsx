@@ -16,5 +16,6 @@ export default async function ArmateurDetailPage({ params }: { params: Promise<{
     const canViewBilling = ['SUPERADMIN', 'FINANCE_ADMIN'].includes(profile.role);
     const detail = await getArmateurDetail(supabase, id, canViewBilling);
     if (!detail) notFound();
-    return <ArmateurDetail detail={detail} canInvite={profile.role === 'SUPERADMIN'} />;
+    const isSuperadmin = profile.role === 'SUPERADMIN';
+    return <ArmateurDetail detail={detail} canInvite={isSuperadmin} canAnonymize={isSuperadmin} />;
 }

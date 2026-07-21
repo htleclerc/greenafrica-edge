@@ -10,7 +10,7 @@ const ATTACHABLE = new Set(['INITIATED', 'PROCESSING']);
 interface OwnedPayment { id: string; shipowner_id: string; status: string }
 
 type AuthError = { error: NextResponse };
-type AuthOk = { admin: SupabaseClient; payment: OwnedPayment; shipownerId: string; userId: string };
+type AuthOk = { admin: SupabaseClient; payment: OwnedPayment; shipownerId: string; jurisdictionId: string; userId: string };
 type AuthResult = AuthError | AuthOk;
 
 async function authorize(paymentId: string): Promise<AuthResult> {
@@ -36,7 +36,13 @@ async function authorize(paymentId: string): Promise<AuthResult> {
     if ((payment as OwnedPayment).shipowner_id !== shipowner.id) {
         return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
     }
-    return { admin, payment: payment as OwnedPayment, shipownerId: shipowner.id, userId: user.id };
+    return {
+        admin,
+        payment: payment as OwnedPayment,
+        shipownerId: shipowner.id,
+        jurisdictionId: shipowner.jurisdiction_id as string,
+        userId: user.id,
+    };
 }
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }): Promise<NextResponse> {
@@ -84,6 +90,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
                 severity: 'INFO',
                 entity_type: 'Payment',
                 entity_id: id,
+                jurisdiction_id: a.jurisdictionId,
                 details_json: { event: 'PAYMENT_PROOF_UPLOADED', proofId: proof.id },
             });
         } catch (auditErr) {

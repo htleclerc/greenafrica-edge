@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
         await writeAuditLog(client, {
             ...parsed.data,
             user_id: user.id,
+            // TODO(rgpd): juridiction non résolue ici — endpoint générique
+            // (client-side telemetry) sans contexte tenant résolu ; appeler
+            // getServerJurisdictionId() serait fail-closed (throw) et casserait
+            // ce best-effort logger pour tout staff sans cookie switcher actif.
+            jurisdiction_id: null,
         });
 
         return NextResponse.json({ success: true });

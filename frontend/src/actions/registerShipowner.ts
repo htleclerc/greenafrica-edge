@@ -140,7 +140,7 @@ async function autoClaim(
         })
         .eq('id', shipownerId)
         .eq('account_state', 'GHOST')                       // race-safe: only flip if still GHOST
-        .select('id');
+        .select('id, jurisdiction_id');
     if (upErr) return { ok: false, message: GENERIC_MESSAGE };
 
     // Lost the race — another concurrent caller already claimed.
@@ -186,6 +186,7 @@ async function autoClaim(
             severity: 'INFO',
             entity_type: 'Shipowner',
             entity_id: shipownerId,
+            jurisdiction_id: (claimed[0] as { jurisdiction_id: string | null }).jurisdiction_id,
             details_json: {
                 event: 'SHIPOWNER_AUTO_CLAIM',
                 imo_company_no: data.imo_company_no,

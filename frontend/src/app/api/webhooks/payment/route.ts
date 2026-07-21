@@ -297,6 +297,7 @@ export async function POST(request: NextRequest) {
           severity: 'WARNING',
           entity_type: 'Transaction',
           entity_id: txRecord.id,
+          jurisdiction_id: txRecord.jurisdiction_id,
           details_json: {
             event: 'PAYMENT_AMOUNT_MISMATCH',
             provider: parsed.provider,
@@ -338,6 +339,7 @@ export async function POST(request: NextRequest) {
           severity: 'WARNING',
           entity_type: 'Transaction',
           entity_id: txRecord.id,
+          jurisdiction_id: txRecord.jurisdiction_id,
           details_json: {
             event: 'PAYMENT_AMOUNT_MISMATCH',
             provider: parsed.provider,
@@ -424,6 +426,7 @@ export async function POST(request: NextRequest) {
       severity: 'INFO',
       entity_type: 'Transaction',
       entity_id: txRecord.id,
+      jurisdiction_id: txRecord.jurisdiction_id,
       details_json: {
         event: 'PAYMENT_RECEIVED',
         provider: parsed.provider,

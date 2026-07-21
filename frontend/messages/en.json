@@ -1991,6 +1991,14 @@
     "section_07_li3": "<strong>Neighboring Coast Guard Authorities (Djibouti, Eritrea):</strong> Position data of vessels under investigation for non-compliance, pursuant to bilateral maritime agreements.",
     "section_07_li4": "<strong>Ministry of Justice:</strong> Audit logs and financial records in the context of criminal investigations, subject to judicial warrant.",
     "section_07_li5": "<strong>Technical Subprocessors:</strong> Cloud infrastructure and database services operating within Somaliland territory (BER-DC1) or subject to adequate data protection frameworks. All subprocessors are bound by Data Processing Agreements (DPAs).",
+    "section_07_li6": "<strong>Debt collection agency (law firm / bailiff):</strong> Where a maritime carbon tax or pro-forma invoice remains unpaid after the standard reminder schedule, the strictly necessary data (vessel owner/operator identity, contact details, billing history) may be shared with an external debt-collection law firm, copied on reminder notices at D+45, on the basis of legitimate interest and/or contract performance (recovery of amounts due).",
+    "section_07_processors_label": "Subprocessors (data processors)",
+    "section_07_processors_li1": "<strong>Supabase:</strong> Database hosting, file storage, and authentication.",
+    "section_07_processors_li2": "<strong>Vercel:</strong> Hosting of the Green Gate web application.",
+    "section_07_processors_li3": "<strong>Resend:</strong> Delivery of transactional emails (invoices, notifications, reminders).",
+    "section_07_processors_li4": "<strong>Stripe:</strong> Payment card processing.",
+    "section_07_processors_li5": "<strong>Sentry:</strong> Application error monitoring, without personally identifiable information (PII).",
+    "section_07_processors_p1": "Each of these providers acts as a data processor under the applicable regulation. These relationships are governed by Data Processing Agreements (DPAs) setting out confidentiality, security, and data breach notification obligations.",
     "section_07_warning": "<strong>International transfers outside Africa:</strong> Any transfer of personal data to countries not recognized as offering adequate protection requires Standard Contractual Clauses (SCCs) and is subject to SDPC approval. No bulk transfer of vessel owner or operator data is made to non-adequate third countries without explicit authorization.",
     "section_08_p1": "Subject to applicable Somaliland law and operational constraints, data subjects have the following rights. Certain rights may be limited where they would interfere with mandatory legal processing obligations (e.g., tax enforcement, audit immutability):",
     "section_08_table_header_right": "Right",
@@ -3309,6 +3317,7 @@
   },
   "OwnerProfile": {
     "save": "Save",
+    "exportData": "Export my data",
     "status": {
       "title": "KYC status",
       "done": "Completed",
@@ -3847,7 +3856,14 @@
       "remindersTitle": "Reminders",
       "noReminders": "No reminders.",
       "escalatedBailiff": "Escalated — bailiff",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymize (GDPR)",
+      "anonymizeButton": "Anonymize",
+      "anonymizeWarning": "Irreversible action: erases contact and banking data; legal/tax identity is retained.",
+      "anonymizeConfirmLabel": "Type {keyword} to confirm",
+      "anonymizeConfirmKeyword": "ANONYMIZE",
+      "anonymizeCta": "Anonymize permanently",
+      "anonymizedAt": "Anonymized on {date}"
     }
   },
   "AdminAirlines": {
@@ -3948,7 +3964,14 @@
       "remindersTitle": "Reminders",
       "noReminders": "No reminders.",
       "escalatedBailiff": "Escalated — bailiff",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymize (GDPR)",
+      "anonymizeButton": "Anonymize",
+      "anonymizeWarning": "Irreversible action: erases contact and banking data; legal/tax identity is retained.",
+      "anonymizeConfirmLabel": "Type {keyword} to confirm",
+      "anonymizeConfirmKeyword": "ANONYMIZE",
+      "anonymizeCta": "Anonymize permanently",
+      "anonymizedAt": "Anonymized on {date}"
     }
   }
 }

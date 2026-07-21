@@ -176,6 +176,7 @@ export async function POST(request: NextRequest) {
             severity: 'INFO',
             entity_type: 'Profile',
             entity_id: userId,
+            jurisdiction_id: jurisdictionId,
             details_json: {
                 event: 'ARMATEUR_INVITED',
                 invitedEmail: email,

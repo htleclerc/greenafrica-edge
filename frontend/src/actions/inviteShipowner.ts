@@ -87,6 +87,7 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
                 severity: 'CRITICAL',
                 entity_type: 'Shipowner',
                 entity_id: parsed.data.shipownerId,
+                jurisdiction_id: (owner as { jurisdiction_id: string }).jurisdiction_id,
                 details_json: { code: e.code, attempted: 'PORTAL_INVITE', email },
             });
             if (auditErr) {

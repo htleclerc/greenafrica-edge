@@ -415,6 +415,7 @@ interface RefundReconcileRow {
     amount_usd_minor: number;
     rail_details: Record<string, unknown> | null;
     refund_rail: string | null;
+    jurisdiction_id: string | null;
 }
 
 async function handleChargeRefunded(
@@ -449,7 +450,7 @@ async function handleChargeRefunded(
         // 1. Primary lookup: refunds row whose rail_details->>stripe_refund_id matches.
         const { data: primaryHit, error: primaryErr } = await admin
             .from('refunds')
-            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
+            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail, jurisdiction_id')
             .eq('rail_details->>stripe_refund_id', stripeRefundId)
             .limit(1)
             .maybeSingle();
@@ -473,7 +474,7 @@ async function handleChargeRefunded(
             if (origPayment?.transaction_id) {
                 const { data: fallbackList, error: fbErr } = await admin
                     .from('refunds')
-                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
+                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail, jurisdiction_id')
                     .eq('transaction_id', origPayment.transaction_id)
                     .eq('refund_rail', 'STRIPE')
                     .in('status', ['APPROVED', 'REQUESTED'])
@@ -624,6 +625,7 @@ async function handleChargeRefunded(
                 severity: 'INFO',
                 entity_type: 'Refund',
                 entity_id: refundRow.id,
+                jurisdiction_id: refundRow.jurisdiction_id,
                 details_json: {
                     event: 'REFUND_RECONCILED_BY_WEBHOOK',
                     stripe_refund_id: stripeRefundId,

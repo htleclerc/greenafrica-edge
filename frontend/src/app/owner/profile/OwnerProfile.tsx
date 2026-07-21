@@ -352,6 +352,14 @@ export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
             <OsCard>
                 <OsCardHeader title={t('documents.title')} />
                 <div className="flex flex-col gap-2 text-sm">
+                    <a
+                        href="/api/owner/export"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:no-underline text-[var(--os-highlight)]"
+                    >
+                        {t('exportData')}
+                    </a>
                     {profile.proof_doc_url ? (
                         <a
                             href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.proof_doc_url)}`}

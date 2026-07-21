@@ -83,6 +83,7 @@ export async function GET(req: NextRequest) {
         severity: 'INFO',
         entity_type: 'SettlementReport',
         entity_id: filters.from ?? 'all',
+        jurisdiction_id: null, // cross-juridiction (roll-up) — pas de juridiction unique
         details_json: { format, filters, rowCount: rows.length },
     });
 

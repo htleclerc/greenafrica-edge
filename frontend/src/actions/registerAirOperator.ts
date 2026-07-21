@@ -146,7 +146,7 @@ async function autoClaimAir(
         })
         .eq('id', operatorId)
         .eq('account_state', 'GHOST')           // race-safe: only flip if still GHOST
-        .select('id');
+        .select('id, jurisdiction_id');
     if (upErr) return { ok: false, message: GENERIC_MESSAGE };
 
     // Lost the race — another caller already claimed.
@@ -186,6 +186,7 @@ async function autoClaimAir(
             severity: 'INFO',
             entity_type: 'Shipowner',
             entity_id: operatorId,
+            jurisdiction_id: (claimed[0] as { jurisdiction_id: string | null }).jurisdiction_id,
             details_json: { event: 'AIR_OPERATOR_AUTO_CLAIM', aoc_number: data.aoc_number },
         });
     }

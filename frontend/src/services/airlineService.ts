@@ -115,6 +115,7 @@ export interface AirlineDetail {
     iban_masked: string | null;
     swift_bic: string | null;
     bank_name: string | null;
+    anonymized_at: string | null;
     aircraft: AirlineAircraftRow[];
     proformas: AirlineProformaRow[];
     payments: AirlinePaymentRow[];
@@ -195,6 +196,7 @@ export async function getAirlineDetail(
         iban_masked,
         swift_bic: str('swift_bic'),
         bank_name: str('bank_name'),
+        anonymized_at: str('anonymized_at'),
         aircraft: (aircraftRes.data ?? []).map((a) => ({
             id: a.id as string,
             registration: (a.registration as string | null) ?? null,

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // ── Find all OVERDUE transactions ──
     const { data: overdueTxs, error: txErr } = await admin
         .from('transactions')
-        .select('id, vessel_id, vessel_name, vessel_imo, tax_amount_usd, created_at')
+        .select('id, vessel_id, vessel_name, vessel_imo, tax_amount_usd, created_at, jurisdiction_id')
         .eq('status', 'OVERDUE');
 
     if (txErr) {
@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
                 severity: 'WARNING',
                 entity_type: 'Transaction',
                 entity_id: tx.id,
+                jurisdiction_id: (tx as { jurisdiction_id?: string | null }).jurisdiction_id ?? null,
                 details_json: {
                     vesselName: tx.vessel_name,
                     invoiceRef,
