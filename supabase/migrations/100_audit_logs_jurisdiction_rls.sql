@@ -28,6 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_jurisdiction
   ON public.audit_logs(jurisdiction_id);
 
 -- Backfill best-effort (entités à juridiction déterministe).
+-- audit_logs est append-only : le trigger BEFORE UPDATE `audit_logs_no_update`
+-- (mig 018) bloque les UPDATE. On le désactive UNIQUEMENT le temps du backfill de
+-- données puis on le rétablit — ciblé (le guard DELETE `audit_logs_no_delete`
+-- reste actif) et idempotent (re-jouable). Transactionnel sous `supabase db push`.
+ALTER TABLE public.audit_logs DISABLE TRIGGER audit_logs_no_update;
+
 UPDATE public.audit_logs a SET jurisdiction_id = s.jurisdiction_id
   FROM public.shipowners s
   WHERE a.entity_type = 'Shipowner' AND a.entity_id = s.id::text AND a.jurisdiction_id IS NULL;
@@ -40,6 +46,8 @@ UPDATE public.audit_logs a SET jurisdiction_id = r.jurisdiction_id
 UPDATE public.audit_logs a SET jurisdiction_id = p.jurisdiction_id
   FROM public.payments p
   WHERE a.entity_type = 'Payment' AND a.entity_id = p.id::text AND a.jurisdiction_id IS NULL;
+
+ALTER TABLE public.audit_logs ENABLE TRIGGER audit_logs_no_update;
 
 -- Policy SELECT scopée (tolérante au NULL) — remplace mig 004:147-152.
 DROP POLICY IF EXISTS "Users see relevant audit logs" ON public.audit_logs;
