@@ -42,18 +42,32 @@ Trois classes de traitement :
 
 ## Effacement / anonymisation (Art. 17) — lien
 
-Une demande d'effacement d'un owner ne peut pas supprimer les `transactions` (fiscal/immuable), mais DOIT pouvoir **anonymiser les champs non-fiscaux** : `shipowners.address`, `ops_email`, `finance_email`, `phone_e164`, `name`→pseudonyme, `iban`/`swift`/`bank`→effacés, proof docs→supprimés du storage, `profiles.email`/`full_name`→pseudonymisés. Ce mécanisme reste **à implémenter** (cf. audit finding C4/Art.17) — il est le pendant « suppression » de cette politique de rétention.
+Une demande d'effacement d'un owner ne peut pas supprimer les `transactions` (fiscal/immuable), mais anonymise les champs non-fiscaux : `shipowners.address`, `ops_email`, `finance_email`, `phone_e164`, `iban`/`swift`/`bank`→effacés (+ **secret Vault de l'IBAN supprimé**), proof docs→supprimés du storage, `profiles.email`/`full_name`→pseudonymisés ; `name`/`billing_legal_name`/`imo`/sanctions **conservés** (obligation légale). **IMPLÉMENTÉ** (action `anonymizeOwner`, mig 103/105) — pendant « suppression » de cette politique.
 
 ## Implémenté (mig 102)
 
 - **Minimisation IP au write (option 2a)** : trigger `BEFORE INSERT` sur `audit_logs` et `BEFORE INSERT/UPDATE OF ip_address` sur `profiles` → l'IP est tronquée à `/24` (IPv4) / `/48` (IPv6) dès l'écriture (`192.168.44.55` → `192.168.44.0/24`). L'IP complète n'est plus jamais persistée. (Les lignes `audit_logs` existantes ne sont pas rétro-minimisées — append-only ; procédure DBA si nécessaire.)
 - **Fonctions de purge DÉSACTIVÉES + dry_run** : `rgpd_purge_arrival_alerts(p_days, p_dry_run)` et `rgpd_purge_owner_notifications(p_days, p_dry_run)` (service_role uniquement, dry_run par défaut, **aucun `cron.schedule`**). `collection_reminders` volontairement exclu (pas de statut « créance close » fiable).
+- **Effacement Art. 17** (mig 103/105 + action `anonymizeOwner`) : efface contact + bancaire (IBAN + **secret Vault supprimé** via `kyc_vault_delete`) + anonymise le profil, conserve l'identité fiscale + sanctions ; audité `SHIPOWNER_ANONYMIZED`. Bouton UI SUPERADMIN (confirmation type-to-confirm).
+
+## Activer les purges — commandes prêtes (À NE LANCER QU'APRÈS validation des durées)
+
+```sql
+-- 1) Contrôle à blanc (compte les lignes candidates, ne supprime rien) :
+select public.rgpd_purge_arrival_alerts(365, true);       -- 12 mois (proposé)
+select public.rgpd_purge_owner_notifications(540, true);  -- 18 mois (proposé)
+
+-- 2) Une fois les durées validées et les volumes vérifiés, planifier (pg_cron) :
+select cron.schedule('rgpd_purge_arrival_alerts', '0 3 * * 0',
+    $$ select public.rgpd_purge_arrival_alerts(365, false); $$);
+select cron.schedule('rgpd_purge_owner_notifications', '0 3 * * 0',
+    $$ select public.rgpd_purge_owner_notifications(540, false); $$);
+```
 
 ## Prochaines étapes (décision / à faire)
 
-1. **Valider les durées** ci-dessus avec DPO / juridique (bloquant pour l'ACTIVATION des purges — les fonctions existent mais ne tournent pas).
-2. Activer les purges : `cron.schedule(...)` en `p_dry_run=true` d'abord, puis `false` après contrôle des volumes.
-3. Définir « créance close » pour `collection_reminders` puis ajouter sa fonction de purge.
-4. Implémenter l'**anonymisation Art. 17** (effacement partiel owner) — pendant « suppression ».
-5. Documenter la procédure DBA pour `transactions`/`audit_logs` (immuables/append-only).
-6. Référencer cette politique dans la politique de confidentialité (section « durée de conservation »).
+1. **Valider les durées** ci-dessus avec DPO / juridique (bloquant pour l'ACTIVATION des purges — les fonctions existent mais ne tournent pas ; commandes prêtes ci-dessus).
+2. Définir « créance close » pour `collection_reminders` puis ajouter sa fonction de purge.
+3. Documenter la procédure DBA pour `transactions`/`audit_logs` (immuables/append-only).
+4. Décision `swift_bic`/`bank_name` : chiffrer (Vault) OU garder en clair — ces champs sont **affichés au staff** pour opérer les virements, donc le chiffrement au repos apporte une valeur marginale (protège seulement contre un dump brut) pour un coût élevé (change tous les read/write + affichages), contrairement à l'IBAN (jamais affiché, donc chiffrement à forte valeur). **Recommandation : garder en clair** (protégés par RLS + chiffrement disque Supabase), ou traiter en lot dédié si exigence contractuelle.
+5. `swift_bic`/`bank_name` non nullés ne concernent PAS l'effacement (déjà effacés par `anonymizeOwner`).
