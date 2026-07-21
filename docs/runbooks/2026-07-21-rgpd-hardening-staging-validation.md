@@ -29,7 +29,9 @@ supabase db push --db-url "<STAGING_DB_URL>" --yes
 # attendu : applique 099→106, aucune erreur. (Ré-exécutable : les déjà-appliquées sont ignorées.)
 ```
 
-Si une migration échoue → NE PAS merger ; lire l'erreur, corriger sur la branche, re-push.
+Si une migration échoue → NE PAS merger ; lire l'erreur, corriger sur la branche, **re-push** (les migrations sont idempotentes : `db push` reprend là où il s'était arrêté).
+
+> **Résolu (2026-07-21)** : le backfill de `100_audit_logs_jurisdiction_rls.sql` était bloqué par le trigger append-only `audit_logs_no_update` (`SQLSTATE 42501`). Corrigé (commit `cd56414`) : la migration désactive ce trigger précis le temps du backfill puis le rétablit. Après `git pull` de la branche, re-lancer `supabase db push` : 099 est déjà appliquée (ignorée), 100 passe désormais.
 
 ---
 
