@@ -16,6 +16,11 @@ export async function submitKycC(input: KycCInput) {
 
     // Encrypt IBAN before persisting.
     const ibanStored = await encryptIban(data.iban);
+    const ibanInsecure = isInsecureStrategy();
+    if (ibanInsecure) {
+        // RGPD/Art.32 : IBAN écrit sans chiffrement fort (Vault indisponible) — alerte ops.
+        console.error(`[KYC][INSECURE] IBAN écrit sans chiffrement fort (submitKycC) shipowner=${session.shipowner.id}`);
+    }
 
     // Owner-context: scope to the operator's home jurisdiction so the shipowners
     // UPDATE is auto-filtered by jurisdiction_id (defense in depth on top of the
@@ -61,7 +66,7 @@ export async function submitKycC(input: KycCInput) {
         entity_id: session.shipowner.id,
         details_json: {
             event: 'SHIPOWNER_KYC_C_COMPLETED',
-            iban_encryption: isInsecureStrategy() ? 'INSECURE_DEBT' : 'ENCRYPTED',
+            iban_encryption: ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED',
             cgv_accepted_at: new Date().toISOString(),
         },
     });

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { requireOwner } from '@/lib/auth/requireOwner';
-import { encryptIban } from '@/services/kycService';
+import { encryptIban, isInsecureStrategy } from '@/services/kycService';
 import { createTenantClient } from '@/lib/supabase/tenant';
 import { kycBEditableSchema, ALLOWED_DOC_TYPES } from '@/lib/kyc/kycSchema';
 
@@ -34,6 +34,7 @@ export async function updateOwnerKycProfile(input: z.infer<typeof inputSchema>):
 
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const changed: string[] = [];
+    let ibanInsecure = false;
 
     if (data.identity) {
         const id = data.identity;
@@ -61,7 +62,17 @@ export async function updateOwnerKycProfile(input: z.infer<typeof inputSchema>):
         }
         if (b.billing_proof_doc_storage_path !== undefined) { patch.billing_proof_doc_url = b.billing_proof_doc_storage_path; changed.push('billing_proof'); }
         if (b.billing_proof_doc_type !== undefined) patch.billing_proof_doc_type = b.billing_proof_doc_type;
-        if (b.iban !== undefined && b.iban) { patch.iban = await encryptIban(b.iban); changed.push('iban'); }
+        if (b.iban !== undefined && b.iban) {
+            patch.iban = await encryptIban(b.iban);
+            changed.push('iban');
+            ibanInsecure = isInsecureStrategy();
+            if (ibanInsecure) {
+                // RGPD/Art.32 : l'IBAN a été écrit sans chiffrement fort (Vault indisponible).
+                // Non bloquant ici (le durcissement en throw nécessite de confirmer Vault en prod),
+                // mais tracé en clair dans les logs ops + l'audit pour alerte.
+                console.error(`[KYC][INSECURE] IBAN écrit sans chiffrement fort (updateOwnerKycProfile) shipowner=${session.shipowner.id}`);
+            }
+        }
     }
 
     const { error } = await admin.from('shipowners').update(patch).eq('id', session.shipowner.id);
@@ -74,7 +85,11 @@ export async function updateOwnerKycProfile(input: z.infer<typeof inputSchema>):
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: session.shipowner.id,
-        details_json: { event: 'SHIPOWNER_KYC_UPDATED', changed_fields: changed },
+        details_json: {
+            event: 'SHIPOWNER_KYC_UPDATED',
+            changed_fields: changed,
+            ...(changed.includes('iban') ? { iban_encryption: ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED' } : {}),
+        },
     });
     if (auditError) throw auditError;
 
