@@ -109,6 +109,18 @@ export async function decryptIban(stored: string): Promise<string> {
 }
 
 /**
+ * Supprime définitivement le secret IBAN stocké (effacement RGPD Art. 17).
+ * Vault : supprime le secret via kyc_vault_delete. pgsodium/plaintext : no-op
+ * (la valeur n'est pas stockée séparément côté serveur ; nuller la colonne suffit).
+ */
+export async function deleteIban(stored: string): Promise<void> {
+    const s = await detectStrategy();
+    if (s !== 'vault') return;
+    const supabase = createPlatformClient();
+    await supabase.rpc('kyc_vault_delete' as never, { p_id: stored });
+}
+
+/**
  * True when IBAN storage is NOT real encryption (plaintext or pgsodium-base64-placeholder).
  * Audit log uses this to flag IBAN_ENCRYPTION_DEBT, surfacing the security gap to ops.
  */

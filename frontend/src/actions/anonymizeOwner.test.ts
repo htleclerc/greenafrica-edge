@@ -177,7 +177,7 @@ describe('anonymizeOwner', () => {
         expect(audit).toBeDefined();
         expect(audit!.payload).toMatchObject({
             user_id: 'admin-1',
-            action: 'TRANSACTION_UPDATED',
+            action: 'SHIPOWNER_ANONYMIZED',
             severity: 'CRITICAL',
             entity_type: 'Shipowner',
             entity_id: VALID_UUID,

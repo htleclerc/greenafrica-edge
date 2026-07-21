@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
+import { deleteIban } from '@/services/kycService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RGPD Art. 17 — droit à l'effacement (anonymisation d'un armateur/compagnie).
@@ -35,6 +36,7 @@ interface ShipownerAnonymizeRow {
     profile_id: string | null;
     proof_doc_url: string | null;
     billing_proof_doc_url: string | null;
+    iban: string | null;
 }
 
 export async function anonymizeOwner(input: { shipownerId: string }): Promise<AnonymizeOwnerResult> {
@@ -50,7 +52,7 @@ export async function anonymizeOwner(input: { shipownerId: string }): Promise<An
     const platform = createPlatformClient();
     const { data: row, error: rowErr } = await platform
         .from('shipowners')
-        .select('id, jurisdiction_id, anonymized_at, profile_id, proof_doc_url, billing_proof_doc_url')
+        .select('id, jurisdiction_id, anonymized_at, profile_id, proof_doc_url, billing_proof_doc_url, iban')
         .eq('id', parsed.shipownerId)
         .maybeSingle();
     if (rowErr) return { ok: false, error: rowErr.message };
@@ -143,7 +145,7 @@ export async function anonymizeOwner(input: { shipownerId: string }): Promise<An
         await admin.from('audit_logs').insert({
             user_id: auth.user.id,
             user_full_name: auth.user.fullName,
-            action: 'TRANSACTION_UPDATED',
+            action: 'SHIPOWNER_ANONYMIZED',
             severity: 'CRITICAL',
             entity_type: 'Shipowner',
             entity_id: parsed.shipownerId,
@@ -154,9 +156,16 @@ export async function anonymizeOwner(input: { shipownerId: string }): Promise<An
         console.error('[anonymizeOwner] audit_log insert failed:', err);
     }
 
-    // TODO: the encrypted IBAN's corresponding Vault secret is not deleted
-    // here — Vault has no confirmed delete-secret RPC yet. Nulling
-    // shipowners.iban removes the app-level reference only.
+    // 7. Effacement complet de l'IBAN : supprimer aussi le secret Supabase Vault
+    //    (nuller shipowners.iban ne retire que la référence applicative).
+    //    Best-effort — ne bloque pas l'anonymisation. No-op hors stratégie Vault.
+    if (shipowner.iban) {
+        try {
+            await deleteIban(shipowner.iban);
+        } catch (err) {
+            console.error('[anonymizeOwner] Vault secret delete failed:', err);
+        }
+    }
 
     return { ok: true };
 }
