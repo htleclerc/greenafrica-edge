@@ -86,6 +86,7 @@ export async function confirmPayment(input: { paymentId: string }) {
         severity: 'INFO',
         entity_type: 'Payment',
         entity_id: parsed.paymentId,
+        jurisdiction_id: (pmtRow as { jurisdiction_id: string }).jurisdiction_id,
         details_json: { event: 'PAYMENT_CONFIRMED', confirmed_at: confirmedAt },
     });
 

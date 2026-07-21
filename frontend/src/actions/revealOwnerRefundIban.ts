@@ -81,6 +81,7 @@ export async function revealOwnerRefundIban(input: {
             severity: 'INFO',
             entity_type: 'Shipowner',
             entity_id: parsed.shipownerId,
+            jurisdiction_id: jid,
             details_json: { event: 'IBAN_REVEALED' },
         });
     } catch (err) {

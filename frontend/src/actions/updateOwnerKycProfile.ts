@@ -85,6 +85,7 @@ export async function updateOwnerKycProfile(input: z.infer<typeof inputSchema>):
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: session.shipowner.id,
+        jurisdiction_id: session.jurisdictionId,
         details_json: {
             event: 'SHIPOWNER_KYC_UPDATED',
             changed_fields: changed,

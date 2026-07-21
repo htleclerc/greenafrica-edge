@@ -43,6 +43,24 @@ async function detectStrategy(): Promise<'vault' | 'pgsodium' | 'plaintext'> {
  */
 export async function encryptIban(plain: string): Promise<string> {
     const s = await detectStrategy();
+
+    // RGPD/Art. 32 — fail-closed : en PRODUCTION, refuser d'écrire un IBAN si le
+    // chiffrement fort (Supabase Vault) n'est pas actif. `pgsodium` est un
+    // placeholder base64 (réversible) et `plaintext` stocke en clair : dans les deux
+    // cas on préfère bloquer l'écriture plutôt que persister une donnée bancaire non
+    // protégée. Vault confirmé actif en prod (2026-07-21). En dev/local/CI (pas de
+    // Vault), la stratégie retombe sur pgsodium/plaintext : le gate ne s'y applique
+    // pas (NODE_ENV !== 'production'), et un override explicite reste possible.
+    if (
+        s !== 'vault' &&
+        process.env.NODE_ENV === 'production' &&
+        process.env.KYC_ALLOW_INSECURE_IBAN !== 'true'
+    ) {
+        throw new Error(
+            `Refus d'écrire un IBAN sans chiffrement fort (stratégie='${s}'). Supabase Vault requis en production (RGPD Art. 32).`,
+        );
+    }
+
     // Vault/extension RPCs operate on global encryption infrastructure, not a
     // tenant table — the UNSCOPED platform client is correct (.rpc() is never
     // auto-scoped regardless).

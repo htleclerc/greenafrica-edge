@@ -64,6 +64,7 @@ export async function submitKycC(input: KycCInput) {
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: session.shipowner.id,
+        jurisdiction_id: session.jurisdictionId,
         details_json: {
             event: 'SHIPOWNER_KYC_C_COMPLETED',
             iban_encryption: ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED',
