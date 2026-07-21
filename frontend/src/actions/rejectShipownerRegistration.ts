@@ -93,6 +93,7 @@ export async function rejectShipownerRegistration(input: unknown) {
         severity: 'WARNING',
         entity_type: 'Shipowner',
         entity_id: shipownerId,
+        jurisdiction_id: jurisdictionId,
         details_json: {
             event: 'SHIPOWNER_REVIEW_REJECTED',
             reason,

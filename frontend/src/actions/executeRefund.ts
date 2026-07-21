@@ -289,6 +289,7 @@ export async function executeRefund(input: {
         severity: 'INFO',
         entity_type: 'Refund',
         entity_id: refund.id,
+        jurisdiction_id: refund.jurisdiction_id,
         details_json: auditDetails,
     });
 

@@ -109,6 +109,7 @@ export async function createTariffVersion(
             severity: 'INFO',
             entity_type: 'Tariff',
             entity_id: jurisdictionId,
+            jurisdiction_id: jurisdictionId,
             details_json: {
                 event: 'TARIFF_VERSION_CREATED',
                 new_id: row?.new_id ?? null,

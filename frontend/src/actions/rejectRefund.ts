@@ -74,6 +74,7 @@ export async function rejectRefund(input: { refundId: string; reason: string }) 
         severity: 'INFO',
         entity_type: 'Refund',
         entity_id: parsed.refundId,
+        jurisdiction_id: refund.jurisdiction_id,
         details_json: { event: 'REFUND_REJECTED', reason: parsed.reason },
     });
 

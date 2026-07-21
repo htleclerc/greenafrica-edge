@@ -250,6 +250,7 @@ export async function POST(request: NextRequest) {
             severity: fellBackToWire ? 'WARNING' : 'INFO',
             entity_type: 'Transaction',
             entity_id: tx.id,
+            jurisdiction_id: (tx as { jurisdiction_id: string }).jurisdiction_id,
             details_json: {
                 event: 'PAYMENT_CHECKOUT_CREATED',
                 provider: result.provider,

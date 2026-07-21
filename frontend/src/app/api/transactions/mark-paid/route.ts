@@ -180,6 +180,7 @@ async function processMarkPaid(
         severity: 'INFO',
         entity_type: 'Transaction',
         entity_id: tx.id,
+        jurisdiction_id: (tx as { jurisdiction_id?: string | null }).jurisdiction_id ?? null,
         details_json: {
             event: 'PAYMENT_RECEIVED',
             invoiceRef,

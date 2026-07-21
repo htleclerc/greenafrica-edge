@@ -61,6 +61,7 @@ interface RefundRow {
     refund_rail: string;
     status: string;
     rail_details: Record<string, unknown> | null;
+    jurisdiction_id: string | null;
 }
 
 interface Counts {
@@ -76,6 +77,7 @@ async function writeAuditLog(
         actorId: string;
         actorName: string;
         refundId: string;
+        jurisdictionId: string | null;
         event: 'REFUND_RECONCILED_BY_CRON';
         details: Record<string, unknown>;
     },
@@ -87,6 +89,7 @@ async function writeAuditLog(
         severity: 'INFO',
         entity_type: 'Refund',
         entity_id: params.refundId,
+        jurisdiction_id: params.jurisdictionId,
         details_json: { event: params.event, ...params.details },
     });
     if (error) {
@@ -128,7 +131,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const { data: pendingRaw, error: selErr } = await admin
         .from('refunds')
-        .select('id, transaction_id, shipowner_id, amount_usd_minor, refund_rail, status, rail_details')
+        .select('id, transaction_id, shipowner_id, amount_usd_minor, refund_rail, status, rail_details, jurisdiction_id')
         .eq('refund_rail', 'STRIPE')
         .eq('status', 'APPROVED')
         .lt('updated_at', cutoff)
@@ -274,6 +277,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 actorId: systemActorId,
                 actorName: systemActorName,
                 refundId: row.id,
+                jurisdictionId: row.jurisdiction_id,
                 event: 'REFUND_RECONCILED_BY_CRON',
                 details: {
                     new_status: 'EXECUTED',
@@ -339,6 +343,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                     actorId: systemActorId,
                     actorName: systemActorName,
                     refundId: row.id,
+                    jurisdictionId: row.jurisdiction_id,
                     event: 'REFUND_RECONCILED_BY_CRON',
                     details: {
                         new_status: 'REJECTED',
