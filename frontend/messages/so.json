@@ -1991,6 +1991,14 @@
     "section_07_li3": "<strong>Hay'adaha Xeebeynta Deriska ah (Djibouti, Eritrea):</strong> Xogta goobta maraakiibta ee la baarayaa ee ku aaddan ka-baxitaanka hoggaaminta, oo lagu heshiiyay heshiisyada badda ee lamaanaha.",
     "section_07_li4": "<strong>Wasaaradda Cadaaladda:</strong> Diiwaanka jeegga iyo diiwaanada maaliyadda ee xaaladaha baaritaanka dembiga, oo loo baahan yahay ogolaanshaha garsoorka.",
     "section_07_li5": "<strong>Farsamo-Bixiyeyaasha:</strong> Adeegyada kaabayaasha daruuraha iyo kaydiyaha xogta ee ku howlgala dhulka Somaliland (BER-DC1) ama loo baahan yahay qaababka ilaalinta xogta ku habboon. Dhammaan farsamaynayaasha waxaa xidha Heshiisyada Farsamaynta Xogta (DPAs).",
+    "section_07_li6": "<strong>Xafiiska Dib-u-soo-celinta Deynta (xeer-ilaaliye/garsoore):</strong> Marka canshuur kaarboonka badda ama qaansheeg pro-forma aan la bixin ka dib jadwalka caadiga ah ee xasuusinta, xogta lagama maarmaanka ah (aqoonsiga milkiilaha/hawlgalaha markabka, xiriirka, taariikhda lacag-bixinta) ayaa loola wadaagi karaa xafiis dibadda ah oo dib-u-soo-celinta deynta ku takhasusay, kaas oo lagu daro nuqul xasuusinta J+45, iyadoo lagu saleynayo danaha sharciga ah iyo/ama fulinta heshiiska (soo celinta lacagaha la sugayo).",
+    "section_07_processors_label": "Farsamaynayaasha (processors)",
+    "section_07_processors_li1": "<strong>Supabase:</strong> Martigelinta kaydka xogta, kaydinta faylalka, iyo xaqiijinta aqoonsiga.",
+    "section_07_processors_li2": "<strong>Vercel:</strong> Martigelinta barnaamijka webka Green Gate.",
+    "section_07_processors_li3": "<strong>Resend:</strong> Dirista iimaylada ganacsi (qaansheegyada, ogeysiisyada, xasuusinnada).",
+    "section_07_processors_li4": "<strong>Stripe:</strong> Habaynta lacag-bixinnada kaadhka.",
+    "section_07_processors_li5": "<strong>Sentry:</strong> Kormeerka qaladaadka barnaamijka, iyada oo aan lahayn xog shakhsiyeed la aqoonsan karo (PII).",
+    "section_07_processors_p1": "Mid kasta oo bixiyeyaashan wuxuu u shaqeeyaa sida farsamaynaha xogta ee ku hoos jira sharciga khuseeya. Xiriirradan waxaa xakameeya Heshiisyada Farsamaynta Xogta (DPAs) kuwaas oo qeexaya waajibaadka qarsoodiga, ammaanka, iyo ogeysiinta xadgudubka xogta.",
     "section_07_warning": "<strong>Wareejinnada caalamiga ah ee dibadda Afrika:</strong> Wareejinta xogta shakhsiga dalalka aan loo aqoon inay bixiyaan ilaalin ku filan waxay u baahan tahay Clauses-yada Heshiiska Caadiga ah (SCCs) oo loo baahan yahay ogolaanshaha SDPC. Wareejinta culayska xogta asxaabta maraakiibta ama shirkadaha howlgalka dalalka aan ku filnayn la'aanta ruqsad cad lama samayso.",
     "section_08_p1": "Iyada oo loo eegayo sharciga khuseeya Somaliland iyo xaddidaadyada hawlgalka, dadka xogtooda waxay leeyihiin xuquuqdan soo socda. Qaar ka mid ah xuquuqaha waxaa laga xaddidi karaa halka ay faragelin lahayeen waajibka farsamaynta sharciga qasabka ah (tusaale, xaqiijinta canshuurta, aan la beddeli karin jeegga):",
     "section_08_table_header_right": "Xuquuq",
@@ -3309,6 +3317,7 @@
   },
   "OwnerProfile": {
     "save": "Kaydi",
+    "exportData": "Dhoofi xogtayda",
     "status": {
       "title": "Xaaladda KYC",
       "done": "Dhammaystiran",

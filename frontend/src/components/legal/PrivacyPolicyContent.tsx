@@ -172,7 +172,21 @@ export default function PrivacyPolicyContent() {
                     <LegalLi>{t.rich('section_07_li3', richTextComponents)}</LegalLi>
                     <LegalLi>{t.rich('section_07_li4', richTextComponents)}</LegalLi>
                     <LegalLi>{t.rich('section_07_li5', richTextComponents)}</LegalLi>
+                    <LegalLi>{t.rich('section_07_li6', richTextComponents)}</LegalLi>
                 </LegalUl>
+
+                <div className="mt-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#38BDF8] mb-2">{t('section_07_processors_label')}</p>
+                    <LegalUl>
+                        <LegalLi>{t.rich('section_07_processors_li1', richTextComponents)}</LegalLi>
+                        <LegalLi>{t.rich('section_07_processors_li2', richTextComponents)}</LegalLi>
+                        <LegalLi>{t.rich('section_07_processors_li3', richTextComponents)}</LegalLi>
+                        <LegalLi>{t.rich('section_07_processors_li4', richTextComponents)}</LegalLi>
+                        <LegalLi>{t.rich('section_07_processors_li5', richTextComponents)}</LegalLi>
+                    </LegalUl>
+                    <LegalP>{t('section_07_processors_p1')}</LegalP>
+                </div>
+
                 <LegalWarning>
                     {t.rich('section_07_warning', richTextComponents)}
                 </LegalWarning>

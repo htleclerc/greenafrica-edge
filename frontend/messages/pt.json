@@ -158,6 +158,7 @@
   },
   "OwnerProfile": {
     "save": "Guardar",
+    "exportData": "Exportar os meus dados",
     "status": {
       "title": "Estado KYC",
       "done": "Concluído",
@@ -2401,6 +2402,14 @@
     "section_07_li3": "<strong>Autoridades de Guarda Costeira Vizinhas (Djibouti, Eritreia):</strong> Dados de posição de navios sob investigação por incumprimento, ao abrigo de acordos marítimos bilaterais.",
     "section_07_li4": "<strong>Ministério da Justiça:</strong> Registos de auditoria e registos financeiros no contexto de investigações criminais, sujeitos a mandado judicial.",
     "section_07_li5": "<strong>Subprocessadores Técnicos:</strong> Infraestrutura de nuvem e serviços de base de dados operando no território da Somalilândia (BER-DC1) ou sujeitos a quadros de proteção de dados adequados. Todos os subprocessadores estão vinculados por Acordos de Tratamento de Dados (DPAs).",
+    "section_07_li6": "<strong>Agência de cobrança (escritório de advocacia / oficial de justiça):</strong> Quando uma taxa de carbono marítima ou fatura pro-forma permanece por pagar após o calendário padrão de lembretes, os dados estritamente necessários (identidade do armador/operador, dados de contacto, histórico de faturação) podem ser partilhados com um escritório externo de cobrança de dívidas, em cópia nos lembretes ao D+45, com base no interesse legítimo e/ou na execução do contrato (cobrança de valores devidos).",
+    "section_07_processors_label": "Subprocessadores (processadores de dados)",
+    "section_07_processors_li1": "<strong>Supabase:</strong> Alojamento da base de dados, armazenamento de ficheiros e autenticação.",
+    "section_07_processors_li2": "<strong>Vercel:</strong> Alojamento da aplicação web Green Gate.",
+    "section_07_processors_li3": "<strong>Resend:</strong> Envio de e-mails transacionais (faturas, notificações, lembretes).",
+    "section_07_processors_li4": "<strong>Stripe:</strong> Processamento de pagamentos por cartão.",
+    "section_07_processors_li5": "<strong>Sentry:</strong> Supervisão de erros da aplicação, sem dados pessoais identificáveis (PII).",
+    "section_07_processors_p1": "Cada um destes prestadores atua como subprocessador nos termos da regulamentação aplicável. Estas relações são regidas por Acordos de Tratamento de Dados (Data Processing Agreements — DPA) que definem as obrigações de confidencialidade, segurança e notificação de violação de dados.",
     "section_07_warning": "<strong>Transferências internacionais para fora de África:</strong> Qualquer transferência de dados pessoais para países não reconhecidos como oferecendo proteção adequada requer Cláusulas Contratuais Tipo (CCT) e está sujeita à aprovação do SDPC. Nenhuma transferência em massa de dados de proprietários ou operadores de navios é efetuada para países terceiros sem proteção adequada sem autorização explícita.",
     "section_08_p1": "Sujeito à legislação aplicável da Somalilândia e a restrições operacionais, os titulares de dados têm os seguintes direitos. Certos direitos podem ser limitados quando interfeririam com obrigações legais obrigatórias de tratamento (por exemplo, execução fiscal, imutabilidade da auditoria):",
     "section_08_table_header_right": "Direito",
