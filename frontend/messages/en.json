@@ -3856,7 +3856,14 @@
       "remindersTitle": "Reminders",
       "noReminders": "No reminders.",
       "escalatedBailiff": "Escalated — bailiff",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymize (GDPR)",
+      "anonymizeButton": "Anonymize",
+      "anonymizeWarning": "Irreversible action: erases contact and banking data; legal/tax identity is retained.",
+      "anonymizeConfirmLabel": "Type {keyword} to confirm",
+      "anonymizeConfirmKeyword": "ANONYMIZE",
+      "anonymizeCta": "Anonymize permanently",
+      "anonymizedAt": "Anonymized on {date}"
     }
   },
   "AdminAirlines": {
@@ -3957,7 +3964,14 @@
       "remindersTitle": "Reminders",
       "noReminders": "No reminders.",
       "escalatedBailiff": "Escalated — bailiff",
-      "actionsTitle": "Actions"
+      "actionsTitle": "Actions",
+      "anonymizeTitle": "Anonymize (GDPR)",
+      "anonymizeButton": "Anonymize",
+      "anonymizeWarning": "Irreversible action: erases contact and banking data; legal/tax identity is retained.",
+      "anonymizeConfirmLabel": "Type {keyword} to confirm",
+      "anonymizeConfirmKeyword": "ANONYMIZE",
+      "anonymizeCta": "Anonymize permanently",
+      "anonymizedAt": "Anonymized on {date}"
     }
   }
 }

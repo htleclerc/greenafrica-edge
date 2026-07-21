@@ -3859,7 +3859,14 @@
       "remindersTitle": "التذكيرات",
       "noReminders": "لا توجد تذكيرات.",
       "escalatedBailiff": "تم التصعيد — مُحضر قضائي",
-      "actionsTitle": "إجراءات"
+      "actionsTitle": "إجراءات",
+      "anonymizeTitle": "إخفاء الهوية (RGPD)",
+      "anonymizeButton": "إخفاء الهوية",
+      "anonymizeWarning": "إجراء لا رجعة فيه: يمسح بيانات الاتصال والبيانات المصرفية؛ يتم الاحتفاظ بالهوية القانونية/الضريبية.",
+      "anonymizeConfirmLabel": "اكتب {keyword} للتأكيد",
+      "anonymizeConfirmKeyword": "حذف",
+      "anonymizeCta": "إخفاء الهوية نهائيًا",
+      "anonymizedAt": "تم إخفاء الهوية في {date}"
     }
   },
   "AdminAirlines": {
@@ -3960,7 +3967,14 @@
       "remindersTitle": "التذكيرات",
       "noReminders": "لا توجد تذكيرات.",
       "escalatedBailiff": "تم التصعيد — مُحضر قضائي",
-      "actionsTitle": "إجراءات"
+      "actionsTitle": "إجراءات",
+      "anonymizeTitle": "إخفاء الهوية (RGPD)",
+      "anonymizeButton": "إخفاء الهوية",
+      "anonymizeWarning": "إجراء لا رجعة فيه: يمسح بيانات الاتصال والبيانات المصرفية؛ يتم الاحتفاظ بالهوية القانونية/الضريبية.",
+      "anonymizeConfirmLabel": "اكتب {keyword} للتأكيد",
+      "anonymizeConfirmKeyword": "حذف",
+      "anonymizeCta": "إخفاء الهوية نهائيًا",
+      "anonymizedAt": "تم إخفاء الهوية في {date}"
     }
   }
 }

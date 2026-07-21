@@ -3893,7 +3893,14 @@
       "remindersTitle": "Cobranças",
       "noReminders": "Nenhuma cobrança.",
       "escalatedBailiff": "Escalado — oficial de justiça",
-      "actionsTitle": "Ações"
+      "actionsTitle": "Ações",
+      "anonymizeTitle": "Anonimizar (RGPD)",
+      "anonymizeButton": "Anonimizar",
+      "anonymizeWarning": "Ação irreversível: apaga os dados de contacto e bancários; a identidade legal/fiscal é mantida.",
+      "anonymizeConfirmLabel": "Digite {keyword} para confirmar",
+      "anonymizeConfirmKeyword": "ANONIMIZAR",
+      "anonymizeCta": "Anonimizar definitivamente",
+      "anonymizedAt": "Anonimizado em {date}"
     }
   },
   "AdminAirlines": {
@@ -3994,7 +4001,14 @@
       "remindersTitle": "Cobranças",
       "noReminders": "Nenhuma cobrança.",
       "escalatedBailiff": "Escalado — oficial de justiça",
-      "actionsTitle": "Ações"
+      "actionsTitle": "Ações",
+      "anonymizeTitle": "Anonimizar (RGPD)",
+      "anonymizeButton": "Anonimizar",
+      "anonymizeWarning": "Ação irreversível: apaga os dados de contacto e bancários; a identidade legal/fiscal é mantida.",
+      "anonymizeConfirmLabel": "Digite {keyword} para confirmar",
+      "anonymizeConfirmKeyword": "ANONIMIZAR",
+      "anonymizeCta": "Anonimizar definitivamente",
+      "anonymizedAt": "Anonimizado em {date}"
     }
   }
 }

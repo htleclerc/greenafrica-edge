@@ -11,6 +11,7 @@ import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsInput } from '@/components/ui/OsInput';
 import { inviteShipowner } from '@/actions/inviteShipowner';
 import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
+import { anonymizeOwner } from '@/actions/anonymizeOwner';
 import {
     type ArmateurDetail as ArmateurDetailType,
     type ArmateurVesselRow,
@@ -21,6 +22,7 @@ import {
 interface Props {
     detail: ArmateurDetailType;
     canInvite: boolean;
+    canAnonymize: boolean;
 }
 
 const usd = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -41,7 +43,7 @@ const PAYMENT_VARIANT: Record<string, BadgeVariant> = {
     REJECTED: 'critical',
 };
 
-export function ArmateurDetail({ detail, canInvite }: Props) {
+export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
     const t = useTranslations('AdminArmateurs');
     const router = useRouter();
 
@@ -56,6 +58,11 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
     const [inviteEmail, setInviteEmail] = React.useState(detail.official_email ?? '');
     const [inviteError, setInviteError] = React.useState<string | null>(null);
     const [invitePending, startInviteTransition] = React.useTransition();
+
+    const [anonymizeOpen, setAnonymizeOpen] = React.useState(false);
+    const [anonymizeKeywordInput, setAnonymizeKeywordInput] = React.useState('');
+    const [anonymizeError, setAnonymizeError] = React.useState<string | null>(null);
+    const [anonymizePending, startAnonymizeTransition] = React.useTransition();
 
     function openEditEmail() {
         setEmailValue(detail.official_email ?? '');
@@ -97,6 +104,30 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
                 return;
             }
             closeInvite();
+            router.refresh();
+        });
+    }
+
+    const anonymizeKeyword = t('detail.anonymizeConfirmKeyword');
+
+    function openAnonymize() {
+        setAnonymizeKeywordInput('');
+        setAnonymizeError(null);
+        setAnonymizeOpen(true);
+    }
+    function closeAnonymize() {
+        setAnonymizeOpen(false);
+        setAnonymizeError(null);
+    }
+    function submitAnonymize() {
+        setAnonymizeError(null);
+        startAnonymizeTransition(async () => {
+            const result = await anonymizeOwner({ shipownerId: detail.id });
+            if (!result.ok) {
+                setAnonymizeError(result.error);
+                return;
+            }
+            closeAnonymize();
             router.refresh();
         });
     }
@@ -316,6 +347,21 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
                 </div>
             </OsCard>
 
+            {canAnonymize && (
+                <OsCard>
+                    <OsCardHeader title={t('detail.anonymizeTitle')} />
+                    {detail.anonymized_at ? (
+                        <p className="text-sm text-[var(--os-text-muted)]">
+                            {t('detail.anonymizedAt', { date: fmtDate(detail.anonymized_at) })}
+                        </p>
+                    ) : (
+                        <OsButton variant="danger" onClick={openAnonymize}>
+                            {t('detail.anonymizeButton')}
+                        </OsButton>
+                    )}
+                </OsCard>
+            )}
+
             <Dialog.Root open={editEmailOpen} onOpenChange={(o) => !o && closeEditEmail()}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />
@@ -392,6 +438,47 @@ export function ArmateurDetail({ detail, canInvite }: Props) {
                                 disabled={invitePending || !inviteEmail}
                             >
                                 {invitePending ? t('sending') : t('sendInvite')}
+                            </OsButton>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={anonymizeOpen} onOpenChange={(o) => !o && closeAnonymize()}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />
+                    <Dialog.Content
+                        className="fixed left-1/2 top-1/2 z-50 w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-5"
+                        style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                    >
+                        <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-2">
+                            {t('detail.anonymizeTitle')}
+                        </Dialog.Title>
+                        <Dialog.Description className="text-sm text-[var(--os-text-muted)] mb-4">
+                            {t('detail.anonymizeWarning')}
+                        </Dialog.Description>
+
+                        <OsInput
+                            label={t('detail.anonymizeConfirmLabel', { keyword: anonymizeKeyword })}
+                            type="text"
+                            value={anonymizeKeywordInput}
+                            onChange={(e) => setAnonymizeKeywordInput(e.target.value)}
+                            placeholder={anonymizeKeyword}
+                            autoFocus
+                            error={anonymizeError ?? undefined}
+                        />
+
+                        <div className="mt-5 flex justify-end gap-2">
+                            <OsButton variant="ghost" onClick={closeAnonymize} disabled={anonymizePending}>
+                                {t('cancel')}
+                            </OsButton>
+                            <OsButton
+                                variant="danger"
+                                onClick={submitAnonymize}
+                                loading={anonymizePending}
+                                disabled={anonymizePending || anonymizeKeywordInput !== anonymizeKeyword}
+                            >
+                                {t('detail.anonymizeCta')}
                             </OsButton>
                         </div>
                     </Dialog.Content>

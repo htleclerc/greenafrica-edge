@@ -3856,7 +3856,14 @@
       "remindersTitle": "Xasuusinno",
       "noReminders": "Xasuusin lama helin.",
       "escalatedBailiff": "Loo gudbiyay — masuulka garsoorka",
-      "actionsTitle": "Ficillo"
+      "actionsTitle": "Ficillo",
+      "anonymizeTitle": "Qarsoodi ka dhig (GDPR)",
+      "anonymizeButton": "Qarsoodi ka dhig",
+      "anonymizeWarning": "Tallaabo aan la beddeli karin: waxay tirtiraysaa xogta xiriirka iyo xogta bangiga; aqoonsiga sharciga/canshuurta waa la haystaa.",
+      "anonymizeConfirmLabel": "Qor {keyword} si aad u xaqiijiso",
+      "anonymizeConfirmKeyword": "TIRTIR",
+      "anonymizeCta": "Si joogto ah u qarsoodi",
+      "anonymizedAt": "Waa la qarsoodiyay {date}"
     }
   },
   "AdminAirlines": {
@@ -3957,7 +3964,14 @@
       "remindersTitle": "Xasuusinno",
       "noReminders": "Xasuusin lama helin.",
       "escalatedBailiff": "Loo gudbiyay — masuulka garsoorka",
-      "actionsTitle": "Ficillo"
+      "actionsTitle": "Ficillo",
+      "anonymizeTitle": "Qarsoodi ka dhig (GDPR)",
+      "anonymizeButton": "Qarsoodi ka dhig",
+      "anonymizeWarning": "Tallaabo aan la beddeli karin: waxay tirtiraysaa xogta xiriirka iyo xogta bangiga; aqoonsiga sharciga/canshuurta waa la haystaa.",
+      "anonymizeConfirmLabel": "Qor {keyword} si aad u xaqiijiso",
+      "anonymizeConfirmKeyword": "TIRTIR",
+      "anonymizeCta": "Si joogto ah u qarsoodi",
+      "anonymizedAt": "Waa la qarsoodiyay {date}"
     }
   }
 }

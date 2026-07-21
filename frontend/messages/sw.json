@@ -3859,7 +3859,14 @@
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
-      "actionsTitle": "Vitendo"
+      "actionsTitle": "Vitendo",
+      "anonymizeTitle": "Ondoa utambulisho (GDPR)",
+      "anonymizeButton": "Ondoa utambulisho",
+      "anonymizeWarning": "Kitendo kisichoweza kutenduliwa: kinafuta data ya mawasiliano na benki; utambulisho wa kisheria/kodi unabaki.",
+      "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
+      "anonymizeConfirmKeyword": "FUTA",
+      "anonymizeCta": "Ondoa utambulisho kabisa",
+      "anonymizedAt": "Utambulisho umeondolewa {date}"
     }
   },
   "AdminAirlines": {
@@ -3960,7 +3967,14 @@
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
-      "actionsTitle": "Vitendo"
+      "actionsTitle": "Vitendo",
+      "anonymizeTitle": "Ondoa utambulisho (GDPR)",
+      "anonymizeButton": "Ondoa utambulisho",
+      "anonymizeWarning": "Kitendo kisichoweza kutenduliwa: kinafuta data ya mawasiliano na benki; utambulisho wa kisheria/kodi unabaki.",
+      "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
+      "anonymizeConfirmKeyword": "FUTA",
+      "anonymizeCta": "Ondoa utambulisho kabisa",
+      "anonymizedAt": "Utambulisho umeondolewa {date}"
     }
   }
 }

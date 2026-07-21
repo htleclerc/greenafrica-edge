@@ -17,5 +17,6 @@ export default async function AirlineDetailPage({ params }: { params: Promise<{ 
     const detail = await getAirlineDetail(supabase, id, canViewBilling);
     if (!detail) notFound();
 
-    return <AirlineDetail detail={detail} canInvite={profile.role === 'SUPERADMIN'} />;
+    const isSuperadmin = profile.role === 'SUPERADMIN';
+    return <AirlineDetail detail={detail} canInvite={isSuperadmin} canAnonymize={isSuperadmin} />;
 }
