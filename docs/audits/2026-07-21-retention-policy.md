@@ -50,24 +50,26 @@ Une demande d'effacement d'un owner ne peut pas supprimer les `transactions` (fi
 - **Fonctions de purge DÉSACTIVÉES + dry_run** : `rgpd_purge_arrival_alerts(p_days, p_dry_run)` et `rgpd_purge_owner_notifications(p_days, p_dry_run)` (service_role uniquement, dry_run par défaut, **aucun `cron.schedule`**). `collection_reminders` volontairement exclu (pas de statut « créance close » fiable).
 - **Effacement Art. 17** (mig 103/105 + action `anonymizeOwner`) : efface contact + bancaire (IBAN + **secret Vault supprimé** via `kyc_vault_delete`) + anonymise le profil, conserve l'identité fiscale + sanctions ; audité `SHIPOWNER_ANONYMIZED`. Bouton UI SUPERADMIN (confirmation type-to-confirm).
 
-## Activer les purges — commandes prêtes (À NE LANCER QU'APRÈS validation des durées)
+## Purges — ACTIVÉES (durées validées PO 2026-07-21 : 90 jours)
 
+`mig 106` planifie les 2 purges via `pg_cron` (hebdo, dimanche 03:00, **suppression réelle**) à **90 jours** :
+- `rgpd_purge_arrival_alerts(90, false)` · `rgpd_purge_owner_notifications(90, false)`.
+
+Inspection à blanc à tout moment (compte, ne supprime pas) :
 ```sql
--- 1) Contrôle à blanc (compte les lignes candidates, ne supprime rien) :
-select public.rgpd_purge_arrival_alerts(365, true);       -- 12 mois (proposé)
-select public.rgpd_purge_owner_notifications(540, true);  -- 18 mois (proposé)
-
--- 2) Une fois les durées validées et les volumes vérifiés, planifier (pg_cron) :
-select cron.schedule('rgpd_purge_arrival_alerts', '0 3 * * 0',
-    $$ select public.rgpd_purge_arrival_alerts(365, false); $$);
-select cron.schedule('rgpd_purge_owner_notifications', '0 3 * * 0',
-    $$ select public.rgpd_purge_owner_notifications(540, false); $$);
+select public.rgpd_purge_arrival_alerts(90, true);
+select public.rgpd_purge_owner_notifications(90, true);
 ```
+Désactivation : `select cron.unschedule('rgpd-purge-arrival-alerts');` (idem owner-notifications).
 
-## Prochaines étapes (décision / à faire)
+⚠️ Concernent uniquement des données **opérationnelles/transitoires** (AIS/ADS-B, notifications). `transactions`/`audit_logs` restent **hors** purge automatique (fiscal/immuable/append-only → procédure DBA).
 
-1. **Valider les durées** ci-dessus avec DPO / juridique (bloquant pour l'ACTIVATION des purges — les fonctions existent mais ne tournent pas ; commandes prêtes ci-dessus).
-2. Définir « créance close » pour `collection_reminders` puis ajouter sa fonction de purge.
-3. Documenter la procédure DBA pour `transactions`/`audit_logs` (immuables/append-only).
-4. Décision `swift_bic`/`bank_name` : chiffrer (Vault) OU garder en clair — ces champs sont **affichés au staff** pour opérer les virements, donc le chiffrement au repos apporte une valeur marginale (protège seulement contre un dump brut) pour un coût élevé (change tous les read/write + affichages), contrairement à l'IBAN (jamais affiché, donc chiffrement à forte valeur). **Recommandation : garder en clair** (protégés par RLS + chiffrement disque Supabase), ou traiter en lot dédié si exigence contractuelle.
-5. `swift_bic`/`bank_name` non nullés ne concernent PAS l'effacement (déjà effacés par `anonymizeOwner`).
+## Décisions PO (2026-07-21)
+
+- **Rétention purges = 90 jours** → purges activées (mig 106). ✅
+- **`swift_bic`/`bank_name` : GARDÉS EN CLAIR** (pas de chiffrement Vault) — affichés au staff pour opérer les virements, donc chiffrement au repos = valeur marginale (protège seulement un dump brut) vs coût élevé, contrairement à l'IBAN (jamais affiché → chiffré). Protégés par RLS + chiffrement disque Supabase. ✅ (rappel : ils SONT effacés à l'anonymisation Art. 17.)
+
+## Reste (non bloquant)
+
+1. Définir « créance close » pour `collection_reminders` puis ajouter sa fonction de purge.
+2. Documenter la procédure DBA pour `transactions`/`audit_logs` (immuables/append-only).
