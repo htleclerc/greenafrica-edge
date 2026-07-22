@@ -76,6 +76,41 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                         setCtx({ role: profile.role as UserRole, user, isDemo: false, ready: true });
                         return;
                     }
+
+                    // Operator (armateur): authenticated but no `profiles` row — the
+                    // account lives only in `shipowners`, keyed by profile_id. Without
+                    // this branch resolution falls through to the PORT_OFFICER test
+                    // sentinel, so the whole dashboard chrome (name, role, skin) shows
+                    // the wrong identity and blocks on a query that can't succeed.
+                    const { data: shipowner } = await supabase
+                        .from('shipowners')
+                        .select('id, name, official_email, country_code')
+                        .eq('profile_id', authUser.id)
+                        .eq('account_state', 'ACTIVE')
+                        .maybeSingle();
+
+                    if (shipowner) {
+                        localStorage.removeItem('demo_active');
+                        localStorage.removeItem('demo_role');
+                        document.cookie = 'demo_active=; path=/; max-age=0';
+                        document.cookie = 'demo_role=; path=/; max-age=0';
+
+                        const user: SecureUser = {
+                            id: authUser.id,
+                            email: authUser.email ?? (shipowner.official_email as string) ?? '',
+                            fullName: (shipowner.name as string) ?? 'Operator',
+                            role: UserRole.SHIPPING_AGENT,
+                            operationalSite: OperationalSite.BERBERA_PORT,
+                            countryCode: (shipowner.country_code as string) ?? 'SO',
+                            timezone: 'Africa/Mogadishu',
+                            preferredLanguage: 'en',
+                            lastLogin: authUser.last_sign_in_at ?? '',
+                            ipAddress: '',
+                            isActive: true,
+                        };
+                        setCtx({ role: UserRole.SHIPPING_AGENT, user, isDemo: false, ready: true });
+                        return;
+                    }
                 }
             } catch {
                 // Supabase call failed — fall through to demo / default
@@ -103,7 +138,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                         .eq('key', 'demo_mode')
                         .single();
 
-                    const isRemoteEnabled = (config?.value as any)?.enabled ?? true;
+                    const isRemoteEnabled = (config?.value as { enabled?: boolean } | null)?.enabled ?? true;
 
                     if (isRemoteEnabled) {
                         const resolvedRole = Object.values(UserRole).includes(demoRole) ? demoRole : UserRole.PORT_OFFICER;
