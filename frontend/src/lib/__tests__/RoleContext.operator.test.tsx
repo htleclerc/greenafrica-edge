@@ -34,13 +34,19 @@ function makeClient({
 let mockClient: ReturnType<typeof makeClient>;
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => mockClient }));
 
-import { RoleProvider, useRole } from '../RoleContext';
-import { UserRole } from '@/types/secure';
+import { RoleProvider, useRole, type InitialRolePrincipal } from '../RoleContext';
+import { usePrincipalKind } from '@/hooks/usePrincipalKind';
+import { UserRole, OperationalSite, type SecureUser } from '@/types/secure';
 
 function Probe() {
     const { role, user, ready } = useRole();
     if (!ready) return <span>loading</span>;
     return <span data-testid="probe">{`${role}|${user.fullName}`}</span>;
+}
+
+function KindProbe() {
+    const { kind, modes } = usePrincipalKind();
+    return <span data-testid="kind">{`${kind}|${modes.join(',')}`}</span>;
 }
 
 describe('RoleProvider — operator (armateur) resolution', () => {
@@ -77,5 +83,51 @@ describe('RoleProvider — operator (armateur) resolution', () => {
         // Must NOT fall back to the staff sentinel.
         expect(text).not.toContain('Hassan');
         expect(text).not.toContain(UserRole.PORT_OFFICER);
+    });
+});
+
+describe('RoleProvider — server-seeded principal (perf path)', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        document.cookie = '';
+    });
+
+    const operatorUser: SecureUser = {
+        id: 'op-uid-2',
+        email: 'ops@mariner.example',
+        fullName: 'MARINER Corp',
+        role: UserRole.SHIPPING_AGENT,
+        operationalSite: OperationalSite.BERBERA_PORT,
+        countryCode: 'SO',
+        timezone: 'Africa/Mogadishu',
+        preferredLanguage: 'en',
+        lastLogin: '2026-07-22T00:00:00Z',
+        ipAddress: '',
+        isActive: true,
+    };
+    const initial: InitialRolePrincipal = {
+        kind: 'operator',
+        user: operatorUser,
+        modes: ['MARITIME'],
+    };
+
+    it('paints immediately from the seed and performs NO client-side session round trip', async () => {
+        const getUser = vi.fn();
+        // Any client call would be a bug — fail loudly if the effect touches it.
+        mockClient = { auth: { getUser }, from: () => { throw new Error('no client query when seeded'); } } as never;
+
+        render(
+            <RoleProvider initial={initial}>
+                <Probe />
+                <KindProbe />
+            </RoleProvider>,
+        );
+
+        // Ready synchronously — the "loading" spinner must never show.
+        expect(screen.getByTestId('probe').textContent).toBe('SHIPPING_AGENT|MARINER Corp');
+        expect(screen.getByTestId('kind').textContent).toBe('operator|MARITIME');
+
+        // Give any (erroneous) effect a tick to run, then assert no client calls.
+        await waitFor(() => expect(getUser).not.toHaveBeenCalled());
     });
 });
