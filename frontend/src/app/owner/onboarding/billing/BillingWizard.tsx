@@ -242,25 +242,22 @@ export function BillingWizard({ shipownerName, shipownerId }: { shipownerName: s
                     <h2 className="text-xl">{t('step2.title')}</h2>
                     <p className="opacity-70 text-sm">{t('step2.disclaimer')}</p>
                     <OsInput
-                        label="IBAN"
+                        label={`IBAN (${t('optional')})`}
                         value={form.iban}
                         onChange={(e) => update('iban', e.target.value.toUpperCase())}
                         error={errors.iban}
-                        required
                     />
                     <OsInput
-                        label="SWIFT/BIC"
+                        label={`SWIFT/BIC (${t('optional')})`}
                         value={form.swift_bic}
                         onChange={(e) => update('swift_bic', e.target.value.toUpperCase())}
                         error={errors.swift_bic}
-                        required
                     />
                     <OsInput
-                        label={t('bank_name')}
+                        label={`${t('bank_name')} (${t('optional')})`}
                         value={form.bank_name}
                         onChange={(e) => update('bank_name', e.target.value)}
                         error={errors.bank_name}
-                        required
                     />
 
                     <div className="flex flex-col gap-1.5">
@@ -319,10 +316,10 @@ export function BillingWizard({ shipownerName, shipownerId }: { shipownerName: s
                             <strong>{t('city')}:</strong> {form.billing_city}, {form.billing_country_code}
                         </div>
                         <div>
-                            <strong>IBAN:</strong> {form.iban.replace(/(.{4})/g, '$1 ').trim()}
+                            <strong>IBAN:</strong> {form.iban ? form.iban.replace(/(.{4})/g, '$1 ').trim() : '—'}
                         </div>
                         <div>
-                            <strong>SWIFT:</strong> {form.swift_bic}
+                            <strong>SWIFT:</strong> {form.swift_bic || '—'}
                         </div>
                     </div>
                     <label className="flex items-start gap-2">

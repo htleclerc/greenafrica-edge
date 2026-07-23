@@ -14,9 +14,12 @@ export const kycCSchema = z.object({
     billing_postal_code: z.string().min(2).max(20),
     billing_country_code: z.string().length(2),
     vat_number: z.string().max(50).optional(),
-    iban: z.string().regex(/^[A-Z0-9]{15,34}$/),
-    swift_bic: z.string().regex(/^[A-Z0-9]{8,11}$/),
-    bank_name: z.string().min(2).max(200),
+    // Coordonnées bancaires optionnelles (ne servent qu'au remboursement d'un
+    // trop-perçu / réconciliation finale). Validées uniquement si renseignées :
+    // une chaîne vide passe, une valeur non vide doit respecter le format.
+    iban: z.string().regex(/^[A-Z0-9]{15,34}$/).or(z.literal('')).optional(),
+    swift_bic: z.string().regex(/^[A-Z0-9]{8,11}$/).or(z.literal('')).optional(),
+    bank_name: z.string().min(2).max(200).or(z.literal('')).optional(),
     cgv_accepted: z.literal(true),
     billing_proof_doc_storage_path: z.string().min(1).optional(),
     billing_proof_doc_type: z.enum(ALLOWED_DOC_TYPES).optional(),

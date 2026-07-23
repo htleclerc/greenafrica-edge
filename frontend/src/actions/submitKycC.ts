@@ -14,9 +14,11 @@ export async function submitKycC(input: KycCInput) {
     const session = await requireOwner();
     const data = kycCSchema.parse(input);
 
-    // Encrypt IBAN before persisting.
-    const ibanStored = await encryptIban(data.iban);
-    const ibanInsecure = isInsecureStrategy();
+    // Encrypt IBAN before persisting — coordonnées bancaires optionnelles : si
+    // aucun IBAN n'est fourni, on stocke null (pas de chiffrement, pas d'alerte).
+    const hasIban = Boolean(data.iban);
+    const ibanStored = hasIban ? await encryptIban(data.iban as string) : null;
+    const ibanInsecure = hasIban && isInsecureStrategy();
     if (ibanInsecure) {
         // RGPD/Art.32 : IBAN écrit sans chiffrement fort (Vault indisponible) — alerte ops.
         console.error(`[KYC][INSECURE] IBAN écrit sans chiffrement fort (submitKycC) shipowner=${session.shipowner.id}`);
@@ -39,8 +41,8 @@ export async function submitKycC(input: KycCInput) {
         billing_country_code: data.billing_country_code,
         vat_number: data.vat_number ?? null,
         iban: ibanStored,
-        swift_bic: data.swift_bic,
-        bank_name: data.bank_name,
+        swift_bic: data.swift_bic || null,
+        bank_name: data.bank_name || null,
         kyc_level_c_completed_at: new Date().toISOString(),
         // Consentement CGV versionné (RGPD Art. 7 — preuve opposable).
         cgv_accepted_at: new Date().toISOString(),
@@ -70,7 +72,7 @@ export async function submitKycC(input: KycCInput) {
         jurisdiction_id: session.jurisdictionId,
         details_json: {
             event: 'SHIPOWNER_KYC_C_COMPLETED',
-            iban_encryption: ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED',
+            iban_encryption: !hasIban ? 'NONE' : ibanInsecure ? 'INSECURE_DEBT' : 'ENCRYPTED',
             cgv_accepted_at: new Date().toISOString(),
         },
     });

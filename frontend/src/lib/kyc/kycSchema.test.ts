@@ -28,6 +28,17 @@ describe('kycCSchema', () => {
     it('exige un country_code de 2 lettres', () => {
         expect(kycCSchema.safeParse({ ...valid, billing_country_code: 'SOM' }).success).toBe(false);
     });
+    it('accepte un RIB vide (coordonnées bancaires optionnelles)', () => {
+        expect(kycCSchema.safeParse({ ...valid, iban: '', swift_bic: '', bank_name: '' }).success).toBe(true);
+    });
+    it('accepte l\'absence totale de coordonnées bancaires', () => {
+        const { iban: _i, swift_bic: _s, bank_name: _b, ...rest } = valid;
+        void _i; void _s; void _b;
+        expect(kycCSchema.safeParse(rest).success).toBe(true);
+    });
+    it('rejette quand même un IBAN non vide mais malformé', () => {
+        expect(kycCSchema.safeParse({ ...valid, iban: 'abc' }).success).toBe(false);
+    });
 });
 
 describe('kycBEditableSchema', () => {

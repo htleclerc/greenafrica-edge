@@ -3291,6 +3291,7 @@
     "postal_code": "Code postal",
     "country_code": "Pays (ISO-2)",
     "vat_optional": "Numéro de TVA (optionnel)",
+    "optional": "optionnel",
     "bank_name": "Nom de la banque",
     "proof_document": "Pièce justificative (optionnel)",
     "proof_document_hint": "PDF ou image confirmant vos coordonnées bancaires. Optionnel — vous pourrez l'ajouter plus tard.",

@@ -3291,6 +3291,7 @@
     "postal_code": "Koodhka boostada",
     "country_code": "Dalka (ISO-2)",
     "vat_optional": "Lambarka VAT (ikhtiyaari)",
+    "optional": "ikhtiyaari",
     "bank_name": "Magaca bangiga",
     "proof_document": "Dukumeenti caddaynaya (ikhtiyaari)",
     "proof_document_hint": "PDF ama sawir xaqiijinaya xogta bangigaaga. Ikhtiyaari — waad ku dari kartaa mar dambe.",
