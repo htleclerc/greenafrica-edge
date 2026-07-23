@@ -66,6 +66,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // /cgv était une page brouillon ("Draft document") remplacée par la CGU
+      // réelle et versionnée. 308 permanent : les liens/favoris existants (et le
+      // consentement d'onboarding) atterrissent sur le bon document.
+      {
+        source: '/cgv',
+        destination: '/terms-of-service',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 // Sentry wraps the composed config (outermost). Source-map upload only runs when

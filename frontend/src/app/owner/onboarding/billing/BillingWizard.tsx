@@ -330,7 +330,7 @@ export function BillingWizard({ shipownerName, shipownerId }: { shipownerName: s
                         />
                         <span>
                             {t('cgv_label_prefix')}{' '}
-                            <Link href="/cgv" target="_blank" className="underline">
+                            <Link href="/terms-of-service" target="_blank" className="underline">
                                 {t('cgv_link')}
                             </Link>
                         </span>

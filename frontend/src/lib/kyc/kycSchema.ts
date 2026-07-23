@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
-/** Version courante des CGV — persistée à l'acceptation (RGPD Art. 7, preuve de consentement). */
-export const CGV_VERSION = '2026-07-01';
+/**
+ * Version courante des CGU — persistée à l'acceptation (RGPD Art. 7, preuve de
+ * consentement). DOIT correspondre à la version du document réellement affiché
+ * (`TermsOfService.version` dans messages/*.json, page /terms-of-service) pour
+ * que le consentement soit opposable.
+ */
+export const CGV_VERSION = 'v3.0.0';
 
 export const ALLOWED_DOC_TYPES = ['CERTIFICATE_OF_INCORPORATION', 'BANK_STATEMENT', 'RIB', 'OTHER'] as const;
 export const ALLOWED_LANGS = ['en', 'fr', 'so', 'pt', 'ar', 'sw'] as const;
