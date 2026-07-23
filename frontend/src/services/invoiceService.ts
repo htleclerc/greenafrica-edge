@@ -14,9 +14,14 @@ import QRCode from 'qrcode';
  *   EXEMPT         → invoice      → EXEMPT         → TAX INVOICE (exempted)
  */
 export type InvoiceMode = 'proforma' | 'invoice';
-export type InvoiceBadge = 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT';
+export type InvoiceBadge = 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT' | 'SIMULATION';
+/**
+ * Badge dérivé d'un statut de transaction réel — ne contient jamais SIMULATION,
+ * qui n'existe que pour les pré-estimations du simulateur (aucun statut en base).
+ */
+export type StatusBadge = Exclude<InvoiceBadge, 'SIMULATION'>;
 
-export function statusToMode(status: string): { mode: InvoiceMode; badge: InvoiceBadge } {
+export function statusToMode(status: string): { mode: InvoiceMode; badge: StatusBadge } {
   switch (status) {
     case 'PAID':     return { mode: 'invoice',  badge: 'PAID' };
     case 'EXEMPT':   return { mode: 'invoice',  badge: 'EXEMPT' };
@@ -59,6 +64,12 @@ interface InvoiceData {
   mode?: InvoiceMode;
   badge?: InvoiceBadge;
   verifyUrl?: string;       // URL encoded in the QR code
+  /**
+   * Simulation (pré-estimation du simulateur) : le document ne doit JAMAIS
+   * pouvoir être confondu avec un vrai pro-forma opposable. Remplace le bandeau
+   * « OFFICIAL DOCUMENT », retitre le document et appose un filigrane.
+   */
+  simulation?: boolean;
 }
 
 /**
@@ -240,7 +251,8 @@ async function resolveInvoiceArtifacts(data: InvoiceData): Promise<{ qrDataUrl: 
 /**
  * Get the human-readable doc type name based on mode.
  */
-function docTypeName(mode: InvoiceMode | undefined): string {
+function docTypeName(mode: InvoiceMode | undefined, simulation?: boolean): string {
+  if (simulation) return 'TAX SIMULATION';
   return mode === 'invoice' ? 'TAX INVOICE' : 'PRO-FORMA INVOICE';
 }
 
@@ -354,6 +366,7 @@ function badgeColor(badge: InvoiceBadge | undefined): { bg: [number, number, num
     case 'EXEMPT':   return { bg: [14, 165, 233],  fg: [255, 255, 255] };  // sky
     case 'OVERDUE':  return { bg: [220, 38, 38],   fg: [255, 255, 255] };  // red
     case 'DISPUTED': return { bg: [249, 115, 22],  fg: [255, 255, 255] };  // orange
+    case 'SIMULATION': return { bg: [100, 116, 139], fg: [255, 255, 255] }; // slate — non opposable
     case 'TO PAY':
     default:         return { bg: [234, 179, 8],   fg: [13, 31, 24] };     // amber on dark
   }
@@ -373,6 +386,23 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 18;
+
+  // ── Filigrane SIMULATION ──
+  // Dessiné en premier (donc sous le contenu) et en gris très clair : lisible
+  // sans gêner la lecture, mais impossible de confondre une pré-estimation du
+  // simulateur avec un pro-forma réel, y compris une fois imprimée.
+  if (data.simulation) {
+    doc.saveGraphicsState();
+    doc.setTextColor(226, 232, 240); // slate-200
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(58);
+    doc.text('SIMULATION', pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: 40,
+      baseline: 'middle',
+    });
+    doc.restoreGraphicsState();
+  }
 
   // ── Top accent gradient bar (emerald → gold) ──
   doc.setFillColor(4, 120, 87); // #047857
@@ -430,20 +460,39 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
 
   // ── Right header: OFFICIAL DOCUMENT badge + title ──
   const rightX = pageWidth - margin;
-  doc.setFillColor(13, 31, 24);
-  doc.rect(rightX - 38, logoY, 38, 5, 'F');
-  doc.setTextColor(16, 185, 129);
+  // Une simulation n'est pas un document officiel : bandeau et libellés distincts
+  // pour qu'elle ne puisse pas être présentée comme un pro-forma opposable.
+  const headerTag = data.simulation ? 'NOT AN OFFICIAL DOCUMENT' : 'OFFICIAL DOCUMENT';
+  const tagW = data.simulation ? 52 : 38;
+  if (data.simulation) {
+    doc.setFillColor(100, 116, 139);
+  } else {
+    doc.setFillColor(13, 31, 24);
+  }
+  doc.rect(rightX - tagW, logoY, tagW, 5, 'F');
+  if (data.simulation) {
+    doc.setTextColor(255, 255, 255);
+  } else {
+    doc.setTextColor(16, 185, 129);
+  }
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('OFFICIAL DOCUMENT', rightX - 19, logoY + 3.5, { align: 'center' });
+  doc.text(headerTag, rightX - tagW / 2, logoY + 3.5, { align: 'center' });
 
   doc.setTextColor(13, 31, 24);
   doc.setFontSize(13);
-  doc.text(docTypeName(data.mode), rightX, logoY + 12, { align: 'right' });
+  doc.text(docTypeName(data.mode, data.simulation), rightX, logoY + 12, { align: 'right' });
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Maritime Environmental Levy Notice', rightX, logoY + 17, { align: 'right' });
+  doc.text(
+    data.simulation
+      ? 'Non-binding pre-estimate — simulator output'
+      : 'Maritime Environmental Levy Notice',
+    rightX,
+    logoY + 17,
+    { align: 'right' },
+  );
 
   // ── Status badge (TO PAY / PAID / OVERDUE / DISPUTED / EXEMPT) ──
   if (data.badge) {

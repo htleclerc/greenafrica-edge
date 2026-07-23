@@ -47,6 +47,10 @@ const securityHeaders = [
       "font-src 'self' data:",
       `connect-src 'self' https://*.supabase.co wss://*.supabase.co${localSupabaseAllow}`,
       "object-src 'none'",
+      // Prévisualisation PDF (pré-estimation du simulateur) : le blob est généré
+      // par notre propre JS et reste same-origin. Sans cette directive, frame-src
+      // retombe sur default-src 'self' et le navigateur bloque l'iframe blob:.
+      "frame-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
