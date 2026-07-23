@@ -99,7 +99,8 @@ INSERT INTO auth.users (
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
 
--- Superadmin — Green Gate platform owner
+-- Manager — dirigeant (lecture seule : vision board). Anciennement un 2e
+-- SUPERADMIN redondant, reconverti pour couvrir le rôle MANAGER en test.
 INSERT INTO auth.users (
     id, instance_id, aud, role,
     email, encrypted_password,
@@ -111,10 +112,10 @@ INSERT INTO auth.users (
     '00000000-0000-0000-0000-000000000005',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
-    'sadmin@greengate.africa',
+    'manager@greengate.africa',
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
-    jsonb_build_object('full_name', 'Green Gate Superadmin', 'role', 'SUPERADMIN'),
+    jsonb_build_object('full_name', 'Dir. Nimco Warsame', 'role', 'MANAGER'),
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
     '', '',
     '', '', ''
@@ -207,8 +208,8 @@ INSERT INTO auth.identities (
 (
     '00000000-0000-0000-0000-000000000005',
     '00000000-0000-0000-0000-000000000005',
-    'sadmin@greengate.africa', 'email',
-    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000005', 'email', 'sadmin@greengate.africa'),
+    'manager@greengate.africa', 'email',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000005', 'email', 'manager@greengate.africa'),
     NOW(), NOW(), NOW()
 )
 ON CONFLICT DO NOTHING;
@@ -319,4 +320,44 @@ INSERT INTO public.carbon_projects (
 ('40000000-0000-0000-0000-000000000004', 'Berbera Port Solar Micro-Grid',            'Installation of 2.4 MW rooftop solar panels across Berbera Port facilities, displacing diesel generators and cutting port emissions by 40%.',               'SOLAR',           'ACTIVE',        'AfricGreen Energy Solutions',        'org-004', 'Berbera Port Industrial Zone',    10.430000, 45.020000,   18.0, '2024-04-01', NULL,          'IMO_DCS',                 4200.00,  3800.00,  3800.00,     0.00, 18.00,  68400.00, '2025-01-10', '2026-01-10', 3100000.00, '{7,13,9}'),
 ('40000000-0000-0000-0000-000000000005', 'Livestock Methane Capture — Togdheer',     'Biodigester deployment across 120 pastoral communities in Togdheer to capture methane from livestock waste and produce clean cooking fuel.',                'METHANE_CAPTURE', 'PENDING',       'Rural Climate Initiative',           'org-005', 'Togdheer Region',                 9.950000, 45.300000,    0.0, '2025-07-01', NULL,          'GOLD_STANDARD',           6500.00,     0.00,     0.00,     0.00, 25.00,      0.00, NULL,         NULL,          720000.00, '{2,7,13}'),
 ('40000000-0000-0000-0000-000000000006', 'Hargeisa Wind Farm — Phase 1',             '12 MW wind farm on the Ogo plateau supplying clean energy to Hargeisa grid and generating verified carbon credits under Verra VCS.',                        'WIND',            'COMPLETED',     'Horn of Africa Wind Power Ltd.',     'org-006', 'Ogo Plateau, Somaliland',          9.570000, 44.070000,  340.0, '2020-01-01', '2024-12-31',  'VERRA_VCS',              15200.00, 68400.00, 68400.00,     0.00, 20.00, 1368000.00, '2025-01-05', NULL,         8500000.00, '{7,8,13}')
+ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Armateur v7 (operator portal) — rattache le demo agent (003) à une ligne
+-- shipowners ACTIVE. requirePrincipal résout alors demo.agent@mariner-corp.com
+-- comme OPERATOR (portail flotte / factures / wallet) plutôt que staff legacy.
+-- La flotte est déjà seedée (vessels.owner_id = 003 : MSC BERBERA + MAERSK
+-- SEALAND), donc les compteurs du dashboard operator se peuplent via la RLS.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+INSERT INTO public.shipowners (
+    id, name, country_code, official_email, account_state,
+    profile_id, jurisdiction_id, applicable_modes
+) VALUES (
+    '30000000-0000-0000-0000-000000000001',
+    'MARINER Corp', 'SO', 'demo.agent@mariner-corp.com', 'ACTIVE',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-4000-8000-00000000534f',
+    ARRAY['MARITIME']::public.transport_mode[]
+) ON CONFLICT (id) DO NOTHING;
+
+-- Deux factures de l'année en cours sur MSC BERBERA (navire de l'armateur) pour
+-- peupler les compteurs du dashboard operator (unpaidProforma + paidYtd). Dates
+-- relatives (NOW()) pour rester dans l'année civile courante quelle qu'elle soit.
+INSERT INTO public.transactions (
+    id, vessel_id, vessel_name, vessel_imo, transaction_type,
+    emissions_tco2, tax_amount_usd, status, collections_status,
+    document_type, shipowner_id, debtor_profile_id,
+    invoice_pdf_url, port_call, created_at, paid_at
+) VALUES
+-- PROFORMA impayée → unpaidProformaUsd
+('20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000001', 'MSC BERBERA', '9348576', 'ENTRY_TAX',
+ 215.40, 4250.00, 'PENDING', 'CURRENT',
+ 'PROFORMA', '30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003',
+ NULL, 'BERBERA', NOW() - INTERVAL '6 days', NULL),
+-- FINALE payée cette année → paidYtdUsd
+('20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000001', 'MSC BERBERA', '9348576', 'ENTRY_TAX',
+ 180.00, 3600.00, 'PAID', 'PAID',
+ 'FINAL', '30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003',
+ '/invoices/op-final.pdf', 'BERBERA', NOW() - INTERVAL '40 days', NOW() - INTERVAL '38 days')
 ON CONFLICT (id) DO NOTHING;
