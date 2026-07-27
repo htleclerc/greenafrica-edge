@@ -456,6 +456,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
             badge,
             pdfBuffer,
             verifyUrl,
+            jurisdictionName,
         });
         if (!emailResult.success) {
             console.error('[Invoice issuance] Email failed:', emailResult.error);

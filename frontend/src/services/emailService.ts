@@ -52,6 +52,7 @@ export interface EmailResult {
 
 async function sendEmail(params: {
     to: string | string[];
+    cc?: string[];
     subject: string;
     html: string;
     text?: string;
@@ -62,6 +63,9 @@ async function sendEmail(params: {
         const result = await resend.emails.send({
             from: fromAddress(),
             to: Array.isArray(params.to) ? params.to : [params.to],
+            // Resend rejette un tableau vide : on omet le champ plutôt que de
+            // l'envoyer vide.
+            ...(params.cc?.length ? { cc: params.cc } : {}),
             subject: params.subject,
             html: params.html,
             text: params.text,
@@ -89,8 +93,12 @@ async function sendEmail(params: {
 
 // ── Shared layout ──────────────────────────────────────────────────────────
 
-function emailLayout(content: string, options?: { previewText?: string }): string {
+function emailLayout(content: string, options?: { previewText?: string; sovereignLine?: string }): string {
     const preview = options?.previewText ?? '';
+    // Pied de page souverain. Par défaut le Somaliland (émetteur historique) ;
+    // les documents fiscaux passent l'autorité de leur propre juridiction pour
+    // qu'une facture djiboutienne ne soit pas signée par le Somaliland.
+    const sovereignLine = options?.sovereignLine ?? 'Republic of Somaliland · Maritime Carbon Tax Authority';
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,7 +149,7 @@ function emailLayout(content: string, options?: { previewText?: string }): strin
         </div>
         <div class="body">${content}</div>
         <div class="footer">
-            <p style="margin:0">Republic of Somaliland · Maritime Carbon Tax Authority</p>
+            <p style="margin:0">${escapeHtml(sovereignLine)}</p>
             <p style="margin:4px 0 0">This is an automated message. <a href="${appUrl()}">Visit the portal</a> · AES-256 Encrypted</p>
         </div>
     </div>
@@ -163,6 +171,8 @@ function escapeHtml(s: string): string {
 
 export interface InvoiceEmailParams {
     to: string;
+    /** Copies résolues par resolveInvoiceRecipients. */
+    cc?: string[];
     recipientName: string;
     vesselName: string;
     invoiceRef: string;
@@ -172,6 +182,8 @@ export interface InvoiceEmailParams {
     badge: 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT';
     pdfBuffer: Uint8Array;
     verifyUrl: string;
+    /** Nom souverain de l'État émetteur, résolu depuis la juridiction de la transaction. */
+    jurisdictionName: string;
 }
 
 export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResult> {
@@ -191,7 +203,7 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
     const content = `
         <h1>${docName} ${escapeHtml(p.invoiceRef)}</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the Republic of Somaliland.</p>
+        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the ${escapeHtml(p.jurisdictionName)}.</p>
 
         <div style="display:inline-block;padding:6px 14px;background:${badge.bg};color:${badge.fg};font-weight:800;letter-spacing:1.5px;border-radius:4px;font-size:12px;margin:8px 0">${p.badge}</div>
 
@@ -214,8 +226,12 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
 
     return sendEmail({
         to: p.to,
+        cc: p.cc,
         subject,
-        html: emailLayout(content, { previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}` }),
+        html: emailLayout(content, {
+            previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
         text: `${docName} ${p.invoiceRef}\n\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nStatus: ${p.badge}\nDue: ${p.dueDate}\n\nVerify at: ${p.verifyUrl}`,
         attachments: [
             {

@@ -349,6 +349,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
       badge: 'TO PAY',
       pdfBuffer: pdfBytes,
       verifyUrl,
+      jurisdictionName,
     });
     if (!emailResult.success) {
       return { ok: false, reason: `email: ${emailResult.error ?? 'unknown'}` };
