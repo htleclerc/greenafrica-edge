@@ -5,24 +5,20 @@
 
 import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
-import { signInvoiceRef } from '@/services/invoiceService';
+import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/InvoicesTable';
 
 interface RawTxn {
     id: string;
     invoice_ref: string | null;
     content_hash: string | null;
+    invoice_pdf_url: string | null;
     document_type: 'PROFORMA' | 'FINAL' | 'COMPLEMENT' | 'REFUND' | null;
     vessel_name: string;
     tax_amount_usd: number;
     status: string;
     paid_at: string | null;
     created_at: string;
-}
-
-function buildDownloadUrl(ref: string, contentHash: string): string {
-    const sig = signInvoiceRef(ref, contentHash);
-    return `/api/invoices/${encodeURIComponent(ref)}/download?h=${contentHash}&s=${sig}`;
 }
 
 interface Props {
@@ -37,7 +33,7 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
         principal.supabase
             .from('transactions')
             .select(
-                'id, invoice_ref, content_hash, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at',
+                'id, invoice_ref, content_hash, invoice_pdf_url, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at',
             )
             .order('created_at', { ascending: false })
             .limit(200),
@@ -94,10 +90,7 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
 
     const rows: InvoiceRow[] = txns.map((txn) => ({
         ...txn,
-        download_url:
-            txn.invoice_ref && txn.content_hash
-                ? buildDownloadUrl(txn.invoice_ref, txn.content_hash)
-                : null,
+        download_url: buildInvoiceDownloadUrl(txn),
         receipt_ref: receiptByTxn.get(txn.id) ?? null,
         pending_wire_payment_id: pendingWireByTxn.get(txn.id) ?? null,
     }));

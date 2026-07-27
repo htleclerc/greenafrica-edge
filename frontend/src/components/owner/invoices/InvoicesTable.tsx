@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard, Scale, Receipt, Paperclip } from 'lucide-react';
+import { Download, CreditCard, Scale, Receipt, Paperclip, FileClock } from 'lucide-react';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
@@ -67,6 +67,11 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
     const isDisputable = (r: InvoiceRow) =>
         (r.document_type === 'PROFORMA' || r.document_type === 'FINAL' || r.document_type === 'COMPLEMENT') &&
         r.status !== 'CANCELLED';
+    // A charge the authority is expected to have issued a PDF for. Refunds are
+    // credit notes settled through the wallet — they carry no such document, so
+    // a missing PDF on a refund row is normal, not a gap.
+    const expectsDocument = (r: InvoiceRow) =>
+        r.document_type === 'PROFORMA' || r.document_type === 'FINAL' || r.document_type === 'COMPLEMENT';
 
     const columns: OsColumn<InvoiceRow>[] = [
         {
@@ -124,7 +129,7 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
             className: 'text-right',
             render: (r) => (
                 <div className="flex justify-end items-center gap-3">
-                    {r.download_url && (
+                    {r.download_url ? (
                         <a
                             href={r.download_url}
                             target="_blank"
@@ -135,6 +140,16 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                             <Download className="w-3.5 h-3.5" />
                             PDF
                         </a>
+                    ) : (
+                        expectsDocument(r) && (
+                            <span
+                                className="inline-flex items-center gap-1.5 text-xs text-[var(--os-text-muted)]"
+                                title="The port authority has not issued the PDF for this charge yet. You can still pay or dispute it."
+                            >
+                                <FileClock className="w-3.5 h-3.5" />
+                                PDF not issued
+                            </span>
+                        )
                     )}
                     {r.receipt_ref && (
                         <a
