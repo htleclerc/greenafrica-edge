@@ -22,7 +22,7 @@ import {
     type InvoiceBadge,
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
-import { fetchJurisdictionName } from '../lib/jurisdictionName';
+import { fetchJurisdictionMeta, fetchJurisdictionBillingCc } from '../lib/jurisdictionName';
 
 /**
  * Returns the hash/signature fields to include in the transactions UPDATE.
@@ -186,6 +186,26 @@ export function resolveInvoiceRecipients(
     return { to, cc };
 }
 
+/**
+ * Un document fiscal dont le détail contredit le total n'a pas à exister.
+ * On tolère un cent d'écart pour absorber les arrondis de représentation en
+ * virgule flottante, pas davantage.
+ */
+export function assertLineItemsMatchTotal(
+    lineItems: InvoiceData['lineItems'],
+    totalUsd: number,
+): void {
+    if (!lineItems.length) {
+        throw new Error('invoice issuance: lineItems must contain at least one line item');
+    }
+    const sum = lineItems.reduce((acc, item) => acc + item.amount, 0);
+    if (Math.abs(sum - totalUsd) > 0.01) {
+        throw new Error(
+            `invoice issuance: lineItems sum ${sum} does not match tax_amount_usd ${totalUsd}`,
+        );
+    }
+}
+
 export interface IssueInvoiceActor {
     /** auth.users id used for the audit trail. */
     id: string;
@@ -203,6 +223,16 @@ export interface IssueInvoiceInput {
     origin: string;
     /** Also email the document to the vessel owner and stamp proforma_sent_at. */
     sendEmail?: boolean;
+    /**
+     * Lignes de détail personnalisées. Permet au pipeline automatique de
+     * conserver son libellé métier. Validées : leur somme doit égaler
+     * tax_amount_usd. Par défaut, ligne unique « emissions × taux ».
+     */
+    lineItems?: InvoiceData['lineItems'];
+    /** N'écrit pas dans le bucket. invoice_pdf_url reste NULL. Tests uniquement. */
+    skipStorage?: boolean;
+    /** N'envoie pas d'e-mail. Tests et rattrapage. */
+    skipEmail?: boolean;
 }
 
 export interface IssueInvoiceEmailResult {
@@ -224,6 +254,8 @@ export type IssueInvoiceResult =
           storagePath: string;
           pdfBuffer: Uint8Array;
           email: IssueInvoiceEmailResult;
+          /** Destinataires réellement retenus, null si aucun n'était joignable. */
+          recipients: { to: string; cc: string[] } | null;
       }
     | { ok: false; status: number; error: string };
 
@@ -250,7 +282,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     // ── 1. Reload the authoritative transaction ─────────────────────────
     const { data: tx, error: txErr } = await admin
         .from('transactions')
-        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id')
+        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id, shipowner_id, agent_profile_id')
         .eq('id', transactionId)
         .single();
     if (txErr || !tx) {
@@ -292,11 +324,17 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     // Keep an existing ref if already minted (idempotent re-gen).
     const invoiceRef = tx.invoice_ref || mintInvoiceRef(tx.id, mode, createdAt);
 
-    // ── 3. Resolve the transaction's sovereign name ─────────────────────
+    // ── 3. Resolve the transaction's jurisdiction (code + sovereign name) ─
     // Use the jurisdiction_id stamped on the row (W2+). Falls back to
-    // 'Republic of Somaliland' for any pre-W2 row that lacks it.
-    const txRecord = tx as typeof tx & { jurisdiction_id?: string | null };
-    const jurisdictionName = await fetchJurisdictionName(admin, txRecord.jurisdiction_id);
+    // Somaliland for any pre-W2 row that lacks it. The code drives the storage
+    // prefix, the name is printed on the document.
+    const txRecord = tx as typeof tx & {
+        jurisdiction_id?: string | null;
+        shipowner_id?: string | null;
+        agent_profile_id?: string | null;
+    };
+    const jurisdiction = await fetchJurisdictionMeta(admin, txRecord.jurisdiction_id);
+    const jurisdictionName = jurisdiction.name;
 
     const totalUsd = Number(tx.tax_amount_usd);
     const emissionsTco2 = Number(tx.emissions_tco2);
@@ -338,6 +376,20 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     });
 
     // ── 5. Render the PDF ───────────────────────────────────────────────
+    // Le pipeline automatique fournit ses propres lignes (libellé métier) ;
+    // sinon, ligne unique « emissions × taux ». Dans les deux cas la somme doit
+    // égaler le total, faute de quoi le document contredirait la créance.
+    const lineItems = input.lineItems ?? buildLineItems(emissionsTco2, effectiveRate, totalUsd);
+    try {
+        assertLineItemsMatchTotal(lineItems, totalUsd);
+    } catch (err) {
+        return {
+            ok: false,
+            status: 400,
+            error: err instanceof Error ? err.message : 'invalid lineItems',
+        };
+    }
+
     const invoiceData: InvoiceData = {
         invoiceRef,
         vesselName: tx.vessel_name,
@@ -357,9 +409,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         mode,
         badge,
         verifyUrl,
-        // Fiscal documents must not invent sub-line items.  The authoritative
-        // total is a single carbon-tax charge computed as emissions × rate.
-        lineItems: buildLineItems(emissionsTco2, effectiveRate, totalUsd),
+        lineItems,
     };
 
     let pdfBuffer: Uint8Array;
@@ -376,20 +426,22 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
 
     // ── 6. Upload to the private documents bucket ───────────────────────
     const storagePath = buildStoragePath({
-        jurisdictionCode: 'SO',   // câblé sur la juridiction réelle en Task 5
+        jurisdictionCode: jurisdiction.code,
         mode,
         createdAt,
         invoiceRef,
     });
-    const { error: uploadError } = await admin.storage
-        .from('documents')
-        .upload(storagePath, pdfBuffer, {
-            contentType: 'application/pdf',
-            upsert: true,
-        });
-    if (uploadError) {
-        console.error('[Invoice issuance] Upload failed:', uploadError.message);
-        return { ok: false, status: 502, error: `Upload failed: ${uploadError.message}` };
+    if (!input.skipStorage) {
+        const { error: uploadError } = await admin.storage
+            .from('documents')
+            .upload(storagePath, pdfBuffer, {
+                contentType: 'application/pdf',
+                upsert: true,
+            });
+        if (uploadError) {
+            console.error('[Invoice issuance] Upload failed:', uploadError.message);
+            return { ok: false, status: 502, error: `Upload failed: ${uploadError.message}` };
+        }
     }
 
     // ── 7. Persist ref, hash, signature + pdf storage path ──────────────
@@ -403,11 +455,22 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         .update({
             invoice_ref: invoiceRef,
             ...hashFields,
-            invoice_pdf_url: storagePath, // a storage path, not a public URL
+            // Only record the storage path when the PDF was actually uploaded,
+            // so a skipStorage run never claims a document exists.
+            ...(input.skipStorage ? {} : { invoice_pdf_url: storagePath }),
         })
         .eq('id', transactionId);
     if (txUpdateErr) {
+        // Bloquant par conception : un PDF présent dans le bucket dont la
+        // référence n'est pas en base est invisible depuis l'application — le
+        // portail et /verify résolvent tous deux par invoice_ref. Mieux vaut
+        // échouer et rejouer que produire un document fantôme.
         console.error('[Invoice issuance] Transaction update failed:', txUpdateErr.message);
+        return {
+            ok: false,
+            status: 500,
+            error: `Persisting invoice reference failed: ${txUpdateErr.message}`,
+        };
     }
 
     if (tx.vessel_id) {
@@ -442,11 +505,38 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         console.error('[Invoice issuance] Audit log failed:', auditError.message);
     }
 
-    // ── 9. Email delivery (only when explicitly requested) ──────────────
-    let emailResult: IssueInvoiceEmailResult = { success: false, skipped: !sendEmail };
-    if (sendEmail && vesselOwnerEmail) {
+    // ── 9. Resolve recipients (cascade + copies) ────────────────────────
+    const { data: shipowner } = txRecord.shipowner_id
+        ? await admin
+            .from('shipowners')
+            .select('official_email')
+            .eq('id', txRecord.shipowner_id)
+            .maybeSingle()
+        : { data: null };
+
+    const { data: agentProfile } = txRecord.agent_profile_id
+        ? await admin
+            .from('profiles')
+            .select('email')
+            .eq('id', txRecord.agent_profile_id)
+            .maybeSingle()
+        : { data: null };
+
+    const recipients = resolveInvoiceRecipients({
+        shipownerBillingEmail: (shipowner?.official_email as string | null) ?? null,
+        agentEmail: (agentProfile?.email as string | null) ?? null,
+        vesselOwnerEmail,
+        jurisdictionCcEmails: await fetchJurisdictionBillingCc(admin, txRecord.jurisdiction_id),
+        platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
+    });
+
+    // ── 10. Email delivery (only when explicitly requested) ─────────────
+    const emailRequested = sendEmail && !input.skipEmail;
+    let emailResult: IssueInvoiceEmailResult = { success: false, skipped: !emailRequested };
+    if (emailRequested && recipients) {
         emailResult = await sendInvoiceEmail({
-            to: vesselOwnerEmail,
+            to: recipients.to,
+            cc: recipients.cc,
             recipientName: ownerName,
             vesselName: tx.vessel_name,
             invoiceRef,
@@ -461,11 +551,15 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         if (!emailResult.success) {
             console.error('[Invoice issuance] Email failed:', emailResult.error);
         }
+    } else if (emailRequested) {
+        // La créance existe indépendamment de la joignabilité du débiteur : on
+        // n'échoue pas, on trace l'absence de destinataire.
+        emailResult = { success: false, error: 'no reachable recipient' };
     }
 
-    // ── 10. On "Print & Send": stamp proforma_sent_at (first time only)
+    // ── 11. On "Print & Send": stamp proforma_sent_at (first time only)
     //        + always insert an INVOICE_SENT audit entry ────────────────
-    if (sendEmail) {
+    if (emailRequested) {
         if (mode === 'proforma' && !tx.proforma_sent_at) {
             const { error: sentStampError } = await admin
                 .from('transactions')
@@ -489,7 +583,8 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
                 invoiceRef,
                 mode,
                 badge,
-                recipientEmail: vesselOwnerEmail,
+                recipientEmail: recipients?.to ?? null,
+                recipientCc: recipients?.cc ?? [],
                 recipientName: ownerName,
                 delivery: {
                     provider: 'resend',
@@ -514,5 +609,6 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         storagePath,
         pdfBuffer,
         email: emailResult,
+        recipients,
     };
 }
