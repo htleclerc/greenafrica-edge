@@ -126,6 +126,66 @@ export function buildStoragePath(input: {
     return `${input.jurisdictionCode}/${folder}/${year}/${month}/${input.invoiceRef}.pdf`;
 }
 
+export interface InvoiceRecipientsInput {
+    /** Contact de facturation déclaré par l'armateur (shipowners.official_email). */
+    shipownerBillingEmail: string | null;
+    /** Agent maritime rattaché à la transaction. */
+    agentEmail: string | null;
+    /** Propriétaire du navire (vessels.owner_id → profiles.email). */
+    vesselOwnerEmail: string | null;
+    /** Copies propres à l'État émetteur (jurisdictions.billing_cc_emails). */
+    jurisdictionCcEmails: string[];
+    /** Copie plateforme unique (PLATFORM_BILLING_CC). */
+    platformCcEmail: string | null;
+}
+
+const cleanEmail = (value: string | null | undefined): string | null => {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : null;
+};
+
+/**
+ * Détermine qui reçoit un document fiscal.
+ *
+ * Destinataire principal en cascade : contact de facturation de l'armateur →
+ * agent maritime → propriétaire du navire. L'agent passe en copie s'il n'est
+ * pas déjà le destinataire principal, puis viennent les copies de l'État
+ * émetteur et celle de la plateforme.
+ *
+ * Renvoie `null` quand aucun destinataire principal n'est joignable : une
+ * créance existe indépendamment de la joignabilité de son débiteur, et il
+ * serait absurde d'envoyer un document uniquement à ses propres archives.
+ *
+ * Le dédoublonnage est insensible à la casse mais préserve la casse d'origine
+ * de la première occurrence : certains serveurs traitent la partie locale
+ * comme sensible à la casse.
+ */
+export function resolveInvoiceRecipients(
+    input: InvoiceRecipientsInput,
+): { to: string; cc: string[] } | null {
+    const to = cleanEmail(input.shipownerBillingEmail)
+        ?? cleanEmail(input.agentEmail)
+        ?? cleanEmail(input.vesselOwnerEmail);
+    if (!to) return null;
+
+    const seen = new Set<string>([to.toLowerCase()]);
+    const cc: string[] = [];
+    const candidates = [
+        cleanEmail(input.agentEmail),
+        ...input.jurisdictionCcEmails.map(cleanEmail),
+        cleanEmail(input.platformCcEmail),
+    ];
+    for (const candidate of candidates) {
+        if (!candidate) continue;
+        const key = candidate.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cc.push(candidate);
+    }
+
+    return { to, cc };
+}
+
 export interface IssueInvoiceActor {
     /** auth.users id used for the audit trail. */
     id: string;
