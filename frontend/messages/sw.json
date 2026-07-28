@@ -3205,7 +3205,12 @@
       "unattributed": "{count} miamala isiyo na sifa",
       "mismatched": "{count} miamala isiyolingana"
     },
-    "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho."
+    "modesDisclosure": "Inadhibiti ugunduzi mpya na utozaji wa bili — safari zinazoendelea zinamalizika; API ya hesabu inabaki wazi kwa upatanisho.",
+    "recovery_cc_title": "Nakala za urejeshaji madeni",
+    "billing_cc_label": "Nakala za bili (tenganisha kwa koma)",
+    "bailiff_cc_label": "Nakala za afisa mtekelezaji (tenganisha kwa koma)",
+    "cc_save": "Hifadhi nakala",
+    "cc_saved": "Imehifadhiwa"
   },
   "Vision": {
     "pageTitle": "Vision Board",
@@ -3800,7 +3805,15 @@
     "dialog_subtitle": "Hii inarekodiwa dhidi ya kikumbusho cha hivi karibuni na inaongoza mfumo wa vikumbusho.",
     "response_label": "Jibu la mdaiwa",
     "cancel": "Ghairi",
-    "save": "Hifadhi"
+    "save": "Hifadhi",
+    "escalate_bailiff": "Peleka kwa afisa mtekelezaji",
+    "escalate_judicial": "Peleka kwa mahakama",
+    "escalate_dialog_title": "Thibitisha kupeleka",
+    "escalate_dialog_subtitle": "Toa taarifa ya {tier} kwa {ref}? Hii inatuma arifa ya urejeshaji wa kisheria ikiwa na ankara imeambatanishwa na inarekodiwa.",
+    "escalate_confirm": "Peleka",
+    "escalate_ramp_bailiff": "Kikumbusho cha J45 (kabla ya afisa mtekelezaji) lazima kitumwe kwanza.",
+    "escalate_ramp_judicial": "Taarifa ya afisa mtekelezaji lazima itolewe kwanza.",
+    "escalated_badge": "Imepelekwa"
   },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",

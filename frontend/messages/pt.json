@@ -3682,7 +3682,12 @@
       "unattributed": "{count} tx não atribuídas",
       "mismatched": "{count} tx incorretas"
     },
-    "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação."
+    "modesDisclosure": "Condiciona novas deteções e faturação — viagens em curso terminam; a API de cálculo permanece aberta para reconciliação.",
+    "recovery_cc_title": "CC de cobrança",
+    "billing_cc_label": "CC de faturação (separados por vírgulas)",
+    "bailiff_cc_label": "CC do agente de execução (separados por vírgulas)",
+    "cc_save": "Guardar CC",
+    "cc_saved": "Guardado"
   },
   "Vision": {
     "pageTitle": "Vision Board",
@@ -3834,7 +3839,15 @@
     "dialog_subtitle": "Isto é registado em relação ao lembrete mais recente e orienta o motor de lembretes.",
     "response_label": "Resposta do devedor",
     "cancel": "Cancelar",
-    "save": "Guardar"
+    "save": "Guardar",
+    "escalate_bailiff": "Escalar para agente de execução",
+    "escalate_judicial": "Escalar para judicial",
+    "escalate_dialog_title": "Confirmar escalonamento",
+    "escalate_dialog_subtitle": "Emitir uma notificação {tier} para {ref}? Isto envia uma notificação de cobrança legal com a fatura em anexo e fica registado.",
+    "escalate_confirm": "Escalar",
+    "escalate_ramp_bailiff": "Um lembrete J45 (pré-execução) deve ser enviado primeiro.",
+    "escalate_ramp_judicial": "Uma notificação de agente de execução deve ser emitida primeiro.",
+    "escalated_badge": "Escalado"
   },
   "AdminArmateurs": {
     "title": "Armadores",

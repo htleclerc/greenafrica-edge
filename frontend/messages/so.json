@@ -3713,7 +3713,12 @@
       "unattributed": "{count} macaamiil aan la qoondayn",
       "mismatched": "{count} macaamiil aan is-waafaqin"
     },
-    "modesDisclosure": "Xidida ogaanshaha cusub iyo xisaabinta — safarkii socda wuu dhammaanayaa; API xisaabinta waxay furantahay dib-u-heshiisinta."
+    "modesDisclosure": "Xidida ogaanshaha cusub iyo xisaabinta — safarkii socda wuu dhammaanayaa; API xisaabinta waxay furantahay dib-u-heshiisinta.",
+    "recovery_cc_title": "CC ee soo-ururinta",
+    "billing_cc_label": "CC xisaabinta (kala saar comma)",
+    "bailiff_cc_label": "CC xeer-ilaaliyaha (kala saar comma)",
+    "cc_save": "Kaydi CC",
+    "cc_saved": "La kaydiyay"
   },
   "Vision": {
     "pageTitle": "Guriga Aragtida",
@@ -3797,7 +3802,15 @@
     "dialog_subtitle": "Tan waxaa lagu diiwaangeliyaa xasuusinta ugu dambeysay waxayna xukumtaa matoorka xasuusinta.",
     "response_label": "Jawaabta deyn qaadaha",
     "cancel": "Jooji",
-    "save": "Kaydi"
+    "save": "Kaydi",
+    "escalate_bailiff": "U gudbi xeer-ilaaliyaha",
+    "escalate_judicial": "U gudbi maxkamadda",
+    "escalate_dialog_title": "Xaqiiji gudbinta",
+    "escalate_dialog_subtitle": "Ma diri ogeysiiska {tier} ee {ref}? Tani waxay dirtaa ogeysiis soo-ururin sharci ah oo lifaaqan biilka waana la diiwaangeliyaa.",
+    "escalate_confirm": "Gudbi",
+    "escalate_ramp_bailiff": "Xasuusin J45 (kahor xeer-ilaaliyaha) ayaa marka hore la diri karaa.",
+    "escalate_ramp_judicial": "Ogeysiis xeer-ilaaliye ayaa marka hore bixi kara.",
+    "escalated_badge": "La gudbiyay"
   },
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",

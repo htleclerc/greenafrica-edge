@@ -3713,7 +3713,12 @@
       "unattributed": "{count} unattributed tx",
       "mismatched": "{count} mismatched tx"
     },
-    "modesDisclosure": "Gates new detections and billing — in-flight voyages complete; the calc API stays open for reconciliation."
+    "modesDisclosure": "Gates new detections and billing — in-flight voyages complete; the calc API stays open for reconciliation.",
+    "recovery_cc_title": "Recovery CC",
+    "billing_cc_label": "Billing CC (comma-separated)",
+    "bailiff_cc_label": "Bailiff CC (comma-separated)",
+    "cc_save": "Save CC",
+    "cc_saved": "Saved"
   },
   "Vision": {
     "pageTitle": "Vision Board",
@@ -3797,7 +3802,15 @@
     "dialog_subtitle": "This is recorded against the most recent reminder and drives the reminder engine.",
     "response_label": "Debtor response",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "escalate_bailiff": "Escalate to bailiff",
+    "escalate_judicial": "Escalate to judicial",
+    "escalate_dialog_title": "Confirm escalation",
+    "escalate_dialog_subtitle": "Issue a {tier} notice for {ref}? This sends a legal-recovery notification with the invoice attached and is recorded.",
+    "escalate_confirm": "Escalate",
+    "escalate_ramp_bailiff": "A J45 (pre-bailiff) reminder must be sent first.",
+    "escalate_ramp_judicial": "A bailiff notice must be issued first.",
+    "escalated_badge": "Escalated"
   },
   "AdminArmateurs": {
     "title": "Shipowners",

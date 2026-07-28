@@ -3713,7 +3713,12 @@
       "unattributed": "{count} tx non attribuées",
       "mismatched": "{count} tx incorrectes"
     },
-    "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation."
+    "modesDisclosure": "Conditionne les nouvelles détections et la facturation — les voyages en cours se terminent ; l'API de calcul reste ouverte pour la réconciliation.",
+    "recovery_cc_title": "Copie recouvrement",
+    "billing_cc_label": "Copie facturation (séparés par des virgules)",
+    "bailiff_cc_label": "Copie huissier (séparés par des virgules)",
+    "cc_save": "Enregistrer les copies",
+    "cc_saved": "Enregistré"
   },
   "Vision": {
     "pageTitle": "Vision Board",
@@ -3797,7 +3802,15 @@
     "dialog_subtitle": "Cette réponse est associée à la relance la plus récente et pilote le moteur de relance.",
     "response_label": "Réponse du débiteur",
     "cancel": "Annuler",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "escalate_bailiff": "Escalader vers l'huissier",
+    "escalate_judicial": "Escalader vers le judiciaire",
+    "escalate_dialog_title": "Confirmer l'escalade",
+    "escalate_dialog_subtitle": "Émettre une mise en demeure {tier} pour {ref} ? Ceci envoie une notification de recouvrement légal avec la facture jointe et est enregistré.",
+    "escalate_confirm": "Escalader",
+    "escalate_ramp_bailiff": "Une relance J45 (pré-huissier) doit d'abord être envoyée.",
+    "escalate_ramp_judicial": "Une mise en demeure d'huissier doit d'abord être émise.",
+    "escalated_badge": "Escaladé"
   },
   "AdminArmateurs": {
     "title": "Armateurs",
