@@ -86,6 +86,22 @@ export async function fetchJurisdictionBillingCc(
     return (data.cc_emails as string[] | null) ?? [];
 }
 
+/** Copies cabinet huissier (jurisdiction_billing_cc.bailiff_cc_emails), []-safe.
+ *  À n'appeler qu'avec un client service-role — même RLS staff-only que le CC standard. */
+export async function fetchJurisdictionBailiffCc(
+    client: SupabaseClient,
+    jurisdictionId: string | null | undefined,
+): Promise<string[]> {
+    if (!jurisdictionId) return [];
+    const { data, error } = await client
+        .from('jurisdiction_billing_cc')
+        .select('bailiff_cc_emails')
+        .eq('jurisdiction_id', jurisdictionId)
+        .maybeSingle();
+    if (error || !data) return [];
+    return (data.bailiff_cc_emails as string[] | null) ?? [];
+}
+
 /** Exposé pour les tests uniquement — vide le cache en mémoire. */
 export function _clearCacheForTest(): void {
     cache.clear();

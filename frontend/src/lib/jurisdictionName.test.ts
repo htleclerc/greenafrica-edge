@@ -4,6 +4,7 @@ import {
     fetchJurisdictionMeta,
     fetchJurisdictionName,
     fetchJurisdictionBillingCc,
+    fetchJurisdictionBailiffCc,
     _clearCacheForTest,
 } from './jurisdictionName';
 
@@ -133,5 +134,21 @@ describe('fetchJurisdictionBillingCc', () => {
             jurisdiction_billing_cc: { data: null, error: { message: 'boom' } },
         });
         await expect(fetchJurisdictionBillingCc(client, 'jur-dj')).resolves.toEqual([]);
+    });
+});
+
+describe('fetchJurisdictionBailiffCc', () => {
+    it('renvoie les copies huissier de la juridiction', async () => {
+        const client = {
+            from: () => ({ select: () => ({ eq: () => ({
+                maybeSingle: async () => ({ data: { bailiff_cc_emails: ['huissier@eidle.so'] }, error: null }),
+            }) }) }),
+        } as unknown as SupabaseClient;
+        await expect(fetchJurisdictionBailiffCc(client, 'jur-so')).resolves.toEqual(['huissier@eidle.so']);
+    });
+
+    it('renvoie une liste vide sans juridiction', async () => {
+        const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) } as unknown as SupabaseClient;
+        await expect(fetchJurisdictionBailiffCc(client, null)).resolves.toEqual([]);
     });
 });
