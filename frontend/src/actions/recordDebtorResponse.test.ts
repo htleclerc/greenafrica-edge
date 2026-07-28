@@ -35,7 +35,7 @@ beforeEach(() => {
     getUserMock.mockResolvedValue({ data: { user: authUser } });
     // profiles.role (server client) → FINANCE_ADMIN par défaut
     serverFromMock.mockImplementation((t: string) => {
-        if (t === 'profiles') return { select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'FINANCE_ADMIN' } }) }) }) };
+        if (t === 'profiles') return { select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'FINANCE_ADMIN', full_name: 'Finance Admin', is_active: true } }) }) }) };
         throw new Error(`unexpected server table ${t}`);
     });
     getJurMock.mockResolvedValue('jur-so');
@@ -50,9 +50,15 @@ describe('recordDebtorResponse', () => {
     });
 
     it('refuse un rôle non-staff', async () => {
-        serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SHIPPING_AGENT' } }) }) }) }));
+        serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SHIPPING_AGENT', full_name: 'Agent', is_active: true } }) }) }) }));
         const r = await recordDebtorResponse(okInput);
         expect(r).toMatchObject({ ok: false, reason: expect.stringMatching(/role/i) });
+    });
+
+    it('refuse un staff désactivé', async () => {
+        serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'FINANCE_ADMIN', full_name: 'Finance Admin', is_active: false } }) }) }) }));
+        const r = await recordDebtorResponse(okInput);
+        expect(r).toMatchObject({ ok: false, reason: expect.stringMatching(/inactive/i) });
     });
 
     it('refuse un staff hors juridiction', async () => {
@@ -89,12 +95,13 @@ describe('recordDebtorResponse', () => {
         expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ debtor_response_type: 'DISPUTE' }));
         expect(auditInsertSpy).toHaveBeenCalledWith(expect.objectContaining({
             action: 'TRANSACTION_UPDATED',
+            user_full_name: 'Finance Admin',
             details_json: expect.objectContaining({ event: 'DEBTOR_RESPONSE_RECORDED', newResponse: 'DISPUTE' }),
         }));
     });
 
     it('laisse passer un SUPERADMIN hors de sa juridiction courante', async () => {
-        serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SUPERADMIN' } }) }) }) }));
+        serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SUPERADMIN', full_name: 'Super Admin', is_active: true } }) }) }) }));
         getJurMock.mockResolvedValue('jur-dj');
         const updateSpy = vi.fn((_payload: Record<string, unknown>) => ({ eq: async () => ({ error: null }) }));
         platformTables({
