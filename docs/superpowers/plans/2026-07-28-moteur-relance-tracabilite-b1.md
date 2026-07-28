@@ -959,11 +959,12 @@ Vérifier par lecture que la route passe bien `skipEmail: true` à `notifyOwner`
 
 ## Bascule (décision PO, hors exécution automatique)
 
-À faire au déploiement, **simultanément** pour éviter une journée sans relance :
+Ordre **strict** au déploiement — la coexistence des deux crons est dangereuse **dans les deux sens** (final review #4) : si le cron Vercel démarre avant que la mig 110 ne désactive le pg_cron 065, les deux enfilent un `PROFORMA_REMINDER` pour les pro-formas de 3/7 jours → **double e-mail** ; s'il démarre après, une journée sans relance. La mig et l'activation du cron doivent donc atterrir dans le **même** déploiement.
 
-1. Appliquer la mig 110 (`node scripts/db-migrate.mjs`) — désactive le pg_cron 065.
-2. Le cron Vercel `collection-reminders` s'active via `vercel.json` au déploiement.
-3. Renseigner `jurisdiction_billing_cc.bailiff_cc_emails` (Somaliland → cabinet Eidle Advocats) — sinon J+45 part sans copie huissier (acceptable en attendant B2).
+1. **Backfill du registre AVANT tout** (final review #3) : `npx tsx scripts/backfill-collection-reminders.ts --execute`. Pré-remplit `collection_reminders` avec les paliers déjà écoulés de chaque pro-forma PENDING/OVERDUE (marqués `(backfill)`, sans e-mail), pour que le moteur ne reparte qu'au **prochain** palier réel — sinon la 1ʳᵉ passe enverrait une notice J45 « huissier imminent » à froid sur tout le backlog agé ($2,75 M). Dry-run d'abord.
+2. Appliquer la mig 110 (`node scripts/db-migrate.mjs`) — désactive le pg_cron 065, dans le déploiement qui active le cron Vercel.
+3. Le cron Vercel `collection-reminders` s'active via `vercel.json` au déploiement (08:00 UTC, une heure avant `notification-email-loop`).
+4. Renseigner `jurisdiction_billing_cc.bailiff_cc_emails` (Somaliland → cabinet Eidle Advocats) — sinon J+45 part sans copie huissier (acceptable en attendant B2). Les copies sont désormais **réellement livrées** : depuis le final review, le cron envoie l'e-mail **inline** avec `to`+`cc` et stampe `emailed_at` sur la notif pour que le loop ne double pas.
 
 ## Chantier suivant (B2)
 
