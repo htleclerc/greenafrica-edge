@@ -9,6 +9,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
 import { toggleJurisdictionMode } from '@/actions/toggleJurisdictionMode';
 import { createTariffVersion } from '@/actions/createTariffVersion';
+import { updateJurisdictionCcEmails } from '@/actions/updateJurisdictionCcEmails';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types (exported so the page can cast DB results)
@@ -68,6 +69,12 @@ export interface SettlementRow {
     mismatched_usd: number | string | null;
 }
 
+export interface JurisdictionBillingCcRow {
+    jurisdiction_id: string;
+    cc_emails: string[];
+    bailiff_cc_emails: string[];
+}
+
 interface Props {
     jurisdictions: JurisdictionRow[];
     modeConfigs: JurisdictionModeConfigRow[];
@@ -75,6 +82,7 @@ interface Props {
     splitRules: SplitRuleRow[];
     settlement: SettlementRow[];
     viewerRole: string;
+    ccByJurisdiction?: Record<string, { cc_emails: string[]; bailiff_cc_emails: string[] }>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -583,6 +591,53 @@ function SplitSection({ split }: { split: SplitRuleRow | undefined }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Recovery CC section (billing + bailiff CC lists per jurisdiction)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface RecoveryCcSectionProps {
+    jid: string;
+    initial: { cc_emails: string[]; bailiff_cc_emails: string[] };
+    canEdit: boolean;
+}
+
+function RecoveryCcSection({ jid, initial, canEdit }: RecoveryCcSectionProps) {
+    const t = useTranslations('AdminJurisdictions');
+    const [billing, setBilling] = React.useState(initial.cc_emails.join(', '));
+    const [bailiff, setBailiff] = React.useState(initial.bailiff_cc_emails.join(', '));
+    const [saving, startSave] = React.useTransition();
+    const [msg, setMsg] = React.useState<string | null>(null);
+
+    function parse(s: string): string[] {
+        return s.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean);
+    }
+    function save() {
+        setMsg(null);
+        startSave(async () => {
+            const res = await updateJurisdictionCcEmails({
+                jurisdictionId: jid, billingCcEmails: parse(billing), bailiffCcEmails: parse(bailiff),
+            });
+            setMsg(res.ok ? t('cc_saved') : res.reason);
+        });
+    }
+
+    return (
+        <div className="mt-3 border-t border-[var(--os-border)] pt-3">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">{t('recovery_cc_title')}</h4>
+            <label className="block text-xs text-[var(--os-text-secondary)] mb-1">{t('billing_cc_label')}</label>
+            <OsInput value={billing} disabled={!canEdit} onChange={(e) => setBilling(e.target.value)} placeholder="a@x.gov, b@x.gov" />
+            <label className="block text-xs text-[var(--os-text-secondary)] mt-2 mb-1">{t('bailiff_cc_label')}</label>
+            <OsInput value={bailiff} disabled={!canEdit} onChange={(e) => setBailiff(e.target.value)} placeholder="huissier@cabinet.so" />
+            {canEdit && (
+                <div className="flex items-center gap-2 mt-2">
+                    <OsButton size="sm" variant="secondary" loading={saving} onClick={save}>{t('cc_save')}</OsButton>
+                    {msg && <span className="text-xs text-[var(--os-text-muted)]">{msg}</span>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Settlement section
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -712,13 +767,15 @@ interface JurisdictionCardProps {
     tariffs: TariffRow[];
     splitRule: SplitRuleRow | undefined;
     settlement: SettlementRow[];
+    ccInitial: { cc_emails: string[]; bailiff_cc_emails: string[] };
     canToggleModes: boolean;
     canCreateTariff: boolean;
+    canEditCc: boolean;
     onRefresh: () => void;
 }
 
 function JurisdictionCard({
-    jur, modeConfigs, tariffs, splitRule, settlement, canToggleModes, canCreateTariff, onRefresh,
+    jur, modeConfigs, tariffs, splitRule, settlement, ccInitial, canToggleModes, canCreateTariff, canEditCc, onRefresh,
 }: JurisdictionCardProps) {
     const t = useTranslations('AdminJurisdictions');
     const modes = TRANSPORT_MODES;
@@ -787,6 +844,9 @@ function JurisdictionCard({
 
             {/* Settlement */}
             <SettlementSection jid={jur.id} rows={settlement} />
+
+            {/* Recovery CC (billing + bailiff) */}
+            <RecoveryCcSection jid={jur.id} initial={ccInitial} canEdit={canEditCc} />
         </div>
     );
 }
@@ -795,13 +855,16 @@ function JurisdictionCard({
 // Main panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, settlement, viewerRole }: Props) {
+export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, settlement, viewerRole, ccByJurisdiction }: Props) {
     const t = useTranslations('AdminJurisdictions');
     const router = useRouter();
 
     const isSuperAdmin = viewerRole === 'SUPERADMIN';
     const canCreateTariff = viewerRole === 'SUPERADMIN' || viewerRole === 'FINANCE_ADMIN';
     const canToggleModes = isSuperAdmin;
+    // Matches updateJurisdictionCcEmails' STAFF_ROLES gate (SUPERADMIN, FINANCE_ADMIN, PORT_OFFICER),
+    // i.e. the same set already required to reach this page (ALLOWED_ROLES in page.tsx).
+    const canEditCc = viewerRole === 'SUPERADMIN' || viewerRole === 'FINANCE_ADMIN' || viewerRole === 'PORT_OFFICER';
 
     const onRefresh = () => router.refresh();
 
@@ -830,6 +893,7 @@ export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitR
                         const jurModeConfigs = modeConfigs.filter((m) => m.jurisdiction_id === jur.id);
                         const jurTariffs = tariffs.filter((r) => r.jurisdiction_id === jur.id);
                         const splitRule = splitRules.find((s) => s.jurisdiction_id === jur.id);
+                        const ccInitial = ccByJurisdiction?.[jur.id] ?? { cc_emails: [], bailiff_cc_emails: [] };
                         return (
                             <JurisdictionCard
                                 key={jur.id}
@@ -838,8 +902,10 @@ export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitR
                                 tariffs={jurTariffs}
                                 splitRule={splitRule}
                                 settlement={settlement}
+                                ccInitial={ccInitial}
                                 canToggleModes={canToggleModes}
                                 canCreateTariff={canCreateTariff}
+                                canEditCc={canEditCc}
                                 onRefresh={onRefresh}
                             />
                         );

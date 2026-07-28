@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { AdminJurisdictions } from '@/components/dashboard/admin/AdminJurisdictions';
-import type { JurisdictionRow, JurisdictionModeConfigRow, TariffRow, SplitRuleRow, SettlementRow } from '@/components/dashboard/admin/AdminJurisdictions';
+import type { JurisdictionRow, JurisdictionModeConfigRow, TariffRow, SplitRuleRow, SettlementRow, JurisdictionBillingCcRow } from '@/components/dashboard/admin/AdminJurisdictions';
 
 export const metadata: Metadata = {
     title: 'Jurisdictions | Green Gate',
@@ -31,7 +31,7 @@ export default async function AdminJurisdictionsRoute() {
 
     const platform = createPlatformClient();
 
-    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes, settlementRes] = await Promise.all([
+    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes, settlementRes, billingCcRes] = await Promise.all([
         platform
             .from('jurisdictions')
             .select('id, code, name, default_currency, locales, status')
@@ -54,6 +54,9 @@ export default async function AdminJurisdictionsRoute() {
             .from('v_revenue_split_settlement')
             .select('*')
             .order('month', { ascending: false }),
+        platform
+            .from('jurisdiction_billing_cc')
+            .select('jurisdiction_id, cc_emails, bailiff_cc_emails'),
     ]);
 
     if (jurisdictionsRes.error) {
@@ -71,6 +74,17 @@ export default async function AdminJurisdictionsRoute() {
     if (settlementRes.error) {
         throw new Error(`Failed to load settlement data: ${settlementRes.error.message}`);
     }
+    if (billingCcRes.error) {
+        throw new Error(`Failed to load recovery CC lists: ${billingCcRes.error.message}`);
+    }
+
+    const ccByJurisdiction: Record<string, { cc_emails: string[]; bailiff_cc_emails: string[] }> = {};
+    for (const row of (billingCcRes.data ?? []) as JurisdictionBillingCcRow[]) {
+        ccByJurisdiction[row.jurisdiction_id] = {
+            cc_emails: row.cc_emails ?? [],
+            bailiff_cc_emails: row.bailiff_cc_emails ?? [],
+        };
+    }
 
     return (
         <div className="px-6 py-4">
@@ -81,6 +95,7 @@ export default async function AdminJurisdictionsRoute() {
                 splitRules={(splitRulesRes.data ?? []) as SplitRuleRow[]}
                 settlement={(settlementRes.data ?? []) as SettlementRow[]}
                 viewerRole={profile.role}
+                ccByJurisdiction={ccByJurisdiction}
             />
         </div>
     );
