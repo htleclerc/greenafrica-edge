@@ -703,7 +703,8 @@
     "nav_registrations": "Usajili",
     "nav_wallets": "Pochi",
     "nav_refunds": "Marejesho",
-    "nav_admin_invoices": "Ankara"
+    "nav_admin_invoices": "Ankara",
+    "nav_admin_collections": "Urejeshaji Madeni"
   },
   "AdminStaff": {
     "page_title": "Usimamizi wa Wafanyakazi",
@@ -3770,6 +3771,36 @@
     "pagination": "{start}–{end} kati ya {total}",
     "prev": "Iliyotangulia",
     "next": "Ifuatayo"
+  },
+  "AdminCollections": {
+    "title": "Urejeshaji Madeni",
+    "subtitle": "Historia ya vikumbusho na majibu ya wadaiwa kwa pro-forma zinazodaiwa.",
+    "search": "Tafuta mdaiwa au ankara…",
+    "f_jurisdiction": "Mamlaka zote",
+    "f_status": "Hali zote",
+    "f_tier": "Ngazi zote",
+    "f_response": "Majibu yote",
+    "col_debtor": "Mdaiwa",
+    "col_invoice": "Ankara",
+    "col_outstanding": "Inayodaiwa",
+    "col_status": "Hali",
+    "col_tier": "Ngazi ya mwisho",
+    "col_response": "Jibu",
+    "col_count": "Vikumbusho",
+    "empty": "Hakuna madeni yaliyokumbushwa.",
+    "pagination": "{start}–{end} kati ya {total}",
+    "prev": "Iliyotangulia",
+    "next": "Ifuatayo",
+    "timeline_title": "{debtor} — {ref}",
+    "record_response": "Rekodi jibu",
+    "close": "Funga",
+    "loading": "Inapakia…",
+    "no_reminders": "Hakuna vikumbusho vilivyorekodiwa.",
+    "dialog_title": "Rekodi jibu la mdaiwa",
+    "dialog_subtitle": "Hii inarekodiwa dhidi ya kikumbusho cha hivi karibuni na inaongoza mfumo wa vikumbusho.",
+    "response_label": "Jibu la mdaiwa",
+    "cancel": "Ghairi",
+    "save": "Hifadhi"
   },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",

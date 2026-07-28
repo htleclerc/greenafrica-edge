@@ -703,7 +703,8 @@
     "nav_registrations": "التسجيلات",
     "nav_wallets": "المحافظ",
     "nav_refunds": "المبالغ المستردة",
-    "nav_admin_invoices": "الفواتير"
+    "nav_admin_invoices": "الفواتير",
+    "nav_admin_collections": "التحصيل"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -3770,6 +3771,36 @@
     "pagination": "{start}–{end} من {total}",
     "prev": "السابق",
     "next": "التالي"
+  },
+  "AdminCollections": {
+    "title": "التحصيل",
+    "subtitle": "سجل التذكيرات وردود المدينين على الفواتير الأولية المستحقة.",
+    "search": "البحث عن مدين أو فاتورة…",
+    "f_jurisdiction": "جميع الولايات",
+    "f_status": "جميع الحالات",
+    "f_tier": "جميع المستويات",
+    "f_response": "جميع الردود",
+    "col_debtor": "المدين",
+    "col_invoice": "الفاتورة",
+    "col_outstanding": "المستحق",
+    "col_status": "الحالة",
+    "col_tier": "آخر مستوى",
+    "col_response": "الرد",
+    "col_count": "التذكيرات",
+    "empty": "لا توجد ذمم مدينة تم تذكيرها.",
+    "pagination": "{start}–{end} من {total}",
+    "prev": "السابق",
+    "next": "التالي",
+    "timeline_title": "{debtor} — {ref}",
+    "record_response": "تسجيل الرد",
+    "close": "إغلاق",
+    "loading": "جارٍ التحميل…",
+    "no_reminders": "لا توجد تذكيرات مسجلة.",
+    "dialog_title": "تسجيل رد المدين",
+    "dialog_subtitle": "يُسجَّل هذا مقابل آخر تذكير ويوجّه محرك التذكيرات.",
+    "response_label": "رد المدين",
+    "cancel": "إلغاء",
+    "save": "حفظ"
   },
   "AdminArmateurs": {
     "title": "الملاك الملاحيون",

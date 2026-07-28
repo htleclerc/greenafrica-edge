@@ -1146,7 +1146,8 @@
     "nav_registrations": "Cadastros",
     "nav_wallets": "Carteiras",
     "nav_refunds": "Reembolsos",
-    "nav_admin_invoices": "Faturas"
+    "nav_admin_invoices": "Faturas",
+    "nav_admin_collections": "Cobranças"
   },
   "AdminStaff": {
     "page_title": "Gestão de Pessoal",
@@ -3804,6 +3805,36 @@
     "pagination": "{start}–{end} de {total}",
     "prev": "Anterior",
     "next": "Seguinte"
+  },
+  "AdminCollections": {
+    "title": "Cobranças",
+    "subtitle": "Histórico de lembretes e respostas dos devedores para pró-formas em dívida.",
+    "search": "Pesquisar devedor ou fatura…",
+    "f_jurisdiction": "Todas as jurisdições",
+    "f_status": "Todos os estados",
+    "f_tier": "Todos os níveis",
+    "f_response": "Todas as respostas",
+    "col_debtor": "Devedor",
+    "col_invoice": "Fatura",
+    "col_outstanding": "Em dívida",
+    "col_status": "Estado",
+    "col_tier": "Último nível",
+    "col_response": "Resposta",
+    "col_count": "Lembretes",
+    "empty": "Nenhum recebível com lembrete.",
+    "pagination": "{start}–{end} de {total}",
+    "prev": "Anterior",
+    "next": "Seguinte",
+    "timeline_title": "{debtor} — {ref}",
+    "record_response": "Registar resposta",
+    "close": "Fechar",
+    "loading": "A carregar…",
+    "no_reminders": "Nenhum lembrete registado.",
+    "dialog_title": "Registar resposta do devedor",
+    "dialog_subtitle": "Isto é registado em relação ao lembrete mais recente e orienta o motor de lembretes.",
+    "response_label": "Resposta do devedor",
+    "cancel": "Cancelar",
+    "save": "Guardar"
   },
   "AdminArmateurs": {
     "title": "Armadores",
