@@ -10,6 +10,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import { createClient } from '@/lib/supabase/client';
 import { recordDebtorResponse } from '@/actions/recordDebtorResponse';
+import { escalateCollection } from '@/actions/escalateCollection';
 import {
     tierVariant, responseVariant, type CollectionAdminRow, type CollectionAdminFilters,
 } from '@/services/collectionAdminService';
@@ -21,6 +22,7 @@ const STATUSES = ['PENDING', 'OVERDUE', 'PAID', 'DISPUTED'];
 interface ReminderRow {
     id: string; tier: string; sent_at: string; sent_email: string; cc_emails: string[] | null;
     template_used: string; debtor_response_type: string; debtor_response_at: string | null;
+    escalated_bailiff: boolean;
 }
 
 interface Props {
@@ -104,12 +106,30 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
         let cancelled = false;
         const supabase = createClient();
         supabase.from('collection_reminders')
-            .select('id, tier, sent_at, sent_email, cc_emails, template_used, debtor_response_type, debtor_response_at')
+            .select('id, tier, sent_at, sent_email, cc_emails, template_used, debtor_response_type, debtor_response_at, escalated_bailiff')
             .eq('transaction_id', row.transaction_id)
             .order('sent_at', { ascending: true })
             .then(({ data }) => { if (!cancelled) setReminders((data ?? []) as ReminderRow[]); });
         return () => { cancelled = true; };
     }, [row.transaction_id]);
+
+    const tiers = (reminders ?? []).map((r) => r.tier);
+    const canBailiff = tiers.includes('J45') && !tiers.includes('BAILIFF');
+    const canJudicial = tiers.includes('BAILIFF') && !tiers.includes('JUDICIAL');
+    const [escalateTier, setEscalateTier] = React.useState<'BAILIFF' | 'JUDICIAL' | null>(null);
+    const [escalateError, setEscalateError] = React.useState<string | null>(null);
+    const [escalating, startEscalate] = React.useTransition();
+
+    function confirmEscalate() {
+        if (!escalateTier) return;
+        setEscalateError(null);
+        startEscalate(async () => {
+            const res = await escalateCollection({ transactionId: row.transaction_id, tier: escalateTier });
+            if (!res.ok) { setEscalateError(res.reason); return; }
+            setEscalateTier(null);
+            onSaved();
+        });
+    }
 
     function submit() {
         setError(null);
@@ -129,6 +149,16 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                 </h2>
                 <div className="flex gap-2">
                     <OsButton size="sm" variant="secondary" onClick={() => setDialogOpen(true)}>{t('record_response')}</OsButton>
+                    <OsButton size="sm" variant="danger" disabled={!canBailiff}
+                        title={canBailiff ? undefined : t('escalate_ramp_bailiff')}
+                        onClick={() => { setEscalateError(null); setEscalateTier('BAILIFF'); }}>
+                        {t('escalate_bailiff')}
+                    </OsButton>
+                    <OsButton size="sm" variant="danger" disabled={!canJudicial}
+                        title={canJudicial ? undefined : t('escalate_ramp_judicial')}
+                        onClick={() => { setEscalateError(null); setEscalateTier('JUDICIAL'); }}>
+                        {t('escalate_judicial')}
+                    </OsButton>
                     <OsButton size="sm" variant="ghost" onClick={onClose}>{t('close')}</OsButton>
                 </div>
             </div>
@@ -144,6 +174,9 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                             <OsBadge variant={tierVariant(r.tier)} label={r.tier} />
                             <span className="text-[var(--os-text-muted)]">{new Date(r.sent_at).toLocaleDateString()}</span>
                             <span className="text-[var(--os-text-secondary)] truncate">{r.sent_email}{r.cc_emails?.length ? ` +${r.cc_emails.length} cc` : ''}</span>
+                            {(r.escalated_bailiff || r.tier === 'BAILIFF' || r.tier === 'JUDICIAL') && (
+                                <OsBadge variant="critical" label={t('escalated_badge')} />
+                            )}
                             <span className="ml-auto"><OsBadge variant={responseVariant(r.debtor_response_type)} label={r.debtor_response_type} /></span>
                         </li>
                     ))}
@@ -163,6 +196,24 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                         <div className="flex justify-end gap-2 mt-4">
                             <OsButton size="sm" variant="ghost" onClick={() => setDialogOpen(false)}>{t('cancel')}</OsButton>
                             <OsButton size="sm" variant="primary" loading={pending} onClick={submit}>{t('save')}</OsButton>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={escalateTier !== null} onOpenChange={(o) => !o && setEscalateTier(null)}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0" style={{ background: 'rgba(0,0,0,0.6)' }} />
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] max-w-[92vw] rounded-2xl p-5"
+                        style={{ background: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
+                        <Dialog.Title className="text-sm font-bold text-[var(--os-text-primary)]">{t('escalate_dialog_title')}</Dialog.Title>
+                        <Dialog.Description className="text-xs text-[var(--os-text-muted)] mb-3">
+                            {t('escalate_dialog_subtitle', { tier: escalateTier ?? '', ref: row.invoice_ref ?? row.transaction_id.slice(0, 8) })}
+                        </Dialog.Description>
+                        {escalateError && <p className="text-xs text-[#EF4444] mt-2">{escalateError}</p>}
+                        <div className="flex justify-end gap-2 mt-4">
+                            <OsButton size="sm" variant="ghost" onClick={() => setEscalateTier(null)}>{t('cancel')}</OsButton>
+                            <OsButton size="sm" variant="danger" loading={escalating} onClick={confirmEscalate}>{t('escalate_confirm')}</OsButton>
                         </div>
                     </Dialog.Content>
                 </Dialog.Portal>
