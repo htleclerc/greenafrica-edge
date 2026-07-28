@@ -799,6 +799,40 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
     });
 }
 
+// ── Monthly statement email (chantier C) ───────────────────────────────────
+
+export interface StatementReadyParams {
+    to: string;
+    recipientName: string;
+    periodLabel: string;
+    totalOutstandingUsd: number;
+    pdfBuffer?: Uint8Array;
+}
+
+export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<EmailResult> {
+    const subject = `Account statement — ${p.periodLabel}`;
+    const content = `
+        <h1>Monthly Account Statement</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Your account statement for <strong>${escapeHtml(p.periodLabel)}</strong> is available.</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">${escapeHtml(p.periodLabel)}</span></div>
+        <div class="meta-row"><span class="meta-label">Total Outstanding</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.totalOutstandingUsd.toLocaleString()}</span></div>
+
+        <div class="alert alert-warn">This is an informational statement, not an invoice. Open pro-formas remain payable from your portal.</div>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">View Statements →</a>
+    `;
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Statement ${p.periodLabel} — $${p.totalOutstandingUsd.toLocaleString()} due` }),
+        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        attachments: p.pdfBuffer ? [{ filename: `statement-${p.periodLabel.replace(/\s/g, '-')}.pdf`, content: Buffer.from(p.pdfBuffer) }] : undefined,
+    });
+}
+
 // ── 11. Wallet top-up email (Plan 7F) ──────────────────────────────────────
 
 export interface WalletTopupParams {

@@ -7,6 +7,7 @@ import {
     sendWalletTopupEmail,
     sendKycRejectedEmail,
     sendRefundIssuedEmail,
+    sendStatementReadyEmail,
     type EmailResult,
     type RefundIssuedParams,
 } from '@/services/emailService';
@@ -17,7 +18,7 @@ export type NotificationKind =
     | 'PAYMENT_RECEIVED' | 'PAYMENT_REJECTED'
     | 'FINAL_ISSUED' | 'COMPLEMENT_ISSUED' | 'REFUND_ISSUED'
     | 'WALLET_TOPPED_UP' | 'WALLET_APPLIED' | 'WALLET_LOW_BALANCE'
-    | 'DISPUTE_UPDATED' | 'OWNER_ESCALATION';
+    | 'DISPUTE_UPDATED' | 'OWNER_ESCALATION' | 'STATEMENT_READY';
 
 /**
  * Set of kinds that ALSO dispatch an email (besides the in-app row).
@@ -35,7 +36,7 @@ export const EMAIL_KINDS: ReadonlySet<NotificationKind> = new Set<NotificationKi
     'PAYMENT_RECEIVED', 'PAYMENT_REJECTED',
     'FINAL_ISSUED', 'COMPLEMENT_ISSUED', 'REFUND_ISSUED',
     'WALLET_TOPPED_UP', 'WALLET_LOW_BALANCE',
-    'DISPUTE_UPDATED', 'OWNER_ESCALATION',
+    'DISPUTE_UPDATED', 'OWNER_ESCALATION', 'STATEMENT_READY',
 ]);
 
 export interface NotifyOwnerInput {
@@ -165,6 +166,15 @@ export async function notifyOwner(
                             amountUsd: Number(input.params.amount_usd ?? 0),
                             refundRail: input.params.refund_rail as RefundIssuedParams['refundRail'],
                             executedAt: String(input.params.executed_at ?? new Date().toLocaleString()),
+                        });
+                        break;
+                    case 'STATEMENT_READY':
+                        result = await sendStatementReadyEmail({
+                            to: ownerEmail,
+                            recipientName: ownerName,
+                            periodLabel: String(input.params.period ?? ''),
+                            totalOutstandingUsd: Number(input.params.total_outstanding_usd ?? 0),
+                            pdfBuffer: input.attachments?.pdfBuffer,
                         });
                         break;
                     default:
