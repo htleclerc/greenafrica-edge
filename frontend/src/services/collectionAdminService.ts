@@ -121,6 +121,7 @@ export async function listCollectionsAdmin(
     const offset = (f.page - 1) * f.pageSize;
     const { data, count, error } = await q
         .order('latest_sent_at', { ascending: false })
+        .order('transaction_id', { ascending: true })
         .range(offset, offset + f.pageSize - 1);
     if (error) throw new Error(`listCollectionsAdmin: ${error.message}`);
     return {

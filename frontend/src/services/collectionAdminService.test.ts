@@ -80,8 +80,17 @@ describe('listCollectionsAdmin', () => {
         const orCall = calls.find((c) => c.method === 'or');
         const orArg = String(orCall?.args[0]);
         // escapeSearch replaced % , ( ) with spaces; the term 'ACME%,(x)' becomes 'ACME   x '
-        expect(orArg).toContain('invoice_ref.ilike.%ACME');   // substring wildcard present
-        expect(orArg).not.toMatch(/ACME[()]/);                 // no user punctuation after search term
+        // sans échappement, orArg contiendrait la séquence brute 'ACME%,(x)' → ces assertions
+        // échoueraient si escapeSearch était retiré.
+        expect(orArg).toContain('invoice_ref.ilike.%');   // wildcard ILIKE toujours présent
+        expect(orArg).not.toContain('%,(');                // séquence brute non échappée absente
+        expect(orArg).not.toContain('(x)');                // parenthèses utilisateur absentes
+        // tri : latest_sent_at desc puis transaction_id asc (départage déterministe des égalités)
+        const orderCalls = calls.filter((c) => c.method === 'order');
+        expect(orderCalls).toEqual([
+            { method: 'order', args: ['latest_sent_at', { ascending: false }] },
+            { method: 'order', args: ['transaction_id', { ascending: true }] },
+        ]);
         // pagination : range(offset=25, 49)
         const rangeCall = calls.find((c) => c.method === 'range');
         expect(rangeCall?.args).toEqual([25, 49]);

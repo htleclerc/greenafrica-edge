@@ -80,7 +80,9 @@ describe('recordDebtorResponse', () => {
     });
 
     it('stampe la relance la plus récente et audite', async () => {
-        const updateSpy = vi.fn((_payload: Record<string, unknown>) => ({ eq: async () => ({ error: null }) }));
+        const updateSpy = vi.fn<(payload: Record<string, unknown>) => { eq: () => Promise<{ error: null }> }>(
+            () => ({ eq: async () => ({ error: null }) }),
+        );
         const auditInsertSpy = vi.fn(async () => ({ error: null }));
         platformTables({
             transactions: { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { jurisdiction_id: 'jur-so' } }) }) }) },
@@ -103,7 +105,9 @@ describe('recordDebtorResponse', () => {
     it('laisse passer un SUPERADMIN hors de sa juridiction courante', async () => {
         serverFromMock.mockImplementation(() => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SUPERADMIN', full_name: 'Super Admin', is_active: true } }) }) }) }));
         getJurMock.mockResolvedValue('jur-dj');
-        const updateSpy = vi.fn((_payload: Record<string, unknown>) => ({ eq: async () => ({ error: null }) }));
+        const updateSpy = vi.fn<(payload: Record<string, unknown>) => { eq: () => Promise<{ error: null }> }>(
+            () => ({ eq: async () => ({ error: null }) }),
+        );
         platformTables({
             transactions: { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { jurisdiction_id: 'jur-so' } }) }) }) },
             collection_reminders: {
