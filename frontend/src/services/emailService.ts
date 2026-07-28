@@ -687,6 +687,75 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
     });
 }
 
+// ── Collection escalation notice (B3 — manual bailiff/judicial) ────────────
+// Distinct from the automatic reminders: a legal-recovery NOTIFICATION (not a
+// legal service of process) sent by staff, with the invoice PDF attached and
+// the issuing jurisdiction's sovereign footer.
+
+export interface CollectionEscalationParams {
+    tier: 'BAILIFF' | 'JUDICIAL';
+    to: string;
+    cc?: string[];
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    jurisdictionName: string;
+    vesselName?: string;
+    pdfBuffer: Uint8Array;
+}
+
+function escalationTone(tier: 'BAILIFF' | 'JUDICIAL', invoiceRef: string): {
+    subject: string; heading: string; alertText: string;
+} {
+    if (tier === 'JUDICIAL') {
+        return {
+            subject: `Judicial recovery proceedings — ${invoiceRef}`,
+            heading: 'Notice of Judicial Recovery Proceedings',
+            alertText: 'Judicial recovery proceedings have been initiated for this outstanding debt. You are urged to settle immediately to avoid further legal costs.',
+        };
+    }
+    return {
+        subject: `Bailiff referral — ${invoiceRef}`,
+        heading: 'Notice of Referral to Bailiff (Huissier)',
+        alertText: 'This outstanding debt has been referred to a bailiff (huissier) for legal recovery, at your expense. Immediate settlement is required to halt enforcement.',
+    };
+}
+
+export async function sendCollectionEscalationEmail(p: CollectionEscalationParams): Promise<EmailResult> {
+    const t = escalationTone(p.tier, p.invoiceRef);
+    const vesselRow = p.vesselName
+        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        : '';
+    const content = `
+        <h1>${t.heading}</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Regarding outstanding pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong>:</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${vesselRow}
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+
+        <div class="alert alert-danger">${t.alertText}</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">This is an automated notification. Reference: ${escapeHtml(p.invoiceRef)}</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        cc: p.cc,
+        subject: t.subject,
+        html: emailLayout(content, {
+            previewText: `${t.subject} — $${p.amountUsd.toLocaleString()}`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
+        text: `${t.subject}\nInvoice: ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\n\n${t.alertText}`,
+        attachments: [
+            { filename: `invoice-${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) },
+        ],
+    });
+}
+
 // ── 10b. Pro-forma ISSUED email (issuance-time notice) ─────────────────────
 // Sent when a pro-forma is first issued. On the AIR path there is no matched
 // agent, so this is how the operator is emailed about a freshly-billed
