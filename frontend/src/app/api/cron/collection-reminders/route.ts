@@ -4,6 +4,7 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 import { resolveInvoiceRecipients } from '@/services/invoiceIssuanceService';
 import { fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc } from '@/lib/jurisdictionName';
 import { notifyOwner } from '@/services/notificationService';
+import { sendProformaReminderEmail } from '@/services/emailService';
 import {
     dueTier, reminderTemplate, type ReminderTier, type DebtorResponseType,
 } from '@/services/collectionReminderService';
@@ -14,9 +15,13 @@ import { scopedLogger } from '@/lib/logger';
  *
  * Vercel Cron quotidien (08:00 UTC) — moteur de relance B1. Remplace le pg_cron
  * proforma-reminders-daily (mig 065, désactivé par mig 110). Pour chaque
- * pro-forma PENDING/OVERDUE dont un palier (J3→J45) est dû, insère une notif
- * PROFORMA_REMINDER (skipEmail: true — le notification-email-loop de 09:00
- * enverra l'e-mail) PUIS une ligne collection_reminders (registre durable).
+ * pro-forma PENDING/OVERDUE dont un palier (J3→J45) est dû : envoie l'e-mail de
+ * relance INLINE (comme le chantier A pour les documents fiscaux — la cascade
+ * de destinataires + copies n'est disponible qu'ici, pas dans le
+ * notification-email-loop générique), insère la notif PROFORMA_REMINDER
+ * (skipEmail: true pour ne pas la faire doubler par ce même loop) en estampant
+ * emailed_at si l'envoi a réussi, PUIS une ligne collection_reminders (registre
+ * durable).
  *
  * Auth : Authorization: Bearer ${CRON_SECRET}. Sinon 401.
  */
@@ -103,7 +108,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             // Destinataires : cascade armateur + copies juridiction/plateforme + huissier dès J45.
             const { data: owner } = p.shipowner_id
-                ? await admin.from('shipowners').select('official_email').eq('id', p.shipowner_id).maybeSingle()
+                ? await admin.from('shipowners').select('official_email, name').eq('id', p.shipowner_id).maybeSingle()
                 : { data: null };
             const { data: agent } = p.agent_profile_id
                 ? await admin.from('profiles').select('email').eq('id', p.agent_profile_id).maybeSingle()
@@ -128,18 +133,37 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
             }
 
             const { templateId } = reminderTemplate(tier);
+            const ageDays = ageInDays(p.created_at, now);
             const bodyParams = {
                 transaction_id: p.id,
                 invoice_ref: p.invoice_ref,
                 amount_usd: p.tax_amount_usd,
                 vessel_name: p.vessel_name,
                 tier,
-                age_days: ageInDays(p.created_at, now),
+                age_days: ageDays,
             };
+            const recipientName = (owner?.name as string | null) ?? 'Shipowner';
 
-            // 1) Notif d'abord : elle pilote l'envoi e-mail via le loop. skipEmail
-            //    pour ne pas doubler (notifyOwner enverrait inline sinon).
-            await notifyOwner(admin, {
+            // 1) Envoi inline (comme le chantier A) : seule cette route connaît la
+            //    cascade + copies résolues ci-dessus. Best-effort — un échec ne doit
+            //    ni interrompre la notif ni le registre, une créance a droit à sa
+            //    trace même sans e-mail livré.
+            const emailResult = await sendProformaReminderEmail({
+                to: recipients.to,
+                cc: recipients.cc,
+                recipientName,
+                invoiceRef: p.invoice_ref ?? '—',
+                amountUsd: p.tax_amount_usd,
+                ageDays,
+                tier,
+            });
+            if (!emailResult.success) {
+                log.warn('reminder_email_failed', { txnId: p.id, tier, error: emailResult.error });
+            }
+
+            // 2) Notif in-app. skipEmail: true — l'envoi a déjà eu lieu ci-dessus,
+            //    le notification-email-loop ne doit pas le redoubler.
+            const { id: notifId } = await notifyOwner(admin, {
                 shipownerId: p.shipowner_id!,
                 kind: 'PROFORMA_REMINDER',
                 params: bodyParams,
@@ -147,7 +171,20 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 skipEmail: true,
             });
 
-            // 2) Puis le registre durable. L'unicité (transaction_id, tier) est le
+            // 3) Si l'envoi a réussi, estampiller emailed_at pour que le loop
+            //    saute cette ligne. Sinon on la laisse null : le loop reste le
+            //    filet de rattrapage.
+            if (emailResult.success) {
+                const { error: emailedAtErr } = await admin
+                    .from('owner_notifications')
+                    .update({ emailed_at: now.toISOString() })
+                    .eq('id', notifId);
+                if (emailedAtErr) {
+                    log.warn('reminder_emailed_at_update_failed', { txnId: p.id, notifId, error: emailedAtErr.message });
+                }
+            }
+
+            // 4) Puis le registre durable. L'unicité (transaction_id, tier) est le
             //    garde-fou dur contre un doublon en cas de passes concurrentes.
             const { error: insErr } = await admin.from('collection_reminders').insert({
                 transaction_id: p.id,
