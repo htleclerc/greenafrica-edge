@@ -720,6 +720,112 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   return new Uint8Array(doc.output('arraybuffer'));
 }
 
+// ── Monthly account statement (chantier C) ─────────────────────────────────
+// Informatif : pas de QR, pas de HMAC, pas de sceau fiscal. Réutilise fmtUsd et
+// le squelette jsPDF de generateInvoicePdf, en version allégée.
+
+export interface StatementLine {
+    invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number;
+}
+export interface StatementPayment {
+    confirmedAt: string; receiptRef: string | null; amountUsd: number;
+}
+export interface StatementData {
+    ownerName: string;
+    jurisdiction: string;
+    periodLabel: string;
+    openLines: StatementLine[];
+    payments: StatementPayment[];
+    totalOutstandingUsd: number;
+    paymentsInMonthUsd: number;
+}
+
+export async function generateStatementPdf(data: StatementData): Promise<Uint8Array> {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 18;
+
+    // Accent bar
+    doc.setFillColor(4, 120, 87); doc.rect(0, 0, pageWidth / 2, 4, 'F');
+    doc.setFillColor(16, 185, 129); doc.rect(pageWidth / 2, 0, pageWidth / 4, 4, 'F');
+    doc.setFillColor(234, 179, 8); doc.rect((pageWidth * 3) / 4, 0, pageWidth / 4, 4, 'F');
+
+    // Title
+    doc.setTextColor(13, 31, 24);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    doc.text('Account Statement', margin, 22);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${data.jurisdiction} · Maritime Carbon Tax Authority`, margin, 29);
+
+    // Owner + period
+    doc.setTextColor(13, 31, 24); doc.setFontSize(11);
+    doc.text(data.ownerName, margin, 40);
+    doc.setTextColor(100, 116, 139); doc.setFontSize(10);
+    doc.text(`Statement period: ${data.periodLabel}`, margin, 46);
+
+    // Informational disclaimer
+    doc.setTextColor(148, 163, 184); doc.setFontSize(8);
+    doc.text('Informational account statement — not an invoice or a formal notice.', margin, 52);
+
+    let y = 62;
+
+    // Open pro-formas
+    doc.setTextColor(13, 31, 24); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Outstanding pro-formas', margin, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text('Reference', margin, y); doc.text('Vessel', margin + 55, y);
+    doc.text('Age', margin + 110, y); doc.text('Due (USD)', pageWidth - margin, y, { align: 'right' }); y += 5;
+    doc.setTextColor(13, 31, 24);
+    if (data.openLines.length === 0) {
+        doc.setTextColor(148, 163, 184); doc.text('None', margin, y); doc.setTextColor(13, 31, 24); y += 6;
+    } else {
+        for (const l of data.openLines) {
+            if (y > 250) { doc.addPage(); y = 22; }
+            doc.setFontSize(9);
+            doc.text(l.invoiceRef, margin, y);
+            doc.text(l.vesselName.slice(0, 26), margin + 55, y);
+            doc.text(`${l.ageDays}d`, margin + 110, y);
+            doc.text(fmtUsd(l.outstandingUsd), pageWidth - margin, y, { align: 'right' });
+            y += 5;
+        }
+    }
+    y += 4;
+
+    // Payments in month
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(`Payments received in ${data.periodLabel}`, margin, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text('Date', margin, y); doc.text('Receipt', margin + 55, y);
+    doc.text('Amount (USD)', pageWidth - margin, y, { align: 'right' }); y += 5;
+    doc.setTextColor(13, 31, 24);
+    if (data.payments.length === 0) {
+        doc.setTextColor(148, 163, 184); doc.text('None', margin, y); doc.setTextColor(13, 31, 24); y += 6;
+    } else {
+        for (const p of data.payments) {
+            if (y > 250) { doc.addPage(); y = 22; }
+            doc.setFontSize(9);
+            doc.text(p.confirmedAt.slice(0, 10), margin, y);
+            doc.text(p.receiptRef ?? '—', margin + 55, y);
+            doc.text(fmtUsd(p.amountUsd), pageWidth - margin, y, { align: 'right' });
+            y += 5;
+        }
+    }
+    y += 8;
+
+    // Totals
+    doc.setDrawColor(203, 213, 225); doc.line(margin, y, pageWidth - margin, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100, 116, 139);
+    doc.text('Payments received this period', margin, y);
+    doc.setTextColor(16, 185, 129);
+    doc.text(`$${fmtUsd(data.paymentsInMonthUsd)}`, pageWidth - margin, y, { align: 'right' }); y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 31, 24);
+    doc.text('Total outstanding', margin, y);
+    doc.text(`$${fmtUsd(data.totalOutstandingUsd)}`, pageWidth - margin, y, { align: 'right' });
+
+    return new Uint8Array(doc.output('arraybuffer'));
+}
+
 /**
  * Generate invoice PDF and upload to Supabase Storage.
  * Returns the public URL of the uploaded PDF.
