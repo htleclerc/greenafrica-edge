@@ -611,25 +611,67 @@ export async function sendPaymentRejectedEmail(p: PaymentRejectedParams): Promis
 
 export interface ProformaReminderParams {
     to: string;
+    cc?: string[];
     recipientName: string;
     invoiceRef: string;
     amountUsd: number;
     ageDays: number;
+    /** Palier de relance — pilote le ton. Absent = rappel courtois générique. */
+    tier?: 'J3' | 'J7' | 'J15' | 'J30' | 'J45';
+}
+
+/** Objet + bandeau d'alerte selon le palier. */
+function reminderTone(tier: ProformaReminderParams['tier'], invoiceRef: string, ageDays: number): {
+    subject: string;
+    heading: string;
+    alertClass: string;
+    alertText: string;
+} {
+    switch (tier) {
+        case 'J30':
+            return {
+                subject: `Formal notice — overdue invoice ${invoiceRef}`,
+                heading: 'Formal Notice of Overdue Payment',
+                alertClass: 'alert-danger',
+                alertText: 'This is a formal demand for payment. Failure to settle this invoice may lead to enforcement proceedings and additional recovery costs.',
+            };
+        case 'J45':
+            return {
+                subject: `Final notice before bailiff referral — ${invoiceRef}`,
+                heading: 'Final Notice — Bailiff Referral Imminent',
+                alertClass: 'alert-danger',
+                alertText: 'Unless this invoice is settled without further delay, the file will be referred to a bailiff (huissier) for legal recovery, at your expense.',
+            };
+        case 'J15':
+            return {
+                subject: `Reminder: invoice ${invoiceRef} still unpaid`,
+                heading: 'Payment Reminder',
+                alertClass: 'alert-warn',
+                alertText: 'Please settle this invoice promptly to avoid escalation and late-payment interest.',
+            };
+        default: // J3, J7, ou absence de tier
+            return {
+                subject: `Reminder: invoice ${invoiceRef} pending (${ageDays} days)`,
+                heading: 'Payment Reminder',
+                alertClass: 'alert-warn',
+                alertText: 'Please settle this invoice at your earliest convenience to avoid port-clearance delays and late-payment interest.',
+            };
+    }
 }
 
 export async function sendProformaReminderEmail(p: ProformaReminderParams): Promise<EmailResult> {
-    const subject = `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)`;
+    const t = reminderTone(p.tier, p.invoiceRef, p.ageDays);
     const content = `
-        <h1>Payment Reminder</h1>
+        <h1>${t.heading}</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>This is a friendly reminder that pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been pending for <strong>${p.ageDays} days</strong>.</p>
+        <p>Pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been outstanding for <strong>${p.ageDays} days</strong>.</p>
 
         <h2>Summary</h2>
         <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
         <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
         <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
 
-        <div class="alert alert-warn">Please settle this invoice at your earliest convenience to avoid port-clearance delays and late-payment interest.</div>
+        <div class="alert ${t.alertClass}">${t.alertText}</div>
 
         <a href="${appUrl()}/owner/invoices" class="btn">Pay Invoice →</a>
 
@@ -638,9 +680,10 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
 
     return sendEmail({
         to: p.to,
-        subject,
-        html: emailLayout(content, { previewText: `${p.invoiceRef} pending — $${p.amountUsd.toLocaleString()}` }),
-        text: `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        cc: p.cc,
+        subject: t.subject,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
+        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
     });
 }
 

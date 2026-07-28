@@ -77,6 +77,7 @@ export async function dispatchNotificationEmail(
                 invoiceRef: String(bodyParams.invoice_ref ?? '—'),
                 amountUsd: Number(bodyParams.amount_usd ?? 0),
                 ageDays: Number(bodyParams.age_days ?? 3),
+                tier: (bodyParams.tier as 'J3' | 'J7' | 'J15' | 'J30' | 'J45' | undefined) ?? undefined,
             });
 
         case 'PROFORMA_ISSUED':
