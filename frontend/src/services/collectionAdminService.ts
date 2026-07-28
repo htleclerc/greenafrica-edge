@@ -115,8 +115,8 @@ export async function listCollectionsAdmin(
     if (f.latestTier) q = q.eq('latest_tier', f.latestTier);
     if (f.latestResponse) q = q.eq('latest_response_type', f.latestResponse);
     if (f.q) {
-        const s = escapeSearch(f.q).trim();
-        q = q.or(`invoice_ref.ilike.% ${s} %,debtor_name.ilike.% ${s} %`);
+        const s = escapeSearch(f.q);
+        q = q.or(`invoice_ref.ilike.%${s}%,debtor_name.ilike.%${s}%`);
     }
     const offset = (f.page - 1) * f.pageSize;
     const { data, count, error } = await q

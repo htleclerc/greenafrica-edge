@@ -78,7 +78,10 @@ describe('listCollectionsAdmin', () => {
         expect(calls.find((c) => c.method === 'from')?.args[0]).toBe('v_collection_admin');
         // recherche échappée (%,() remplacés par espaces)
         const orCall = calls.find((c) => c.method === 'or');
-        expect(String(orCall?.args[0])).not.toMatch(/[%(),]ACME|ACME[%(),]/);
+        const orArg = String(orCall?.args[0]);
+        // escapeSearch replaced % , ( ) with spaces; the term 'ACME%,(x)' becomes 'ACME   x '
+        expect(orArg).toContain('invoice_ref.ilike.%ACME');   // substring wildcard present
+        expect(orArg).not.toMatch(/ACME[()]/);                 // no user punctuation after search term
         // pagination : range(offset=25, 49)
         const rangeCall = calls.find((c) => c.method === 'range');
         expect(rangeCall?.args).toEqual([25, 49]);
