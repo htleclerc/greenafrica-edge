@@ -28,7 +28,7 @@ export async function escalateCollection(
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return { ok: false, reason: 'not authenticated' };
-    const { data: profile } = await supabase.from('profiles').select('role, is_active').eq('id', auth.user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, full_name, is_active').eq('id', auth.user.id).single();
     if (!profile || !STAFF_ROLES.includes(profile.role)) return { ok: false, reason: 'insufficient role' };
     if (profile.is_active === false) return { ok: false, reason: 'account inactive' };
 
@@ -106,24 +106,28 @@ export async function escalateCollection(
     });
     if (!emailResult.success) return { ok: false, reason: `email failed: ${emailResult.error ?? 'unknown'}` };
 
-    // 8. Registre.
+    // 8. Audit — la notice a été dispatchée, cet événement légalement significatif
+    // doit TOUJOURS être tracé, même si l'insert du registre échoue ensuite.
+    await platform.from('audit_logs').insert({
+        user_id: auth.user.id, user_full_name: profile.full_name ?? auth.user.email ?? 'Staff',
+        action: 'TRANSACTION_UPDATED', severity: 'WARNING',
+        entity_type: 'Transaction', entity_id: transactionId, jurisdiction_id: jurisdictionId,
+        details_json: { event: `ESCALATED_${tier}`, tier, recipient: recipients.to, cc: recipients.cc },
+    });
+
+    // 9. Registre.
     const { error: insErr } = await platform.from('collection_reminders').insert({
         transaction_id: transactionId, tier, sent_at: new Date().toISOString(),
         sent_email: recipients.to, cc_emails: recipients.cc,
         template_used: `${tier.toLowerCase()}_notice`, escalated_bailiff: true, debtor_response_type: 'SILENT',
     });
     if (insErr) {
-        // 23505 = course avec un autre escalade même tier → déjà tracé.
-        return { ok: false, reason: `already escalated to ${tier}` };
+        // 23505 = course avec un autre escalade même tier → déjà tracé (attendu).
+        // Toute autre erreur : la notice est partie mais le registre n'a pas pu
+        // l'enregistrer — ne pas la maquiller en doublon.
+        if (insErr.code === '23505') return { ok: false, reason: `already escalated to ${tier}` };
+        return { ok: false, reason: `notice sent but ledger write failed: ${insErr.message}` };
     }
-
-    // 9. Audit.
-    await platform.from('audit_logs').insert({
-        user_id: auth.user.id, user_full_name: auth.user.email ?? 'Staff',
-        action: 'TRANSACTION_UPDATED', severity: 'WARNING',
-        entity_type: 'Transaction', entity_id: transactionId, jurisdiction_id: jurisdictionId,
-        details_json: { event: `ESCALATED_${tier}`, tier, recipient: recipients.to, cc: recipients.cc },
-    });
 
     revalidatePath('/admin/collections');
     return { ok: true, tier };

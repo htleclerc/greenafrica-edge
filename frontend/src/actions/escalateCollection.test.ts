@@ -40,11 +40,11 @@ const TXN = '11111111-1111-4111-8111-111111111111';
 // Fabrique le client platform : transaction + relances existantes + inserts capturés.
 function setup(opts: {
     role?: string; isActive?: boolean; txnJur?: string; pdf?: string | null;
-    sentTiers?: string[]; insertErr?: { code?: string; message: string } | null;
+    sentTiers?: string[]; insertErr?: { code?: string; message: string } | null; fullName?: string | null;
 }) {
     const captured = { reminderInsert: null as Record<string, unknown> | null, audit: null as Record<string, unknown> | null };
     serverFromMock.mockImplementation((t: string) => {
-        if (t === 'profiles') return { select: () => ({ eq: () => ({ single: async () => ({ data: { role: opts.role ?? 'FINANCE_ADMIN', is_active: opts.isActive ?? true } }) }) }) };
+        if (t === 'profiles') return { select: () => ({ eq: () => ({ single: async () => ({ data: { role: opts.role ?? 'FINANCE_ADMIN', full_name: opts.fullName ?? null, is_active: opts.isActive ?? true } }) }) }) };
         throw new Error(`server table ${t}`);
     });
     storageDownloadMock.mockResolvedValue({ data: { arrayBuffer: async () => new Uint8Array([1]).buffer }, error: null });
@@ -82,11 +82,23 @@ describe('escalateCollection — rampe', () => {
     });
 
     it('accepte BAILIFF quand J45 existe', async () => {
-        const cap = setup({ sentTiers: ['J45'] });
+        const cap = setup({ sentTiers: ['J45'], fullName: 'Finance Admin' });
         const r = await escalateCollection({ transactionId: TXN, tier: 'BAILIFF' });
         expect(r).toMatchObject({ ok: true, tier: 'BAILIFF' });
         expect(cap.reminderInsert).toMatchObject({ tier: 'BAILIFF', escalated_bailiff: true });
-        expect(cap.audit).toMatchObject({ severity: 'WARNING', details_json: expect.objectContaining({ event: 'ESCALATED_BAILIFF' }) });
+        expect(cap.audit).toMatchObject({
+            severity: 'WARNING', user_full_name: 'Finance Admin',
+            details_json: expect.objectContaining({ event: 'ESCALATED_BAILIFF' }),
+        });
+    });
+
+    it('accepte une escalade SUPERADMIN hors juridiction (bypass isolation)', async () => {
+        const cap = setup({
+            role: 'SUPERADMIN', txnJur: 'jur-dj', sentTiers: ['J45'], fullName: 'Finance Admin',
+        });
+        const r = await escalateCollection({ transactionId: TXN, tier: 'BAILIFF' });
+        expect(r).toMatchObject({ ok: true, tier: 'BAILIFF' });
+        expect(cap.reminderInsert).toMatchObject({ tier: 'BAILIFF', escalated_bailiff: true });
     });
 
     it('refuse JUDICIAL sans BAILIFF', async () => {

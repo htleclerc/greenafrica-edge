@@ -24,7 +24,7 @@ export async function updateJurisdictionCcEmails(
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return { ok: false, reason: 'not authenticated' };
-    const { data: profile } = await supabase.from('profiles').select('role, is_active').eq('id', auth.user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, full_name, is_active').eq('id', auth.user.id).single();
     if (!profile || !STAFF_ROLES.includes(profile.role)) return { ok: false, reason: 'insufficient role' };
     if (profile.is_active === false) return { ok: false, reason: 'account inactive' };
 
@@ -45,7 +45,7 @@ export async function updateJurisdictionCcEmails(
     if (upErr) return { ok: false, reason: `update failed: ${upErr.message}` };
 
     await platform.from('audit_logs').insert({
-        user_id: auth.user.id, user_full_name: auth.user.email ?? 'Staff',
+        user_id: auth.user.id, user_full_name: profile.full_name ?? auth.user.email ?? 'Staff',
         action: 'TRANSACTION_UPDATED', severity: 'INFO',
         entity_type: 'Jurisdiction', entity_id: jurisdictionId, jurisdiction_id: jurisdictionId,
         details_json: { event: 'JURISDICTION_CC_UPDATED', billingCount: billingCcEmails.length, bailiffCount: bailiffCcEmails.length },
