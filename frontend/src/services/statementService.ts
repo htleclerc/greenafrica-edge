@@ -36,7 +36,10 @@ export interface ComposeInput {
     shipownerId: string; periodStart: Date; periodEnd: Date; now: Date;
 }
 
-/** Compose les données du relevé : pro-formas ouvertes + paiements confirmés du mois. */
+/**
+ * Compose les données du relevé : pro-formas ouvertes (PENDING, OVERDUE,
+ * PARTIALLY_PAID) + paiements confirmés du mois.
+ */
 export async function composeOwnerStatement(
     admin: SupabaseClient,
     input: ComposeInput,
@@ -46,7 +49,7 @@ export async function composeOwnerStatement(
         .select('invoice_ref, vessel_name, created_at, tax_amount_usd, partial_paid_usd')
         .eq('document_type', 'PROFORMA')
         .eq('shipowner_id', input.shipownerId)
-        .in('status', ['PENDING', 'OVERDUE']);
+        .in('status', ['PENDING', 'OVERDUE', 'PARTIALLY_PAID']);
     const openLines: StatementLine[] = ((txRaw ?? []) as Record<string, unknown>[]).map((r) => {
         const outstanding = Number(r.tax_amount_usd) - Number(r.partial_paid_usd ?? 0);
         return {
