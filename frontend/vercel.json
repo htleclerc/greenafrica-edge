@@ -38,6 +38,10 @@
     {
       "path": "/api/cron/monthly-settlement-export",
       "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/monthly-statements",
+      "schedule": "0 6 1 * *"
     }
   ]
 }
