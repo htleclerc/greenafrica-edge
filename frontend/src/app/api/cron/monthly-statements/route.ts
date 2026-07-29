@@ -26,7 +26,7 @@ function serviceClient(): SupabaseClient { return clientOverride ?? createPlatfo
 
 interface OwnerRow {
     id: string; name: string | null; official_email: string | null;
-    jurisdiction_id: string | null; total_outstanding_usd: number;
+    total_outstanding_usd: number;
 }
 
 export async function GET(req: NextRequest | Request): Promise<NextResponse> {
@@ -41,22 +41,44 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     const now = new Date();
     const { periodStart, periodEnd, label } = periodBounds(now);
     const periodMonth = periodStart.toISOString().slice(0, 10);
-    const counts = { generated: 0, skipped: 0, failed: 0 };
+    const counts = { generated: 0, failed: 0 };
 
     // Armateurs (maritime + aviation) à solde dû > 0. Dédup par id.
     const [maritimeRes, aviationRes] = await Promise.all([
-        admin.from('v_armateur_recouvrement').select('id, name, official_email, jurisdiction_id, total_outstanding_usd').gt('total_outstanding_usd', 0),
-        admin.from('v_compagnie_recouvrement').select('id, name, official_email, jurisdiction_id, total_outstanding_usd').gt('total_outstanding_usd', 0),
+        admin.from('v_armateur_recouvrement').select('id, name, official_email, total_outstanding_usd').gt('total_outstanding_usd', 0),
+        admin.from('v_compagnie_recouvrement').select('id, name, official_email, total_outstanding_usd').gt('total_outstanding_usd', 0),
     ]);
+    if (maritimeRes.error || aviationRes.error) {
+        log.error('owner_query_failed', {
+            maritimeError: maritimeRes.error?.message, aviationError: aviationRes.error?.message,
+        });
+        return NextResponse.json({ error: 'owner_query_failed' }, { status: 500 });
+    }
     const byId = new Map<string, OwnerRow>();
     for (const r of [...((maritimeRes.data ?? []) as OwnerRow[]), ...((aviationRes.data ?? []) as OwnerRow[])]) {
         byId.set(r.id, r);
     }
 
+    // jurisdiction_id vit sur shipowners, pas sur les vues de recouvrement.
+    const ownerIds = [...byId.keys()];
+    const jurById = new Map<string, string | null>();
+    if (ownerIds.length > 0) {
+        const { data: jurRows } = await admin.from('shipowners').select('id, jurisdiction_id').in('id', ownerIds);
+        for (const r of (jurRows ?? []) as { id: string; jurisdiction_id: string | null }[]) {
+            jurById.set(r.id, r.jurisdiction_id);
+        }
+    }
+
     for (const owner of byId.values()) {
         try {
+            const jurisdictionId = jurById.get(owner.id) ?? null;
+            if (!jurisdictionId) {
+                log.warn('missing_jurisdiction', { ownerId: owner.id });
+                counts.failed += 1;
+                continue;
+            }
             const data = await composeOwnerStatement(admin, { shipownerId: owner.id, periodStart, periodEnd, now });
-            const jurisdictionName = await fetchJurisdictionName(admin, owner.jurisdiction_id);
+            const jurisdictionName = await fetchJurisdictionName(admin, jurisdictionId);
             const pdf = await generateStatementPdf({
                 ownerName: owner.name ?? 'Shipowner',
                 jurisdiction: jurisdictionName,
@@ -74,12 +96,13 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 .upload(path, pdf, { contentType: 'application/pdf', upsert: true });
             if (upErr) { log.warn('upload_failed', { ownerId: owner.id, error: upErr.message }); counts.failed += 1; continue; }
 
-            await admin.from('owner_statements').upsert({
-                shipowner_id: owner.id, jurisdiction_id: owner.jurisdiction_id, period_month: periodMonth,
+            const { error: upsertErr } = await admin.from('owner_statements').upsert({
+                shipowner_id: owner.id, jurisdiction_id: jurisdictionId, period_month: periodMonth,
                 pdf_path: path, total_outstanding_usd: data.totalOutstandingUsd,
                 payments_in_month_usd: data.paymentsInMonthUsd, open_count: data.openCount,
                 generated_at: now.toISOString(),
             }, { onConflict: 'shipowner_id,period_month' });
+            if (upsertErr) { log.warn('upsert_failed', { ownerId: owner.id, error: upsertErr.message }); counts.failed += 1; continue; }
 
             await notifyOwner(admin, {
                 shipownerId: owner.id, kind: 'STATEMENT_READY',
