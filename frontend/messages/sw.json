@@ -2800,6 +2800,8 @@
       "dispute": "Dispute",
       "downloadPdf": "PDF",
       "downloadAria": "Download PDF for {ref}",
+      "statements_title": "Taarifa za akaunti",
+      "statements_download": "Pakua",
       "payDialog": {
         "title": "Declare payment",
         "subtitle": "Enter the bank-transfer reference for pro-forma {ref} ({amount}). Finance will reconcile it against the bank statement and confirm.",

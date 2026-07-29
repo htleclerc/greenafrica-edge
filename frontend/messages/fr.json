@@ -2915,6 +2915,8 @@
       "dispute": "Contester",
       "downloadPdf": "PDF",
       "downloadAria": "Télécharger le PDF pour {ref}",
+      "statements_title": "Relevés",
+      "statements_download": "Télécharger",
       "payDialog": {
         "title": "Déclarer un paiement",
         "subtitle": "Saisissez la référence du virement bancaire pour la pro-forma {ref} ({amount}). Le service Finance la rapprochera du relevé bancaire et confirmera.",

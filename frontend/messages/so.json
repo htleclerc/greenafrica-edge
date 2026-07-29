@@ -2915,6 +2915,8 @@
       "dispute": "Muruso",
       "downloadPdf": "PDF",
       "downloadAria": "Soo deji PDF-ka {ref}",
+      "statements_title": "Warbixinnada",
+      "statements_download": "Soo deji",
       "payDialog": {
         "title": "Ku dhawaaq lacag bixinta",
         "subtitle": "Gali tixraaca wareejinta bangiga ee pro-forma {ref} ({amount}). Xisaabaadku wuxuu u dherderayaa bangiga oo xaqiijiyaa.",

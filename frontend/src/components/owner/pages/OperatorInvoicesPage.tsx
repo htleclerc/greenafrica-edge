@@ -95,6 +95,15 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
         pending_wire_payment_id: pendingWireByTxn.get(txn.id) ?? null,
     }));
 
+    const { data: statementsRaw } = await principal.supabase
+        .from('owner_statements')
+        .select('id, period_month, total_outstanding_usd, generated_at')
+        .order('period_month', { ascending: false })
+        .limit(24);
+    const statements = (statementsRaw ?? []) as {
+        id: string; period_month: string; total_outstanding_usd: number; generated_at: string;
+    }[];
+
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
             <header className="mb-6">
@@ -126,6 +135,22 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
                     rows={rows}
                     walletBalanceUsdMinor={walletBalanceUsdMinor}
                 />
+            )}
+
+            {statements.length > 0 && (
+                <section className="mt-8">
+                    <h2 className="text-lg font-semibold text-[var(--os-text-primary)] mb-3">{t('statements_title')}</h2>
+                    <div className="os-card divide-y divide-[var(--os-border)]">
+                        {statements.map((s) => (
+                            <div key={s.id} className="flex items-center justify-between px-4 py-3">
+                                <span className="text-sm text-[var(--os-text-primary)]">{s.period_month.slice(0, 7)}</span>
+                                <span className="text-sm font-mono tabular-nums text-[var(--os-text-secondary)]">${Number(s.total_outstanding_usd).toLocaleString()}</span>
+                                <a href={`/api/statements/${s.id}/download`} target="_blank" rel="noopener noreferrer"
+                                   className="text-xs text-emerald-400 hover:underline">{t('statements_download')}</a>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             )}
         </div>
     );
