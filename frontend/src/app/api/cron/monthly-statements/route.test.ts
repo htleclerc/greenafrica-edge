@@ -11,6 +11,7 @@ vi.mock('@/services/invoiceService', () => ({ generateStatementPdf: vi.fn().mock
 vi.mock('@/lib/jurisdictionName', () => ({ fetchJurisdictionName: vi.fn().mockResolvedValue('Republic of Somaliland') }));
 
 import { GET, __setClientForTest } from './route';
+import { composeOwnerStatement } from '@/services/statementService';
 
 const CRON_SECRET = 'test-cron';
 
@@ -22,7 +23,7 @@ function req(auth: string | null, dryRun = false): Request {
 // Faux client : liste des armateurs à solde > 0 + shipowners (jurisdiction_id) +
 // storage.upload + owner_statements.upsert. `viewError` simule un échec PostgREST
 // sur les vues de recouvrement.
-function makeClient(owners: Record<string, unknown>[], opts: { viewError?: boolean } = {}) {
+function makeClient(owners: Record<string, unknown>[], opts: { viewError?: boolean; existingStatements?: string[] } = {}) {
     const captured = { uploads: [] as string[], upserts: [] as Record<string, unknown>[] };
     const client = {
         from: (t: string) => {
@@ -39,7 +40,10 @@ function makeClient(owners: Record<string, unknown>[], opts: { viewError?: boole
                 return { select: () => ({ in: async () => ({ data: [{ id: 'own-1', jurisdiction_id: 'jur-so' }], error: null }) }) };
             }
             if (t === 'owner_statements') {
-                return { upsert: async (p: Record<string, unknown>) => { captured.upserts.push(p); return { error: null }; } };
+                return {
+                    select: () => ({ eq: () => ({ in: async () => ({ data: (opts.existingStatements ?? []).map((id) => ({ shipowner_id: id })), error: null }) }) }),
+                    upsert: async (p: Record<string, unknown>) => { captured.upserts.push(p); return { error: null }; },
+                };
             }
             throw new Error(`unexpected ${t}`);
         },
@@ -90,6 +94,36 @@ describe('GET /api/cron/monthly-statements', () => {
         __setClientForTest(client);
         const res = await GET(req(`Bearer ${CRON_SECRET}`));
         expect(res.status).toBe(500);
+        expect(notifyOwnerMock).not.toHaveBeenCalled();
+    });
+
+    it('saute un armateur dont le relevé composé n\'a rien à reporter (openCount 0)', async () => {
+        vi.mocked(composeOwnerStatement).mockResolvedValueOnce({
+            openLines: [], payments: [], totalOutstandingUsd: 0, paymentsInMonthUsd: 0, openCount: 0,
+        });
+        const { client, captured } = makeClient([
+            { id: 'own-1', name: 'Owner One', official_email: 'o1@x.com', total_outstanding_usd: 500 },
+        ]);
+        __setClientForTest(client);
+        const res = await GET(req(`Bearer ${CRON_SECRET}`));
+        expect(res.status).toBe(200);
+        expect(captured.uploads).toHaveLength(0);
+        expect(captured.upserts).toHaveLength(0);
+        expect(notifyOwnerMock).not.toHaveBeenCalled();
+        const body = await res.json();
+        expect(body.skipped).toBe(1);
+    });
+
+    it('ne renvoie pas de notification si un relevé existe déjà pour la période (dédup retry cron)', async () => {
+        const { client, captured } = makeClient(
+            [{ id: 'own-1', name: 'Owner One', official_email: 'o1@x.com', total_outstanding_usd: 500 }],
+            { existingStatements: ['own-1'] },
+        );
+        __setClientForTest(client);
+        const res = await GET(req(`Bearer ${CRON_SECRET}`));
+        expect(res.status).toBe(200);
+        expect(captured.uploads).toHaveLength(1);
+        expect(captured.upserts).toHaveLength(1);
         expect(notifyOwnerMock).not.toHaveBeenCalled();
     });
 });

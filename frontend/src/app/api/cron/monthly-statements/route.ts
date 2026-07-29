@@ -41,7 +41,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     const now = new Date();
     const { periodStart, periodEnd, label } = periodBounds(now);
     const periodMonth = periodStart.toISOString().slice(0, 10);
-    const counts = { generated: 0, failed: 0 };
+    const counts = { generated: 0, failed: 0, skipped: 0 };
 
     // Armateurs (maritime + aviation) à solde dû > 0. Dédup par id.
     const [maritimeRes, aviationRes] = await Promise.all([
@@ -63,10 +63,25 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     const ownerIds = [...byId.keys()];
     const jurById = new Map<string, string | null>();
     if (ownerIds.length > 0) {
-        const { data: jurRows } = await admin.from('shipowners').select('id, jurisdiction_id').in('id', ownerIds);
+        const { data: jurRows, error: jurErr } = await admin.from('shipowners').select('id, jurisdiction_id').in('id', ownerIds);
+        if (jurErr) {
+            log.error('jurisdiction_query_failed', { error: jurErr.message });
+            return NextResponse.json({ error: 'jurisdiction_query_failed' }, { status: 500 });
+        }
         for (const r of (jurRows ?? []) as { id: string; jurisdiction_id: string | null }[]) {
             jurById.set(r.id, r.jurisdiction_id);
         }
+    }
+
+    // I-2 : le PDF + la ligne owner_statements sont idempotents (upsert (owner,mois)),
+    // mais notifyOwner insère une notification à chaque appel. Sur un retry du cron
+    // (timeout Vercel), on ré-enverrait l'e-mail. On ne notifie donc que les armateurs
+    // sans ligne préexistante pour la période ; le PDF/la ligne sont quand même réécrits.
+    const alreadyNotified = new Set<string>();
+    if (ownerIds.length > 0) {
+        const { data: existing } = await admin.from('owner_statements')
+            .select('shipowner_id').eq('period_month', periodMonth).in('shipowner_id', ownerIds);
+        for (const r of (existing ?? []) as { shipowner_id: string }[]) alreadyNotified.add(r.shipowner_id);
     }
 
     for (const owner of byId.values()) {
@@ -78,6 +93,11 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 continue;
             }
             const data = await composeOwnerStatement(admin, { shipownerId: owner.id, periodStart, periodEnd, now });
+            if (data.openCount === 0) {
+                log.info('skipped_empty', { ownerId: owner.id });
+                counts.skipped += 1;
+                continue;
+            }
             const jurisdictionName = await fetchJurisdictionName(admin, jurisdictionId);
             const pdf = await generateStatementPdf({
                 ownerName: owner.name ?? 'Shipowner',
@@ -104,12 +124,14 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
             }, { onConflict: 'shipowner_id,period_month' });
             if (upsertErr) { log.warn('upsert_failed', { ownerId: owner.id, error: upsertErr.message }); counts.failed += 1; continue; }
 
-            await notifyOwner(admin, {
-                shipownerId: owner.id, kind: 'STATEMENT_READY',
-                params: { period: label, total_outstanding_usd: data.totalOutstandingUsd, period_month: periodMonth },
-                deepLink: '/owner/invoices',
-                attachments: { pdfBuffer: pdf, filename: `statement-${periodMonth}.pdf` },
-            });
+            if (!alreadyNotified.has(owner.id)) {
+                await notifyOwner(admin, {
+                    shipownerId: owner.id, kind: 'STATEMENT_READY',
+                    params: { period: label, total_outstanding_usd: data.totalOutstandingUsd, period_month: periodMonth },
+                    deepLink: '/owner/invoices',
+                    attachments: { pdfBuffer: pdf, filename: `statement-${periodMonth}.pdf` },
+                });
+            }
             counts.generated += 1;
         } catch (e) {
             counts.failed += 1;
