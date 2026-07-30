@@ -399,6 +399,7 @@ import {
     Client,
     Environment,
     CheckoutPaymentIntent,
+    PaypalExperienceUserAction,
     OrdersController,
 } from '@paypal/paypal-server-sdk';
 
@@ -531,11 +532,17 @@ export async function createOrder(input: {
                     amount: { currencyCode: 'USD', value },
                 },
             ],
-            applicationContext: {
-                returnUrl: input.returnUrl,
-                cancelUrl: input.cancelUrl,
-                brandName: 'Green Gate',
-                userAction: 'PAY_NOW',
+            // Le SDK 2.x marque `applicationContext` comme DÉPRÉCIÉ : les URLs de
+            // retour passent par paymentSource.paypal.experienceContext.
+            paymentSource: {
+                paypal: {
+                    experienceContext: {
+                        brandName: 'Green Gate',
+                        returnUrl: input.returnUrl,
+                        cancelUrl: input.cancelUrl,
+                        userAction: PaypalExperienceUserAction.PayNow,
+                    },
+                },
             },
         },
         prefer: 'return=representation',
