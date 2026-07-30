@@ -28,7 +28,7 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/stripe-reconcile-all",
+      "path": "/api/cron/payments-reconcile-all",
       "schedule": "0 9 * * *"
     },
     {
