@@ -2836,6 +2836,12 @@
       "stripeReturn": {
         "success": "Malipo yamekamilika — ankara yako itasasishwa hivi karibuni.",
         "cancel": "Malipo yameghairiwa — unaweza jaribu tena."
+      },
+      "paypalReturn": {
+        "success": "Malipo ya PayPal yamethibitishwa. Ankara yako imelipwa.",
+        "cancel": "Malipo ya PayPal yamefutwa. Hakuna kiasi kilichotozwa.",
+        "pending": "Malipo ya PayPal yanahakikiwa. Ankara yako itasasishwa hivi karibuni.",
+        "failed": "Malipo ya PayPal hayakukamilika. Hakuna kiasi kilichotozwa — jaribu tena au chagua njia nyingine ya malipo."
       }
     },
     "alerts": {
@@ -2880,6 +2886,10 @@
         "stripe": {
           "label": "Kadi ya Mkopo / Debit",
           "hint": "Malipo salama ya mtandaoni"
+        },
+        "paypal": {
+          "label": "Lipa na PayPal",
+          "hint": "Papo hapo — salio la PayPal au kadi"
         }
       },
       "paramsHint": {
@@ -2887,7 +2897,8 @@
         "mobile_money": "Toa maelezo ya muamala wa pesa ya simu.",
         "third_party": "Toa maelezo ya mlipaji wa tatu.",
         "wallet": "Salio la pochi yako litatumika.",
-        "stripe": "Utaelekezwa kwenye ukurasa salama wa malipo."
+        "stripe": "Utaelekezwa kwenye ukurasa salama wa malipo.",
+        "paypal": "Utaelekezwa kwa PayPal ili kuidhinisha malipo."
       },
       "field": {
         "bankReference": "Marejeo ya benki",

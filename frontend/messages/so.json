@@ -2951,6 +2951,12 @@
       "stripeReturn": {
         "success": "Lacag bixinta waa la helay — rasiidhka waa socdaa sanduuqaaga.",
         "cancel": "Lacag bixintu waa la joojiyay. Biilkaagu weli socdo; waqti kasta ayaad isku dayn kartaa."
+      },
+      "paypalReturn": {
+        "success": "Lacag-bixinta PayPal waa la xaqiijiyay. Biilkaaga waa la bixiyay.",
+        "cancel": "Lacag-bixinta PayPal waa la joojiyay. Lacag lama qaadin.",
+        "pending": "Lacag-bixinta PayPal waa la hubinayaa. Biilkaaga wuu cusboonaan doonaa dhawaan.",
+        "failed": "Lacag-bixinta PayPal lama dhammaystirin. Lacag lama qaadin — isku day mar kale ama dooro hab kale."
       }
     },
     "alerts": {
@@ -2992,6 +2998,10 @@
         "stripe": {
           "label": "Bixi kaadhka (Stripe)",
           "hint": "Isla markiiba — Visa, Mastercard, Apple Pay, Google Pay"
+        },
+        "paypal": {
+          "label": "Ku bixi PayPal",
+          "hint": "Isla markiiba — hadhaaga PayPal ama kaar bangi"
         }
       },
       "paramsHint": {
@@ -2999,7 +3009,8 @@
         "mobile_money": "Gali lambarka taleefoonka ee loo isticmaalay wareejinta {provider}.",
         "third_party": "Aqoonso dhinaca saddexaad ee kaaga bixinaya.",
         "wallet": "Ku dabaq balankaaga boorsada biilkan.",
-        "stripe": "Waxaad u wareejin doontaa Stripe Checkout si aad u geliso xogta kaadhkaaga."
+        "stripe": "Waxaad u wareejin doontaa Stripe Checkout si aad u geliso xogta kaadhkaaga.",
+        "paypal": "Waxaa laguu weecin doonaa PayPal si aad lacag-bixinta u ansixiso."
       },
       "field": {
         "bankReference": "Tixraaca bangiga",

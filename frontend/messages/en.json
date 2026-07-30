@@ -2951,6 +2951,12 @@
       "stripeReturn": {
         "success": "Payment received — receipt is on its way to your inbox.",
         "cancel": "Payment cancelled. Your invoice is still pending; you can try again anytime."
+      },
+      "paypalReturn": {
+        "success": "PayPal payment confirmed. Your invoice is settled.",
+        "cancel": "PayPal payment cancelled. Nothing was charged.",
+        "pending": "PayPal payment is being verified. Your invoice will update shortly.",
+        "failed": "The PayPal payment could not be completed. Nothing was charged — try again or choose another payment method."
       }
     },
     "alerts": {
@@ -2992,6 +2998,10 @@
         "stripe": {
           "label": "Pay by card (Stripe)",
           "hint": "Instant — Visa, Mastercard, Apple Pay, Google Pay"
+        },
+        "paypal": {
+          "label": "Pay with PayPal",
+          "hint": "Instant — PayPal balance or card"
         }
       },
       "paramsHint": {
@@ -2999,7 +3009,8 @@
         "mobile_money": "Enter the phone number used for the {provider} transfer.",
         "third_party": "Identify the third party paying on your behalf.",
         "wallet": "Apply your wallet balance to this invoice.",
-        "stripe": "You will be redirected to Stripe Checkout to enter your card details."
+        "stripe": "You will be redirected to Stripe Checkout to enter your card details.",
+        "paypal": "You will be redirected to PayPal to approve the payment."
       },
       "field": {
         "bankReference": "Bank reference",

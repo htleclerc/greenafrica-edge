@@ -3279,6 +3279,12 @@
       "stripeReturn": {
         "success": "Pagamento concluído — sua fatura será atualizada em breve.",
         "cancel": "Pagamento cancelado — você pode tentar novamente."
+      },
+      "paypalReturn": {
+        "success": "Pagamento PayPal confirmado. A sua fatura está liquidada.",
+        "cancel": "Pagamento PayPal cancelado. Nenhum valor foi cobrado.",
+        "pending": "O pagamento PayPal está a ser verificado. A sua fatura será atualizada em breve.",
+        "failed": "Não foi possível concluir o pagamento PayPal. Nenhum valor foi cobrado — tente novamente ou escolha outro método de pagamento."
       }
     },
     "alerts": {
@@ -3334,6 +3340,10 @@
         "stripe": {
           "label": "Cartão de Crédito / Débito",
           "hint": "Pagamento online seguro"
+        },
+        "paypal": {
+          "label": "Pagar com PayPal",
+          "hint": "Instantâneo — saldo PayPal ou cartão"
         }
       },
       "paramsHint": {
@@ -3341,7 +3351,8 @@
         "mobile_money": "Forneça os detalhes da transação de dinheiro móvel.",
         "third_party": "Forneça os detalhes do pagador terceiro.",
         "wallet": "Seu saldo na carteira será utilizado.",
-        "stripe": "Você será redirecionado para uma página de pagamento segura."
+        "stripe": "Você será redirecionado para uma página de pagamento segura.",
+        "paypal": "Será redirecionado para o PayPal para aprovar o pagamento."
       },
       "field": {
         "bankReference": "Referência bancária",

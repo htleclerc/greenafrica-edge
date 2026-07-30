@@ -2951,6 +2951,12 @@
       "stripeReturn": {
         "success": "Paiement reçu — le reçu vous parvient par e-mail.",
         "cancel": "Paiement annulé. Votre facture reste en attente ; vous pouvez réessayer."
+      },
+      "paypalReturn": {
+        "success": "Paiement PayPal confirmé. Votre facture est réglée.",
+        "cancel": "Paiement PayPal annulé. Aucun montant n'a été prélevé.",
+        "pending": "Paiement PayPal en cours de vérification. Votre facture sera mise à jour sous peu.",
+        "failed": "Le paiement PayPal n'a pas pu être finalisé. Aucun montant n'a été prélevé — réessayez ou choisissez un autre moyen de paiement."
       }
     },
     "alerts": {
@@ -2992,6 +2998,10 @@
         "stripe": {
           "label": "Payer par carte (Stripe)",
           "hint": "Instantané — Visa, Mastercard, Apple Pay, Google Pay"
+        },
+        "paypal": {
+          "label": "Payer avec PayPal",
+          "hint": "Instantané — solde PayPal ou carte bancaire"
         }
       },
       "paramsHint": {
@@ -2999,7 +3009,8 @@
         "mobile_money": "Saisissez le numéro de téléphone utilisé pour le transfert {provider}.",
         "third_party": "Identifiez le tiers qui paie pour votre compte.",
         "wallet": "Appliquez votre solde wallet à cette facture.",
-        "stripe": "Vous serez redirigé vers Stripe Checkout pour saisir votre carte."
+        "stripe": "Vous serez redirigé vers Stripe Checkout pour saisir votre carte.",
+        "paypal": "Vous serez redirigé vers PayPal pour valider le paiement."
       },
       "field": {
         "bankReference": "Référence bancaire",

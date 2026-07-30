@@ -3,7 +3,9 @@
 import * as React from 'react';
 
 export type Step = 'rail' | 'params' | 'confirm';
-export type Rail = 'STRIPE' | 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
+// L'ordre suit OWNER_RAILS de api/owner/payment-availability — les deux listes
+// décrivent le même ensemble de rails ouverts à l'armateur.
+export type Rail = 'STRIPE' | 'PAYPAL' | 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
 export type PayDialogMode = 'invoice' | 'topup';
 
 export interface PayDialogState {
