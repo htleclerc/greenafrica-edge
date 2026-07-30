@@ -98,7 +98,44 @@ BEGIN
   ASSERT v_dup, 'expected unique_violation on duplicate PAYPAL external_reference';
 END $$;
 
--- 6. La clé de feature flag est semée, à false
+-- 6. Une ligne PAYPAL en PROCESSING sans external_reference est refusée
+DO $$
+DECLARE
+  v_shipowner UUID;
+  v_blocked   BOOLEAN := FALSE;
+BEGIN
+  SELECT id INTO v_shipowner FROM public.shipowners LIMIT 1;
+  IF v_shipowner IS NULL THEN
+    RAISE NOTICE 'skipping external_ref assertion: no seed shipowner';
+    RETURN;
+  END IF;
+
+  BEGIN
+    INSERT INTO public.payments
+        (shipowner_id, amount_minor, currency, amount_usd_minor, rail, status, external_reference)
+    VALUES
+        (v_shipowner, 100000, 'USD', 100000, 'PAYPAL', 'PROCESSING', NULL);
+  EXCEPTION WHEN check_violation THEN
+    v_blocked := TRUE;
+  END;
+
+  ASSERT v_blocked, 'expected check_violation on PAYPAL PROCESSING row without external_reference';
+END $$;
+
+-- 6b. Mais une ligne PAYPAL non engagée (INITIATED/CANCELLED) reste permise
+DO $$
+DECLARE v_shipowner UUID;
+BEGIN
+  SELECT id INTO v_shipowner FROM public.shipowners LIMIT 1;
+  IF v_shipowner IS NULL THEN RETURN; END IF;
+
+  INSERT INTO public.payments
+      (shipowner_id, amount_minor, currency, amount_usd_minor, rail, status, external_reference)
+  VALUES
+      (v_shipowner, 100000, 'USD', 100000, 'PAYPAL', 'CANCELLED', NULL);
+END $$;
+
+-- 7. La clé de feature flag est semée, à false
 DO $$
 DECLARE v JSONB;
 BEGIN

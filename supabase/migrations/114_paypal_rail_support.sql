@@ -23,6 +23,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_paypal_order
 COMMENT ON INDEX public.idx_payments_paypal_order IS
     'Rail PAYPAL : lookup par paypal order id + garde d''idempotence (une ligne par ordre).';
 
+-- 1b. Une ligne PAYPAL engagée doit porter son identifiant d'ordre.
+--
+-- Jumelle de la contrainte `payments_stripe_external_ref` (mig 048) : sans
+-- external_reference, ni la route de retour, ni le webhook, ni le cron ne
+-- peuvent retrouver la ligne — le paiement serait encaissé chez PayPal et
+-- introuvable chez nous. L'index unique de l'étape 1 ne suffit pas : un index
+-- partiel n'interdit pas les NULL.
+ALTER TABLE public.payments
+    ADD CONSTRAINT payments_paypal_external_ref CHECK (
+        NOT (rail = 'PAYPAL' AND status IN ('PROCESSING','CONFIRMED','REFUNDED')
+             AND external_reference IS NULL)
+    );
+
 -- 2. can_confirm_payment (mig 057) : PAYPAL est confirmé par le système
 --    (route de retour / webhook / cron), JAMAIS par un humain — comme WALLET et
 --    STRIPE. Sans ça, un FINANCE_ADMIN pourrait confirmer à la main un paiement
