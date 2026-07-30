@@ -111,6 +111,7 @@ export function LegalPageShell({
                                 <a href={`/privacy-policy${from ? `?from=${from}` : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_privacy_policy')}</a>
                                 <a href={`/terms-of-service${from ? `?from=${from}` : ''}`} className="hover:text-[#38BDF8] transition-colors">{t('footer_terms_of_service')}</a>
                                 <a href={`/security-audit${from ? `?from=${from}` : ''}`}  className="hover:text-[#38BDF8] transition-colors">{t('footer_security_audit')}</a>
+                                <a href={`/legal-basis${from ? `?from=${from}` : ''}`} className="hover:text-[#38BDF8] transition-colors">{t('footer_legal_basis')}</a>
                             </div>
                         </div>
                     </div>

@@ -19,6 +19,7 @@ const SUPPORT_ROUTES: Record<string, string> = {
     privacy_policy:   '/privacy-policy',
     terms_of_service: '/terms-of-service',
     security_audit:   '/security-audit',
+    legal_basis:      '/legal-basis',
 };
 
 export function Footer() {

@@ -60,3 +60,17 @@ describe('LegalBasisContent', () => {
         expect(document.querySelector('a[href$=".pdf"]')).toBeNull();
     });
 });
+
+describe('LegalBasisContent — cross-links', () => {
+    it('links to the other legal documents from the shell footer', () => {
+        renderPage();
+        for (const href of ['/privacy-policy', '/terms-of-service', '/security-audit']) {
+            expect(document.querySelector(`a[href="${href}"]`), href).not.toBeNull();
+        }
+    });
+
+    it('exposes the legal-basis link in the shell footer', () => {
+        renderPage();
+        expect(document.querySelector('a[href="/legal-basis"]')).not.toBeNull();
+    });
+});
