@@ -13,6 +13,7 @@ const mockSupabase = {
         }),
         select: vi.fn(() => ({
             eq: () => ({
+                maybeSingle: async () => ({ data: transactionRow, error: null }),
                 order: () => ({
                     limit: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
                 }),
@@ -43,6 +44,15 @@ vi.mock('@/lib/auth/requireOwner', () => ({
     })),
 }));
 
+let transactionRow: { invoice_ref: string | null } | null = { invoice_ref: 'INV-2026-abc' };
+const createPaypalOrderMock = vi.fn();
+const paypalConfiguredMock = vi.fn(() => true);
+
+vi.mock('@/services/paypalService', () => ({
+    createOrder: (...a: unknown[]) => createPaypalOrderMock(...a),
+    paypalConfigured: () => paypalConfiguredMock(),
+}));
+
 vi.mock('@/services/stripeService', () => ({
     createCheckoutSession: vi.fn().mockResolvedValue({
         checkoutUrl: 'https://checkout.stripe.com/c/cs_test_123',
@@ -55,6 +65,9 @@ beforeEach(() => {
     inserted.length = 0;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
+    transactionRow = { invoice_ref: 'INV-2026-abc' };
+    createPaypalOrderMock.mockReset().mockResolvedValue({ orderId: 'ORDER-1', approveUrl: 'https://paypal.com/approve/ORDER-1' });
+    paypalConfiguredMock.mockReset().mockReturnValue(true);
     vi.clearAllMocks();
 });
 
@@ -145,5 +158,106 @@ describe('initiatePayment — STRIPE rail', () => {
             transactionId: '123e4567-e89b-42d3-a456-426614174000',
             amount: '100.00', currency: 'USD', rail: 'STRIPE', railDetails: {},
         })).rejects.toThrow(/Stripe API error/);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rail PAYPAL — jumeau de STRIPE : ordre cree AVANT l'INSERT, ligne PROCESSING,
+// checkoutUrl renvoyee au dialogue.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('initiatePayment — rail PAYPAL', () => {
+    const TX_ID = '123e4567-e89b-12d3-a456-426614174010';
+
+    it('cree un ordre PayPal et insere une ligne PROCESSING', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        const out = await initiatePayment({
+            transactionId: TX_ID,
+            amount: '1250.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        });
+
+        const row = inserted[0];
+        expect(row.rail).toBe('PAYPAL');
+        expect(row.status).toBe('PROCESSING');
+        expect(row.external_reference).toBe('ORDER-1');
+        expect(row.amount_usd_minor).toBe(125000);
+        expect(row.rail_details.paypal_order_id).toBe('ORDER-1');
+        expect(out.checkoutUrl).toBe('https://paypal.com/approve/ORDER-1');
+    });
+
+    it('passe montant, reference de facture et URLs de retour a PayPal', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        await initiatePayment({
+            transactionId: TX_ID,
+            amount: '1250.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        });
+
+        const arg = createPaypalOrderMock.mock.calls[0][0];
+        expect(arg.amountUsdMinor).toBe(125000);
+        expect(arg.transactionId).toBe(TX_ID);
+        expect(arg.invoiceRef).toBe('INV-2026-abc');
+        expect(arg.returnUrl).toContain('/api/payments/paypal/return');
+        expect(arg.cancelUrl).toContain('/dashboard/invoices?paypal=cancel');
+    });
+
+    it('retombe sur l id de transaction si la facture n a pas de reference', async () => {
+        transactionRow = { invoice_ref: null };
+        const { initiatePayment } = await import('./initiatePayment');
+        await initiatePayment({
+            transactionId: TX_ID,
+            amount: '10.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        });
+        expect(createPaypalOrderMock.mock.calls[0][0].invoiceRef).toBe(TX_ID);
+    });
+
+    it('refuse si les credentials PayPal manquent, sans creer de ligne', async () => {
+        paypalConfiguredMock.mockReturnValue(false);
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: TX_ID,
+            amount: '10.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        })).rejects.toThrow(/paypal/i);
+        expect(inserted).toEqual([]);
+        expect(createPaypalOrderMock).not.toHaveBeenCalled();
+    });
+
+    it('ne cree aucune ligne si createOrder echoue', async () => {
+        createPaypalOrderMock.mockRejectedValue(new Error('PayPal 422'));
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: TX_ID,
+            amount: '10.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        })).rejects.toThrow('PayPal 422');
+        expect(inserted).toEqual([]);
+    });
+
+    it('fonctionne en top-up (transactionId null)', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        await initiatePayment({
+            transactionId: null,
+            amount: '500.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: {},
+        });
+        expect(inserted[0].transaction_id).toBeNull();
+        expect(createPaypalOrderMock.mock.calls[0][0].transactionId).toBeNull();
+        expect(createPaypalOrderMock.mock.calls[0][0].invoiceRef).toBe('TOPUP');
+    });
+
+    it('preserve les railDetails fournis par le dialogue', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        await initiatePayment({
+            transactionId: TX_ID,
+            amount: '10.00', currency: 'USD', rail: 'PAYPAL',
+            railDetails: { source: 'owner_initiated' },
+        });
+        expect(inserted[0].rail_details).toEqual({
+            source: 'owner_initiated',
+            paypal_order_id: 'ORDER-1',
+        });
     });
 });
