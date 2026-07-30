@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import en from '../../../messages/en.json';
+import ar from '../../../messages/ar.json';
 import fr from '../../../messages/fr.json';
+import pt from '../../../messages/pt.json';
+import so from '../../../messages/so.json';
+import sw from '../../../messages/sw.json';
 
 type Messages = Record<string, Record<string, string>>;
 
 const EN = en as unknown as Messages;
-const FR = fr as unknown as Messages;
 
 describe('LegalBasis message catalog — English reference', () => {
     it('defines the LegalBasis namespace', () => {
@@ -39,21 +42,29 @@ describe('LegalBasis message catalog — English reference', () => {
     });
 });
 
-describe('LegalBasis message catalog — French', () => {
+const TRANSLATIONS: ReadonlyArray<readonly [string, Messages]> = [
+    ['ar', ar as unknown as Messages],
+    ['fr', fr as unknown as Messages],
+    ['pt', pt as unknown as Messages],
+    ['so', so as unknown as Messages],
+    ['sw', sw as unknown as Messages],
+];
+
+describe.each(TRANSLATIONS)('LegalBasis message catalog — %s', (locale, messages) => {
     it('has exactly the English key set', () => {
-        expect(Object.keys(FR.LegalBasis ?? {}).sort()).toEqual(Object.keys(EN.LegalBasis).sort());
+        expect(Object.keys(messages.LegalBasis ?? {}).sort()).toEqual(Object.keys(EN.LegalBasis).sort());
     });
 
     it('has no empty or whitespace-only value', () => {
-        for (const [key, value] of Object.entries(FR.LegalBasis ?? {})) {
-            expect(typeof value, `LegalBasis.${key} must be a string`).toBe('string');
-            expect(value.trim(), `LegalBasis.${key} must not be blank`).not.toBe('');
+        for (const [key, value] of Object.entries(messages.LegalBasis ?? {})) {
+            expect(typeof value, `${locale} LegalBasis.${key} must be a string`).toBe('string');
+            expect(value.trim(), `${locale} LegalBasis.${key} must not be blank`).not.toBe('');
         }
     });
 
     it('defines the shell integration keys', () => {
-        expect(FR.Legal.badge_legal_basis).toBeTruthy();
-        expect(FR.Legal.footer_legal_basis).toBeTruthy();
-        expect(FR.Footer.legal_basis).toBeTruthy();
+        expect(messages.Legal.badge_legal_basis, `${locale} Legal.badge_legal_basis`).toBeTruthy();
+        expect(messages.Legal.footer_legal_basis, `${locale} Legal.footer_legal_basis`).toBeTruthy();
+        expect(messages.Footer.legal_basis, `${locale} Footer.legal_basis`).toBeTruthy();
     });
 });
