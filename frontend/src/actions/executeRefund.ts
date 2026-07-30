@@ -28,8 +28,14 @@ const log = scopedLogger('executeRefund');
 //             API failure the refund stays in APPROVED — the admin can retry
 //             once Stripe is reachable again. Webhook (Task 8) is the
 //             idempotent safety net for race conditions / lost responses.
-//   - Other rails (CASH/CHEQUE/MOBILE_MONEY/THIRD_PARTY/NETTING/LC/BANK_GUARANTEE):
+//   - Other rails (CASH/CHEQUE/MOBILE_MONEY/THIRD_PARTY/NETTING/LC/
+//                   BANK_GUARANTEE/PAYPAL):
 //             state transition only; admin records execution out-of-band.
+//             PAYPAL is deliberately in this group: the PayPal refund API
+//             (/v2/payments/captures/{id}/refund) is NOT wired up, so a finance
+//             admin issues the refund in the PayPal dashboard and records it
+//             here. Automating it is a separate piece of work — do not assume
+//             money moves when a PAYPAL refund reaches EXECUTED.
 //
 // All state writes happen AFTER the side effect succeeds — so a half-executed
 // orphan row should not exist. The one residual hazard is the WALLET case
@@ -47,6 +53,7 @@ const RAIL_VALUES = [
     'WALLET',
     'WIRE_TRANSFER',
     'STRIPE',
+    'PAYPAL',
     'CASH',
     'CHEQUE',
     'MOBILE_MONEY',

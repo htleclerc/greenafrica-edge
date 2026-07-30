@@ -12,7 +12,7 @@ import { PaymentReviewDrawer } from './PaymentReviewDrawer';
 import type { PaymentRow as PaymentRowType, PaymentStatusV7, PaymentRail } from '@/services/paymentService';
 
 const ALL_STATUSES: PaymentStatusV7[] = ['INITIATED', 'PROCESSING', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'REFUNDED'];
-const ALL_RAILS: PaymentRail[] = ['STRIPE','WIRE_TRANSFER','CASH','CHEQUE','LETTER_OF_CREDIT','NETTING','THIRD_PARTY','MOBILE_MONEY','BANK_GUARANTEE','WALLET'];
+const ALL_RAILS: PaymentRail[] = ['STRIPE','PAYPAL','WIRE_TRANSFER','CASH','CHEQUE','LETTER_OF_CREDIT','NETTING','THIRD_PARTY','MOBILE_MONEY','BANK_GUARANTEE','WALLET'];
 
 export function PaymentsAdminPanel() {
     const t = useTranslations('AdminPayments');

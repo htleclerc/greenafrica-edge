@@ -29,6 +29,8 @@ const schema = z.object({
         'WALLET',
         'WIRE_TRANSFER',
         'STRIPE',
+        // PAYPAL : remboursement manuel (voir executeRefund) — aucun appel API.
+        'PAYPAL',
         'CASH',
         'CHEQUE',
         'MOBILE_MONEY',
@@ -46,6 +48,7 @@ export async function approveRefund(input: {
         | 'WALLET'
         | 'WIRE_TRANSFER'
         | 'STRIPE'
+        | 'PAYPAL'
         | 'CASH'
         | 'CHEQUE'
         | 'MOBILE_MONEY'

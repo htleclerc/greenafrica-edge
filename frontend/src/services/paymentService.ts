@@ -527,6 +527,7 @@ export async function verifyPayoneerSignature(body: string, signature: string): 
  */
 export type PaymentRail =
   | 'STRIPE'
+  | 'PAYPAL'
   | 'WIRE_TRANSFER'
   | 'CASH'
   | 'CHEQUE'
