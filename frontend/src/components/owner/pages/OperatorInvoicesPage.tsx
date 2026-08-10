@@ -1,7 +1,7 @@
 // Reusable server component for the operator invoices view.
 // Used by /owner/invoices (via thin wrapper) and /dashboard/invoices when the
 // principal is an operator. Always fetches via principal.supabase (RLS-scoped).
-// Preserves the PayDialog owner flow (3-step wizard) and ?stripe= banners.
+// Preserves the PayDialog owner flow (3-step wizard) and ?stripe= / ?paypal= banners.
 
 import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
@@ -21,12 +21,36 @@ interface RawTxn {
     created_at: string;
 }
 
+/**
+ * Issues possibles d'un retour PayPal. Quatre valeurs, contre deux pour Stripe :
+ * la capture PayPal est un appel explicite, elle peut rester en attente (filet
+ * webhook/cron) ou échouer sans qu'aucun montant n'ait été prélevé.
+ */
+export const PAYPAL_RETURNS = ['success', 'cancel', 'pending', 'failed'] as const;
+export type PaypalReturn = typeof PAYPAL_RETURNS[number];
+
+/**
+ * Teintes des bannières de retour PayPal, alignées sur celles de Stripe :
+ * vert = encaissé, ambre = en attente ou annulé, rouge = échec.
+ */
+const PAYPAL_BANNER_STYLE: Record<PaypalReturn, string> = {
+    success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+    cancel: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+    pending: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+    failed: 'border-red-500/30 bg-red-500/10 text-red-200',
+};
+
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
     stripeReturn?: 'success' | 'cancel' | null;
+    paypalReturn?: PaypalReturn | null;
 }
 
-export async function OperatorInvoicesPage({ principal, stripeReturn = null }: Props) {
+export async function OperatorInvoicesPage({
+    principal,
+    stripeReturn = null,
+    paypalReturn = null,
+}: Props) {
     const t = await getTranslations('OwnerPortal.invoices');
 
     const [txnRes, walletRes, receiptRes, pendingWireRes] = await Promise.all([
@@ -123,6 +147,11 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
             {stripeReturn === 'cancel' && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 mb-4 text-sm text-amber-200">
                     {t('stripeReturn.cancel')}
+                </div>
+            )}
+            {paypalReturn && (
+                <div className={`rounded-xl border p-3 mb-4 text-sm ${PAYPAL_BANNER_STYLE[paypalReturn]}`}>
+                    {t(`paypalReturn.${paypalReturn}`)}
                 </div>
             )}
 

@@ -69,9 +69,9 @@ Actual schedules per `frontend/vercel.json` (3 crons, all daily — Vercel Hobby
 |---|---|---|
 | `/api/cron/overdue-alerts` | `0 9 * * *` (daily 09:00 UTC) | Pre-Plan 7 |
 | `/api/cron/notification-email-loop` | `0 9 * * *` (daily 09:00 UTC) | 7H-1 |
-| `/api/cron/stripe-reconcile-all` | `0 9 * * *` (daily 09:00 UTC) | Chains 7D + 7H-1 reconcilers |
+| `/api/cron/payments-reconcile-all` | `0 9 * * *` (daily 09:00 UTC) | Chains 7D + 7H-1 + PayPal reconcilers |
 
-> **Note**: `/api/cron/stripe-reconcile-pending` (7D) and `/api/cron/stripe-refund-reconcile-pending` (7H-1) still exist as routes but are **NOT scheduled** — their original `*/15 * * * *` cadence fails Hobby-plan deploys, so `stripe-reconcile-all` chains both behind the single daily slot. Consequence: a missed Stripe webhook can leave a PROCESSING payment / APPROVED refund stuck for up to ~24h before reconciliation. The individual routes remain callable manually with `Authorization: Bearer $CRON_SECRET` for ops/debug. Restore `*/15` on Vercel Pro if reactivity becomes a constraint.
+> **Note**: `/api/cron/stripe-reconcile-pending` (7D) and `/api/cron/stripe-refund-reconcile-pending` (7H-1) still exist as routes but are **NOT scheduled** — their original `*/15 * * * *` cadence fails Hobby-plan deploys, so `payments-reconcile-all` chains both behind the single daily slot. Consequence: a missed Stripe webhook can leave a PROCESSING payment / APPROVED refund stuck for up to ~24h before reconciliation. The individual routes remain callable manually with `Authorization: Bearer $CRON_SECRET` for ops/debug. Restore `*/15` on Vercel Pro if reactivity becomes a constraint.
 
 Vercel Crons dashboard → confirm last/next run timestamps look sane.
 
@@ -240,7 +240,7 @@ Have one canary owner pay one proforma ($100) via Stripe. Verify:
 UPDATE app_config SET value = 'false'::jsonb WHERE key = 'feature.online_payment_stripe_enabled';
 ```
 
-In-flight Checkout sessions: existing PROCESSING payments will continue to reconcile via `/api/cron/stripe-reconcile-all` daily at 09:00 UTC (up to ~24h latency — see §1.3 note; trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET for immediate reconcile). Webhook handler still functions even when flag is off (idempotent by design).
+In-flight Checkout sessions: existing PROCESSING payments will continue to reconcile via `/api/cron/payments-reconcile-all` daily at 09:00 UTC (up to ~24h latency — see §1.3 note; trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET for immediate reconcile). Webhook handler still functions even when flag is off (idempotent by design).
 
 ---
 
@@ -457,7 +457,7 @@ scope:stripe-webhook
 - Decision: add handler (then mig + deploy) OR ignore (most likely safe — handler is no-op idempotent return 200).
 
 ### 11.7 Stuck INITIATED payment (`v_payments_initiated_overdue` non-zero)
-- For STRIPE rail: `/api/cron/stripe-reconcile-all` reconciles daily at 09:00 UTC (§1.3). For an immediate check, trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET, or check `external_reference` against the Stripe dashboard.
+- For STRIPE rail: `/api/cron/payments-reconcile-all` reconciles daily at 09:00 UTC (§1.3). For an immediate check, trigger `/api/cron/stripe-reconcile-pending` manually with the CRON_SECRET, or check `external_reference` against the Stripe dashboard.
 - For WIRE/CHEQUE/CASH rails: payment proof was uploaded but admin never confirmed/rejected. Surface via `/admin/payments` queue.
 
 ---

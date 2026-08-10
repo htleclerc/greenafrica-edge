@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // --- Mocks ---
 vi.mock('@/lib/supabase/server', () => ({
@@ -15,6 +15,7 @@ vi.mock('@/lib/feature-flags', () => ({
 
 import { GET } from './route';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
+import { selectProvidersForRail } from '@/services/paymentService';
 
 interface RailEligibility {
     rail: string;
@@ -82,5 +83,103 @@ describe('GET /api/owner/payment-availability — Plan 7H-1 Task 5.2 STRIPE flag
         const body = await res.json() as { rails: RailEligibility[] };
         const stripe = body.rails.find((r) => r.rail === 'STRIPE');
         expect(stripe?.eligible).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rail PAYPAL — meme politique fail-secure que STRIPE : credentials en
+// environnement ET feature flag app_config, les deux requis.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PAYPAL_ENV_KEYS = ['PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET'] as const;
+
+function flags(overrides: Record<string, boolean> = {}) {
+    return {
+        portalV1Enabled: true,
+        selfServiceEnabled: true,
+        onlinePaymentStripeEnabled: false,
+        onlinePaypalEnabled: false,
+        walletTopupEnabled: true,
+        notificationSmsEnabled: false,
+        airSelfServiceEnabled: false,
+        ...overrides,
+    };
+}
+
+describe('GET /api/owner/payment-availability — rail PAYPAL', () => {
+    const savedPaypal: Record<string, string | undefined> = {};
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        for (const k of PAYPAL_ENV_KEYS) savedPaypal[k] = process.env[k];
+    });
+
+    afterEach(() => {
+        for (const k of PAYPAL_ENV_KEYS) {
+            if (savedPaypal[k] === undefined) delete process.env[k];
+            else process.env[k] = savedPaypal[k];
+        }
+    });
+
+    function paypalOf(body: { rails: RailEligibility[] }) {
+        return body.rails.find((r) => r.rail === 'PAYPAL');
+    }
+
+    it('eligible quand les credentials et le flag sont presents', async () => {
+        process.env.PAYPAL_CLIENT_ID = 'cid';
+        process.env.PAYPAL_CLIENT_SECRET = 'csecret';
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(
+            flags({ onlinePaypalEnabled: true }),
+        );
+
+        const res = await GET(makeReq() as never);
+        const paypal = paypalOf(await res.json());
+        expect(paypal?.eligible).toBe(true);
+        expect(paypal?.providers).toEqual([
+            { provider: 'paypal', routes_rail: ['PAYPAL'], display_order: 0 },
+        ]);
+        expect(paypal?.reason).toBeUndefined();
+    });
+
+    it('ineligible quand le flag est OFF, meme avec les credentials', async () => {
+        process.env.PAYPAL_CLIENT_ID = 'cid';
+        process.env.PAYPAL_CLIENT_SECRET = 'csecret';
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(
+            flags({ onlinePaypalEnabled: false }),
+        );
+
+        const res = await GET(makeReq() as never);
+        const paypal = paypalOf(await res.json());
+        expect(paypal?.eligible).toBe(false);
+        expect(paypal?.reason).toBe('no_active_provider');
+        expect(paypal?.providers).toEqual([]);
+    });
+
+    it('ineligible quand le secret manque, meme avec le flag ON', async () => {
+        process.env.PAYPAL_CLIENT_ID = 'cid';
+        delete process.env.PAYPAL_CLIENT_SECRET;
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(
+            flags({ onlinePaypalEnabled: true }),
+        );
+
+        const res = await GET(makeReq() as never);
+        expect(paypalOf(await res.json())?.eligible).toBe(false);
+    });
+
+    it('ne consulte pas payment_config pour PAYPAL ni STRIPE', async () => {
+        process.env.PAYPAL_CLIENT_ID = 'cid';
+        process.env.PAYPAL_CLIENT_SECRET = 'csecret';
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(
+            flags({ onlinePaypalEnabled: true }),
+        );
+
+        await GET(makeReq() as never);
+
+        const railsQueried = (selectProvidersForRail as ReturnType<typeof vi.fn>).mock.calls.map(
+            (c) => c[1],
+        );
+        expect(railsQueried).not.toContain('PAYPAL');
+        expect(railsQueried).not.toContain('STRIPE');
+        expect(railsQueried).toEqual(['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY']);
     });
 });

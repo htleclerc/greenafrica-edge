@@ -108,3 +108,92 @@ describe('PayDialog', () => {
         expect(await screen.findByText(/Bank reference is required/)).toBeInTheDocument();
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rail PAYPAL — jumeau de STRIPE cote UI : aucun parametre a saisir, puis
+// redirection vers la checkoutUrl renvoyee par initiatePayment.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('PayDialog — rail PAYPAL', () => {
+    const PAYPAL_ELIGIBLE = {
+        rail: 'PAYPAL',
+        eligible: true,
+        providers: [{ provider: 'paypal', routes_rail: ['PAYPAL'], display_order: 0 }],
+    };
+
+    function mockAvailability(rails: unknown[]) {
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ rails }),
+        });
+    }
+
+    beforeEach(() => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockReset();
+    });
+
+    it('affiche PayPal dans le picker quand le rail est eligible', async () => {
+        mockAvailability([PAYPAL_ELIGIBLE]);
+        setup();
+        const label = await screen.findByText(/Pay with PayPal/i);
+        expect(label.closest('button')).not.toBeDisabled();
+    });
+
+    it('affiche PayPal desactive quand il est ineligible', async () => {
+        mockAvailability([
+            { rail: 'PAYPAL', eligible: false, providers: [], reason: 'no_active_provider' },
+        ]);
+        setup();
+        const label = await screen.findByText(/Pay with PayPal/i);
+        expect(label.closest('button')).toBeDisabled();
+    });
+
+    it('ne demande aucun parametre de rail pour PayPal', async () => {
+        mockAvailability([PAYPAL_ELIGIBLE]);
+        setup();
+        fireEvent.click((await screen.findByText(/Pay with PayPal/i)).closest('button')!);
+        // Etape 2 : uniquement le hint, aucun champ obligatoire.
+        expect(await screen.findByText(/redirected to PayPal/i)).toBeInTheDocument();
+        expect(screen.queryByPlaceholderText('SWIFT-MT103-…')).not.toBeInTheDocument();
+    });
+
+    it('redirige vers l URL de checkout PayPal a la confirmation', async () => {
+        mockAvailability([PAYPAL_ELIGIBLE]);
+        const { initiatePayment } = await import('@/actions/initiatePayment');
+        (initiatePayment as ReturnType<typeof vi.fn>).mockResolvedValue({
+            id: 'pay-1',
+            status: 'PROCESSING',
+            transaction_id: 'tx-1',
+            amount_usd_minor: 100000,
+            checkoutUrl: 'https://paypal.com/approve/ORDER-1',
+        });
+
+        const assign = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: {
+                ...originalLocation,
+                get href() { return ''; },
+                set href(v: string) { assign(v); },
+            },
+        });
+
+        try {
+            setup();
+            fireEvent.click((await screen.findByText(/Pay with PayPal/i)).closest('button')!);
+            fireEvent.click(await screen.findByText('Next'));
+            fireEvent.click(await screen.findByText(/Submit payment/i));
+
+            await waitFor(() => expect(initiatePayment).toHaveBeenCalledWith(
+                expect.objectContaining({ rail: 'PAYPAL', currency: 'USD' }),
+            ));
+            await waitFor(() => expect(assign).toHaveBeenCalledWith('https://paypal.com/approve/ORDER-1'));
+        } finally {
+            Object.defineProperty(window, 'location', {
+                configurable: true,
+                value: originalLocation,
+            });
+        }
+    });
+});
