@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type EmailSource = 'AGENT_CLAIM' | 'PORT_OFFICER' | 'EQUASIS_VERIFIED';
+export type EmailSource = 'AGENT_CLAIM' | 'PORT_OFFICER' | 'EQUASIS_VERIFIED' | 'VESSELFINDER_VERIFIED';
 export type ShipownerAccountState = 'GHOST' | 'INVITED' | 'ACTIVE';
 
 export interface Shipowner {
@@ -34,6 +34,7 @@ export async function listShipowners(db: SupabaseClient): Promise<ShipownerListR
 const TRUST: Record<EmailSource, number> = {
   AGENT_CLAIM: 1,
   EQUASIS_VERIFIED: 2,
+  VESSELFINDER_VERIFIED: 2,
   PORT_OFFICER: 3,
 };
 
