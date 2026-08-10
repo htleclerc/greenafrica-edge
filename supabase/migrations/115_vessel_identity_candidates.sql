@@ -65,18 +65,10 @@ ALTER TABLE public.vessel_identity_candidates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY vic_staff_all ON public.vessel_identity_candidates
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid()
-        AND p.role IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN')
-    )
+    public.get_user_role()::text IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN')
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid()
-        AND p.role IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN')
-    )
+    public.get_user_role()::text IN ('PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN')
   );
 
 COMMENT ON TABLE public.vessel_identity_candidates IS
