@@ -202,10 +202,31 @@ export function parseVesselFinderPortCalls(csv: string): ParseResult {
 }
 
 /**
+ * Forme minimale acceptée par `resolveBillingEmail`. Volontairement structurelle
+ * plutôt que liée à `VesselFinderCandidate` : les trois appelants ont des formes
+ * différentes (candidat du parseur, ligne `vessel_identity_candidates` en
+ * snake_case côté action, ligne projetée côté écran) et doivent tous pouvoir
+ * traverser la MÊME fonction — c'est le sens du regroupement.
+ */
+export interface BillingContactSource {
+    managerEmail: string | null;
+    ownerEmail: string | null;
+    ismManagerEmail: string | null;
+    /** Absent ⇒ non bloqué. Un candidat sous sanctions n'a JAMAIS de destinataire. */
+    contactBlocked?: boolean;
+}
+
+/**
  * Destinataire de facturation (décision D4 de la spec) : le manager d'abord.
  * Mesuré sur l'export réel : manager 32 navires, owner 1, ISM 14 — l'owner est
  * presque toujours une société mono-navire domiciliée chez un trust, sans e-mail.
+ *
+ * SOURCE UNIQUE de la règle. Elle porte aussi la garde sanctions : un candidat
+ * `contactBlocked` ne rend aucune adresse, quelle que soit la société qui la
+ * porte. Sans cette garde, la fonction restituait l'adresse de Morgan Navigation
+ * (`arm-013`, UN) à qui l'appelait.
  */
-export function resolveBillingEmail(c: VesselFinderCandidate): string | null {
+export function resolveBillingEmail(c: BillingContactSource): string | null {
+    if (c.contactBlocked) return null;
     return c.managerEmail ?? c.ownerEmail ?? c.ismManagerEmail ?? null;
 }

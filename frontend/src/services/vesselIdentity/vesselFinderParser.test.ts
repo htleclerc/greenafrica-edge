@@ -133,8 +133,17 @@ describe('resolveBillingEmail', () => {
         ).toBeNull();
     });
 
-    it('résout MAYAR par l\'ISM manager', () => {
+    it('résout MAYAR par l\'ISM manager tant qu\'aucune sanction n\'est constatée', () => {
         const mayar = parseVesselFinderPortCalls(csv(MAYAR)).candidates[0];
         expect(resolveBillingEmail(mayar)).toBe('morgan.navigation@mail.example');
+    });
+
+    it('ne rend JAMAIS l\'adresse d\'un candidat sous sanctions', () => {
+        // MAYAR est joignable par MORGAN NAVIGATION CO SA (arm-013, liste UN).
+        // Une fois le candidat marqué par la garde sanctions, la règle de
+        // destinataire doit rendre null — c'est la même fonction qui sert les
+        // trois appelants, la garde ne peut donc plus être oubliée nulle part.
+        const mayar = parseVesselFinderPortCalls(csv(MAYAR)).candidates[0];
+        expect(resolveBillingEmail({ ...mayar, contactBlocked: true })).toBeNull();
     });
 });
