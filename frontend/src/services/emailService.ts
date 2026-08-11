@@ -406,7 +406,7 @@ export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<Emai
 
         <a href="${escapeHtml(p.verifyUrl)}" class="btn">Pay Now →</a>
 
-        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 7 days.</p>
+        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 10 business days of invoice issuance.</p>
     `;
 
     return sendEmail({
