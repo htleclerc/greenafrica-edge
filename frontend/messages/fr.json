@@ -3994,7 +3994,15 @@
     "billingEmail": "Contact de facturation",
     "noEmail": "Aucun contact joignable",
     "searchPlaceholder": "Rechercher par nom, IMO ou MMSI",
-    "empty": "Aucun candidat en attente. Déposez un export pour commencer."
+    "empty": "Aucun candidat en attente. Déposez un export pour commencer.",
+    "manualTitle": "Saisie manuelle",
+    "manualSubmit": "Ajouter le candidat",
+    "manualImo": "Numéro IMO",
+    "manualName": "Nom du navire",
+    "manualFlag": "Pavillon (ISO-2)",
+    "manualType": "Type de navire",
+    "manualManager": "Gérant",
+    "manualManagerEmail": "E-mail du gérant"
   },
   "AdminArmateurs": {
     "title": "Armateurs",

@@ -3994,7 +3994,15 @@
     "billingEmail": "Billing contact",
     "noEmail": "No reachable contact",
     "searchPlaceholder": "Search by name, IMO or MMSI",
-    "empty": "No candidates pending. Upload an export to get started."
+    "empty": "No candidates pending. Upload an export to get started.",
+    "manualTitle": "Manual entry",
+    "manualSubmit": "Add candidate",
+    "manualImo": "IMO number",
+    "manualName": "Vessel name",
+    "manualFlag": "Flag (ISO-2)",
+    "manualType": "Vessel type",
+    "manualManager": "Manager",
+    "manualManagerEmail": "Manager email"
   },
   "AdminArmateurs": {
     "title": "Shipowners",

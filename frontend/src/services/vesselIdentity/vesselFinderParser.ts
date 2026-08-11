@@ -67,7 +67,7 @@ const HEADER_GUARD: ReadonlyArray<readonly [number, string]> = [
  * classerait un pétrolier en cargo et fausserait la taxe. Ici un libellé inconnu
  * rejette la ligne et impose une décision humaine.
  */
-const CATEGORY_BY_TYPENAME: Readonly<Record<string, VesselCategory>> = {
+export const CATEGORY_BY_TYPENAME: Readonly<Record<string, VesselCategory>> = {
     'Bulk Carrier': 'BULK_CARRIER',
     'Container Ship': 'CONTAINER',
     'General Cargo Ship': 'CARGO',

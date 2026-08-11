@@ -3997,7 +3997,15 @@
     "billingEmail": "جهة اتصال الفوترة",
     "noEmail": "لا توجد جهة اتصال متاحة",
     "searchPlaceholder": "البحث بالاسم أو رقم IMO أو MMSI",
-    "empty": "لا يوجد مرشحون معلقون. ارفع ملف تصدير للبدء."
+    "empty": "لا يوجد مرشحون معلقون. ارفع ملف تصدير للبدء.",
+    "manualTitle": "إدخال يدوي",
+    "manualSubmit": "إضافة المرشح",
+    "manualImo": "رقم IMO",
+    "manualName": "اسم السفينة",
+    "manualFlag": "العلم (ISO-2)",
+    "manualType": "نوع السفينة",
+    "manualManager": "المدير",
+    "manualManagerEmail": "البريد الإلكتروني للمدير"
   },
   "AdminArmateurs": {
     "title": "الملاك الملاحيون",

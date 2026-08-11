@@ -3997,7 +3997,15 @@
     "billingEmail": "Mawasiliano ya malipo",
     "noEmail": "Hakuna mawasiliano yanayoweza kufikiwa",
     "searchPlaceholder": "Tafuta kwa jina, IMO au MMSI",
-    "empty": "Hakuna wagombea wanaosubiri. Pakia faili ili kuanza."
+    "empty": "Hakuna wagombea wanaosubiri. Pakia faili ili kuanza.",
+    "manualTitle": "Uingizaji wa mkono",
+    "manualSubmit": "Ongeza mgombea",
+    "manualImo": "Nambari ya IMO",
+    "manualName": "Jina la meli",
+    "manualFlag": "Bendera (ISO-2)",
+    "manualType": "Aina ya meli",
+    "manualManager": "Meneja",
+    "manualManagerEmail": "Barua pepe ya meneja"
   },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",

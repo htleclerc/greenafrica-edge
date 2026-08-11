@@ -4031,7 +4031,15 @@
     "billingEmail": "Contacto de faturação",
     "noEmail": "Nenhum contacto disponível",
     "searchPlaceholder": "Pesquisar por nome, IMO ou MMSI",
-    "empty": "Nenhum candidato pendente. Envie uma exportação para começar."
+    "empty": "Nenhum candidato pendente. Envie uma exportação para começar.",
+    "manualTitle": "Entrada manual",
+    "manualSubmit": "Adicionar candidato",
+    "manualImo": "Número IMO",
+    "manualName": "Nome do navio",
+    "manualFlag": "Bandeira (ISO-2)",
+    "manualType": "Tipo de navio",
+    "manualManager": "Gestor",
+    "manualManagerEmail": "E-mail do gestor"
   },
   "AdminArmateurs": {
     "title": "Armadores",

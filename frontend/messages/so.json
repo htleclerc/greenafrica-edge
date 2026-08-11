@@ -3994,7 +3994,15 @@
     "billingEmail": "Xiriirka lacag-bixinta",
     "noEmail": "Wax xiriir ah oo la heli karo lama helin",
     "searchPlaceholder": "Ka raadi magaca, IMO ama MMSI",
-    "empty": "Musharrax sugaya ma jiro. Soo geli sooyaal si aad u bilowdo."
+    "empty": "Musharrax sugaya ma jiro. Soo geli sooyaal si aad u bilowdo.",
+    "manualTitle": "Gelinta gacanta",
+    "manualSubmit": "Ku dar musharraxa",
+    "manualImo": "Lambarka IMO",
+    "manualName": "Magaca markabka",
+    "manualFlag": "Calanka (ISO-2)",
+    "manualType": "Nooca markabka",
+    "manualManager": "Maamulaha",
+    "manualManagerEmail": "Emailka maamulaha"
   },
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",

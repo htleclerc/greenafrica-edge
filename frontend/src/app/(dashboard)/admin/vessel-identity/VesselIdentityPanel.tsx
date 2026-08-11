@@ -4,6 +4,24 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { importVesselIdentityBatch } from '@/actions/importVesselIdentityBatch';
 import { applyVesselIdentity } from '@/actions/applyVesselIdentity';
+import { createManualCandidate } from '@/actions/createManualCandidate';
+import { CATEGORY_BY_TYPENAME } from '@/services/vesselIdentity/vesselFinderParser';
+
+const VESSEL_TYPES = Object.keys(CATEGORY_BY_TYPENAME);
+
+const EMPTY_MANUAL_FORM = {
+    imoNumber: '',
+    vesselName: '',
+    mmsi: '',
+    callSign: '',
+    flagCode: '',
+    typeRaw: VESSEL_TYPES[0] ?? '',
+    grossTonnage: '',
+    deadweight: '',
+    buildYear: '',
+    managerName: '',
+    managerEmail: '',
+};
 
 export interface UnidentifiedVessel {
     id: string;
@@ -48,6 +66,34 @@ export default function VesselIdentityPanel({
     const [busy, setBusy] = useState(false);
     const [selectedVessel, setSelectedVessel] = useState<string | null>(null);
     const [search, setSearch] = useState('');
+    const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM);
+    const [manualError, setManualError] = useState<string | null>(null);
+    const [manualBusy, setManualBusy] = useState(false);
+
+    function setManualField(field: keyof typeof EMPTY_MANUAL_FORM, value: string) {
+        setManualForm((prev) => ({ ...prev, [field]: value }));
+    }
+
+    async function onManualSubmit() {
+        setManualBusy(true);
+        setManualError(null);
+        const res = await createManualCandidate({
+            imoNumber: manualForm.imoNumber,
+            vesselName: manualForm.vesselName,
+            mmsi: manualForm.mmsi || null,
+            callSign: manualForm.callSign || null,
+            flagCode: manualForm.flagCode.toUpperCase(),
+            typeRaw: manualForm.typeRaw,
+            grossTonnage: manualForm.grossTonnage === '' ? null : Number(manualForm.grossTonnage),
+            deadweight: manualForm.deadweight === '' ? null : Number(manualForm.deadweight),
+            buildYear: manualForm.buildYear === '' ? null : Number(manualForm.buildYear),
+            managerName: manualForm.managerName || null,
+            managerEmail: manualForm.managerEmail || null,
+        });
+        setManualBusy(false);
+        if (!res.ok) { setManualError(res.reason); return; }
+        window.location.reload();
+    }
 
     async function onFile(file: File) {
         setBusy(true);
@@ -116,6 +162,139 @@ export default function VesselIdentityPanel({
                 )}
                 {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             </section>
+
+            <details className="rounded-lg border p-4" style={{ borderColor: 'var(--os-border)' }}>
+                <summary className="cursor-pointer font-medium text-[var(--os-text-primary)]">
+                    {t('manualTitle')}
+                </summary>
+                <form
+                    className="mt-3 grid gap-3 sm:grid-cols-2"
+                    onSubmit={(e) => { e.preventDefault(); void onManualSubmit(); }}
+                >
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualImo')}</span>
+                        <input
+                            type="text"
+                            required
+                            value={manualForm.imoNumber}
+                            onChange={(e) => setManualField('imoNumber', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualName')}</span>
+                        <input
+                            type="text"
+                            required
+                            value={manualForm.vesselName}
+                            onChange={(e) => setManualField('vesselName', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">MMSI</span>
+                        <input
+                            type="text"
+                            value={manualForm.mmsi}
+                            onChange={(e) => setManualField('mmsi', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualFlag')}</span>
+                        <input
+                            type="text"
+                            required
+                            maxLength={2}
+                            value={manualForm.flagCode}
+                            onChange={(e) => setManualField('flagCode', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualType')}</span>
+                        <select
+                            required
+                            value={manualForm.typeRaw}
+                            onChange={(e) => setManualField('typeRaw', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        >
+                            {VESSEL_TYPES.map((type) => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">GT</span>
+                        <input
+                            type="number"
+                            min={0}
+                            value={manualForm.grossTonnage}
+                            onChange={(e) => setManualField('grossTonnage', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">DWT</span>
+                        <input
+                            type="number"
+                            min={0}
+                            value={manualForm.deadweight}
+                            onChange={(e) => setManualField('deadweight', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">BUILT</span>
+                        <input
+                            type="number"
+                            value={manualForm.buildYear}
+                            onChange={(e) => setManualField('buildYear', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualManager')}</span>
+                        <input
+                            type="text"
+                            value={manualForm.managerName}
+                            onChange={(e) => setManualField('managerName', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualManagerEmail')}</span>
+                        <input
+                            type="email"
+                            value={manualForm.managerEmail}
+                            onChange={(e) => setManualField('managerEmail', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <div className="sm:col-span-2">
+                        <button
+                            type="submit"
+                            disabled={manualBusy}
+                            className="rounded bg-emerald-600 px-3 py-1 text-sm text-white disabled:opacity-40"
+                        >
+                            {t('manualSubmit')}
+                        </button>
+                    </div>
+                    {manualError && (
+                        <p className="sm:col-span-2 text-sm text-red-600">{manualError}</p>
+                    )}
+                </form>
+            </details>
 
             <div className="grid gap-6 md:grid-cols-2">
                 <section>
