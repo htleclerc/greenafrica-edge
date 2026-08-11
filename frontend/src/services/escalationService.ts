@@ -13,7 +13,7 @@ export interface UnpaidProforma {
   ownerEscalationDueAt: string;
   shipownerId: string | null;
   shipownerOfficialEmail: string | null;
-  shipownerOfficialEmailSource: 'AGENT_CLAIM' | 'PORT_OFFICER' | 'EQUASIS_VERIFIED' | null;
+  shipownerOfficialEmailSource: 'AGENT_CLAIM' | 'PORT_OFFICER' | 'EQUASIS_VERIFIED' | 'VESSELFINDER_VERIFIED' | null;
   agentProfileId: string | null;
   agentEmail: string | null;
 }
