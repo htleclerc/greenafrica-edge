@@ -26,28 +26,47 @@ interface OtherVesselRow {
     mmsi: string | null;
 }
 
+/** Écritures observées, pour vérifier les PAYLOADS et pas seulement les retours. */
+interface Capture {
+    updates: Array<{ table: string; payload: Record<string, unknown> }>;
+    inserts: Array<{ table: string; payload: Record<string, unknown> }>;
+}
+
+function newCapture(): Capture {
+    return { updates: [], inserts: [] };
+}
+
+interface StubOptions {
+    vesselCollisions?: OtherVesselRow[];
+    /** Vrai ⇒ l'armateur du navire cible porte AU MOINS un autre navire. */
+    sharedShipowner?: boolean;
+    capture?: Capture;
+}
+
 /**
  * Construit un faux client dont chaque table renvoie une réponse scriptée.
  *
- * `vessels` est interrogée jusqu'à trois fois avec des filtres différents :
- * une fois pour charger le navire cible (`.eq('id', vesselId)`), puis une ou
- * deux fois pour détecter une collision d'identité en excluant ce même
- * navire (`.neq('id', vessel.id).eq('imo_number', …)` puis, si besoin,
- * `.eq('mmsi', …)`). Une réponse scriptée statique par table ne peut pas
- * distinguer ces appels — sans le filtrage ci-dessous, la ligne `vessels`
- * scriptée se retrouverait comme "collision" avec elle-même à chaque
- * appariement réussi.
+ * `vessels` est interrogée jusqu'à quatre fois avec des filtres différents :
+ * une fois pour charger le navire cible (`.eq('id', vesselId)`), une ou deux
+ * fois pour détecter une collision d'identité en excluant ce même navire
+ * (`.neq('id', vessel.id).eq('imo_number', …)` puis, si besoin,
+ * `.eq('mmsi', …)`), et une fois pour savoir si l'armateur du navire porte un
+ * autre navire (`.eq('shipowner_id', …).neq('id', vessel.id)`). Une réponse
+ * scriptée statique par table ne peut pas distinguer ces appels — sans le
+ * filtrage ci-dessous, la ligne `vessels` scriptée se retrouverait comme
+ * "collision" avec elle-même à chaque appariement réussi.
  *
  * `vesselCollisions`, quand fourni, simule une vraie recherche filtrée par
  * colonne (`imo_number` ou `mmsi`) parmi une liste de navires tiers — c'est
  * ce qui permet de vérifier que la garde 4 interroge bien la valeur exacte
  * de `candidate.mmsi` via `.eq()` plutôt que de la concaténer dans une
  * chaîne `.or()` où une virgule pourrait la détourner.
+ *
+ * `capture`, quand fourni, retient les payloads d'`update` et d'`insert` :
+ * c'est le seul moyen de vérifier le point d'écriture lui-même — mapping
+ * GT → `gross_tonnage_dwt`, absence des colonnes nulles, entrée d'audit.
  */
-function tableStub(
-    responses: Record<string, unknown>,
-    options?: { vesselCollisions?: OtherVesselRow[] },
-) {
+function tableStub(responses: Record<string, unknown>, options?: StubOptions) {
     return (table: string) => {
         const row = responses[table] as { id?: unknown } | null | undefined;
         const collisions = table === 'vessels' ? options?.vesselCollisions : undefined;
@@ -64,7 +83,15 @@ function tableStub(
                 return chain;
             },
             or: () => chain,
+            limit: () => chain,
             maybeSingle: async () => {
+                // Sondage « cet armateur porte-t-il un autre navire ? » (garde 6).
+                if (table === 'vessels' && 'shipowner_id' in filters) {
+                    return {
+                        data: options?.sharedShipowner ? { id: 'autre-navire' } : null,
+                        error: null,
+                    };
+                }
                 // Chargement par id (garde 3) : jamais combiné à un .neq() ici.
                 if ('id' in filters && excludedId === undefined) {
                     return { data: row ?? null, error: null };
@@ -86,8 +113,14 @@ function tableStub(
                 return { data: excluded ? null : (row ?? null), error: null };
             },
             single: async () => ({ data: row ?? null, error: null }),
-            update: () => chain,
-            insert: async () => ({ error: null }),
+            update: (payload: Record<string, unknown>) => {
+                options?.capture?.updates.push({ table, payload });
+                return chain;
+            },
+            insert: async (payload: Record<string, unknown>) => {
+                options?.capture?.inserts.push({ table, payload });
+                return { error: null };
+            },
         };
         return chain;
     };
@@ -214,5 +247,245 @@ describe('applyVesselIdentity', () => {
         const r = await applyVesselIdentity(INPUT);
         expect(r).toEqual({ ok: false, reason: 'identity already held by another vessel' });
         expect(mockUpsertEmail).not.toHaveBeenCalled();
+    });
+
+    it('refuse une collision réelle sur l’IMO (autre navire) et passe le candidat en CONFLICT', async () => {
+        const OTHER_VESSEL: OtherVesselRow = {
+            id: '44444444-4444-4444-4444-444444444444',
+            imo_number: CANDIDATE.imo_number,
+            mmsi: '999999999',
+        };
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { vesselCollisions: [OTHER_VESSEL], capture },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        expect(r).toEqual({ ok: false, reason: 'identity already held by another vessel' });
+        // Aucune écriture sur vessels : l'IMO est UNIQUE en base, la garde
+        // doit trancher AVANT l'UPDATE.
+        expect(capture.updates.filter((u) => u.table === 'vessels')).toHaveLength(0);
+        expect(capture.updates).toContainEqual({
+            table: 'vessel_identity_candidates',
+            payload: { status: 'CONFLICT' },
+        });
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
+    });
+
+    it('écrit un audit CRITICAL quand le contact est bloqué par les sanctions', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            {
+                vessel_identity_candidates: {
+                    ...CANDIDATE, contact_blocked: true,
+                    contact_blocked_reason: 'ISM manager sous sanctions : Morgan Navigation SA (arm-013)',
+                    manager_email: null, ism_manager_email: 'morgan.navigation@mail.example',
+                },
+                vessels: PLACEHOLDER_VESSEL,
+            },
+            { capture },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        expect(r).toMatchObject({ ok: true, emailApplied: false, emailSkipped: 'CONTACT_BLOCKED' });
+
+        const audit = capture.inserts.find(
+            (i) => i.table === 'audit_logs' && i.payload.action === 'SANCTIONS_CONTACT_BLOCKED',
+        );
+        expect(audit).toBeDefined();
+        expect(audit?.payload).toMatchObject({
+            severity: 'CRITICAL',
+            entity_type: 'Vessel',
+            entity_id: PLACEHOLDER_VESSEL.id,
+        });
+        expect(audit?.payload.details_json).toMatchObject({
+            event: 'VESSELFINDER_CONTACT_BLOCKED',
+            reason: 'ISM manager sous sanctions : Morgan Navigation SA (arm-013)',
+        });
+    });
+
+    it('écrit GT dans gross_tonnage_dwt et DWT dans dwt — le mapping qui fait le montant', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { capture },
+        ));
+        expect((await applyVesselIdentity(INPUT)).ok).toBe(true);
+
+        const write = capture.updates.find((u) => u.table === 'vessels');
+        expect(write?.payload).toEqual({
+            imo_number: '7504158',
+            name: 'TRUST 1',
+            mmsi: '671882000',
+            call_sign: '5VEV4',
+            flag_code: 'TG',
+            category: 'CARGO',
+            vessel_subtype: 'Livestock Carrier',
+            gross_tonnage_dwt: 2975,
+            dwt: 2560,
+            build_year: 1975,
+        });
+    });
+
+    it('n’écrase JAMAIS une colonne par null — un GT vide n’entre pas dans le payload', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            {
+                vessel_identity_candidates: {
+                    ...CANDIDATE, gross_tonnage: null, deadweight: null,
+                    build_year: null, call_sign: null, mmsi: null,
+                },
+                vessels: PLACEHOLDER_VESSEL,
+            },
+            { capture },
+        ));
+        expect((await applyVesselIdentity(INPUT)).ok).toBe(true);
+
+        // gross_tonnage_dwt est INTEGER NOT NULL : l'inclure à null ferait
+        // échouer l'UPDATE au niveau base, message Postgres brut à l'écran.
+        const write = capture.updates.find((u) => u.table === 'vessels');
+        expect(write?.payload).not.toHaveProperty('gross_tonnage_dwt');
+        expect(write?.payload).not.toHaveProperty('dwt');
+        expect(write?.payload).not.toHaveProperty('build_year');
+        expect(write?.payload).not.toHaveProperty('mmsi');
+        // L'identité, elle, est toujours écrite.
+        expect(write?.payload).toMatchObject({ imo_number: '7504158', name: 'TRUST 1' });
+    });
+
+    it('n’écrit pas le contact quand l’armateur porte plus d’un navire', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { sharedShipowner: true, capture },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        // L'identité est appliquée, seul le contact est sauté : arm-014 porte
+        // 83 navires, une écriture y enverrait 82 relances au mauvais manager.
+        expect(r).toEqual({
+            ok: true,
+            vesselId: PLACEHOLDER_VESSEL.id,
+            emailApplied: false,
+            emailSkipped: 'SHARED_SHIPOWNER',
+        });
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
+        expect(capture.updates.find((u) => u.table === 'vessels')).toBeDefined();
+
+        const audit = capture.inserts.find(
+            (i) => i.table === 'audit_logs' && i.payload.action === 'TRANSACTION_UPDATED',
+        );
+        expect(audit?.payload.details_json).toMatchObject({ emailSkipped: 'SHARED_SHIPOWNER' });
+    });
+
+    it('dit NO_EMAIL quand aucun des trois contacts n’a d’adresse', async () => {
+        mockAdminFrom.mockImplementation(tableStub({
+            vessel_identity_candidates: {
+                ...CANDIDATE, manager_email: null, owner_email: null, ism_manager_email: null,
+            },
+            vessels: PLACEHOLDER_VESSEL,
+        }));
+        expect(await applyVesselIdentity(INPUT)).toMatchObject({
+            ok: true, emailApplied: false, emailSkipped: 'NO_EMAIL',
+        });
+    });
+
+    it('dit NO_SHIPOWNER quand le navire n’est rattaché à aucun armateur', async () => {
+        mockAdminFrom.mockImplementation(tableStub({
+            vessel_identity_candidates: CANDIDATE,
+            vessels: { ...PLACEHOLDER_VESSEL, shipowner_id: null },
+        }));
+        expect(await applyVesselIdentity(INPUT)).toMatchObject({
+            ok: true, emailApplied: false, emailSkipped: 'NO_SHIPOWNER',
+        });
+    });
+
+    it('n’abandonne pas le candidat quand l’écriture du contact lève', async () => {
+        const capture = newCapture();
+        mockUpsertEmail.mockRejectedValue(new Error('shipowner introuvable'));
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { capture },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        // L'identité est écrite : laisser le candidat PENDING le bloquerait à
+        // jamais derrière la garde « navire déjà identifié ».
+        expect(r).toMatchObject({ ok: true, emailApplied: false });
+        expect(capture.updates).toContainEqual(
+            expect.objectContaining({
+                table: 'vessel_identity_candidates',
+                payload: expect.objectContaining({ status: 'MATCHED' }),
+            }),
+        );
+        const audit = capture.inserts.find(
+            (i) => i.table === 'audit_logs' && i.payload.action === 'TRANSACTION_UPDATED',
+        );
+        expect(audit?.payload.details_json).toMatchObject({ emailError: 'shipowner introuvable' });
+    });
+});
+
+describe('applyVesselIdentity — garde de divergence de champs (§7.4)', () => {
+    /** Navire déjà pourvu d'une jauge et d'un pavillon, différents du candidat. */
+    const RENSEIGNE = {
+        ...PLACEHOLDER_VESSEL,
+        gross_tonnage_dwt: 5000,
+        dwt: 4000,
+        flag_code: 'KM',
+        build_year: 1975,
+    };
+
+    it('refuse d’écraser une valeur renseignée divergente et rend la liste', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: RENSEIGNE },
+            { capture },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        expect(r.ok).toBe(false);
+        if (!r.ok) {
+            expect(r.reason).toBe('field conflict');
+            expect(r.conflicts).toEqual([
+                { field: 'gross_tonnage_dwt', current: '5000', proposed: '2975' },
+                { field: 'dwt', current: '4000', proposed: '2560' },
+                { field: 'flag_code', current: 'KM', proposed: 'TG' },
+            ]);
+        }
+        // Aucune écriture : c'est tout l'intérêt de l'arbitrage.
+        expect(capture.updates.filter((u) => u.table === 'vessels')).toHaveLength(0);
+        expect(capture.updates).toContainEqual({
+            table: 'vessel_identity_candidates',
+            payload: { status: 'CONFLICT' },
+        });
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
+    });
+
+    it('ne voit pas de divergence sur une valeur cible vide ni sur le nom', async () => {
+        // Les placeholders s'appellent VESSEL-W4-xx : la divergence de nom est
+        // la règle, elle n'a aucune portée fiscale et ne doit rien bloquer.
+        mockAdminFrom.mockImplementation(tableStub({
+            vessel_identity_candidates: CANDIDATE,
+            vessels: { ...PLACEHOLDER_VESSEL, name: 'VESSEL-W4-07', gross_tonnage_dwt: null },
+        }));
+        expect((await applyVesselIdentity(INPUT)).ok).toBe(true);
+    });
+
+    it('applique et trace les champs écrasés quand l’arbitrage est explicite', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: RENSEIGNE },
+            { capture },
+        ));
+        const r = await applyVesselIdentity({ ...INPUT, acceptFieldOverrides: true });
+        expect(r).toMatchObject({ ok: true, emailApplied: true });
+
+        const write = capture.updates.find((u) => u.table === 'vessels');
+        expect(write?.payload).toMatchObject({ gross_tonnage_dwt: 2975, dwt: 2560, flag_code: 'TG' });
+
+        const audit = capture.inserts.find(
+            (i) => i.table === 'audit_logs' && i.payload.action === 'TRANSACTION_UPDATED',
+        );
+        const details = audit?.payload.details_json as { overriddenFields?: unknown };
+        expect(details.overriddenFields).toEqual([
+            { field: 'gross_tonnage_dwt', current: '5000', proposed: '2975' },
+            { field: 'dwt', current: '4000', proposed: '2560' },
+            { field: 'flag_code', current: 'KM', proposed: 'TG' },
+        ]);
     });
 });
