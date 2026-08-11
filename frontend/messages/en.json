@@ -820,7 +820,8 @@
     "nav_armateurs": "Shipowners",
     "nav_admin_invoices": "Invoices",
     "nav_admin_collections": "Collections",
-    "nav_airlines": "Airlines"
+    "nav_airlines": "Airlines",
+    "nav_vessel_identity": "Vessel Identity"
   },
   "AdminStaff": {
     "page_title": "Staff Management",
@@ -3973,6 +3974,27 @@
     "escalate_ramp_bailiff": "A J45 (pre-bailiff) reminder must be sent first.",
     "escalate_ramp_judicial": "A bailiff notice must be issued first.",
     "escalated_badge": "Escalated"
+  },
+  "AdminVesselIdentity": {
+    "title": "Vessel Identity",
+    "subtitle": "Match an unidentified vessel to a real vessel from a VesselFinder port-call export",
+    "uploadLabel": "Upload the port-call export (CSV)",
+    "batchLabel": "Batch name",
+    "import": "Import",
+    "importReport": "{rowsRead} rows read · {inserted} vessels retained · {rejected} rows rejected",
+    "rejectedTitle": "Rejected rows",
+    "rejectedLine": "Line {lineNumber} — {vesselName}: {reason}",
+    "unidentifiedTitle": "Unidentified vessels",
+    "candidatesTitle": "Available candidates",
+    "match": "Match",
+    "matched": "Matched",
+    "conflict": "Conflict — identity already held by another vessel",
+    "contactBlocked": "Contact blocked (sanctions)",
+    "contactBlockedHint": "The identity can be matched, but no email will be recorded.",
+    "billingEmail": "Billing contact",
+    "noEmail": "No reachable contact",
+    "searchPlaceholder": "Search by name, IMO or MMSI",
+    "empty": "No candidates pending. Upload an export to get started."
   },
   "AdminArmateurs": {
     "title": "Shipowners",

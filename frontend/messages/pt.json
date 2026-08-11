@@ -1148,7 +1148,8 @@
     "nav_wallets": "Carteiras",
     "nav_refunds": "Reembolsos",
     "nav_admin_invoices": "Faturas",
-    "nav_admin_collections": "Cobranças"
+    "nav_admin_collections": "Cobranças",
+    "nav_vessel_identity": "Identidade dos navios"
   },
   "AdminStaff": {
     "page_title": "Gestão de Pessoal",
@@ -4010,6 +4011,27 @@
     "escalate_ramp_bailiff": "Um lembrete J45 (pré-execução) deve ser enviado primeiro.",
     "escalate_ramp_judicial": "Uma notificação de agente de execução deve ser emitida primeiro.",
     "escalated_badge": "Escalado"
+  },
+  "AdminVesselIdentity": {
+    "title": "Identidade dos navios",
+    "subtitle": "Associar um navio não identificado a um navio real de uma exportação de escalas VesselFinder",
+    "uploadLabel": "Enviar a exportação de escalas (CSV)",
+    "batchLabel": "Nome do lote",
+    "import": "Importar",
+    "importReport": "{rowsRead} linhas lidas · {inserted} navios retidos · {rejected} linhas rejeitadas",
+    "rejectedTitle": "Linhas rejeitadas",
+    "rejectedLine": "Linha {lineNumber} — {vesselName}: {reason}",
+    "unidentifiedTitle": "Navios não identificados",
+    "candidatesTitle": "Candidatos disponíveis",
+    "match": "Associar",
+    "matched": "Associado",
+    "conflict": "Conflito — identidade já atribuída a outro navio",
+    "contactBlocked": "Contacto bloqueado (sanções)",
+    "contactBlockedHint": "A identidade pode ser associada, mas nenhum e-mail será registado.",
+    "billingEmail": "Contacto de faturação",
+    "noEmail": "Nenhum contacto disponível",
+    "searchPlaceholder": "Pesquisar por nome, IMO ou MMSI",
+    "empty": "Nenhum candidato pendente. Envie uma exportação para começar."
   },
   "AdminArmateurs": {
     "title": "Armadores",

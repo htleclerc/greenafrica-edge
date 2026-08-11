@@ -705,7 +705,8 @@
     "nav_wallets": "المحافظ",
     "nav_refunds": "المبالغ المستردة",
     "nav_admin_invoices": "الفواتير",
-    "nav_admin_collections": "التحصيل"
+    "nav_admin_collections": "التحصيل",
+    "nav_vessel_identity": "هوية السفن"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -3976,6 +3977,27 @@
     "escalate_ramp_bailiff": "يجب إرسال تذكير J45 (ما قبل المحضر القضائي) أولاً.",
     "escalate_ramp_judicial": "يجب إصدار إشعار المحضر القضائي أولاً.",
     "escalated_badge": "تم التصعيد"
+  },
+  "AdminVesselIdentity": {
+    "title": "هوية السفن",
+    "subtitle": "مطابقة سفينة غير معروفة الهوية بسفينة حقيقية من تصدير حركة الموانئ الخاص بـ VesselFinder",
+    "uploadLabel": "رفع تصدير حركة الموانئ (CSV)",
+    "batchLabel": "اسم الدفعة",
+    "import": "استيراد",
+    "importReport": "تمت قراءة {rowsRead} سطر · تم الاحتفاظ بـ {inserted} سفينة · تم رفض {rejected} سطر",
+    "rejectedTitle": "الأسطر المرفوضة",
+    "rejectedLine": "السطر {lineNumber} — {vesselName}: {reason}",
+    "unidentifiedTitle": "السفن غير المعروفة الهوية",
+    "candidatesTitle": "المرشحون المتاحون",
+    "match": "مطابقة",
+    "matched": "تمت المطابقة",
+    "conflict": "تعارض — الهوية مرتبطة بالفعل بسفينة أخرى",
+    "contactBlocked": "جهة الاتصال محظورة (عقوبات)",
+    "contactBlockedHint": "يمكن مطابقة الهوية، لكن لن يتم تسجيل أي بريد إلكتروني.",
+    "billingEmail": "جهة اتصال الفوترة",
+    "noEmail": "لا توجد جهة اتصال متاحة",
+    "searchPlaceholder": "البحث بالاسم أو رقم IMO أو MMSI",
+    "empty": "لا يوجد مرشحون معلقون. ارفع ملف تصدير للبدء."
   },
   "AdminArmateurs": {
     "title": "الملاك الملاحيون",

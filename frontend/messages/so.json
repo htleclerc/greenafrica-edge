@@ -820,7 +820,8 @@
     "nav_armateurs": "Milkiilayaasha Markabka",
     "nav_admin_invoices": "Biilasha",
     "nav_admin_collections": "Soo-ururinta",
-    "nav_airlines": "Shirkadaha Diyaaradaha"
+    "nav_airlines": "Shirkadaha Diyaaradaha",
+    "nav_vessel_identity": "Aqoonsiga Markabyada"
   },
   "AdminStaff": {
     "page_title": "Maaraynta Shaqaalaha",
@@ -3973,6 +3974,27 @@
     "escalate_ramp_bailiff": "Xasuusin J45 (kahor xeer-ilaaliyaha) ayaa marka hore la diri karaa.",
     "escalate_ramp_judicial": "Ogeysiis xeer-ilaaliye ayaa marka hore bixi kara.",
     "escalated_badge": "La gudbiyay"
+  },
+  "AdminVesselIdentity": {
+    "title": "Aqoonsiga Markabyada",
+    "subtitle": "Isku deji markab aan la aqoonsan iyo markab dhab ah oo laga soo saaray sooyaal soo-gaadhista dekedaha ee VesselFinder",
+    "uploadLabel": "Soo geli sooyaalka soo-gaadhista dekedaha (CSV)",
+    "batchLabel": "Magaca kooxda",
+    "import": "Soo deji",
+    "importReport": "{rowsRead} saf ayaa la akhriyay · {inserted} markab ayaa la haystaa · {rejected} saf ayaa la diiday",
+    "rejectedTitle": "Safafka la diiday",
+    "rejectedLine": "Safka {lineNumber} — {vesselName}: {reason}",
+    "unidentifiedTitle": "Markabyada aan la aqoonsan",
+    "candidatesTitle": "Musharraxiinta la heli karo",
+    "match": "Isku dheji",
+    "matched": "La isku dhejiyay",
+    "conflict": "Khilaaf — aqoonsiga waxaa hore u haystaa markab kale",
+    "contactBlocked": "Xiriirka waa la xanibay (cunaqabatayn)",
+    "contactBlockedHint": "Aqoonsiga waa la isku dhejin karaa, laakiin emailna lama duubi doono.",
+    "billingEmail": "Xiriirka lacag-bixinta",
+    "noEmail": "Wax xiriir ah oo la heli karo lama helin",
+    "searchPlaceholder": "Ka raadi magaca, IMO ama MMSI",
+    "empty": "Musharrax sugaya ma jiro. Soo geli sooyaal si aad u bilowdo."
   },
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",

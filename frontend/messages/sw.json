@@ -705,7 +705,8 @@
     "nav_wallets": "Pochi",
     "nav_refunds": "Marejesho",
     "nav_admin_invoices": "Ankara",
-    "nav_admin_collections": "Urejeshaji Madeni"
+    "nav_admin_collections": "Urejeshaji Madeni",
+    "nav_vessel_identity": "Utambulisho wa Meli"
   },
   "AdminStaff": {
     "page_title": "Usimamizi wa Wafanyakazi",
@@ -3976,6 +3977,27 @@
     "escalate_ramp_bailiff": "Kikumbusho cha J45 (kabla ya afisa mtekelezaji) lazima kitumwe kwanza.",
     "escalate_ramp_judicial": "Taarifa ya afisa mtekelezaji lazima itolewe kwanza.",
     "escalated_badge": "Imepelekwa"
+  },
+  "AdminVesselIdentity": {
+    "title": "Utambulisho wa Meli",
+    "subtitle": "Linganisha meli isiyotambuliwa na meli halisi kutoka kwa faili la kuingia bandarini la VesselFinder",
+    "uploadLabel": "Pakia faili la kuingia bandarini (CSV)",
+    "batchLabel": "Jina la kundi",
+    "import": "Ingiza",
+    "importReport": "Mistari {rowsRead} imesomwa · Meli {inserted} zimehifadhiwa · Mistari {rejected} imekataliwa",
+    "rejectedTitle": "Mistari iliyokataliwa",
+    "rejectedLine": "Mstari {lineNumber} — {vesselName}: {reason}",
+    "unidentifiedTitle": "Meli zisizotambuliwa",
+    "candidatesTitle": "Wagombea waliopo",
+    "match": "Linganisha",
+    "matched": "Imelinganishwa",
+    "conflict": "Mgogoro — utambulisho tayari unamilikiwa na meli nyingine",
+    "contactBlocked": "Mawasiliano yamezuiwa (vikwazo)",
+    "contactBlockedHint": "Utambulisho unaweza kulinganishwa, lakini hakuna barua pepe itakayohifadhiwa.",
+    "billingEmail": "Mawasiliano ya malipo",
+    "noEmail": "Hakuna mawasiliano yanayoweza kufikiwa",
+    "searchPlaceholder": "Tafuta kwa jina, IMO au MMSI",
+    "empty": "Hakuna wagombea wanaosubiri. Pakia faili ili kuanza."
   },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",
