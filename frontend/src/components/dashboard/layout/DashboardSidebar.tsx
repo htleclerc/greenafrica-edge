@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye, Plane, Building2,
+    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -59,6 +59,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'staff',         icon: <Users className="w-5 h-5" />,        href: '/admin/staff',           labelKey: 'nav_staff',         section: 'admin' },
     { key: 'armateurs',     icon: <Building2 className="w-5 h-5" />,    href: '/admin/armateurs',       labelKey: 'nav_armateurs',     section: 'admin' },
     { key: 'airlines',      icon: <Plane className="w-5 h-5" />,        href: '/admin/airlines',        labelKey: 'nav_airlines',      section: 'admin' },
+    { key: 'vessel-identity', icon: <IdCard className="w-5 h-5" />,     href: '/admin/vessel-identity', labelKey: 'nav_vessel_identity', section: 'admin' },
 ];
 
 // Icon map for operator nav items. Keyed by OperatorNavItem.key.
