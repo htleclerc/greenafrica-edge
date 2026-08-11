@@ -3999,6 +3999,7 @@
     "manualSubmit": "Ajouter le candidat",
     "manualImo": "Numéro IMO",
     "manualName": "Nom du navire",
+    "manualCallSign": "Indicatif d'appel",
     "manualFlag": "Pavillon (ISO-2)",
     "manualType": "Type de navire",
     "manualManager": "Gérant",

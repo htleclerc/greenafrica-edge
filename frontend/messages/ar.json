@@ -4002,6 +4002,7 @@
     "manualSubmit": "إضافة المرشح",
     "manualImo": "رقم IMO",
     "manualName": "اسم السفينة",
+    "manualCallSign": "شارة النداء",
     "manualFlag": "العلم (ISO-2)",
     "manualType": "نوع السفينة",
     "manualManager": "المدير",

@@ -3999,6 +3999,7 @@
     "manualSubmit": "Add candidate",
     "manualImo": "IMO number",
     "manualName": "Vessel name",
+    "manualCallSign": "Call sign",
     "manualFlag": "Flag (ISO-2)",
     "manualType": "Vessel type",
     "manualManager": "Manager",

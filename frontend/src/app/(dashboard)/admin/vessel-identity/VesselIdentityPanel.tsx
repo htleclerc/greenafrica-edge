@@ -204,6 +204,16 @@ export default function VesselIdentityPanel({
                         />
                     </label>
                     <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('manualCallSign')}</span>
+                        <input
+                            type="text"
+                            value={manualForm.callSign}
+                            onChange={(e) => setManualField('callSign', e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
                         <span className="block">{t('manualFlag')}</span>
                         <input
                             type="text"

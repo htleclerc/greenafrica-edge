@@ -4036,6 +4036,7 @@
     "manualSubmit": "Adicionar candidato",
     "manualImo": "Número IMO",
     "manualName": "Nome do navio",
+    "manualCallSign": "Indicativo de chamada",
     "manualFlag": "Bandeira (ISO-2)",
     "manualType": "Tipo de navio",
     "manualManager": "Gestor",
