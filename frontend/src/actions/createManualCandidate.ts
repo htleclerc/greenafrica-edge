@@ -7,6 +7,7 @@ import { isValidImo } from '@/services/vesselIdentity/imo';
 import { CATEGORY_BY_TYPENAME } from '@/services/vesselIdentity/vesselFinderParser';
 import {
     flagSanctionedCandidates,
+    isUniqueViolation,
     loadSanctionedEntities,
 } from '@/services/vesselIdentity/vesselIdentityService';
 
@@ -75,7 +76,12 @@ export async function createManualCandidate(raw: unknown): Promise<CreateManualC
         return { ok: false, reason: 'service role not configured' };
     }
 
-    const sanctioned = await loadSanctionedEntities(admin);
+    let sanctioned;
+    try {
+        sanctioned = await loadSanctionedEntities(admin);
+    } catch {
+        return { ok: false, reason: 'sanctions lookup failed' };
+    }
     const [flagged] = flagSanctionedCandidates(
         [{
             imoNumber: input.imoNumber,
@@ -129,7 +135,11 @@ export async function createManualCandidate(raw: unknown): Promise<CreateManualC
         })
         .select('id')
         .single();
-    if (error || !data) return { ok: false, reason: error?.message ?? 'insert failed' };
+    // L'index unique (batch_label, imo_number) rejette une seconde saisie du
+    // même IMO tant que la première est pendante ; l'opérateur doit lire un
+    // motif, pas le message brut de Postgres.
+    if (isUniqueViolation(error)) return { ok: false, reason: 'candidate already exists' };
+    if (error || !data) return { ok: false, reason: 'candidate insert failed' };
 
     return { ok: true, candidateId: String(data.id) };
 }

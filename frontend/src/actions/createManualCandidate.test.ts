@@ -82,6 +82,41 @@ describe('createManualCandidate', () => {
         });
     });
 
+    it('enregistre les trois niveaux de contact saisis', async () => {
+        // 15 des 47 navires joignables de l'export ne le sont que par l'owner
+        // ou l'ISM manager : les perdre reviendrait à les rendre injoignables.
+        const r = await createManualCandidate({
+            ...VALID,
+            ownerName: 'UNIVERSAL SHIPPING & LOGISTIC',
+            ownerEmail: 'ops@universal-shipping.com',
+            ismManagerName: 'FAROS SHIPPING CO SARL',
+            ismManagerEmail: 'faros@farosshipping.example',
+        });
+        expect(r.ok).toBe(true);
+        expect(inserted).toMatchObject({
+            owner_name: 'UNIVERSAL SHIPPING & LOGISTIC',
+            owner_email: 'ops@universal-shipping.com',
+            ism_manager_name: 'FAROS SHIPPING CO SARL',
+            ism_manager_email: 'faros@farosshipping.example',
+        });
+    });
+
+    it('rend un motif lisible plutôt que le message brut de Postgres', async () => {
+        mockAdminFrom.mockImplementation(() => ({
+            insert: () => ({
+                select: () => ({
+                    single: async () => ({
+                        data: null,
+                        error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+                    }),
+                }),
+            }),
+        }));
+        expect(await createManualCandidate(VALID)).toEqual({
+            ok: false, reason: 'candidate already exists',
+        });
+    });
+
     it('refuse un rôle insuffisant', async () => {
         mockFrom.mockImplementation(() => ({
             select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'SHIPPING_AGENT' }, error: null }) }) }),

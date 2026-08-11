@@ -68,6 +68,34 @@ describe('importVesselIdentityBatch', () => {
         expect(mockInsertCandidates).not.toHaveBeenCalled();
     });
 
+    it('rend un motif lisible quand le même lot est redéposé', async () => {
+        // Scénario du premier jour : l'opérateur redépose le fichier, `batch_label`
+        // vaut son nom, l'index unique (batch_label, imo_number) rejette.
+        mockInsertCandidates.mockRejectedValue({ code: '23505', message: 'duplicate key value' });
+        const r = await importVesselIdentityBatch({
+            batchLabel: 'portcalls-mai-aout.csv',
+            csv: [HEADER, TRUST1].join('\n'),
+        });
+        expect(r).toEqual({ ok: false, reason: 'batch already imported' });
+    });
+
+    it('ne laisse pas remonter une exception d’insertion', async () => {
+        mockInsertCandidates.mockRejectedValue(new Error('connexion perdue'));
+        const r = await importVesselIdentityBatch({
+            batchLabel: 'x.csv', csv: [HEADER, TRUST1].join('\n'),
+        });
+        expect(r).toEqual({ ok: false, reason: 'candidate insert failed' });
+    });
+
+    it('ne laisse pas remonter une exception de lecture des sanctions', async () => {
+        mockLoadSanctioned.mockRejectedValue(new Error('PostgREST 503'));
+        const r = await importVesselIdentityBatch({
+            batchLabel: 'x.csv', csv: [HEADER, TRUST1].join('\n'),
+        });
+        expect(r).toEqual({ ok: false, reason: 'sanctions lookup failed' });
+        expect(mockInsertCandidates).not.toHaveBeenCalled();
+    });
+
     it('rend un message explicite sur un fichier qui n’est pas un export d’escales', async () => {
         const r = await importVesselIdentityBatch({ batchLabel: 'x.csv', csv: 'IMO,MMSI,FLAG,NAME,TYPE\n1,2,3,4,5' });
         expect(r.ok).toBe(false);

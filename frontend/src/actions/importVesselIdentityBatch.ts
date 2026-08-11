@@ -7,6 +7,7 @@ import { parseVesselFinderPortCalls } from '@/services/vesselIdentity/vesselFind
 import {
     flagSanctionedCandidates,
     insertCandidates,
+    isUniqueViolation,
     loadSanctionedEntities,
 } from '@/services/vesselIdentity/vesselIdentityService';
 
@@ -64,9 +65,29 @@ export async function importVesselIdentityBatch(raw: unknown): Promise<ImportBat
         return { ok: false, reason: err instanceof Error ? err.message : 'parsing failed' };
     }
 
-    const sanctioned = await loadSanctionedEntities(admin);
+    // `loadSanctionedEntities` lève sur toute erreur PostgREST. Sans ce filet,
+    // une simple coupure réseau remontait comme exception non rattrapée : la
+    // Server Action renvoyait une erreur opaque et l'écran restait figé.
+    let sanctioned;
+    try {
+        sanctioned = await loadSanctionedEntities(admin);
+    } catch {
+        return { ok: false, reason: 'sanctions lookup failed' };
+    }
     const flagged = flagSanctionedCandidates(result.candidates, sanctioned);
-    const inserted = await insertCandidates(admin, parsed.data.batchLabel, auth.user.id, flagged);
+
+    // Le scénario le plus probable au premier jour d'usage : l'opérateur
+    // redépose le même fichier. `batch_label` vaut le nom du fichier, l'index
+    // unique (batch_label, imo_number) rejette, et l'insertion lève.
+    let inserted;
+    try {
+        inserted = await insertCandidates(admin, parsed.data.batchLabel, auth.user.id, flagged);
+    } catch (err) {
+        return {
+            ok: false,
+            reason: isUniqueViolation(err) ? 'batch already imported' : 'candidate insert failed',
+        };
+    }
 
     return {
         ok: true,

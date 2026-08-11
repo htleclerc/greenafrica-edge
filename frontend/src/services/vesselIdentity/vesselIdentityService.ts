@@ -46,6 +46,20 @@ export function flagSanctionedCandidates(
     });
 }
 
+/**
+ * Vrai si l'erreur remontée par PostgREST est une violation d'unicité (23505).
+ * Les erreurs Supabase ne sont pas des `Error` : elles arrivent comme objets
+ * nus porteurs d'un `code`, d'où le contrôle structurel.
+ */
+export function isUniqueViolation(err: unknown): boolean {
+    return (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: unknown }).code === '23505'
+    );
+}
+
 /** Charge les armateurs marqués OFAC SDN ou UN prohibited (colonnes de la migration 092). */
 export async function loadSanctionedEntities(db: SupabaseClient): Promise<SanctionedEntity[]> {
     const { data, error } = await db
