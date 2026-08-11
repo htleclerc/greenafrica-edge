@@ -46,6 +46,7 @@ const ERROR_KEY_BY_REASON: Readonly<Record<string, string>> = {
     'vessel not found': 'errVesselNotFound',
     'vessel already identified': 'errVesselAlreadyIdentified',
     'identity already held by another vessel': 'errIdentityHeld',
+    'identity check failed': 'errIdentityCheckFailed',
     'field conflict': 'errFieldConflict',
     'sanctions lookup failed': 'errSanctionsLookup',
     'batch already imported': 'errBatchAlreadyImported',

@@ -4029,6 +4029,7 @@
     "errVesselNotFound": "Navire introuvable.",
     "errVesselAlreadyIdentified": "Ce navire est déjà identifié.",
     "errIdentityHeld": "Un autre navire porte déjà cet IMO ou ce MMSI.",
+    "errIdentityCheckFailed": "Le contrôle d'identité n'a pas pu aboutir. Rien n'a été écrit — réessayez.",
     "errFieldConflict": "Valeurs divergentes — un arbitrage humain est nécessaire.",
     "errSanctionsLookup": "La liste des sanctions n'a pas pu être lue. Rien n'a été importé.",
     "errBatchAlreadyImported": "Ce lot a déjà été importé.",

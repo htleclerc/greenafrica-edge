@@ -4032,6 +4032,7 @@
     "errVesselNotFound": "Meli haikupatikana.",
     "errVesselAlreadyIdentified": "Meli hii tayari imetambuliwa.",
     "errIdentityHeld": "Meli nyingine tayari ina IMO au MMSI hii.",
+    "errIdentityCheckFailed": "Ukaguzi wa utambulisho haukukamilika. Hakuna kilichoandikwa — jaribu tena.",
     "errFieldConflict": "Thamani zinazotofautiana — uamuzi wa mtu unahitajika.",
     "errSanctionsLookup": "Orodha ya vikwazo haikuweza kusomwa. Hakuna kilichoingizwa.",
     "errBatchAlreadyImported": "Kundi hili tayari limeingizwa.",

@@ -4032,6 +4032,7 @@
     "errVesselNotFound": "لم يُعثر على السفينة.",
     "errVesselAlreadyIdentified": "هذه السفينة محدّدة الهوية بالفعل.",
     "errIdentityHeld": "سفينة أخرى تحمل بالفعل رقم IMO أو MMSI هذا.",
+    "errIdentityCheckFailed": "تعذّر إتمام التحقق من الهوية. لم يُكتب أي شيء — أعد المحاولة.",
     "errFieldConflict": "قيم متعارضة — يلزم تحكيم بشري.",
     "errSanctionsLookup": "تعذّرت قراءة قائمة العقوبات. لم يُستورد أي شيء.",
     "errBatchAlreadyImported": "سبق استيراد هذه الدفعة.",

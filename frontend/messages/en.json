@@ -4029,6 +4029,7 @@
     "errVesselNotFound": "Vessel not found.",
     "errVesselAlreadyIdentified": "This vessel is already identified.",
     "errIdentityHeld": "Another vessel already holds this IMO or MMSI.",
+    "errIdentityCheckFailed": "The identity check could not be completed. Nothing was written — please try again.",
     "errFieldConflict": "Conflicting values — human arbitration required.",
     "errSanctionsLookup": "The sanctions list could not be read. Nothing was imported.",
     "errBatchAlreadyImported": "This batch has already been imported.",

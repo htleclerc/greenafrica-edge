@@ -4029,6 +4029,7 @@
     "errVesselNotFound": "Markabka lama helin.",
     "errVesselAlreadyIdentified": "Markabkan horey ayaa loo aqoonsaday.",
     "errIdentityHeld": "Markab kale ayaa horey u haysta IMO-gan ama MMSI-gan.",
+    "errIdentityCheckFailed": "Hubinta aqoonsiga ma dhammaystirmin. Waxba lama qorin — isku day mar kale.",
     "errFieldConflict": "Qiimayaal is khilaafsan — go'aan bini'aadam ayaa loo baahan yahay.",
     "errSanctionsLookup": "Liiska cunaqabateynta lama akhrin karin. Waxba lama soo dejin.",
     "errBatchAlreadyImported": "Dufcaddan horey ayaa la soo dejiyay.",
