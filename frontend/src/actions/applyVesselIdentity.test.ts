@@ -40,6 +40,10 @@ interface StubOptions {
     vesselCollisions?: OtherVesselRow[];
     /** Vrai ⇒ l'armateur du navire cible porte AU MOINS un autre navire. */
     sharedShipowner?: boolean;
+    /** Vrai ⇒ la sonde « armateur partagé » échoue (coupure, 5xx, expiration). */
+    sharedShipownerFails?: boolean;
+    /** Vrai ⇒ la sonde de collision d'identité échoue. */
+    identityProbeFails?: boolean;
     capture?: Capture;
 }
 
@@ -65,10 +69,22 @@ interface StubOptions {
  * `capture`, quand fourni, retient les payloads d'`update` et d'`insert` :
  * c'est le seul moyen de vérifier le point d'écriture lui-même — mapping
  * GT → `gross_tonnage_dwt`, absence des colonnes nulles, entrée d'audit.
+ *
+ * Le stub est **à état** : un `update()` modifie réellement la ligne scriptée,
+ * si bien qu'une relecture ultérieure voit la nouvelle valeur. Sans cela, deux
+ * appels successifs de l'action relisent une ligne figée et un enchaînement
+ * — refus puis arbitrage sur le même candidat — ne peut pas être testé. Les
+ * lignes reçues sont clonées à la construction, donc la mutation reste
+ * confinée à un stub : deux tests qui partagent la même constante ne se
+ * contaminent pas.
  */
 function tableStub(responses: Record<string, unknown>, options?: StubOptions) {
+    const state: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(responses)) {
+        state[key] = value && typeof value === 'object' ? { ...value } : value;
+    }
     return (table: string) => {
-        const row = responses[table] as { id?: unknown } | null | undefined;
+        const row = state[table] as { id?: unknown } | null | undefined;
         const collisions = table === 'vessels' ? options?.vesselCollisions : undefined;
         const filters: Record<string, unknown> = {};
         let excludedId: unknown;
@@ -87,10 +103,17 @@ function tableStub(responses: Record<string, unknown>, options?: StubOptions) {
             maybeSingle: async () => {
                 // Sondage « cet armateur porte-t-il un autre navire ? » (garde 6).
                 if (table === 'vessels' && 'shipowner_id' in filters) {
+                    if (options?.sharedShipownerFails) {
+                        return { data: null, error: { message: 'PostgREST 503' } };
+                    }
                     return {
                         data: options?.sharedShipowner ? { id: 'autre-navire' } : null,
                         error: null,
                     };
+                }
+                // Sonde de collision d'identité en panne (garde 4).
+                if (table === 'vessels' && excludedId !== undefined && options?.identityProbeFails) {
+                    return { data: null, error: { message: 'PostgREST 503' } };
                 }
                 // Chargement par id (garde 3) : jamais combiné à un .neq() ici.
                 if ('id' in filters && excludedId === undefined) {
@@ -115,6 +138,9 @@ function tableStub(responses: Record<string, unknown>, options?: StubOptions) {
             single: async () => ({ data: row ?? null, error: null }),
             update: (payload: Record<string, unknown>) => {
                 options?.capture?.updates.push({ table, payload });
+                // C'est ici que le stub prend son état : la ligne scriptée est
+                // réellement modifiée, donc la lecture suivante la voit.
+                if (row && typeof row === 'object') Object.assign(row, payload);
                 return chain;
             },
             insert: async (payload: Record<string, unknown>) => {
@@ -375,6 +401,33 @@ describe('applyVesselIdentity', () => {
         expect(audit?.payload.details_json).toMatchObject({ emailSkipped: 'SHARED_SHIPOWNER' });
     });
 
+    it('saute le contact quand la sonde d’armateur partagé échoue', async () => {
+        // Une erreur PostgREST rend `data = null` : sans contrôle de `error`,
+        // la panne se lisait « pas de frère » et rouvrait l'écriture sur
+        // arm-014. Ne pas savoir vaut ici « armateur partagé ».
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { sharedShipownerFails: true },
+        ));
+        expect(await applyVesselIdentity(INPUT)).toMatchObject({
+            ok: true, emailApplied: false, emailSkipped: 'SHARED_SHIPOWNER',
+        });
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
+    });
+
+    it('échoue sans rien écrire quand la sonde de collision d’identité échoue', async () => {
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { identityProbeFails: true, capture },
+        ));
+        expect(await applyVesselIdentity(INPUT)).toEqual({
+            ok: false, reason: 'identity check failed',
+        });
+        expect(capture.updates.filter((u) => u.table === 'vessels')).toHaveLength(0);
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
+    });
+
     it('dit NO_EMAIL quand aucun des trois contacts n’a d’adresse', async () => {
         mockAdminFrom.mockImplementation(tableStub({
             vessel_identity_candidates: {
@@ -464,6 +517,65 @@ describe('applyVesselIdentity — garde de divergence de champs (§7.4)', () => 
             vessels: { ...PLACEHOLDER_VESSEL, name: 'VESSEL-W4-07', gross_tonnage_dwt: null },
         }));
         expect((await applyVesselIdentity(INPUT)).ok).toBe(true);
+    });
+
+    it('rouvre le candidat mis en CONFLICT et laisse l’arbitrage aboutir', async () => {
+        // Aller-retour sur UN MÊME candidat, avec un stub à état : la garde 5
+        // écrit CONFLICT, et la garde 2 doit accepter de le rouvrir. Sans cette
+        // réentrée, le bouton « appliquer quand même » de l'écran se heurtait
+        // invariablement à « candidate already processed » — et la divergence
+        // est le chemin nominal, gross_tonnage_dwt étant toujours renseigné
+        // par l'import d'onboarding.
+        const capture = newCapture();
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: RENSEIGNE },
+            { capture },
+        ));
+
+        const premier = await applyVesselIdentity(INPUT);
+        expect(premier).toMatchObject({ ok: false, reason: 'field conflict' });
+        expect(capture.updates).toContainEqual({
+            table: 'vessel_identity_candidates',
+            payload: { status: 'CONFLICT' },
+        });
+
+        // Le statut a REELLEMENT changé : une nouvelle tentative sans
+        // autorisation ne peut plus écraser en silence.
+        const reprise = await applyVesselIdentity(INPUT);
+        expect(reprise).toEqual({ ok: false, reason: 'candidate already processed' });
+
+        // …mais l'arbitrage explicite passe, sur ce même candidat en CONFLICT.
+        const arbitrage = await applyVesselIdentity({ ...INPUT, acceptFieldOverrides: true });
+        expect(arbitrage).toMatchObject({ ok: true, vesselId: PLACEHOLDER_VESSEL.id });
+
+        const write = capture.updates.find((u) => u.table === 'vessels');
+        expect(write?.payload).toMatchObject({ gross_tonnage_dwt: 2975, dwt: 2560, flag_code: 'TG' });
+
+        const audit = capture.inserts.find(
+            (i) => i.table === 'audit_logs' && i.payload.action === 'TRANSACTION_UPDATED',
+        );
+        const details = audit?.payload.details_json as { overriddenFields?: unknown };
+        expect(details.overriddenFields).toEqual([
+            { field: 'gross_tonnage_dwt', current: '5000', proposed: '2975' },
+            { field: 'dwt', current: '4000', proposed: '2560' },
+            { field: 'flag_code', current: 'KM', proposed: 'TG' },
+        ]);
+        expect(capture.updates).toContainEqual(
+            expect.objectContaining({
+                table: 'vessel_identity_candidates',
+                payload: expect.objectContaining({ status: 'MATCHED' }),
+            }),
+        );
+    });
+
+    it('ne rouvre pas un candidat MATCHED, même avec l’autorisation', async () => {
+        mockAdminFrom.mockImplementation(tableStub({
+            vessel_identity_candidates: { ...CANDIDATE, status: 'MATCHED' },
+            vessels: RENSEIGNE,
+        }));
+        expect(await applyVesselIdentity({ ...INPUT, acceptFieldOverrides: true })).toEqual({
+            ok: false, reason: 'candidate already processed',
+        });
     });
 
     it('applique et trace les champs écrasés quand l’arbitrage est explicite', async () => {

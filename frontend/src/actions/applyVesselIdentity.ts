@@ -162,14 +162,19 @@ async function applyBillingContact(
 
     // Le navire courant étant lui-même rattaché à cet armateur, « il en existe
     // un autre » équivaut exactement à « le compte dépasse 1 ».
-    const { data: sibling } = await admin
+    //
+    // La sonde REFUSE PAR DÉFAUT : une erreur PostgREST rend `data = null`,
+    // donc « pas de frère », donc l'écriture sur arm-014 — exactement le
+    // contournement silencieux que cette garde existe pour fermer. Ne pas
+    // savoir vaut ici « armateur partagé ».
+    const { data: sibling, error: siblingErr } = await admin
         .from('vessels')
         .select('id')
         .eq('shipowner_id', shipownerId)
         .neq('id', vessel.id)
         .limit(1)
         .maybeSingle();
-    if (sibling) return { emailApplied: false, emailSkipped: 'SHARED_SHIPOWNER' };
+    if (siblingErr || sibling) return { emailApplied: false, emailSkipped: 'SHARED_SHIPOWNER' };
 
     // Un échec d'écriture du contact ne doit jamais laisser le candidat PENDING
     // alors que l'identité, elle, est déjà écrite : sans ce filet, une exception
@@ -236,7 +241,15 @@ export async function applyVesselIdentity(raw: unknown): Promise<ApplyVesselIden
         .eq('id', parsed.data.candidateId)
         .maybeSingle();
     if (!candidate) return { ok: false, reason: 'candidate not found' };
-    if (candidate.status !== 'PENDING') {
+    // Un candidat passé en CONFLICT par la garde 5 doit pouvoir être ROUVERT
+    // par l'arbitrage humain, sinon la fonctionnalité est morte-née : la
+    // divergence est le chemin NOMINAL — `vessels.gross_tonnage_dwt` est
+    // INTEGER NOT NULL et toujours renseigné par l'import d'onboarding, donc
+    // la jauge du seed diffère presque toujours de celle de VesselFinder.
+    // MATCHED et REJECTED restent refusés : ce ne sont pas des propositions
+    // ouvertes, et seul un CONFLICT porte une divergence à arbitrer.
+    const reopenable = candidate.status === 'CONFLICT' && parsed.data.acceptFieldOverrides === true;
+    if (candidate.status !== 'PENDING' && !reopenable) {
         return { ok: false, reason: 'candidate already processed' };
     }
 
@@ -256,20 +269,27 @@ export async function applyVesselIdentity(raw: unknown): Promise<ApplyVesselIden
     // en amont), mais mmsi est un TEXT libre sans contrainte (mig 115) — une
     // virgule ou une parenthèse dans sa valeur pourrait altérer la syntaxe
     // du filtre PostgREST si elle était concaténée dans la chaîne .or().
-    const { data: imoClash } = await admin
+    //
+    // Une erreur PostgREST sur ces sondes rend `data = null`, c'est-à-dire
+    // « aucune collision » : la garde s'ouvrirait sur une panne. Elle refuse
+    // donc par défaut — un appariement raté se rejoue, un IMO écrit sur le
+    // mauvais navire se répare à la main.
+    const { data: imoClash, error: imoClashErr } = await admin
         .from('vessels')
         .select('id')
         .neq('id', vessel.id)
         .eq('imo_number', candidate.imo_number)
         .maybeSingle();
+    if (imoClashErr) return { ok: false, reason: 'identity check failed' };
     let mmsiClash: { id: string } | null = null;
     if (!imoClash && candidate.mmsi) {
-        const { data } = await admin
+        const { data, error: mmsiClashErr } = await admin
             .from('vessels')
             .select('id')
             .neq('id', vessel.id)
             .eq('mmsi', candidate.mmsi)
             .maybeSingle();
+        if (mmsiClashErr) return { ok: false, reason: 'identity check failed' };
         mmsiClash = data;
     }
     const clash = imoClash ?? mmsiClash;
