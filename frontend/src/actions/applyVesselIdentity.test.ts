@@ -19,32 +19,73 @@ vi.mock('@/services/shipownerService', () => ({
 
 import { applyVesselIdentity } from './applyVesselIdentity';
 
+/** Ligne de navire tierce utilisée uniquement pour les tests de collision (garde 4). */
+interface OtherVesselRow {
+    id: string;
+    imo_number: string | null;
+    mmsi: string | null;
+}
+
 /**
  * Construit un faux client dont chaque table renvoie une réponse scriptée.
  *
- * `vessels` est interrogée deux fois avec des filtres différents : une fois
- * pour charger le navire cible (`.eq('id', vesselId)`), une fois pour
- * détecter une collision d'identité en excluant ce même navire
- * (`.neq('id', vessel.id)`). Une réponse scriptée statique par table ne peut
- * pas distinguer les deux appels — sans le filtrage ci-dessous, la ligne
- * `vessels` scriptée se retrouverait aussi comme "collision" avec elle-même
- * à chaque appariement réussi. `neq('id', …)` exclut donc la ligne dont l'id
- * correspond, comme le ferait Postgres.
+ * `vessels` est interrogée jusqu'à trois fois avec des filtres différents :
+ * une fois pour charger le navire cible (`.eq('id', vesselId)`), puis une ou
+ * deux fois pour détecter une collision d'identité en excluant ce même
+ * navire (`.neq('id', vessel.id).eq('imo_number', …)` puis, si besoin,
+ * `.eq('mmsi', …)`). Une réponse scriptée statique par table ne peut pas
+ * distinguer ces appels — sans le filtrage ci-dessous, la ligne `vessels`
+ * scriptée se retrouverait comme "collision" avec elle-même à chaque
+ * appariement réussi.
+ *
+ * `vesselCollisions`, quand fourni, simule une vraie recherche filtrée par
+ * colonne (`imo_number` ou `mmsi`) parmi une liste de navires tiers — c'est
+ * ce qui permet de vérifier que la garde 4 interroge bien la valeur exacte
+ * de `candidate.mmsi` via `.eq()` plutôt que de la concaténer dans une
+ * chaîne `.or()` où une virgule pourrait la détourner.
  */
-function tableStub(responses: Record<string, unknown>) {
+function tableStub(
+    responses: Record<string, unknown>,
+    options?: { vesselCollisions?: OtherVesselRow[] },
+) {
     return (table: string) => {
         const row = responses[table] as { id?: unknown } | null | undefined;
-        let excluded = false;
+        const collisions = table === 'vessels' ? options?.vesselCollisions : undefined;
+        const filters: Record<string, unknown> = {};
+        let excludedId: unknown;
         const chain = {
             select: () => chain,
-            eq: () => chain,
+            eq: (column: string, value: unknown) => {
+                filters[column] = value;
+                return chain;
+            },
             neq: (column: string, value: unknown) => {
-                if (row && column === 'id' && row.id === value) excluded = true;
+                if (column === 'id') excludedId = value;
                 return chain;
             },
             or: () => chain,
-            maybeSingle: async () => ({ data: excluded ? null : (row ?? null), error: null }),
-            single: async () => ({ data: excluded ? null : (row ?? null), error: null }),
+            maybeSingle: async () => {
+                // Chargement par id (garde 3) : jamais combiné à un .neq() ici.
+                if ('id' in filters && excludedId === undefined) {
+                    return { data: row ?? null, error: null };
+                }
+                // Recherche de collision (garde 4), simulée par colonne filtrée.
+                if (collisions) {
+                    const match = collisions.find((v) => {
+                        if (excludedId !== undefined && v.id === excludedId) return false;
+                        if ('imo_number' in filters) return v.imo_number === filters.imo_number;
+                        if ('mmsi' in filters) return v.mmsi === filters.mmsi;
+                        return false;
+                    });
+                    return { data: match ?? null, error: null };
+                }
+                // Pas de liste de collision scriptée : on retombe sur l'ancien
+                // comportement (une seule ligne par table), en excluant la
+                // ligne elle-même comme le ferait Postgres avec `.neq('id', …)`.
+                const excluded = Boolean(row && excludedId !== undefined && row.id === excludedId);
+                return { data: excluded ? null : (row ?? null), error: null };
+            },
+            single: async () => ({ data: row ?? null, error: null }),
             update: () => chain,
             insert: async () => ({ error: null }),
         };
@@ -146,5 +187,32 @@ describe('applyVesselIdentity', () => {
     it('refuse une entrée mal formée', async () => {
         const r = await applyVesselIdentity({ candidateId: 'pas-un-uuid', vesselId: 'non plus' });
         expect(r.ok).toBe(false);
+    });
+
+    it('n’est pas trompée par une virgule dans le mmsi (pas de collision réelle)', async () => {
+        mockAdminFrom.mockImplementation(tableStub(
+            {
+                vessel_identity_candidates: { ...CANDIDATE, mmsi: '671882000,mmsi.eq.999' },
+                vessels: PLACEHOLDER_VESSEL,
+            },
+            { vesselCollisions: [] },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        expect(r).toMatchObject({ ok: true, emailApplied: true });
+    });
+
+    it('refuse une collision réelle sur le mmsi (autre navire)', async () => {
+        const OTHER_VESSEL: OtherVesselRow = {
+            id: '44444444-4444-4444-4444-444444444444',
+            imo_number: '0000000',
+            mmsi: CANDIDATE.mmsi,
+        };
+        mockAdminFrom.mockImplementation(tableStub(
+            { vessel_identity_candidates: CANDIDATE, vessels: PLACEHOLDER_VESSEL },
+            { vesselCollisions: [OTHER_VESSEL] },
+        ));
+        const r = await applyVesselIdentity(INPUT);
+        expect(r).toEqual({ ok: false, reason: 'identity already held by another vessel' });
+        expect(mockUpsertEmail).not.toHaveBeenCalled();
     });
 });

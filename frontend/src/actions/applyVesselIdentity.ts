@@ -84,17 +84,28 @@ export async function applyVesselIdentity(raw: unknown): Promise<ApplyVesselIden
         return { ok: false, reason: 'vessel already identified' };
     }
 
-    // Garde 4 — collision d'identité
-    const { data: clash } = await admin
+    // Garde 4 — collision d'identité. Deux requêtes .eq() paramétrées plutôt
+    // qu'un .or() interpolé : imo_number est sûr (regex + somme de contrôle
+    // en amont), mais mmsi est un TEXT libre sans contrainte (mig 115) — une
+    // virgule ou une parenthèse dans sa valeur pourrait altérer la syntaxe
+    // du filtre PostgREST si elle était concaténée dans la chaîne .or().
+    const { data: imoClash } = await admin
         .from('vessels')
         .select('id')
         .neq('id', vessel.id)
-        .or(
-            candidate.mmsi
-                ? `imo_number.eq.${candidate.imo_number},mmsi.eq.${candidate.mmsi}`
-                : `imo_number.eq.${candidate.imo_number}`,
-        )
+        .eq('imo_number', candidate.imo_number)
         .maybeSingle();
+    let mmsiClash: { id: string } | null = null;
+    if (!imoClash && candidate.mmsi) {
+        const { data } = await admin
+            .from('vessels')
+            .select('id')
+            .neq('id', vessel.id)
+            .eq('mmsi', candidate.mmsi)
+            .maybeSingle();
+        mmsiClash = data;
+    }
+    const clash = imoClash ?? mmsiClash;
     if (clash) {
         await admin
             .from('vessel_identity_candidates')
