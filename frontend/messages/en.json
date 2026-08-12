@@ -107,6 +107,10 @@
     "hero_title_line1": "Securing Africa's",
     "hero_title_line2": "Maritime Climate Wealth",
     "hero_subtitle": "A comprehensive interface for African coastal states to monitor, manage, and optimize sovereign carbon mechanisms. Accelerate climate revenue generation with real-time AIS data visualization.",
+    "hero_owner_title_line1": "Does your vessel owe",
+    "hero_owner_title_line2": "carbon tax?",
+    "hero_owner_subtitle": "Check instantly with your IMO or MMSI number, then settle online. No account needed to check.",
+    "hero_owner_signin": "Sign in",
     "trusted_by": "TRUSTED BY SOVEREIGN ENTITIES & PARTNERS",
     "cap_tax_title": "Maritime Carbon Tax",
     "cap_tax_desc": "Automated calculation and collection mechanisms for maritime traffic taxation within sovereign waters.",
@@ -4247,5 +4251,29 @@
       "anonymizeCta": "Anonymize permanently",
       "anonymizedAt": "Anonymized on {date}"
     }
+  },
+  "VesselLookup": {
+    "form_label": "IMO or MMSI number",
+    "form_placeholder": "e.g. 9424223",
+    "form_submit": "Check",
+    "form_hint": "Instant answer, no account needed.",
+    "form_invalid": "Enter an IMO number (7 digits) or MMSI (9 digits).",
+    "page_title": "Check a vessel's carbon tax",
+    "outstanding_heading": "Notices outstanding",
+    "outstanding_count": "{count, plural, one {# notice outstanding} other {# notices outstanding}}",
+    "outstanding_due": "Earliest due date: {date}",
+    "outstanding_overdue": "One notice is overdue",
+    "outstanding_amount_locked": "Amount visible to the account holder only",
+    "outstanding_cta": "View and pay",
+    "outstanding_cta_sub": "Sign in or open an account in a few minutes",
+    "clear_heading": "Nothing outstanding",
+    "clear_body": "This vessel has no carbon tax due at this time.",
+    "clear_cta": "Open an account to track it",
+    "unknown_heading": "No notice for this number",
+    "unknown_body": "We have no carbon tax notice linked to this number. Check the digits, or contact us if you believe this is an error.",
+    "unknown_cta": "Contact us",
+    "port_call": "Port of call",
+    "imo_label": "IMO",
+    "how_it_works": "How it works"
   }
 }

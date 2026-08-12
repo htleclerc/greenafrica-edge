@@ -107,6 +107,10 @@
     "hero_title_line1": "Sécuriser la Richesse",
     "hero_title_line2": "Climatique Maritime de l'Afrique",
     "hero_subtitle": "Une interface complète pour les États côtiers africains afin de surveiller, gérer et optimiser les mécanismes carbone souverains. Accélérez la génération de revenus climatiques avec la visualisation de données AIS en temps réel.",
+    "hero_owner_title_line1": "Votre navire a-t-il",
+    "hero_owner_title_line2": "une taxe carbone à régler ?",
+    "hero_owner_subtitle": "Vérifiez en un instant avec votre numéro IMO ou MMSI, puis réglez en ligne. Aucun compte nécessaire pour vérifier.",
+    "hero_owner_signin": "Se connecter",
     "trusted_by": "APPROUVÉ PAR DES ENTITÉS SOUVERAINES & PARTENAIRES",
     "cap_tax_title": "Taxe Carbone Maritime",
     "cap_tax_desc": "Calcul automatisé et mécanismes de collecte pour la taxation du trafic maritime dans les eaux souveraines.",
@@ -4247,5 +4251,29 @@
       "anonymizeCta": "Anonymiser définitivement",
       "anonymizedAt": "Anonymisé le {date}"
     }
+  },
+  "VesselLookup": {
+    "form_label": "Numéro IMO ou MMSI",
+    "form_placeholder": "ex. 9424223",
+    "form_submit": "Vérifier",
+    "form_hint": "Réponse immédiate, sans compte.",
+    "form_invalid": "Saisissez un numéro IMO (7 chiffres) ou MMSI (9 chiffres).",
+    "page_title": "Vérifier la taxe carbone d'un navire",
+    "outstanding_heading": "Avis en attente",
+    "outstanding_count": "{count, plural, one {# avis en attente} other {# avis en attente}}",
+    "outstanding_due": "Échéance la plus proche : {date}",
+    "outstanding_overdue": "Un avis est échu",
+    "outstanding_amount_locked": "Montant réservé au titulaire du compte",
+    "outstanding_cta": "Voir et payer",
+    "outstanding_cta_sub": "Connexion ou création de compte en quelques minutes",
+    "clear_heading": "Aucun avis en attente",
+    "clear_body": "Ce navire n'a aucune taxe carbone à régler à ce jour.",
+    "clear_cta": "Créer un compte pour suivre",
+    "unknown_heading": "Aucun avis pour ce numéro",
+    "unknown_body": "Nous n'avons pas d'avis de taxe carbone associé à ce numéro. Vérifiez la saisie, ou contactez-nous si vous pensez qu'il s'agit d'une erreur.",
+    "unknown_cta": "Nous contacter",
+    "port_call": "Port d'escale",
+    "imo_label": "IMO",
+    "how_it_works": "Comment ça marche"
   }
 }

@@ -107,6 +107,10 @@
     "hero_title_line1": "Ilaalinta",
     "hero_title_line2": "Mawduuca Cimilada Badda Afrika",
     "hero_subtitle": "Xarunta dhamaystiran ee dowladaha xeebta Afrika si ay u kormeeraan, maamulaan, oo ay u hagaajiyaan xeerarka kaarboonka ee madaxbannaan. Xawaareyso abuurista dakhliga cimilada adoo isticmaalaya sawirka xogta AIS ee wakhtiga dhabta ah.",
+    "hero_owner_title_line1": "Markabkaagu ma leeyahay",
+    "hero_owner_title_line2": "cashuur kaarboon oo la bixin doono?",
+    "hero_owner_subtitle": "Isla markiiba xaqiiji adoo isticmaalaya lambarkaaga IMO ama MMSI, kadibna bixi khadka tooska ah. Akoon looma baahna si aad u xaqiijiso.",
+    "hero_owner_signin": "Gal",
     "trusted_by": "DOWLADAHA MADAXBANNAAN IYO SHURAAKADA AYAA INNAGA AAMINSAN",
     "cap_tax_title": "Canshuurta Kaarboonka Badda",
     "cap_tax_desc": "Xisaabinta tooska ah iyo nidaamyada ururinta canshuuraha gaadiidka badda ee dhex mara biyaha madaxbannaan.",
@@ -4247,5 +4251,30 @@
       "anonymizeCta": "Si joogto ah u qarsoodi",
       "anonymizedAt": "Waa la qarsoodiyay {date}"
     }
+  },
+  "VesselLookup": {
+    "_translation_status": "auto — sugaya dib-u-eegis luqad hooyo (mashruuca isdiiwaangelinta iyo lacag-bixinta, 2026-08-12)",
+    "form_label": "Lambarka IMO ama MMSI",
+    "form_placeholder": "tusaale, 9424223",
+    "form_submit": "Xaqiiji",
+    "form_hint": "Jawaab degdeg ah, akoon looma baahna.",
+    "form_invalid": "Geli lambar IMO (7 tirood) ama MMSI (9 tirood).",
+    "page_title": "Xaqiiji cashuurta kaarboonka ee markab",
+    "outstanding_heading": "Ogeysiisyo sugaya",
+    "outstanding_count": "{count, plural, one {# ogeysiis oo sugaya} other {# ogeysiis oo sugaya}}",
+    "outstanding_due": "Taariikhda ugu dhow ee la bixin doono: {date}",
+    "outstanding_overdue": "Ogeysiis ayaa dhaafay wakhtigiisii",
+    "outstanding_amount_locked": "Qadarka waxaa arki kara milkiilaha akoonka oo keliya",
+    "outstanding_cta": "Fiiri oo bixi",
+    "outstanding_cta_sub": "Gal ama samayso akoon dhowr daqiiqo gudahood",
+    "clear_heading": "Wax sugaya ma jiraan",
+    "clear_body": "Markabkan ma laha cashuur kaarboon oo la sugayo wakhtigan.",
+    "clear_cta": "Samayso akoon si aad u la socoto",
+    "unknown_heading": "Ogeysiis looma helin lambarkan",
+    "unknown_body": "Ma haynno ogeysiis cashuur kaarboon oo ku xidhan lambarkan. Hubi tirooyinka, ama nala soo xiriir haddii aad u malaynayso in ay khalad tahay.",
+    "unknown_cta": "Nala soo xiriir",
+    "port_call": "Yeedhis Dekedda",
+    "imo_label": "IMO",
+    "how_it_works": "Sida ay u shaqeyso"
   }
 }

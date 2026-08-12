@@ -40,6 +40,10 @@
     "hero_title_line1": "Kulinda",
     "hero_title_line2": "Utajiri wa Hali ya Hewa ya Bahari ya Afrika",
     "hero_subtitle": "Kiolesura kamili kwa nchi za pwani za Afrika kufuatilia, kusimamia, na kuboresha taratibu za kaboni za enzi kuu. Harakisha uzalishaji wa mapato ya hali ya hewa kwa taswira ya data ya AIS kwa wakati halisi.",
+    "hero_owner_title_line1": "Je, meli yako ina",
+    "hero_owner_title_line2": "kodi ya kaboni inayodaiwa?",
+    "hero_owner_subtitle": "Thibitisha papo hapo kwa nambari yako ya IMO au MMSI, kisha ulipe mtandaoni. Hakuna akaunti inayohitajika kuthibitisha.",
+    "hero_owner_signin": "Ingia",
     "trusted_by": "KUAMINIWA NA TAASISI ZA ENZI KUU NA WASHIRIKA",
     "cap_tax_title": "Kodi ya Kaboni ya Bahari",
     "cap_tax_desc": "Taratibu za kiotomatiki za kukokotoa na kukusanya kodi ya trafiki ya bahari ndani ya maji ya enzi kuu.",
@@ -4250,5 +4254,30 @@
       "anonymizeCta": "Ondoa utambulisho kabisa",
       "anonymizedAt": "Utambulisho umeondolewa {date}"
     }
+  },
+  "VesselLookup": {
+    "_translation_status": "auto — inasubiri ukaguzi wa mzungumzaji asili (mradi wa kujiunga na malipo, 2026-08-12)",
+    "form_label": "Nambari ya IMO au MMSI",
+    "form_placeholder": "mf. 9424223",
+    "form_submit": "Thibitisha",
+    "form_hint": "Jibu la papo hapo, hakuna akaunti inayohitajika.",
+    "form_invalid": "Weka nambari ya IMO (tarakimu 7) au MMSI (tarakimu 9).",
+    "page_title": "Thibitisha kodi ya kaboni ya meli",
+    "outstanding_heading": "Arifa zinazosubiri",
+    "outstanding_count": "{count, plural, one {# arifa inayosubiri} other {# arifa zinazosubiri}}",
+    "outstanding_due": "Tarehe ya karibu zaidi ya malipo: {date}",
+    "outstanding_overdue": "Arifa moja imepitwa na wakati",
+    "outstanding_amount_locked": "Kiasi kinachoonekana kwa mmiliki wa akaunti pekee",
+    "outstanding_cta": "Ona na ulipe",
+    "outstanding_cta_sub": "Ingia au fungua akaunti kwa dakika chache",
+    "clear_heading": "Hakuna kinachosubiri",
+    "clear_body": "Meli hii haina kodi ya kaboni inayodaiwa kwa sasa.",
+    "clear_cta": "Fungua akaunti ili kufuatilia",
+    "unknown_heading": "Hakuna arifa kwa nambari hii",
+    "unknown_body": "Hatuna arifa ya kodi ya kaboni iliyounganishwa na nambari hii. Angalia tarakimu, au wasiliana nasi ikiwa unaamini hii ni hitilafu.",
+    "unknown_cta": "Wasiliana nasi",
+    "port_call": "Bandari ya kusimama",
+    "imo_label": "IMO",
+    "how_it_works": "Jinsi inavyofanya kazi"
   }
 }

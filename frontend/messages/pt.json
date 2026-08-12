@@ -483,6 +483,10 @@
     "hero_title_line1": "Assegurando a Riqueza",
     "hero_title_line2": "Climática Marítima da África",
     "hero_subtitle": "Uma interface abrangente para estados costeiros africanos monitorarem, gerenciarem e otimizarem mecanismos soberanos de carbono. Acelere a geração de receita climática com visualização de dados AIS em tempo real.",
+    "hero_owner_title_line1": "Seu navio tem",
+    "hero_owner_title_line2": "taxa de carbono a pagar?",
+    "hero_owner_subtitle": "Verifique instantaneamente com seu número IMO ou MMSI e pague online. Nenhuma conta necessária para verificar.",
+    "hero_owner_signin": "Entrar",
     "trusted_by": "CONFIADO POR ENTIDADES SOBERANAS E PARCEIROS",
     "cap_tax_title": "Imposto de Carbono Marítimo",
     "cap_tax_desc": "Mecanismos automatizados de cálculo e arrecadação para tributação do tráfego marítimo em águas soberanas.",
@@ -4284,5 +4288,30 @@
       "anonymizeCta": "Anonimizar definitivamente",
       "anonymizedAt": "Anonimizado em {date}"
     }
+  },
+  "VesselLookup": {
+    "_translation_status": "auto — a revisar por falante nativo (projeto onboarding pagamento, 2026-08-12)",
+    "form_label": "Número IMO ou MMSI",
+    "form_placeholder": "ex.: 9424223",
+    "form_submit": "Verificar",
+    "form_hint": "Resposta imediata, sem necessidade de conta.",
+    "form_invalid": "Informe um número IMO (7 dígitos) ou MMSI (9 dígitos).",
+    "page_title": "Verificar a taxa de carbono de um navio",
+    "outstanding_heading": "Avisos pendentes",
+    "outstanding_count": "{count, plural, one {# aviso pendente} other {# avisos pendentes}}",
+    "outstanding_due": "Vencimento mais próximo: {date}",
+    "outstanding_overdue": "Há um aviso vencido",
+    "outstanding_amount_locked": "Valor visível apenas para o titular da conta",
+    "outstanding_cta": "Ver e pagar",
+    "outstanding_cta_sub": "Entre ou crie uma conta em poucos minutos",
+    "clear_heading": "Nada pendente",
+    "clear_body": "Este navio não tem taxa de carbono devida no momento.",
+    "clear_cta": "Criar uma conta para acompanhar",
+    "unknown_heading": "Nenhum aviso para este número",
+    "unknown_body": "Não temos aviso de taxa de carbono vinculado a este número. Verifique os dígitos, ou fale conosco se acredita se tratar de um erro.",
+    "unknown_cta": "Fale conosco",
+    "port_call": "Porto de escala",
+    "imo_label": "IMO",
+    "how_it_works": "Como funciona"
   }
 }
