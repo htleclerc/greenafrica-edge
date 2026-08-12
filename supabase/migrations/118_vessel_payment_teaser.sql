@@ -8,6 +8,11 @@
 -- authentifié est un levier de déni de service.
 CREATE INDEX IF NOT EXISTS idx_vessels_mmsi ON public.vessels(mmsi) WHERE mmsi IS NOT NULL;
 
+-- Rattachement self-service d'un armateur (vérification du code envoyé à son
+-- adresse officielle). Absent de l'enum de base (003) et de ses extensions
+-- (016, 092, 105) — ajouté ici pour la ligne d'audit de verifyVesselAccessCode.
+ALTER TYPE public.audit_action ADD VALUE IF NOT EXISTS 'SHIPOWNER_SELF_CLAIM';
+
 -- Marqueur explicite d'armateur de regroupement. Voir G2 dans le spec : ces
 -- lignes ne représentent aucune entité réelle et ne doivent jamais ouvrir un
 -- accès par code. Aujourd'hui « À identifier » n'a pas d'official_email et se
