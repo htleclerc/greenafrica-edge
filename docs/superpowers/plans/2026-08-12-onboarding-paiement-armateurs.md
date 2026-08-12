@@ -1727,14 +1727,23 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
         return { ok: false, reason: 'send_failed' };
     }
 
+    // `transactions` ne porte que vessel_imo — pas de colonne MMSI. Une
+    // recherche par MMSI doit donc passer par vessels pour obtenir l'IMO.
+    let imo = identifier.value;
+    if (identifier.kind === 'MMSI') {
+        const { data: vessel } = await admin
+            .from('vessels').select('imo_number').eq('mmsi', identifier.value).maybeSingle();
+        if (!vessel?.imo_number) return { ok: false, reason: 'not_claimable' };
+        imo = vessel.imo_number;
+    }
+
     // Résolution via transactions.shipowner_id — first-write-only (trigger de
     // mig 089), donc porteuse de l'attribution fiscale faisant foi. Ne pas
     // « simplifier » vers vessels.shipowner_id, librement modifiable.
-    const column = identifier.kind === 'IMO' ? 'vessel_imo' : 'vessel_mmsi';
     const { data: txn } = await admin
         .from('transactions')
         .select('shipowner_id')
-        .eq(column === 'vessel_imo' ? 'vessel_imo' : 'vessel_imo', identifier.value)
+        .eq('vessel_imo', imo)
         .in('status', OUTSTANDING)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -1773,32 +1782,26 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
 }
 ```
 
-**Correction à appliquer pendant l'implémentation :** la ligne
-```ts
-.eq(column === 'vessel_imo' ? 'vessel_imo' : 'vessel_imo', identifier.value)
-```
-est un reliquat — `transactions` ne porte **que** `vessel_imo`, pas de MMSI. Pour une recherche par MMSI, résoudre d'abord l'IMO via `vessels` :
+**Complément au test :** le mock de Step 1 ne couvre pas la table `vessels`, utilisée uniquement dans la branche MMSI. Ajouter dans `mockAdminFrom.mockImplementation` un cas :
 
 ```ts
-    let imo = identifier.value;
-    if (identifier.kind === 'MMSI') {
-        const { data: vessel } = await admin
-            .from('vessels').select('imo_number').eq('mmsi', identifier.value).maybeSingle();
-        if (!vessel?.imo_number) return { ok: false, reason: 'not_claimable' };
-        imo = vessel.imo_number;
-    }
-
-    const { data: txn } = await admin
-        .from('transactions')
-        .select('shipowner_id')
-        .eq('vessel_imo', imo)
-        .in('status', OUTSTANDING)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        if (table === 'vessels') {
+            return {
+                select: () => ({
+                    eq: () => ({ maybeSingle: async () => ({ data: { imo_number: '9424223' }, error: null }) }),
+                }),
+            };
+        }
 ```
 
-Remplacer le bloc par cette version et supprimer la variable `column`. Adapter le mock du test pour couvrir la table `vessels` dans le cas MMSI (ajouter un cas `if (table === 'vessels')` retournant `{ imo_number: '9424223' }`).
+et un test qui couvre la résolution par MMSI :
+
+```ts
+    it('résout un MMSI en IMO avant de chercher l''avis', async () => {
+        const r = await requestVesselAccessCode({ identifier: '341581000' });
+        expect(r.ok).toBe(true);
+    });
+```
 
 - [ ] **Step 4: Lancer le test pour vérifier qu'il passe**
 
@@ -2738,7 +2741,7 @@ Résumer : commits produits, migration 118 à appliquer (après 115/116/117 enco
 
 **Écarts assumés et signalés à l'implémenteur :**
 
-1. **Task 10, Step 3** contient une ligne fautive (`.eq(column === … ? 'vessel_imo' : 'vessel_imo', …)`) suivie immédiatement de sa correction. `transactions` ne porte pas de colonne MMSI — la résolution par MMSI doit passer par `vessels.imo_number`. La correction est écrite en entier ; l'implémenteur doit l'appliquer et étendre le mock du test au cas `vessels`.
+1. **Task 10** : `transactions` ne porte pas de colonne MMSI — la résolution par MMSI passe par `vessels.imo_number`. Le code de Step 3 intègre cette résolution ; Step 3 complète aussi le mock du test au cas `vessels`.
 2. **Task 11, Step 4** : la valeur d'enum `audit_action` `'SHIPOWNER_SELF_CLAIM'` n'est pas garantie exister. La procédure de repli est donnée (reprendre une valeur existante, ou l'ajouter en migration 118 et relancer Task 1).
 3. **Task 13, Step 1** : la fonction exposant les rails actifs n'a pas été localisée précisément. La consigne de repli — n'exposer que des catégories génériques, ne nommer aucun prestataire — garantit que la page ne peut pas devenir fausse même si l'implémenteur ne trouve pas de source dynamique.
 4. **Task 14, Step 7** : `billingComplete` est approximé par `kyc_level_c_completed_at`. Si `BillingWizard` expose un critère de complétude distinct, le préférer — l'item porte sur les coordonnées de facturation, pas sur le KYC.
