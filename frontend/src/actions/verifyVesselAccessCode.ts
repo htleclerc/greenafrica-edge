@@ -1,11 +1,16 @@
 'use server';
 
 import { z } from 'zod';
+import { headers } from 'next/headers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 import { normalizeVesselIdentifier } from '@/lib/vessels/identifier';
 import { writeAuditLog } from '@/services/auditService';
+import { scopedLogger } from '@/lib/logger';
+
+const log = scopedLogger('verifyVesselAccessCode');
 
 const schema = z.object({
     identifier: z.string(),
@@ -14,9 +19,18 @@ const schema = z.object({
 
 const OUTSTANDING = ['PENDING', 'PARTIALLY_PAID', 'OVERDUE'];
 
+// Chaîne de confiance (mig 116) : seules ces sources sont vérifiées de façon
+// indépendante de l'armateur lui-même. AGENT_CLAIM et une source absente
+// (NULL — provenance inconnue) restent en WARNING : l'inconnu n'est jamais
+// routinier, seul le vérifié l'est.
+const VERIFIED_SOURCES = new Set(['EQUASIS_VERIFIED', 'VESSELFINDER_VERIFIED', 'PORT_OFFICER']);
+
 export type VerifyAccessCodeResult =
     | { ok: true; redirectTo: string }
-    | { ok: false; reason: 'invalid_code' | 'invalid_identifier' | 'not_claimable' };
+    | {
+          ok: false;
+          reason: 'invalid_code' | 'invalid_identifier' | 'not_claimable' | 'rate_limited' | 'activation_failed';
+      };
 
 /**
  * Vérifie le code reçu par e-mail, lie le compte à l'armateur et l'active.
@@ -33,6 +47,13 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
 
     const identifier = normalizeVesselIdentifier(parsed.data.identifier);
     if (!identifier) return { ok: false, reason: 'invalid_identifier' };
+
+    // Plafond : le chemin d'envoi (tâche 10) en impose déjà deux. Sans plafond
+    // ici, un code à six chiffres reste tentable en force brute contre un IMO
+    // connu — même clé que l'envoi, même bucket, keyée sur l'IP.
+    const h = await headers();
+    const quota = await enforceRateLimit('vessel-claim', getClientId(h));
+    if (!quota.allowed) return { ok: false, reason: 'rate_limited' };
 
     let admin: SupabaseClient;
     try {
@@ -81,7 +102,7 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
 
     if (error || !session?.user) return { ok: false, reason: 'invalid_code' };
 
-    await admin
+    const { error: updateError } = await admin
         .from('shipowners')
         .update({
             profile_id: session.user.id,
@@ -90,17 +111,35 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
         })
         .eq('id', owner.id);
 
-    const viaAgentClaim = owner.official_email_source === 'AGENT_CLAIM';
+    // L'échec d'écriture doit être un échec pour l'appelant, pas un {ok:true}
+    // silencieux : sans ce garde, l'audit (une fois écrit) affirmerait un
+    // rattachement qui n'a en réalité pas eu lieu.
+    if (updateError) {
+        log.warn('shipowner_activation_failed', { ownerId: owner.id, error: updateError.message });
+        return { ok: false, reason: 'activation_failed' };
+    }
+
+    const { data: profile } = await admin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+    // Provenance vérifiée indépendamment de l'armateur → INFO, routinier.
+    // Tout le reste (AGENT_CLAIM, ou une source absente) → WARNING : le
+    // contrôle compensatoire de la décision PO du 2026-08-12.
+    const isVerifiedSource = owner.official_email_source !== null
+        && VERIFIED_SOURCES.has(owner.official_email_source);
+
     await writeAuditLog(admin, {
-        action: 'SHIPOWNER_SELF_CLAIM',
-        entity_type: 'shipowners',
-        entity_id: owner.id,
         user_id: session.user.id,
+        user_full_name: profile?.full_name ?? 'Armateur (auto-rattachement)',
+        action: 'SHIPOWNER_SELF_CLAIM',
+        severity: isVerifiedSource ? 'INFO' : 'WARNING',
+        entity_type: 'Shipowner',
+        entity_id: owner.id,
         jurisdiction_id: owner.jurisdiction_id ?? null,
-        // AGENT_CLAIM = adresse déclarée par un agent maritime. L'accès est
-        // ouvert (décision PO) mais tracé plus fort pour rester revoyable.
-        severity: viaAgentClaim ? 'WARNING' : 'INFO',
-        metadata: {
+        details_json: {
             vessel_imo: imo,
             email_source: owner.official_email_source,
         },

@@ -103,7 +103,15 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
     // G4 : l'adresse vient de la base. Aucune valeur d'entrée n'y contribue.
     const { error } = await admin.auth.signInWithOtp({
         email: owner.official_email,
-        options: { shouldCreateUser: true },
+        options: {
+            shouldCreateUser: true,
+            // handle_new_user (mig 001) attribue PORT_OFFICER faute de role dans
+            // les métadonnées — ce qui ouvrirait les audit_logs non tagués (RLS
+            // mig 100) à un armateur auto-rattaché. Ces métadonnées ne
+            // s'appliquent qu'à la CRÉATION du user : un compte existant (staff
+            // compris) n'est jamais rétrogradé par cet appel.
+            data: { role: 'SHIPOWNER', is_active: true },
+        },
     });
 
     if (error) {

@@ -84,6 +84,17 @@ describe('requestVesselAccessCode', () => {
         );
     });
 
+    it('passe role SHIPOWNER et is_active à la création pour ne pas hériter de PORT_OFFICER (mig 001)', async () => {
+        await requestVesselAccessCode({ identifier: '9424223' });
+        expect(mockSignInWithOtp).toHaveBeenCalledWith(
+            expect.objectContaining({
+                options: expect.objectContaining({
+                    data: { role: 'SHIPOWNER', is_active: true },
+                }),
+            }),
+        );
+    });
+
     it("ouvre l'accès direct pour AGENT_CLAIM (décision PO 2026-08-12)", async () => {
         ownerFixture = ownerRow({ official_email_source: 'AGENT_CLAIM' });
         const r = await requestVesselAccessCode({ identifier: '9424223' });
