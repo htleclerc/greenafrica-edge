@@ -3,10 +3,11 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ArrowRight, Shield } from 'lucide-react';
+import { VesselLookupForm } from '@/components/pay/VesselLookupForm';
 
 export function HeroSection() {
     const t = useTranslations('Landing');
-    const c = useTranslations('Common');
+    const v = useTranslations('VesselLookup');
 
     return (
         <section className="relative pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-32 px-3 sm:px-6 overflow-hidden" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
@@ -33,30 +34,34 @@ export function HeroSection() {
                     {t('badge')}
                 </div>
 
-                {/* Main Title */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
-                    <span style={{ color: 'var(--ais-page-text)' }}>{t('hero_title_line1')}</span>
+                {/* Main Title — orienté armateur : c'est la question qu'il se
+                    pose en arrivant, posée au-dessus de la ligne de flottaison. */}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-[1.1]">
+                    <span style={{ color: 'var(--ais-page-text)' }}>{t('hero_owner_title_line1')}</span>
                     {' '}
                     <br />
                     <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-yellow-400 bg-clip-text text-transparent">
-                        {t('hero_title_line2')}
+                        {t('hero_owner_title_line2')}
                     </span>
                 </h1>
 
-                {/* Subtitle */}
-                <p className="text-sm sm:text-base md:text-lg mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
-                    {t('hero_subtitle')}
+                <p className="text-sm sm:text-base md:text-lg mb-8 leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--ais-page-text-muted)' }}>
+                    {t('hero_owner_subtitle')}
                 </p>
 
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                    <Link href="/login" className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group" style={{ color: '#FFFFFF' }}>
-                        {c('sign_in_portal')}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {/* Le champ de recherche est l'élément central du hero. */}
+                <div className="mb-6">
+                    <VesselLookupForm autoFocus={false} />
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16 text-sm">
+                    <Link href="/how-to-pay" className="inline-flex items-center gap-2 text-emerald-400 hover:underline font-medium">
+                        {v('how_it_works')}
+                        <ArrowRight className="w-4 h-4" />
                     </Link>
-                    <Link href="/signup" className="w-full sm:w-auto px-8 py-3.5 bg-transparent rounded-xl font-semibold transition-all flex items-center justify-center gap-2" style={{ color: 'var(--ais-page-text-secondary)', border: '1px solid var(--ais-page-border)' }}>
+                    <Link href="/login" className="inline-flex items-center gap-2 hover:underline" style={{ color: 'var(--ais-page-text-secondary)' }}>
                         <Shield className="w-4 h-4 text-emerald-500" />
-                        {c('request_access')}
+                        {t('hero_owner_signin')}
                     </Link>
                 </div>
 
