@@ -901,6 +901,50 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
     });
 }
 
+// ── 12b. Vessel access code email (public claim funnel) ────────────────────
+//
+// Sent by requestVesselAccessCode when a shipowner requests self-service
+// account linking from the public vessel-lookup page. The code is minted
+// server-side via admin.auth.admin.generateLink({ type: 'magiclink' }) and
+// mailed here as plain text — GoTrue's own "Magic Link" / "Confirm signup"
+// templates only carry {{ .ConfirmationURL }}, never {{ .Token }} (every
+// [auth.email.template.*] block is commented out in supabase/config.toml),
+// so relying on supabase.auth.signInWithOtp() to deliver a six-digit code
+// does not work. This function is the custom-email half of that pattern —
+// no i18n: the destination is always shipowners.official_email, never a
+// visitor-facing surface, so a single English copy is sufficient (see spec
+// 2026-08-12 G4).
+
+export interface VesselAccessCodeParams {
+    to: string;
+    recipientName?: string;
+    code: string;
+}
+
+export async function sendVesselAccessCodeEmail(p: VesselAccessCodeParams): Promise<EmailResult> {
+    const subject = `Your Green Gate access code: ${p.code}`;
+    const content = `
+        <h1>Your Access Code</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>Use the code below to link your account and access your vessel's carbon tax records on Green Gate.</p>
+
+        <div style="text-align:center;margin:24px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        <div class="alert alert-warn">This code can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Enter this code on the Green Gate portal to complete your account linking.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Your access code: ${p.code}` }),
+        text: `Your Green Gate access code: ${p.code}\n\nEnter this code on the portal to link your account. This code can only be used once and expires shortly.`,
+    });
+}
+
 // ── 13. Refund issued email (Plan 7G) ──────────────────────────────────────
 
 export interface RefundIssuedParams {
