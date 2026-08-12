@@ -4315,5 +4315,17 @@
     "dispute_body": "Waxaad haysataa 10 maalmood oo shaqo laga bilaabo helitaanka ogeysiiska si aad uga digatid. Nala soo xiriir <email>st.operations@greengate.africa</email> adigoo sheegaya lambarka ogeysiiska.",
     "legal_link": "Fiiri saldhigga sharciga ee xisaabinta",
     "cta": "Xaqiiji markabkayga"
+  },
+  "PaymentOnboarding": {
+    "_translation_status": "auto — sugaya dib-u-eegis luqad hooyo (mashruuca isdiiwaangelinta iyo lacag-bixinta, 2026-08-12)",
+    "title": "Tallaabooyinkaaga xiga",
+    "item_account": "Akoonka waa la firfircooneeyay",
+    "item_vessel": "Markab waa lagu xidhay",
+    "item_billing": "Faahfaahinta lacag-bixinta",
+    "item_payment": "Bixinta ugu horreysa",
+    "cta_billing": "Dhammaystir faahfaahintayda",
+    "cta_payment": "Eeg ogeysiisyadayda",
+    "dismiss": "Qari",
+    "help": "Sida ay u shaqeyso"
   }
 }

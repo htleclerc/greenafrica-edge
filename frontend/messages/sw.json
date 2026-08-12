@@ -4318,5 +4318,17 @@
     "dispute_body": "Una siku 10 za kazi tangu kupokea arifa ili kuipinga. Andika kwa <email>st.operations@greengate.africa</email> ukitaja kumbukumbu ya arifa.",
     "legal_link": "Angalia msingi wa kisheria wa hesabu",
     "cta": "Thibitisha meli yangu"
+  },
+  "PaymentOnboarding": {
+    "_translation_status": "auto — inasubiri ukaguzi wa mzungumzaji asili (mradi wa kujiunga na malipo, 2026-08-12)",
+    "title": "Hatua zako zinazofuata",
+    "item_account": "Akaunti imeamilishwa",
+    "item_vessel": "Meli imeunganishwa",
+    "item_billing": "Maelezo ya malipo",
+    "item_payment": "Malipo ya kwanza",
+    "cta_billing": "Kamilisha maelezo yangu",
+    "cta_payment": "Angalia arifa zangu",
+    "dismiss": "Ficha",
+    "help": "Jinsi inavyofanya kazi"
   }
 }

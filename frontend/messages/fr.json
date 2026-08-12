@@ -4313,5 +4313,16 @@
     "dispute_body": "Vous disposez de 10 jours ouvrés à compter de la réception de l'avis pour le contester. Écrivez à <email>st.operations@greengate.africa</email> en rappelant la référence de l'avis.",
     "legal_link": "Consulter la base légale du calcul",
     "cta": "Vérifier mon navire"
+  },
+  "PaymentOnboarding": {
+    "title": "Vos prochaines étapes",
+    "item_account": "Compte activé",
+    "item_vessel": "Navire rattaché",
+    "item_billing": "Coordonnées de facturation",
+    "item_payment": "Premier paiement",
+    "cta_billing": "Compléter mes coordonnées",
+    "cta_payment": "Voir mes avis",
+    "dismiss": "Masquer",
+    "help": "Comment ça marche"
   }
 }

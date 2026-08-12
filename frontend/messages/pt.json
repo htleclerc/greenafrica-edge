@@ -4352,5 +4352,17 @@
     "dispute_body": "Você tem 10 dias úteis a partir do recebimento do aviso para contestá-lo. Escreva para <email>st.operations@greengate.africa</email> indicando a referência do aviso.",
     "legal_link": "Consultar a base legal do cálculo",
     "cta": "Verificar meu navio"
+  },
+  "PaymentOnboarding": {
+    "_translation_status": "auto — a revisar por falante nativo (projeto onboarding pagamento, 2026-08-12)",
+    "title": "Suas próximas etapas",
+    "item_account": "Conta ativada",
+    "item_vessel": "Navio vinculado",
+    "item_billing": "Dados de faturamento",
+    "item_payment": "Primeiro pagamento",
+    "cta_billing": "Completar meus dados",
+    "cta_payment": "Ver meus avisos",
+    "dismiss": "Ocultar",
+    "help": "Como funciona"
   }
 }

@@ -9,6 +9,8 @@ import type { Principal } from '@/lib/auth/requirePrincipal';
 import { OsStatCard } from '@/components/ui/OsStatCard';
 import { getOwnerCounters, formatUsd } from '@/services/ownerPortalService';
 import { KycCBanner } from '@/components/owner/KycCBanner';
+import { PaymentOnboardingChecklist } from '@/components/onboarding/PaymentOnboardingChecklist';
+import { derivePaymentChecklist } from '@/lib/onboarding/paymentChecklist';
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
@@ -18,9 +20,31 @@ export async function OperatorDashboardPage({ principal }: Props) {
     const counters = await getOwnerCounters(principal.supabase);
     const t = await getTranslations('OwnerPortal.dashboard');
 
+    // Faits dérivés pour la checklist de progression — jamais persistés,
+    // toujours recalculés depuis l'état réel des tables (cf paymentChecklist.ts).
+    const [{ count: vesselCount }, { count: paymentCount }] = await Promise.all([
+        principal.supabase
+            .from('transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('shipowner_id', principal.shipowner.id),
+        principal.supabase
+            .from('payments')
+            .select('id', { count: 'exact', head: true })
+            .eq('shipowner_id', principal.shipowner.id)
+            .eq('status', 'CONFIRMED'),
+    ]);
+
+    const checklist = derivePaymentChecklist({
+        accountState: String(principal.shipowner.account_state),
+        hasAttachedVessel: (vesselCount ?? 0) > 0,
+        billingComplete: Boolean(principal.shipowner.kyc_level_c_completed_at),
+        hasConfirmedPayment: (paymentCount ?? 0) > 0,
+    });
+
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
             <KycCBanner kycComplete={!!principal.shipowner.kyc_level_c_completed_at} />
+            <PaymentOnboardingChecklist items={checklist} />
             <header className="mb-6">
                 <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">
                     {principal.shipowner.name}

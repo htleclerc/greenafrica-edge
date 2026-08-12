@@ -4313,5 +4313,16 @@
     "dispute_body": "You have 10 business days from receipt of the notice to dispute it. Write to <email>st.operations@greengate.africa</email> quoting the notice reference.",
     "legal_link": "See the legal basis for the calculation",
     "cta": "Check my vessel"
+  },
+  "PaymentOnboarding": {
+    "title": "Your next steps",
+    "item_account": "Account activated",
+    "item_vessel": "Vessel attached",
+    "item_billing": "Billing details",
+    "item_payment": "First payment",
+    "cta_billing": "Complete my details",
+    "cta_payment": "See my notices",
+    "dismiss": "Dismiss",
+    "help": "How it works"
   }
 }

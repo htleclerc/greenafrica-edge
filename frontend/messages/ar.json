@@ -4318,5 +4318,17 @@
     "dispute_body": "لديك 10 أيام عمل من تاريخ استلام الإشعار للاعتراض عليه. راسلنا على <email>st.operations@greengate.africa</email> مع ذكر مرجع الإشعار.",
     "legal_link": "الاطلاع على الأساس القانوني للحساب",
     "cta": "تحقق من سفينتي"
+  },
+  "PaymentOnboarding": {
+    "_translation_status": "auto — بانتظار مراجعة متحدث أصلي (مشروع الانضمام والدفع، 2026-08-12)",
+    "title": "خطواتك التالية",
+    "item_account": "الحساب مفعّل",
+    "item_vessel": "السفينة مرتبطة",
+    "item_billing": "بيانات الفوترة",
+    "item_payment": "الدفعة الأولى",
+    "cta_billing": "إكمال بياناتي",
+    "cta_payment": "عرض إشعاراتي",
+    "dismiss": "إخفاء",
+    "help": "كيف يعمل"
   }
 }
