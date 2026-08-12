@@ -4298,5 +4298,22 @@
     "claim_staff_doc": "Dukumeenti caddayn ah",
     "claim_staff_submit": "Dir codsigayga",
     "claim_staff_sent": "Codsiga waa la diray. Waxaad heli doontaa iimayl marka la ansixiyo."
+  },
+  "HowToPay": {
+    "_translation_status": "auto — sugaya dib-u-eegis luqad hooyo (mashruuca isdiiwaangelinta iyo lacag-bixinta, 2026-08-12)",
+    "page_title": "Bixi cashuurta kaarboonka ee markabkaaga",
+    "intro": "Afar tallaabo, laga bilaabo xaqiijinta ilaa bixinta. Akoon looma baahna si loo xaqiijiyo.",
+    "step1_title": "Hel markabkaaga",
+    "step1_body": "Geli lambarka IMO (7 tirood) ama MMSI (9 tirood) ee markabkaaga. Waxaan kuu sheegaynaa isla markiiba haddii ay jiraan ogeysiisyo sugaya.",
+    "step2_title": "Hel koodhkaaga gelitaanka",
+    "step2_body": "Waxaan koodh u dirnaa cinwaanka hore loogu diiwaan geliyay shirkaddaada. Marnaba kama dirno koodh cinwaan lagu qoray boggan — taasi waa waxa ilaalisa xogtaada.",
+    "step3_title": "Eeg ogeysiisyadaada",
+    "step3_body": "Marka aad gasho, waxaad aragtaa faahfaahinta ogeysiis kasta: markabka, yeedhiska dekedda, habka xisaabinta, qadarka iyo taariikhda dhammaadka.",
+    "step4_title": "Bixi",
+    "step4_body": "Dhowr habab oo lacag-bixin ah ayaa la heli karaa iyadoo ku xidhan dalka dekedda. Waxaa lagu muujiyaa maktabkaaga marka la bixinayo.",
+    "dispute_title": "Ka digatid ogeysiis",
+    "dispute_body": "Waxaad haysataa 10 maalmood oo shaqo laga bilaabo helitaanka ogeysiiska si aad uga digatid. Nala soo xiriir <email>st.operations@greengate.africa</email> adigoo sheegaya lambarka ogeysiiska.",
+    "legal_link": "Fiiri saldhigga sharciga ee xisaabinta",
+    "cta": "Xaqiiji markabkayga"
   }
 }

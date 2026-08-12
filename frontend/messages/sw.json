@@ -4301,5 +4301,22 @@
     "claim_staff_doc": "Hati ya uthibitisho",
     "claim_staff_submit": "Tuma ombi langu",
     "claim_staff_sent": "Ombi limetumwa. Utapokea barua pepe mara litakapoidhinishwa."
+  },
+  "HowToPay": {
+    "_translation_status": "auto — inasubiri ukaguzi wa mzungumzaji asili (mradi wa kujiunga na malipo, 2026-08-12)",
+    "page_title": "Lipa kodi ya kaboni ya meli yako",
+    "intro": "Hatua nne, kuanzia uthibitishaji hadi malipo. Hakuna akaunti inayohitajika ili kuthibitisha.",
+    "step1_title": "Tafuta meli yako",
+    "step1_body": "Weka nambari ya IMO (tarakimu 7) au MMSI (tarakimu 9) ya meli yako. Tunakuonyesha mara moja kama kuna arifa zinazosubiri.",
+    "step2_title": "Pata msimbo wako wa kuingia",
+    "step2_body": "Tunatuma msimbo kwa anwani iliyosajiliwa tayari ya kampuni yako. Hatutumi kamwe msimbo kwa anwani iliyoandikwa kwenye ukurasa huu — hii ndiyo inayolinda data yako.",
+    "step3_title": "Angalia arifa zako",
+    "step3_body": "Ukishaingia, unaona maelezo ya kila arifa: meli, kusimama bandarini, njia ya kukokotoa, kiasi na tarehe ya mwisho.",
+    "step4_title": "Lipa",
+    "step4_body": "Njia kadhaa za malipo zinapatikana kulingana na nchi ya bandari ya kusimama. Zinaonyeshwa kwenye lango lako wakati wa malipo.",
+    "dispute_title": "Pinga arifa",
+    "dispute_body": "Una siku 10 za kazi tangu kupokea arifa ili kuipinga. Andika kwa <email>st.operations@greengate.africa</email> ukitaja kumbukumbu ya arifa.",
+    "legal_link": "Angalia msingi wa kisheria wa hesabu",
+    "cta": "Thibitisha meli yangu"
   }
 }

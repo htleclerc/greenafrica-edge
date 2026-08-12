@@ -4335,5 +4335,22 @@
     "claim_staff_doc": "Documento comprobatório",
     "claim_staff_submit": "Enviar minha solicitação",
     "claim_staff_sent": "Solicitação enviada. Você receberá um e-mail assim que for validada."
+  },
+  "HowToPay": {
+    "_translation_status": "auto — a revisar por falante nativo (projeto onboarding pagamento, 2026-08-12)",
+    "page_title": "Pague a taxa de carbono do seu navio",
+    "intro": "Quatro etapas, da verificação ao pagamento. Nenhuma conta é necessária para verificar.",
+    "step1_title": "Encontre seu navio",
+    "step1_body": "Informe o número IMO (7 dígitos) ou MMSI (9 dígitos) do seu navio. Indicamos imediatamente se há avisos pendentes.",
+    "step2_title": "Receba seu código de acesso",
+    "step2_body": "Enviamos um código para o endereço já registrado da sua empresa. Nunca enviamos um código para um endereço digitado nesta página — é isso que protege seus dados.",
+    "step3_title": "Consulte seus avisos",
+    "step3_body": "Depois de entrar, você vê o detalhe de cada aviso: navio, escala, método de cálculo, valor e vencimento.",
+    "step4_title": "Pague",
+    "step4_body": "Vários meios de pagamento estão disponíveis conforme o país da escala. Eles são exibidos no seu portal no momento do pagamento.",
+    "dispute_title": "Contestar um aviso",
+    "dispute_body": "Você tem 10 dias úteis a partir do recebimento do aviso para contestá-lo. Escreva para <email>st.operations@greengate.africa</email> indicando a referência do aviso.",
+    "legal_link": "Consultar a base legal do cálculo",
+    "cta": "Verificar meu navio"
   }
 }

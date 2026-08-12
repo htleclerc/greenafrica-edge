@@ -4297,5 +4297,21 @@
     "claim_staff_doc": "Supporting document",
     "claim_staff_submit": "Send my request",
     "claim_staff_sent": "Request sent. You'll receive an email once it's approved."
+  },
+  "HowToPay": {
+    "page_title": "Pay your vessel's carbon tax",
+    "intro": "Four steps, from checking to paying. No account needed to check.",
+    "step1_title": "Find your vessel",
+    "step1_body": "Enter your vessel's IMO number (7 digits) or MMSI (9 digits). We tell you immediately whether any notices are outstanding.",
+    "step2_title": "Get your access code",
+    "step2_body": "We send a code to the address already registered for your company. We never send a code to an address entered on this page — that's what protects your data.",
+    "step3_title": "Review your notices",
+    "step3_body": "Once signed in, you see the detail of each notice: vessel, port call, calculation method, amount and due date.",
+    "step4_title": "Pay",
+    "step4_body": "Several payment methods are available depending on the port of call's country. They're shown in your portal at the time of payment.",
+    "dispute_title": "Dispute a notice",
+    "dispute_body": "You have 10 business days from receipt of the notice to dispute it. Write to <email>st.operations@greengate.africa</email> quoting the notice reference.",
+    "legal_link": "See the legal basis for the calculation",
+    "cta": "Check my vessel"
   }
 }

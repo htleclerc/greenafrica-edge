@@ -4297,5 +4297,21 @@
     "claim_staff_doc": "Pièce justificative",
     "claim_staff_submit": "Envoyer ma demande",
     "claim_staff_sent": "Demande envoyée. Vous recevrez un e-mail dès validation."
+  },
+  "HowToPay": {
+    "page_title": "Régler la taxe carbone de votre navire",
+    "intro": "Quatre étapes, de la vérification au paiement. Aucun compte n'est nécessaire pour vérifier.",
+    "step1_title": "Trouvez votre navire",
+    "step1_body": "Saisissez le numéro IMO (7 chiffres) ou MMSI (9 chiffres) de votre navire. Nous vous indiquons immédiatement si des avis sont en attente.",
+    "step2_title": "Recevez votre code d'accès",
+    "step2_body": "Nous envoyons un code à l'adresse déjà enregistrée pour votre société. Nous n'envoyons jamais de code à une adresse saisie sur cette page — c'est ce qui protège vos données.",
+    "step3_title": "Consultez vos avis",
+    "step3_body": "Une fois connecté, vous voyez le détail de chaque avis : navire, escale, méthode de calcul, montant et échéance.",
+    "step4_title": "Payez",
+    "step4_body": "Plusieurs moyens de paiement sont disponibles selon le pays d'escale. Ils sont affichés dans votre portail au moment du règlement.",
+    "dispute_title": "Contester un avis",
+    "dispute_body": "Vous disposez de 10 jours ouvrés à compter de la réception de l'avis pour le contester. Écrivez à <email>st.operations@greengate.africa</email> en rappelant la référence de l'avis.",
+    "legal_link": "Consulter la base légale du calcul",
+    "cta": "Vérifier mon navire"
   }
 }
