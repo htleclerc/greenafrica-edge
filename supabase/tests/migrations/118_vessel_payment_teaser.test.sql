@@ -10,18 +10,6 @@ DECLARE
   r        RECORD;
   n        INT;
 BEGIN
-  -- ── G1 : la projection ne contient aucun champ financier ni nominatif ──────
-  SELECT COUNT(*) INTO n
-  FROM information_schema.columns
-  WHERE table_schema = 'public'
-    AND table_name   = 'vessel_payment_teaser'
-    AND column_name IN (
-      'tax_amount_usd', 'amount_usd', 'invoice_ref', 'owner_name',
-      'official_email', 'shipowner_id', 'partial_paid_usd'
-    );
-  ASSERT n = 0,
-    'G1 VIOLÉE : vessel_payment_teaser expose un champ financier ou nominatif';
-
   -- ── Fixture : navire + armateur réel avec e-mail ──────────────────────────
   INSERT INTO public.shipowners (name, account_state, official_email, official_email_source)
   VALUES ('Test Owner Claimable', 'GHOST', 'ops@test-owner.example', 'AGENT_CLAIM')
@@ -49,6 +37,25 @@ BEGIN
   ASSERT r.outstanding_count = 1, 'un avis PENDING doit être compté';
   ASSERT r.has_overdue = FALSE, 'aucun avis échu attendu';
   ASSERT r.claimable = TRUE, 'AGENT_CLAIM ouvre l''accès direct (décision PO)';
+
+  -- ── G1 : la projection ne contient aucun champ financier ni nominatif ──────
+  -- Vérifiée sur la ligne RÉELLEMENT produite par la RPC, pas sur
+  -- information_schema.columns : une fonction RETURNS TABLE n'enregistre
+  -- aucune ligne dans ce catalogue (ses colonnes de sortie vivent dans
+  -- pg_proc.proallargtypes/proargmodes/proargnames), donc un filtre
+  -- information_schema ne matche jamais rien et ne garde rien. row_to_json
+  -- sur le RECORD retourné exerce la projection vivante : si demain
+  -- quelqu'un ajoute tax_amount_usd (ou tout autre champ de la liste
+  -- interdite) au RETURNS TABLE, cette clé apparaît dans le JSON et
+  -- l'assertion casse.
+  SELECT COUNT(*) INTO n
+  FROM jsonb_object_keys(row_to_json(r)::jsonb) AS k
+  WHERE k IN (
+    'tax_amount_usd', 'amount_usd', 'invoice_ref', 'owner_name',
+    'official_email', 'shipowner_id', 'partial_paid_usd'
+  );
+  ASSERT n = 0,
+    'G1 VIOLÉE : vessel_payment_teaser expose un champ financier ou nominatif';
 
   -- Recherche par MMSI — même résultat
   SELECT * INTO r FROM public.vessel_payment_teaser('111000111');
