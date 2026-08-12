@@ -8,10 +8,22 @@ export const metadata: Metadata = {
     description: 'Inscription self-service pour les opérateurs maritimes et aériens.',
 };
 
-export default async function SignupPage() {
+// Un IMO valide fait 7 chiffres (voir normalizeVesselIdentifier). Un
+// paramètre `imo` qui ne respecte pas ce format est ignoré silencieusement
+// plutôt que transmis tel quel au formulaire — pas de pré-remplissage sur une
+// valeur qui échouerait de toute façon le pattern du champ.
+const IMO_PATTERN = /^\d{7}$/;
+
+export default async function SignupPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ imo?: string }>;
+}) {
     const flags = await readPortalFeatureFlags();
     const open = flags.selfServiceEnabled || flags.airSelfServiceEnabled;
     const t = await getTranslations('OwnerRegister');
+    const { imo } = await searchParams;
+    const prefillImo = imo && IMO_PATTERN.test(imo) ? imo : undefined;
     return (
         <div className="min-h-screen os-bg flex items-center justify-center p-6">
             <div className="os-card max-w-2xl w-full p-8">
@@ -23,6 +35,7 @@ export default async function SignupPage() {
                             recaptchaSiteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? ''}
                             maritimeEnabled={flags.selfServiceEnabled}
                             airEnabled={flags.airSelfServiceEnabled}
+                            prefillImo={prefillImo}
                         />
                     </>
                 ) : (
