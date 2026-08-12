@@ -30,7 +30,9 @@ type LimiterKey =
     | 'signup-shipowner'
     | 'signup-air-operator'
     | 'admin-read'
-    | 'admin-export';
+    | 'admin-export'
+    | 'vessel-lookup'
+    | 'vessel-claim';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -72,6 +74,16 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // Admin data exports (settlement CSV) — heavier responses over cross-
     // jurisdiction fiscal data, so a tighter envelope than plain reads.
     'admin-export': { perMinute: 20, perHour: 120 },
+
+    // Consultation publique par IMO/MMSI. Un armateur vérifie sa flotte :
+    // quelques navires, quelques rechargements. Généreux pour l'humain, dur
+    // pour le balayage des 7 chiffres d'IMO.
+    'vessel-lookup': { perMinute: 20, perHour: 120 },
+
+    // Envoi d'un code d'accès. Doublement plafonné : par IP ici, et par
+    // armateur dans l'action — sinon faire varier l'IP suffirait à inonder la
+    // boîte de l'armateur.
+    'vessel-claim': { perMinute: 3, perHour: 10, perDay: 15 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.
