@@ -8,6 +8,7 @@ import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 import { normalizeVesselIdentifier } from '@/lib/vessels/identifier';
 import { maskEmailHint } from '@/lib/vessels/maskEmail';
 import { scopedLogger } from '@/lib/logger';
+import { sendVesselAccessCodeEmail } from '@/services/emailService';
 
 const log = scopedLogger('requestVesselAccessCode');
 
@@ -73,11 +74,19 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
     // Résolution via transactions.shipowner_id — first-write-only (trigger de
     // mig 089), donc porteuse de l'attribution fiscale faisant foi. Ne pas
     // « simplifier » vers vessels.shipowner_id, librement modifiable.
+    // .not('shipowner_id', 'is', null) : sans ce filtre, un pro-forma AIR
+    // récent auto-émis pour un navire non apparié (proformaPipelineService,
+    // shipowner_id: vessel.shipowner_id ?? null) devient la ligne "la plus
+    // récente" retenue ici et fait échouer not_claimable — alors même que le
+    // RPC vessel_payment_teaser (JOIN shipowners) a déjà écarté cette ligne
+    // et affiché claimable=true sur la base d'un avis attribué plus ancien.
+    // Les deux résolutions doivent porter sur le même sous-ensemble.
     const { data: txn } = await admin
         .from('transactions')
         .select('shipowner_id')
         .eq('vessel_imo', imo)
         .in('status', OUTSTANDING)
+        .not('shipowner_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -86,7 +95,7 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
 
     const { data: owner } = await admin
         .from('shipowners')
-        .select('id, official_email, official_email_source, is_placeholder')
+        .select('id, name, official_email, official_email_source, is_placeholder')
         .eq('id', txn.shipowner_id)
         .maybeSingle();
 
@@ -101,10 +110,20 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
     if (!ownerQuota.allowed) return { ok: false, reason: 'rate_limited' };
 
     // G4 : l'adresse vient de la base. Aucune valeur d'entrée n'y contribue.
-    const { error } = await admin.auth.signInWithOtp({
+    //
+    // On ne passe plus par signInWithOtp() : GoTrue enverrait alors SON propre
+    // template ("Magic Link" pour un user existant, "Confirm signup" pour un
+    // nouveau), et les deux ne portent que {{ .ConfirmationURL }} — aucun des
+    // blocs [auth.email.template.*] n'est configuré (supabase/config.toml
+    // ~L229, tous commentés). L'armateur recevrait un lien, jamais le code à
+    // six chiffres qu'attend ClaimByCodePanel. On mine le token nous-mêmes
+    // via generateLink (même pattern que /auth/sl/route.ts) et on envoie le
+    // code par notre propre e-mail (emailService/Resend), comme tout le reste
+    // de la plateforme.
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
         email: owner.official_email,
         options: {
-            shouldCreateUser: true,
             // handle_new_user (mig 001) attribue PORT_OFFICER faute de role dans
             // les métadonnées — ce qui ouvrirait les audit_logs non tagués (RLS
             // mig 100) à un armateur auto-rattaché. Ces métadonnées ne
@@ -114,8 +133,19 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
         },
     });
 
-    if (error) {
-        log.warn('otp_send_failed', { ownerId: owner.id, error: error.message });
+    if (linkError || !linkData?.properties?.email_otp) {
+        log.warn('otp_generate_failed', { ownerId: owner.id, error: linkError?.message });
+        return { ok: false, reason: 'send_failed' };
+    }
+
+    const emailResult = await sendVesselAccessCodeEmail({
+        to: owner.official_email,
+        recipientName: owner.name,
+        code: linkData.properties.email_otp,
+    });
+
+    if (!emailResult.success) {
+        log.warn('otp_send_failed', { ownerId: owner.id, error: emailResult.error });
         return { ok: false, reason: 'send_failed' };
     }
 
