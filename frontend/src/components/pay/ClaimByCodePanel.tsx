@@ -4,43 +4,9 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Mail, KeyRound } from 'lucide-react';
-import { requestVesselAccessCode, type RequestAccessCodeResult } from '@/actions/requestVesselAccessCode';
-import { verifyVesselAccessCode, type VerifyAccessCodeResult } from '@/actions/verifyVesselAccessCode';
-
-type SendFailureReason = Extract<RequestAccessCodeResult, { ok: false }>['reason'];
-type VerifyFailureReason = Extract<VerifyAccessCodeResult, { ok: false }>['reason'];
-
-// Mappages exhaustifs raison → clé i18n. Écrits en switch sans `default` : si
-// une raison est un jour ajoutée côté action, TypeScript refuse de compiler
-// tant que ce fichier n'a pas été mis à jour — pas de repli silencieux sur
-// « code incorrect » pour une raison en réalité non gérée.
-function sendErrorKey(reason: SendFailureReason): string {
-    switch (reason) {
-        case 'rate_limited':
-            return 'claim_error_rate_limited';
-        case 'invalid_identifier':
-            return 'claim_error_invalid_identifier';
-        case 'not_claimable':
-            return 'claim_error_not_claimable';
-        case 'send_failed':
-            return 'claim_error_send_failed';
-    }
-}
-
-function verifyErrorKey(reason: VerifyFailureReason): string {
-    switch (reason) {
-        case 'invalid_code':
-            return 'claim_error_invalid_code';
-        case 'rate_limited':
-            return 'claim_error_rate_limited';
-        case 'invalid_identifier':
-            return 'claim_error_invalid_identifier';
-        case 'not_claimable':
-            return 'claim_error_not_claimable';
-        case 'activation_failed':
-            return 'claim_error_activation_failed';
-    }
-}
+import { requestVesselAccessCode } from '@/actions/requestVesselAccessCode';
+import { verifyVesselAccessCode } from '@/actions/verifyVesselAccessCode';
+import { sendErrorKey, verifyErrorKey } from '@/components/pay/claimErrorKeys';
 
 /**
  * Branche A du rattachement : code envoyé à l'adresse déjà enregistrée.
