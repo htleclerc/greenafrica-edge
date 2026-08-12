@@ -1,16 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockAdminFrom, mockSignInWithOtp, mockEnforce, mockRpc } = vi.hoisted(() => ({
+const { mockAdminFrom, mockSignInWithOtp, mockEnforce } = vi.hoisted(() => ({
     mockAdminFrom: vi.fn(),
     mockSignInWithOtp: vi.fn(),
     mockEnforce: vi.fn(),
-    mockRpc: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/tenant', () => ({
     createPlatformClient: () => ({
         from: mockAdminFrom,
-        rpc: mockRpc,
         auth: { signInWithOtp: mockSignInWithOtp },
     }),
 }));
@@ -40,10 +38,6 @@ beforeEach(() => {
     ownerFixture = ownerRow();
     mockEnforce.mockResolvedValue({ allowed: true });
     mockSignInWithOtp.mockResolvedValue({ error: null });
-    mockRpc.mockResolvedValue({
-        data: [{ imo_number: '9424223', claimable: true, outstanding_count: 2 }],
-        error: null,
-    });
     mockAdminFrom.mockImplementation((table: string) => {
         if (table === 'transactions') {
             return {
@@ -103,16 +97,13 @@ describe('requestVesselAccessCode', () => {
         expect(mockSignInWithOtp).not.toHaveBeenCalled();
     });
 
-    it('G4 — ignore toute adresse fournie en entrée', async () => {
+    it("refuse un payload portant une adresse fournie par l'appelant (G4)", async () => {
         const r = await requestVesselAccessCode({
             identifier: '9424223',
             email: 'attaquant@example.com',
-        } as unknown);
-        expect(r.ok).toBe(true);
-        expect(mockSignInWithOtp).toHaveBeenCalledWith(
-            expect.objectContaining({ email: 'contact@hornshipping.com' }),
-        );
-        expect(JSON.stringify(mockSignInWithOtp.mock.calls)).not.toContain('attaquant');
+        });
+        expect(r).toEqual({ ok: false, reason: 'invalid_identifier' });
+        expect(mockSignInWithOtp).not.toHaveBeenCalled();
     });
 
     it("G3 — refuse au-delà du plafond par armateur, même quand l'IP passe", async () => {
@@ -128,6 +119,15 @@ describe('requestVesselAccessCode', () => {
         const second = await requestVesselAccessCode({ identifier: '9424223' });
         expect(second).toEqual({ ok: false, reason: 'rate_limited' });
         expect(mockSignInWithOtp).toHaveBeenCalledTimes(1);
+
+        // Les deux plafonds ne doivent pas pouvoir entrer en collision : le
+        // premier appel est keyé sur l'IP, le second sur l'armateur. Sans
+        // cette distinction, faire varier l'IP suffirait à contourner le
+        // second plafond — c'est exactement la faille que G3 doit fermer.
+        expect(mockEnforce).toHaveBeenNthCalledWith(1, 'vessel-claim', 'test-client');
+        expect(mockEnforce).toHaveBeenNthCalledWith(2, 'vessel-claim', 'owner:owner-1');
+        expect(mockEnforce).toHaveBeenNthCalledWith(3, 'vessel-claim', 'test-client');
+        expect(mockEnforce).toHaveBeenNthCalledWith(4, 'vessel-claim', 'owner:owner-1');
     });
 
     it('refuse un identifiant invalide sans toucher la base', async () => {

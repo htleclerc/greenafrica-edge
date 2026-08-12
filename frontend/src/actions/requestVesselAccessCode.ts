@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { headers } from 'next/headers';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 import { normalizeVesselIdentifier } from '@/lib/vessels/identifier';
@@ -12,7 +13,9 @@ const log = scopedLogger('requestVesselAccessCode');
 
 // Volontairement `.strict()` : le formulaire ne propose aucun champ e-mail, et
 // un champ supplémentaire dans le payload est le signe d'une tentative de
-// détournement, pas d'une évolution légitime. Voir G4.
+// détournement, pas d'une évolution légitime. Un payload qui échoue ce parse
+// est REFUSÉ tel quel (invalid_identifier) — aucun champ n'est jamais
+// récupéré hors du schéma. Voir G4.
 const schema = z.object({ identifier: z.string() }).strict();
 
 const OUTSTANDING = ['PENDING', 'PARTIALLY_PAID', 'OVERDUE'];
@@ -38,27 +41,19 @@ export type RequestAccessCodeResult =
  */
 export async function requestVesselAccessCode(raw: unknown): Promise<RequestAccessCodeResult> {
     const parsed = schema.safeParse(raw);
-    // Un champ inattendu (ex. `email`) fait échouer .strict() — on retombe sur
-    // invalid_identifier plutôt que d'ignorer silencieusement le surplus. Le
-    // test G4 passe un `email` en plus : le parse échouerait. On reprend donc
-    // uniquement `identifier` avant validation.
-    const identifierRaw =
-        parsed.success
-            ? parsed.data.identifier
-            : typeof (raw as { identifier?: unknown })?.identifier === 'string'
-                ? (raw as { identifier: string }).identifier
-                : null;
+    // Un champ inattendu (ex. `email`) fait échouer .strict() — le payload est
+    // refusé tel quel, pas nettoyé. G4 : rien n'est jamais repris hors du
+    // schéma validé.
+    if (!parsed.success) return { ok: false, reason: 'invalid_identifier' };
 
-    if (!identifierRaw) return { ok: false, reason: 'invalid_identifier' };
-
-    const identifier = normalizeVesselIdentifier(identifierRaw);
+    const identifier = normalizeVesselIdentifier(parsed.data.identifier);
     if (!identifier) return { ok: false, reason: 'invalid_identifier' };
 
     const h = await headers();
     const ipQuota = await enforceRateLimit('vessel-claim', getClientId(h));
     if (!ipQuota.allowed) return { ok: false, reason: 'rate_limited' };
 
-    let admin;
+    let admin: SupabaseClient;
     try {
         admin = createPlatformClient();
     } catch {
