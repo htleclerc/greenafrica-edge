@@ -33,6 +33,34 @@ export type VerifyAccessCodeResult =
       };
 
 /**
+ * Refuse un rattachement qui DÉPLACERAIT profile_id plutôt que de le poser
+ * pour la première fois — dans les deux sens :
+ *   1. cette ligne shipowners porte déjà un profile_id différent du compte
+ *      qui vient de vérifier son code ;
+ *   2. ce compte porte déjà une AUTRE ligne shipowners.
+ * shipowners.profile_id n'a pas de contrainte unique (mig 024) et tous les
+ * points de résolution (requireOwner, requirePrincipal, /api/me/principal,
+ * RoleContext) lisent via .maybeSingle() — un re-pointage silencieux dans
+ * l'un ou l'autre sens ferait échouer cette lecture pour un compte existant.
+ */
+async function findProfileClaimConflict(
+    admin: SupabaseClient,
+    owner: { id: string; profile_id: string | null },
+    sessionUserId: string,
+): Promise<boolean> {
+    if (owner.profile_id && owner.profile_id !== sessionUserId) return true;
+
+    const { data: conflictingRow } = await admin
+        .from('shipowners')
+        .select('id')
+        .eq('profile_id', sessionUserId)
+        .neq('id', owner.id)
+        .maybeSingle();
+
+    return Boolean(conflictingRow);
+}
+
+/**
  * Vérifie le code reçu par e-mail, lie le compte à l'armateur et l'active.
  *
  * La ligne d'audit n'est pas décorative : le PO a décidé (2026-08-12) que les
@@ -70,11 +98,18 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
         imo = vessel.imo_number;
     }
 
+    // .not('shipowner_id', 'is', null) : doit rester en accord avec la même
+    // clause dans requestVesselAccessCode et avec le JOIN shipowners du RPC
+    // vessel_payment_teaser (mig 118) — sinon un pro-forma AIR récent non
+    // apparié (shipowner_id NULL) devient "le plus récent" ici tout en étant
+    // écarté par le teaser, et l'écran affiche claimable=true pour un armateur
+    // que cette résolution ne retrouvera jamais.
     const { data: txn } = await admin
         .from('transactions')
         .select('shipowner_id')
         .eq('vessel_imo', imo)
         .in('status', OUTSTANDING)
+        .not('shipowner_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -83,7 +118,7 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
 
     const { data: owner } = await admin
         .from('shipowners')
-        .select('id, official_email, official_email_source, is_placeholder, jurisdiction_id')
+        .select('id, official_email, official_email_source, is_placeholder, jurisdiction_id, profile_id')
         .eq('id', txn.shipowner_id)
         .maybeSingle();
 
@@ -101,6 +136,14 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
     });
 
     if (error || !session?.user) return { ok: false, reason: 'invalid_code' };
+
+    // Finding 3 : la vérification du code n'autorise qu'un PREMIER
+    // rattachement, jamais un TRANSFERT de la ligne shipowners d'un compte à
+    // un autre.
+    if (await findProfileClaimConflict(admin, owner, session.user.id)) {
+        log.warn('profile_claim_conflict', { ownerId: owner.id, sessionUserId: session.user.id });
+        return { ok: false, reason: 'activation_failed' };
+    }
 
     const { error: updateError } = await admin
         .from('shipowners')
