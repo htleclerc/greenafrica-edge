@@ -57,6 +57,14 @@ let updateEqError: { message: string } | null = null;
  */
 let conflictFixture: { id: string } | null = null;
 
+/**
+ * Erreur renvoyée par la requête de conflit (Finding 3, garde 2). null = pas
+ * d'erreur, l'écrasante majorité des tests. Une valeur non-null simule
+ * PGRST116 (.maybeSingle() sur 2+ lignes) — l'état déjà corrompu que cette
+ * garde doit précisément détecter, pas laisser passer.
+ */
+let conflictErrorFixture: { message: string } | null = null;
+
 /** Transaction outstanding résolue pour l'IMO recherché (Finding 2). */
 let txnResult: { shipowner_id: string | null } | null = { shipowner_id: 'owner-1' };
 
@@ -66,6 +74,7 @@ beforeEach(() => {
     profileFixture = { full_name: 'Horn Shipping SA' };
     updateEqError = null;
     conflictFixture = null;
+    conflictErrorFixture = null;
     txnResult = { shipowner_id: 'owner-1' };
     mockVerifyOtp.mockResolvedValue({ data: { user: { id: 'user-9' } }, error: null });
     mockEnforce.mockResolvedValue({ allowed: true });
@@ -99,9 +108,11 @@ beforeEach(() => {
                 eq: () => ({
                     // Rattachement direct : owner lookup (.eq('id', ...).maybeSingle()).
                     maybeSingle: async () => ({ data: ownerFixture, error: null }),
-                    // Garde 2 de Finding 3 : .eq('profile_id', ...).neq('id', ...).maybeSingle().
+                    // Garde 2 de Finding 3 : .eq('profile_id', ...).neq('id', ...).limit(1).maybeSingle().
                     neq: () => ({
-                        maybeSingle: async () => ({ data: conflictFixture, error: null }),
+                        limit: () => ({
+                            maybeSingle: async () => ({ data: conflictFixture, error: conflictErrorFixture }),
+                        }),
                     }),
                 }),
             }),
@@ -249,6 +260,19 @@ describe('verifyVesselAccessCode', () => {
 
     it("Finding 3 — refuse activation_failed quand ce compte porte déjà une AUTRE ligne shipowners", async () => {
         conflictFixture = { id: 'owner-other' };
+        const r = await verifyVesselAccessCode({ identifier: '9424223', code: '123456' });
+        expect(r).toEqual({ ok: false, reason: 'activation_failed' });
+        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockAudit).not.toHaveBeenCalled();
+    });
+
+    it("Finding 3 — échoue fermé (activation_failed) quand la requête de conflit renvoie une erreur, sans update ni audit", async () => {
+        // Simule PGRST116 : .maybeSingle() lève quand 2+ lignes shipowners
+        // portent déjà ce profile_id — l'état déjà corrompu que la garde
+        // existe pour détecter. data:null + error non-null ne doit jamais se
+        // lire comme "pas de conflit".
+        conflictFixture = null;
+        conflictErrorFixture = { message: 'JSON object requested, multiple (or no) rows returned' };
         const r = await verifyVesselAccessCode({ identifier: '9424223', code: '123456' });
         expect(r).toEqual({ ok: false, reason: 'activation_failed' });
         expect(mockUpdate).not.toHaveBeenCalled();

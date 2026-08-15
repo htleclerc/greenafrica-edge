@@ -50,12 +50,28 @@ async function findProfileClaimConflict(
 ): Promise<boolean> {
     if (owner.profile_id && owner.profile_id !== sessionUserId) return true;
 
-    const { data: conflictingRow } = await admin
+    // .limit(1) : sans plafond, .maybeSingle() lève PGRST116 dès que DEUX lignes
+    // ou plus matchent — et c'est justement l'état déjà corrompu (le même
+    // profile_id porté par plusieurs shipowners) que cette garde existe pour
+    // détecter. .maybeSingle() renvoie alors data:null avec une erreur ; ignorer
+    // l'erreur ferait lire "aucun conflit" sur le cas exact qu'on cherche à
+    // bloquer. On échoue donc fermé : toute erreur ici est traitée en conflit.
+    const { data: conflictingRow, error } = await admin
         .from('shipowners')
         .select('id')
         .eq('profile_id', sessionUserId)
         .neq('id', owner.id)
+        .limit(1)
         .maybeSingle();
+
+    if (error) {
+        log.warn('profile_claim_conflict_check_failed', {
+            ownerId: owner.id,
+            sessionUserId,
+            error: error.message,
+        });
+        return true;
+    }
 
     return Boolean(conflictingRow);
 }
