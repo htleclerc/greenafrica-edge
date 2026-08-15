@@ -124,18 +124,56 @@ export async function requestVesselAccessCode(raw: unknown): Promise<RequestAcce
         type: 'magiclink',
         email: owner.official_email,
         options: {
-            // handle_new_user (mig 001) attribue PORT_OFFICER faute de role dans
-            // les métadonnées — ce qui ouvrirait les audit_logs non tagués (RLS
-            // mig 100) à un armateur auto-rattaché. Ces métadonnées ne
-            // s'appliquent qu'à la CRÉATION du user : un compte existant (staff
-            // compris) n'est jamais rétrogradé par cet appel.
-            data: { role: 'SHIPOWNER', is_active: true },
+            // handle_new_user attribuait PORT_OFFICER faute de role dans les
+            // métadonnées — ce qui ouvrirait les audit_logs non tagués (RLS
+            // mig 100) à un armateur auto-rattaché. Depuis la mig 120 le repli
+            // du trigger est SHIPOWNER, mais on continue de le demander
+            // explicitement : 'SHIPOWNER' est le seul rôle de l'allowlist du
+            // canal client, donc ce chemin reste correct même si le repli
+            // change. Ces métadonnées ne s'appliquent qu'à la CRÉATION du
+            // user : un compte existant (staff compris) n'est jamais
+            // rétrogradé par cet appel.
+            //
+            // is_active n'y figure plus : la mig 120 ne l'accepte QUE depuis
+            // raw_app_meta_data (canal service_role), hors de portée de
+            // generateLink — dont les options sont typées
+            // Pick<GenerateLinkOptions, 'data' | 'redirectTo'> et dont `data`
+            // alimente raw_user_meta_data. L'activation est donc reposée
+            // juste après, explicitement.
+            data: { role: 'SHIPOWNER' },
         },
     });
 
     if (linkError || !linkData?.properties?.email_otp) {
         log.warn('otp_generate_failed', { ownerId: owner.id, error: linkError?.message });
         return { ok: false, reason: 'send_failed' };
+    }
+
+    // Réactive le profil que le trigger vient de créer inactif.
+    //
+    // `.eq('role', 'SHIPOWNER')` n'est pas cosmétique : generateLink renvoie le
+    // compte EXISTANT quand l'adresse en a déjà un. Sans ce filtre, un membre du
+    // staff dont l'adresse est aussi l'official_email d'un armateur se verrait
+    // activé (ou, si on écrivait aussi le rôle, rétrogradé) par un simple appel
+    // public à cette action. Le filtre borne l'écriture aux lignes déjà sans
+    // privilège — elle ne peut donc rien élever.
+    //
+    // Non bloquant : le code est déjà miné et l'e-mail part quand même. Après
+    // rattachement (verifyVesselAccessCode pose shipowners.profile_id +
+    // account_state='ACTIVE'), requirePrincipal résout l'armateur par la
+    // branche opérateur, qui ne lit pas profiles.is_active.
+    if (linkData.user?.id) {
+        const { error: activateError } = await admin
+            .from('profiles')
+            .update({ is_active: true })
+            .eq('id', linkData.user.id)
+            .eq('role', 'SHIPOWNER');
+        if (activateError) {
+            log.warn('owner_profile_activation_failed', {
+                ownerId: owner.id,
+                error: activateError.message,
+            });
+        }
     }
 
     const emailResult = await sendVesselAccessCodeEmail({

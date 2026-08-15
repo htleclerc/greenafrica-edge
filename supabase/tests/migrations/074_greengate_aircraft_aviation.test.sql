@@ -55,7 +55,13 @@ BEGIN
   INSERT INTO public.aircraft (registration, icao_type, jurisdiction_id)
     VALUES ('TST-AC1', 'A320', tst_jid);
 
-  INSERT INTO auth.users (id, email) VALUES (user_a, 'a@air-isolation.test') ON CONFLICT DO NOTHING;
+  -- Rôle staff posé via raw_app_meta_data (canal serveur, mig 120) : l'INSERT
+  -- profiles qui suit est un no-op (ON CONFLICT DO NOTHING sur la ligne déjà
+  -- créée par on_auth_user_created), donc le repli du trigger — SHIPOWNER
+  -- depuis la mig 120 — s'appliquerait sans cette métadonnée.
+  INSERT INTO auth.users (id, email, raw_app_meta_data)
+    VALUES (user_a, 'a@air-isolation.test', jsonb_build_object('role', 'PORT_OFFICER'))
+    ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (user_a, 'a@air-isolation.test', 'Officer A', 'PORT_OFFICER', true) ON CONFLICT (id) DO NOTHING;
   INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id)
@@ -90,10 +96,18 @@ BEGIN
   -- clause is definitively FALSE (current_jurisdiction_ids() = '{}') — visibility can
   -- ONLY come from the owner clause. Created BEFORE the shipowner so the
   -- shipowners.profile_id FK (→ profiles.id) is satisfied.
-  INSERT INTO auth.users (id, email) VALUES (owner_usr, 'owner@air-isolation.test') ON CONFLICT DO NOTHING;
+  -- Même remarque que ci-dessus : c'est la ligne du trigger qui fait foi, donc
+  -- le rôle voulu passe par raw_app_meta_data. Ici il se trouve coïncider avec
+  -- le repli de la mig 120 (SHIPOWNER), mais l'écrire explicitement évite que
+  -- ce test tienne, comme avant, par la seule valeur du repli.
+  INSERT INTO auth.users (id, email, raw_app_meta_data)
+    VALUES (owner_usr, 'owner@air-isolation.test', jsonb_build_object('role', 'SHIPOWNER'))
+    ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (owner_usr, 'owner@air-isolation.test', 'Air Operator', 'SHIPOWNER', true) ON CONFLICT (id) DO NOTHING;
-  INSERT INTO auth.users (id, email) VALUES (other_usr, 'other@air-isolation.test') ON CONFLICT DO NOTHING;
+  INSERT INTO auth.users (id, email, raw_app_meta_data)
+    VALUES (other_usr, 'other@air-isolation.test', jsonb_build_object('role', 'SHIPOWNER'))
+    ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (other_usr, 'other@air-isolation.test', 'Other Operator', 'SHIPOWNER', true) ON CONFLICT (id) DO NOTHING;
 

@@ -1,11 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockAdminFrom, mockGenerateLink, mockEnforce, mockSendCodeEmail, mockTxnNot } = vi.hoisted(() => ({
+const {
+    mockAdminFrom,
+    mockGenerateLink,
+    mockEnforce,
+    mockSendCodeEmail,
+    mockTxnNot,
+    mockProfileUpdate,
+    mockProfileEq,
+} = vi.hoisted(() => ({
     mockAdminFrom: vi.fn(),
     mockGenerateLink: vi.fn(),
     mockEnforce: vi.fn(),
     mockSendCodeEmail: vi.fn(),
     mockTxnNot: vi.fn(),
+    mockProfileUpdate: vi.fn(),
+    mockProfileEq: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/tenant', () => ({
@@ -45,13 +55,41 @@ let ownerFixture = ownerRow();
  */
 let txnResult: { shipowner_id: string | null } | null = { shipowner_id: 'owner-1' };
 
+/** Erreur renvoyée par l'UPDATE d'activation du profil (mig 120). */
+let profileUpdateError: { message: string } | null = null;
+
+/**
+ * Chaîne mockée de l'UPDATE sur `profiles` :
+ * update().eq('id', …).eq('role', 'SHIPOWNER'), attendue en fin de chaîne.
+ * Chaque `.eq()` renvoie la même chaîne, elle-même « thenable » pour que
+ * `await` la résolve comme le ferait PostgREST.
+ */
+type UpdateChain = PromiseLike<{ error: { message: string } | null }> & {
+    eq: (column: string, value: unknown) => UpdateChain;
+};
+
+function makeUpdateChain(): UpdateChain {
+    const chain: UpdateChain = {
+        eq: (column: string, value: unknown) => {
+            mockProfileEq(column, value);
+            return chain;
+        },
+        then: (onfulfilled) => Promise.resolve({ error: profileUpdateError }).then(onfulfilled),
+    };
+    return chain;
+}
+
 beforeEach(() => {
     vi.clearAllMocks();
     ownerFixture = ownerRow();
     txnResult = { shipowner_id: 'owner-1' };
+    profileUpdateError = null;
     mockEnforce.mockResolvedValue({ allowed: true });
     mockGenerateLink.mockResolvedValue({
-        data: { properties: { email_otp: '654321' } },
+        // `user` est renvoyé par generateLink (GenerateLinkResponse) : c'est
+        // par lui que l'action retrouve le compte que le trigger vient de
+        // créer, pour le réactiver.
+        data: { properties: { email_otp: '654321' }, user: { id: 'user-1' } },
         error: null,
     });
     mockSendCodeEmail.mockResolvedValue({ success: true, id: 'email-1' });
@@ -81,6 +119,14 @@ beforeEach(() => {
                 select: () => ({
                     eq: () => ({ maybeSingle: async () => ({ data: { imo_number: '9424223' }, error: null }) }),
                 }),
+            };
+        }
+        if (table === 'profiles') {
+            return {
+                update: (patch: Record<string, unknown>) => {
+                    mockProfileUpdate(patch);
+                    return makeUpdateChain();
+                },
             };
         }
         // shipowners
@@ -116,15 +162,59 @@ describe('requestVesselAccessCode', () => {
         expect(mockGenerateLink).toHaveBeenCalledTimes(1);
     });
 
-    it('passe role SHIPOWNER et is_active à la création pour ne pas hériter de PORT_OFFICER (mig 001)', async () => {
+    it('passe role SHIPOWNER à la création pour ne pas hériter du repli du trigger (migs 001/120)', async () => {
+        // 'SHIPOWNER' est le seul rôle de l'allowlist du canal client de la
+        // mig 120 : le retirer d'ici ferait retomber le compte sur le repli du
+        // trigger. Historiquement ce repli était PORT_OFFICER, ce qui ouvrait
+        // les audit_logs non tagués (RLS mig 100) à un armateur auto-rattaché.
         await requestVesselAccessCode({ identifier: '9424223' });
         expect(mockGenerateLink).toHaveBeenCalledWith(
             expect.objectContaining({
-                options: expect.objectContaining({
-                    data: { role: 'SHIPOWNER', is_active: true },
-                }),
+                options: expect.objectContaining({ data: { role: 'SHIPOWNER' } }),
             }),
         );
+    });
+
+    it("n'envoie plus is_active dans les métadonnées generateLink : la mig 120 ne l'accepte que du canal serveur", async () => {
+        // generateLink n'écrit que raw_user_meta_data (options typées
+        // Pick<GenerateLinkOptions, 'data' | 'redirectTo'>). Depuis la mig 120
+        // is_active n'y est plus lu du tout ; l'y laisser donnerait la fausse
+        // impression que ce chemin active encore le compte par métadonnées.
+        await requestVesselAccessCode({ identifier: '9424223' });
+        const arg = mockGenerateLink.mock.calls[0][0] as { options: { data: Record<string, unknown> } };
+        expect(arg.options.data).not.toHaveProperty('is_active');
+    });
+
+    it('active le profil créé inactif par le trigger, en bornant l\'écriture aux lignes déjà SHIPOWNER', async () => {
+        await requestVesselAccessCode({ identifier: '9424223' });
+        expect(mockProfileUpdate).toHaveBeenCalledWith({ is_active: true });
+        expect(mockProfileEq).toHaveBeenNthCalledWith(1, 'id', 'user-1');
+        // Le second filtre est la garde : generateLink renvoie le compte
+        // EXISTANT quand l'adresse en a déjà un. Sans `.eq('role','SHIPOWNER')`,
+        // un compte staff partageant l'adresse d'un armateur serait activé par
+        // un appel public à cette action.
+        expect(mockProfileEq).toHaveBeenNthCalledWith(2, 'role', 'SHIPOWNER');
+    });
+
+    it("n'active aucun profil quand generateLink ne renvoie pas d'utilisateur", async () => {
+        mockGenerateLink.mockResolvedValue({
+            data: { properties: { email_otp: '654321' } },
+            error: null,
+        });
+        const r = await requestVesselAccessCode({ identifier: '9424223' });
+        expect(r.ok).toBe(true);
+        expect(mockProfileUpdate).not.toHaveBeenCalled();
+    });
+
+    it("envoie le code même si l'activation du profil échoue (non bloquant)", async () => {
+        // Le code est déjà miné : refuser l'envoi ici priverait l'armateur de
+        // son accès pour une écriture qui n'est qu'un confort d'affichage —
+        // après rattachement, requirePrincipal résout l'armateur par la branche
+        // opérateur, qui ne lit pas profiles.is_active.
+        profileUpdateError = { message: 'db down' };
+        const r = await requestVesselAccessCode({ identifier: '9424223' });
+        expect(r).toEqual({ ok: true, emailHint: 'c••••t@h••••g.com' });
+        expect(mockSendCodeEmail).toHaveBeenCalled();
     });
 
     it("ouvre l'accès direct pour AGENT_CLAIM (décision PO 2026-08-12)", async () => {

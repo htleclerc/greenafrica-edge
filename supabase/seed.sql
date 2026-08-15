@@ -14,6 +14,17 @@
 -- ── 1. Créer les utilisateurs dans auth.users ────────────────────────────────
 -- Le trigger on_auth_user_created créera automatiquement les profils.
 -- On utilise des UUID fixes pour pouvoir les référencer ensuite.
+--
+-- Le rôle est porté par raw_app_meta_data, PAS par raw_user_meta_data : depuis
+-- la mig 120, handle_new_user() n'accepte un rôle du canal client
+-- (raw_user_meta_data = `options.data` du signup PUBLIC) que s'il est sans
+-- privilège, et fait autorité sur raw_app_meta_data, écrivable uniquement par
+-- l'API admin / service_role — ce qu'est précisément un fixture SQL. Le
+-- 'role' laissé dans raw_user_meta_data ci-dessous est conservé tel quel (il
+-- reflète ce que GoTrue stocke pour ces comptes de démo) mais n'est plus lu.
+-- is_active n'est délibérément PAS posé : ces profils étaient déjà
+-- is_active = FALSE (l'ancien trigger ne trouvait pas de clé is_active), et
+-- rien en aval n'en dépend.
 
 -- Port Officer — Hassan Mohamoud
 INSERT INTO auth.users (
@@ -31,7 +42,7 @@ INSERT INTO auth.users (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Officer Hassan Mohamoud', 'role', 'PORT_OFFICER'),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email'], 'role', 'PORT_OFFICER'),
     '', '',
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
@@ -52,7 +63,7 @@ INSERT INTO auth.users (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Adm. Fadumo Yusuf', 'role', 'FINANCE_ADMIN'),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email'], 'role', 'FINANCE_ADMIN'),
     '', '',
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
@@ -73,7 +84,7 @@ INSERT INTO auth.users (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Ahmed Warsame', 'role', 'SHIPPING_AGENT'),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email'], 'role', 'SHIPPING_AGENT'),
     '', '',
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
@@ -94,7 +105,7 @@ INSERT INTO auth.users (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Min. Al-Farid Ibrahim', 'role', 'SUPERADMIN'),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email'], 'role', 'SUPERADMIN'),
     '', '',
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;
@@ -116,7 +127,7 @@ INSERT INTO auth.users (
     crypt('Demo@2025!', gen_salt('bf')),
     NOW(), NOW(), NOW(),
     jsonb_build_object('full_name', 'Dir. Nimco Warsame', 'role', 'MANAGER'),
-    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email'], 'role', 'MANAGER'),
     '', '',
     '', '', ''
 ) ON CONFLICT (id) DO NOTHING;

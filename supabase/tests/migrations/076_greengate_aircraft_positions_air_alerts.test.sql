@@ -138,7 +138,13 @@ BEGIN
   INSERT INTO public.aircraft_positions (aircraft_id, lat, lng, in_fir)
     VALUES (tst_ac, 1.00, 1.00, false);
 
-  INSERT INTO auth.users (id, email) VALUES (officer, 'officer@air-pos-isolation.test') ON CONFLICT DO NOTHING;
+  -- Rôle staff posé via raw_app_meta_data (canal serveur, mig 120) : l'INSERT
+  -- profiles qui suit est un no-op (ON CONFLICT DO NOTHING sur la ligne déjà
+  -- créée par on_auth_user_created), donc le repli du trigger — SHIPOWNER
+  -- depuis la mig 120 — s'appliquerait sans cette métadonnée.
+  INSERT INTO auth.users (id, email, raw_app_meta_data)
+    VALUES (officer, 'officer@air-pos-isolation.test', jsonb_build_object('role', 'PORT_OFFICER'))
+    ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (officer, 'officer@air-pos-isolation.test', 'Pos Officer', 'PORT_OFFICER', true) ON CONFLICT (id) DO NOTHING;
   INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id)

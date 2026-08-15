@@ -44,7 +44,15 @@ BEGIN
   INSERT INTO public.shipowners (name, jurisdiction_id) VALUES ('Owner TST', tst_jid);
 
   -- Staff user A, member of Somaliland only.
-  INSERT INTO auth.users (id, email) VALUES (user_a, 'a@isolation.test') ON CONFLICT DO NOTHING;
+  -- Le rôle est posé via raw_app_meta_data : le trigger on_auth_user_created
+  -- crée le profil AVANT l'INSERT ci-dessous, dont le ON CONFLICT DO NOTHING
+  -- est donc un no-op — c'est la ligne du trigger qui fait foi. Avant la mig
+  -- 120 ce test tenait par accident (le repli du trigger valait PORT_OFFICER) ;
+  -- le repli est désormais SHIPOWNER, donc le rôle staff doit être demandé
+  -- explicitement, et raw_app_meta_data est le canal serveur prévu pour ça.
+  INSERT INTO auth.users (id, email, raw_app_meta_data)
+    VALUES (user_a, 'a@isolation.test', jsonb_build_object('role', 'PORT_OFFICER'))
+    ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
     VALUES (user_a, 'a@isolation.test', 'Officer A', 'PORT_OFFICER', true) ON CONFLICT (id) DO NOTHING;
   INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id)
