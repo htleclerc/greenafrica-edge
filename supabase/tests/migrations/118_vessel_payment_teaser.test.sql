@@ -25,11 +25,18 @@ BEGIN
   -- transaction_type : CARBON_TAX n'existe pas dans public.transaction_type
   -- (voir 003_core_domain_tables.sql : ENTRY_TAX, TRANSIT_FEE, PORT_STAY).
   -- ENTRY_TAX retenue ici, le test ne porte pas sur ce champ.
+  --
+  -- created_at explicite : la mig 089 rend shipowner_id first-write-only
+  -- (BEFORE UPDATE sur transactions), donc le cas G2 ci-dessous ne peut plus
+  -- re-pointer cette ligne — il insère une DEUXIÈME transaction plus récente
+  -- à la place. La RPC résout par ORDER BY created_at DESC LIMIT 1 ; fixer
+  -- created_at ici rend « plus récent » déterministe plutôt que dépendant de
+  -- la résolution de l'horloge entre deux INSERT successifs.
   INSERT INTO public.transactions (
     vessel_id, vessel_name, vessel_imo, transaction_type,
-    emissions_tco2, tax_amount_usd, status, shipowner_id
+    emissions_tco2, tax_amount_usd, status, shipowner_id, created_at
   ) VALUES (v_vessel, 'MV TEASER TEST', '1110001', 'ENTRY_TAX',
-            100.00, 12400.00, 'PENDING', v_owner);
+            100.00, 12400.00, 'PENDING', v_owner, NOW() - INTERVAL '1 hour');
 
   -- Recherche par IMO
   SELECT * INTO r FROM public.vessel_payment_teaser('1110001');
@@ -64,15 +71,30 @@ BEGIN
   -- ── G2 : un armateur placeholder n'est jamais claimable, MÊME avec e-mail ──
   -- C'est ce cas qui distingue la garde intentionnelle de la coïncidence de
   -- données : on renseigne délibérément une adresse sur le placeholder.
+  --
+  -- shipowner_id est first-write-only (mig 089) : re-pointer la transaction
+  -- existante par UPDATE est rejeté par le trigger. On insère à la place une
+  -- SECONDE transaction, plus récente, qui porte le placeholder dès l'INSERT
+  -- — la RPC (ORDER BY created_at DESC LIMIT 1 sur les avis en attente) la
+  -- retient alors comme la plus récente pour ce navire.
   INSERT INTO public.shipowners (name, account_state, official_email, is_placeholder)
   VALUES ('À identifier - test', 'GHOST', 'fourre-tout@example.org', TRUE)
   RETURNING id INTO v_ghost;
 
-  UPDATE public.transactions SET shipowner_id = v_ghost WHERE vessel_id = v_vessel;
+  INSERT INTO public.transactions (
+    vessel_id, vessel_name, vessel_imo, transaction_type,
+    emissions_tco2, tax_amount_usd, status, shipowner_id, created_at
+  ) VALUES (v_vessel, 'MV TEASER TEST', '1110001', 'ENTRY_TAX',
+            50.00, 6200.00, 'PENDING', v_ghost, NOW());
 
   SELECT * INTO r FROM public.vessel_payment_teaser('1110001');
+  ASSERT r.outstanding_count = 2, 'les deux avis PENDING doivent être comptés';
   ASSERT r.claimable = FALSE,
-    'G2 VIOLÉE : un armateur is_placeholder ouvre le rattachement par code';
+    'G2 VIOLÉE : un armateur is_placeholder ouvre le rattachement par code — '
+    'la garde doit tenir MÊME quand ce placeholder porte un official_email '
+    '(si elle ne tenait que par absence d''adresse, retirer '
+    's.is_placeholder = FALSE de la RPC ne changerait rien à ce test ; c''est '
+    'précisément ce que ce fixture, avec son e-mail renseigné, exclut)';
 
   -- ── Navire inconnu : zéro ligne ───────────────────────────────────────────
   SELECT COUNT(*) INTO n FROM public.vessel_payment_teaser('0000000');
