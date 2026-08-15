@@ -96,11 +96,13 @@ END $$;
 -- ── e) le rôle service_role (clients admin mintés via lib/supabase/tenant.ts —
 --        /api/auth/approve, inviteStaff, registerShipowner, etc., tous
 --        service_role) reste libre de modifier role/is_active ──────────────
--- RESET ROLE : redevient le rôle de connexion du test (bypass RLS, comme un
--- vrai client service_role bypasse RLS) — seul le garde-fou du trigger
--- (auth.role() = 'service_role', lu depuis request.jwt.claims) est sous test ici.
-RESET ROLE;
-SET LOCAL "request.jwt.claims" = '{"role":"service_role"}';
+-- "sub" délibérément posé ICI (contrairement au (f) plus bas) : ça isole la
+-- branche auth.role() = 'service_role' du trigger de la branche auth.uid()
+-- IS NULL ajoutée par le correctif post-CI — sans "sub", ce cas se
+-- confondrait avec (f) et ne prouverait plus rien de spécifique à
+-- service_role. (En pratique un vrai JWT service_role ne porte pas de "sub" ;
+-- on le synthétise seulement pour discriminer les deux bypass du trigger.)
+SET LOCAL "request.jwt.claims" = '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","role":"service_role"}';
 
 DO $$
 DECLARE v_active BOOLEAN;
@@ -111,6 +113,25 @@ BEGIN
   SELECT is_active INTO v_active FROM public.profiles WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001';
   ASSERT v_active = TRUE,
     'TEST FAILED : service_role doit pouvoir modifier is_active (chemin /api/auth/approve)';
+END $$;
+
+-- ── f) session sans AUCUN contexte JWT (psql superuser nu, comme une
+--        fixture de migration/test qui pose is_active/role directement en
+--        SQL — le scénario exact qui a cassé 082/084/088 avant ce correctif) :
+--        doit rester libre, sans quoi ce trigger casse toute fixture SQL du
+--        dépôt qui prépare un profil actif/rôlé sans passer par PostgREST ──
+RESET ROLE;
+SET LOCAL "request.jwt.claims" = '';
+
+DO $$
+DECLARE v_role public.user_role;
+BEGIN
+  UPDATE public.profiles SET role = 'SHIPPING_AGENT'
+    WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
+  SELECT role INTO v_role FROM public.profiles WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001';
+  ASSERT v_role = 'SHIPPING_AGENT',
+    format('TEST FAILED : une session sans contexte JWT (migrations/fixtures) doit pouvoir écrire role/is_active, trouvé %s', v_role);
 END $$;
 
 DO $$ BEGIN RAISE NOTICE 'mig 119 : toutes les assertions passent'; END $$;

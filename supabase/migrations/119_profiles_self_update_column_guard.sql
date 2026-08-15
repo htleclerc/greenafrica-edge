@@ -75,6 +75,16 @@
 -- ce garde-fou, aucune promotion/rétrogradation manuelle depuis l'app ne
 -- serait plus jamais possible.
 --
+-- CORRECTIF POST-CI (même migration, jamais déployée ailleurs qu'en CI
+-- éphémère avant ce correctif — éditée en place plutôt qu'une 120) : la
+-- première version bloquait aussi toute session SANS contexte JWT (auth.uid()
+-- NULL — migrations, fixtures de tests SQL directes), cassant
+-- 082_greengate_geofences_djibouti.test.sql, 084_greengate_create_tariff_
+-- version_rpc.test.sql et 088_greengate_tariff_invariants.test.sql, qui
+-- posent is_active sur des profils en session psql superuser nue (aucun
+-- SET request.jwt.claims). Ajout d'un bypass explicite auth.uid() IS NULL,
+-- voir sa justification inline dans la fonction ci-dessous.
+--
 -- DOWN:
 --   DROP TRIGGER IF EXISTS profiles_privileged_column_guard ON public.profiles;
 --   DROP FUNCTION IF EXISTS public.profiles_privileged_column_guard();
@@ -85,6 +95,33 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
+  -- Aucun contexte JWT du tout (session psql brute : migrations, fixtures de
+  -- tests SQL, tout client qui ne passe pas par PostgREST) : auth.uid() est
+  -- NULL. Le vecteur protégé exige un utilisateur AUTHENTIFIÉ modifiant SA
+  -- PROPRE ligne (auth.uid() non NULL et = id — la condition même de la
+  -- policy "Users can update own profile", mig 001) ; sans JWT il n'y a
+  -- personne à qui refuser un privilège, et RLS elle-même n'accorderait
+  -- jamais l'accès en écriture à une session avec auth.uid() NULL (ni "Users
+  -- can update own profile" ni "Superadmin can update any profile" ne
+  -- peuvent être vraies avec un id NULL) — donc cette branche n'ouvre rien
+  -- qu'un attaquant via PostgREST pourrait atteindre : l'API REST fournit
+  -- toujours un JWT (même la clé anon en est un), donc y compris un appel
+  -- anon a request.jwt.claims posé (juste sans "sub"), tandis qu'un vrai
+  -- superuser/service Postgres direct n'en a aucun.
+  --
+  -- auth.uid() (fourni par la plateforme, hors dépôt) lit
+  -- current_setting(clé, true) — le second argument "missing_ok" lui fait
+  -- renvoyer NULL plutôt que lever une erreur quand le paramètre est absent ;
+  -- ce IF est donc sûr même hors contexte de requête. Vérifié empiriquement
+  -- par l'échec CI initial : les fixtures 082/084/088 (SET is_active en session
+  -- psql superuser nue, sans aucun SET request.jwt.claims) remontaient bien
+  -- l'exception métier "is_active cannot be self-updated" — pas une erreur
+  -- bas niveau de paramètre de configuration manquant — la preuve qu'auth.uid()
+  -- s'est résolu proprement en NULL plutôt que de lever.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
   -- service_role (admin API routes, crons, scripts — tous mintés via
   -- lib/supabase/tenant.ts) : déjà RLS-bypass, ne pas re-restreindre ici sous
   -- peine de casser l'approbation staff, l'anonymisation RGPD et les upserts
