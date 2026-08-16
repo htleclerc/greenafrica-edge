@@ -418,7 +418,7 @@ Passer le débiteur en client actif, avec facturation automatique de toutes les 
 
 | Fonction | Personne | Coordonnées |
 |---|---|---|
-| **Direction Green-Gate** | Noël KPATCHAVI | +33 7 58 66 67 75 · `st.operations@greengate.africa` |
+| **Direction Green-Gate** | Noël KPATCHAVI | +33 7 51 42 23 84 · `st.operations@greengate.africa` |
 | **Bailiff Somaliland** | Me Eidle Omer | `eidle@eidle-advocats.so` |
 | **Cabinets Anvers (mandat)** | Van Hooydonk · Kegels · HBSV · D'Hoine · Karell M. | Voir mandat GG-MDT-2026-BE-001 |
 | **Autorité de tutelle** | Ministère de l'Environnement Somaliland | Décret MOE&CC/MWI/36/2026 |

@@ -274,7 +274,7 @@ Les 5 règles de matching s'appliquent aux 2 types de références.
 
 ## 📞 Contacts
 
-- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 58 66 67 75
+- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 51 42 23 84
 - **Partenaire local** : Me Eidle Omer (Eidle Advocats, Hargeisa) · eidle@eidle-advocats.so
 - **Cabinets Anvers** : Van Hooydonk · Kegels · HBSV · D'Hoine & Mackay · Karell M.
 - **Ministère** : MOE&CC Somaliland — Décret MOE&CC/MWI/36/2026

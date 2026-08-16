@@ -435,7 +435,7 @@ GET    /api/notifications/pending              non envoyées
 
 ## 📞 Support intégration
 
-- **Direction Green-Gate** : Noël KPATCHAVI · +33 7 58 66 67 75
+- **Direction Green-Gate** : Noël KPATCHAVI · +33 7 51 42 23 84
 - **Templates emails à valider** : voir `workflows/PAYMENT_TRACKING.md`
 - **Coordonnées bancaires** : voir pièce jointe `PJ5_Coordonnees_Bancaires.docx`
 
