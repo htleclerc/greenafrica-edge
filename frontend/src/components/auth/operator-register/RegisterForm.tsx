@@ -7,6 +7,12 @@ import { createClient } from '@/lib/supabase/client';
 
 interface Props {
     recaptchaSiteKey: string;
+    /**
+     * IMO venu du rattachement `/pay/claim` : affiché en lecture seule, la
+     * saisie ne doit pas pouvoir diverger du navire pour lequel la demande a
+     * été ouverte.
+     */
+    prefillImo?: string;
 }
 
 const LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
@@ -20,7 +26,7 @@ declare global {
     }
 }
 
-export function RegisterForm({ recaptchaSiteKey }: Props) {
+export function RegisterForm({ recaptchaSiteKey, prefillImo }: Props) {
     const t = useTranslations('OwnerRegister');
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -123,6 +129,9 @@ export function RegisterForm({ recaptchaSiteKey }: Props) {
                 label={t('vessel_imo')}
                 pattern="\d{7}"
                 required
+                defaultValue={prefillImo}
+                readOnly={!!prefillImo}
+                aria-readonly={!!prefillImo}
             />
             <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-[var(--os-text-secondary)] uppercase tracking-wider">
