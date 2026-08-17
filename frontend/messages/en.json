@@ -1213,7 +1213,7 @@
     "fee_security_surcharge": "Maritime Security Surcharge",
     "total_due": "Total Due",
     "payment_capture": "Payment Capture",
-    "payment_bank": "Dahabshiil / Premier Bank",
+    "payment_bank": "Bank transfer",
     "payment_bank_sub": "Direct API settlement",
     "payment_swift": "SWIFT Proof Upload",
     "payment_swift_sub": "External wire verification",

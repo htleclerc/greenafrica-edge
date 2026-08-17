@@ -1213,7 +1213,7 @@
     "fee_security_surcharge": "Surtaxe de sécurité maritime",
     "total_due": "Total dû",
     "payment_capture": "Saisie du paiement",
-    "payment_bank": "Dahabshiil / Premier Bank",
+    "payment_bank": "Virement bancaire",
     "payment_bank_sub": "Règlement API direct",
     "payment_swift": "Téléversement preuve SWIFT",
     "payment_swift_sub": "Vérification de virement externe",

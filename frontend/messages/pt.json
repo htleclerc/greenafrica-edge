@@ -1539,7 +1539,7 @@
     "fee_security_surcharge": "Sobretaxa de Segurança Marítima",
     "total_due": "Total Devido",
     "payment_capture": "Captura de Pagamento",
-    "payment_bank": "Dahabshiil / Premier Bank",
+    "payment_bank": "Transferência bancária",
     "payment_bank_sub": "Liquidação via API direta",
     "payment_swift": "Upload de Comprovante SWIFT",
     "payment_swift_sub": "Verificação de transferência externa",

@@ -1096,7 +1096,7 @@
     "fee_security_surcharge": "Tozo ya Usalama wa Bahari",
     "total_due": "Jumla Inayostahili",
     "payment_capture": "Kukamata Malipo",
-    "payment_bank": "Dahabshiil / Premier Bank",
+    "payment_bank": "Uhamisho wa benki",
     "payment_bank_sub": "Malipo ya moja kwa moja kupitia API",
     "payment_swift": "Pakia Uthibitisho wa SWIFT",
     "payment_swift_sub": "Uthibitishaji wa uhamisho wa nje",

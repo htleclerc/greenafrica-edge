@@ -1096,7 +1096,7 @@
     "fee_security_surcharge": "رسوم الأمن البحري الإضافية",
     "total_due": "الإجمالي المستحق",
     "payment_capture": "تحصيل الدفع",
-    "payment_bank": "داهبشيل / بريميير بنك",
+    "payment_bank": "تحويل مصرفي",
     "payment_bank_sub": "تسوية مباشرة عبر API",
     "payment_swift": "رفع إثبات SWIFT",
     "payment_swift_sub": "التحقق من الحوالة الخارجية",
