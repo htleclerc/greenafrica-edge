@@ -4259,6 +4259,7 @@
     "form_submit": "Xaqiiji",
     "form_hint": "Jawaab degdeg ah, akoon looma baahna.",
     "form_invalid": "Geli lambar IMO (7 tirood) ama MMSI (9 tirood).",
+    "form_invalid_checksum": "Lambarkan IMO ma eka mid sax ah — hubi lambarka ugu dambeeya.",
     "page_title": "Xaqiiji cashuurta kaarboonka ee markab",
     "outstanding_heading": "Ogeysiisyo sugaya",
     "outstanding_count": "{count, plural, one {# ogeysiis oo sugaya} other {# ogeysiis oo sugaya}}",

@@ -4262,6 +4262,7 @@
     "form_submit": "تحقق",
     "form_hint": "إجابة فورية، دون الحاجة إلى حساب.",
     "form_invalid": "أدخل رقم IMO (7 أرقام) أو MMSI (9 أرقام).",
+    "form_invalid_checksum": "رقم IMO هذا لا يبدو صحيحًا — تحقق من الرقم الأخير.",
     "page_title": "التحقق من ضريبة الكربون لسفينة",
     "outstanding_heading": "إشعارات معلّقة",
     "outstanding_count": "{count, plural, zero {لا توجد إشعارات معلّقة} one {إشعار واحد معلّق} two {إشعاران معلّقان} few {# إشعارات معلّقة} many {# إشعارًا معلّقًا} other {# إشعار معلّق}}",

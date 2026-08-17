@@ -4296,6 +4296,7 @@
     "form_submit": "Verificar",
     "form_hint": "Resposta imediata, sem necessidade de conta.",
     "form_invalid": "Informe um número IMO (7 dígitos) ou MMSI (9 dígitos).",
+    "form_invalid_checksum": "Esse número IMO não parece válido — verifique o último dígito.",
     "page_title": "Verificar a taxa de carbono de um navio",
     "outstanding_heading": "Avisos pendentes",
     "outstanding_count": "{count, plural, one {# aviso pendente} other {# avisos pendentes}}",
