@@ -63,12 +63,13 @@ export interface PaymentResult {
 export interface WireTransferInstructions {
   beneficiary: string;
   accountNumber: string;
-  beneficiaryAddress: string;
+  beneficiaryAddress?: string;
   bank: string;
+  bankAddress?: string;
   swiftCode: string;
   iban: string;
-  intermediaryBank: string;
-  intermediarySwift: string;
+  intermediaryBank?: string;
+  intermediarySwift?: string;
   reference: string;
   amount: string;
   currency: Currency;
@@ -334,14 +335,14 @@ function createWireTransfer(payment: PaymentRequest): PaymentResult {
     provider: 'wire_transfer',
     status: 'pending',
     wireInstructions: {
-      beneficiary: 'SOLIDE TECHNOLOGY',
-      accountNumber: '100613310001',
-      beneficiaryAddress: 'Masalaha Street, M.Haybe District, Hargeisa, Somaliland',
-      bank: 'Premier Bank Limited — Durdur Branch, Hargeisa, Somaliland',
-      swiftCode: 'PBSMSOSM',
-      iban: 'SO9500051001100613310001',
-      intermediaryBank: 'Premier Bank Kenya Limited, Nairobi',
-      intermediarySwift: 'IFCBKENA',
+      beneficiary: 'Solide Technology Limited',
+      // IBAN-based Maltese account — no separate domestic account number was
+      // provided, so the IBAN also serves as the account identifier here.
+      accountNumber: 'MT12SYPL39480821090981701607644',
+      bank: 'SYSTEM PAY SERVICES (MALTA) LIMITED',
+      bankAddress: 'Ruby Workspaces, 3 Triq Santandrija, St Julians, STJ 9023, MT',
+      swiftCode: 'SYPLMTM2XXX',
+      iban: 'MT12SYPL39480821090981701607644',
       reference: ref,
       amount: `${payment.currency} ${payment.amount.toFixed(2)}`,
       currency: payment.currency,

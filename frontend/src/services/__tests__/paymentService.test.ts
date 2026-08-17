@@ -271,7 +271,10 @@ describe('createPaymentRequest', () => {
         expect(result.provider).toBe('wire_transfer');
         expect(result.status).toBe('pending');
         expect(result.wireInstructions).toBeDefined();
-        expect(result.wireInstructions?.beneficiary).toMatch(/SOLIDE TECHNOLOGY/);
+        expect(result.wireInstructions?.beneficiary).toBe('Solide Technology Limited');
+        expect(result.wireInstructions?.iban).toBe('MT12SYPL39480821090981701607644');
+        expect(result.wireInstructions?.swiftCode).toBe('SYPLMTM2XXX');
+        expect(result.wireInstructions?.intermediaryBank).toBeUndefined();
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

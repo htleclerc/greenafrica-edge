@@ -10,12 +10,13 @@ import { legacyProofAdapter } from './legacyProofAdapter';
 export interface WireTransferInstructions {
     beneficiary: string;
     accountNumber: string;
-    beneficiaryAddress: string;
+    beneficiaryAddress?: string;
     bank: string;
+    bankAddress?: string;
     swiftCode: string;
     iban: string;
-    intermediaryBank: string;
-    intermediarySwift: string;
+    intermediaryBank?: string;
+    intermediarySwift?: string;
     reference: string;
     amount: string;
     currency: string;
@@ -41,15 +42,27 @@ export function WireTransferModal({ instructions, invoiceRef, vesselName, transa
         });
     }
 
-    const fields = [
+    // Optional fields (beneficiary/bank address, intermediary bank) are omitted
+    // entirely from the rendered list rather than shown blank when the active
+    // wire instructions don't carry them — see WireTransferInstructions.
+    const fields: Array<{ key: string; label: string; value: string; icon: React.ComponentType<{ className?: string }> }> = [
         { key: 'beneficiary',      label: 'Beneficiary',         value: instructions.beneficiary,        icon: Building2 },
         { key: 'accountNumber',    label: 'Account No.',         value: instructions.accountNumber,      icon: CreditCard },
-        { key: 'beneficiaryAddr',  label: 'Beneficiary Address', value: instructions.beneficiaryAddress, icon: Building2 },
+        ...(instructions.beneficiaryAddress
+            ? [{ key: 'beneficiaryAddr',  label: 'Beneficiary Address', value: instructions.beneficiaryAddress, icon: Building2 }]
+            : []),
         { key: 'bank',             label: 'Beneficiary Bank',    value: instructions.bank,               icon: Building2 },
+        ...(instructions.bankAddress
+            ? [{ key: 'bankAddress',      label: 'Bank Address',        value: instructions.bankAddress,        icon: Building2 }]
+            : []),
         { key: 'swift',            label: 'SWIFT/BIC',           value: instructions.swiftCode,          icon: Hash },
         { key: 'iban',             label: 'IBAN',                value: instructions.iban,               icon: CreditCard },
-        { key: 'intermediaryBank', label: 'Intermediary Bank',   value: instructions.intermediaryBank,   icon: Building2 },
-        { key: 'intermediarySwift',label: 'Intermediary SWIFT',  value: instructions.intermediarySwift,  icon: Hash },
+        ...(instructions.intermediaryBank
+            ? [{ key: 'intermediaryBank', label: 'Intermediary Bank',   value: instructions.intermediaryBank,   icon: Building2 }]
+            : []),
+        ...(instructions.intermediarySwift
+            ? [{ key: 'intermediarySwift',label: 'Intermediary SWIFT',  value: instructions.intermediarySwift,  icon: Hash }]
+            : []),
         { key: 'reference',        label: 'Mandatory Reference', value: instructions.reference,          icon: FileText },
         { key: 'amount',           label: 'Amount',              value: instructions.amount,             icon: CreditCard },
     ];

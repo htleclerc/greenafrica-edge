@@ -206,7 +206,7 @@ sender:
 signature: |
   Green-Gate Programme
   Directeur : Noël KPATCHAVI
-  +33 7 58 66 67 75
+  +33 7 51 42 23 84
 ```
 
 ### Destinataires par type de bilan

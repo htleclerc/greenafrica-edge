@@ -304,7 +304,7 @@ Après activation (stage = ACTIVE) :
 
 ## 📞 Contacts opérationnels
 
-- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 58 66 67 75
+- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 51 42 23 84
 - **Bailiff Hargeisa** : Eidle Omer (Eidle Advocats) · eidle@eidle-advocats.so
 - **Ministère MOE&CC** : Direction générale · direction@moe.gov.so
 - **Partenaire ASCR** : Ahmed Araita Ali (AGADEV) · ahmed.araita@agadev.dj
