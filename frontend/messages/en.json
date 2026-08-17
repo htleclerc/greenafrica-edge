@@ -4250,6 +4250,7 @@
     "form_submit": "Check",
     "form_hint": "Instant answer, no account needed.",
     "form_invalid": "Enter an IMO number (7 digits) or MMSI (9 digits).",
+    "form_invalid_checksum": "That IMO number doesn't look valid — check the last digit.",
     "page_title": "Check a vessel's carbon tax",
     "outstanding_heading": "Notices outstanding",
     "outstanding_count": "{count, plural, one {# notice outstanding} other {# notices outstanding}}",
