@@ -87,6 +87,10 @@ jobs:
     # Note: `healthcheck` depends on `backend` only and runs regardless of this job.
     if: ${{ vars.VERCEL_PROD_ENABLED == 'true' }}
     needs: [ci, migrations]
+    # Sans plafond, `vercel deploy` attend indefiniment que le deploiement soit
+    # pret. Le 2026-08-19 le job a consomme les 6 h du plafond GitHub par defaut
+    # avant d'etre tue, sans jamais promouvoir l'alias.
+    timeout-minutes: 20
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -114,17 +118,43 @@ jobs:
       - name: Deploy Production
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Frontend: $URL" >> "$GITHUB_STEP_SUMMARY"
         working-directory: frontend
+
+      # La promotion de l'alias etait implicite : elle dependait de la CLI menant
+      # son attente a terme. Le 2026-08-19 elle s'est bloquee, le job a ete tue au
+      # bout de 6 h, et greengate.africa est reste sur l'ancien deploiement alors
+      # que le build avait reussi. Rendue explicite, elle echoue visiblement.
+      - name: Promote to production domain
+        run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+
+      # Fumigation du domaine public. On ne compare PAS un identifiant de
+      # deploiement : Vercel n'expose aucun en-tete stable pour cela — x-vercel-id
+      # change a chaque requete (verifie le 2026-08-19). La garantie de promotion
+      # vient de l'etape precedente ; ici on s'assure seulement que le domaine
+      # repond, pour ne pas terminer vert sur une prod injoignable.
+      - name: Smoke-check the production domain
+        run: |
+          STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 20 "${{ secrets.PRODUCTION_URL }}/login" || echo "000")
+          echo "Domaine public: HTTP $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Le domaine de production repond $STATUS apres promotion."
+            exit 1
+          fi
+          echo "### Domaine de production sain (HTTP $STATUS)" >> "$GITHUB_STEP_SUMMARY"
 
   # ── Post-deploy health checks ────────────────────────────────────────────
   healthcheck:
     name: Health Checks
     runs-on: ubuntu-latest
-    # frontend deploys via the native Vercel integration; the PRODUCTION_URL check below is still valid
-    needs: [backend]
+    # Depend des deux deploiements et s'execute meme si l'un echoue : le
+    # 2026-08-19, `backend` en echec (facturation Fly) a fait sauter ce job, donc
+    # une prod perimee n'a declenche aucun controle.
+    needs: [backend, deploy]
+    if: ${{ always() }}
     # Resolves PRODUCTION_URL / BACKEND_URL to the PRODUCTION secrets.
     environment: production
 
