@@ -4,7 +4,12 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Search } from 'lucide-react';
-import { normalizeVesselIdentifier } from '@/lib/vessels/identifier';
+import { classifyVesselIdentifier, type VesselIdentifierProblem } from '@/lib/vessels/identifier';
+
+const PROBLEM_MESSAGE_KEY: Record<VesselIdentifierProblem, string> = {
+    FORMAT: 'form_invalid',
+    IMO_CHECKSUM: 'form_invalid_checksum',
+};
 
 /**
  * Champ de recherche par IMO/MMSI. Monté à deux endroits — le hero d'accueil et
@@ -24,17 +29,17 @@ export function VesselLookupForm({
     const t = useTranslations('VesselLookup');
     const router = useRouter();
     const [value, setValue] = React.useState(defaultValue);
-    const [error, setError] = React.useState(false);
+    const [problem, setProblem] = React.useState<VesselIdentifierProblem | null>(null);
 
     function onSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const identifier = normalizeVesselIdentifier(value);
-        if (!identifier) {
-            setError(true);
+        const result = classifyVesselIdentifier(value);
+        if (!result.ok) {
+            setProblem(result.problem);
             return;
         }
-        setError(false);
-        router.push(`/pay?q=${encodeURIComponent(identifier.value)}`);
+        setProblem(null);
+        router.push(`/pay?q=${encodeURIComponent(result.identifier.value)}`);
     }
 
     return (
@@ -52,10 +57,10 @@ export function VesselLookupForm({
                         autoComplete="off"
                         autoFocus={autoFocus}
                         value={value}
-                        onChange={(e) => { setValue(e.target.value); setError(false); }}
+                        onChange={(e) => { setValue(e.target.value); setProblem(null); }}
                         placeholder={t('form_placeholder')}
-                        aria-invalid={error}
-                        aria-describedby={error ? 'vessel-lookup-error' : undefined}
+                        aria-invalid={problem !== null}
+                        aria-describedby={problem !== null ? 'vessel-lookup-error' : undefined}
                         className="w-full px-5 py-3.5 rounded-xl text-base bg-transparent
                                    focus-visible:outline-none focus-visible:ring-2
                                    focus-visible:ring-emerald-500"
@@ -79,13 +84,13 @@ export function VesselLookupForm({
                 </button>
             </div>
 
-            {error ? (
+            {problem !== null ? (
                 <p
                     id="vessel-lookup-error"
                     role="alert"
                     className="mt-2 text-sm text-red-400 text-center sm:text-left"
                 >
-                    {t('form_invalid')}
+                    {t(PROBLEM_MESSAGE_KEY[problem])}
                 </p>
             ) : (
                 <p className="mt-2 text-xs text-center sm:text-left" style={{ color: 'var(--ais-page-text-dim)' }}>

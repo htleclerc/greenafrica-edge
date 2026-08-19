@@ -4254,6 +4254,7 @@
     "form_submit": "Thibitisha",
     "form_hint": "Jibu la papo hapo, hakuna akaunti inayohitajika.",
     "form_invalid": "Weka nambari ya IMO (tarakimu 7) au MMSI (tarakimu 9).",
+    "form_invalid_checksum": "Nambari hii ya IMO haionekani sahihi — angalia tarakimu ya mwisho.",
     "page_title": "Thibitisha kodi ya kaboni ya meli",
     "outstanding_heading": "Arifa zinazosubiri",
     "outstanding_count": "{count, plural, one {# arifa inayosubiri} other {# arifa zinazosubiri}}",

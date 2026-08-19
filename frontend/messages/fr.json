@@ -4250,6 +4250,7 @@
     "form_submit": "Vérifier",
     "form_hint": "Réponse immédiate, sans compte.",
     "form_invalid": "Saisissez un numéro IMO (7 chiffres) ou MMSI (9 chiffres).",
+    "form_invalid_checksum": "Ce numéro IMO ne semble pas valide — vérifiez le dernier chiffre.",
     "page_title": "Vérifier la taxe carbone d'un navire",
     "outstanding_heading": "Avis en attente",
     "outstanding_count": "{count, plural, one {# avis en attente} other {# avis en attente}}",

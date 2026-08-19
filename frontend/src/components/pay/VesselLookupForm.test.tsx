@@ -20,7 +20,7 @@ describe('VesselLookupForm', () => {
         expect(mockPush).toHaveBeenCalledWith('/pay?q=9424223');
     });
 
-    it('affiche une erreur et ne navigue pas sur saisie invalide', () => {
+    it('affiche l\'erreur de format et ne navigue pas sur une longueur invalide', () => {
         render(<VesselLookupForm />);
         fireEvent.change(screen.getByLabelText('form_label'), { target: { value: '123' } });
         fireEvent.click(screen.getByRole('button', { name: 'form_submit' }));
@@ -28,10 +28,14 @@ describe('VesselLookupForm', () => {
         expect(screen.getByRole('alert')).toHaveTextContent('form_invalid');
     });
 
-    it('rejette un IMO à somme de contrôle fausse sans appel réseau', () => {
+    it('affiche l\'erreur de somme de contrôle (pas l\'erreur de format) sur un IMO à 7 chiffres mal saisi', () => {
+        // 9424224 a la bonne longueur (7 chiffres) mais une clé de contrôle
+        // fausse : le message affiché doit le distinguer d'un problème de
+        // format, sans quoi l'utilisateur recompte ses chiffres pour rien.
         render(<VesselLookupForm />);
         fireEvent.change(screen.getByLabelText('form_label'), { target: { value: '9424224' } });
         fireEvent.click(screen.getByRole('button', { name: 'form_submit' }));
         expect(mockPush).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent('form_invalid_checksum');
     });
 });
