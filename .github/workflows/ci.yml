@@ -1,21 +1,99 @@
 name: CI — Lint, Test, Build
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  workflow_call: {} # callable as the CI gate from deploy-production.yml
+  workflow_call: # porte CI appelee par deploy-staging.yml et deploy-production.yml
+    inputs:
+      full:
+        description: "Tout executer sans filtrage par chemin (promotion vers main)."
+        type: boolean
+        default: false
+
+# Le declencheur `push` a ete retire : les deux workflows de deploiement
+# appellent deja cette CI comme porte, donc chaque fusion la lancait DEUX fois
+# sur le meme commit (constate le 2026-08-19 sur 679a094). Les PR restent
+# couvertes par le declencheur `pull_request`.
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ── Perimetre : que faut-il reellement executer sur ce commit ? ───────────
+  # Sur main (promotion, ou PR ciblant main) : tout, sans condition.
+  # Ailleurs : seulement les domaines touches par le diff.
+  scope:
+    name: Scope
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.s.outputs.full }}
+      frontend: ${{ steps.s.outputs.frontend }}
+      backend: ${{ steps.s.outputs.backend }}
+      db: ${{ steps.s.outputs.db }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: s
+        env:
+          FULL_INPUT: ${{ inputs.full }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -u
+          FULL=false
+          if [ "${FULL_INPUT:-false}" = "true" ] || [ "${BASE_REF:-}" = "main" ]; then
+            FULL=true
+          fi
+
+          FILES=""
+          if [ "$FULL" != "true" ]; then
+            if [ -n "${BASE_REF:-}" ]; then
+              git fetch origin "$BASE_REF" --depth=200 >/dev/null 2>&1 || true
+              FILES=$(git diff --name-only "origin/$BASE_REF...HEAD" 2>/dev/null || true)
+            elif [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              FILES=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" 2>/dev/null || true)
+            fi
+            # Diff indisponible (historique tronque, premier push d'une branche) :
+            # on ne devine pas, on execute tout.
+            if [ -z "$FILES" ]; then
+              FULL=true
+            fi
+          fi
+
+          if [ "$FULL" = "true" ]; then
+            FE=true; BE=true; DB=true
+          else
+            # GitHub execute les `run:` avec `bash -eo pipefail` : un `grep`
+            # sans correspondance renvoie 1 et, hors d'un `if`, abandonne le
+            # script. Ne pas revenir a la forme `grep -q ... && VAR=true`.
+            FE=false; BE=false; DB=false
+            if echo "$FILES" | grep -qE '^frontend/'; then FE=true; fi
+            if echo "$FILES" | grep -qE '^backend/';  then BE=true; fi
+            if echo "$FILES" | grep -qE '^supabase/'; then DB=true; fi
+            # Un changement de workflow peut affecter n'importe quel domaine.
+            if echo "$FILES" | grep -qE '^\.github/workflows/'; then
+              FE=true; BE=true; DB=true
+            fi
+          fi
+
+          echo "full=$FULL"   >> "$GITHUB_OUTPUT"
+          echo "frontend=$FE" >> "$GITHUB_OUTPUT"
+          echo "backend=$BE"  >> "$GITHUB_OUTPUT"
+          echo "db=$DB"       >> "$GITHUB_OUTPUT"
+          {
+            echo "### Perimetre CI"
+            echo "- complet : \`$FULL\`"
+            echo "- frontend : \`$FE\` · backend : \`$BE\` · base : \`$DB\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # ── Frontend checks ──────────────────────────────────────────────────────
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
+    needs: [scope]
+    if: ${{ needs.scope.outputs.frontend == 'true' }}
     defaults:
       run:
         working-directory: frontend
@@ -58,6 +136,8 @@ jobs:
   backend:
     name: Backend (Go)
     runs-on: ubuntu-latest
+    needs: [scope]
+    if: ${{ needs.scope.outputs.backend == 'true' }}
     defaults:
       run:
         working-directory: backend
@@ -86,6 +166,11 @@ jobs:
   integration:
     name: Integration (pg + Go)
     runs-on: ubuntu-latest
+    needs: [scope]
+    # Les tests Go adosses a la base ET les .test.sql : un changement de l'un ou
+    # de l'autre doit les declencher. C'est ce job qui a attrape, le 2026-08-19,
+    # deux tests pg perimes qui bloquaient toute mise en production.
+    if: ${{ needs.scope.outputs.backend == 'true' || needs.scope.outputs.db == 'true' }}
 
     steps:
       - uses: actions/checkout@v5
