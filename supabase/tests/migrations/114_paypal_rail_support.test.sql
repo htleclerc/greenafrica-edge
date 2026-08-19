@@ -86,6 +86,15 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Premiere ligne : doit passer. Sans elle, l'insertion suivante n'est pas
+  -- un doublon et l'index n'a rien a rejeter — l'assertion ne pouvait pas
+  -- passer.
+  INSERT INTO public.payments
+      (shipowner_id, amount_minor, currency, amount_usd_minor, rail, status, external_reference)
+  VALUES
+      (v_shipowner, 100000, 'USD', 100000, 'PAYPAL', 'PROCESSING', 'ORDER-TEST-114');
+
+  -- Seconde ligne, meme ordre PayPal : l'index unique partiel doit la refuser.
   BEGIN
     INSERT INTO public.payments
         (shipowner_id, amount_minor, currency, amount_usd_minor, rail, status, external_reference)
