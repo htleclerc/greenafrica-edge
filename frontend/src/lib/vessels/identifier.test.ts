@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeVesselIdentifier } from './identifier';
+import { classifyVesselIdentifier, normalizeVesselIdentifier } from './identifier';
 
 describe('normalizeVesselIdentifier', () => {
     it('accepte un IMO nu', () => {
@@ -30,5 +30,40 @@ describe('normalizeVesselIdentifier', () => {
 
     it('rejette une saisie sans aucun chiffre plutôt que de la réduire à vide', () => {
         expect(normalizeVesselIdentifier('IMO')).toBeNull();
+    });
+});
+
+describe('classifyVesselIdentifier', () => {
+    it('distingue une somme de contrôle IMO fausse d\'un problème de format', () => {
+        // 9745311 : 7 chiffres, format correct, mais la clé de contrôle est
+        // fausse (somme pondérée des 6 premiers chiffres = 156, clé attendue
+        // 6, pas 1). C'est la faute de frappe qui a motivé ce correctif.
+        expect(classifyVesselIdentifier('9745311')).toEqual({ ok: false, problem: 'IMO_CHECKSUM' });
+    });
+
+    it('accepte un IMO réel du jeu de données de seed', () => {
+        expect(classifyVesselIdentifier('9235957')).toEqual({
+            ok: true,
+            identifier: { kind: 'IMO', value: '9235957' },
+        });
+    });
+
+    it('accepte un MMSI à 9 chiffres', () => {
+        expect(classifyVesselIdentifier('341581000')).toEqual({
+            ok: true,
+            identifier: { kind: 'MMSI', value: '341581000' },
+        });
+    });
+
+    it('signale un problème de format pour une longueur ni 7 ni 9', () => {
+        expect(classifyVesselIdentifier('123')).toEqual({ ok: false, problem: 'FORMAT' });
+    });
+
+    it('signale un problème de format pour une saisie vide', () => {
+        expect(classifyVesselIdentifier('')).toEqual({ ok: false, problem: 'FORMAT' });
+    });
+
+    it('signale un problème de format pour une saisie sans aucun chiffre', () => {
+        expect(classifyVesselIdentifier('IMO')).toEqual({ ok: false, problem: 'FORMAT' });
     });
 });

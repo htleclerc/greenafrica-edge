@@ -9,13 +9,19 @@ BEGIN
   ASSERT n = 1, format('expected enqueue_proforma_reminders, got %s', n);
 END $$;
 
--- 2. Cron job exists
+-- 2. Le cron pg_cron a ete retire par la migration 110.
+--
+-- La 065 planifiait 'proforma-reminders-daily' ; la 110 l'a desactive
+-- (cron.unschedule) quand la relance est passee au cron applicatif
+-- /api/cron/collection-reminders, qui gere les paliers J3/J7. Ce fichier
+-- s'execute apres TOUTE la chaine de migrations : l'etat correct ici est
+-- donc l'absence du job. La fonction, elle, reste et est verifiee en 1.
 DO $$
 DECLARE n INT;
 BEGIN
   SELECT COUNT(*) INTO n FROM cron.job
     WHERE jobname = 'proforma-reminders-daily';
-  ASSERT n = 1, format('expected cron job, got %s', n);
+  ASSERT n = 0, format('le cron 065 doit avoir ete retire par la mig 110, trouve %s', n);
 END $$;
 
 -- 3. Function inserts notifications for PROFORMA aged 3 days
