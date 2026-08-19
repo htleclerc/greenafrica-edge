@@ -65,12 +65,17 @@ jobs:
           if [ "$FULL" = "true" ]; then
             FE=true; BE=true; DB=true
           else
+            # GitHub execute les `run:` avec `bash -eo pipefail` : un `grep`
+            # sans correspondance renvoie 1 et, hors d'un `if`, abandonne le
+            # script. Ne pas revenir a la forme `grep -q ... && VAR=true`.
             FE=false; BE=false; DB=false
-            echo "$FILES" | grep -qE '^frontend/'          && FE=true
-            echo "$FILES" | grep -qE '^backend/'           && BE=true
-            echo "$FILES" | grep -qE '^supabase/'          && DB=true
-            # Un changement de workflow ou de racine peut affecter n'importe quoi.
-            echo "$FILES" | grep -qE '^\.github/workflows/' && { FE=true; BE=true; DB=true; }
+            if echo "$FILES" | grep -qE '^frontend/'; then FE=true; fi
+            if echo "$FILES" | grep -qE '^backend/';  then BE=true; fi
+            if echo "$FILES" | grep -qE '^supabase/'; then DB=true; fi
+            # Un changement de workflow peut affecter n'importe quel domaine.
+            if echo "$FILES" | grep -qE '^\.github/workflows/'; then
+              FE=true; BE=true; DB=true
+            fi
           fi
 
           echo "full=$FULL"   >> "$GITHUB_OUTPUT"
