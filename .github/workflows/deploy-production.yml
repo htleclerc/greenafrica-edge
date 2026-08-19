@@ -115,6 +115,34 @@ jobs:
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: frontend
 
+      # Une variable marquee "Sensitive" dans Vercel n'est pas relisible, donc
+      # `vercel pull` ne la rapporte pas. Le build local l'inline alors a
+      # `undefined` et la production casse a l'execution — c'est ce qui a mis
+      # greengate.africa a terre le 2026-08-20 (MIDDLEWARE_INVOCATION_FAILED sur
+      # toutes les routes) alors que la variable etait bien presente cote Vercel.
+      # Les NEXT_PUBLIC_* sont inlinees au build ET finissent dans le bundle
+      # navigateur : elles sont publiques par construction et ne doivent jamais
+      # etre marquees Sensitive.
+      - name: Verify the pulled env carries the public variables
+        run: |
+          ENVFILE=".vercel/.env.production.local"
+          if [ ! -f "$ENVFILE" ]; then
+            echo "::error::$ENVFILE absent — vercel pull n'a rien rapporte."
+            exit 1
+          fi
+          MISSING=""
+          for VAR in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+            if ! grep -qE "^${VAR}=.+" "$ENVFILE"; then
+              MISSING="$MISSING $VAR"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Variables absentes du build :$MISSING — verifier qu'elles ne sont pas marquees Sensitive dans le projet Vercel."
+            exit 1
+          fi
+          echo "### Variables publiques presentes dans le build" >> "$GITHUB_STEP_SUMMARY"
+        working-directory: frontend
+
       - name: Build
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: frontend
@@ -140,9 +168,13 @@ jobs:
           for i in $(seq 1 40); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ steps.deploy.outputs.url }}" || echo "000")
             echo "tentative $i — deploiement: HTTP $STATUS"
-            if [ "$STATUS" = "200" ]; then
-              exit 0
-            fi
+            # Un deploiement pret repond 2xx OU 3xx : l'URL de deploiement
+            # redirige (302) vers le domaine de production. N'accepter que 200
+            # faisait boucler l'attente jusqu'au plafond sur un deploiement
+            # pourtant sain — constate le 2026-08-20, 24 tentatives a 302.
+            case "$STATUS" in
+              2??|3??) exit 0 ;;
+            esac
             sleep 20
           done
           echo "::error::Le deploiement n'a pas repondu 200 dans le delai imparti."
