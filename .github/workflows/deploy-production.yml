@@ -168,13 +168,16 @@ jobs:
           for i in $(seq 1 40); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ steps.deploy.outputs.url }}" || echo "000")
             echo "tentative $i — deploiement: HTTP $STATUS"
-            # Un deploiement pret repond 2xx OU 3xx : l'URL de deploiement
-            # redirige (302) vers le domaine de production. N'accepter que 200
-            # faisait boucler l'attente jusqu'au plafond sur un deploiement
-            # pourtant sain — constate le 2026-08-20, 24 tentatives a 302.
-            case "$STATUS" in
-              2??|3??) exit 0 ;;
-            esac
+            # 200 SEULEMENT. Un 302 sur l'URL de deploiement signifie
+            # "pas encore pret", pas "pret et redirige" : elargir aux 3xx a fait
+            # sortir la boucle des la 2e tentative le 2026-08-20, et
+            # `vercel promote` a repondu 422 « deployment is not ready ».
+            # Les 24 x 302 observes plus tot venaient d'un deploiement BLOQUE
+            # par Vercel, qui ne serait jamais devenu pret — le signal etait
+            # juste, c'est la cause qui etait ailleurs.
+            if [ "$STATUS" = "200" ]; then
+              exit 0
+            fi
             sleep 20
           done
           echo "::error::Le deploiement n'a pas repondu 200 dans le delai imparti."
