@@ -90,7 +90,7 @@ jobs:
     # Sans plafond, `vercel deploy` attend indefiniment que le deploiement soit
     # pret. Le 2026-08-19 le job a consomme les 6 h du plafond GitHub par defaut
     # avant d'etre tue, sans jamais promouvoir l'alias.
-    timeout-minutes: 20
+    timeout-minutes: 25
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -118,24 +118,41 @@ jobs:
       - name: Deploy Production
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
+          # --no-wait : la CLI rend la main des la fin du televersement.
+          # Sans lui elle attend l'etat READY et ne le voit jamais : constate le
+          # 2026-08-19 sur deux executions (6 h puis 20 min, tuees par le
+          # plafond), alors que le deploiement aboutissait bien cote Vercel —
+          # son URL servait du 200. `--prebuilt` ne declenche pourtant aucun
+          # build distant : c'est l'attente elle-meme qui est en cause.
+          URL=$(vercel deploy --prebuilt --prod --yes --no-wait --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Frontend: $URL" >> "$GITHUB_STEP_SUMMARY"
         working-directory: frontend
 
-      # La promotion de l'alias etait implicite : elle dependait de la CLI menant
-      # son attente a terme. Le 2026-08-19 elle s'est bloquee, le job a ete tue au
-      # bout de 6 h, et greengate.africa est reste sur l'ancien deploiement alors
-      # que le build avait reussi. Rendue explicite, elle echoue visiblement.
+      # On attend nous-memes, sur un signal observable : le deploiement repond.
+      # Borne a ~13 min, largement au-dessus des quelques minutes constatees.
+      - name: Wait until the deployment answers
+        run: |
+          for i in $(seq 1 40); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ steps.deploy.outputs.url }}" || echo "000")
+            echo "tentative $i — deploiement: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Le deploiement n'a pas repondu 200 dans le delai imparti."
+          exit 1
+
+      # Promotion explicite : ne depend plus du bon deroulement d'une attente
+      # interne a la CLI.
       - name: Promote to production domain
         run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: frontend
 
-      # Fumigation du domaine public. On ne compare PAS un identifiant de
-      # deploiement : Vercel n'expose aucun en-tete stable pour cela — x-vercel-id
-      # change a chaque requete (verifie le 2026-08-19). La garantie de promotion
-      # vient de l'etape precedente ; ici on s'assure seulement que le domaine
-      # repond, pour ne pas terminer vert sur une prod injoignable.
+      # Fumigation. On ne compare pas d'identifiant de deploiement : Vercel
+      # n'expose aucun en-tete stable pour cela (x-vercel-id change a chaque
+      # requete, verifie le 2026-08-19).
       - name: Smoke-check the production domain
         run: |
           STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 20 "${{ secrets.PRODUCTION_URL }}/login" || echo "000")
