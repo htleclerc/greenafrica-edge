@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
     Calculator, Ship, RefreshCw, FileText, Info, ChevronDown,
     AlertTriangle, CheckCircle2, Anchor, Navigation, HelpCircle, Plane,
+    Download, X,
 } from 'lucide-react';
 import { VesselCategory } from '@/types/secure';
 import { usePrincipalKind } from '@/hooks/usePrincipalKind';
@@ -307,8 +308,34 @@ function MaritimeSimulator() {
     const riskLabel = { low: t('simulator_risk_low'), medium: t('simulator_risk_medium'), high: t('simulator_risk_high') }[riskLevel];
 
     // ── Pre-estimate PDF generation ──
+    // Le PDF n'est jamais téléchargé automatiquement : on l'affiche dans une
+    // modale (clairement estampillée « simulation ») et l'utilisateur décide
+    // s'il le télécharge.
     const [pdfStatus, setPdfStatus] = React.useState<'idle' | 'generating' | 'error'>('idle');
     const [pdfError, setPdfError]   = React.useState<string | null>(null);
+    const [estimatePdf, setEstimatePdf] = React.useState<{ url: string; ref: string } | null>(null);
+
+    const closeEstimate = React.useCallback(() => {
+        setEstimatePdf((prev) => {
+            if (prev) URL.revokeObjectURL(prev.url);
+            return null;
+        });
+    }, []);
+
+    // Libère l'object URL si le composant est démonté modale ouverte.
+    React.useEffect(() => () => {
+        if (estimatePdf) URL.revokeObjectURL(estimatePdf.url);
+    }, [estimatePdf]);
+
+    function downloadEstimate() {
+        if (!estimatePdf) return;
+        const a = document.createElement('a');
+        a.href = estimatePdf.url;
+        a.download = `SIMULATION-${estimatePdf.ref}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
 
     async function handleGenerateEstimatePdf() {
         if (!result || pdfStatus === 'generating') return;
@@ -345,17 +372,12 @@ function MaritimeSimulator() {
                 throw new Error(errBody.error || `HTTP ${response.status}`);
             }
 
-            // Stream the PDF blob and trigger download
+            // Prévisualisation : on garde le blob et on ouvre la modale.
+            // L'utilisateur télécharge lui-même depuis celle-ci.
             const blob = await response.blob();
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement('a');
-            const ts   = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            a.href     = url;
-            a.download = `greengate-pre-estimate-${ts}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const ref = response.headers.get('X-Estimate-Ref')
+                ?? `SIM-${new Date().getFullYear()}`;
+            setEstimatePdf({ url: URL.createObjectURL(blob), ref });
 
             setPdfStatus('idle');
         } catch (err) {
@@ -712,6 +734,91 @@ function MaritimeSimulator() {
                     <FaqPanel />
                 </div>
             </div>
+            {/* ── Modale de pré-estimation ──
+                Le PDF n'est jamais téléchargé automatiquement : on le prévisualise
+                ici, estampillé « simulation », et l'utilisateur choisit de le
+                télécharger. */}
+            {estimatePdf && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t('simulator_pdf_modal_title')}
+                    onClick={closeEstimate}
+                >
+                    <div
+                        className="w-full max-w-4xl h-[85vh] flex flex-col rounded-xl overflow-hidden"
+                        style={{ backgroundColor: 'var(--os-surface-1)', border: '1px solid var(--os-border)' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div
+                            className="flex items-center justify-between gap-3 px-5 py-3 shrink-0"
+                            style={{ borderBottom: '1px solid var(--os-border)' }}
+                        >
+                            <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="w-4 h-4 shrink-0" style={{ color: 'var(--os-text-muted)' }} />
+                                <h2 className="text-sm font-semibold truncate" style={{ color: 'var(--os-text-primary)' }}>
+                                    {t('simulator_pdf_modal_title')}
+                                </h2>
+                                <span
+                                    className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0"
+                                    style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-muted)' }}
+                                >
+                                    {estimatePdf.ref}
+                                </span>
+                            </div>
+                            <button
+                                onClick={closeEstimate}
+                                aria-label={t('simulator_pdf_close')}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-[var(--os-surface-2)]"
+                                style={{ color: 'var(--os-text-muted)' }}
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Avertissement — différencie du vrai proforma */}
+                        <div
+                            className="flex items-start gap-2 px-5 py-3 shrink-0"
+                            style={{ backgroundColor: 'rgba(234,179,8,0.10)', borderBottom: '1px solid var(--os-border)' }}
+                        >
+                            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#EAB308' }} />
+                            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--os-text-secondary)' }}>
+                                {t('simulator_pdf_modal_warning')}
+                            </p>
+                        </div>
+
+                        <iframe
+                            src={estimatePdf.url}
+                            title={t('simulator_pdf_modal_title')}
+                            className="flex-1 w-full"
+                            style={{ border: 'none', backgroundColor: '#525659' }}
+                        />
+
+                        <div
+                            className="flex items-center justify-end gap-2 px-5 py-3 shrink-0"
+                            style={{ borderTop: '1px solid var(--os-border)' }}
+                        >
+                            <button
+                                onClick={closeEstimate}
+                                className="px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-[var(--os-surface-2)]"
+                                style={{ color: 'var(--os-text-secondary)' }}
+                            >
+                                {t('simulator_pdf_close')}
+                            </button>
+                            <button
+                                onClick={downloadEstimate}
+                                className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-opacity hover:opacity-90"
+                                style={{ backgroundColor: '#10B981', color: '#052e1c' }}
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                {t('simulator_pdf_download')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

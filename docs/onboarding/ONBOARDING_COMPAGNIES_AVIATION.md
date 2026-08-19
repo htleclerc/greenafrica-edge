@@ -226,7 +226,7 @@ Ajouts au dashboard existant :
 
 ## 📞 Support intégration
 
-- **Direction Green-Gate** : Noël KPATCHAVI · +33 7 58 66 67 75
+- **Direction Green-Gate** : Noël KPATCHAVI · +33 7 51 42 23 84
 - **Documentation formule** : cf. `PJ3_Etat_Art_Mondial_Taxes_Carbone.docx` (méthodologie détaillée)
 - **Package pro-formas prêt** : `GreenGate_ProFormas_AVIATION_FINAL.zip`
 

@@ -130,7 +130,7 @@ export async function applyEquasisProposal(
     const fillUpdates: Record<string, string> = {};
     const { data: current } = await admin
         .from('shipowners')
-        .select('name, country_code')
+        .select('name, country_code, jurisdiction_id')
         .eq('id', shipownerId)
         .single();
     if (proposal.proposed_owner_name && (!current?.name || current.name.startsWith('Owner of IMO'))) {
@@ -164,6 +164,7 @@ export async function applyEquasisProposal(
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: shipownerId,
+        jurisdiction_id: current?.jurisdiction_id ?? null,
         details_json: {
             event: 'EQUASIS_PROPOSAL_APPLIED',
             proposalId: proposal.id,

@@ -28,6 +28,12 @@ export async function getAuditLogs(client: Client, filters?: AuditLogFilters): P
     return ((data ?? []) as AuditLogRow[]).map(rowToAuditLogEntry);
 }
 
+/**
+ * Callers SHOULD include `jurisdiction_id: string | null` on `entry` (RGPD C3b —
+ * audit_logs.jurisdiction_id must be tagged on every writer; `null` only for
+ * legitimate cross-jurisdiction roll-ups). Left untyped (Record<string, unknown>)
+ * on purpose so existing call sites aren't forced through a signature change.
+ */
 export async function writeAuditLog(
     client: Client,
     entry: Record<string, unknown>,

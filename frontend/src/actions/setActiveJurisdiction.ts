@@ -70,6 +70,7 @@ export async function setActiveJurisdiction(raw: unknown): Promise<SetActiveJuri
             severity: 'INFO',
             entity_type: 'Jurisdiction',
             entity_id: jurisdictionId,
+            jurisdiction_id: jurisdictionId,
             details_json: { event: 'ACTIVE_JURISDICTION_SWITCHED' },
         });
     } catch (err) {

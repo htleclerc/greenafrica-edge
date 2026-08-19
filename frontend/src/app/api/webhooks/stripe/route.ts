@@ -3,6 +3,7 @@ import { type SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { verifyWebhookSignature } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
+import { applyPaymentConfirmationEffects } from '@/services/paymentConfirmationEffects';
 import { scopedLogger } from '@/lib/logger';
 
 const log = scopedLogger('stripe-webhook');
@@ -16,7 +17,9 @@ const log = scopedLogger('stripe-webhook');
  * Handled events (v1):
  *   - payment_intent.succeeded      → UPDATE payments → CONFIRMED + capture
  *     stripe_charge_id, payment_method_type, fx_rate_source='STRIPE_SETTLE'
- *     into rail_details; trigger Plan 7C-4 receipt + email hook.
+ *     into rail_details; puis délègue les effets (reçu PDF, e-mail,
+ *     notification in-app) à `paymentConfirmationEffects`, partagé avec le
+ *     rail PAYPAL.
  *   - payment_intent.payment_failed → UPDATE payments → REJECTED + reason.
  *   - checkout.session.expired      → UPDATE payments → CANCELLED.
  *   - charge.refunded               → idempotent safety net for Plan 7G
@@ -207,100 +210,18 @@ async function handlePaymentSucceeded(
         amountUsdMinor: payment.amount_usd_minor,
     });
 
-    // Plan 7C-4 receipt + email hook (fail-soft — payment stays CONFIRMED on error)
-    let receiptRefForNotif: string | undefined;
-    let receiptBufferForNotif: Uint8Array | undefined;
-    let txForNotif: { invoice_ref: string | null; vessel_name: string | null } | null = null;
-    try {
-        const { generatePaymentReceipt } = await import('@/services/receiptService');
-        const receipt = await generatePaymentReceipt(admin, payment.id);
-        receiptRefForNotif = receipt.receiptRef;
-        receiptBufferForNotif = receipt.pdfBuffer;
-
-        const { sendPaymentConfirmationEmail } = await import('@/services/emailService');
-
-        const { data: owner } = await admin
-            .from('shipowners')
-            .select('name, official_email')
-            .eq('id', payment.shipowner_id)
-            .single();
-
-        const { data: tx } = payment.transaction_id
-            ? await admin
-                .from('transactions')
-                .select('invoice_ref, vessel_name')
-                .eq('id', payment.transaction_id)
-                .single()
-            : { data: null as { invoice_ref: string | null; vessel_name: string | null } | null };
-        txForNotif = tx
-            ? { invoice_ref: tx.invoice_ref as string | null, vessel_name: tx.vessel_name as string | null }
-            : null;
-
-        const ownerEmail = (owner as { official_email?: string } | null)?.official_email;
-        if (ownerEmail) {
-            await sendPaymentConfirmationEmail({
-                to: ownerEmail,
-                recipientName: ((owner as { name?: string } | null)?.name) ?? 'Shipowner',
-                vesselName: (tx?.vessel_name as string | null) ?? '—',
-                invoiceRef: (tx?.invoice_ref as string | null) ?? '—',
-                amountUsd: (payment.amount_usd_minor ?? 0) / 100,
-                paidAt: new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }),
-                receiptRef: receipt.receiptRef,
-                receiptPdfBuffer: receipt.pdfBuffer,
-            });
-        }
-    } catch (e) {
-        log.warn('receipt_email_failed', {
-            paymentId: payment.id,
-            error: e instanceof Error ? e.message : String(e),
-        });
-    }
-
-    // Plan 7F: in-app notification (email already sent above for PAYMENT_RECEIVED;
-    // WALLET_TOPPED_UP — Stripe top-ups have transaction_id=null — dispatches its own
-    // topup email via notifyOwner). Fail-soft.
-    try {
-        const { notifyOwner } = await import('@/services/notificationService');
-        const isTopup = payment.transaction_id === null;
-        if (isTopup) {
-            const { data: wallet } = await admin
-                .from('wallets')
-                .select('balance_usd_minor')
-                .eq('shipowner_id', payment.shipowner_id)
-                .maybeSingle();
-            await notifyOwner(admin, {
-                shipownerId: payment.shipowner_id,
-                kind: 'WALLET_TOPPED_UP',
-                params: {
-                    amount_usd: (payment.amount_usd_minor ?? 0) / 100,
-                    new_balance_usd: ((wallet?.balance_usd_minor as number | undefined) ?? 0) / 100,
-                },
-                deepLink: '/owner/wallet',
-            });
-        } else {
-            await notifyOwner(admin, {
-                shipownerId: payment.shipowner_id,
-                kind: 'PAYMENT_RECEIVED',
-                params: {
-                    vessel_name: txForNotif?.vessel_name ?? '—',
-                    invoice_ref: txForNotif?.invoice_ref ?? '—',
-                    amount_usd: (payment.amount_usd_minor ?? 0) / 100,
-                    paid_at: confirmedAt,
-                    receipt_ref: receiptRefForNotif,
-                },
-                deepLink: `/owner/invoices?ref=${encodeURIComponent(txForNotif?.invoice_ref ?? '')}`,
-                skipEmail: true,
-                ...(receiptBufferForNotif
-                    ? { attachments: { pdfBuffer: receiptBufferForNotif, filename: `${receiptRefForNotif}.pdf` } }
-                    : {}),
-            });
-        }
-    } catch (notifyErr) {
-        log.warn('notification_dispatch_failed', {
-            paymentId: payment.id,
-            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
-        });
-    }
+    // Reçu PDF + e-mail + notification in-app. Fail-soft : le paiement reste
+    // CONFIRMED même si un effet échoue. Partagé avec le rail PAYPAL.
+    await applyPaymentConfirmationEffects(
+        admin,
+        {
+            id: payment.id,
+            shipowner_id: payment.shipowner_id,
+            transaction_id: payment.transaction_id,
+            amount_usd_minor: payment.amount_usd_minor,
+        },
+        confirmedAt,
+    );
 }
 
 async function handlePaymentFailed(
@@ -415,6 +336,7 @@ interface RefundReconcileRow {
     amount_usd_minor: number;
     rail_details: Record<string, unknown> | null;
     refund_rail: string | null;
+    jurisdiction_id: string | null;
 }
 
 async function handleChargeRefunded(
@@ -449,7 +371,7 @@ async function handleChargeRefunded(
         // 1. Primary lookup: refunds row whose rail_details->>stripe_refund_id matches.
         const { data: primaryHit, error: primaryErr } = await admin
             .from('refunds')
-            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
+            .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail, jurisdiction_id')
             .eq('rail_details->>stripe_refund_id', stripeRefundId)
             .limit(1)
             .maybeSingle();
@@ -473,7 +395,7 @@ async function handleChargeRefunded(
             if (origPayment?.transaction_id) {
                 const { data: fallbackList, error: fbErr } = await admin
                     .from('refunds')
-                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail')
+                    .select('id, status, shipowner_id, transaction_id, amount_usd_minor, rail_details, refund_rail, jurisdiction_id')
                     .eq('transaction_id', origPayment.transaction_id)
                     .eq('refund_rail', 'STRIPE')
                     .in('status', ['APPROVED', 'REQUESTED'])
@@ -624,6 +546,7 @@ async function handleChargeRefunded(
                 severity: 'INFO',
                 entity_type: 'Refund',
                 entity_id: refundRow.id,
+                jurisdiction_id: refundRow.jurisdiction_id,
                 details_json: {
                     event: 'REFUND_RECONCILED_BY_WEBHOOK',
                     stripe_refund_id: stripeRefundId,

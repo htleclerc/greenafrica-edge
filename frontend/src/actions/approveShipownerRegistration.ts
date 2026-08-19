@@ -127,6 +127,7 @@ export async function approveShipownerRegistration(input: unknown) {
         severity: 'INFO',
         entity_type: 'Shipowner',
         entity_id: shipownerId,
+        jurisdiction_id: jurisdictionId,
         details_json: { event: 'SHIPOWNER_REVIEW_APPROVED' },
     });
     if (auditErr) {

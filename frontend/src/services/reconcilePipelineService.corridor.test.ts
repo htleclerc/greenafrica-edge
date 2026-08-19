@@ -14,6 +14,20 @@ vi.mock('./emailService', () => ({
   sendInvoiceEmail: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+// The inline proforma reissue delegates to the shared issuance service; mock it
+// so this corridor test stays focused on the VOID/WAIVED + reissue-insert logic.
+vi.mock('./invoiceIssuanceService', () => ({
+  issueInvoiceDocument: vi.fn().mockResolvedValue({
+    ok: true,
+    invoiceRef: 'PRO-2026-30-reissued0001',
+    mode: 'proforma',
+    storagePath: 'SO/proformas/2026/07/PRO-2026-30-reissued0001.pdf',
+  }),
+}));
+
+// Staff profiles returned by resolveIssuingActor (profiles.in(role).limit()).
+const STAFF_ROWS = [{ id: 'admin-rec', full_name: 'Recon Admin', email: 'recon@gg.africa', role: 'SUPERADMIN' }];
+
 // Capture structured log events (scopedLogger) — the corridor guard's warn/error
 // events are part of its contract (settlement ops alert on them).
 const logCalls = vi.hoisted(
@@ -241,6 +255,10 @@ function makeClient(
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({ data: AGENT, error: null }),
+          })),
+          // resolveIssuingActor: profiles.select(...).in('role', [...]).limit(50)
+          in: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue({ data: STAFF_ROWS, error: null }),
           })),
         })),
       };

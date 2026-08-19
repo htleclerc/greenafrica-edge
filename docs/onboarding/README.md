@@ -325,7 +325,7 @@ main()
 
 ## 📞 Support intégration
 
-- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 58 66 67 75
+- **Direction Green-Gate** : Noël KPATCHAVI · n.kpatchavi@solidetechnology.com · +33 7 51 42 23 84
 - **Documentation formule** : voir `Etat_de_lart_mondial_v2.docx` (parties 1-4)
 - **Rapport mensuel juillet 2026** : voir `Rapport_Mensuel_Juillet_2026.docx`
 - **Dashboard v14 exemple** : voir `Dashboard_GreenGate_v14_5juillet.xlsx`

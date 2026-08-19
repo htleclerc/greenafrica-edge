@@ -70,9 +70,20 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'cash-desk':    [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.PORT_OFFICER],
     'wallets':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'jurisdictions': [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+    'admin-invoices': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'admin-collections': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Staff management — SUPERADMIN only
     'staff':        [UserRole.SUPERADMIN],
+
+    // Shipowners cockpit (collections) — same audience as jurisdictions
+    'armateurs':    [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+
+    // Airlines cockpit (collections) — same audience as armateurs
+    'airlines':     [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+
+    // Vessel identity matching — port officer resolves VesselFinder candidates
+    'vessel-identity': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
 
     // Settings
     'settings':     [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SHIPPING_AGENT, UserRole.SUPERADMIN],

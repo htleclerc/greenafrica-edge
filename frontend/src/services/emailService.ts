@@ -52,6 +52,7 @@ export interface EmailResult {
 
 async function sendEmail(params: {
     to: string | string[];
+    cc?: string[];
     subject: string;
     html: string;
     text?: string;
@@ -62,6 +63,9 @@ async function sendEmail(params: {
         const result = await resend.emails.send({
             from: fromAddress(),
             to: Array.isArray(params.to) ? params.to : [params.to],
+            // Resend rejette un tableau vide : on omet le champ plutôt que de
+            // l'envoyer vide.
+            ...(params.cc?.length ? { cc: params.cc } : {}),
             subject: params.subject,
             html: params.html,
             text: params.text,
@@ -89,8 +93,12 @@ async function sendEmail(params: {
 
 // ── Shared layout ──────────────────────────────────────────────────────────
 
-function emailLayout(content: string, options?: { previewText?: string }): string {
+function emailLayout(content: string, options?: { previewText?: string; sovereignLine?: string }): string {
     const preview = options?.previewText ?? '';
+    // Pied de page souverain. Par défaut le Somaliland (émetteur historique) ;
+    // les documents fiscaux passent l'autorité de leur propre juridiction pour
+    // qu'une facture djiboutienne ne soit pas signée par le Somaliland.
+    const sovereignLine = options?.sovereignLine ?? 'Republic of Somaliland · Maritime Carbon Tax Authority';
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,7 +149,7 @@ function emailLayout(content: string, options?: { previewText?: string }): strin
         </div>
         <div class="body">${content}</div>
         <div class="footer">
-            <p style="margin:0">Republic of Somaliland · Maritime Carbon Tax Authority</p>
+            <p style="margin:0">${escapeHtml(sovereignLine)}</p>
             <p style="margin:4px 0 0">This is an automated message. <a href="${appUrl()}">Visit the portal</a> · AES-256 Encrypted</p>
         </div>
     </div>
@@ -163,6 +171,8 @@ function escapeHtml(s: string): string {
 
 export interface InvoiceEmailParams {
     to: string;
+    /** Copies résolues par resolveInvoiceRecipients. */
+    cc?: string[];
     recipientName: string;
     vesselName: string;
     invoiceRef: string;
@@ -172,6 +182,8 @@ export interface InvoiceEmailParams {
     badge: 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT';
     pdfBuffer: Uint8Array;
     verifyUrl: string;
+    /** Nom souverain de l'État émetteur, résolu depuis la juridiction de la transaction. */
+    jurisdictionName: string;
 }
 
 export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResult> {
@@ -191,7 +203,7 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
     const content = `
         <h1>${docName} ${escapeHtml(p.invoiceRef)}</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the Republic of Somaliland.</p>
+        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the ${escapeHtml(p.jurisdictionName)}.</p>
 
         <div style="display:inline-block;padding:6px 14px;background:${badge.bg};color:${badge.fg};font-weight:800;letter-spacing:1.5px;border-radius:4px;font-size:12px;margin:8px 0">${p.badge}</div>
 
@@ -214,8 +226,12 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
 
     return sendEmail({
         to: p.to,
+        cc: p.cc,
         subject,
-        html: emailLayout(content, { previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}` }),
+        html: emailLayout(content, {
+            previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
         text: `${docName} ${p.invoiceRef}\n\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nStatus: ${p.badge}\nDue: ${p.dueDate}\n\nVerify at: ${p.verifyUrl}`,
         attachments: [
             {
@@ -390,7 +406,7 @@ export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<Emai
 
         <a href="${escapeHtml(p.verifyUrl)}" class="btn">Pay Now →</a>
 
-        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 7 days.</p>
+        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 10 business days of invoice issuance.</p>
     `;
 
     return sendEmail({
@@ -595,25 +611,67 @@ export async function sendPaymentRejectedEmail(p: PaymentRejectedParams): Promis
 
 export interface ProformaReminderParams {
     to: string;
+    cc?: string[];
     recipientName: string;
     invoiceRef: string;
     amountUsd: number;
     ageDays: number;
+    /** Palier de relance — pilote le ton. Absent = rappel courtois générique. */
+    tier?: 'J3' | 'J7' | 'J15' | 'J30' | 'J45';
+}
+
+/** Objet + bandeau d'alerte selon le palier. */
+function reminderTone(tier: ProformaReminderParams['tier'], invoiceRef: string, ageDays: number): {
+    subject: string;
+    heading: string;
+    alertClass: string;
+    alertText: string;
+} {
+    switch (tier) {
+        case 'J30':
+            return {
+                subject: `Formal notice — overdue invoice ${invoiceRef}`,
+                heading: 'Formal Notice of Overdue Payment',
+                alertClass: 'alert-danger',
+                alertText: 'This is a formal demand for payment. Failure to settle this invoice may lead to enforcement proceedings and additional recovery costs.',
+            };
+        case 'J45':
+            return {
+                subject: `Final notice before bailiff referral — ${invoiceRef}`,
+                heading: 'Final Notice — Bailiff Referral Imminent',
+                alertClass: 'alert-danger',
+                alertText: 'Unless this invoice is settled without further delay, the file will be referred to a bailiff (huissier) for legal recovery, at your expense.',
+            };
+        case 'J15':
+            return {
+                subject: `Reminder: invoice ${invoiceRef} still unpaid`,
+                heading: 'Payment Reminder',
+                alertClass: 'alert-warn',
+                alertText: 'Please settle this invoice promptly to avoid escalation and late-payment interest.',
+            };
+        default: // J3, J7, ou absence de tier
+            return {
+                subject: `Reminder: invoice ${invoiceRef} pending (${ageDays} days)`,
+                heading: 'Payment Reminder',
+                alertClass: 'alert-warn',
+                alertText: 'Please settle this invoice at your earliest convenience to avoid port-clearance delays and late-payment interest.',
+            };
+    }
 }
 
 export async function sendProformaReminderEmail(p: ProformaReminderParams): Promise<EmailResult> {
-    const subject = `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)`;
+    const t = reminderTone(p.tier, p.invoiceRef, p.ageDays);
     const content = `
-        <h1>Payment Reminder</h1>
+        <h1>${t.heading}</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>This is a friendly reminder that pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been pending for <strong>${p.ageDays} days</strong>.</p>
+        <p>Pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been outstanding for <strong>${p.ageDays} days</strong>.</p>
 
         <h2>Summary</h2>
         <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
         <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
         <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
 
-        <div class="alert alert-warn">Please settle this invoice at your earliest convenience to avoid port-clearance delays and late-payment interest.</div>
+        <div class="alert ${t.alertClass}">${t.alertText}</div>
 
         <a href="${appUrl()}/owner/invoices" class="btn">Pay Invoice →</a>
 
@@ -622,9 +680,79 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
 
     return sendEmail({
         to: p.to,
-        subject,
-        html: emailLayout(content, { previewText: `${p.invoiceRef} pending — $${p.amountUsd.toLocaleString()}` }),
-        text: `Reminder: invoice ${p.invoiceRef} pending (${p.ageDays} days)\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        cc: p.cc,
+        subject: t.subject,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
+        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+    });
+}
+
+// ── Collection escalation notice (B3 — manual bailiff/judicial) ────────────
+// Distinct from the automatic reminders: a legal-recovery NOTIFICATION (not a
+// legal service of process) sent by staff, with the invoice PDF attached and
+// the issuing jurisdiction's sovereign footer.
+
+export interface CollectionEscalationParams {
+    tier: 'BAILIFF' | 'JUDICIAL';
+    to: string;
+    cc?: string[];
+    recipientName: string;
+    invoiceRef: string;
+    amountUsd: number;
+    jurisdictionName: string;
+    vesselName?: string;
+    pdfBuffer: Uint8Array;
+}
+
+function escalationTone(tier: 'BAILIFF' | 'JUDICIAL', invoiceRef: string): {
+    subject: string; heading: string; alertText: string;
+} {
+    if (tier === 'JUDICIAL') {
+        return {
+            subject: `Judicial recovery proceedings — ${invoiceRef}`,
+            heading: 'Notice of Judicial Recovery Proceedings',
+            alertText: 'Judicial recovery proceedings have been initiated for this outstanding debt. You are urged to settle immediately to avoid further legal costs.',
+        };
+    }
+    return {
+        subject: `Bailiff referral — ${invoiceRef}`,
+        heading: 'Notice of Referral to Bailiff (Huissier)',
+        alertText: 'This outstanding debt has been referred to a bailiff (huissier) for legal recovery, at your expense. Immediate settlement is required to halt enforcement.',
+    };
+}
+
+export async function sendCollectionEscalationEmail(p: CollectionEscalationParams): Promise<EmailResult> {
+    const t = escalationTone(p.tier, p.invoiceRef);
+    const vesselRow = p.vesselName
+        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        : '';
+    const content = `
+        <h1>${t.heading}</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Regarding outstanding pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong>:</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${vesselRow}
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+
+        <div class="alert alert-danger">${t.alertText}</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">This is an automated notification. Reference: ${escapeHtml(p.invoiceRef)}</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        cc: p.cc,
+        subject: t.subject,
+        html: emailLayout(content, {
+            previewText: `${t.subject} — $${p.amountUsd.toLocaleString()}`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
+        text: `${t.subject}\nInvoice: ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\n\n${t.alertText}`,
+        attachments: [
+            { filename: `invoice-${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) },
+        ],
     });
 }
 
@@ -668,6 +796,40 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
         subject,
         html: emailLayout(content, { previewText: `${p.invoiceRef} issued — $${p.amountUsd.toLocaleString()}` }),
         text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+    });
+}
+
+// ── Monthly statement email (chantier C) ───────────────────────────────────
+
+export interface StatementReadyParams {
+    to: string;
+    recipientName: string;
+    periodLabel: string;
+    totalOutstandingUsd: number;
+    pdfBuffer?: Uint8Array;
+}
+
+export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<EmailResult> {
+    const subject = `Account statement — ${p.periodLabel}`;
+    const content = `
+        <h1>Monthly Account Statement</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Your account statement for <strong>${escapeHtml(p.periodLabel)}</strong> is available.</p>
+
+        <h2>Summary</h2>
+        <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">${escapeHtml(p.periodLabel)}</span></div>
+        <div class="meta-row"><span class="meta-label">Total Outstanding</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.totalOutstandingUsd.toLocaleString()}</span></div>
+
+        <div class="alert alert-warn">This is an informational statement, not an invoice. Open pro-formas remain payable from your portal.</div>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">View Statements →</a>
+    `;
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Statement ${p.periodLabel} — $${p.totalOutstandingUsd.toLocaleString()} due` }),
+        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        attachments: p.pdfBuffer ? [{ filename: `statement-${p.periodLabel.replace(/\s/g, '-')}.pdf`, content: Buffer.from(p.pdfBuffer) }] : undefined,
     });
 }
 
@@ -736,6 +898,50 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
         subject,
         html: emailLayout(content, { previewText: `Your registration was not approved` }),
         text: `Registration not approved\n\nReason: ${p.reason}\n\nYou may submit a new request at any time.`,
+    });
+}
+
+// ── 12b. Vessel access code email (public claim funnel) ────────────────────
+//
+// Sent by requestVesselAccessCode when a shipowner requests self-service
+// account linking from the public vessel-lookup page. The code is minted
+// server-side via admin.auth.admin.generateLink({ type: 'magiclink' }) and
+// mailed here as plain text — GoTrue's own "Magic Link" / "Confirm signup"
+// templates only carry {{ .ConfirmationURL }}, never {{ .Token }} (every
+// [auth.email.template.*] block is commented out in supabase/config.toml),
+// so relying on supabase.auth.signInWithOtp() to deliver a six-digit code
+// does not work. This function is the custom-email half of that pattern —
+// no i18n: the destination is always shipowners.official_email, never a
+// visitor-facing surface, so a single English copy is sufficient (see spec
+// 2026-08-12 G4).
+
+export interface VesselAccessCodeParams {
+    to: string;
+    recipientName?: string;
+    code: string;
+}
+
+export async function sendVesselAccessCodeEmail(p: VesselAccessCodeParams): Promise<EmailResult> {
+    const subject = `Your Green Gate access code: ${p.code}`;
+    const content = `
+        <h1>Your Access Code</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>Use the code below to link your account and access your vessel's carbon tax records on Green Gate.</p>
+
+        <div style="text-align:center;margin:24px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        <div class="alert alert-warn">This code can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Enter this code on the Green Gate portal to complete your account linking.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject,
+        html: emailLayout(content, { previewText: `Your access code: ${p.code}` }),
+        text: `Your Green Gate access code: ${p.code}\n\nEnter this code on the portal to link your account. This code can only be used once and expires shortly.`,
     });
 }
 

@@ -46,12 +46,17 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                     railDetails: ctx.railDetails,
                 });
 
-                // Plan 7D: STRIPE flow returns checkoutUrl — redirect the browser there.
-                // The webhook will flip the payment to CONFIRMED + generate receipt + email
-                // when the owner completes Checkout (or CANCELLED via cron reconcile if abandoned).
-                if (ctx.rail === 'STRIPE' && 'checkoutUrl' in result && result.checkoutUrl) {
-                    window.location.href = result.checkoutUrl as string;
-                    return; // do NOT call onClose / router.refresh — page is about to unload
+                // Rails à checkout externe (STRIPE, PAYPAL) : l'action renvoie une
+                // checkoutUrl, on y envoie le navigateur.
+                //
+                // STRIPE : le webhook passe le paiement à CONFIRMED et génère reçu +
+                // e-mail (ou CANCELLED via le cron si abandonné).
+                // PAYPAL : la route de retour /api/payments/paypal/return capture et
+                // confirme, avec le webhook et le cron en filet.
+                const isCheckoutRail = ctx.rail === 'STRIPE' || ctx.rail === 'PAYPAL';
+                if (isCheckoutRail && result.checkoutUrl) {
+                    window.location.href = result.checkoutUrl;
+                    return; // ne pas appeler onClose / router.refresh — la page va se décharger
                 }
 
                 // WIRE_TRANSFER: keep the dialog open and let the owner attach the MT103.

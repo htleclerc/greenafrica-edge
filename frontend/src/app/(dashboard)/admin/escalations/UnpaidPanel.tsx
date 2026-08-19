@@ -22,6 +22,7 @@ function sourceBadgeVariant(
 ): 'compliant' | 'info' | 'pending' | 'archived' {
     switch (source) {
         case 'EQUASIS_VERIFIED':
+        case 'VESSELFINDER_VERIFIED':
             return 'compliant';
         case 'AGENT_CLAIM':
             return 'info';

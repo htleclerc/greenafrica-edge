@@ -1,13 +1,37 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  generateInvoicePdf,
-  buildVerifyUrl,
-  hashInvoiceFields,
-  signInvoiceRef,
-  type InvoiceData,
-} from './invoiceService';
-import { sendInvoiceEmail } from './emailService';
+import { issueInvoiceDocument } from './invoiceIssuanceService';
 import { notifyOwner } from './notificationService';
+
+/** Rôles habilités à émettre un document fiscal, du plus autoritaire au moins. */
+const ISSUING_ROLES = ['SUPERADMIN', 'FINANCE_ADMIN', 'PORT_OFFICER'];
+
+/**
+ * Le pipeline s'exécute sans utilisateur connecté, mais l'audit d'émission exige
+ * un profil réel (audit_logs.user_id est NOT NULL REFERENCES profiles). On retient
+ * le profil staff le plus autoritaire disponible plutôt que d'inventer un
+ * identifiant qui violerait la clé étrangère.
+ */
+async function resolveIssuingActor(
+  db: SupabaseClient,
+  jurisdictionId: string | null | undefined,
+): Promise<{ id: string; fullName: string }> {
+  const { data } = await db
+    .from('profiles')
+    .select('id, full_name, email, role')
+    .in('role', ISSUING_ROLES)
+    .limit(50);
+  const rows = (data ?? []) as { id: string; full_name: string | null; email: string | null; role: string }[];
+  if (!rows.length) {
+    throw new Error(
+      `proformaPipeline: no staff profile (${ISSUING_ROLES.join(', ')}) available to issue documents`
+      + (jurisdictionId ? ` for jurisdiction ${jurisdictionId}` : ''),
+    );
+  }
+  const chosen = [...rows].sort(
+    (a, b) => ISSUING_ROLES.indexOf(a.role) - ISSUING_ROLES.indexOf(b.role),
+  )[0];
+  return { id: chosen.id, fullName: chosen.full_name || chosen.email || 'Automated pipeline' };
+}
 
 /**
  * Pro-forma pipeline — the orchestrator.
@@ -129,49 +153,21 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     return { ok: false, reason: 'alert missing jurisdiction_id' };
   }
 
-  // ── Resolve jurisdiction display name for the invoice PDF (W2). ──────────
-  // The alert's jurisdiction_id is NOT NULL (enforced at detection time), so the
-  // row will exist; fallback to the legacy label if the lookup somehow fails.
-  const { data: juri } = await db
-    .from('jurisdictions')
-    .select('name')
-    .eq('id', alert.jurisdiction_id)
-    .maybeSingle();
-  const jurisdictionName = juri?.name ?? 'Republic of Somaliland';
-
   // ── AIR branch (W1-C): detected air arrival → air tax calc → mode='AIR' PROFORMA.
+  // Le nom souverain n'est plus résolu ici : c'est le service d'émission qui lit
+  // la juridiction (code + nom) au moment de rendre le document.
   if (alert.mode === 'AIR') {
     // Corridor guard (W4-T6) is maritime-only: AIR detection is in-FIR ground
     // truth (ADS-B), so air jurisdictions are never provisional and never reissued.
     if (input.reissue) {
       return { ok: false, reason: 'corridor reissue is maritime-only (AIR jurisdiction is ground truth)' };
     }
-    return runAirProforma(input, alert, jurisdictionName);
+    return runAirProforma(input, alert);
   }
 
   const vessel = Array.isArray(alert.vessel) ? alert.vessel[0] : alert.vessel;
   if (!vessel) return { ok: false, reason: 'vessel missing' };
   if (!alert.matched_agent_id) return { ok: false, reason: 'alert has no matched agent' };
-
-  const { data: agent, error: agentErr } = await db
-    .from('profiles')
-    .select('id, email, full_name')
-    .eq('id', alert.matched_agent_id)
-    .single();
-  if (agentErr || !agent?.email) {
-    return { ok: false, reason: `agent missing email: ${agentErr?.message ?? 'nil'}` };
-  }
-
-  // Optional: look up shipowner name for PDF "Issued to / owner" field
-  let ownerName = agent.full_name ?? agent.email;
-  if (vessel.shipowner_id) {
-    const { data: owner } = await db
-      .from('shipowners')
-      .select('name')
-      .eq('id', vessel.shipowner_id)
-      .maybeSingle();
-    if (owner?.name) ownerName = owner.name;
-  }
 
   // ── 2. Tax calculation via Go backend ───────────────────────────────────
   const estimatedRouteNm = Number(alert.estimated_route_nm ?? 0);
@@ -256,51 +252,21 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     return { ok: false, reason: `insert txn: ${txnErr?.message ?? 'nil'}` };
   }
 
-  // The auto-trigger on transactions generates `ref` as INV-YYYY-NNNNNN. For
-  // a PROFORMA row we want a PRO- prefix so /verify can parse `parseInvoiceRef`
-  // back to a document type. We derive the pro-forma ref from the transaction
-  // UUID's first segment (matches buildReceiptRef convention).
-  const year = new Date().getFullYear();
-  const suffix = txn.id.split('-')[1].toUpperCase();
-  const invoiceRef = `PRO-${year}-${suffix}`;
-
-  // ── 4. Build InvoiceData + PDF ──────────────────────────────────────────
-  const issuedAt = new Date();
-  const dueAt = new Date(issuedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const periodStart = issuedAt.toISOString().slice(0, 10);
-  const periodEnd = dueAt.toISOString().slice(0, 10);
-
-  const canonicalFields = {
-    invoiceRef,
-    vesselImo: vessel.imo_number,
-    vesselName: vessel.name,
-    ownerName,
-    totalUsd: tax.usd_amount,
-    periodStart,
-    periodEnd,
-    mode: 'proforma' as const,
-  };
-  const contentHash = hashInvoiceFields(canonicalFields);
-  const signature = signInvoiceRef(invoiceRef, contentHash);
-  const verifyUrl = buildVerifyUrl(invoiceRef, { contentHash, signature });
-
-  const invoiceData: InvoiceData = {
-    invoiceRef,
-    vesselName: vessel.name,
-    vesselImo: vessel.imo_number,
-    vesselMmsi: vessel.mmsi ?? '',
-    ownerName,
-    jurisdiction: jurisdictionName,
-    periodStart,
-    periodEnd,
-    emissionsTco2: tax.tco2,
-    ratePerTco2: tax.breakdown.rate_usd_per_tco2,
-    subtotalUsd: tax.usd_amount,
-    exemptionUsd: 0,
-    totalUsd: tax.usd_amount,
-    mode: 'proforma',
-    badge: 'TO PAY',
-    verifyUrl,
+  // ── 4. Émission du document ─────────────────────────────────────────────
+  // Le pipeline ne rend plus le PDF lui-même : référence, hash, signature,
+  // rendu, upload, persistance, audit et e-mail sont l'affaire du service
+  // d'émission, partagé avec /api/invoices/generate. Entretenir une seconde
+  // copie ici est exactement ce qui avait fait diverger les deux formats de
+  // référence et les deux nomenclatures de stockage.
+  const issuer = await resolveIssuingActor(db, alert.jurisdiction_id);
+  const issued = await issueInvoiceDocument({
+    admin: db,
+    transactionId: txn.id,
+    jurisdictionId: alert.jurisdiction_id,
+    actor: issuer,
+    origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300',
+    sendEmail: !input.dryRunEmail,
+    skipStorage: input.dryRunStorage,
     lineItems: [
       {
         zone: 'EEZ',
@@ -313,58 +279,9 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
         rateDisplay: `$${tax.breakdown.rate_usd_per_tco2.toFixed(2)}/t`,
       },
     ],
-  };
-
-  let pdfBytes: Uint8Array;
-  try {
-    pdfBytes = await generateInvoicePdf(invoiceData);
-  } catch (err) {
-    return {
-      ok: false,
-      reason: `pdf gen failed: ${err instanceof Error ? err.message : String(err)}`,
-    };
-  }
-
-  // ── 5. Upload PDF (unless dry-run) ──────────────────────────────────────
-  let pdfPath: string | null = null;
-  if (!input.dryRunStorage) {
-    const path = `proformas/${invoiceRef}.pdf`;
-    const { error: upErr } = await db.storage
-      .from('documents')
-      .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: true });
-    if (upErr) return { ok: false, reason: `upload: ${upErr.message}` };
-    pdfPath = path;
-  }
-
-  // ── 6. Email the agent (unless dry-run) ─────────────────────────────────
-  if (!input.dryRunEmail) {
-    const emailResult = await sendInvoiceEmail({
-      to: agent.email,
-      recipientName: agent.full_name ?? agent.email,
-      vesselName: vessel.name,
-      invoiceRef,
-      amountUsd: tax.usd_amount,
-      dueDate: periodEnd,
-      mode: 'proforma',
-      badge: 'TO PAY',
-      pdfBuffer: pdfBytes,
-      verifyUrl,
-    });
-    if (!emailResult.success) {
-      return { ok: false, reason: `email: ${emailResult.error ?? 'unknown'}` };
-    }
-  }
-
-  // ── 7. Persist pdf_url + flip alert to PROFORMA_SENT ────────────────────
-  if (pdfPath) {
-    const { error: urlErr } = await db
-      .from('transactions')
-      .update({ invoice_pdf_url: pdfPath })
-      .eq('id', txn.id);
-    if (urlErr) {
-      // Non-fatal — the transaction and alert transition are the critical bits.
-      console.warn('[proformaPipeline] pdf_url update failed:', urlErr.message);
-    }
+  });
+  if (!issued.ok) {
+    return { ok: false, reason: `issuance: ${issued.error}` };
   }
 
   // Corridor reissue (W4-T6): keep the alert in DEPARTED_EEZ and only re-point
@@ -424,7 +341,7 @@ interface AlertForAir {
  * Air alerts have NO matched_agent_id (no air agent-matching in v1), so the email
  * step is skipped — there is no recipient.
  */
-async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionName: string): Promise<RunResult> {
+async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunResult> {
   const { alertId, adminClient: db, taxApiUrl } = input;
 
   // ── Jurisdiction guard (W2): forwarded from the caller after the shared lookup.
@@ -511,49 +428,19 @@ async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionN
     return { ok: false, reason: `insert txn: ${txnErr?.message ?? 'nil'}` };
   }
 
-  // Pro-forma ref (PRO- prefix so /verify can parse the document type), derived
-  // from the transaction UUID's first segment — same convention as maritime.
-  const year = new Date().getFullYear();
-  const suffix = txn.id.split('-')[1].toUpperCase();
-  const invoiceRef = `PRO-${year}-${suffix}`;
-
-  // ── 4. Build InvoiceData + PDF ───────────────────────────────────────────
-  const issuedAt = new Date();
-  const dueAt = new Date(issuedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const periodStart = issuedAt.toISOString().slice(0, 10);
-  const periodEnd = dueAt.toISOString().slice(0, 10);
-
-  const canonicalFields = {
-    invoiceRef,
-    vesselImo: assetIdent,
-    vesselName: assetName,
-    ownerName: assetName,
-    totalUsd: tax.usd_amount,
-    periodStart,
-    periodEnd,
-    mode: 'proforma' as const,
-  };
-  const contentHash = hashInvoiceFields(canonicalFields);
-  const signature = signInvoiceRef(invoiceRef, contentHash);
-  const verifyUrl = buildVerifyUrl(invoiceRef, { contentHash, signature });
-
-  const invoiceData: InvoiceData = {
-    invoiceRef,
-    vesselName: assetName,
-    vesselImo: assetIdent,
-    vesselMmsi: aircraft.icao24 ?? '',
-    ownerName: assetName,
-    jurisdiction: jurisdictionName,
-    periodStart,
-    periodEnd,
-    emissionsTco2: tax.tco2,
-    ratePerTco2: tax.breakdown.rate_usd_per_tco2,
-    subtotalUsd: tax.usd_amount,
-    exemptionUsd: 0,
-    totalUsd: tax.usd_amount,
-    mode: 'proforma',
-    badge: 'TO PAY',
-    verifyUrl,
+  // ── 4. Émission du document ──────────────────────────────────────────────
+  // Comme le maritime, l'air délègue au service partagé. Air n'a pas d'agent
+  // destinataire (pas d'appariement agent en v1) : sendEmail=false, l'opérateur
+  // est prévenu in-app ci-dessous et rejoint par la boucle de relance ensuite.
+  const issuer = await resolveIssuingActor(db, alert.jurisdiction_id);
+  const issued = await issueInvoiceDocument({
+    admin: db,
+    transactionId: txn.id,
+    jurisdictionId: alert.jurisdiction_id,
+    actor: issuer,
+    origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300',
+    sendEmail: false,
+    skipStorage: input.dryRunStorage,
     lineItems: [
       {
         zone: 'FIR',
@@ -566,30 +453,12 @@ async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionN
         rateDisplay: `$${tax.breakdown.rate_usd_per_tco2.toFixed(2)}/t`,
       },
     ],
-  };
-
-  let pdfBytes: Uint8Array;
-  try {
-    pdfBytes = await generateInvoicePdf(invoiceData);
-  } catch (err) {
-    return {
-      ok: false,
-      reason: `pdf gen failed: ${err instanceof Error ? err.message : String(err)}`,
-    };
+  });
+  if (!issued.ok) {
+    return { ok: false, reason: `issuance: ${issued.error}` };
   }
 
-  // ── 5. Upload PDF (unless dry-run) ───────────────────────────────────────
-  let pdfPath: string | null = null;
-  if (!input.dryRunStorage) {
-    const path = `proformas/${invoiceRef}.pdf`;
-    const { error: upErr } = await db.storage
-      .from('documents')
-      .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: true });
-    if (upErr) return { ok: false, reason: `upload: ${upErr.message}` };
-    pdfPath = path;
-  }
-
-  // ── 6. No agent email (air alerts have no matched agent). Instead notify ─
+  // ── 5. No agent email (air alerts have no matched agent). Instead notify ─
   //      the linked operator in-app so the proforma is visible in their portal
   //      immediately, and reaches them by email via the reminder loop once
   //      they onboard. Best-effort — must never block proforma issuance.
@@ -599,7 +468,7 @@ async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionN
         shipownerId: aircraft.operator_id,
         kind: 'PROFORMA_ISSUED',
         params: {
-          invoice_ref: invoiceRef,
+          invoice_ref: issued.invoiceRef,
           amount_usd: tax.usd_amount,
           vessel_name: assetName,
         },
@@ -610,18 +479,6 @@ async function runAirProforma(input: RunInput, alert: AlertForAir, jurisdictionN
         '[proformaPipeline] air operator notification failed:',
         err instanceof Error ? err.message : String(err),
       );
-    }
-  }
-
-  // ── 7. Persist pdf_url + flip alert to PROFORMA_SENT ─────────────────────
-  if (pdfPath) {
-    const { error: urlErr } = await db
-      .from('transactions')
-      .update({ invoice_pdf_url: pdfPath })
-      .eq('id', txn.id);
-    if (urlErr) {
-      // Non-fatal — the transaction and alert transition are the critical bits.
-      console.warn('[proformaPipeline] pdf_url update failed:', urlErr.message);
     }
   }
 

@@ -62,6 +62,7 @@ export async function rejectPayment(input: { paymentId: string; reason: string }
         severity: 'INFO',
         entity_type: 'Payment',
         entity_id: parsed.paymentId,
+        jurisdiction_id: (pmtRow as { jurisdiction_id: string }).jurisdiction_id,
         details_json: { event: 'PAYMENT_REJECTED', reason: parsed.reason },
     });
 

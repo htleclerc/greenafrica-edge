@@ -20,11 +20,15 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/collection-reminders",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/notification-email-loop",
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/stripe-reconcile-all",
+      "path": "/api/cron/payments-reconcile-all",
       "schedule": "0 9 * * *"
     },
     {
@@ -33,6 +37,10 @@
     },
     {
       "path": "/api/cron/monthly-settlement-export",
+      "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/monthly-statements",
       "schedule": "0 6 1 * *"
     }
   ]

@@ -31,6 +31,7 @@ import {
     sendWalletTopupEmail,
     sendKycRejectedEmail,
     sendRefundIssuedEmail,
+    sendStatementReadyEmail,
     type EmailResult,
     type RefundIssuedParams,
 } from '@/services/emailService';
@@ -77,6 +78,7 @@ export async function dispatchNotificationEmail(
                 invoiceRef: String(bodyParams.invoice_ref ?? '—'),
                 amountUsd: Number(bodyParams.amount_usd ?? 0),
                 ageDays: Number(bodyParams.age_days ?? 3),
+                tier: (bodyParams.tier as 'J3' | 'J7' | 'J15' | 'J30' | 'J45' | undefined) ?? undefined,
             });
 
         case 'PROFORMA_ISSUED':
@@ -111,6 +113,14 @@ export async function dispatchNotificationEmail(
                 amountUsd: Number(bodyParams.amount_usd ?? 0),
                 refundRail: (bodyParams.refund_rail ?? 'WALLET') as RefundIssuedParams['refundRail'],
                 executedAt: String(bodyParams.executed_at ?? new Date().toLocaleString()),
+            });
+
+        case 'STATEMENT_READY':
+            return sendStatementReadyEmail({
+                to: ownerEmail,
+                recipientName: ownerName,
+                periodLabel: String(bodyParams.period ?? ''),
+                totalOutstandingUsd: Number(bodyParams.total_outstanding_usd ?? 0),
             });
 
         // Intentionally not wired — see file header.

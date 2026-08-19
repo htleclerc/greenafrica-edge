@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
         severity: 'INFO',
         entity_type: 'SettlementReport',
         entity_id: month,
+        jurisdiction_id: null, // cross-juridiction (roll-up) — pas de juridiction unique
         details_json: { month, rowCount: rows.length, storedPath, source: 'monthly-cron' },
     });
 

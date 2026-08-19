@@ -132,7 +132,10 @@ describe('fetchJurisdictionName — Djibouti row produces correct sovereign name
                 select: vi.fn(() => ({
                     eq: vi.fn(() => ({
                         maybeSingle: vi.fn().mockResolvedValue({
-                            data: { name: DJ_NAME },
+                            // `code` is NOT NULL in jurisdictions; fetchJurisdictionMeta
+                            // now selects it alongside `name`, so a realistic stub must
+                            // supply both or the lookup falls back to the legacy name.
+                            data: { code: 'DJ', name: DJ_NAME },
                             error: null,
                         }),
                     })),

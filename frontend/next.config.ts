@@ -47,6 +47,10 @@ const securityHeaders = [
       "font-src 'self' data:",
       `connect-src 'self' https://*.supabase.co wss://*.supabase.co${localSupabaseAllow}`,
       "object-src 'none'",
+      // Prévisualisation PDF (pré-estimation du simulateur) : le blob est généré
+      // par notre propre JS et reste same-origin. Sans cette directive, frame-src
+      // retombe sur default-src 'self' et le navigateur bloque l'iframe blob:.
+      "frame-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -63,6 +67,18 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers: securityHeaders,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      // /cgv était une page brouillon ("Draft document") remplacée par la CGU
+      // réelle et versionnée. 308 permanent : les liens/favoris existants (et le
+      // consentement d'onboarding) atterrissent sur le bon document.
+      {
+        source: '/cgv',
+        destination: '/terms-of-service',
+        permanent: true,
       },
     ];
   },

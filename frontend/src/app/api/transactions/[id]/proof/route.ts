@@ -15,6 +15,7 @@ interface AuthorizedTxn {
     vessel_id: string;
     payment_proof_files: ProofEntry[];
     status: string;
+    jurisdiction_id: string | null;
 }
 
 type AuthorizeResult =
@@ -32,7 +33,7 @@ async function authorizeTxn(transactionId: string): Promise<AuthorizeResult> {
     const admin = createPlatformClient();
 
     const { data: txn } = await admin
-        .from('transactions').select('id, vessel_id, payment_proof_files, status').eq('id', transactionId).maybeSingle();
+        .from('transactions').select('id, vessel_id, payment_proof_files, status, jurisdiction_id').eq('id', transactionId).maybeSingle();
     if (!txn) return { error: NextResponse.json({ error: 'Transaction not found' }, { status: 404 }) };
 
     const { data: vessel } = await admin.from('vessels').select('owner_id').eq('id', txn.vessel_id).maybeSingle();
@@ -77,6 +78,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
         severity: 'INFO',
         entity_type: 'Transaction',
         entity_id: id,
+        jurisdiction_id: a.txn.jurisdiction_id,
         details_json: { event: 'PAYMENT_PROOF_UPLOADED', path, size_bytes: file.size },
     });
 

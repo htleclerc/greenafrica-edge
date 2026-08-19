@@ -641,6 +641,7 @@ export async function runReconcilePipeline(input: RunInput): Promise<RunResult> 
       badge,
       pdfBuffer: pdfBytes,
       verifyUrl,
+      jurisdictionName,
     });
     if (!emailResult.success) {
       return { ok: false, reason: `email: ${emailResult.error ?? 'unknown'}` };

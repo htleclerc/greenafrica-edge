@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
-    const estimateRef = `EST-${now.getFullYear()}-${Math.floor(Math.random() * 999_999).toString().padStart(6, '0')}`;
+    // Préfixe SIM- (et non EST-/INV-) : la référence elle-même doit signaler
+    // qu'il s'agit d'une simulation, pas d'un document opposable.
+    const estimateRef = `SIM-${now.getFullYear()}-${Math.floor(Math.random() * 999_999).toString().padStart(6, '0')}`;
 
     // Build InvoiceData shape — labels reflect that this is a pre-estimate
     const invoiceData: InvoiceData = {
@@ -86,20 +88,26 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-        // Pre-estimate is always a "proforma TO PAY" by definition
+        // Simulation : filigrane + bandeau « NOT AN OFFICIAL DOCUMENT » + badge
+        // SIMULATION, pour qu'aucune pré-estimation ne puisse être présentée
+        // comme un pro-forma réel (lui figé et opposable).
         const pdfBuffer = await generateInvoicePdf({
             ...invoiceData,
             mode: 'proforma',
-            badge: 'TO PAY',
+            badge: 'SIMULATION',
+            simulation: true,
         });
 
-        // Return binary PDF directly so the browser can save it
+        // `inline` : le client prévisualise le PDF dans une modale et déclenche
+        // lui-même le téléchargement (plus de download automatique surprise).
         return new NextResponse(new Uint8Array(pdfBuffer), {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="${estimateRef}.pdf"`,
+                'Content-Disposition': `inline; filename="${estimateRef}.pdf"`,
                 'Cache-Control': 'no-store',
+                // Permet au client de nommer le fichier téléchargé sans re-parser.
+                'X-Estimate-Ref': estimateRef,
             },
         });
     } catch (err) {

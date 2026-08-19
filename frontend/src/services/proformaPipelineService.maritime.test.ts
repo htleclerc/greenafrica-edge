@@ -1,21 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Keep the real hash/sign/verify helpers (pure, deterministic) but stub the PDF
-// renderer so this unit test is hermetic and fast (no font/runtime dependency).
-vi.mock('./invoiceService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./invoiceService')>();
-  return {
-    ...actual,
-    generateInvoicePdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])), // "%PDF"
-  };
-});
-
-vi.mock('./emailService', () => ({
-  sendInvoiceEmail: vi.fn().mockResolvedValue({ success: true }),
+// Le pipeline délègue tout le document (référence, hash, rendu, upload, e-mail)
+// au service d'émission, testé séparément. On le mocke ici pour que ce test
+// unitaire vérifie la seule responsabilité du pipeline : calcul, insertion,
+// délégation, transition d'alerte.
+vi.mock('./invoiceIssuanceService', () => ({
+  issueInvoiceDocument: vi.fn().mockResolvedValue({
+    ok: true,
+    invoiceRef: 'PRO-2026-30-a1b2c3d4dead',
+    mode: 'proforma',
+    storagePath: 'SO/proformas/2026/07/PRO-2026-30-a1b2c3d4dead.pdf',
+  }),
 }));
 
 import { runProformaPipeline } from './proformaPipelineService';
+import { issueInvoiceDocument } from './invoiceIssuanceService';
+
+const issueMock = vi.mocked(issueInvoiceDocument);
+
+// Profils staff renvoyés par resolveIssuingActor (profiles.in(role).limit()).
+const STAFF_ROWS = [{ id: 'admin-001', full_name: 'Ops Admin', email: 'ops@gg.africa', role: 'SUPERADMIN' }];
 
 const SOMALILAND_JID = '00000000-0000-4000-8000-00000000534f';
 
@@ -101,8 +106,13 @@ function makeClient(opts: { alertStatus?: string; arrivedAt?: string | null } = 
     if (table === 'profiles') {
       return {
         select: vi.fn(() => ({
+          // Agent lookup (legacy shape, still used by other readers).
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({ data: AGENT, error: null }),
+          })),
+          // Staff lookup for resolveIssuingActor.
+          in: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue({ data: STAFF_ROWS, error: null }),
           })),
         })),
       };
@@ -146,6 +156,12 @@ describe('runProformaPipeline — maritime branch (Wedge 2 jurisdiction + tariff
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    issueMock.mockResolvedValue({
+      ok: true,
+      invoiceRef: 'PRO-2026-30-a1b2c3d4dead',
+      mode: 'proforma',
+      storagePath: 'SO/proformas/2026/07/PRO-2026-30-a1b2c3d4dead.pdf',
+    } as Awaited<ReturnType<typeof issueInvoiceDocument>>);
   });
 
   it('maritime alert → POSTs jurisdiction_id to Go calc → inserts transaction with tariff_id and jurisdiction_id', async () => {
@@ -205,6 +221,43 @@ describe('runProformaPipeline — maritime branch (Wedge 2 jurisdiction + tariff
     });
   });
 
+  // RÉGRESSION (2026-07-24) — le pipeline rendait et uploadait le PDF lui-même
+  // mais ne persistait ni invoice_ref ni content_hash. Comme /verify et la route
+  // de téléchargement résolvent par invoice_ref, le QR imprimé était mort et le
+  // portail armateur n'avait pas de quoi construire un lien : le document
+  // existait dans le bucket et nulle part dans l'application. Le pipeline délègue
+  // désormais au service d'émission — ce test garde contre un retour en arrière.
+  it("délègue l'émission au service partagé avec les lignes maritimes", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => MARITIME_TAX_RESULT, text: async () => '',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { client } = makeClient();
+    await runProformaPipeline({
+      alertId: 'alert-sea-1',
+      adminClient: client,
+      taxApiUrl: 'http://tax.test',
+      dryRunEmail: true,
+      dryRunStorage: true,
+    });
+
+    expect(issueMock).toHaveBeenCalledTimes(1);
+    const arg = issueMock.mock.calls[0][0];
+    expect(arg).toMatchObject({
+      transactionId: 'a1b2c3d4-aaaa-bbbb-cccc-000000000099',
+      jurisdictionId: SOMALILAND_JID,
+      sendEmail: false,     // dryRunEmail: true
+      skipStorage: true,    // dryRunStorage: true
+    });
+    expect(arg.lineItems?.[0]).toMatchObject({
+      amount: 532.0,
+      description: expect.stringContaining('IMO Cubic Law'),
+    });
+    // L'acteur d'audit est le profil staff le plus autoritaire disponible.
+    expect(arg.actor).toEqual({ id: 'admin-001', fullName: 'Ops Admin' });
+  });
+
   it('fail-closed: 422 no_active_tariff → ok:false, no transaction inserted', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
@@ -235,6 +288,12 @@ describe('runProformaPipeline — corridor guard (W4-T6 provisional stamp + reis
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    issueMock.mockResolvedValue({
+      ok: true,
+      invoiceRef: 'PRO-2026-30-a1b2c3d4dead',
+      mode: 'proforma',
+      storagePath: 'SO/proformas/2026/07/PRO-2026-30-a1b2c3d4dead.pdf',
+    } as Awaited<ReturnType<typeof issueInvoiceDocument>>);
   });
 
   function stubTaxFetch() {

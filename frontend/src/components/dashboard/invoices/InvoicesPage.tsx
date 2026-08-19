@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ChevronRight, ArrowLeft, Scale, Download } from 'lucide-react';
+import { Search, Plus, Ship, FileText, CheckCircle, Clock, AlertTriangle, ArrowLeft, Scale, Download } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -470,7 +470,7 @@ function InvoiceDetail({
     role: UserRole;
 }) {
     const t = useTranslations('InvoicesPage');
-    const [activeTab, setActiveTab] = React.useState<'details' | 'payment' | 'audit'>('details');
+    const [activeTab, setActiveTab] = React.useState<'details' | 'audit'>('details');
     const invoiceRef = tx.ref;
     const isOverdue  = tx.status === TransactionStatus.OVERDUE;
     const isPaid     = tx.status === TransactionStatus.PAID;
@@ -568,7 +568,7 @@ function InvoiceDetail({
 
             {/* Tabs */}
             <div className="flex items-center gap-0.5 border-b border-[var(--os-border)] pb-0">
-                {(['details', 'payment', 'audit'] as const).map((tabKey) => (
+                {(['details', 'audit'] as const).map((tabKey) => (
                     <button
                         key={tabKey}
                         onClick={() => setActiveTab(tabKey)}
@@ -578,7 +578,7 @@ function InvoiceDetail({
                                 : 'border-transparent text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)]'
                         }`}
                     >
-                        {tabKey === 'details' ? t('tab_details') : tabKey === 'payment' ? t('tab_payment') : t('tab_audit_trail')}
+                        {tabKey === 'details' ? t('tab_details') : t('tab_audit_trail')}
                     </button>
                 ))}
             </div>
@@ -624,39 +624,6 @@ function InvoiceDetail({
                             </div>
                         </div>
                     )}
-                </div>
-            )}
-
-            {activeTab === 'payment' && (
-                <div className="flex flex-col gap-3">
-                    <div className="os-card p-4">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">{t('payment_capture')}</h4>
-                        {[
-                            { label: t('payment_bank'), sub: t('payment_bank_sub'), badge: 'LIVE', badgeColor: '#00D97E' },
-                            { label: t('payment_swift'), sub: t('payment_swift_sub'), badge: null, badgeColor: '' },
-                            { label: t('payment_manual'), sub: t('payment_manual_sub'), badge: 'ADV. PREF+', badgeColor: '#F59E0B' },
-                        ].map(({ label, sub, badge, badgeColor }) => (
-                            <button key={label} className="w-full flex items-center justify-between p-3 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] transition-all mb-2 last:mb-0">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-[var(--os-surface-3)] flex items-center justify-center">
-                                        <FileText className="w-4 h-4 text-[var(--os-text-muted)]" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-semibold text-[var(--os-text-primary)]">{label}</p>
-                                        <p className="text-[10px] text-[var(--os-text-muted)]">{sub}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {badge && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: `${badgeColor}18`, color: badgeColor }}>
-                                            {badge}
-                                        </span>
-                                    )}
-                                    <ChevronRight className="w-4 h-4 text-[var(--os-text-muted)]" />
-                                </div>
-                            </button>
-                        ))}
-                    </div>
                 </div>
             )}
 

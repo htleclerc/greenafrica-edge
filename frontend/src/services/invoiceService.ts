@@ -14,9 +14,14 @@ import QRCode from 'qrcode';
  *   EXEMPT         → invoice      → EXEMPT         → TAX INVOICE (exempted)
  */
 export type InvoiceMode = 'proforma' | 'invoice';
-export type InvoiceBadge = 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT';
+export type InvoiceBadge = 'TO PAY' | 'PAID' | 'OVERDUE' | 'DISPUTED' | 'EXEMPT' | 'SIMULATION';
+/**
+ * Badge dérivé d'un statut de transaction réel — ne contient jamais SIMULATION,
+ * qui n'existe que pour les pré-estimations du simulateur (aucun statut en base).
+ */
+export type StatusBadge = Exclude<InvoiceBadge, 'SIMULATION'>;
 
-export function statusToMode(status: string): { mode: InvoiceMode; badge: InvoiceBadge } {
+export function statusToMode(status: string): { mode: InvoiceMode; badge: StatusBadge } {
   switch (status) {
     case 'PAID':     return { mode: 'invoice',  badge: 'PAID' };
     case 'EXEMPT':   return { mode: 'invoice',  badge: 'EXEMPT' };
@@ -59,6 +64,12 @@ interface InvoiceData {
   mode?: InvoiceMode;
   badge?: InvoiceBadge;
   verifyUrl?: string;       // URL encoded in the QR code
+  /**
+   * Simulation (pré-estimation du simulateur) : le document ne doit JAMAIS
+   * pouvoir être confondu avec un vrai pro-forma opposable. Remplace le bandeau
+   * « OFFICIAL DOCUMENT », retitre le document et appose un filigrane.
+   */
+  simulation?: boolean;
 }
 
 /**
@@ -240,7 +251,8 @@ async function resolveInvoiceArtifacts(data: InvoiceData): Promise<{ qrDataUrl: 
 /**
  * Get the human-readable doc type name based on mode.
  */
-function docTypeName(mode: InvoiceMode | undefined): string {
+function docTypeName(mode: InvoiceMode | undefined, simulation?: boolean): string {
+  if (simulation) return 'TAX SIMULATION';
   return mode === 'invoice' ? 'TAX INVOICE' : 'PRO-FORMA INVOICE';
 }
 
@@ -354,6 +366,7 @@ function badgeColor(badge: InvoiceBadge | undefined): { bg: [number, number, num
     case 'EXEMPT':   return { bg: [14, 165, 233],  fg: [255, 255, 255] };  // sky
     case 'OVERDUE':  return { bg: [220, 38, 38],   fg: [255, 255, 255] };  // red
     case 'DISPUTED': return { bg: [249, 115, 22],  fg: [255, 255, 255] };  // orange
+    case 'SIMULATION': return { bg: [100, 116, 139], fg: [255, 255, 255] }; // slate — non opposable
     case 'TO PAY':
     default:         return { bg: [234, 179, 8],   fg: [13, 31, 24] };     // amber on dark
   }
@@ -373,6 +386,23 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 18;
+
+  // ── Filigrane SIMULATION ──
+  // Dessiné en premier (donc sous le contenu) et en gris très clair : lisible
+  // sans gêner la lecture, mais impossible de confondre une pré-estimation du
+  // simulateur avec un pro-forma réel, y compris une fois imprimée.
+  if (data.simulation) {
+    doc.saveGraphicsState();
+    doc.setTextColor(226, 232, 240); // slate-200
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(58);
+    doc.text('SIMULATION', pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: 40,
+      baseline: 'middle',
+    });
+    doc.restoreGraphicsState();
+  }
 
   // ── Top accent gradient bar (emerald → gold) ──
   doc.setFillColor(4, 120, 87); // #047857
@@ -430,20 +460,39 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
 
   // ── Right header: OFFICIAL DOCUMENT badge + title ──
   const rightX = pageWidth - margin;
-  doc.setFillColor(13, 31, 24);
-  doc.rect(rightX - 38, logoY, 38, 5, 'F');
-  doc.setTextColor(16, 185, 129);
+  // Une simulation n'est pas un document officiel : bandeau et libellés distincts
+  // pour qu'elle ne puisse pas être présentée comme un pro-forma opposable.
+  const headerTag = data.simulation ? 'NOT AN OFFICIAL DOCUMENT' : 'OFFICIAL DOCUMENT';
+  const tagW = data.simulation ? 52 : 38;
+  if (data.simulation) {
+    doc.setFillColor(100, 116, 139);
+  } else {
+    doc.setFillColor(13, 31, 24);
+  }
+  doc.rect(rightX - tagW, logoY, tagW, 5, 'F');
+  if (data.simulation) {
+    doc.setTextColor(255, 255, 255);
+  } else {
+    doc.setTextColor(16, 185, 129);
+  }
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('OFFICIAL DOCUMENT', rightX - 19, logoY + 3.5, { align: 'center' });
+  doc.text(headerTag, rightX - tagW / 2, logoY + 3.5, { align: 'center' });
 
   doc.setTextColor(13, 31, 24);
   doc.setFontSize(13);
-  doc.text(docTypeName(data.mode), rightX, logoY + 12, { align: 'right' });
+  doc.text(docTypeName(data.mode, data.simulation), rightX, logoY + 12, { align: 'right' });
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Maritime Environmental Levy Notice', rightX, logoY + 17, { align: 'right' });
+  doc.text(
+    data.simulation
+      ? 'Non-binding pre-estimate — simulator output'
+      : 'Maritime Environmental Levy Notice',
+    rightX,
+    logoY + 17,
+    { align: 'right' },
+  );
 
   // ── Status badge (TO PAY / PAID / OVERDUE / DISPUTED / EXEMPT) ──
   if (data.badge) {
@@ -654,21 +703,134 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
     margin,
     footerY + 4,
   );
+  // Split across two lines — holder+bank / SWIFT+IBAN+Ref no longer fits a
+  // single 7pt line at this page width (measured ~212mm vs. ~174mm usable).
   doc.text(
-    `Remit to: SOLIDE TECHNOLOGY (Concessionaire) · Bank of Somaliland · SWIFT BSSLSO21 · Ref: ${data.invoiceRef}`,
+    'Remit to: Solide Technology Limited · System Pay Services (Malta) Limited',
     margin,
     footerY + 7.5,
+  );
+  doc.text(
+    `SWIFT SYPLMTM2XXX · IBAN MT12SYPL39480821090981701607644 · Ref: ${data.invoiceRef}`,
+    margin,
+    footerY + 11,
   );
   doc.setTextColor(203, 213, 225);
   doc.setFontSize(6);
   doc.text(
     `Document generated by Green Gate OS · ${new Date().toISOString()} · AES-256 Encrypted`,
     pageWidth / 2,
-    footerY + 12,
+    footerY + 14.5,
     { align: 'center' },
   );
 
   return new Uint8Array(doc.output('arraybuffer'));
+}
+
+// ── Monthly account statement (chantier C) ─────────────────────────────────
+// Informatif : pas de QR, pas de HMAC, pas de sceau fiscal. Réutilise fmtUsd et
+// le squelette jsPDF de generateInvoicePdf, en version allégée.
+
+export interface StatementLine {
+    invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number;
+}
+export interface StatementPayment {
+    confirmedAt: string; receiptRef: string | null; amountUsd: number;
+}
+export interface StatementData {
+    ownerName: string;
+    jurisdiction: string;
+    periodLabel: string;
+    openLines: StatementLine[];
+    payments: StatementPayment[];
+    totalOutstandingUsd: number;
+    paymentsInMonthUsd: number;
+}
+
+export async function generateStatementPdf(data: StatementData): Promise<Uint8Array> {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 18;
+
+    // Accent bar
+    doc.setFillColor(4, 120, 87); doc.rect(0, 0, pageWidth / 2, 4, 'F');
+    doc.setFillColor(16, 185, 129); doc.rect(pageWidth / 2, 0, pageWidth / 4, 4, 'F');
+    doc.setFillColor(234, 179, 8); doc.rect((pageWidth * 3) / 4, 0, pageWidth / 4, 4, 'F');
+
+    // Title
+    doc.setTextColor(13, 31, 24);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    doc.text('Account Statement', margin, 22);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${data.jurisdiction} · Maritime Carbon Tax Authority`, margin, 29);
+
+    // Owner + period
+    doc.setTextColor(13, 31, 24); doc.setFontSize(11);
+    doc.text(data.ownerName, margin, 40);
+    doc.setTextColor(100, 116, 139); doc.setFontSize(10);
+    doc.text(`Statement period: ${data.periodLabel}`, margin, 46);
+
+    // Informational disclaimer
+    doc.setTextColor(148, 163, 184); doc.setFontSize(8);
+    doc.text('Informational account statement — not an invoice or a formal notice.', margin, 52);
+
+    let y = 62;
+
+    // Open pro-formas
+    doc.setTextColor(13, 31, 24); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Outstanding pro-formas', margin, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text('Reference', margin, y); doc.text('Vessel', margin + 55, y);
+    doc.text('Age', margin + 110, y); doc.text('Due (USD)', pageWidth - margin, y, { align: 'right' }); y += 5;
+    doc.setTextColor(13, 31, 24);
+    if (data.openLines.length === 0) {
+        doc.setTextColor(148, 163, 184); doc.text('None', margin, y); doc.setTextColor(13, 31, 24); y += 6;
+    } else {
+        for (const l of data.openLines) {
+            if (y > 250) { doc.addPage(); y = 22; }
+            doc.setFontSize(9);
+            doc.text(l.invoiceRef, margin, y);
+            doc.text(l.vesselName.slice(0, 26), margin + 55, y);
+            doc.text(`${l.ageDays}d`, margin + 110, y);
+            doc.text(fmtUsd(l.outstandingUsd), pageWidth - margin, y, { align: 'right' });
+            y += 5;
+        }
+    }
+    y += 4;
+
+    // Payments in month
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(`Payments received in ${data.periodLabel}`, margin, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text('Date', margin, y); doc.text('Receipt', margin + 55, y);
+    doc.text('Amount (USD)', pageWidth - margin, y, { align: 'right' }); y += 5;
+    doc.setTextColor(13, 31, 24);
+    if (data.payments.length === 0) {
+        doc.setTextColor(148, 163, 184); doc.text('None', margin, y); doc.setTextColor(13, 31, 24); y += 6;
+    } else {
+        for (const p of data.payments) {
+            if (y > 250) { doc.addPage(); y = 22; }
+            doc.setFontSize(9);
+            doc.text(p.confirmedAt.slice(0, 10), margin, y);
+            doc.text(p.receiptRef ?? '—', margin + 55, y);
+            doc.text(fmtUsd(p.amountUsd), pageWidth - margin, y, { align: 'right' });
+            y += 5;
+        }
+    }
+    y += 8;
+
+    // Totals
+    doc.setDrawColor(203, 213, 225); doc.line(margin, y, pageWidth - margin, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100, 116, 139);
+    doc.text('Payments received this period', margin, y);
+    doc.setTextColor(16, 185, 129);
+    doc.text(`$${fmtUsd(data.paymentsInMonthUsd)}`, pageWidth - margin, y, { align: 'right' }); y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 31, 24);
+    doc.text('Total outstanding', margin, y);
+    doc.text(`$${fmtUsd(data.totalOutstandingUsd)}`, pageWidth - margin, y, { align: 'right' });
+
+    return new Uint8Array(doc.output('arraybuffer'));
 }
 
 /**

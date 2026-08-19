@@ -301,6 +301,16 @@ describe('generateInvoicePdf', () => {
         const buffer = await generateInvoicePdf({ ...MOCK_INVOICE_DATA, lineItems: [] });
         expect(buffer.length).toBeGreaterThan(1000);
     });
+
+    it('renders a simulation PDF (watermark + SIMULATION badge) without throwing', async () => {
+        const buffer = await generateInvoicePdf({
+            ...MOCK_INVOICE_DATA,
+            badge: 'SIMULATION',
+            simulation: true,
+        });
+        expect(buffer).toBeInstanceOf(Uint8Array);
+        expect(buffer.length).toBeGreaterThan(1000);
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -9,11 +9,17 @@ interface Props {
     recaptchaSiteKey: string;
     maritimeEnabled: boolean;
     airEnabled: boolean;
+    /**
+     * IMO du navire à l'origine de la demande (venu du rattachement
+     * `/pay/claim`), pré-rempli en lecture seule dans le formulaire
+     * maritime. Sans objet côté aviation, qui n'a pas de champ IMO navire.
+     */
+    prefillImo?: string;
 }
 
 type Mode = 'MARITIME' | 'AIR';
 
-export function RegisterModeSwitcher({ recaptchaSiteKey, maritimeEnabled, airEnabled }: Props) {
+export function RegisterModeSwitcher({ recaptchaSiteKey, maritimeEnabled, airEnabled, prefillImo }: Props) {
     const t = useTranslations('AirRegister');
     const [mode, setMode] = useState<Mode>(maritimeEnabled ? 'MARITIME' : 'AIR');
     const bothEnabled = maritimeEnabled && airEnabled;
@@ -41,7 +47,7 @@ export function RegisterModeSwitcher({ recaptchaSiteKey, maritimeEnabled, airEna
                 </div>
             )}
             {mode === 'MARITIME' && maritimeEnabled
-                ? <RegisterForm recaptchaSiteKey={recaptchaSiteKey} />
+                ? <RegisterForm recaptchaSiteKey={recaptchaSiteKey} prefillImo={prefillImo} />
                 : <AirRegisterForm recaptchaSiteKey={recaptchaSiteKey} />}
         </div>
     );

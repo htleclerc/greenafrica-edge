@@ -161,6 +161,18 @@ describe('submitKycC', () => {
                 }),
             );
         });
+
+        it('ne chiffre pas et stocke null quand le RIB est vide (optionnel)', async () => {
+            const { submitKycC } = await import('./submitKycC');
+            const { encryptIban } = await import('@/services/kycService');
+
+            await submitKycC({ ...validInput, iban: '', swift_bic: '', bank_name: '' });
+
+            expect(encryptIban).not.toHaveBeenCalled();
+            expect(mockShipownersTable.update).toHaveBeenCalledWith(
+                expect.objectContaining({ iban: null, swift_bic: null, bank_name: null }),
+            );
+        });
     });
 
     describe('persistence', () => {

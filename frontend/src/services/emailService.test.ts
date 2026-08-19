@@ -16,6 +16,7 @@ import {
     sendProformaIssuedEmail,
     sendWalletTopupEmail,
     sendKycRejectedEmail,
+    sendVesselAccessCodeEmail,
 } from './emailService';
 
 beforeEach(() => {
@@ -105,5 +106,42 @@ describe('sendKycRejectedEmail', () => {
         const call = sendMock.mock.calls[0][0];
         expect(call.subject).toBe('Registration not approved');
         expect(call.html).toContain('&lt;missing&gt;');
+    });
+});
+
+describe('sendVesselAccessCodeEmail', () => {
+    it('carries the raw six-digit code in subject, html and text (Finding 1)', async () => {
+        const result = await sendVesselAccessCodeEmail({
+            to: 'contact@hornshipping.com',
+            recipientName: 'Horn Shipping SA',
+            code: '654321',
+        });
+        expect(result.success).toBe(true);
+        const call = sendMock.mock.calls[0][0];
+        expect(call.to).toEqual(['contact@hornshipping.com']);
+        expect(call.subject).toContain('654321');
+        expect(call.html).toContain('654321');
+        expect(call.text).toContain('654321');
+        // No link to click — the whole point of this template is that the
+        // OTP travels as a code, not a GoTrue action_link.
+        expect(call.html).not.toContain('action_link');
+        expect(call.html).not.toContain('/auth/v1/verify');
+    });
+
+    it('escapes an unexpected recipient name', async () => {
+        await sendVesselAccessCodeEmail({
+            to: 'contact@hornshipping.com',
+            recipientName: '<script>Alice</script>',
+            code: '111111',
+        });
+        const call = sendMock.mock.calls[0][0];
+        expect(call.html).toContain('&lt;script&gt;');
+        expect(call.html).not.toContain('<script>Alice');
+    });
+
+    it('falls back to a generic salutation when no recipient name is given', async () => {
+        await sendVesselAccessCodeEmail({ to: 'contact@hornshipping.com', code: '222222' });
+        const call = sendMock.mock.calls[0][0];
+        expect(call.html).toContain('Dear Shipowner');
     });
 });

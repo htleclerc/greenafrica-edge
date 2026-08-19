@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Banknote, Smartphone, Briefcase, Wallet, CreditCard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePayDialog, type Rail } from './usePayDialogContext';
+import { PaypalMark } from './PaypalMark';
 
 interface RailEligibility {
     rail: Rail;
@@ -18,6 +19,7 @@ interface AvailabilityResponse {
 
 const RAIL_META: Record<Rail, { icon: React.ComponentType<{ className?: string }>; color: string; key: string }> = {
     STRIPE:        { icon: CreditCard, color: '#635BFF', key: 'stripe' },
+    PAYPAL:        { icon: PaypalMark, color: '#0070BA', key: 'paypal' },
     WIRE_TRANSFER: { icon: Banknote,   color: '#10B981', key: 'wire' },
     MOBILE_MONEY:  { icon: Smartphone, color: '#1DC9B7', key: 'momo' },
     THIRD_PARTY:   { icon: Briefcase,  color: '#FF4800', key: 'third' },

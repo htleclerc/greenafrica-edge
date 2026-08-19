@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Keep the real hash/sign/verify helpers (pure, deterministic) but stub the PDF
-// renderer so this unit test is hermetic and fast (no font/runtime dependency).
-vi.mock('./invoiceService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./invoiceService')>();
-  return {
-    ...actual,
-    generateInvoicePdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])), // "%PDF"
-  };
-});
+// Le pipeline délègue tout le document au service d'émission (testé à part).
+// On le mocke pour vérifier la seule responsabilité de la branche air : calcul,
+// insertion, délégation avec sendEmail=false, notification in-app, transition.
+vi.mock('./invoiceIssuanceService', () => ({
+  issueInvoiceDocument: vi.fn().mockResolvedValue({
+    ok: true,
+    invoiceRef: 'PRO-2026-30-b1c2d3e4beef',
+    mode: 'proforma',
+    storagePath: 'SO/proformas/2026/07/PRO-2026-30-b1c2d3e4beef.pdf',
+  }),
+}));
 
 // Email must never be invoked on the air path (no matched agent / recipient).
 vi.mock('./emailService', () => ({
@@ -22,6 +24,12 @@ vi.mock('./notificationService', () => ({
 }));
 
 import { runProformaPipeline } from './proformaPipelineService';
+import { issueInvoiceDocument } from './invoiceIssuanceService';
+
+const issueMock = vi.mocked(issueInvoiceDocument);
+
+// Profils staff renvoyés par resolveIssuingActor (profiles.in(role).limit()).
+const STAFF_ROWS = [{ id: 'admin-air', full_name: 'Air Ops', email: 'airops@gg.africa', role: 'FINANCE_ADMIN' }];
 
 const SOMALILAND_JID = '00000000-0000-4000-8000-00000000534f';
 
@@ -98,14 +106,12 @@ function makeClient(opts: { aircraft?: typeof AIRCRAFT | null; alertStatus?: str
         }),
       };
     }
-    if (table === 'jurisdictions') {
+    if (table === 'profiles') {
+      // resolveIssuingActor: profiles.select(...).in('role', [...]).limit(50)
       return {
         select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: { name: 'Republic of Somaliland' },
-              error: null,
-            }),
+          in: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue({ data: STAFF_ROWS, error: null }),
           })),
         })),
       };
@@ -142,6 +148,12 @@ describe('runProformaPipeline — AIR branch (W1-C-2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    issueMock.mockResolvedValue({
+      ok: true,
+      invoiceRef: 'PRO-2026-30-b1c2d3e4beef',
+      mode: 'proforma',
+      storagePath: 'SO/proformas/2026/07/PRO-2026-30-b1c2d3e4beef.pdf',
+    } as Awaited<ReturnType<typeof issueInvoiceDocument>>);
   });
 
   it('AIR alert → POSTs the air contract → inserts a mode=AIR transaction (aircraft_id, null vessel_id)', async () => {

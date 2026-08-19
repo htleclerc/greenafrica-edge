@@ -45,6 +45,7 @@ describe('feature-flags', () => {
             portalV1Enabled: true,
             selfServiceEnabled: true,
             onlinePaymentStripeEnabled: true,
+            onlinePaypalEnabled: false,
             walletTopupEnabled: true,
             notificationSmsEnabled: true,
             airSelfServiceEnabled: false,
@@ -59,6 +60,7 @@ describe('feature-flags', () => {
             portalV1Enabled: false,
             selfServiceEnabled: false,
             onlinePaymentStripeEnabled: false,
+            onlinePaypalEnabled: false,
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
@@ -78,6 +80,7 @@ describe('feature-flags', () => {
             portalV1Enabled: true,
             selfServiceEnabled: false,
             onlinePaymentStripeEnabled: true,
+            onlinePaypalEnabled: false,
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
@@ -116,6 +119,7 @@ describe('feature-flags', () => {
             portalV1Enabled: false,
             selfServiceEnabled: false,
             onlinePaymentStripeEnabled: false,
+            onlinePaypalEnabled: false,
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
@@ -146,5 +150,49 @@ describe('feature-flags', () => {
         // typed-key lookups against one read.
         expect(await isFeatureEnabled('walletTopupEnabled')).toBe(true);
         expect(await isFeatureEnabled('portalV1Enabled')).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rail PayPal — 7e flag (mig 114). Meme politique fail-secure que les autres :
+// seul un booleen JSONB strictement true ouvre la porte.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('feature-flags — onlinePaypalEnabled', () => {
+    it('false quand la cle est absente', async () => {
+        mockRows = [];
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        const flags = await _readPortalFeatureFlagsImpl();
+        expect(flags.onlinePaypalEnabled).toBe(false);
+    });
+
+    it('true quand feature.online_payment_paypal_enabled vaut true', async () => {
+        mockRows = [{ key: 'feature.online_payment_paypal_enabled', value: true }];
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        const flags = await _readPortalFeatureFlagsImpl();
+        expect(flags.onlinePaypalEnabled).toBe(true);
+    });
+
+    it('false sur une valeur JSONB non booleenne (defensif)', async () => {
+        mockRows = [{ key: 'feature.online_payment_paypal_enabled', value: 'true' }];
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        const flags = await _readPortalFeatureFlagsImpl();
+        expect(flags.onlinePaypalEnabled).toBe(false);
+    });
+
+    it('independant du flag Stripe', async () => {
+        mockRows = [{ key: 'feature.online_payment_stripe_enabled', value: true }];
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        const flags = await _readPortalFeatureFlagsImpl();
+        expect(flags.onlinePaymentStripeEnabled).toBe(true);
+        expect(flags.onlinePaypalEnabled).toBe(false);
+    });
+
+    it('la cle PayPal fait partie du SELECT unique (7 cles)', async () => {
+        const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
+        await _readPortalFeatureFlagsImpl();
+        const inCall = mockSupabase.from.mock.results[0].value.select.mock.results[0].value.in;
+        expect(inCall.mock.calls[0][1]).toContain('feature.online_payment_paypal_enabled');
+        expect(inCall.mock.calls[0][1]).toHaveLength(7);
     });
 });

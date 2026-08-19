@@ -5,7 +5,7 @@ import { UserRole } from '@/types/secure';
 
 const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN];
 const VALID_STATUSES = new Set(['INITIATED', 'PROCESSING', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'REFUNDED']);
-const VALID_RAILS = new Set(['STRIPE','WIRE_TRANSFER','CASH','CHEQUE','LETTER_OF_CREDIT','NETTING','THIRD_PARTY','MOBILE_MONEY','BANK_GUARANTEE','WALLET']);
+const VALID_RAILS = new Set(['STRIPE','PAYPAL','WIRE_TRANSFER','CASH','CHEQUE','LETTER_OF_CREDIT','NETTING','THIRD_PARTY','MOBILE_MONEY','BANK_GUARANTEE','WALLET']);
 
 function parseList(raw: string | null, allowed: Set<string>): string[] {
     if (!raw) return [];

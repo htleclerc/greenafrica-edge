@@ -1,17 +1,18 @@
 // Reusable server component for the operator invoices view.
 // Used by /owner/invoices (via thin wrapper) and /dashboard/invoices when the
 // principal is an operator. Always fetches via principal.supabase (RLS-scoped).
-// Preserves the PayDialog owner flow (3-step wizard) and ?stripe= banners.
+// Preserves the PayDialog owner flow (3-step wizard) and ?stripe= / ?paypal= banners.
 
 import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
-import { signInvoiceRef } from '@/services/invoiceService';
+import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/InvoicesTable';
 
 interface RawTxn {
     id: string;
     invoice_ref: string | null;
     content_hash: string | null;
+    invoice_pdf_url: string | null;
     document_type: 'PROFORMA' | 'FINAL' | 'COMPLEMENT' | 'REFUND' | null;
     vessel_name: string;
     tax_amount_usd: number;
@@ -20,24 +21,43 @@ interface RawTxn {
     created_at: string;
 }
 
-function buildDownloadUrl(ref: string, contentHash: string): string {
-    const sig = signInvoiceRef(ref, contentHash);
-    return `/api/invoices/${encodeURIComponent(ref)}/download?h=${contentHash}&s=${sig}`;
-}
+/**
+ * Issues possibles d'un retour PayPal. Quatre valeurs, contre deux pour Stripe :
+ * la capture PayPal est un appel explicite, elle peut rester en attente (filet
+ * webhook/cron) ou échouer sans qu'aucun montant n'ait été prélevé.
+ */
+export const PAYPAL_RETURNS = ['success', 'cancel', 'pending', 'failed'] as const;
+export type PaypalReturn = typeof PAYPAL_RETURNS[number];
+
+/**
+ * Teintes des bannières de retour PayPal, alignées sur celles de Stripe :
+ * vert = encaissé, ambre = en attente ou annulé, rouge = échec.
+ */
+const PAYPAL_BANNER_STYLE: Record<PaypalReturn, string> = {
+    success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+    cancel: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+    pending: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+    failed: 'border-red-500/30 bg-red-500/10 text-red-200',
+};
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
     stripeReturn?: 'success' | 'cancel' | null;
+    paypalReturn?: PaypalReturn | null;
 }
 
-export async function OperatorInvoicesPage({ principal, stripeReturn = null }: Props) {
+export async function OperatorInvoicesPage({
+    principal,
+    stripeReturn = null,
+    paypalReturn = null,
+}: Props) {
     const t = await getTranslations('OwnerPortal.invoices');
 
     const [txnRes, walletRes, receiptRes, pendingWireRes] = await Promise.all([
         principal.supabase
             .from('transactions')
             .select(
-                'id, invoice_ref, content_hash, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at',
+                'id, invoice_ref, content_hash, invoice_pdf_url, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at',
             )
             .order('created_at', { ascending: false })
             .limit(200),
@@ -94,13 +114,19 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
 
     const rows: InvoiceRow[] = txns.map((txn) => ({
         ...txn,
-        download_url:
-            txn.invoice_ref && txn.content_hash
-                ? buildDownloadUrl(txn.invoice_ref, txn.content_hash)
-                : null,
+        download_url: buildInvoiceDownloadUrl(txn),
         receipt_ref: receiptByTxn.get(txn.id) ?? null,
         pending_wire_payment_id: pendingWireByTxn.get(txn.id) ?? null,
     }));
+
+    const { data: statementsRaw } = await principal.supabase
+        .from('owner_statements')
+        .select('id, period_month, total_outstanding_usd, generated_at')
+        .order('period_month', { ascending: false })
+        .limit(24);
+    const statements = (statementsRaw ?? []) as {
+        id: string; period_month: string; total_outstanding_usd: number; generated_at: string;
+    }[];
 
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
@@ -123,6 +149,11 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
                     {t('stripeReturn.cancel')}
                 </div>
             )}
+            {paypalReturn && (
+                <div className={`rounded-xl border p-3 mb-4 text-sm ${PAYPAL_BANNER_STYLE[paypalReturn]}`}>
+                    {t(`paypalReturn.${paypalReturn}`)}
+                </div>
+            )}
 
             {txnRes.error ? (
                 <div className="os-card p-4 text-sm" style={{ color: '#FCA5A5' }}>
@@ -133,6 +164,22 @@ export async function OperatorInvoicesPage({ principal, stripeReturn = null }: P
                     rows={rows}
                     walletBalanceUsdMinor={walletBalanceUsdMinor}
                 />
+            )}
+
+            {statements.length > 0 && (
+                <section className="mt-8">
+                    <h2 className="text-lg font-semibold text-[var(--os-text-primary)] mb-3">{t('statements_title')}</h2>
+                    <div className="os-card divide-y divide-[var(--os-border)]">
+                        {statements.map((s) => (
+                            <div key={s.id} className="flex items-center justify-between px-4 py-3">
+                                <span className="text-sm text-[var(--os-text-primary)]">{s.period_month.slice(0, 7)}</span>
+                                <span className="text-sm font-mono tabular-nums text-[var(--os-text-secondary)]">${Number(s.total_outstanding_usd).toLocaleString()}</span>
+                                <a href={`/api/statements/${s.id}/download`} target="_blank" rel="noopener noreferrer"
+                                   className="text-xs text-emerald-400 hover:underline">{t('statements_download')}</a>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             )}
         </div>
     );
