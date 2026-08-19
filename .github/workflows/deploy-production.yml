@@ -13,6 +13,10 @@ jobs:
   ci:
     name: CI Gate
     uses: ./.github/workflows/ci.yml
+    # Sur main on ne filtre rien : une promotion valide l'ensemble, quel que
+    # soit le diff. Le filtrage par chemin n'a lieu que sur develop et les PR.
+    with:
+      full: true
     secrets: inherit
 
   # ── Supabase migrations ─────────────────────────────────────────────────
