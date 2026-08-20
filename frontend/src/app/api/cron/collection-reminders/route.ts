@@ -108,7 +108,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             // Destinataires : cascade armateur + copies juridiction/plateforme + huissier dès J45.
             const { data: owner } = p.shipowner_id
-                ? await admin.from('shipowners').select('official_email, name').eq('id', p.shipowner_id).maybeSingle()
+                ? await admin.from('shipowners').select('official_email, name, billing_cc_emails').eq('id', p.shipowner_id).maybeSingle()
                 : { data: null };
             const { data: agent } = p.agent_profile_id
                 ? await admin.from('profiles').select('email').eq('id', p.agent_profile_id).maybeSingle()
@@ -123,6 +123,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 shipownerBillingEmail: (owner?.official_email as string | null) ?? null,
                 agentEmail: (agent?.email as string | null) ?? null,
                 vesselOwnerEmail: null,
+                ownerCcEmails: (owner?.billing_cc_emails as string[] | null) ?? [],
                 jurisdictionCcEmails: [...jurisdictionCc, ...bailiffCc],
                 platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
             });
