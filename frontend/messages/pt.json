@@ -4229,6 +4229,8 @@
     "toChase": "A cobrar",
     "empty": "Nenhum armador atrasado.",
     "sendRecap": "Resumo",
+    "sendRecapConfirmTitle": "Confirmar envio do resumo",
+    "sendRecapConfirmBody": "Enviar a {name} o resumo consolidado das suas {count} faturas em aberto? Isto é enviado de imediato e não pode ser desfeito.",
     "cancel": "Cancelar",
     "col": {
       "owner": "Armador",

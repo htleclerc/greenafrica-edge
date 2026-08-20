@@ -4192,6 +4192,8 @@
     "toChase": "À relancer",
     "empty": "Aucun armateur en retard.",
     "sendRecap": "Récapitulatif",
+    "sendRecapConfirmTitle": "Confirmer l'envoi du récapitulatif",
+    "sendRecapConfirmBody": "Envoyer à {name} le récapitulatif consolidé de ses {count} factures ouvertes ? Cet envoi est immédiat et irréversible.",
     "cancel": "Annuler",
     "col": {
       "owner": "Armateur",

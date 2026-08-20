@@ -20,6 +20,12 @@ import {
 const RESPONSE_TYPES = ['ACKNOWLEDGE', 'DISPUTE', 'PAYMENT_PROMISE', 'PARTIAL_PAYMENT', 'PAID', 'REFUSED'] as const;
 const TIERS = ['J3', 'J7', 'J15', 'J30', 'J45', 'BAILIFF', 'JUDICIAL'];
 const STATUSES = ['PENDING', 'OVERDUE', 'PAID', 'DISPUTED'];
+// Round de correction 1 : STATUSES ci-dessus (filtre de l'écran) inclut PAID et
+// DISPUTED, deux statuts pour lesquels sendManualReminder refuse d'envoyer
+// (REMINDABLE_STATUSES, sendManualReminder.ts). Sans ce filtre, une ligne PAID
+// ou DISPUTED laissait passer un clic voué à un refus serveur — même patron que
+// OPEN_PROFORMA_STATUSES dans ArmateurDetail.tsx.
+const REMINDABLE_STATUSES = ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'];
 
 interface ReminderRow {
     id: string; tier: string; sent_at: string; sent_email: string; cc_emails: string[] | null;
@@ -200,7 +206,11 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                 </h2>
                 <div className="flex gap-2">
                     <OsButton size="sm" variant="secondary" onClick={() => setDialogOpen(true)}>{t('record_response')}</OsButton>
-                    <OsButton size="sm" variant="secondary" onClick={() => { setRemindError(null); setRemindOpen(true); }}>{t('remind_now')}</OsButton>
+                    {REMINDABLE_STATUSES.includes(row.status) && (
+                        <OsButton size="sm" variant="secondary" onClick={() => { setRemindError(null); setRemindOpen(true); }}>
+                            {t('remind_now')}
+                        </OsButton>
+                    )}
                     <OsButton size="sm" variant="danger" disabled={!canBailiff}
                         title={canBailiff ? undefined : t('escalate_ramp_bailiff')}
                         onClick={() => { setEscalateError(null); setEscalateTier('BAILIFF'); }}>

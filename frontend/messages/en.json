@@ -4192,6 +4192,8 @@
     "toChase": "To chase",
     "empty": "No overdue shipowners.",
     "sendRecap": "Recap",
+    "sendRecapConfirmTitle": "Confirm recap",
+    "sendRecapConfirmBody": "Send {name} a consolidated recap of their {count} open invoices? This is sent immediately and cannot be undone.",
     "cancel": "Cancel",
     "col": {
       "owner": "Shipowner",

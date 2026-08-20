@@ -20,6 +20,10 @@ export interface ArmateurCockpitRow {
     last_auto_tier: string | null;
     last_reminder_at: string | null;
     latest_response_type: string | null;
+    // mig 127 : portée réelle de sendConsolidatedRecap (PENDING/OVERDUE/
+    // PARTIALLY_PAID, sans condition de date) — overdue_count seul sous-annonce
+    // les factures ouvertes pas encore échues.
+    open_count: number;
 }
 
 export async function listArmateursCockpit(db: SupabaseClient): Promise<ArmateurCockpitRow[]> {
@@ -48,6 +52,7 @@ export async function listArmateursCockpit(db: SupabaseClient): Promise<Armateur
         last_auto_tier: (r.last_auto_tier as string | null) ?? null,
         last_reminder_at: (r.last_reminder_at as string | null) ?? null,
         latest_response_type: (r.latest_response_type as string | null) ?? null,
+        open_count: Number(r.open_count ?? 0),
     }));
 }
 

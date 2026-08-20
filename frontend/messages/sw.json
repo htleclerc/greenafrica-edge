@@ -4195,6 +4195,8 @@
     "toChase": "Zinazohitaji kufuatiliwa",
     "empty": "Hakuna mmiliki wa meli aliyechelewa.",
     "sendRecap": "Muhtasari",
+    "sendRecapConfirmTitle": "Thibitisha kutuma muhtasari",
+    "sendRecapConfirmBody": "Tuma kwa {name} muhtasari wa pamoja wa ankara zake {count} zilizo wazi? Hii inatumwa mara moja na haiwezi kutenduliwa.",
     "cancel": "Ghairi",
     "col": {
       "owner": "Mmiliki wa meli",

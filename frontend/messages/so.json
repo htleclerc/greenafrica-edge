@@ -4192,6 +4192,8 @@
     "toChase": "Loo baahan yahay xasuusin",
     "empty": "Milkiile markab oo dhaafay lama helin.",
     "sendRecap": "Soo-koobid",
+    "sendRecapConfirmTitle": "Xaqiiji dirista soo-koobidda",
+    "sendRecapConfirmBody": "Ma dirto {name} soo-koobid isku-dhafan oo ka kooban {count} biilood oo furan? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
     "cancel": "Jooji",
     "col": {
       "owner": "Milkiile",

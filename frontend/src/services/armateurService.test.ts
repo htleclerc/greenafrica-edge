@@ -65,7 +65,7 @@ describe('listArmateursCockpit — colonnes de relance (mig 121, mock)', () => {
             total_outstanding_usd: '800',
             overdue_count: '2', next_due_date: '2026-09-01T00:00:00Z',
             last_auto_tier: 'J15', last_reminder_at: '2026-08-18T09:00:00Z',
-            latest_response_type: 'PAYMENT_PROMISE',
+            latest_response_type: 'PAYMENT_PROMISE', open_count: '4',
         }]);
         const rows = await listArmateursCockpit(db);
         // PostgREST renvoie les BIGINT en string — la normalisation est le contrat.
@@ -73,6 +73,9 @@ describe('listArmateursCockpit — colonnes de relance (mig 121, mock)', () => {
         expect(rows[0].next_due_date).toBe('2026-09-01T00:00:00Z');
         expect(rows[0].last_auto_tier).toBe('J15');
         expect(rows[0].latest_response_type).toBe('PAYMENT_PROMISE');
+        // mig 127 : open_count (PENDING/OVERDUE/PARTIALLY_PAID, sans condition de
+        // date) est distinct et toujours >= overdue_count sur de vraies données.
+        expect(rows[0].open_count).toBe(4);
     });
 
     it('retombe sur des valeurs neutres quand aucune relance n_a eu lieu', async () => {
@@ -86,6 +89,7 @@ describe('listArmateursCockpit — colonnes de relance (mig 121, mock)', () => {
         }]);
         const rows = await listArmateursCockpit(db);
         expect(rows[0].overdue_count).toBe(0);
+        expect(rows[0].open_count).toBe(0);
         expect(rows[0].next_due_date).toBeNull();
         expect(rows[0].last_auto_tier).toBeNull();
     });

@@ -166,18 +166,16 @@ export function ReglementsDashboard({ summary, owners }: Props) {
                         style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
                     >
                         <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-2">
-                            {t('sendRecap')}
+                            {t('sendRecapConfirmTitle')}
                         </Dialog.Title>
-                        {/* Le récapitulatif étant ici déclenché depuis une agrégation par
-                            armateur (v_armateur_recouvrement), pas une liste de factures,
-                            le nombre exact de factures ouvertes n'est connu que côté
-                            serveur (composeOwnerStatement). overdue_count — déjà affiché
-                            dans la colonne de cette même ligne — est le meilleur repère
-                            client disponible : c'est un plancher (les factures ouvertes
-                            mais pas encore en retard n'y sont pas comptées), jamais une
-                            survente du nombre réel de factures couvertes. */}
+                        {/* Round de correction 1 : v_armateur_recouvrement gagne open_count
+                            (mig 127) — même filtre que sendConsolidatedRecap/
+                            composeOwnerStatement (PENDING/OVERDUE/PARTIALLY_PAID, sans
+                            condition de date), donc le compte annoncé ici est désormais
+                            EXACT, pas un plancher approché via overdue_count comme avant
+                            (qui excluait les factures ouvertes pas encore échues). */}
                         <Dialog.Description className="text-sm text-[var(--os-text-muted)] mb-4">
-                            {recapTarget?.name} — {t('col.overdue')}: {recapTarget?.overdue_count}
+                            {t('sendRecapConfirmBody', { name: recapTarget?.name ?? '', count: recapTarget?.open_count ?? 0 })}
                         </Dialog.Description>
 
                         {recapError && <p className="text-xs text-[#EF4444] mb-3">{recapError}</p>}
