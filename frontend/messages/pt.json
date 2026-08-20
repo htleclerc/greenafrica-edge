@@ -4007,7 +4007,12 @@
     "escalate_confirm": "Escalar",
     "escalate_ramp_bailiff": "Um lembrete J45 (pré-execução) deve ser enviado primeiro.",
     "escalate_ramp_judicial": "Uma notificação de agente de execução deve ser emitida primeiro.",
-    "escalated_badge": "Escalado"
+    "escalated_badge": "Escalado",
+    "remind_now": "Lembrar agora",
+    "remind_now_confirm": "Enviar um lembrete manual a {debtor} referente a {ref}? Isto é enviado de imediato e não pode ser desfeito.",
+    "manual_group": "Resumo consolidado — {count} faturas",
+    "col_count_manual": "manual",
+    "col_count_manual_tooltip": "Lembretes manuais fora do procedimento — o último em {date}"
   },
   "AdminVesselIdentity": {
     "title": "Identidade dos navios",
@@ -4093,6 +4098,12 @@
     "inviteDialogTitle": "Convidar armador",
     "inviteDialogSubtitle": "Enviar um convite do portal para {name}.",
     "navLink": "Armadores",
+    "remind": "Lembrar",
+    "remindConfirmTitle": "Confirmar lembrete",
+    "remindConfirmBody": "Enviar um lembrete manual a {name} referente à fatura {ref}? Isto é enviado de imediato e não pode ser desfeito.",
+    "sendRecap": "Enviar resumo",
+    "sendRecapConfirmTitle": "Confirmar envio do resumo",
+    "sendRecapConfirmBody": "Enviar a {name} o resumo consolidado das suas {count} faturas em aberto? Isto é enviado de imediato e não pode ser desfeito.",
     "state": {
       "active": "Ativo",
       "invited": "Convidado",
@@ -4170,6 +4181,7 @@
       "noPayments": "Nenhum pagamento.",
       "remindersTitle": "Cobranças",
       "noReminders": "Nenhuma cobrança.",
+      "manualGroup": "Resumo consolidado — {count} faturas",
       "escalatedBailiff": "Escalado — oficial de justiça",
       "actionsTitle": "Ações",
       "anonymizeTitle": "Anonimizar (RGPD)",
@@ -4216,6 +4228,8 @@
     "overdueCount": "{count} faturas atrasadas",
     "toChase": "A cobrar",
     "empty": "Nenhum armador atrasado.",
+    "sendRecap": "Resumo",
+    "cancel": "Cancelar",
     "col": {
       "owner": "Armador",
       "outstanding": "Devido",

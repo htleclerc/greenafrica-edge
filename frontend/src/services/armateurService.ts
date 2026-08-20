@@ -92,6 +92,7 @@ export interface ArmateurReminderRow {
     id: string;
     tier: string;
     sent_at: string;
+    template_used: string;
     debtor_response_type: string;
     escalated_bailiff: boolean;
 }
@@ -187,7 +188,9 @@ export async function getArmateurDetail(
           ? db.from('payments').select('id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
           : Promise.resolve({ data: [] as unknown[] }),
         txIds.length
-          ? db.from('collection_reminders').select('id, tier, sent_at, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
+          // template_used est requis par groupManualReminders (Tâche 13) pour
+          // regrouper les lignes MANUAL d'un même récapitulatif consolidé.
+          ? db.from('collection_reminders').select('id, tier, sent_at, template_used, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
           : Promise.resolve({ data: [] as unknown[] }),
     ]);
 
@@ -268,6 +271,7 @@ export async function getArmateurDetail(
         })),
         reminders: ((remRes.data ?? []) as Record<string, unknown>[]).map((r) => ({
             id: r.id as string, tier: r.tier as string, sent_at: r.sent_at as string,
+            template_used: r.template_used as string,
             debtor_response_type: r.debtor_response_type as string, escalated_bailiff: !!r.escalated_bailiff,
         })),
         representatives: ((repRes.data ?? []) as Record<string, unknown>[]).map((m) => {

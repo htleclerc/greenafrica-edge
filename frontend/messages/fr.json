@@ -3970,7 +3970,12 @@
     "escalate_confirm": "Escalader",
     "escalate_ramp_bailiff": "Une relance J45 (pré-huissier) doit d'abord être envoyée.",
     "escalate_ramp_judicial": "Une mise en demeure d'huissier doit d'abord être émise.",
-    "escalated_badge": "Escaladé"
+    "escalated_badge": "Escaladé",
+    "remind_now": "Relancer maintenant",
+    "remind_now_confirm": "Envoyer une relance manuelle à {debtor} pour {ref} ? Cet envoi est immédiat et irréversible.",
+    "manual_group": "Récapitulatif consolidé — {count} factures",
+    "col_count_manual": "manuel",
+    "col_count_manual_tooltip": "Relances manuelles hors procédure — dernière le {date}"
   },
   "AdminVesselIdentity": {
     "title": "Identité des navires",
@@ -4056,6 +4061,12 @@
     "inviteDialogTitle": "Inviter l'armateur",
     "inviteDialogSubtitle": "Envoyer une invitation au portail à {name}.",
     "navLink": "Armateurs",
+    "remind": "Relancer",
+    "remindConfirmTitle": "Confirmer la relance",
+    "remindConfirmBody": "Envoyer une relance manuelle à {name} pour la facture {ref} ? Cet envoi est immédiat et irréversible.",
+    "sendRecap": "Envoyer le récapitulatif",
+    "sendRecapConfirmTitle": "Confirmer l'envoi du récapitulatif",
+    "sendRecapConfirmBody": "Envoyer à {name} le récapitulatif consolidé de ses {count} factures ouvertes ? Cet envoi est immédiat et irréversible.",
     "state": {
       "active": "Actif",
       "invited": "Invité",
@@ -4133,6 +4144,7 @@
       "noPayments": "Aucun paiement.",
       "remindersTitle": "Relances",
       "noReminders": "Aucune relance.",
+      "manualGroup": "Récapitulatif consolidé — {count} factures",
       "escalatedBailiff": "Escaladé — huissier",
       "actionsTitle": "Actions",
       "anonymizeTitle": "Anonymiser (RGPD)",
@@ -4179,6 +4191,8 @@
     "overdueCount": "{count} factures en retard",
     "toChase": "À relancer",
     "empty": "Aucun armateur en retard.",
+    "sendRecap": "Récapitulatif",
+    "cancel": "Annuler",
     "col": {
       "owner": "Armateur",
       "outstanding": "Dû",

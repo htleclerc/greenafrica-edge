@@ -3970,7 +3970,12 @@
     "escalate_confirm": "Gudbi",
     "escalate_ramp_bailiff": "Xasuusin J45 (kahor xeer-ilaaliyaha) ayaa marka hore la diri karaa.",
     "escalate_ramp_judicial": "Ogeysiis xeer-ilaaliye ayaa marka hore bixi kara.",
-    "escalated_badge": "La gudbiyay"
+    "escalated_badge": "La gudbiyay",
+    "remind_now": "Xasuusi hadda",
+    "remind_now_confirm": "Xasuusin gacanta lagu diray u dir {debtor} ee {ref}? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
+    "manual_group": "Soo-koobid isku-dhafan — {count} biilood",
+    "col_count_manual": "gacanta",
+    "col_count_manual_tooltip": "Xasuusino gacanta lagu diray oo ka baxsan hab-maamuuska — tii ugu dambeysay {date}"
   },
   "AdminVesselIdentity": {
     "title": "Aqoonsiga Markabyada",
@@ -4056,6 +4061,12 @@
     "inviteDialogTitle": "Casuun milkiilaha markabka",
     "inviteDialogSubtitle": "U dir casuunta boortaalka {name}.",
     "navLink": "Milkiilayaasha Markabka",
+    "remind": "Xasuusi",
+    "remindConfirmTitle": "Xaqiiji xasuusinta",
+    "remindConfirmBody": "Xasuusin gacanta lagu diray u dir {name} ee biilka {ref}? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
+    "sendRecap": "Dir soo-koobid",
+    "sendRecapConfirmTitle": "Xaqiiji dirista soo-koobidda",
+    "sendRecapConfirmBody": "Ma dirto {name} soo-koobid isku-dhafan oo ka kooban {count} biilood oo furan? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
     "state": {
       "active": "Firfircoon",
       "invited": "La casuumay",
@@ -4133,6 +4144,7 @@
       "noPayments": "Lacag-bixin lama helin.",
       "remindersTitle": "Xasuusinno",
       "noReminders": "Xasuusin lama helin.",
+      "manualGroup": "Soo-koobid isku-dhafan — {count} biilood",
       "escalatedBailiff": "Loo gudbiyay — masuulka garsoorka",
       "actionsTitle": "Ficillo",
       "anonymizeTitle": "Qarsoodi ka dhig (GDPR)",
@@ -4179,6 +4191,8 @@
     "overdueCount": "{count} qaansheeg oo dhaafay",
     "toChase": "Loo baahan yahay xasuusin",
     "empty": "Milkiile markab oo dhaafay lama helin.",
+    "sendRecap": "Soo-koobid",
+    "cancel": "Jooji",
     "col": {
       "owner": "Milkiile",
       "outstanding": "La sugayo",

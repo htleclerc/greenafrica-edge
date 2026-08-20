@@ -3973,7 +3973,12 @@
     "escalate_confirm": "تصعيد",
     "escalate_ramp_bailiff": "يجب إرسال تذكير J45 (ما قبل المحضر القضائي) أولاً.",
     "escalate_ramp_judicial": "يجب إصدار إشعار المحضر القضائي أولاً.",
-    "escalated_badge": "تم التصعيد"
+    "escalated_badge": "تم التصعيد",
+    "remind_now": "تذكير الآن",
+    "remind_now_confirm": "هل تريد إرسال تذكير يدوي إلى {debtor} بخصوص {ref}؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
+    "manual_group": "ملخص موحّد — {count} فاتورة",
+    "col_count_manual": "يدوي",
+    "col_count_manual_tooltip": "تذكيرات يدوية خارج المسار الرسمي — آخرها في {date}"
   },
   "AdminVesselIdentity": {
     "title": "هوية السفن",
@@ -4059,6 +4064,12 @@
     "inviteDialogTitle": "دعوة مالك السفينة",
     "inviteDialogSubtitle": "إرسال دعوة للبوابة إلى {name}.",
     "navLink": "الملاك الملاحيون",
+    "remind": "تذكير",
+    "remindConfirmTitle": "تأكيد التذكير",
+    "remindConfirmBody": "هل تريد إرسال تذكير يدوي إلى {name} بخصوص الفاتورة {ref}؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
+    "sendRecap": "إرسال الملخص",
+    "sendRecapConfirmTitle": "تأكيد إرسال الملخص",
+    "sendRecapConfirmBody": "هل تريد إرسال ملخص موحّد إلى {name} يغطي {count} فاتورة مفتوحة؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
     "state": {
       "active": "نشط",
       "invited": "تمت دعوته",
@@ -4136,6 +4147,7 @@
       "noPayments": "لا توجد مدفوعات.",
       "remindersTitle": "التذكيرات",
       "noReminders": "لا توجد تذكيرات.",
+      "manualGroup": "ملخص موحّد — {count} فاتورة",
       "escalatedBailiff": "تم التصعيد — مُحضر قضائي",
       "actionsTitle": "إجراءات",
       "anonymizeTitle": "إخفاء الهوية (RGPD)",
@@ -4182,6 +4194,8 @@
     "overdueCount": "{count} فاتورة متأخرة",
     "toChase": "بحاجة إلى متابعة",
     "empty": "لا يوجد ملاك سفن متأخرون.",
+    "sendRecap": "ملخص",
+    "cancel": "إلغاء",
     "col": {
       "owner": "مالك السفينة",
       "outstanding": "المستحق",

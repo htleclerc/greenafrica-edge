@@ -3973,7 +3973,12 @@
     "escalate_confirm": "Peleka",
     "escalate_ramp_bailiff": "Kikumbusho cha J45 (kabla ya afisa mtekelezaji) lazima kitumwe kwanza.",
     "escalate_ramp_judicial": "Taarifa ya afisa mtekelezaji lazima itolewe kwanza.",
-    "escalated_badge": "Imepelekwa"
+    "escalated_badge": "Imepelekwa",
+    "remind_now": "Kumbusha sasa",
+    "remind_now_confirm": "Tuma kikumbusho cha mkono kwa {debtor} kuhusu {ref}? Hii inatumwa mara moja na haiwezi kutenduliwa.",
+    "manual_group": "Muhtasari wa pamoja — ankara {count}",
+    "col_count_manual": "mkono",
+    "col_count_manual_tooltip": "Vikumbusho vya mkono nje ya utaratibu — cha mwisho {date}"
   },
   "AdminVesselIdentity": {
     "title": "Utambulisho wa Meli",
@@ -4059,6 +4064,12 @@
     "inviteDialogTitle": "Alika mmiliki wa meli",
     "inviteDialogSubtitle": "Tuma mwaliko wa lango kwa {name}.",
     "navLink": "Wamiliki wa Meli",
+    "remind": "Kumbusha",
+    "remindConfirmTitle": "Thibitisha kikumbusho",
+    "remindConfirmBody": "Tuma kikumbusho cha mkono kwa {name} kuhusu ankara {ref}? Hii inatumwa mara moja na haiwezi kutenduliwa.",
+    "sendRecap": "Tuma muhtasari",
+    "sendRecapConfirmTitle": "Thibitisha kutuma muhtasari",
+    "sendRecapConfirmBody": "Tuma kwa {name} muhtasari wa pamoja wa ankara zake {count} zilizo wazi? Hii inatumwa mara moja na haiwezi kutenduliwa.",
     "state": {
       "active": "Hai",
       "invited": "Amealikwa",
@@ -4136,6 +4147,7 @@
       "noPayments": "Hakuna malipo.",
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
+      "manualGroup": "Muhtasari wa pamoja — ankara {count}",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
       "actionsTitle": "Vitendo",
       "anonymizeTitle": "Ondoa utambulisho (GDPR)",
@@ -4182,6 +4194,8 @@
     "overdueCount": "Ankara {count} zimechelewa",
     "toChase": "Zinazohitaji kufuatiliwa",
     "empty": "Hakuna mmiliki wa meli aliyechelewa.",
+    "sendRecap": "Muhtasari",
+    "cancel": "Ghairi",
     "col": {
       "owner": "Mmiliki wa meli",
       "outstanding": "Deni",

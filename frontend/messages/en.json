@@ -3970,7 +3970,12 @@
     "escalate_confirm": "Escalate",
     "escalate_ramp_bailiff": "A J45 (pre-bailiff) reminder must be sent first.",
     "escalate_ramp_judicial": "A bailiff notice must be issued first.",
-    "escalated_badge": "Escalated"
+    "escalated_badge": "Escalated",
+    "remind_now": "Remind now",
+    "remind_now_confirm": "Send a manual reminder to {debtor} for {ref}? This is sent immediately and cannot be undone.",
+    "manual_group": "Consolidated recap — {count} invoices",
+    "col_count_manual": "manual",
+    "col_count_manual_tooltip": "Manual reminders outside the ramp — last on {date}"
   },
   "AdminVesselIdentity": {
     "title": "Vessel Identity",
@@ -4056,6 +4061,12 @@
     "inviteDialogTitle": "Invite shipowner",
     "inviteDialogSubtitle": "Send a portal invite to {name}.",
     "navLink": "Shipowners",
+    "remind": "Remind",
+    "remindConfirmTitle": "Confirm reminder",
+    "remindConfirmBody": "Send a manual reminder to {name} for invoice {ref}? This is sent immediately and cannot be undone.",
+    "sendRecap": "Send recap",
+    "sendRecapConfirmTitle": "Confirm recap",
+    "sendRecapConfirmBody": "Send {name} a consolidated recap of their {count} open invoices? This is sent immediately and cannot be undone.",
     "state": {
       "active": "Active",
       "invited": "Invited",
@@ -4133,6 +4144,7 @@
       "noPayments": "No payments.",
       "remindersTitle": "Reminders",
       "noReminders": "No reminders.",
+      "manualGroup": "Consolidated recap — {count} invoices",
       "escalatedBailiff": "Escalated — bailiff",
       "actionsTitle": "Actions",
       "anonymizeTitle": "Anonymize (GDPR)",
@@ -4179,6 +4191,8 @@
     "overdueCount": "{count} invoices overdue",
     "toChase": "To chase",
     "empty": "No overdue shipowners.",
+    "sendRecap": "Recap",
+    "cancel": "Cancel",
     "col": {
       "owner": "Shipowner",
       "outstanding": "Outstanding",

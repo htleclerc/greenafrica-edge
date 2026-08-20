@@ -28,6 +28,11 @@ export interface CollectionAdminRow {
     latest_sent_at: string | null;
     latest_response_type: string | null;
     latest_response_at: string | null;
+    // mig 126 : reminder_count exclut désormais les relances MANUAL (elles ne
+    // font pas partie de la rampe légale) — manual_count/last_manual_at sont
+    // leur compensation, pour ne pas perdre ce geste hors procédure à l'écran.
+    manual_count: number;
+    last_manual_at: string | null;
 }
 
 export interface CollectionAdminFilters {
@@ -114,6 +119,9 @@ function toRow(r: RawRow): CollectionAdminRow {
         latest_sent_at: (r.latest_sent_at as string | null) ?? null,
         latest_response_type: (r.latest_response_type as string | null) ?? null,
         latest_response_at: (r.latest_response_at as string | null) ?? null,
+        // PostgREST rend les BIGINT (count(*)) en chaînes — Number(...) obligatoire.
+        manual_count: Number(r.manual_count),
+        last_manual_at: (r.last_manual_at as string | null) ?? null,
     };
 }
 

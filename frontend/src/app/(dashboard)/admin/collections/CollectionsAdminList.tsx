@@ -11,6 +11,8 @@ import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import { createClient } from '@/lib/supabase/client';
 import { recordDebtorResponse } from '@/actions/recordDebtorResponse';
 import { escalateCollection } from '@/actions/escalateCollection';
+import { sendManualReminder } from '@/actions/sendManualReminder';
+import { groupManualReminders } from '@/lib/groupManualReminders';
 import {
     tierVariant, responseVariant, type CollectionAdminRow, type CollectionAdminFilters,
 } from '@/services/collectionAdminService';
@@ -66,7 +68,29 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
         { key: 'status', header: t('col_status'), sortable: true, render: (r) => <OsBadge variant={r.status === 'PAID' ? 'paid' : r.status === 'OVERDUE' ? 'overdue' : r.status === 'DISPUTED' ? 'disputed' : 'pending'} label={r.status} /> },
         { key: 'latest_tier', header: t('col_tier'), sortable: true, render: (r) => <OsBadge variant={tierVariant(r.latest_tier)} label={r.latest_tier ?? '—'} /> },
         { key: 'response', header: t('col_response'), render: (r) => <OsBadge variant={responseVariant(r.latest_response_type)} label={r.latest_response_type ?? 'SILENT'} /> },
-        { key: 'reminder_count', header: t('col_count'), className: 'text-right', sortable: true, render: (r) => <span className="text-xs tabular-nums">{r.reminder_count}</span> },
+        {
+            key: 'reminder_count', header: t('col_count'), className: 'text-right', sortable: true,
+            // mig 126 : reminder_count (la rampe légale J3…JUDICIAL) exclut désormais
+            // les relances MANUAL — sans ce complément, une créance relancée
+            // uniquement à la main afficherait zéro relance. manual_count est affiché
+            // à part, avec son propre libellé, pour ne jamais laisser croire qu'il
+            // s'agit d'une étape de la rampe.
+            render: (r) => (
+                <span className="text-xs tabular-nums whitespace-nowrap">
+                    {r.reminder_count}
+                    {r.manual_count > 0 && (
+                        <span
+                            className="text-[var(--os-text-muted)]"
+                            title={t('col_count_manual_tooltip', {
+                                date: r.last_manual_at ? new Date(r.last_manual_at).toLocaleDateString() : '—',
+                            })}
+                        >
+                            {' '}+{r.manual_count} {t('col_count_manual')}
+                        </span>
+                    )}
+                </span>
+            ),
+        },
     ];
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -154,6 +178,20 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
         });
     }
 
+    const [remindOpen, setRemindOpen] = React.useState(false);
+    const [remindError, setRemindError] = React.useState<string | null>(null);
+    const [reminding, startRemindTransition] = React.useTransition();
+
+    function confirmRemind() {
+        setRemindError(null);
+        startRemindTransition(async () => {
+            const res = await sendManualReminder({ transactionId: row.transaction_id });
+            if (!res.ok) { setRemindError(res.reason); return; }
+            setRemindOpen(false);
+            onSaved();
+        });
+    }
+
     return (
         <div className="mt-4 os-card p-4">
             <div className="flex items-center justify-between mb-3">
@@ -162,6 +200,7 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                 </h2>
                 <div className="flex gap-2">
                     <OsButton size="sm" variant="secondary" onClick={() => setDialogOpen(true)}>{t('record_response')}</OsButton>
+                    <OsButton size="sm" variant="secondary" onClick={() => { setRemindError(null); setRemindOpen(true); }}>{t('remind_now')}</OsButton>
                     <OsButton size="sm" variant="danger" disabled={!canBailiff}
                         title={canBailiff ? undefined : t('escalate_ramp_bailiff')}
                         onClick={() => { setEscalateError(null); setEscalateTier('BAILIFF'); }}>
@@ -182,7 +221,13 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                 <p className="text-xs text-[var(--os-text-muted)]">{t('no_reminders')}</p>
             ) : (
                 <ul className="flex flex-col gap-2">
-                    {reminders.map((r) => (
+                    {groupManualReminders(reminders).map((r) => r.kind === 'group' ? (
+                        <li key={r.id} className="flex items-center gap-3 text-xs border-b border-[var(--os-border)] pb-2">
+                            <OsBadge variant={tierVariant('MANUAL')} label="MANUAL" />
+                            <span className="text-[var(--os-text-muted)]">{new Date(r.sentAt).toLocaleDateString()}</span>
+                            <span className="text-[var(--os-text-secondary)]">{t('manual_group', { count: r.count })}</span>
+                        </li>
+                    ) : (
                         <li key={r.id} className="flex items-center gap-3 text-xs border-b border-[var(--os-border)] pb-2">
                             <OsBadge variant={tierVariant(r.tier)} label={r.tier} />
                             <span className="text-[var(--os-text-muted)]">{new Date(r.sent_at).toLocaleDateString()}</span>
@@ -209,6 +254,24 @@ function DetailPanel({ row, onClose, onSaved }: { row: CollectionAdminRow; onClo
                         <div className="flex justify-end gap-2 mt-4">
                             <OsButton size="sm" variant="ghost" onClick={() => setDialogOpen(false)}>{t('cancel')}</OsButton>
                             <OsButton size="sm" variant="primary" loading={pending} onClick={submit}>{t('save')}</OsButton>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={remindOpen} onOpenChange={setRemindOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0" style={{ background: 'rgba(0,0,0,0.6)' }} />
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[92vw] rounded-2xl p-5"
+                        style={{ background: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
+                        <Dialog.Title className="text-sm font-bold text-[var(--os-text-primary)]">{t('remind_now')}</Dialog.Title>
+                        <Dialog.Description className="text-xs text-[var(--os-text-muted)] mb-3">
+                            {t('remind_now_confirm', { debtor: row.debtor_name ?? '—', ref: row.invoice_ref ?? row.transaction_id.slice(0, 8) })}
+                        </Dialog.Description>
+                        {remindError && <p className="text-xs text-[#EF4444] mt-2">{remindError}</p>}
+                        <div className="flex justify-end gap-2 mt-4">
+                            <OsButton size="sm" variant="ghost" onClick={() => setRemindOpen(false)}>{t('cancel')}</OsButton>
+                            <OsButton size="sm" variant="primary" loading={reminding} onClick={confirmRemind}>{t('remind_now')}</OsButton>
                         </div>
                     </Dialog.Content>
                 </Dialog.Portal>

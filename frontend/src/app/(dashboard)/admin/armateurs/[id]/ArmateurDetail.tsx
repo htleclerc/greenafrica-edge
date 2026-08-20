@@ -15,6 +15,9 @@ import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { anonymizeOwner } from '@/actions/anonymizeOwner';
 import { createOwnerAgentMapping } from '@/actions/createOwnerAgentMapping';
 import { deactivateOwnerAgentMapping } from '@/actions/deactivateOwnerAgentMapping';
+import { sendManualReminder } from '@/actions/sendManualReminder';
+import { sendConsolidatedRecap } from '@/actions/sendConsolidatedRecap';
+import { groupManualReminders } from '@/lib/groupManualReminders';
 import { useClientSort } from '@/hooks/useClientSort';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
 import { MAX_CC_EMAILS } from '@/lib/armateurContacts';
@@ -75,6 +78,13 @@ const PAYMENT_VARIANT: Record<string, BadgeVariant> = {
     DECLARED: 'pending',
     REJECTED: 'critical',
 };
+
+// Statuts pour lesquels une créance reste ouverte — reflète exactement
+// REMINDABLE_STATUSES (frontend/src/actions/sendManualReminder.ts) et le filtre
+// de composeOwnerStatement (statementService.ts) consommé par
+// sendConsolidatedRecap. Sert à afficher, côté client, un compte de factures
+// concernées cohérent avec ce que le serveur enverra réellement.
+const OPEN_PROFORMA_STATUSES = ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'];
 
 // ── Carte contacts : ne renvoyer que ce qui a réellement changé ────────────
 // Round de correction 1 (Task 8) : un envoi systématique des 8 champs (même
@@ -247,6 +257,56 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
         });
     }
 
+    // Relance manuelle d'UNE pro-forma (sendManualReminder, Tâche 11), déclenchée
+    // depuis une ligne du tableau des pro-formas. `remindTarget` porte la ligne
+    // ciblée — sa présence pilote le Dialog de confirmation ci-dessous, jamais un
+    // clic isolé du bouton de la ligne.
+    const [remindTarget, setRemindTarget] = React.useState<ArmateurProformaRow | null>(null);
+    const [remindError, setRemindError] = React.useState<string | null>(null);
+    const [reminding, startRemindTransition] = React.useTransition();
+
+    function closeRemind() {
+        setRemindTarget(null);
+        setRemindError(null);
+    }
+    function confirmRemind() {
+        if (!remindTarget) return;
+        setRemindError(null);
+        startRemindTransition(async () => {
+            const result = await sendManualReminder({ transactionId: remindTarget.id });
+            if (!result.ok) {
+                setRemindError(result.reason);
+                return;
+            }
+            setRemindTarget(null);
+            router.refresh();
+        });
+    }
+
+    // Récapitulatif consolidé (sendConsolidatedRecap, Tâche 12) — une seule
+    // instance de dialogue pour toute la fiche, pas de "cible" à porter puisque
+    // l'armateur est déjà `detail`. openProformaCount reflète exactement
+    // OPEN_PROFORMA_STATUSES : c'est le même filtre que composeOwnerStatement
+    // appliquera côté serveur, donc le compte affiché dans la confirmation ne
+    // ment jamais sur ce que l'envoi couvrira.
+    const openProformaCount = detail.proformas.filter((p) => OPEN_PROFORMA_STATUSES.includes(p.status)).length;
+    const [recapOpen, setRecapOpen] = React.useState(false);
+    const [recapError, setRecapError] = React.useState<string | null>(null);
+    const [recapPending, startRecapTransition] = React.useTransition();
+
+    function confirmRecap() {
+        setRecapError(null);
+        startRecapTransition(async () => {
+            const result = await sendConsolidatedRecap({ shipownerId: detail.id });
+            if (!result.ok) {
+                setRecapError(result.reason);
+                return;
+            }
+            setRecapOpen(false);
+            router.refresh();
+        });
+    }
+
     const stateBadge = (state: string) => {
         if (state === 'ACTIVE') return <OsBadge variant="active" label={t('state.active')} />;
         if (state === 'INVITED') return <OsBadge variant="warning" label={t('state.invited')} />;
@@ -334,10 +394,20 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
             header: t('col.actions'),
             className: 'text-right',
             render: (p) => {
+                // Bouton de relance manuelle (Tâche 13, sendManualReminder) — affiché
+                // seulement sur une créance encore ouverte (OPEN_PROFORMA_STATUSES),
+                // pour ne pas offrir un clic voué à l'échec sur les dizaines de
+                // pro-formas déjà payées/exemptées que cette table peut contenir.
+                const remindButton = OPEN_PROFORMA_STATUSES.includes(p.status) ? (
+                    <OsButton size="sm" variant="secondary" onClick={() => { setRemindError(null); setRemindTarget(p); }}>
+                        {t('remind')}
+                    </OsButton>
+                ) : null;
+
                 if (p.invoice_ref && p.content_hash && p.verify_signature) {
                     const qs = `?h=${encodeURIComponent(p.content_hash)}&s=${encodeURIComponent(p.verify_signature)}`;
                     return (
-                        <div className="flex justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end items-center gap-3" onClick={(e) => e.stopPropagation()}>
                             <a
                                 href={`/verify/${encodeURIComponent(p.invoice_ref)}${qs}`}
                                 target="_blank"
@@ -354,8 +424,12 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                             >
                                 {t('download')}
                             </a>
+                            {remindButton}
                         </div>
                     );
+                }
+                if (remindButton) {
+                    return <div className="flex justify-end">{remindButton}</div>;
                 }
                 return <span className="text-xs text-[var(--os-text-muted)]">{orDash(p.invoice_ref)}</span>;
             },
@@ -503,7 +577,16 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                     <p className="text-xs text-[var(--os-text-muted)]">{t('detail.noReminders')}</p>
                 ) : (
                     <ul className="flex flex-col gap-2">
-                        {detail.reminders.map((r) => (
+                        {groupManualReminders(detail.reminders).map((r) => r.kind === 'group' ? (
+                            <li
+                                key={r.id}
+                                className="flex flex-wrap items-center gap-3 text-sm border-b border-[var(--os-border)] last:border-0 pb-2 last:pb-0"
+                            >
+                                <OsBadge variant="info" label="MANUAL" size="sm" />
+                                <span className="text-xs text-[var(--os-text-muted)]">{fmtDate(r.sentAt)}</span>
+                                <span className="text-xs">{t('detail.manualGroup', { count: r.count })}</span>
+                            </li>
+                        ) : (
                             <li
                                 key={r.id}
                                 className="flex flex-wrap items-center gap-3 text-sm border-b border-[var(--os-border)] last:border-0 pb-2 last:pb-0"
@@ -518,10 +601,15 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                 )}
             </OsCard>
 
-            {canInvite && (
-                <OsCard>
-                    <OsCardHeader title={t('detail.actionsTitle')} />
-                    <div className="flex flex-wrap gap-3">
+            {/* Non gardée par canInvite (SUPERADMIN uniquement) : sendConsolidatedRecap
+                autorise les 3 rôles staff de la page (PORT_OFFICER, FINANCE_ADMIN,
+                SUPERADMIN — voir STAFF_ROLES dans sendConsolidatedRecap.ts), donc la
+                carte doit rester visible pour eux. Seul le bouton d'invitation, lui,
+                reste gardé en interne. */}
+            <OsCard>
+                <OsCardHeader title={t('detail.actionsTitle')} />
+                <div className="flex flex-wrap gap-3">
+                    {canInvite && (
                         <span title={inviteDisabledReason}>
                             <OsButton
                                 variant="primary"
@@ -531,9 +619,16 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                                 {detail.account_state === 'INVITED' ? t('reinvite') : t('invite')}
                             </OsButton>
                         </span>
-                    </div>
-                </OsCard>
-            )}
+                    )}
+                    <OsButton
+                        variant="secondary"
+                        disabled={openProformaCount === 0}
+                        onClick={() => { setRecapError(null); setRecapOpen(true); }}
+                    >
+                        {t('sendRecap')}
+                    </OsButton>
+                </div>
+            </OsCard>
 
             {canAnonymize && (
                 <OsCard>
@@ -626,6 +721,61 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                                 disabled={anonymizePending || anonymizeKeywordInput !== anonymizeKeyword}
                             >
                                 {t('detail.anonymizeCta')}
+                            </OsButton>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={remindTarget !== null} onOpenChange={(o) => !o && closeRemind()}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />
+                    <Dialog.Content
+                        className="fixed left-1/2 top-1/2 z-50 w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-5"
+                        style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                    >
+                        <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-2">
+                            {t('remindConfirmTitle')}
+                        </Dialog.Title>
+                        <Dialog.Description className="text-sm text-[var(--os-text-muted)] mb-4">
+                            {t('remindConfirmBody', {
+                                name: detail.name,
+                                ref: remindTarget?.invoice_ref ?? remindTarget?.id.slice(0, 8) ?? '',
+                            })}
+                        </Dialog.Description>
+                        {remindError && <p className="text-xs text-[#EF4444] mb-3">{remindError}</p>}
+                        <div className="mt-1 flex justify-end gap-2">
+                            <OsButton variant="ghost" onClick={closeRemind} disabled={reminding}>
+                                {t('cancel')}
+                            </OsButton>
+                            <OsButton variant="primary" onClick={confirmRemind} loading={reminding} disabled={reminding}>
+                                {t('remind')}
+                            </OsButton>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={recapOpen} onOpenChange={(o) => !o && setRecapOpen(false)}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />
+                    <Dialog.Content
+                        className="fixed left-1/2 top-1/2 z-50 w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-5"
+                        style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                    >
+                        <Dialog.Title className="text-base font-semibold text-[var(--os-text-primary)] mb-2">
+                            {t('sendRecapConfirmTitle')}
+                        </Dialog.Title>
+                        <Dialog.Description className="text-sm text-[var(--os-text-muted)] mb-4">
+                            {t('sendRecapConfirmBody', { name: detail.name, count: openProformaCount })}
+                        </Dialog.Description>
+                        {recapError && <p className="text-xs text-[#EF4444] mb-3">{recapError}</p>}
+                        <div className="mt-1 flex justify-end gap-2">
+                            <OsButton variant="ghost" onClick={() => setRecapOpen(false)} disabled={recapPending}>
+                                {t('cancel')}
+                            </OsButton>
+                            <OsButton variant="primary" onClick={confirmRecap} loading={recapPending} disabled={recapPending}>
+                                {t('sendRecap')}
                             </OsButton>
                         </div>
                     </Dialog.Content>
