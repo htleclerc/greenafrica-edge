@@ -80,7 +80,6 @@ export function AirlineDetail({ detail, canInvite, canAnonymize }: Props) {
             const result = await updateArmateurContacts({
                 shipownerId: detail.id,
                 officialEmail: emailValue,
-                billingCcEmails: [],
             });
             if (!result.ok) {
                 setEmailError(result.reason);

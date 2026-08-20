@@ -14,6 +14,7 @@ import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { anonymizeOwner } from '@/actions/anonymizeOwner';
 import { useClientSort } from '@/hooks/useClientSort';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
+import { MAX_CC_EMAILS } from '@/lib/armateurContacts';
 import {
     type ArmateurDetail as ArmateurDetailType,
     type ArmateurVesselRow,
@@ -60,67 +61,120 @@ const PAYMENT_VARIANT: Record<string, BadgeVariant> = {
     REJECTED: 'critical',
 };
 
+// ── Carte contacts : ne renvoyer que ce qui a réellement changé ────────────
+// Round de correction 1 (Task 8) : un envoi systématique des 8 champs (même
+// initialisés depuis `detail`) neutralisait la protection par présence de
+// updateArmateurContacts.ts et ouvrait une mise à jour perdue — un second
+// écrivain existe sur ces mêmes colonnes : updateOwnerKycProfile.ts
+// (self-service armateur, /owner/profile) écrit address/phone_e164/
+// preferred_language/ops_email/finance_email. Scénario concret : le
+// gestionnaire ouvre la fiche à 10h00, l'armateur corrige son téléphone à
+// 10h05 depuis son portail, le gestionnaire ne corrige que l'e-mail à 10h10 et
+// sauvegarde — un envoi inconditionnel de `phoneE164` réexpédierait
+// l'instantané de 10h00 et écraserait la correction de l'armateur, sans
+// aucune détection de conflit. `buildContactsSubmission` compare l'état
+// courant du formulaire à `detail` (l'instantané chargé au montage) et
+// n'inclut un champ que s'il diffère — un champ non touché n'apparaît donc
+// jamais dans l'appel, exactement comme un champ non fourni n'apparaît jamais
+// dans le patch Postgres. `officialEmail` est le seul champ toujours renvoyé
+// (seul requis par le schéma).
+interface ContactsFormState {
+    officialEmail: string;
+    ccEmails: string[];
+    opsEmail: string;
+    financeEmail: string;
+    phoneE164: string;
+    address: string;
+    preferredLanguage: AllowedLang;
+    notes: string;
+}
+
+interface ContactsBaseline {
+    official_email: string | null;
+    billing_cc_emails: string[];
+    ops_email: string | null;
+    finance_email: string | null;
+    phone_e164: string | null;
+    address: string | null;
+    preferred_language: string | null;
+    notes: string | null;
+}
+
+interface ContactsSubmission {
+    officialEmail: string;
+    billingCcEmails?: string[];
+    opsEmail?: string | null;
+    financeEmail?: string | null;
+    phoneE164?: string | null;
+    address?: string | null;
+    preferredLanguage?: AllowedLang;
+    notes?: string | null;
+}
+
+// Égalité en ensemble (ordre indifférent) : la liste de copies n'a pas d'ordre
+// significatif, seul son contenu compte pour décider si elle a changé.
+function sameEmailSet(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((v, i) => v === sb[i]);
+}
+
+export function buildContactsSubmission(
+    state: ContactsFormState,
+    baseline: ContactsBaseline,
+): ContactsSubmission {
+    const submission: ContactsSubmission = { officialEmail: state.officialEmail.trim() };
+
+    if (!sameEmailSet(state.ccEmails, baseline.billing_cc_emails)) {
+        submission.billingCcEmails = state.ccEmails;
+    }
+    const opsEmail = emptyToNull(state.opsEmail);
+    if (opsEmail !== baseline.ops_email) submission.opsEmail = opsEmail;
+
+    const financeEmail = emptyToNull(state.financeEmail);
+    if (financeEmail !== baseline.finance_email) submission.financeEmail = financeEmail;
+
+    const phoneE164 = emptyToNull(state.phoneE164);
+    if (phoneE164 !== baseline.phone_e164) submission.phoneE164 = phoneE164;
+
+    const address = emptyToNull(state.address);
+    if (address !== baseline.address) submission.address = address;
+
+    if (state.preferredLanguage !== baseline.preferred_language) {
+        submission.preferredLanguage = state.preferredLanguage;
+    }
+
+    const notes = emptyToNull(state.notes);
+    if (notes !== baseline.notes) submission.notes = notes;
+
+    return submission;
+}
+
+// Clé de remontage de <ContactsCard>. Après une sauvegarde réussie,
+// router.refresh() fait redescendre un `detail` neuf (même instance de
+// composant, nouvelles props) sans jamais démonter <ArmateurDetail> — un
+// simple useState ne se resynchroniserait donc jamais avec ce qui est
+// réellement en base, et l'écran continuerait d'afficher des valeurs que le
+// serveur a refusées (ex : plafond de copies dépassé) ou modifiées entre
+// deux écrivains (voir buildContactsSubmission). Un `useEffect` qui
+// recopierait `detail` dans le state déclencherait react-hooks/set-state-in-effect
+// (sévérité error dans ce dépôt) : la clé est le mécanisme que React
+// recommande pour réinitialiser un sous-arbre entier avec un état local frais
+// quand les données dont il dérive changent réellement.
+function contactsCardKey(detail: ArmateurDetailType): string {
+    return JSON.stringify([
+        detail.official_email, detail.billing_cc_emails, detail.ops_email,
+        detail.finance_email, detail.phone_e164, detail.address,
+        detail.preferred_language, detail.notes,
+    ]);
+}
+
 export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
     const t = useTranslations('AdminArmateurs');
     const router = useRouter();
 
     const sanctioned = detail.is_ofac_sdn || detail.is_un_prohibited;
-
-    // ── Carte contacts éditable ─────────────────────────────────────────────
-    // Formulaire complet (Task 8) : contrairement à l'ancienne boîte de dialogue
-    // « modifier l'email » (qui n'envoyait que officialEmail + billingCcEmails:[],
-    // écrasant silencieusement les autres coordonnées — voir le commentaire de
-    // buildContactsPatch dans updateArmateurContacts.ts), CE formulaire affiche et
-    // édite TOUS les champs optionnels de l'action. Chaque soumission les envoie
-    // donc tous : un champ non touché renvoie simplement sa valeur actuelle (déjà
-    // pré-remplie ci-dessous), ce n'est jamais une valeur vide inventée. Les champs
-    // nullable vidés par l'utilisateur sont convertis en `null` via emptyToNull —
-    // jamais laissés en chaîne vide, jamais omis (`undefined` figerait la valeur
-    // existante côté serveur au lieu de l'effacer).
-    const [officialEmail, setOfficialEmail] = React.useState(detail.official_email ?? '');
-    const [ccEmails, setCcEmails] = React.useState<string[]>(detail.billing_cc_emails);
-    const [ccInput, setCcInput] = React.useState('');
-    const [opsEmail, setOpsEmail] = React.useState(detail.ops_email ?? '');
-    const [financeEmail, setFinanceEmail] = React.useState(detail.finance_email ?? '');
-    const [phoneE164, setPhoneE164] = React.useState(detail.phone_e164 ?? '');
-    const [address, setAddress] = React.useState(detail.address ?? '');
-    const [preferredLanguage, setPreferredLanguage] = React.useState<AllowedLang>(
-        isAllowedLang(detail.preferred_language) ? detail.preferred_language : 'en',
-    );
-    const [notes, setNotes] = React.useState(detail.notes ?? '');
-    const [contactsError, setContactsError] = React.useState<string | null>(null);
-    const [contactsPending, startContactsTransition] = React.useTransition();
-
-    function addCcEmail() {
-        const email = ccInput.trim().toLowerCase();
-        if (!email || !email.includes('@')) return;
-        setCcEmails((list) => (list.includes(email) ? list : [...list, email]));
-        setCcInput('');
-    }
-    function removeCcEmail(email: string) {
-        setCcEmails((list) => list.filter((e) => e !== email));
-    }
-    function submitContacts() {
-        setContactsError(null);
-        startContactsTransition(async () => {
-            const result = await updateArmateurContacts({
-                shipownerId: detail.id,
-                officialEmail: officialEmail.trim(),
-                billingCcEmails: ccEmails,
-                opsEmail: emptyToNull(opsEmail),
-                financeEmail: emptyToNull(financeEmail),
-                phoneE164: emptyToNull(phoneE164),
-                address: emptyToNull(address),
-                preferredLanguage,
-                notes: emptyToNull(notes),
-            });
-            if (!result.ok) {
-                setContactsError(result.reason);
-                return;
-            }
-            router.refresh();
-        });
-    }
 
     const [inviteOpen, setInviteOpen] = React.useState(false);
     const [inviteEmail, setInviteEmail] = React.useState(detail.official_email ?? '');
@@ -372,134 +426,7 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
                 </dl>
             </OsCard>
 
-            <OsCard>
-                <OsCardHeader title={t('detail.contactsTitle')} />
-                <div className="flex flex-col gap-4">
-                    <OsInput
-                        label={t('detail.officialEmail')}
-                        type="email"
-                        value={officialEmail}
-                        onChange={(e) => setOfficialEmail(e.target.value)}
-                        hint={
-                            detail.official_email_source
-                                ? `${t('detail.officialEmailHint')} (${detail.official_email_source})`
-                                : t('detail.officialEmailHint')
-                        }
-                        placeholder="owner@example.com"
-                    />
-
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-[var(--os-text-secondary)] uppercase tracking-wider">
-                            {t('detail.billingCc')}
-                        </label>
-                        <p className="text-xs text-[var(--os-text-muted)]">{t('detail.billingCcHint')}</p>
-                        {ccEmails.length > 0 && (
-                            <ul className="flex flex-wrap gap-1.5 mt-1">
-                                {ccEmails.map((email) => (
-                                    <li
-                                        key={email}
-                                        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--os-surface-2)] border border-[var(--os-border)] px-2.5 py-1 text-xs text-[var(--os-text-primary)]"
-                                    >
-                                        {email}
-                                        <button
-                                            type="button"
-                                            onClick={() => removeCcEmail(email)}
-                                            aria-label={t('detail.removeCc', { email })}
-                                            className="text-[var(--os-text-muted)] hover:text-[#EF4444] leading-none"
-                                        >
-                                            ×
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        <div className="flex gap-2 mt-1">
-                            <div className="flex-1">
-                                <OsInput
-                                    type="email"
-                                    value={ccInput}
-                                    onChange={(e) => setCcInput(e.target.value)}
-                                    placeholder="cc@example.com"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            addCcEmail();
-                                        }
-                                    }}
-                                />
-                            </div>
-                            <OsButton variant="secondary" onClick={addCcEmail}>
-                                {t('detail.addCc')}
-                            </OsButton>
-                        </div>
-                    </div>
-
-                    <p className="text-xs text-[var(--os-text-muted)] -mb-2">{t('detail.infoOnlyHint')}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <OsInput
-                            label={t('detail.opsEmail')}
-                            type="email"
-                            value={opsEmail}
-                            onChange={(e) => setOpsEmail(e.target.value)}
-                        />
-                        <OsInput
-                            label={t('detail.financeEmail')}
-                            type="email"
-                            value={financeEmail}
-                            onChange={(e) => setFinanceEmail(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <OsInput
-                            label={t('detail.phone')}
-                            type="text"
-                            value={phoneE164}
-                            onChange={(e) => setPhoneE164(e.target.value)}
-                            placeholder="+252..."
-                        />
-                        <OsSelect
-                            label={t('detail.language')}
-                            value={preferredLanguage}
-                            onChange={(e) => {
-                                if (isAllowedLang(e.target.value)) setPreferredLanguage(e.target.value);
-                            }}
-                            options={LANG_OPTIONS}
-                        />
-                    </div>
-
-                    <OsInput
-                        label={t('detail.address')}
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                    />
-
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-[var(--os-text-secondary)] uppercase tracking-wider">
-                            {t('detail.notes')}
-                        </label>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            rows={3}
-                            className="w-full rounded-xl px-4 py-2.5 bg-[var(--os-surface-2)] border border-[var(--os-border)] text-sm text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:outline-none focus:border-[#00D97E]/60 focus:ring-1 focus:ring-[#00D97E]/20 transition-colors resize-none"
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3">
-                        {contactsError && <span className="text-xs text-[#EF4444]">{contactsError}</span>}
-                        <OsButton
-                            variant="primary"
-                            onClick={submitContacts}
-                            loading={contactsPending}
-                            disabled={contactsPending || !officialEmail.trim()}
-                        >
-                            {contactsPending ? t('saving') : t('save')}
-                        </OsButton>
-                    </div>
-                </div>
-            </OsCard>
+            <ContactsCard key={contactsCardKey(detail)} detail={detail} onSaved={() => router.refresh()} />
 
             <OsCard>
                 <OsCardHeader title={t('detail.kycTitle')} />
@@ -688,6 +615,205 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
                 </Dialog.Portal>
             </Dialog.Root>
         </div>
+    );
+}
+
+interface ContactsCardProps {
+    detail: ArmateurDetailType;
+    onSaved: () => void;
+}
+
+// Carte contacts éditable (Task 8, extraite au round de correction 1). Montée
+// avec une `key` dérivée des champs de contact (voir contactsCardKey
+// ci-dessus) : React la démonte/remonte entièrement quand `detail` change
+// réellement, ce qui réinitialise tout son état local sur les valeurs
+// fraîches — sans effet, sans race, sans jamais mentir sur ce qui est en base.
+function ContactsCard({ detail, onSaved }: ContactsCardProps) {
+    const t = useTranslations('AdminArmateurs');
+
+    const [officialEmail, setOfficialEmail] = React.useState(detail.official_email ?? '');
+    const [ccEmails, setCcEmails] = React.useState<string[]>(detail.billing_cc_emails);
+    const [ccInput, setCcInput] = React.useState('');
+    const [opsEmail, setOpsEmail] = React.useState(detail.ops_email ?? '');
+    const [financeEmail, setFinanceEmail] = React.useState(detail.finance_email ?? '');
+    const [phoneE164, setPhoneE164] = React.useState(detail.phone_e164 ?? '');
+    const [address, setAddress] = React.useState(detail.address ?? '');
+    const [preferredLanguage, setPreferredLanguage] = React.useState<AllowedLang>(
+        isAllowedLang(detail.preferred_language) ? detail.preferred_language : 'en',
+    );
+    const [notes, setNotes] = React.useState(detail.notes ?? '');
+    const [contactsError, setContactsError] = React.useState<string | null>(null);
+    const [contactsPending, startContactsTransition] = React.useTransition();
+
+    const ccAtCap = ccEmails.length >= MAX_CC_EMAILS;
+
+    function addCcEmail() {
+        // Filet client : le bouton/l'input sont déjà désactivés au plafond,
+        // ce garde couvre aussi la soumission par la touche Entrée. Le refus
+        // serveur (schéma Zod, updateArmateurContacts.ts) reste le filet
+        // ultime, pas le chemin nominal.
+        if (ccAtCap) return;
+        const email = ccInput.trim().toLowerCase();
+        if (!email || !email.includes('@')) return;
+        setCcEmails((list) => (list.includes(email) ? list : [...list, email]));
+        setCcInput('');
+    }
+    function removeCcEmail(email: string) {
+        setCcEmails((list) => list.filter((e) => e !== email));
+    }
+    function submitContacts() {
+        setContactsError(null);
+        startContactsTransition(async () => {
+            const result = await updateArmateurContacts({
+                shipownerId: detail.id,
+                ...buildContactsSubmission(
+                    { officialEmail, ccEmails, opsEmail, financeEmail, phoneE164, address, preferredLanguage, notes },
+                    detail,
+                ),
+            });
+            if (!result.ok) {
+                setContactsError(result.reason);
+                return;
+            }
+            onSaved();
+        });
+    }
+
+    return (
+        <OsCard>
+            <OsCardHeader title={t('detail.contactsTitle')} />
+            <div className="flex flex-col gap-4">
+                <OsInput
+                    label={t('detail.officialEmail')}
+                    type="email"
+                    value={officialEmail}
+                    onChange={(e) => setOfficialEmail(e.target.value)}
+                    hint={
+                        detail.official_email_source
+                            ? `${t('detail.officialEmailHint')} (${detail.official_email_source})`
+                            : t('detail.officialEmailHint')
+                    }
+                    placeholder="owner@example.com"
+                />
+
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-[var(--os-text-secondary)] uppercase tracking-wider">
+                            {t('detail.billingCc')}
+                        </label>
+                        <span className="text-xs text-[var(--os-text-muted)] tabular-nums">
+                            {ccEmails.length}/{MAX_CC_EMAILS}
+                        </span>
+                    </div>
+                    <p className="text-xs text-[var(--os-text-muted)]">{t('detail.billingCcHint')}</p>
+                    {ccEmails.length > 0 && (
+                        <ul className="flex flex-wrap gap-1.5 mt-1">
+                            {ccEmails.map((email) => (
+                                <li
+                                    key={email}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-[var(--os-surface-2)] border border-[var(--os-border)] px-2.5 py-1 text-xs text-[var(--os-text-primary)]"
+                                >
+                                    {email}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeCcEmail(email)}
+                                        aria-label={t('detail.removeCc', { email })}
+                                        className="text-[var(--os-text-muted)] hover:text-[#EF4444] leading-none"
+                                    >
+                                        ×
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <div className="flex gap-2 mt-1">
+                        <div className="flex-1">
+                            <OsInput
+                                type="email"
+                                value={ccInput}
+                                onChange={(e) => setCcInput(e.target.value)}
+                                placeholder="cc@example.com"
+                                disabled={ccAtCap}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        addCcEmail();
+                                    }
+                                }}
+                            />
+                        </div>
+                        <OsButton variant="secondary" onClick={addCcEmail} disabled={ccAtCap}>
+                            {t('detail.addCc')}
+                        </OsButton>
+                    </div>
+                </div>
+
+                <p className="text-xs text-[var(--os-text-muted)] -mb-2">{t('detail.infoOnlyHint')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <OsInput
+                        label={t('detail.opsEmail')}
+                        type="email"
+                        value={opsEmail}
+                        onChange={(e) => setOpsEmail(e.target.value)}
+                    />
+                    <OsInput
+                        label={t('detail.financeEmail')}
+                        type="email"
+                        value={financeEmail}
+                        onChange={(e) => setFinanceEmail(e.target.value)}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <OsInput
+                        label={t('detail.phone')}
+                        type="text"
+                        value={phoneE164}
+                        onChange={(e) => setPhoneE164(e.target.value)}
+                        placeholder="+252..."
+                    />
+                    <OsSelect
+                        label={t('detail.language')}
+                        value={preferredLanguage}
+                        onChange={(e) => {
+                            if (isAllowedLang(e.target.value)) setPreferredLanguage(e.target.value);
+                        }}
+                        options={LANG_OPTIONS}
+                    />
+                </div>
+
+                <OsInput
+                    label={t('detail.address')}
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                />
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--os-text-secondary)] uppercase tracking-wider">
+                        {t('detail.notes')}
+                    </label>
+                    <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        rows={3}
+                        className="w-full rounded-xl px-4 py-2.5 bg-[var(--os-surface-2)] border border-[var(--os-border)] text-sm text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:outline-none focus:border-[#00D97E]/60 focus:ring-1 focus:ring-[#00D97E]/20 transition-colors resize-none"
+                    />
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                    {contactsError && <span className="text-xs text-[#EF4444]">{contactsError}</span>}
+                    <OsButton
+                        variant="primary"
+                        onClick={submitContacts}
+                        loading={contactsPending}
+                        disabled={contactsPending || !officialEmail.trim()}
+                    >
+                        {contactsPending ? t('saving') : t('save')}
+                    </OsButton>
+                </div>
+            </div>
+        </OsCard>
     );
 }
 

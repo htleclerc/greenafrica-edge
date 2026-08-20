@@ -114,10 +114,13 @@ describe('normalizeCcEmails', () => {
         expect(normalizeCcEmails(['', '   ', 'b@x.com'], 'main@x.com')).toEqual(['b@x.com']);
     });
 
-    it('plafonne la liste', () => {
-        // Une liste de copie n'est pas une liste de diffusion.
+    it('ne plafonne plus elle-meme (round de correction 1) — le schema refuse en amont', () => {
+        // Tronquer ici masquerait un depassement au lieu de le signaler : voir
+        // le schema Zod de updateArmateurContacts (`.max(MAX_CC_EMAILS)`), qui
+        // refuse desormais la requete entiere plutot que d'enregistrer une
+        // liste raccourcie sans le dire.
         const many = Array.from({ length: MAX_CC_EMAILS + 5 }, (_, i) => `u${i}@x.com`);
-        expect(normalizeCcEmails(many, 'main@x.com')).toHaveLength(MAX_CC_EMAILS);
+        expect(normalizeCcEmails(many, 'main@x.com')).toHaveLength(MAX_CC_EMAILS + 5);
     });
 });
 
@@ -211,12 +214,38 @@ describe('updateArmateurContacts — e-mail officiel', () => {
     });
 });
 
+// ── Plafond de copies (round de correction 1) ───────────────────────────────
+// Avant : un dépassement était absorbé en silence par normalizeCcEmails (elle
+// tronquait à MAX_CC_EMAILS). Depuis, le schéma Zod refuse la requête entière
+// dès que la liste BRUTE dépasse le plafond — aucune troncature, aucun succès
+// partiel non signalé.
+
+describe('updateArmateurContacts — plafond de copies', () => {
+    it('refuse un dépassement du plafond au lieu de tronquer en silence', async () => {
+        const many = Array.from({ length: MAX_CC_EMAILS + 1 }, (_, i) => `cc${i}@x.com`);
+        const r = await updateArmateurContacts({ ...baseInput, billingCcEmails: many });
+        expect(r.ok).toBe(false);
+        expect(contactsUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    it('accepte exactement le plafond', async () => {
+        const exactlyMax = Array.from({ length: MAX_CC_EMAILS }, (_, i) => `cc${i}@x.com`);
+        const r = await updateArmateurContacts({ ...baseInput, billingCcEmails: exactlyMax });
+        expect(r).toEqual({ ok: true });
+        const patch = contactsUpdateSpy.mock.calls[0]![0];
+        expect(patch.billing_cc_emails).toHaveLength(MAX_CC_EMAILS);
+    });
+});
+
 // ── Le piège : mise à jour partielle des coordonnées ────────────────────────
 
 describe('updateArmateurContacts — pas d\'écrasement des coordonnées', () => {
-    it("n'inclut aucune des coordonnées annexes quand seuls l'e-mail et les copies sont fournis", async () => {
-        // C'est exactement l'appel que font ArmateursCockpit.tsx et ArmateurDetail.tsx
-        // (édition rapide, avant le formulaire complet de la Task 8).
+    it("n'inclut aucune des coordonnées annexes quand l'e-mail et une liste de copies explicite (même vide) sont fournis", async () => {
+        // baseInput fournit `billingCcEmails: []` explicitement — donc `!== undefined`,
+        // donc écrit tel quel. Ce n'est plus ce qu'envoient les écrans d'édition
+        // rapide aujourd'hui (voir les deux tests suivants : ils omettent
+        // désormais la clé) ; ce test verrouille le comportement pour un appelant
+        // qui voudrait explicitement vider la liste.
         await updateArmateurContacts(baseInput);
         expect(contactsUpdateSpy).toHaveBeenCalledTimes(1);
         const patch = contactsUpdateSpy.mock.calls[0]![0];
@@ -227,6 +256,31 @@ describe('updateArmateurContacts — pas d\'écrasement des coordonnées', () =>
         expect(patch).not.toHaveProperty('address');
         expect(patch).not.toHaveProperty('preferred_language');
         expect(patch).not.toHaveProperty('notes');
+    });
+
+    it("édition rapide (clé billingCcEmails absente, comme ArmateursCockpit.tsx/AirlineDetail.tsx/AirlinesCockpit.tsx) : ne touche pas aux copies existantes et ne déclenche aucun second écrit si rien d'autre n'est fourni", async () => {
+        const quickEdit = { shipownerId: SHIPOWNER_ID, officialEmail: 'owner@example.com' };
+        const r = await updateArmateurContacts(quickEdit);
+        expect(r).toEqual({ ok: true });
+        // Rien à écrire côté coordonnées : le second aller-retour PostgREST est
+        // sauté plutôt que d'envoyer .update({}), qui ne correspond à aucune colonne.
+        expect(contactsUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    it("édition rapide : n'inclut pas billing_cc_emails dans le patch ni dans l'audit quand d'autres coordonnées sont fournies", async () => {
+        const r = await updateArmateurContacts({
+            shipownerId: SHIPOWNER_ID, officialEmail: 'owner@example.com', notes: 'ping',
+        });
+        expect(r).toEqual({ ok: true });
+        expect(contactsUpdateSpy).toHaveBeenCalledTimes(1);
+        const patch = contactsUpdateSpy.mock.calls[0]![0];
+        expect(patch).not.toHaveProperty('billing_cc_emails');
+        expect(patch).toMatchObject({ notes: 'ping' });
+
+        const auditPayload = auditInsertSpy.mock.calls[0]![0];
+        const details = auditPayload.details_json as { fields: string[] };
+        expect(details.fields).not.toContain('billingCcEmails');
+        expect(details.fields).toEqual(['officialEmail', 'notes']);
     });
 
     it('applique une valeur explicite fournie', async () => {

@@ -96,7 +96,6 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
             const result = await updateArmateurContacts({
                 shipownerId: emailTarget.id,
                 officialEmail: emailValue,
-                billingCcEmails: [],
             });
             if (!result.ok) {
                 setEmailError(result.reason);

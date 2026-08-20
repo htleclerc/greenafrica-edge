@@ -8,21 +8,45 @@ import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant'
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { upsertShipownerEmail } from '@/services/shipownerService';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
+import { MAX_CC_EMAILS } from '@/lib/armateurContacts';
 
-export const MAX_CC_EMAILS = 10;
+// Réexporté pour compatibilité : le fichier de test importe MAX_CC_EMAILS
+// depuis ce module (`await import('./updateArmateurContacts')`). La valeur
+// elle-même vit dans @/lib/armateurContacts (module neutre, importable côté
+// client — voir son commentaire d'en-tête).
+export { MAX_CC_EMAILS };
 
 const ALLOWED_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'] as const;
 
-// officialEmail et billingCcEmails restent obligatoires (billingCcEmails à défaut '[]') :
-// cette action en est l'unique rédacteur, l'appelant en contrôle donc toujours la valeur.
+// Round de correction 1 (Task 8) : officialEmail reste seul obligatoire.
+// billingCcEmails suit désormais EXACTEMENT la même sémantique de patch par
+// présence que les cinq autres coordonnées — ce n'est plus une exception.
 //
-// Les cinq coordonnées libres sont `nullable().optional()` — SANS `.default(null)`.
-// Une clé absente doit signifier « ne pas toucher », pas « effacer » : sinon un appelant
-// qui n'envoie que l'e-mail (le cockpit et la fiche, tant que le formulaire complet de
-// la Task 8 n'existe pas) écraserait silencieusement des coordonnées déjà enregistrées.
-// `.optional()` sans défaut préserve la distinction clé-absente / valeur-null-explicite
-// que buildContactsPatch() exploite ci-dessous. Même pattern que updateOwnerKycProfile.ts
-// pour ces mêmes colonnes (address/phone_e164/preferred_language/ops_email/finance_email).
+// Auparavant `billingCcEmails: z.array(z.email()).default([])` rendait la clé
+// TOUJOURS présente (un défaut n'est jamais `undefined`), donc TOUJOURS écrite
+// par buildContactsPatch. Deux écrans « édition rapide » (ArmateursCockpit.tsx,
+// AirlinesCockpit.tsx, AirlineDetail.tsx) qui n'éditent que l'e-mail envoyaient
+// donc systématiquement `billingCcEmails: []` — écrasant en silence les copies
+// déjà configurées à CHAQUE édition rapide, sur CES écrans. Ce n'était pas un
+// risque de concurrence : c'était un effacement déterministe. `.optional()`
+// (sans `.default()`) restaure la distinction clé-absente (« ne pas toucher »)
+// / tableau-vide-explicite (« vider la liste ») que buildContactsPatch()
+// exploite ci-dessous, identique au traitement des cinq autres coordonnées.
+//
+// Le plafond de copies (MAX_CC_EMAILS) est maintenant posé ICI, sur la longueur
+// BRUTE envoyée par le client, et REFUSE la requête (ok:false) au lieu d'être
+// silencieusement absorbé par normalizeCcEmails plus loin. Un plafond de
+// destinataires de mises en demeure ne se laisse pas raboter sans le dire.
+//
+// Les cinq coordonnées libres restent `nullable().optional()` — SANS
+// `.default(null)`. Une clé absente doit signifier « ne pas toucher », pas
+// « effacer » : sinon un appelant qui n'envoie que l'e-mail écraserait
+// silencieusement des coordonnées déjà enregistrées. `.optional()` sans défaut
+// préserve la distinction clé-absente / valeur-null-explicite que
+// buildContactsPatch() exploite ci-dessous. Même pattern que
+// updateOwnerKycProfile.ts pour ces mêmes colonnes (address/phone_e164/
+// preferred_language/ops_email/finance_email) — et maintenant aussi pour
+// billing_cc_emails.
 //
 // preferredLanguage est la SEULE exception à `.nullable()` : la colonne est
 // `NOT NULL` (migration 047 / 124), donc `null` n'est jamais une valeur légale — un
@@ -33,7 +57,9 @@ const ALLOWED_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'] as const;
 const schema = z.object({
     shipownerId: z.string().uuid(),
     officialEmail: z.email(),
-    billingCcEmails: z.array(z.email()).default([]),
+    billingCcEmails: z.array(z.email()).max(MAX_CC_EMAILS, {
+        message: `at most ${MAX_CC_EMAILS} CC emails allowed`,
+    }).optional(),
     opsEmail: z.email().nullable().optional(),
     financeEmail: z.email().nullable().optional(),
     phoneE164: z.string().trim().max(20).nullable().optional(),
@@ -46,8 +72,12 @@ type ParsedInput = z.infer<typeof schema>;
 
 /**
  * Normalise la liste de copies : minuscules, élagage, déduplication, retrait de
- * l'adresse principale (sinon l'armateur recevrait deux fois le même e-mail),
- * et plafond — une liste de copie n'est pas une liste de diffusion.
+ * l'adresse principale (sinon l'armateur recevrait deux fois le même e-mail).
+ *
+ * NE plafonne PLUS elle-même (round de correction 1) : tronquer ici masquerait
+ * un dépassement au lieu de le signaler. Le plafond est appliqué en amont, au
+ * niveau du schéma Zod (`.max(MAX_CC_EMAILS)`), qui refuse la requête entière
+ * avec `{ ok: false }` plutôt que d'enregistrer une liste raccourcie sans le dire.
  */
 export function normalizeCcEmails(list: string[], primary: string): string[] {
     const seen = new Set<string>([primary.trim().toLowerCase()]);
@@ -57,13 +87,12 @@ export function normalizeCcEmails(list: string[], primary: string): string[] {
         if (!email || seen.has(email)) continue;
         seen.add(email);
         out.push(email);
-        if (out.length >= MAX_CC_EMAILS) break;
     }
     return out;
 }
 
 interface ContactsPatch {
-    billing_cc_emails: string[];
+    billing_cc_emails?: string[];
     ops_email?: string | null;
     finance_email?: string | null;
     phone_e164?: string | null;
@@ -75,19 +104,22 @@ interface ContactsPatch {
 /**
  * Construit le patch shipowners ET la liste des champs modifiés à partir des
  * seules clés réellement présentes dans la requête (`!== undefined`) — jamais
- * de celles retombées à `null` par un défaut de schéma. C'est ce qui évite
+ * de celles retombées à une valeur par défaut de schéma. C'est ce qui évite
  * l'écrasement silencieux décrit ci-dessus : un champ omis n'apparaît pas du
  * tout dans le patch envoyé à Postgres, donc sa valeur actuelle ne bouge pas.
+ * `billingCcEmails` suit maintenant cette même règle (voir commentaire du schéma).
  */
 function buildContactsPatch(
     input: ParsedInput,
     officialEmail: string,
 ): { patch: ContactsPatch; changedFields: string[] } {
-    const patch: ContactsPatch = {
-        billing_cc_emails: normalizeCcEmails(input.billingCcEmails, officialEmail),
-    };
-    const changedFields = ['officialEmail', 'billingCcEmails'];
+    const patch: ContactsPatch = {};
+    const changedFields = ['officialEmail'];
 
+    if (input.billingCcEmails !== undefined) {
+        patch.billing_cc_emails = normalizeCcEmails(input.billingCcEmails, officialEmail);
+        changedFields.push('billingCcEmails');
+    }
     if (input.opsEmail !== undefined) {
         patch.ops_email = input.opsEmail;
         changedFields.push('opsEmail');
@@ -206,23 +238,29 @@ export async function updateArmateurContacts(raw: unknown): Promise<UpdateArmate
     // (ok:false sans audit serait trompeur : l'e-mail a bel et bien changé) ni
     // prétendre que tout a réussi. On trace ce qui a réellement changé et on le dit
     // dans le message renvoyé à l'appelant.
-    const { error: updErr } = await admin.from('shipowners').update(patch).eq('id', input.shipownerId);
-    if (updErr) {
-        const { error: partialAuditErr } = await writeContactsAudit(platform, {
-            userId: auth.user.id, userFullName, shipownerId: input.shipownerId, jurisdictionId,
-            severity: 'WARNING', event: 'CONTACTS_PARTIALLY_UPDATED', fields: ['officialEmail'],
-        });
-        if (partialAuditErr) {
-            // Échec en cascade (coordonnées ET trace) : on ne masque pas la cause
-            // première du refus renvoyée à l'appelant, mais l'ops doit pouvoir la voir.
-            console.error(
-                `[audit] echec de trace apres ecriture partielle shipowner=${input.shipownerId}: ${partialAuditErr.message}`,
-            );
+    //
+    // Patch vide (édition rapide : seul l'e-mail était fourni, aucune autre clé
+    // présente) → rien à écrire côté coordonnées : on saute ce second aller-retour
+    // plutôt que d'envoyer `.update({})`, qui ne correspond à aucune colonne.
+    if (Object.keys(patch).length > 0) {
+        const { error: updErr } = await admin.from('shipowners').update(patch).eq('id', input.shipownerId);
+        if (updErr) {
+            const { error: partialAuditErr } = await writeContactsAudit(platform, {
+                userId: auth.user.id, userFullName, shipownerId: input.shipownerId, jurisdictionId,
+                severity: 'WARNING', event: 'CONTACTS_PARTIALLY_UPDATED', fields: ['officialEmail'],
+            });
+            if (partialAuditErr) {
+                // Échec en cascade (coordonnées ET trace) : on ne masque pas la cause
+                // première du refus renvoyée à l'appelant, mais l'ops doit pouvoir la voir.
+                console.error(
+                    `[audit] echec de trace apres ecriture partielle shipowner=${input.shipownerId}: ${partialAuditErr.message}`,
+                );
+            }
+            return {
+                ok: false,
+                reason: `official email saved, but contacts could not be updated: ${updErr.message}`,
+            };
         }
-        return {
-            ok: false,
-            reason: `official email saved, but contacts could not be updated: ${updErr.message}`,
-        };
     }
 
     const { error: auditErr } = await writeContactsAudit(platform, {
