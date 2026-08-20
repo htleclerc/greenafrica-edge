@@ -707,7 +707,16 @@
     "pending_step4_title": "Account Activated",
     "pending_step4_desc": "Once approved, you'll receive an email with access instructions.",
     "pending_info_title": "Why does this take time?",
-    "pending_info_desc": "All accounts are manually verified by authorized government personnel to ensure platform security and compliance with sovereign data protection regulations."
+    "pending_info_desc": "All accounts are manually verified by authorized government personnel to ensure platform security and compliance with sovereign data protection regulations.",
+    "magicLink": {
+      "tabPassword": "Password",
+      "tabLink": "Sign-in link",
+      "emailLabel": "Email address",
+      "submit": "Send me a sign-in link",
+      "hint": "We email you a single-use link. No password needed.",
+      "sent": "If this address is registered, a sign-in link has just been sent to it.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes."
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Command Center",

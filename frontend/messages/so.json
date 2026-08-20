@@ -707,7 +707,16 @@
     "pending_step4_title": "Akoontiga Waa La Firfircoonsiiyay",
     "pending_step4_desc": "Markii la oggolaado, waxaad heli doontaa email oo leh tilmaamaha gelitaanka.",
     "pending_info_title": "Maxay u qaadanaysaa waqti?",
-    "pending_info_desc": "Dhammaan akoontiyada si gacanta ah ayay u xaqiijiyaan shaqaalaha fasaxan ee dowladda si loo hubiyo ammaanka barnaamijka iyo hoggaaminaanta xeerarka ilaalinta xogta xukuumadda."
+    "pending_info_desc": "Dhammaan akoontiyada si gacanta ah ayay u xaqiijiyaan shaqaalaha fasaxan ee dowladda si loo hubiyo ammaanka barnaamijka iyo hoggaaminaanta xeerarka ilaalinta xogta xukuumadda.",
+    "magicLink": {
+      "tabPassword": "Furaha sirta ah",
+      "tabLink": "Xiriirka gelitaanka",
+      "emailLabel": "Cinwaanka iimaylka",
+      "submit": "Ii soo dir xiriirka gelitaanka",
+      "hint": "Waxaan kuu soo dirnaa xiriir hal mar la isticmaalo. Furaha sirta ah looma baahna.",
+      "sent": "Haddii cinwaankan la diiwaan geliyay, xiriirka gelitaanka ayaa hadda loo diray.",
+      "rateLimited": "Isku dayo aad u badan. Fadlan dhowr daqiiqo ka dib isku day."
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Xarunta Amarka",

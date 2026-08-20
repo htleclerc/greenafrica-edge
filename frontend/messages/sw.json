@@ -592,7 +592,16 @@
     "pending_info_title": "Kwa nini hii inachukua muda?",
     "pending_info_desc": "Akaunti zote zinathibitishwa kwa mkono na wafanyakazi wa serikali walioidhinishwa ili kuhakikisha usalama wa jukwaa.",
     "owner_portal_link": "Mmiliki wa meli? Ingia kwenye portal ya mmiliki",
-    "error_database": "Huduma haipatikani kwa sasa. Tafadhali jaribu tena baadaye."
+    "error_database": "Huduma haipatikani kwa sasa. Tafadhali jaribu tena baadaye.",
+    "magicLink": {
+      "tabPassword": "Nenosiri",
+      "tabLink": "Kiungo cha kuingia",
+      "emailLabel": "Anwani ya barua pepe",
+      "submit": "Nitumie kiungo cha kuingia",
+      "hint": "Tunakutumia kiungo cha matumizi moja. Hakuna nenosiri linalohitajika.",
+      "sent": "Ikiwa anwani hii imesajiliwa, kiungo cha kuingia kimetumwa kwake.",
+      "rateLimited": "Majaribio mengi mno. Tafadhali jaribu tena baada ya dakika chache."
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Kituo cha Amri",

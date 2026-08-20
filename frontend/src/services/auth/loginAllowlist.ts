@@ -50,12 +50,24 @@ export async function resolveLoginTarget(
     // le formulaire est public et sert de surface d'énumération.
     if (!email.includes('@') || email.length < 5) return null;
 
-    const { data: owner } = await admin
+    // PAS de .maybeSingle() ici. Une adresse couvre legitimement plusieurs
+    // dossiers — faros@farosshipping.example porte PRO-CONS-2026-008 et -021, soit
+    // 56 518,80 USD — et maybeSingle() ECHOUE des que deux lignes
+    // correspondent : l'armateur ne pouvait plus se connecter du tout, sans le
+    // moindre message. On ordonne pour un choix stable et on prend le premier.
+    //
+    // Le dossier retenu est celui du compte ; les autres se rattachent par
+    // owner_agent_mappings, la plateforme supposant partout un profil pour un
+    // armateur (current_shipowner_id() fait LIMIT 1 sans ORDER BY).
+    const { data: owners } = await admin
         .from('shipowners')
         .select(OWNER_COLUMNS)
         .eq('official_email', email)
-        .maybeSingle();
-    if (owner) return toTarget(owner as Record<string, unknown>, 'OWNER', email);
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .limit(2);
+    const ownerRows = (owners ?? []) as Record<string, unknown>[];
+    if (ownerRows.length > 0) return toTarget(ownerRows[0], 'OWNER', email);
 
     const { data: rep } = await admin
         .from('owner_agent_mappings')
@@ -69,12 +81,17 @@ export async function resolveLoginTarget(
         return toTarget(so, 'REPRESENTATIVE', email);
     }
 
-    const { data: cc } = await admin
+    // Même raison qu'au-dessus : une adresse peut être en copie sur plusieurs
+    // dossiers, et maybeSingle() la rendrait alors introuvable.
+    const { data: ccRows } = await admin
         .from('shipowners')
         .select(OWNER_COLUMNS)
         .contains('billing_cc_emails', [email])
-        .maybeSingle();
-    if (cc) return toTarget(cc as Record<string, unknown>, 'BILLING_CC', email);
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .limit(1);
+    const cc = ((ccRows ?? []) as Record<string, unknown>[])[0];
+    if (cc) return toTarget(cc, 'BILLING_CC', email);
 
     return null;
 }

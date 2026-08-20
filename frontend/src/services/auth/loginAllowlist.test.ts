@@ -52,8 +52,20 @@ function admin(tables: {
             });
             return chain;
         };
-        chain.limit = () => chain;
-        chain.maybeSingle = async () => ({ data: filtered[0] ?? null, error: null });
+        chain.order = () => chain;
+        chain.limit = (n: number) => {
+            filtered = filtered.slice(0, n);
+            return chain;
+        };
+        // PostgREST renvoie une ERREUR — pas la premiere ligne — quand
+        // maybeSingle() trouve plusieurs correspondances. Le simulacre doit le
+        // reproduire : sans cela il validerait un code qui rend un armateur
+        // introuvable des que son adresse couvre deux dossiers.
+        chain.maybeSingle = async () => (filtered.length > 1
+            ? { data: null, error: { code: 'PGRST116', message: 'multiple rows returned' } }
+            : { data: filtered[0] ?? null, error: null });
+        chain.then = (res: (v: unknown) => unknown) =>
+            Promise.resolve({ data: filtered, error: null }).then(res);
         return chain;
     };
     return {
@@ -152,5 +164,31 @@ describe('resolveLoginTarget', () => {
         const t = await resolveLoginTarget(a.client, 'compta@armateur.com');
         expect(t).toMatchObject({ shipownerId: 'own-1', scope: 'BILLING_CC' });
         expect(t?.deliveryEmail).toBe('compta@armateur.com');
+    });
+
+    it('reste résolvable quand l’adresse couvre plusieurs dossiers', async () => {
+        // faros@farosshipping.example porte PRO-CONS-2026-008 et -021, soit
+        // 56 518,80 USD. maybeSingle() echouait sur ce cas et rendait
+        // l'armateur introuvable, sans message.
+        const a = admin({ shipowners: [
+            { ...OWNER, id: 'own-008', name: 'FAROS SHIPPING CO SARL' },
+            { ...OWNER, id: 'own-021', name: 'LEADERS FOR TRADING & MARITIME' },
+        ] });
+        const t = await resolveLoginTarget(a.client, 'faros@farosshipping.example');
+        expect(t).not.toBeNull();
+        expect(t?.scope).toBe('OWNER');
+        // Choix stable : le premier de l'ordre impose, jamais un tirage.
+        expect(t?.shipownerId).toBe('own-008');
+    });
+
+    it('reste résolvable quand une adresse sanctionnée couvre plusieurs dossiers', async () => {
+        const a = admin({ shipowners: [
+            { ...OWNER, id: 'own-022', official_email: 'info@petrofleetenergy.example', is_ofac_sdn: true },
+            { ...OWNER, id: 'own-042', official_email: 'info@petrofleetenergy.example', is_ofac_sdn: true },
+        ] });
+        const t = await resolveLoginTarget(a.client, 'info@petrofleetenergy.example');
+        // Doit etre RECONNU pour que l'appelant puisse le bloquer et le
+        // journaliser ; rendre null le ferait passer pour une adresse inconnue.
+        expect(t?.isOfacSdn).toBe(true);
     });
 });

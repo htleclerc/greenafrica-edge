@@ -1035,7 +1035,16 @@
     "pending_info_title": "Por que isso leva tempo?",
     "pending_info_desc": "Todas as contas são verificadas manualmente por pessoal governamental autorizado para garantir a segurança da plataforma.",
     "owner_portal_link": "Armador? Entre no portal do armador",
-    "error_database": "Serviço temporariamente indisponível. Tente novamente em alguns minutos."
+    "error_database": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
+    "magicLink": {
+      "tabPassword": "Palavra-passe",
+      "tabLink": "Ligação de acesso",
+      "emailLabel": "Endereço de e-mail",
+      "submit": "Receber uma ligação de acesso",
+      "hint": "Enviamos-lhe uma ligação de utilização única. Não é necessária palavra-passe.",
+      "sent": "Se este endereço estiver registado, foi-lhe enviada uma ligação de acesso.",
+      "rateLimited": "Demasiadas tentativas. Tente novamente dentro de alguns minutos."
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Centro de Comando",

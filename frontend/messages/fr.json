@@ -845,7 +845,16 @@
     "pending_step4_title": "Compte activé",
     "pending_step4_desc": "Une fois approuvé, vous recevrez un email avec les instructions d'accès.",
     "pending_info_title": "Pourquoi cela prend-il du temps ?",
-    "pending_info_desc": "Tous les comptes sont vérifiés manuellement par le personnel gouvernemental autorisé pour garantir la sécurité de la plateforme et la conformité aux réglementations de protection des données souveraines."
+    "pending_info_desc": "Tous les comptes sont vérifiés manuellement par le personnel gouvernemental autorisé pour garantir la sécurité de la plateforme et la conformité aux réglementations de protection des données souveraines.",
+    "magicLink": {
+      "tabPassword": "Mot de passe",
+      "tabLink": "Lien de connexion",
+      "emailLabel": "Adresse e-mail",
+      "submit": "Recevoir un lien de connexion",
+      "hint": "Nous vous envoyons un lien à usage unique. Aucun mot de passe n'est nécessaire.",
+      "sent": "Si cette adresse est enregistrée, un lien de connexion vient de lui être envoyé.",
+      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes."
+    }
   },
   "DashboardPages": {
     "alerts_title": "Alertes & Exceptions",
