@@ -73,6 +73,16 @@ describe('dueTier', () => {
     it('ne renvoie rien sous J+3', () => {
         expect(dueTier({ ...base, ageDays: 1 })).toBeNull();
     });
+
+    it("une relance MANUAL ne consomme aucun palier de la rampe", () => {
+        // Le cron filtre sentTiers sur une liste blanche : MANUAL en est écarté
+        // d'office. Ce test verrouille cette immunité.
+        expect(dueTier({
+            status: 'OVERDUE', ageDays: 20,
+            sentTiers: ['J3', 'J7'],       // MANUAL n'entre jamais dans ce tableau
+            latestResponse: null, latestResponseAt: null, now: new Date(),
+        })).toBe('J15');
+    });
 });
 
 describe('reminderTemplate', () => {

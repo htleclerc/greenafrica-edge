@@ -618,6 +618,8 @@ export interface ProformaReminderParams {
     ageDays: number;
     /** Palier de relance — pilote le ton. Absent = rappel courtois générique. */
     tier?: 'J3' | 'J7' | 'J15' | 'J30' | 'J45';
+    /** PDF de la pro-forma, joint quand il est disponible. Absent = envoi quand même. */
+    pdfBuffer?: Uint8Array;
 }
 
 /** Objet + bandeau d'alerte selon le palier. */
@@ -684,6 +686,9 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         subject: t.subject,
         html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
         text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        attachments: p.pdfBuffer
+            ? [{ filename: `${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) }]
+            : undefined,
     });
 }
 
