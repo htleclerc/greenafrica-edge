@@ -44,6 +44,53 @@ describe.skipIf(!ENV_OK)('armateurService.listArmateursCockpit', () => {
     });
 });
 
+describe('listArmateursCockpit — colonnes de relance (mig 121, mock)', () => {
+    function makeDb(rows: Record<string, unknown>[]) {
+        const calls: { method: string; args: unknown[] }[] = [];
+        const builder: Record<string, unknown> = {};
+        builder.select = (...args: unknown[]) => { calls.push({ method: 'select', args }); return builder; };
+        builder.order = (...args: unknown[]) => {
+            calls.push({ method: 'order', args });
+            return Promise.resolve({ data: rows, error: null });
+        };
+        const db = { from: (t: string) => { calls.push({ method: 'from', args: [t] }); return builder; } };
+        return { db: db as never, calls };
+    }
+
+    it('normalise les nouvelles colonnes de relance (mig 121)', async () => {
+        const { db } = makeDb([{
+            id: 'own-1', name: 'ACME', account_state: 'ACTIVE',
+            is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
+            proforma_count: '3', total_invoiced_usd: '900', total_paid_usd: '100',
+            total_outstanding_usd: '800',
+            overdue_count: '2', next_due_date: '2026-09-01T00:00:00Z',
+            last_auto_tier: 'J15', last_reminder_at: '2026-08-18T09:00:00Z',
+            latest_response_type: 'PAYMENT_PROMISE',
+        }]);
+        const rows = await listArmateursCockpit(db);
+        // PostgREST renvoie les BIGINT en string — la normalisation est le contrat.
+        expect(rows[0].overdue_count).toBe(2);
+        expect(rows[0].next_due_date).toBe('2026-09-01T00:00:00Z');
+        expect(rows[0].last_auto_tier).toBe('J15');
+        expect(rows[0].latest_response_type).toBe('PAYMENT_PROMISE');
+    });
+
+    it('retombe sur des valeurs neutres quand aucune relance n_a eu lieu', async () => {
+        const { db } = makeDb([{
+            id: 'own-2', name: 'BETA', account_state: 'GHOST',
+            is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
+            proforma_count: '0', total_invoiced_usd: '0', total_paid_usd: '0',
+            total_outstanding_usd: '0', overdue_count: '0',
+            next_due_date: null, last_auto_tier: null, last_reminder_at: null,
+            latest_response_type: null,
+        }]);
+        const rows = await listArmateursCockpit(db);
+        expect(rows[0].overdue_count).toBe(0);
+        expect(rows[0].next_due_date).toBeNull();
+        expect(rows[0].last_auto_tier).toBeNull();
+    });
+});
+
 describe('maskIban', () => {
     it('masque tout sauf les 4 derniers', () => {
         expect(maskIban(null)).toBeNull();

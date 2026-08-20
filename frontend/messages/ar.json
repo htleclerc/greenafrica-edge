@@ -4082,6 +4082,8 @@
       "invoiced": "المفوتر",
       "paid": "المدفوع",
       "outstanding": "المستحق",
+      "overdue": "متأخر",
+      "lastReminder": "آخر تذكير",
       "actions": "إجراءات",
       "email": "البريد الإلكتروني",
       "imo": "IMO",

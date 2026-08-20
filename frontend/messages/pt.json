@@ -4116,6 +4116,8 @@
       "invoiced": "Faturado",
       "paid": "Pago",
       "outstanding": "Devido",
+      "overdue": "Atrasado",
+      "lastReminder": "Último lembrete",
       "actions": "Ações",
       "email": "Email",
       "imo": "IMO",

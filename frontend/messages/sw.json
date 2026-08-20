@@ -4082,6 +4082,8 @@
       "invoiced": "Ilitozwa",
       "paid": "Imelipwa",
       "outstanding": "Deni",
+      "overdue": "Imechelewa",
+      "lastReminder": "Kikumbusho cha mwisho",
       "actions": "Vitendo",
       "email": "Barua pepe",
       "imo": "IMO",

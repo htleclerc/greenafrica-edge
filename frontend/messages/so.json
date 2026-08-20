@@ -4079,6 +4079,8 @@
       "invoiced": "La qaansheegay",
       "paid": "La bixiyay",
       "outstanding": "La sugayo",
+      "overdue": "Dhaafay",
+      "lastReminder": "Xasuusinta ugu dambeysay",
       "actions": "Ficillo",
       "email": "Email",
       "imo": "IMO",

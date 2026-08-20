@@ -15,6 +15,11 @@ export interface ArmateurCockpitRow {
     total_invoiced_usd: number;
     total_paid_usd: number;
     total_outstanding_usd: number;
+    overdue_count: number;
+    next_due_date: string | null;
+    last_auto_tier: string | null;
+    last_reminder_at: string | null;
+    latest_response_type: string | null;
 }
 
 export async function listArmateursCockpit(db: SupabaseClient): Promise<ArmateurCockpitRow[]> {
@@ -38,6 +43,11 @@ export async function listArmateursCockpit(db: SupabaseClient): Promise<Armateur
         total_invoiced_usd: Number(r.total_invoiced_usd),
         total_paid_usd: Number(r.total_paid_usd),
         total_outstanding_usd: Number(r.total_outstanding_usd),
+        overdue_count: Number(r.overdue_count ?? 0),
+        next_due_date: (r.next_due_date as string | null) ?? null,
+        last_auto_tier: (r.last_auto_tier as string | null) ?? null,
+        last_reminder_at: (r.last_reminder_at as string | null) ?? null,
+        latest_response_type: (r.latest_response_type as string | null) ?? null,
     }));
 }
 

@@ -4079,6 +4079,8 @@
       "invoiced": "Invoiced",
       "paid": "Paid",
       "outstanding": "Outstanding",
+      "overdue": "Overdue",
+      "lastReminder": "Last reminder",
       "actions": "Actions",
       "email": "Email",
       "imo": "IMO",
