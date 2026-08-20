@@ -4131,7 +4131,9 @@
       "due": "Devido",
       "status": "Status",
       "rail": "Canal",
-      "reference": "Referência"
+      "reference": "Referência",
+      "dueDate": "Vencimento",
+      "age": "Idade"
     },
     "detail": {
       "identityTitle": "Identidade",
@@ -4173,7 +4175,20 @@
       "anonymizeConfirmLabel": "Digite {keyword} para confirmar",
       "anonymizeConfirmKeyword": "ANONIMIZAR",
       "anonymizeCta": "Anonimizar definitivamente",
-      "anonymizedAt": "Anonimizado em {date}"
+      "anonymizedAt": "Anonimizado em {date}",
+      "totalsTitle": "Totais da conta",
+      "invoiced": "Faturado",
+      "paid": "Pago",
+      "outstanding": "Devido",
+      "overdueCount": "Faturas atrasadas",
+      "nextDueDate": "Próximo vencimento",
+      "contactsTitle": "Contactos",
+      "officialEmailHint": "Destinatário das faturas e cobranças.",
+      "billingCc": "Cópia de faturamento",
+      "billingCcHint": "Endereços em cópia nas faturas e cobranças, além do destinatário oficial.",
+      "addCc": "Adicionar",
+      "removeCc": "Remover {email}",
+      "infoOnlyHint": "Apenas informativo — não utilizados para envio."
     }
   },
   "AdminReglements": {

@@ -98,6 +98,85 @@ describe('maskIban', () => {
     });
 });
 
+describe('getArmateurDetail — échéance, statut de recouvrement et totaux (mock)', () => {
+    // Faux multi-tables, distinct de makeDb ci-dessus : makeDb ne sert que
+    // listArmateursCockpit (une seule table), alors que getArmateurDetail en
+    // interroge six. Chaque table reçoit son propre jeu de données ; le
+    // builder retourné est à la fois chaînable (select/eq/is/in/order/
+    // maybeSingle renvoient l'objet lui-même) et "thenable" (il expose
+    // .then), donc un `await` — direct ou via Promise.all — se résout quel
+    // que soit le nombre de maillons de chaîne appelés avant.
+    function dbWith(opts: {
+        shipowner: Record<string, unknown>;
+        vessels?: Record<string, unknown>[];
+        transactions?: Record<string, unknown>[];
+        payments?: Record<string, unknown>[];
+        reminders?: Record<string, unknown>[];
+        recouvrement?: Record<string, unknown> | null;
+    }) {
+        function chain(data: unknown) {
+            const builder: Record<string, unknown> = {
+                select: () => builder,
+                eq: () => builder,
+                is: () => builder,
+                in: () => builder,
+                order: () => builder,
+                maybeSingle: () => builder,
+                then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
+                    Promise.resolve({ data, error: null }).then(resolve),
+            };
+            return builder;
+        }
+        const tables: Record<string, unknown> = {
+            shipowners: opts.shipowner,
+            vessels: opts.vessels ?? [],
+            transactions: opts.transactions ?? [],
+            payments: opts.payments ?? [],
+            collection_reminders: opts.reminders ?? [],
+            v_armateur_recouvrement: opts.recouvrement ?? null,
+        };
+        const db = {
+            from: (table: string) => {
+                if (!(table in tables)) throw new Error(`dbWith: table non gérée "${table}"`);
+                return chain(tables[table]);
+            },
+        };
+        return db as never;
+    }
+
+    it('remonte échéance, statut de recouvrement et totaux de compte', async () => {
+        // due_date et collections_status existent depuis la mig 022 mais
+        // n'étaient jamais lus — c'est la régression que ce test verrouille.
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE', billing_cc_emails: ['f@x.com'] },
+            transactions: [{
+                id: 'tx1', invoice_ref: 'INV-1', created_at: '2026-07-01T00:00:00Z',
+                tax_amount_usd: '500', partial_paid_usd: '100', status: 'OVERDUE',
+                due_date: '2026-07-31T00:00:00Z', collections_status: 'OVERDUE',
+            }],
+            recouvrement: {
+                total_invoiced_usd: '500', total_paid_usd: '100', total_outstanding_usd: '400',
+                overdue_count: '1', next_due_date: '2026-07-31T00:00:00Z',
+            },
+        }), 'own-1', true);
+        expect(detail?.proformas[0].due_date).toBe('2026-07-31T00:00:00Z');
+        expect(detail?.proformas[0].collections_status).toBe('OVERDUE');
+        expect(detail?.totals).toMatchObject({ outstandingUsd: 400, overdueCount: 1 });
+        expect(detail?.billing_cc_emails).toEqual(['f@x.com']);
+    });
+
+    it('retombe sur des totaux neutres quand la vue ne renvoie aucune ligne', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-2', name: 'BETA', account_state: 'GHOST' },
+            recouvrement: null,
+        }), 'own-2', false);
+        expect(detail?.totals).toEqual({
+            invoicedUsd: 0, paidUsd: 0, outstandingUsd: 0, overdueCount: 0, nextDueDate: null,
+        });
+        expect(detail?.billing_cc_emails).toEqual([]);
+    });
+});
+
 describe.skipIf(!ENV_OK)('getArmateurDetail', () => {
     let admin: SupabaseClient;
     const armId = '55555555-5555-4555-8555-555555555555';

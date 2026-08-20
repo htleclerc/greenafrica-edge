@@ -4097,7 +4097,9 @@
       "due": "المستحق",
       "status": "الحالة",
       "rail": "القناة",
-      "reference": "المرجع"
+      "reference": "المرجع",
+      "dueDate": "تاريخ الاستحقاق",
+      "age": "العمر"
     },
     "detail": {
       "identityTitle": "الهوية",
@@ -4139,7 +4141,20 @@
       "anonymizeConfirmLabel": "اكتب {keyword} للتأكيد",
       "anonymizeConfirmKeyword": "حذف",
       "anonymizeCta": "إخفاء الهوية نهائيًا",
-      "anonymizedAt": "تم إخفاء الهوية في {date}"
+      "anonymizedAt": "تم إخفاء الهوية في {date}",
+      "totalsTitle": "إجماليات الحساب",
+      "invoiced": "المفوتر",
+      "paid": "المدفوع",
+      "outstanding": "المستحق",
+      "overdueCount": "الفواتير المتأخرة",
+      "nextDueDate": "تاريخ الاستحقاق التالي",
+      "contactsTitle": "جهات الاتصال",
+      "officialEmailHint": "مستلم الفواتير والتذكيرات.",
+      "billingCc": "نسخة الفوترة",
+      "billingCcHint": "عناوين تُنسخ على الفواتير والتذكيرات، بالإضافة إلى المستلم الرسمي.",
+      "addCc": "إضافة",
+      "removeCc": "إزالة {email}",
+      "infoOnlyHint": "للمعلومية فقط — لا تُستخدم للإرسال."
     }
   },
   "AdminReglements": {

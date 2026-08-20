@@ -4094,7 +4094,9 @@
       "due": "Dû",
       "status": "Statut",
       "rail": "Rail",
-      "reference": "Référence"
+      "reference": "Référence",
+      "dueDate": "Échéance",
+      "age": "Âge"
     },
     "detail": {
       "identityTitle": "Identité",
@@ -4136,7 +4138,20 @@
       "anonymizeConfirmLabel": "Tapez {keyword} pour confirmer",
       "anonymizeConfirmKeyword": "ANONYMISER",
       "anonymizeCta": "Anonymiser définitivement",
-      "anonymizedAt": "Anonymisé le {date}"
+      "anonymizedAt": "Anonymisé le {date}",
+      "totalsTitle": "Totaux de compte",
+      "invoiced": "Facturé",
+      "paid": "Payé",
+      "outstanding": "Dû",
+      "overdueCount": "Factures en retard",
+      "nextDueDate": "Prochaine échéance",
+      "contactsTitle": "Contacts",
+      "officialEmailHint": "Destinataire des factures et relances.",
+      "billingCc": "Copies facturation",
+      "billingCcHint": "Adresses en copie sur les factures et relances, en plus du destinataire officiel.",
+      "addCc": "Ajouter",
+      "removeCc": "Retirer {email}",
+      "infoOnlyHint": "Information seulement — non utilisés pour l'envoi."
     }
   },
   "AdminReglements": {

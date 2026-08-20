@@ -64,6 +64,8 @@ export interface ArmateurProformaRow {
     tax_amount_usd: number;
     partial_paid_usd: number;
     status: string;
+    due_date: string | null;
+    collections_status: string | null;
     content_hash: string | null;
     verify_signature: string | null;
 }
@@ -102,6 +104,7 @@ export interface ArmateurDetail {
     address: string | null;
     official_email: string | null;
     official_email_source: string | null;
+    billing_cc_emails: string[];
     ops_email: string | null;
     finance_email: string | null;
     phone_e164: string | null;
@@ -122,6 +125,13 @@ export interface ArmateurDetail {
     swift_bic: string | null;
     bank_name: string | null;
     anonymized_at: string | null;
+    totals: {
+        invoicedUsd: number;
+        paidUsd: number;
+        outstandingUsd: number;
+        overdueCount: number;
+        nextDueDate: string | null;
+    };
     vessels: ArmateurVesselRow[];
     proformas: ArmateurProformaRow[];
     payments: ArmateurPaymentRow[];
@@ -136,11 +146,17 @@ export async function getArmateurDetail(
     const { data: s } = await db.from('shipowners').select('*').eq('id', id).is('iata_code', null).maybeSingle();
     if (!s) return null;
 
-    const [vesselsRes, txRes] = await Promise.all([
+    const [vesselsRes, txRes, recRes] = await Promise.all([
         db.from('vessels').select('id, imo_number, name, category, gross_tonnage_dwt, flag_code').eq('shipowner_id', id),
-        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, content_hash, verify_signature')
+        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, due_date, collections_status, content_hash, verify_signature')
           .eq('shipowner_id', id).eq('document_type', 'PROFORMA').eq('mode', 'MARITIME')
           .order('created_at', { ascending: false }),
+        // Totaux de compte : déjà agrégés par la vue (Task 1, mig 121) — on ne les
+        // recalcule pas ici. Repli à zéro/valeurs neutres si la ligne est absente
+        // (ex: shipowner sans aucune transaction ne produit pas forcément de ligne).
+        db.from('v_armateur_recouvrement')
+          .select('total_invoiced_usd, total_paid_usd, total_outstanding_usd, overdue_count, next_due_date')
+          .eq('id', id).maybeSingle(),
     ]);
     const txIds = (txRes.data ?? []).map((t) => t.id as string);
     const [payRes, remRes] = await Promise.all([
@@ -155,6 +171,17 @@ export async function getArmateurDetail(
     // Narrowing explicite depuis les lignes shipowners (types manuels — pas de any).
     const row = s as Record<string, unknown>;
     const str = (k: string) => (row[k] as string | null) ?? null;
+
+    // PostgREST renvoie les NUMERIC/BIGINT en string → Number(...). Repli à zéro/null
+    // si la vue ne renvoie aucune ligne pour cet armateur (ex : aucune transaction).
+    const recRow = recRes.data as Record<string, unknown> | null;
+    const totals = {
+        invoicedUsd: Number(recRow?.total_invoiced_usd ?? 0),
+        paidUsd: Number(recRow?.total_paid_usd ?? 0),
+        outstandingUsd: Number(recRow?.total_outstanding_usd ?? 0),
+        overdueCount: Number(recRow?.overdue_count ?? 0),
+        nextDueDate: (recRow?.next_due_date as string | null | undefined) ?? null,
+    };
 
     // L'IBAN est chiffré au repos (mig 047) — jamais renvoyé brut au client.
     // Déchiffré + masqué côté serveur, et seulement pour les rôles habilités à voir la facturation.
@@ -175,6 +202,7 @@ export async function getArmateurDetail(
         address: str('address'),
         official_email: str('official_email'),
         official_email_source: str('official_email_source'),
+        billing_cc_emails: (row.billing_cc_emails as string[] | null) ?? [],
         ops_email: str('ops_email'),
         finance_email: str('finance_email'),
         phone_e164: str('phone_e164'),
@@ -195,6 +223,7 @@ export async function getArmateurDetail(
         swift_bic: str('swift_bic'),
         bank_name: str('bank_name'),
         anonymized_at: str('anonymized_at'),
+        totals,
         vessels: (vesselsRes.data ?? []).map((v) => ({
             id: v.id as string, imo_number: v.imo_number as string, name: v.name as string,
             category: v.category as string, gross_tonnage_dwt: Number(v.gross_tonnage_dwt),
@@ -204,6 +233,8 @@ export async function getArmateurDetail(
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
             partial_paid_usd: Number(t.partial_paid_usd ?? 0), status: t.status as string,
+            due_date: (t.due_date as string | null) ?? null,
+            collections_status: (t.collections_status as string | null) ?? null,
             content_hash: (t.content_hash as string | null) ?? null,
             verify_signature: (t.verify_signature as string | null) ?? null,
         })),

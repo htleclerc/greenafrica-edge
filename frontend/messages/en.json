@@ -4094,7 +4094,9 @@
       "due": "Due",
       "status": "Status",
       "rail": "Rail",
-      "reference": "Reference"
+      "reference": "Reference",
+      "dueDate": "Due date",
+      "age": "Age"
     },
     "detail": {
       "identityTitle": "Identity",
@@ -4136,7 +4138,20 @@
       "anonymizeConfirmLabel": "Type {keyword} to confirm",
       "anonymizeConfirmKeyword": "ANONYMIZE",
       "anonymizeCta": "Anonymize permanently",
-      "anonymizedAt": "Anonymized on {date}"
+      "anonymizedAt": "Anonymized on {date}",
+      "totalsTitle": "Account totals",
+      "invoiced": "Invoiced",
+      "paid": "Paid",
+      "outstanding": "Outstanding",
+      "overdueCount": "Overdue invoices",
+      "nextDueDate": "Next due date",
+      "contactsTitle": "Contacts",
+      "officialEmailHint": "Recipient of invoices and reminders.",
+      "billingCc": "Billing CC",
+      "billingCcHint": "Addresses copied on invoices and reminders, in addition to the official recipient.",
+      "addCc": "Add",
+      "removeCc": "Remove {email}",
+      "infoOnlyHint": "Information only — not used for sending."
     }
   },
   "AdminReglements": {

@@ -4094,7 +4094,9 @@
       "due": "La sugayo",
       "status": "Xaalad",
       "rail": "Qaybta bixinta",
-      "reference": "Tixraac"
+      "reference": "Tixraac",
+      "dueDate": "Taariikhda dhicitaanka",
+      "age": "Da'da"
     },
     "detail": {
       "identityTitle": "Aqoonsiga",
@@ -4136,7 +4138,20 @@
       "anonymizeConfirmLabel": "Qor {keyword} si aad u xaqiijiso",
       "anonymizeConfirmKeyword": "TIRTIR",
       "anonymizeCta": "Si joogto ah u qarsoodi",
-      "anonymizedAt": "Waa la qarsoodiyay {date}"
+      "anonymizedAt": "Waa la qarsoodiyay {date}",
+      "totalsTitle": "Wadarta akoonka",
+      "invoiced": "La qaansheegay",
+      "paid": "La bixiyay",
+      "outstanding": "La sugayo",
+      "overdueCount": "Qaansheegyo dhaafay",
+      "nextDueDate": "Taariikhda dhicitaanka xigta",
+      "contactsTitle": "Xiriirrada",
+      "officialEmailHint": "Qofka rasmiga ah ee helaya qaansheegyada iyo xasuusinnada.",
+      "billingCc": "Nuqulka lacag-bixinta",
+      "billingCcHint": "Cinwaannada nuqulka laga helo qaansheegyada iyo xasuusinnada, marka lagu daro qofka rasmiga ah ee helaya.",
+      "addCc": "Ku dar",
+      "removeCc": "Ka saar {email}",
+      "infoOnlyHint": "Macluumaad kaliya — looma isticmaalo dirista."
     }
   },
   "AdminReglements": {

@@ -4097,7 +4097,9 @@
       "due": "Deni",
       "status": "Hali",
       "rail": "Njia",
-      "reference": "Rejeleo"
+      "reference": "Rejeleo",
+      "dueDate": "Tarehe ya malipo",
+      "age": "Umri"
     },
     "detail": {
       "identityTitle": "Utambulisho",
@@ -4139,7 +4141,20 @@
       "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
       "anonymizeConfirmKeyword": "FUTA",
       "anonymizeCta": "Ondoa utambulisho kabisa",
-      "anonymizedAt": "Utambulisho umeondolewa {date}"
+      "anonymizedAt": "Utambulisho umeondolewa {date}",
+      "totalsTitle": "Jumla za akaunti",
+      "invoiced": "Ilitozwa",
+      "paid": "Imelipwa",
+      "outstanding": "Deni",
+      "overdueCount": "Ankara zilizochelewa",
+      "nextDueDate": "Tarehe ya mwisho ijayo",
+      "contactsTitle": "Anwani",
+      "officialEmailHint": "Mpokeaji wa ankara na vikumbusho.",
+      "billingCc": "Nakala za malipo",
+      "billingCcHint": "Anwani zinazopokea nakala za ankara na vikumbusho, pamoja na mpokeaji rasmi.",
+      "addCc": "Ongeza",
+      "removeCc": "Ondoa {email}",
+      "infoOnlyHint": "Taarifa tu — hazitumiki kutuma."
     }
   },
   "AdminReglements": {
