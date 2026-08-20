@@ -976,6 +976,47 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
 // visitor-facing surface, so a single English copy is sufficient (see spec
 // 2026-08-12 G4).
 
+export interface LoginLinkParams {
+    to: string;
+    recipientName?: string;
+    /** Lien miné par generateLink — à usage unique et de courte durée. */
+    link: string;
+}
+
+/**
+ * Lien de connexion au portail.
+ *
+ * Le lien est miné côté serveur puis envoyé par Resend, comme le code d'accès
+ * navire : les modèles GoTrue ne sont pas configurés (tous les blocs
+ * [auth.email.template.*] sont commentés dans supabase/config.toml), et
+ * laisser Supabase l'envoyer produirait un courriel par défaut, hors charte,
+ * et non traduit.
+ *
+ * Le message ne dit jamais quel dossier il ouvre : il part parfois vers une
+ * adresse simplement reconnue, et nommer l'armateur renseignerait un tiers
+ * sur qui est débiteur.
+ */
+export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResult> {
+    const content = `
+        <h1>Sign in to Green Gate</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>Use the button below to open your Green Gate account. No password is required.</p>
+
+        <a href="${p.link}" class="btn">Sign In →</a>
+
+        <div class="alert alert-warn">This link can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: 'Your Green Gate sign-in link',
+        html: emailLayout(content, { previewText: 'Your sign-in link — single use, expires shortly' }),
+        text: `Sign in to Green Gate\n\nOpen this link to access your account (single use, expires shortly):\n${p.link}\n\nIf you did not request it, ignore this email — no account changes will be made.`,
+    });
+}
+
 export interface VesselAccessCodeParams {
     to: string;
     recipientName?: string;
