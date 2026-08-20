@@ -4099,7 +4099,9 @@
       "rail": "القناة",
       "reference": "المرجع",
       "dueDate": "تاريخ الاستحقاق",
-      "age": "العمر"
+      "age": "العمر",
+      "priority": "الأولوية",
+      "validity": "فترة الصلاحية"
     },
     "detail": {
       "identityTitle": "الهوية",
@@ -4154,7 +4156,15 @@
       "billingCcHint": "عناوين تُنسخ على الفواتير والتذكيرات، بالإضافة إلى المستلم الرسمي.",
       "addCc": "إضافة",
       "removeCc": "إزالة {email}",
-      "infoOnlyHint": "للمعلومية فقط — لا تُستخدم للإرسال."
+      "infoOnlyHint": "للمعلومية فقط — لا تُستخدم للإرسال.",
+      "representativesTitle": "الممثلون",
+      "noRepresentatives": "لا يوجد ممثلون.",
+      "repPrimary": "نسخة على الفواتير الجديدة (مطابقة تلقائية)",
+      "repAttach": "إلحاق",
+      "repRevoke": "إلغاء",
+      "repRevoked": "ملغى",
+      "repManageAll": "إدارة جميع الروابط",
+      "repAgentId": "معرّف الوكيل (UUID)"
     }
   },
   "AdminReglements": {

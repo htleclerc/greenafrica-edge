@@ -98,52 +98,54 @@ describe('maskIban', () => {
     });
 });
 
-describe('getArmateurDetail — échéance, statut de recouvrement et totaux (mock)', () => {
-    // Faux multi-tables, distinct de makeDb ci-dessus : makeDb ne sert que
-    // listArmateursCockpit (une seule table), alors que getArmateurDetail en
-    // interroge six. Chaque table reçoit son propre jeu de données ; le
-    // builder retourné est à la fois chaînable (select/eq/is/in/order/
-    // maybeSingle renvoient l'objet lui-même) et "thenable" (il expose
-    // .then), donc un `await` — direct ou via Promise.all — se résout quel
-    // que soit le nombre de maillons de chaîne appelés avant.
-    function dbWith(opts: {
-        shipowner: Record<string, unknown>;
-        vessels?: Record<string, unknown>[];
-        transactions?: Record<string, unknown>[];
-        payments?: Record<string, unknown>[];
-        reminders?: Record<string, unknown>[];
-        recouvrement?: Record<string, unknown> | null;
-    }) {
-        function chain(data: unknown) {
-            const builder: Record<string, unknown> = {
-                select: () => builder,
-                eq: () => builder,
-                is: () => builder,
-                in: () => builder,
-                order: () => builder,
-                maybeSingle: () => builder,
-                then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
-                    Promise.resolve({ data, error: null }).then(resolve),
-            };
-            return builder;
-        }
-        const tables: Record<string, unknown> = {
-            shipowners: opts.shipowner,
-            vessels: opts.vessels ?? [],
-            transactions: opts.transactions ?? [],
-            payments: opts.payments ?? [],
-            collection_reminders: opts.reminders ?? [],
-            v_armateur_recouvrement: opts.recouvrement ?? null,
+// Faux multi-tables partagé par les describe getArmateurDetail ci-dessous,
+// distinct de makeDb plus haut : makeDb ne sert que listArmateursCockpit (une
+// seule table), alors que getArmateurDetail en interroge sept. Chaque table
+// reçoit son propre jeu de données ; le builder retourné est à la fois
+// chaînable (select/eq/is/in/order/maybeSingle renvoient l'objet lui-même) et
+// "thenable" (il expose .then), donc un `await` — direct ou via Promise.all —
+// se résout quel que soit le nombre de maillons de chaîne appelés avant.
+function dbWith(opts: {
+    shipowner: Record<string, unknown>;
+    vessels?: Record<string, unknown>[];
+    transactions?: Record<string, unknown>[];
+    payments?: Record<string, unknown>[];
+    reminders?: Record<string, unknown>[];
+    recouvrement?: Record<string, unknown> | null;
+    mappings?: Record<string, unknown>[];
+}) {
+    function chain(data: unknown) {
+        const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: () => builder,
+            is: () => builder,
+            in: () => builder,
+            order: () => builder,
+            maybeSingle: () => builder,
+            then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
+                Promise.resolve({ data, error: null }).then(resolve),
         };
-        const db = {
-            from: (table: string) => {
-                if (!(table in tables)) throw new Error(`dbWith: table non gérée "${table}"`);
-                return chain(tables[table]);
-            },
-        };
-        return db as never;
+        return builder;
     }
+    const tables: Record<string, unknown> = {
+        shipowners: opts.shipowner,
+        vessels: opts.vessels ?? [],
+        transactions: opts.transactions ?? [],
+        payments: opts.payments ?? [],
+        collection_reminders: opts.reminders ?? [],
+        v_armateur_recouvrement: opts.recouvrement ?? null,
+        owner_agent_mappings: opts.mappings ?? [],
+    };
+    const db = {
+        from: (table: string) => {
+            if (!(table in tables)) throw new Error(`dbWith: table non gérée "${table}"`);
+            return chain(tables[table]);
+        },
+    };
+    return db as never;
+}
 
+describe('getArmateurDetail — échéance, statut de recouvrement et totaux (mock)', () => {
     it('remonte échéance, statut de recouvrement et totaux de compte', async () => {
         // due_date et collections_status existent depuis la mig 022 mais
         // n'étaient jamais lus — c'est la régression que ce test verrouille.
@@ -174,6 +176,66 @@ describe('getArmateurDetail — échéance, statut de recouvrement et totaux (mo
             invoicedUsd: 0, paidUsd: 0, outstandingUsd: 0, overdueCount: 0, nextDueDate: null,
         });
         expect(detail?.billing_cc_emails).toEqual([]);
+    });
+});
+
+describe('getArmateurDetail — représentants (mock)', () => {
+    it('remonte les représentants actifs par priorité croissante', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm2', agent_profile_id: 'p2', priority: 200, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: { full_name: 'Second', email: 'b@x.com' } },
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: { full_name: 'Premier', email: 'a@x.com' } },
+            ],
+        }), 'own-1', true);
+        // La priorité la plus basse est le contact principal : c'est lui qui part
+        // en copie des factures via la cascade d'envoi.
+        expect(detail?.representatives.map((r) => r.full_name)).toEqual(['Premier', 'Second']);
+        expect(detail?.representatives[0].email).toBe('a@x.com');
+    });
+
+    it('normalise profiles en tableau (cardinalité PostgREST) sans planter', () => {
+        // Le patron `Array.isArray(...)` d'escalateCollection.ts:84 doit tenir
+        // même quand PostgREST choisit de renvoyer la relation jointe comme
+        // tableau à un seul élément plutôt que comme objet — un typage naïf
+        // (objet seul) compile mais casse à l'exécution sur cette forme.
+        return getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: [{ full_name: 'Premier', email: 'a@x.com' }] },
+            ],
+        }), 'own-1', true).then((detail) => {
+            expect(detail?.representatives[0].full_name).toBe('Premier');
+            expect(detail?.representatives[0].email).toBe('a@x.com');
+        });
+    });
+
+    it('inclut les représentants révoqués (historique) avec active: false', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: false,
+                  valid_from: '2026-01-01', valid_until: '2026-06-01',
+                  profiles: { full_name: 'Ancien', email: 'old@x.com' } },
+            ],
+        }), 'own-1', true);
+        expect(detail?.representatives).toEqual([{
+            id: 'm1', profile_id: 'p1', full_name: 'Ancien', email: 'old@x.com',
+            priority: 100, active: false, valid_from: '2026-01-01', valid_until: '2026-06-01',
+        }]);
+    });
+
+    it('retombe sur un tableau vide quand l_armateur n_a aucun représentant', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+        }), 'own-1', true);
+        expect(detail?.representatives).toEqual([]);
     });
 });
 

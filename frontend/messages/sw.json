@@ -4099,7 +4099,9 @@
       "rail": "Njia",
       "reference": "Rejeleo",
       "dueDate": "Tarehe ya malipo",
-      "age": "Umri"
+      "age": "Umri",
+      "priority": "Kipaumbele",
+      "validity": "Kipindi cha uhalali"
     },
     "detail": {
       "identityTitle": "Utambulisho",
@@ -4154,7 +4156,15 @@
       "billingCcHint": "Anwani zinazopokea nakala za ankara na vikumbusho, pamoja na mpokeaji rasmi.",
       "addCc": "Ongeza",
       "removeCc": "Ondoa {email}",
-      "infoOnlyHint": "Taarifa tu — hazitumiki kutuma."
+      "infoOnlyHint": "Taarifa tu — hazitumiki kutuma.",
+      "representativesTitle": "Wawakilishi",
+      "noRepresentatives": "Hakuna mwakilishi.",
+      "repPrimary": "Nakala kwenye ankara mpya (ulinganishaji wa kiotomatiki)",
+      "repAttach": "Unganisha",
+      "repRevoke": "Batilisha",
+      "repRevoked": "Imebatilishwa",
+      "repManageAll": "Simamia ramani zote",
+      "repAgentId": "Kitambulisho cha wakala (UUID)"
     }
   },
   "AdminReglements": {

@@ -4096,7 +4096,9 @@
       "rail": "Rail",
       "reference": "Reference",
       "dueDate": "Due date",
-      "age": "Age"
+      "age": "Age",
+      "priority": "Priority",
+      "validity": "Validity period"
     },
     "detail": {
       "identityTitle": "Identity",
@@ -4151,7 +4153,15 @@
       "billingCcHint": "Addresses copied on invoices and reminders, in addition to the official recipient.",
       "addCc": "Add",
       "removeCc": "Remove {email}",
-      "infoOnlyHint": "Information only — not used for sending."
+      "infoOnlyHint": "Information only — not used for sending.",
+      "representativesTitle": "Representatives",
+      "noRepresentatives": "No representatives.",
+      "repPrimary": "CC'd on new invoices (auto matching)",
+      "repAttach": "Attach",
+      "repRevoke": "Revoke",
+      "repRevoked": "Revoked",
+      "repManageAll": "Manage all mappings",
+      "repAgentId": "Agent ID (UUID)"
     }
   },
   "AdminReglements": {

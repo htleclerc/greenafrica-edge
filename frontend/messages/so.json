@@ -4096,7 +4096,9 @@
       "rail": "Qaybta bixinta",
       "reference": "Tixraac",
       "dueDate": "Taariikhda dhicitaanka",
-      "age": "Da'da"
+      "age": "Da'da",
+      "priority": "Mudnaanta",
+      "validity": "Muddada ansaxnimada"
     },
     "detail": {
       "identityTitle": "Aqoonsiga",
@@ -4151,7 +4153,15 @@
       "billingCcHint": "Cinwaannada nuqulka laga helo qaansheegyada iyo xasuusinnada, marka lagu daro qofka rasmiga ah ee helaya.",
       "addCc": "Ku dar",
       "removeCc": "Ka saar {email}",
-      "infoOnlyHint": "Macluumaad kaliya — looma isticmaalo dirista."
+      "infoOnlyHint": "Macluumaad kaliya — looma isticmaalo dirista.",
+      "representativesTitle": "Wakiillada",
+      "noRepresentatives": "Wakiil lama helin.",
+      "repPrimary": "Nuqul ka mid ah qaansheegyada cusub (isku-xirka otomaatiga)",
+      "repAttach": "Ku lifaaq",
+      "repRevoke": "Baabi'i",
+      "repRevoked": "La baabi'iyay",
+      "repManageAll": "Maamul dhammaan xiriirrada",
+      "repAgentId": "Aqoonsiga wakiilka (UUID)"
     }
   },
   "AdminReglements": {

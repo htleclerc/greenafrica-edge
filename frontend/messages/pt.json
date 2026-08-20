@@ -4133,7 +4133,9 @@
       "rail": "Canal",
       "reference": "Referência",
       "dueDate": "Vencimento",
-      "age": "Idade"
+      "age": "Idade",
+      "priority": "Prioridade",
+      "validity": "Período de validade"
     },
     "detail": {
       "identityTitle": "Identidade",
@@ -4188,7 +4190,15 @@
       "billingCcHint": "Endereços em cópia nas faturas e cobranças, além do destinatário oficial.",
       "addCc": "Adicionar",
       "removeCc": "Remover {email}",
-      "infoOnlyHint": "Apenas informativo — não utilizados para envio."
+      "infoOnlyHint": "Apenas informativo — não utilizados para envio.",
+      "representativesTitle": "Representantes",
+      "noRepresentatives": "Nenhum representante.",
+      "repPrimary": "Em cópia nas novas faturas (correspondência automática)",
+      "repAttach": "Vincular",
+      "repRevoke": "Revogar",
+      "repRevoked": "Revogado",
+      "repManageAll": "Gerir todos os mapeamentos",
+      "repAgentId": "ID do agente (UUID)"
     }
   },
   "AdminReglements": {

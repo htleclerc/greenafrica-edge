@@ -96,6 +96,17 @@ export interface ArmateurReminderRow {
     escalated_bailiff: boolean;
 }
 
+export interface ArmateurRepresentativeRow {
+    id: string;
+    profile_id: string;
+    full_name: string;
+    email: string;
+    priority: number;
+    active: boolean;
+    valid_from: string;
+    valid_until: string | null;
+}
+
 export interface ArmateurDetail {
     id: string;
     name: string;
@@ -136,6 +147,7 @@ export interface ArmateurDetail {
     proformas: ArmateurProformaRow[];
     payments: ArmateurPaymentRow[];
     reminders: ArmateurReminderRow[];
+    representatives: ArmateurRepresentativeRow[];
 }
 
 export async function getArmateurDetail(
@@ -146,7 +158,7 @@ export async function getArmateurDetail(
     const { data: s } = await db.from('shipowners').select('*').eq('id', id).is('iata_code', null).maybeSingle();
     if (!s) return null;
 
-    const [vesselsRes, txRes, recRes] = await Promise.all([
+    const [vesselsRes, txRes, recRes, repRes] = await Promise.all([
         db.from('vessels').select('id, imo_number, name, category, gross_tonnage_dwt, flag_code').eq('shipowner_id', id),
         db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, due_date, collections_status, content_hash, verify_signature')
           .eq('shipowner_id', id).eq('document_type', 'PROFORMA').eq('mode', 'MARITIME')
@@ -157,6 +169,17 @@ export async function getArmateurDetail(
         db.from('v_armateur_recouvrement')
           .select('total_invoiced_usd, total_paid_usd, total_outstanding_usd, overdue_count, next_due_date')
           .eq('id', id).maybeSingle(),
+        // Représentants (Task 9) : toutes les lignes (actives ET révoquées), triées
+        // par priorité croissante — la fiche doit pouvoir montrer l'historique, pas
+        // seulement l'état courant. owner_agent_mappings porte DEUX FK vers profiles
+        // (agent_profile_id et created_by, migration 024) : un embed `profiles(...)`
+        // non qualifié est ambigu pour PostgREST et échoue à l'exécution (PGRST201)
+        // malgré un typage qui compile — d'où le hint explicite sur le nom de la FK,
+        // déjà utilisé pour cette même relation dans ownerAgentMappingService.ts.
+        db.from('owner_agent_mappings')
+          .select('id, agent_profile_id, priority, active, valid_from, valid_until, profiles!owner_agent_mappings_agent_profile_id_fkey(full_name, email)')
+          .eq('shipowner_id', id)
+          .order('priority', { ascending: true }),
     ]);
     const txIds = (txRes.data ?? []).map((t) => t.id as string);
     const [payRes, remRes] = await Promise.all([
@@ -247,5 +270,29 @@ export async function getArmateurDetail(
             id: r.id as string, tier: r.tier as string, sent_at: r.sent_at as string,
             debtor_response_type: r.debtor_response_type as string, escalated_bailiff: !!r.escalated_bailiff,
         })),
+        representatives: ((repRes.data ?? []) as Record<string, unknown>[]).map((m) => {
+            // PostgREST renvoie une relation jointe en objet OU en tableau selon la
+            // cardinalité qu'il infère — normaliser avant lecture (même patron que
+            // escalateCollection.ts:84), sinon un typage naïf compile et casse au
+            // premier shipowner dont l'inférence choisit le tableau.
+            type JoinedProfile = { full_name: string | null; email: string };
+            const rawProfile = m.profiles as JoinedProfile | JoinedProfile[] | null;
+            const p = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+            return {
+                id: m.id as string,
+                profile_id: m.agent_profile_id as string,
+                full_name: p?.full_name ?? p?.email ?? '—',
+                email: p?.email as string,
+                priority: Number(m.priority),
+                active: !!m.active,
+                valid_from: m.valid_from as string,
+                valid_until: (m.valid_until as string | null) ?? null,
+            };
+        })
+        // Le tri par priorité croissante est déjà demandé à la requête
+        // (.order('priority', ...)) mais on le refait ici, JS-side : c'est ce
+        // tri, pas l'ordre SQL, qui détermine le représentant principal côté UI,
+        // et on ne suppose jamais qu'un appelant futur retire l'.order() sans y penser.
+        .sort((a, b) => a.priority - b.priority),
     };
 }

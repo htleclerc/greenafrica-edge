@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as Dialog from '@radix-ui/react-dialog';
 import { OsCard, OsCardHeader } from '@/components/ui/OsCard';
@@ -12,6 +13,8 @@ import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import { inviteShipowner } from '@/actions/inviteShipowner';
 import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { anonymizeOwner } from '@/actions/anonymizeOwner';
+import { createOwnerAgentMapping } from '@/actions/createOwnerAgentMapping';
+import { deactivateOwnerAgentMapping } from '@/actions/deactivateOwnerAgentMapping';
 import { useClientSort } from '@/hooks/useClientSort';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
 import { MAX_CC_EMAILS } from '@/lib/armateurContacts';
@@ -20,6 +23,7 @@ import {
     type ArmateurVesselRow,
     type ArmateurProformaRow,
     type ArmateurPaymentRow,
+    type ArmateurRepresentativeRow,
 } from '@/services/armateurService';
 
 interface Props {
@@ -428,6 +432,8 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
 
             <ContactsCard key={contactsCardKey(detail)} detail={detail} onSaved={() => router.refresh()} />
 
+            <RepresentativesCard detail={detail} onSaved={() => router.refresh()} />
+
             <OsCard>
                 <OsCardHeader title={t('detail.kycTitle')} />
                 <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
@@ -811,6 +817,227 @@ function ContactsCard({ detail, onSaved }: ContactsCardProps) {
                     >
                         {contactsPending ? t('saving') : t('save')}
                     </OsButton>
+                </div>
+            </div>
+        </OsCard>
+    );
+}
+
+interface RepresentativesCardProps {
+    detail: ArmateurDetailType;
+    onSaved: () => void;
+}
+
+// Carte représentants (Task 9). Contrairement à ContactsCard, aucun état local
+// ne dérive d'un instantané de `detail` : la liste est relue directement depuis
+// les props à chaque rendu (comme sortedVessels/sortedProformas/sortedPayments
+// dans le composant parent), et le mini-formulaire d'attache part toujours de
+// champs vides. Pas de remontage par `key` nécessaire ici — voir la note sur
+// contactsCardKey pour le problème que ContactsCard résout et que celui-ci
+// n'a pas.
+//
+// Table volontairement non triable (pas de useClientSort) : un armateur a
+// typiquement 1 à 3 représentants, l'ordre par priorité déjà appliqué par
+// getArmateurDetail suffit. useClientSort mémoïse sur la RÉFÉRENCE de columns
+// (frontend/src/hooks/useClientSort.ts) — l'utiliser ici aurait forcé soit un
+// useMemo sur columns avec des gestionnaires eux-mêmes stabilisés par
+// useCallback (pending/erreur par ligne inclus), soit une dépendance manquante
+// signalée par react-hooks/preserve-manual-memoization (sévérité error dans ce
+// dépôt) ; complexité non justifiée pour une liste aussi courte. Même parti
+// pris que OwnerAgentMappingList.tsx (frontend/src/app/(dashboard)/admin/
+// owner-agent-mappings/OwnerAgentMappingList.tsx), qui gère cette même donnée
+// sans useClientSort non plus.
+function RepresentativesCard({ detail, onSaved }: RepresentativesCardProps) {
+    const t = useTranslations('AdminArmateurs');
+
+    const [attachOpen, setAttachOpen] = React.useState(false);
+    const [agentProfileId, setAgentProfileId] = React.useState('');
+    const [priority, setPriority] = React.useState(100);
+    const [attachError, setAttachError] = React.useState<string | null>(null);
+    const [attachPending, startAttachTransition] = React.useTransition();
+
+    const [revokingId, setRevokingId] = React.useState<string | null>(null);
+    const [revokeError, setRevokeError] = React.useState<string | null>(null);
+    const [revokePending, startRevokeTransition] = React.useTransition();
+
+    function openAttach() {
+        setAgentProfileId('');
+        setPriority(100);
+        setAttachError(null);
+        setAttachOpen(true);
+    }
+    function closeAttach() {
+        setAttachOpen(false);
+        setAttachError(null);
+    }
+    function submitAttach() {
+        setAttachError(null);
+        startAttachTransition(async () => {
+            const result = await createOwnerAgentMapping({
+                shipownerId: detail.id,
+                agentProfileId: agentProfileId.trim(),
+                priority,
+            });
+            if (!result.ok) {
+                setAttachError(result.reason);
+                return;
+            }
+            closeAttach();
+            onSaved();
+        });
+    }
+
+    function submitRevoke(mappingId: string) {
+        setRevokeError(null);
+        setRevokingId(mappingId);
+        startRevokeTransition(async () => {
+            const result = await deactivateOwnerAgentMapping({ mappingId });
+            if (!result.ok) {
+                setRevokingId(null);
+                setRevokeError(result.reason);
+                return;
+            }
+            onSaved();
+        });
+    }
+
+    // Représentant "principal" au sens du rapprochement automatique (cascade A,
+    // match_pending_alerts — migrations 034/046) : actif, dans sa fenêtre de
+    // validité, priorité la plus basse. C'est UNIQUEMENT ce qu'une NOUVELLE
+    // alerte d'arrivée traitée automatiquement retiendrait aujourd'hui — PAS une
+    // garantie sur les pro-formas déjà émises (transactions.agent_profile_id y
+    // est figé au moment de l'émission, cf getArmateurDetail et
+    // proformaPipelineService.ts) ni sur une alerte revendiquée manuellement
+    // (claimAlert dans arrivalAlertService.ts, qui ignore ce mapping et peut
+    // désigner n'importe quel agent). D'où le libellé de repPrimary,
+    // volontairement au futur et borné aux "nouvelles" factures plutôt qu'une
+    // affirmation générale — voir le rapport de la Tâche 9 pour le détail de cet
+    // écart avec le brief initial.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const eligible = detail.representatives
+        .filter((r) => r.active && r.valid_from <= todayIso && (r.valid_until === null || r.valid_until >= todayIso))
+        .sort((a, b) => a.priority - b.priority);
+    const primaryId = eligible[0]?.id ?? null;
+
+    const columns: OsColumn<ArmateurRepresentativeRow>[] = [
+        {
+            key: 'name',
+            header: t('col.name'),
+            render: (r) => (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-medium text-[var(--os-text-primary)]">{r.full_name}</span>
+                    {r.id === primaryId && <OsBadge variant="info" label={t('detail.repPrimary')} size="sm" />}
+                </div>
+            ),
+        },
+        {
+            key: 'email',
+            header: t('col.email'),
+            render: (r) => <span className="text-xs text-[var(--os-text-muted)]">{r.email}</span>,
+        },
+        {
+            key: 'priority',
+            header: t('col.priority'),
+            className: 'text-right',
+            render: (r) => <span className="text-xs tabular-nums font-mono">{r.priority}</span>,
+        },
+        {
+            key: 'validity',
+            header: t('col.validity'),
+            // Dates au format DATE (pas de composante horaire) : affichées telles
+            // quelles, jamais via `new Date(...).toLocaleDateString()` — ce
+            // parsing réintroduirait un décalage de fuseau horaire pour les
+            // lecteurs en UTC négatif (même écueil déjà évité par
+            // OwnerAgentMappingList.tsx pour ces mêmes colonnes).
+            render: (r) => (
+                <span className="text-xs tabular-nums">{r.valid_from} → {r.valid_until ?? '—'}</span>
+            ),
+        },
+        {
+            key: 'status',
+            header: t('col.status'),
+            render: (r) => (r.active
+                ? <OsBadge variant="active" label={t('state.active')} size="sm" />
+                : <OsBadge variant="archived" label={t('detail.repRevoked')} size="sm" />),
+        },
+        {
+            key: 'actions',
+            header: t('col.actions'),
+            className: 'text-right',
+            render: (r) => (r.active ? (
+                <div className="flex justify-end">
+                    <OsButton
+                        size="sm"
+                        variant="danger"
+                        onClick={() => submitRevoke(r.id)}
+                        loading={revokePending && revokingId === r.id}
+                        disabled={revokePending && revokingId === r.id}
+                    >
+                        {t('detail.repRevoke')}
+                    </OsButton>
+                </div>
+            ) : null),
+        },
+    ];
+
+    return (
+        <OsCard>
+            <OsCardHeader title={t('detail.representativesTitle')} />
+            <div className="flex flex-col gap-3">
+                <OsTable
+                    columns={columns}
+                    rows={detail.representatives}
+                    keyExtractor={(r) => r.id}
+                    emptyMessage={t('detail.noRepresentatives')}
+                />
+                {revokeError && <p className="text-xs text-[#EF4444]">{revokeError}</p>}
+
+                {attachOpen && (
+                    <div className="flex flex-wrap items-end gap-3 p-3 rounded-xl border border-[var(--os-border)] bg-[var(--os-surface-2)]">
+                        <div className="flex-1 min-w-[220px]">
+                            <OsInput
+                                label={t('detail.repAgentId')}
+                                value={agentProfileId}
+                                onChange={(e) => setAgentProfileId(e.target.value)}
+                                placeholder="00000000-0000-0000-0000-000000000000"
+                                disabled={attachPending}
+                            />
+                        </div>
+                        <div className="w-28">
+                            <OsInput
+                                type="number"
+                                min={1}
+                                max={1000}
+                                label={t('col.priority')}
+                                value={priority}
+                                onChange={(e) => setPriority(Number(e.target.value))}
+                                disabled={attachPending}
+                            />
+                        </div>
+                        <OsButton
+                            variant="primary"
+                            onClick={submitAttach}
+                            loading={attachPending}
+                            disabled={attachPending || !agentProfileId.trim()}
+                        >
+                            {t('detail.repAttach')}
+                        </OsButton>
+                        <OsButton variant="ghost" onClick={closeAttach} disabled={attachPending}>
+                            {t('cancel')}
+                        </OsButton>
+                        {attachError && <p className="text-xs text-[#EF4444] w-full">{attachError}</p>}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                    {!attachOpen && (
+                        <OsButton variant="secondary" size="sm" onClick={openAttach}>
+                            {t('detail.repAttach')}
+                        </OsButton>
+                    )}
+                    <Link href="/admin/owner-agent-mappings" className="text-xs text-[#00D97E] hover:underline ml-auto">
+                        {t('detail.repManageAll')}
+                    </Link>
                 </div>
             </div>
         </OsCard>
