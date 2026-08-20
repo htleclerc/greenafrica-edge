@@ -4101,7 +4101,8 @@
       "dueDate": "تاريخ الاستحقاق",
       "age": "العمر",
       "priority": "الأولوية",
-      "validity": "فترة الصلاحية"
+      "validity": "فترة الصلاحية",
+      "agent": "الوكيل"
     },
     "detail": {
       "identityTitle": "الهوية",
@@ -4163,8 +4164,7 @@
       "repAttach": "إلحاق",
       "repRevoke": "إلغاء",
       "repRevoked": "ملغى",
-      "repManageAll": "إدارة جميع الروابط",
-      "repAgentId": "معرّف الوكيل (UUID)"
+      "repManageAll": "إدارة جميع الروابط"
     }
   },
   "AdminReglements": {

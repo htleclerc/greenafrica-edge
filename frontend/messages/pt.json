@@ -4135,7 +4135,8 @@
       "dueDate": "Vencimento",
       "age": "Idade",
       "priority": "Prioridade",
-      "validity": "Período de validade"
+      "validity": "Período de validade",
+      "agent": "Agente"
     },
     "detail": {
       "identityTitle": "Identidade",
@@ -4197,8 +4198,7 @@
       "repAttach": "Vincular",
       "repRevoke": "Revogar",
       "repRevoked": "Revogado",
-      "repManageAll": "Gerir todos os mapeamentos",
-      "repAgentId": "ID do agente (UUID)"
+      "repManageAll": "Gerir todos os mapeamentos"
     }
   },
   "AdminReglements": {

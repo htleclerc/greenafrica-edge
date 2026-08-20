@@ -14,8 +14,31 @@ export default async function ArmateurDetailPage({ params }: { params: Promise<{
     if (!profile || !['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'].includes(profile.role)) redirect('/dashboard');
 
     const canViewBilling = ['SUPERADMIN', 'FINANCE_ADMIN'].includes(profile.role);
-    const detail = await getArmateurDetail(supabase, id, canViewBilling);
+    // Même requête que owner-agent-mappings/page.tsx pour peupler le sélecteur
+    // d'agent de la carte Représentants (round de correction 1, Tâche 9) —
+    // indépendante de getArmateurDetail, donc en parallèle plutôt qu'en série.
+    const [detail, agentsRes] = await Promise.all([
+        getArmateurDetail(supabase, id, canViewBilling),
+        supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .eq('role', 'SHIPPING_AGENT')
+            .order('full_name'),
+    ]);
     if (!detail) notFound();
     const isSuperadmin = profile.role === 'SUPERADMIN';
-    return <ArmateurDetail detail={detail} canInvite={isSuperadmin} canAnonymize={isSuperadmin} />;
+    return (
+        <ArmateurDetail
+            detail={detail}
+            canInvite={isSuperadmin}
+            canAnonymize={isSuperadmin}
+            agents={
+                (agentsRes.data ?? []) as {
+                    id: string;
+                    full_name: string | null;
+                    email: string;
+                }[]
+            }
+        />
+    );
 }

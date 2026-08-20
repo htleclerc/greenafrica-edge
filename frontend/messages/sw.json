@@ -4101,7 +4101,8 @@
       "dueDate": "Tarehe ya malipo",
       "age": "Umri",
       "priority": "Kipaumbele",
-      "validity": "Kipindi cha uhalali"
+      "validity": "Kipindi cha uhalali",
+      "agent": "Wakala"
     },
     "detail": {
       "identityTitle": "Utambulisho",
@@ -4163,8 +4164,7 @@
       "repAttach": "Unganisha",
       "repRevoke": "Batilisha",
       "repRevoked": "Imebatilishwa",
-      "repManageAll": "Simamia ramani zote",
-      "repAgentId": "Kitambulisho cha wakala (UUID)"
+      "repManageAll": "Simamia ramani zote"
     }
   },
   "AdminReglements": {

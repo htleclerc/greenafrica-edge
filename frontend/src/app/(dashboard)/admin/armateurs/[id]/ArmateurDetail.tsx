@@ -26,10 +26,21 @@ import {
     type ArmateurRepresentativeRow,
 } from '@/services/armateurService';
 
+// Forme exacte de agentsRes.data dans page.tsx (select('id, full_name, email')
+// sur profiles filtré role=SHIPPING_AGENT) — même requête que owner-agent-mappings/
+// page.tsx, réutilisée telle quelle pour peupler le sélecteur d'agent de
+// RepresentativesCard (round de correction 1, Tâche 9).
+interface ArmateurAgentOption {
+    id: string;
+    full_name: string | null;
+    email: string;
+}
+
 interface Props {
     detail: ArmateurDetailType;
     canInvite: boolean;
     canAnonymize: boolean;
+    agents: ArmateurAgentOption[];
 }
 
 type AllowedLang = (typeof ALLOWED_LANGS)[number];
@@ -174,7 +185,7 @@ function contactsCardKey(detail: ArmateurDetailType): string {
     ]);
 }
 
-export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
+export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Props) {
     const t = useTranslations('AdminArmateurs');
     const router = useRouter();
 
@@ -432,7 +443,7 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize }: Props) {
 
             <ContactsCard key={contactsCardKey(detail)} detail={detail} onSaved={() => router.refresh()} />
 
-            <RepresentativesCard detail={detail} onSaved={() => router.refresh()} />
+            <RepresentativesCard detail={detail} onSaved={() => router.refresh()} agents={agents} />
 
             <OsCard>
                 <OsCardHeader title={t('detail.kycTitle')} />
@@ -826,6 +837,7 @@ function ContactsCard({ detail, onSaved }: ContactsCardProps) {
 interface RepresentativesCardProps {
     detail: ArmateurDetailType;
     onSaved: () => void;
+    agents: ArmateurAgentOption[];
 }
 
 // Carte représentants (Task 9). Contrairement à ContactsCard, aucun état local
@@ -847,7 +859,7 @@ interface RepresentativesCardProps {
 // pris que OwnerAgentMappingList.tsx (frontend/src/app/(dashboard)/admin/
 // owner-agent-mappings/OwnerAgentMappingList.tsx), qui gère cette même donnée
 // sans useClientSort non plus.
-function RepresentativesCard({ detail, onSaved }: RepresentativesCardProps) {
+function RepresentativesCard({ detail, onSaved, agents }: RepresentativesCardProps) {
     const t = useTranslations('AdminArmateurs');
 
     const [attachOpen, setAttachOpen] = React.useState(false);
@@ -919,10 +931,19 @@ function RepresentativesCard({ detail, onSaved }: RepresentativesCardProps) {
         .sort((a, b) => a.priority - b.priority);
     const primaryId = eligible[0]?.id ?? null;
 
+    // Même patron que AddMappingForm.tsx (frontend/src/app/(dashboard)/admin/
+    // owner-agent-mappings/AddMappingForm.tsx) pour la même liste d'agents.
+    const agentOptions = agents.map((a) => ({ value: a.id, label: a.full_name ?? a.email }));
+
     const columns: OsColumn<ArmateurRepresentativeRow>[] = [
         {
             key: 'name',
-            header: t('col.name'),
+            // col.agent, PAS col.name : col.name résout vers "Armateur"/"Shipowner"
+            // (usage canonique dans ArmateursCockpit.tsx, le nom de l'armateur
+            // lui-même) — un en-tête trompeur ici, puisque cette colonne montre le
+            // nom d'un AGENT rattaché, pas celui de l'armateur. Corrigé au round de
+            // correction 1 (Tâche 9), trouvé en revue.
+            header: t('col.agent'),
             render: (r) => (
                 <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-medium text-[var(--os-text-primary)]">{r.full_name}</span>
@@ -995,11 +1016,12 @@ function RepresentativesCard({ detail, onSaved }: RepresentativesCardProps) {
                 {attachOpen && (
                     <div className="flex flex-wrap items-end gap-3 p-3 rounded-xl border border-[var(--os-border)] bg-[var(--os-surface-2)]">
                         <div className="flex-1 min-w-[220px]">
-                            <OsInput
-                                label={t('detail.repAgentId')}
+                            <OsSelect
+                                label={t('col.agent')}
+                                placeholder="—"
+                                options={agentOptions}
                                 value={agentProfileId}
                                 onChange={(e) => setAgentProfileId(e.target.value)}
-                                placeholder="00000000-0000-0000-0000-000000000000"
                                 disabled={attachPending}
                             />
                         </div>

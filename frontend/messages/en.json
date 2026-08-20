@@ -4098,7 +4098,8 @@
       "dueDate": "Due date",
       "age": "Age",
       "priority": "Priority",
-      "validity": "Validity period"
+      "validity": "Validity period",
+      "agent": "Agent"
     },
     "detail": {
       "identityTitle": "Identity",
@@ -4160,8 +4161,7 @@
       "repAttach": "Attach",
       "repRevoke": "Revoke",
       "repRevoked": "Revoked",
-      "repManageAll": "Manage all mappings",
-      "repAgentId": "Agent ID (UUID)"
+      "repManageAll": "Manage all mappings"
     }
   },
   "AdminReglements": {

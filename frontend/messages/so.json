@@ -4098,7 +4098,8 @@
       "dueDate": "Taariikhda dhicitaanka",
       "age": "Da'da",
       "priority": "Mudnaanta",
-      "validity": "Muddada ansaxnimada"
+      "validity": "Muddada ansaxnimada",
+      "agent": "Wakiil"
     },
     "detail": {
       "identityTitle": "Aqoonsiga",
@@ -4160,8 +4161,7 @@
       "repAttach": "Ku lifaaq",
       "repRevoke": "Baabi'i",
       "repRevoked": "La baabi'iyay",
-      "repManageAll": "Maamul dhammaan xiriirrada",
-      "repAgentId": "Aqoonsiga wakiilka (UUID)"
+      "repManageAll": "Maamul dhammaan xiriirrada"
     }
   },
   "AdminReglements": {
