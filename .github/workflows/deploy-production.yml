@@ -165,24 +165,19 @@ jobs:
           echo "### Frontend: $URL" >> "$GITHUB_STEP_SUMMARY"
         working-directory: frontend
 
-      # Promotion explicite : ne depend plus du bon deroulement d'une attente
-      # interne a la CLI.
-      # Promotion explicite. Le deploiement est pret a ce stade puisque
-      # `vercel deploy` a rendu la main. Un deploiement --prod recupere de toute
-      # facon le domaine tout seul ; cette etape est la garantie observable.
-      - name: Promote to production domain
-        run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend
-
-      # Fumigation. On ne compare pas d'identifiant de deploiement : Vercel
-      # n'expose aucun en-tete stable pour cela (x-vercel-id change a chaque
-      # requete, verifie le 2026-08-19).
+      # Un deploiement `--prod` recupere le domaine de production tout seul :
+      # `vercel promote` repond 409 « already the current production deployment »
+      # et n'a de sens que pour promouvoir une PREVERSION. L'etape a donc ete
+      # retiree, et cette fumigation devient la garantie de mise en ligne.
+      #
+      # On ne compare pas d'identifiant de deploiement : Vercel n'expose aucun
+      # en-tete stable pour cela (x-vercel-id change a chaque requete).
       - name: Smoke-check the production domain
         run: |
           STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 20 "${{ secrets.PRODUCTION_URL }}/login" || echo "000")
           echo "Domaine public: HTTP $STATUS"
           if [ "$STATUS" != "200" ]; then
-            echo "::error::Le domaine de production repond $STATUS apres promotion."
+            echo "::error::Le domaine de production repond $STATUS apres deploiement."
             exit 1
           fi
           echo "### Domaine de production sain (HTTP $STATUS)" >> "$GITHUB_STEP_SUMMARY"
