@@ -133,7 +133,7 @@ LEFT JOIN LATERAL (
        FILTER (WHERE cr.debtor_response_type <> 'SILENT'))[1]                                  AS latest_response_type
   FROM public.collection_reminders cr
   JOIN public.transactions t2 ON t2.id = cr.transaction_id
-  WHERE t2.shipowner_id = s.id
+  WHERE t2.shipowner_id = s.id AND t2.document_type = 'PROFORMA' AND t2.mode = 'MARITIME'
 ) r ON TRUE
 WHERE s.iata_code IS NULL
 GROUP BY s.id, r.last_auto_tier, r.last_reminder_at, r.latest_response_type;
