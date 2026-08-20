@@ -1,0 +1,156 @@
+import { describe, it, expect } from 'vitest';
+import { resolveLoginTarget } from './loginAllowlist';
+
+/**
+ * La liste d'autorisation décide qui peut recevoir un lien de connexion.
+ *
+ * Trois sources, par priorité décroissante : l'adresse officielle de
+ * l'armateur, un représentant rattaché (owner_agent_mappings), un
+ * destinataire en copie de facturation (shipowners.billing_cc_emails, une
+ * colonne TEXT[] et non une table).
+ *
+ * Une adresse inconnue ne crée jamais rien, et l'adresse de livraison vient
+ * toujours de la base : la saisie sert à chercher, pas à recevoir.
+ */
+const OWNER = {
+    id: 'own-1',
+    name: 'FAROS SHIPPING CO SARL',
+    official_email: 'faros@farosshipping.example',
+    is_placeholder: false,
+    is_ofac_sdn: false,
+    is_un_prohibited: false,
+};
+
+/** Faux client : chaque table rend la première ligne correspondant aux filtres. */
+function admin(tables: {
+    shipowners?: Record<string, unknown>[];
+    mappings?: Record<string, unknown>[];
+    cc?: Record<string, unknown>[];
+}) {
+    const calls: string[] = [];
+    const make = (rows: Record<string, unknown>[]) => {
+        let filtered = [...rows];
+        const chain: Record<string, unknown> = {};
+        chain.select = () => chain;
+        // PostgREST filtre une table jointe par chemin pointe
+        // (`profiles.email`) : le simulacre doit le refleter, sinon il
+        // validerait une requete qui ne marche pas en vrai.
+        chain.eq = (col: string, val: unknown) => {
+            filtered = filtered.filter((r) => {
+                const v = col.includes('.')
+                    ? col.split('.').reduce<unknown>((acc, k) =>
+                        (acc as Record<string, unknown> | undefined)?.[k], r)
+                    : r[col];
+                return v === val;
+            });
+            return chain;
+        };
+        chain.contains = (col: string, val: unknown[]) => {
+            filtered = filtered.filter((r) => {
+                const arr = (r[col] ?? []) as unknown[];
+                return val.every((v) => arr.includes(v));
+            });
+            return chain;
+        };
+        chain.limit = () => chain;
+        chain.maybeSingle = async () => ({ data: filtered[0] ?? null, error: null });
+        return chain;
+    };
+    return {
+        client: {
+            from: (t: string) => {
+                calls.push(t);
+                if (t === 'owner_agent_mappings') return make(tables.mappings ?? []);
+                return make(t === 'shipowners' && tables.cc ? tables.cc : (tables.shipowners ?? []));
+            },
+        } as never,
+        calls,
+    };
+}
+
+describe('resolveLoginTarget', () => {
+    it('reconnaît l’adresse officielle de l’armateur', async () => {
+        const a = admin({ shipowners: [OWNER] });
+        const t = await resolveLoginTarget(a.client, 'faros@farosshipping.example');
+        expect(t).toMatchObject({ shipownerId: 'own-1', scope: 'OWNER' });
+    });
+
+    it('normalise la casse et les espaces', async () => {
+        const a = admin({ shipowners: [OWNER] });
+        const t = await resolveLoginTarget(a.client, '  FAROS@farosshipping.example ');
+        expect(t?.shipownerId).toBe('own-1');
+    });
+
+    it('livre toujours à l’adresse de la base, jamais à celle saisie', async () => {
+        const a = admin({ shipowners: [OWNER] });
+        const t = await resolveLoginTarget(a.client, 'FAROS@FAROSSHIPPING.EXAMPLE');
+        expect(t?.deliveryEmail).toBe('faros@farosshipping.example');
+    });
+
+    it('rend null sur une adresse inconnue', async () => {
+        const a = admin({ shipowners: [OWNER] });
+        expect(await resolveLoginTarget(a.client, 'inconnu@nulle.part')).toBeNull();
+    });
+
+    it('rend null sur une saisie qui n’est pas une adresse', async () => {
+        const a = admin({ shipowners: [OWNER] });
+        expect(await resolveLoginTarget(a.client, 'pas-une-adresse')).toBeNull();
+        // Aucune requête ne doit partir pour une saisie manifestement invalide.
+        expect(a.calls).toEqual([]);
+    });
+
+    it('rend null sur un armateur fictif', async () => {
+        const a = admin({ shipowners: [{ ...OWNER, is_placeholder: true }] });
+        expect(await resolveLoginTarget(a.client, 'faros@farosshipping.example')).toBeNull();
+    });
+
+    it('rend null quand l’armateur n’a pas d’adresse de livraison', async () => {
+        const a = admin({ shipowners: [{ ...OWNER, official_email: null }] });
+        expect(await resolveLoginTarget(a.client, 'faros@farosshipping.example')).toBeNull();
+    });
+
+    it('remonte les drapeaux de sanctions sans décider à la place de l’appelant', async () => {
+        const a = admin({ shipowners: [{
+            ...OWNER, id: 'own-2',
+            official_email: 'morgan.navigation@mail.example',
+            is_un_prohibited: true,
+        }] });
+        const t = await resolveLoginTarget(a.client, 'morgan.navigation@mail.example');
+        expect(t?.isUnProhibited).toBe(true);
+        expect(t?.scope).toBe('OWNER');
+    });
+
+    it('reconnaît un représentant rattaché et actif', async () => {
+        const a = admin({
+            shipowners: [],
+            mappings: [{
+                shipowner_id: 'own-1', active: true,
+                profiles: { email: 'gavaksh.b@rafflescommercial.com' },
+                shipowners: OWNER,
+            }],
+        });
+        const t = await resolveLoginTarget(a.client, 'gavaksh.b@rafflescommercial.com');
+        expect(t).toMatchObject({ shipownerId: 'own-1', scope: 'REPRESENTATIVE' });
+        // Le lien part à l'adresse du représentant, pas à celle de l'armateur.
+        expect(t?.deliveryEmail).toBe('gavaksh.b@rafflescommercial.com');
+    });
+
+    it('ignore un rattachement désactivé', async () => {
+        const a = admin({
+            shipowners: [],
+            mappings: [{
+                shipowner_id: 'own-1', active: false,
+                profiles: { email: 'ancien@rep.com' },
+                shipowners: OWNER,
+            }],
+        });
+        expect(await resolveLoginTarget(a.client, 'ancien@rep.com')).toBeNull();
+    });
+
+    it('reconnaît une copie de facturation, portée BILLING_CC', async () => {
+        const a = admin({ cc: [{ ...OWNER, billing_cc_emails: ['compta@armateur.com'] }] });
+        const t = await resolveLoginTarget(a.client, 'compta@armateur.com');
+        expect(t).toMatchObject({ shipownerId: 'own-1', scope: 'BILLING_CC' });
+        expect(t?.deliveryEmail).toBe('compta@armateur.com');
+    });
+});
