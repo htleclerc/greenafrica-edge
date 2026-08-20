@@ -8,13 +8,18 @@ import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant'
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { upsertShipownerEmail } from '@/services/shipownerService';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
-import { MAX_CC_EMAILS } from '@/lib/armateurContacts';
+import { MAX_CC_EMAILS, normalizeCcEmails } from '@/lib/armateurContacts';
 
-// Réexporté pour compatibilité : le fichier de test importe MAX_CC_EMAILS
-// depuis ce module (`await import('./updateArmateurContacts')`). La valeur
-// elle-même vit dans @/lib/armateurContacts (module neutre, importable côté
-// client — voir son commentaire d'en-tête).
-export { MAX_CC_EMAILS };
+// Réexportés pour compatibilité : le fichier de test importe MAX_CC_EMAILS et
+// normalizeCcEmails depuis ce module (`await import('./updateArmateurContacts')`).
+// Les deux vivent dans @/lib/armateurContacts (module neutre, importable côté
+// client) — normalizeCcEmails y a été déplacée depuis ce fichier : un export
+// synchrone déclaré directement dans un fichier 'use server' fait échouer
+// `next build` avec « Server Actions must be async functions », une
+// contrainte que ni tsc, ni vitest, ni eslint ne détectent. Voir le
+// commentaire d'en-tête de @/lib/armateurContacts pour le même motif déjà en
+// place pour MAX_CC_EMAILS.
+export { MAX_CC_EMAILS, normalizeCcEmails };
 
 const ALLOWED_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'] as const;
 
@@ -69,27 +74,6 @@ const schema = z.object({
 });
 
 type ParsedInput = z.infer<typeof schema>;
-
-/**
- * Normalise la liste de copies : minuscules, élagage, déduplication, retrait de
- * l'adresse principale (sinon l'armateur recevrait deux fois le même e-mail).
- *
- * NE plafonne PLUS elle-même (round de correction 1) : tronquer ici masquerait
- * un dépassement au lieu de le signaler. Le plafond est appliqué en amont, au
- * niveau du schéma Zod (`.max(MAX_CC_EMAILS)`), qui refuse la requête entière
- * avec `{ ok: false }` plutôt que d'enregistrer une liste raccourcie sans le dire.
- */
-export function normalizeCcEmails(list: string[], primary: string): string[] {
-    const seen = new Set<string>([primary.trim().toLowerCase()]);
-    const out: string[] = [];
-    for (const raw of list) {
-        const email = raw.trim().toLowerCase();
-        if (!email || seen.has(email)) continue;
-        seen.add(email);
-        out.push(email);
-    }
-    return out;
-}
 
 interface ContactsPatch {
     billing_cc_emails?: string[];
