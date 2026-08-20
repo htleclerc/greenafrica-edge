@@ -40,8 +40,9 @@ function docVariant(d: InvoiceAdminRow['document_type']): BadgeVariant {
 function statusVariant(s: string): BadgeVariant {
     if (s === 'PAID') return 'active';
     if (s === 'OVERDUE') return 'critical';
-    if (s === 'PENDING' || s === 'PARTIAL') return 'warning';
-    if (s === 'CANCELLED') return 'archived';
+    if (s === 'PENDING' || s === 'PARTIALLY_PAID') return 'warning';
+    if (s === 'DISPUTED') return 'disputed';
+    if (s === 'VOID') return 'archived';
     return 'info';
 }
 
