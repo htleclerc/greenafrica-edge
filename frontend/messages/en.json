@@ -822,6 +822,7 @@
     "nav_vision": "Vision Board",
     "nav_staff": "Staff Management",
     "nav_armateurs": "Shipowners",
+    "nav_reglements": "Settlements",
     "nav_admin_invoices": "Invoices",
     "nav_admin_collections": "Collections",
     "nav_airlines": "Airlines",
@@ -4136,6 +4137,29 @@
       "anonymizeConfirmKeyword": "ANONYMIZE",
       "anonymizeCta": "Anonymize permanently",
       "anonymizedAt": "Anonymized on {date}"
+    }
+  },
+  "AdminReglements": {
+    "title": "Settlements",
+    "subtitle": "Invoicing, collections and unpaid amounts by jurisdiction.",
+    "flowTitle": "Invoicing and collection flow",
+    "utcNote": "Times in UTC",
+    "today": "Today",
+    "week": "Last 7 days",
+    "month": "Last 30 days",
+    "invoiced": "Invoiced",
+    "collected": "Collected",
+    "totalOutstanding": "Total outstanding",
+    "overdue": "Overdue",
+    "overdueCount": "{count} invoices overdue",
+    "toChase": "To chase",
+    "empty": "No overdue shipowners.",
+    "col": {
+      "owner": "Shipowner",
+      "outstanding": "Outstanding",
+      "overdue": "Overdue",
+      "tier": "Tier",
+      "lastReminder": "Last reminder"
     }
   },
   "AdminAirlines": {

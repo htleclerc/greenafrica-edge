@@ -822,6 +822,7 @@
     "nav_vision": "Saxiix Muraayadda",
     "nav_staff": "Maamulidda Shaqaalaha",
     "nav_armateurs": "Milkiilayaasha Markabka",
+    "nav_reglements": "Bixinnada",
     "nav_admin_invoices": "Biilasha",
     "nav_admin_collections": "Soo-ururinta",
     "nav_airlines": "Shirkadaha Diyaaradaha",
@@ -4136,6 +4137,29 @@
       "anonymizeConfirmKeyword": "TIRTIR",
       "anonymizeCta": "Si joogto ah u qarsoodi",
       "anonymizedAt": "Waa la qarsoodiyay {date}"
+    }
+  },
+  "AdminReglements": {
+    "title": "Bixinnada",
+    "subtitle": "Qaansheegga, ururinta lacagta iyo lacagaha aan la bixin ee juridiction kasta.",
+    "flowTitle": "Socodka qaansheegga iyo ururinta lacagta",
+    "utcNote": "Saacadaha waa UTC",
+    "today": "Maanta",
+    "week": "7-dii maalmood ee ugu dambeeyay",
+    "month": "30-kii maalmood ee ugu dambeeyay",
+    "invoiced": "La qaansheegay",
+    "collected": "La ururiyay",
+    "totalOutstanding": "Wadarta la sugayo",
+    "overdue": "Dhaafay",
+    "overdueCount": "{count} qaansheeg oo dhaafay",
+    "toChase": "Loo baahan yahay xasuusin",
+    "empty": "Milkiile markab oo dhaafay lama helin.",
+    "col": {
+      "owner": "Milkiile",
+      "outstanding": "La sugayo",
+      "overdue": "Dhaafay",
+      "tier": "Heerka",
+      "lastReminder": "Xasuusinta ugu dambeysay"
     }
   },
   "AdminAirlines": {

@@ -702,6 +702,7 @@
     "nav_vision": "Ubao wa Maono",
     "nav_staff": "Usimamizi wa Wafanyakazi",
     "nav_armateurs": "Wamiliki wa Meli",
+    "nav_reglements": "Ulipaji",
     "nav_airlines": "Kampuni za Ndege",
     "nav_origin_port_proposals": "Mapendekezo ya bandari ya asili",
     "nav_cash_desk": "Kasisi",
@@ -4139,6 +4140,29 @@
       "anonymizeConfirmKeyword": "FUTA",
       "anonymizeCta": "Ondoa utambulisho kabisa",
       "anonymizedAt": "Utambulisho umeondolewa {date}"
+    }
+  },
+  "AdminReglements": {
+    "title": "Ulipaji",
+    "subtitle": "Ankara, urejeshaji na kiasi ambacho hakijalipwa kwa kila mamlaka.",
+    "flowTitle": "Mtiririko wa ankara na urejeshaji",
+    "utcNote": "Saa kwa UTC",
+    "today": "Leo",
+    "week": "Siku 7 zilizopita",
+    "month": "Siku 30 zilizopita",
+    "invoiced": "Ilitozwa",
+    "collected": "Imekusanywa",
+    "totalOutstanding": "Jumla ya deni",
+    "overdue": "Imechelewa",
+    "overdueCount": "Ankara {count} zimechelewa",
+    "toChase": "Zinazohitaji kufuatiliwa",
+    "empty": "Hakuna mmiliki wa meli aliyechelewa.",
+    "col": {
+      "owner": "Mmiliki wa meli",
+      "outstanding": "Deni",
+      "overdue": "Imechelewa",
+      "tier": "Ngazi",
+      "lastReminder": "Kikumbusho cha mwisho"
     }
   },
   "AdminAirlines": {

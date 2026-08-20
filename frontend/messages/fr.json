@@ -699,6 +699,7 @@
     "nav_vision": "Tableau de bord",
     "nav_staff": "Gestion du personnel",
     "nav_armateurs": "Armateurs",
+    "nav_reglements": "Règlements",
     "nav_admin_invoices": "Factures",
     "nav_admin_collections": "Recouvrement",
     "nav_airlines": "Compagnies",
@@ -4136,6 +4137,29 @@
       "anonymizeConfirmKeyword": "ANONYMISER",
       "anonymizeCta": "Anonymiser définitivement",
       "anonymizedAt": "Anonymisé le {date}"
+    }
+  },
+  "AdminReglements": {
+    "title": "Règlements",
+    "subtitle": "Facturation, encaissements et impayés par juridiction.",
+    "flowTitle": "Flux de facturation et d'encaissement",
+    "utcNote": "Heures en UTC",
+    "today": "Aujourd'hui",
+    "week": "7 derniers jours",
+    "month": "30 derniers jours",
+    "invoiced": "Facturé",
+    "collected": "Encaissé",
+    "totalOutstanding": "Total dû",
+    "overdue": "En retard",
+    "overdueCount": "{count} factures en retard",
+    "toChase": "À relancer",
+    "empty": "Aucun armateur en retard.",
+    "col": {
+      "owner": "Armateur",
+      "outstanding": "Dû",
+      "overdue": "En retard",
+      "tier": "Palier",
+      "lastReminder": "Dernière relance"
     }
   },
   "AdminAirlines": {

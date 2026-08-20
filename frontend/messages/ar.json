@@ -702,6 +702,7 @@
     "nav_vision": "لوحة الرؤية",
     "nav_staff": "إدارة الموظفين",
     "nav_armateurs": "الملاك الملاحيون",
+    "nav_reglements": "التسويات",
     "nav_airlines": "شركات الطيران",
     "nav_origin_port_proposals": "مقترحات ميناء المنشأ",
     "nav_cash_desk": "الصندوق",
@@ -4139,6 +4140,29 @@
       "anonymizeConfirmKeyword": "حذف",
       "anonymizeCta": "إخفاء الهوية نهائيًا",
       "anonymizedAt": "تم إخفاء الهوية في {date}"
+    }
+  },
+  "AdminReglements": {
+    "title": "التسويات",
+    "subtitle": "الفوترة والتحصيل والمبالغ غير المسددة حسب الولاية القضائية.",
+    "flowTitle": "تدفق الفوترة والتحصيل",
+    "utcNote": "التوقيت بالتوقيت العالمي المنسق (UTC)",
+    "today": "اليوم",
+    "week": "آخر 7 أيام",
+    "month": "آخر 30 يومًا",
+    "invoiced": "المفوتر",
+    "collected": "المحصّل",
+    "totalOutstanding": "إجمالي المستحق",
+    "overdue": "متأخر",
+    "overdueCount": "{count} فاتورة متأخرة",
+    "toChase": "بحاجة إلى متابعة",
+    "empty": "لا يوجد ملاك سفن متأخرون.",
+    "col": {
+      "owner": "مالك السفينة",
+      "outstanding": "المستحق",
+      "overdue": "متأخر",
+      "tier": "المستوى",
+      "lastReminder": "آخر تذكير"
     }
   },
   "AdminAirlines": {
