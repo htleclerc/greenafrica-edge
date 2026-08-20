@@ -32,6 +32,16 @@ primary_region = 'ams'
 [[vm]]
   # `memory` and `memory_mb` are mutually exclusive — keeping the 1 GB form.
   # The stray `memory_mb = 256` previously won, starving the Go backend.
+  #
+  # ATTENTION — cette correction a deja ete perdue une fois. `fly launch`
+  # regenere ce fichier depuis zero : la branche flyio-new-files (b88a70e) a
+  # ainsi reintroduit `memory_mb = 256` et efface ces commentaires, et la
+  # version degradee a vecu sur main sans etre remarquee. Relire ce bloc apres
+  # tout passage de `fly launch`, et ne jamais committer sa sortie telle quelle.
+  #
+  # `app` reste 'africgreen' (staging) : la production surcharge via
+  # `--app greengate-prod` dans deploy-production.yml, pour que le meme fichier
+  # serve les deux environnements.
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
