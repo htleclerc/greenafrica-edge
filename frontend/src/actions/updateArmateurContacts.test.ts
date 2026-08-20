@@ -35,7 +35,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 let ownerRow: { id: string; jurisdiction_id: string } | null;
 const contactsUpdateSpy = vi.fn((_patch: Record<string, unknown>) => ({ error: null as { message: string } | null }));
-const auditInsertSpy = vi.fn((_payload: Record<string, unknown>) => ({ error: null }));
+const auditInsertSpy = vi.fn((_payload: Record<string, unknown>) => ({ error: null as { message: string } | null }));
 
 function buildAdminMock() {
     return {
@@ -170,6 +170,32 @@ describe('updateArmateurContacts — gardes', () => {
     });
 });
 
+// ── preferredLanguage : enum sur les six locales livrées (mig 124) ─────────
+// La colonne shipowners.preferred_language est NOT NULL avec un CHECK sur
+// en/fr/so/pt/ar/sw (migration 124) : Zod doit refuser exactement ce que
+// Postgres refuserait, et jamais accepter null (contrairement aux cinq autres
+// coordonnées, qui elles peuvent être explicitement effacées).
+describe('updateArmateurContacts — preferredLanguage', () => {
+    it('rejette une langue hors des six locales livrées', async () => {
+        const r = await updateArmateurContacts({ ...baseInput, preferredLanguage: 'de' });
+        expect(r.ok).toBe(false);
+        expect(contactsUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejette null (la colonne est NOT NULL, contrairement aux autres coordonnées)', async () => {
+        const r = await updateArmateurContacts({ ...baseInput, preferredLanguage: null });
+        expect(r.ok).toBe(false);
+        expect(contactsUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    it('accepte le somali (so) — la régression que la mig 124 corrige', async () => {
+        const r = await updateArmateurContacts({ ...baseInput, preferredLanguage: 'so' });
+        expect(r).toEqual({ ok: true });
+        const patch = contactsUpdateSpy.mock.calls[0]![0];
+        expect(patch).toMatchObject({ preferred_language: 'so' });
+    });
+});
+
 // ── Délégation de l'e-mail officiel ─────────────────────────────────────────
 
 describe('updateArmateurContacts — e-mail officiel', () => {
@@ -273,10 +299,54 @@ describe('updateArmateurContacts — audit', () => {
         expect(JSON.stringify(payload)).not.toContain('owner@example.com');
     });
 
-    it("n'audite pas quand la mise à jour échoue", async () => {
+    // ── Succès partiel : deux transactions PostgREST distinctes ────────────
+    // upsertShipownerEmail (e-mail) et le .update(patch) (coordonnées) sont deux
+    // requêtes séparées. Si la première réussit et que la seconde échoue, l'e-mail
+    // est déjà écrit DURABLEMENT — la fonction ne doit ni le taire (ok:false sans
+    // audit) ni le nier (message générique). Ni "rien n'a changé", ni "tout a réussi".
+    it("succes partiel : l'e-mail est ecrit, les coordonnees echouent — trace quand meme et le dit", async () => {
         contactsUpdateSpy.mockImplementationOnce(() => ({ error: { message: 'db down' } }));
+        const r = await updateArmateurContacts({ ...baseInput, notes: 'Contact prioritaire' });
+
+        expect(upsertEmailSpy).toHaveBeenCalledTimes(1); // l'e-mail EST parti
+        expect(r).toEqual({
+            ok: false,
+            reason: 'official email saved, but contacts could not be updated: db down',
+        });
+
+        // La trace reflète ce qui a RÉELLEMENT changé (l'e-mail seul), pas ce qui a
+        // été demandé (notes y était aussi) — sinon l'audit mentirait à son tour.
+        expect(auditInsertSpy).toHaveBeenCalledTimes(1);
+        const payload = auditInsertSpy.mock.calls[0]![0];
+        expect(payload).toMatchObject({ action: 'SHIPOWNER_UPDATED', severity: 'WARNING', entity_type: 'Shipowner' });
+        const details = payload.details_json as { event: string; fields: string[] };
+        expect(details.event).toBe('CONTACTS_PARTIALLY_UPDATED');
+        expect(details.fields).toEqual(['officialEmail']);
+    });
+
+    it("double echec (coordonnees ET trace du succes partiel) : le message renvoye reste celui de l'echec des coordonnees", async () => {
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        contactsUpdateSpy.mockImplementationOnce(() => ({ error: { message: 'db down' } }));
+        auditInsertSpy.mockImplementationOnce(() => ({ error: { message: 'audit db down too' } }));
+
         const r = await updateArmateurContacts(baseInput);
-        expect(r).toEqual({ ok: false, reason: 'db down' });
-        expect(auditInsertSpy).not.toHaveBeenCalled();
+        expect(r).toEqual({
+            ok: false,
+            reason: 'official email saved, but contacts could not be updated: db down',
+        });
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        consoleErrorSpy.mockRestore();
+    });
+
+    it("echec du seul insert d'audit apres un succes complet : ne renvoie pas ok:true", async () => {
+        auditInsertSpy.mockImplementationOnce(() => ({ error: { message: 'audit db down' } }));
+        const r = await updateArmateurContacts(baseInput);
+        expect(r).toEqual({
+            ok: false,
+            reason: 'contacts updated, but the audit trail failed: audit db down',
+        });
+        // Les deux écritures de données ont bien eu lieu — seule la trace a échoué.
+        expect(upsertEmailSpy).toHaveBeenCalledTimes(1);
+        expect(contactsUpdateSpy).toHaveBeenCalledTimes(1);
     });
 });

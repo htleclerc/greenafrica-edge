@@ -2,10 +2,12 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { upsertShipownerEmail } from '@/services/shipownerService';
+import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
 
 export const MAX_CC_EMAILS = 10;
 
@@ -14,13 +16,20 @@ const ALLOWED_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'] as const;
 // officialEmail et billingCcEmails restent obligatoires (billingCcEmails à défaut '[]') :
 // cette action en est l'unique rédacteur, l'appelant en contrôle donc toujours la valeur.
 //
-// Les six coordonnées annexes sont `nullable().optional()` — SANS `.default(null)`.
+// Les cinq coordonnées libres sont `nullable().optional()` — SANS `.default(null)`.
 // Une clé absente doit signifier « ne pas toucher », pas « effacer » : sinon un appelant
 // qui n'envoie que l'e-mail (le cockpit et la fiche, tant que le formulaire complet de
 // la Task 8 n'existe pas) écraserait silencieusement des coordonnées déjà enregistrées.
 // `.optional()` sans défaut préserve la distinction clé-absente / valeur-null-explicite
 // que buildContactsPatch() exploite ci-dessous. Même pattern que updateOwnerKycProfile.ts
 // pour ces mêmes colonnes (address/phone_e164/preferred_language/ops_email/finance_email).
+//
+// preferredLanguage est la SEULE exception à `.nullable()` : la colonne est
+// `NOT NULL` (migration 047 / 124), donc `null` n'est jamais une valeur légale — un
+// appelant qui voudrait « effacer » cette colonne n'a pas de sens ici. Validé par
+// `z.enum(ALLOWED_LANGS)`, la même liste que `updateOwnerKycProfile.ts` (source unique :
+// `frontend/src/lib/kyc/kycSchema.ts`), pour ne pas faire diverger à nouveau ce que
+// Zod accepte de ce que la contrainte SQL autorise (voir migration 124).
 const schema = z.object({
     shipownerId: z.string().uuid(),
     officialEmail: z.email(),
@@ -29,7 +38,7 @@ const schema = z.object({
     financeEmail: z.email().nullable().optional(),
     phoneE164: z.string().trim().max(20).nullable().optional(),
     address: z.string().trim().max(500).nullable().optional(),
-    preferredLanguage: z.string().trim().max(10).nullable().optional(),
+    preferredLanguage: z.enum(ALLOWED_LANGS).optional(),
     notes: z.string().trim().max(2000).nullable().optional(),
 });
 
@@ -59,7 +68,7 @@ interface ContactsPatch {
     finance_email?: string | null;
     phone_e164?: string | null;
     address?: string | null;
-    preferred_language?: string | null;
+    preferred_language?: string;
     notes?: string | null;
 }
 
@@ -107,6 +116,36 @@ function buildContactsPatch(
     return { patch, changedFields };
 }
 
+/**
+ * Écrit une entrée d'audit pour cette action et en remonte l'échec au lieu de
+ * l'avaler — un insert `audit_logs` non vérifié laisserait une trace manquante
+ * passer pour un succès (voir le corps de l'action pour l'usage des deux sites
+ * d'appel : succès complet et succès partiel).
+ */
+async function writeContactsAudit(
+    platform: SupabaseClient,
+    args: {
+        userId: string;
+        userFullName: string;
+        shipownerId: string;
+        jurisdictionId: string;
+        severity: 'INFO' | 'WARNING';
+        event: string;
+        fields: string[];
+    },
+): Promise<{ error: { message: string } | null }> {
+    const { error } = await platform.from('audit_logs').insert({
+        user_id: args.userId,
+        user_full_name: args.userFullName,
+        action: 'SHIPOWNER_UPDATED', severity: args.severity,
+        entity_type: 'Shipowner', entity_id: args.shipownerId,
+        jurisdiction_id: args.jurisdictionId,
+        // Trace les CHAMPS modifiés, pas leurs valeurs : ce sont des données personnelles.
+        details_json: { event: args.event, fields: args.fields },
+    });
+    return { error };
+}
+
 export type UpdateArmateurContactsResult = { ok: true } | { ok: false; reason: string };
 
 /**
@@ -148,28 +187,54 @@ export async function updateArmateurContacts(raw: unknown): Promise<UpdateArmate
     const officialEmail = input.officialEmail.trim().toLowerCase();
     const admin = createTenantClient(jurisdictionId);
     const { patch, changedFields } = buildContactsPatch(input, officialEmail);
+    const userFullName = profile.full_name ?? auth.user.email ?? 'Staff';
 
     try {
         // L'e-mail officiel passe TOUJOURS par upsertShipownerEmail : c'est lui qui
         // porte la comparaison de tiers de confiance. Un staff écrit en PORT_OFFICER
-        // (confiance 3, la plus haute) — jamais refusé silencieusement.
+        // (confiance 3, la plus haute) — jamais refusé silencieusement. upsertShipownerEmail
+        // lit avant d'écrire et son update+RETURNING est une transaction PostgREST unique :
+        // un échec ici annule sa propre mutation, il n'y a donc rien à auditer.
         await upsertShipownerEmail(admin, input.shipownerId, officialEmail, 'PORT_OFFICER');
-
-        const { error: updErr } = await admin.from('shipowners').update(patch).eq('id', input.shipownerId);
-        if (updErr) return { ok: false, reason: updErr.message };
     } catch (e) {
         return { ok: false, reason: e instanceof Error ? e.message : 'update failed' };
     }
 
-    // Trace les CHAMPS modifiés, pas leurs valeurs : ce sont des données personnelles.
-    await platform.from('audit_logs').insert({
-        user_id: auth.user.id,
-        user_full_name: profile.full_name ?? auth.user.email ?? 'Staff',
-        action: 'SHIPOWNER_UPDATED', severity: 'INFO',
-        entity_type: 'Shipowner', entity_id: input.shipownerId,
-        jurisdiction_id: jurisdictionId,
-        details_json: { event: 'CONTACTS_UPDATED', fields: changedFields },
+    // À partir d'ici, l'e-mail officiel est écrit DURABLEMENT (transaction distincte,
+    // déjà commitée). Le patch de coordonnées ci-dessous est une SECONDE transaction,
+    // indépendante : si elle échoue, on ne doit ni prétendre que rien n'a changé
+    // (ok:false sans audit serait trompeur : l'e-mail a bel et bien changé) ni
+    // prétendre que tout a réussi. On trace ce qui a réellement changé et on le dit
+    // dans le message renvoyé à l'appelant.
+    const { error: updErr } = await admin.from('shipowners').update(patch).eq('id', input.shipownerId);
+    if (updErr) {
+        const { error: partialAuditErr } = await writeContactsAudit(platform, {
+            userId: auth.user.id, userFullName, shipownerId: input.shipownerId, jurisdictionId,
+            severity: 'WARNING', event: 'CONTACTS_PARTIALLY_UPDATED', fields: ['officialEmail'],
+        });
+        if (partialAuditErr) {
+            // Échec en cascade (coordonnées ET trace) : on ne masque pas la cause
+            // première du refus renvoyée à l'appelant, mais l'ops doit pouvoir la voir.
+            console.error(
+                `[audit] echec de trace apres ecriture partielle shipowner=${input.shipownerId}: ${partialAuditErr.message}`,
+            );
+        }
+        return {
+            ok: false,
+            reason: `official email saved, but contacts could not be updated: ${updErr.message}`,
+        };
+    }
+
+    const { error: auditErr } = await writeContactsAudit(platform, {
+        userId: auth.user.id, userFullName, shipownerId: input.shipownerId, jurisdictionId,
+        severity: 'INFO', event: 'CONTACTS_UPDATED', fields: changedFields,
     });
+    if (auditErr) {
+        // Aligné sur updateOwnerKycProfile.ts : un échec d'audit n'est jamais avalé.
+        // Les données SONT changées (les deux transactions ci-dessus ont réussi) —
+        // le message le dit, pour ne pas laisser croire que rien ne s'est passé.
+        return { ok: false, reason: `contacts updated, but the audit trail failed: ${auditErr.message}` };
+    }
 
     revalidatePath('/admin/armateurs');
     revalidatePath(`/admin/armateurs/${input.shipownerId}`);
