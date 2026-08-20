@@ -161,29 +161,16 @@ jobs:
           echo "### Frontend: $URL" >> "$GITHUB_STEP_SUMMARY"
         working-directory: frontend
 
-      # On attend nous-memes, sur un signal observable : le deploiement repond.
-      # Borne a ~13 min, largement au-dessus des quelques minutes constatees.
-      - name: Wait until the deployment answers
-        run: |
-          for i in $(seq 1 40); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ steps.deploy.outputs.url }}" || echo "000")
-            echo "tentative $i — deploiement: HTTP $STATUS"
-            # Un deploiement pret repond 2xx OU 3xx : l'URL de deploiement
-            # redirige (302) vers le domaine de production. N'accepter que 200
-            # faisait boucler l'attente jusqu'au plafond sur un deploiement
-            # pourtant sain — constate le 2026-08-20, 24 tentatives a 302.
-            case "$STATUS" in
-              2??|3??) exit 0 ;;
-            esac
-            sleep 20
-          done
-          echo "::error::Le deploiement n'a pas repondu 200 dans le delai imparti."
-          exit 1
-
       # Promotion explicite : ne depend plus du bon deroulement d'une attente
       # interne a la CLI.
+      # `--timeout` est le mecanisme documente pour attendre qu'un deploiement
+      # devienne promouvable. Il remplace une boucle HTTP maison qui s'est
+      # trompee deux fois : n'accepter que 200 bloquait sur les 302 que renvoie
+      # une URL de deploiement, et accepter les 3xx sortait trop tot — d'ou un
+      # `promote` en 422 « deployment is not ready » le 2026-08-20. L'etat du
+      # deploiement se demande a Vercel, il ne se devine pas depuis un code HTTP.
       - name: Promote to production domain
-        run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --timeout 10m --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: frontend
 
       # Fumigation. On ne compare pas d'identifiant de deploiement : Vercel
