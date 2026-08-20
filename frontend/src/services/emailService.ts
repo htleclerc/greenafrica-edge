@@ -857,11 +857,11 @@ export interface CollectionRecapParams {
 }
 
 export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promise<EmailResult> {
-    const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString()} outstanding`;
+    const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`;
     const rows = p.lines.map((l) => `
         <div class="meta-row">
             <span class="meta-label" style="font-family:monospace">${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d</span>
-            <span class="meta-value">$${l.outstandingUsd.toLocaleString()}</span>
+            <span class="meta-value">$${l.outstandingUsd.toLocaleString('en-US')}</span>
         </div>`).join('');
     const content = `
         <h1>Consolidated Recovery Statement</h1>
@@ -871,7 +871,7 @@ export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promis
         <h2>Outstanding Invoices (${p.lines.length})</h2>
         ${rows}
 
-        <div class="alert alert-warn">Total outstanding: <strong>$${p.totalOutstandingUsd.toLocaleString()}</strong>. Please settle these invoices promptly to avoid further collection action.</div>
+        <div class="alert alert-warn">Total outstanding: <strong>$${p.totalOutstandingUsd.toLocaleString('en-US')}</strong>. Please settle these invoices promptly to avoid further collection action.</div>
 
         <a href="${appUrl()}/owner/invoices" class="btn">Pay Outstanding Invoices →</a>
 
@@ -883,10 +883,10 @@ export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promis
         cc: p.cc,
         subject,
         html: emailLayout(content, {
-            previewText: `${p.lines.length} invoice(s) — $${p.totalOutstandingUsd.toLocaleString()} outstanding`,
+            previewText: `${p.lines.length} invoice(s) — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`,
             sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
         }),
-        text: `Consolidated statement of account\n\n${p.lines.map((l) => `${l.invoiceRef} — ${l.vesselName} — ${l.ageDays}d — $${l.outstandingUsd.toLocaleString()}`).join('\n')}\n\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        text: `Consolidated statement of account\n\n${p.lines.map((l) => `${l.invoiceRef} — ${l.vesselName} — ${l.ageDays}d — $${l.outstandingUsd.toLocaleString('en-US')}`).join('\n')}\n\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}/owner/invoices`,
         attachments: [
             { filename: `consolidated-recap-${new Date().toISOString().slice(0, 10)}.pdf`, content: Buffer.from(p.pdfBuffer) },
         ],

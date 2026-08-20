@@ -28,15 +28,19 @@ describe('sendCollectionRecapEmail', () => {
         const { sendCollectionRecapEmail } = await import('./emailService');
         await sendCollectionRecapEmail(base);
         const call = sendMock.mock.calls[0][0];
-        // Le séparateur de milliers de toLocaleString() dépend de la locale du
-        // runtime (virgule en en-US, espace ailleurs) : on compare au même appel
-        // que l'implémentation plutôt qu'à un séparateur codé en dur, pour rester
-        // vert quelle que soit la locale par défaut de la machine qui exécute le test.
-        const totalFormatted = base.totalOutstandingUsd.toLocaleString();
-        expect(String(call.subject)).toContain(totalFormatted);
+        // Round de correction 1 : la locale est desormais figee a 'en-US' dans
+        // l'implementation (risque de production releve par la revue - un montant
+        // du type 27992 se lit differemment en en-US/fr-FR/de-DE). On affirme donc
+        // un format CONCRET, pas le resultat d'un second appel a .toLocaleString()
+        // sur la meme reference : ce dernier serait circulaire (les deux traversent
+        // la meme fonction non figee du runtime et ne peuvent jamais diverger), et
+        // ne detecterait ni le vrai separateur rendu ni une regression qui
+        // retirerait la locale explicite de l'implementation.
+        expect(String(call.subject)).toContain('27,992');
         expect(String(call.html)).toContain('PRO-1');
         expect(String(call.html)).toContain('PRO-2');
-        expect(String(call.html)).toContain(totalFormatted);
+        expect(String(call.html)).toContain('27,992');
+        expect(String(call.html)).toContain('16,500'); // ligne PRO-1 (16500), meme separateur fige
         expect(call.cc).toEqual(['cc@armateur.com', 'finance@so.gov']);
         expect(call.attachments).toHaveLength(1);
         expect(call.attachments?.[0]?.filename).toMatch(/\.pdf$/);
