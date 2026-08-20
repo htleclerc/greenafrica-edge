@@ -10,7 +10,7 @@ import { OsButton } from '@/components/ui/OsButton';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsInput } from '@/components/ui/OsInput';
 import { inviteShipowner } from '@/actions/inviteShipowner';
-import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
+import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { anonymizeOwner } from '@/actions/anonymizeOwner';
 import {
     type AirlineDetail as AirlineDetailType,
@@ -77,7 +77,11 @@ export function AirlineDetail({ detail, canInvite, canAnonymize }: Props) {
     function submitEditEmail() {
         setEmailError(null);
         startEmailTransition(async () => {
-            const result = await updateArmateurEmail({ shipownerId: detail.id, email: emailValue });
+            const result = await updateArmateurContacts({
+                shipownerId: detail.id,
+                officialEmail: emailValue,
+                billingCcEmails: [],
+            });
             if (!result.ok) {
                 setEmailError(result.reason);
                 return;

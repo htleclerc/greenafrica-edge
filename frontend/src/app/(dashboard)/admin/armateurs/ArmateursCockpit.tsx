@@ -9,7 +9,7 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import * as Dialog from '@radix-ui/react-dialog';
 import { inviteShipowner } from '@/actions/inviteShipowner';
-import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
+import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { filterArmateurs, type ArmateurFilterState, type SanctionFilter } from './armateurFilters';
 import { useClientSort } from '@/hooks/useClientSort';
 import type { ArmateurCockpitRow } from '@/services/armateurService';
@@ -93,7 +93,11 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
         if (!emailTarget) return;
         setEmailError(null);
         startEmailTransition(async () => {
-            const result = await updateArmateurEmail({ shipownerId: emailTarget.id, email: emailValue });
+            const result = await updateArmateurContacts({
+                shipownerId: emailTarget.id,
+                officialEmail: emailValue,
+                billingCcEmails: [],
+            });
             if (!result.ok) {
                 setEmailError(result.reason);
                 return;
