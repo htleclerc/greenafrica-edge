@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createPlatformClient } from '@/lib/supabase/tenant';
+import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { resolveInvoiceRecipients } from '@/services/invoiceIssuanceService';
 import { fetchJurisdictionBillingCc, fetchJurisdictionName } from '@/lib/jurisdictionName';
@@ -72,9 +72,20 @@ export async function sendConsolidatedRecap(
 
     // 4. Compose le relevé du mois EN COURS. Zéro facture ouverte ⇒ refus
     //    explicite : on n'envoie pas un récapitulatif vide.
+    //
+    //    Client scopé à la juridiction de l'armateur, PAS `platform` :
+    //    transactions.jurisdiction_id vient de l'escale (pas de l'armateur), et
+    //    vessels.imo_number / shipowners.imo_company_no sont UNIQUE global — un
+    //    navire touchant plusieurs juridictions produit par construction un
+    //    armateur avec des créances dans plusieurs juridictions. `transactions`
+    //    et `payments` figurent tous deux dans TENANT_SCOPED_TABLES
+    //    (lib/supabase/tenant.ts) : createTenantClient y injecte automatiquement
+    //    `jurisdiction_id = jurisdictionId` sur chaque requête, ce que le
+    //    service-role non scopé `platform` ne fait pas.
     const now = new Date();
     const { periodStart, periodEnd, label } = currentMonthBounds(now);
-    const result = await composeOwnerStatement(platform, { shipownerId, periodStart, periodEnd, now });
+    const tenant = createTenantClient(jurisdictionId);
+    const result = await composeOwnerStatement(tenant, { shipownerId, periodStart, periodEnd, now });
     if (result.openLines.length === 0) return { ok: false, reason: 'nothing outstanding' };
 
     // 5. PDF généré EN MÉMOIRE — jamais écrit dans owner_statements ni dans le

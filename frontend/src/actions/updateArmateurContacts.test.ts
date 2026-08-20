@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MAX_CC_EMAILS, normalizeCcEmails } from '@/lib/armateurContacts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // updateArmateurContacts — remplace l'ancienne action à e-mail seul : édition
@@ -81,7 +82,7 @@ const upsertEmailSpy = vi.fn(async (_db: unknown, _id: string, email: string, so
 }));
 vi.mock('@/services/shipownerService', () => ({ upsertShipownerEmail: upsertEmailSpy }));
 
-const { updateArmateurContacts, normalizeCcEmails, MAX_CC_EMAILS } = await import('./updateArmateurContacts');
+const { updateArmateurContacts } = await import('./updateArmateurContacts');
 
 beforeEach(() => {
     vi.clearAllMocks();

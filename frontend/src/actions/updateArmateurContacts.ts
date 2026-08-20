@@ -10,17 +10,6 @@ import { upsertShipownerEmail } from '@/services/shipownerService';
 import { ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
 import { MAX_CC_EMAILS, normalizeCcEmails } from '@/lib/armateurContacts';
 
-// Réexportés pour compatibilité : le fichier de test importe MAX_CC_EMAILS et
-// normalizeCcEmails depuis ce module (`await import('./updateArmateurContacts')`).
-// Les deux vivent dans @/lib/armateurContacts (module neutre, importable côté
-// client) — normalizeCcEmails y a été déplacée depuis ce fichier : un export
-// synchrone déclaré directement dans un fichier 'use server' fait échouer
-// `next build` avec « Server Actions must be async functions », une
-// contrainte que ni tsc, ni vitest, ni eslint ne détectent. Voir le
-// commentaire d'en-tête de @/lib/armateurContacts pour le même motif déjà en
-// place pour MAX_CC_EMAILS.
-export { MAX_CC_EMAILS, normalizeCcEmails };
-
 const ALLOWED_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'] as const;
 
 // Round de correction 1 (Task 8) : officialEmail reste seul obligatoire.

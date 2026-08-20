@@ -28,8 +28,14 @@ vi.mock('@/lib/supabase/server', () => ({
 
 // storage.from(...).upload est câblé mais ne doit JAMAIS être appelé par cette
 // action (voir tests « ne dépose rien dans statements/ » plus bas).
+//
+// createTenantClient partage le même dispatcher que createPlatformClient : le
+// client scopé (C1) n'est passé qu'à composeOwnerStatement, lui-même entièrement
+// remplacé par composeOwnerStatementMock ci-dessous — son .from() n'est donc
+// jamais réellement invoqué ici. Même pattern que updateArmateurContacts.test.ts.
 vi.mock('@/lib/supabase/tenant', () => ({
     createPlatformClient: () => ({ from: platformFromMock, storage: { from: () => ({ upload: storageUploadMock }) } }),
+    createTenantClient: () => ({ from: platformFromMock, storage: { from: () => ({ upload: storageUploadMock }) } }),
 }));
 
 vi.mock('@/lib/auth/tenantContext', () => ({ getServerJurisdictionId: vi.fn(async () => 'jur-so') }));

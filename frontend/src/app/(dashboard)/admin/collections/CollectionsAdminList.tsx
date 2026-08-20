@@ -19,7 +19,7 @@ import {
 
 const RESPONSE_TYPES = ['ACKNOWLEDGE', 'DISPUTE', 'PAYMENT_PROMISE', 'PARTIAL_PAYMENT', 'PAID', 'REFUSED'] as const;
 const TIERS = ['J3', 'J7', 'J15', 'J30', 'J45', 'BAILIFF', 'JUDICIAL'];
-const STATUSES = ['PENDING', 'OVERDUE', 'PAID', 'DISPUTED'];
+const STATUSES = ['PENDING', 'OVERDUE', 'PARTIALLY_PAID', 'PAID', 'DISPUTED'];
 // Round de correction 1 : STATUSES ci-dessus (filtre de l'écran) inclut PAID et
 // DISPUTED, deux statuts pour lesquels sendManualReminder refuse d'envoyer
 // (REMINDABLE_STATUSES, sendManualReminder.ts). Sans ce filtre, une ligne PAID

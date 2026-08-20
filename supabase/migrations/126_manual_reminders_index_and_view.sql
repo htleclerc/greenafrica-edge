@@ -46,8 +46,10 @@ JOIN LATERAL (
     (array_agg(r.tier ORDER BY r.sent_at DESC)
        FILTER (WHERE r.tier <> 'MANUAL'))[1]                                      AS latest_tier,
     max(r.sent_at) FILTER (WHERE r.tier <> 'MANUAL')                              AS latest_sent_at,
-    (array_agg(r.debtor_response_type ORDER BY r.sent_at DESC))[1]                AS latest_response_type,
-    (array_agg(r.debtor_response_at   ORDER BY r.sent_at DESC))[1]                AS latest_response_at,
+    (array_agg(r.debtor_response_type ORDER BY r.debtor_response_at DESC NULLS LAST)
+       FILTER (WHERE r.debtor_response_type <> 'SILENT'))[1]                      AS latest_response_type,
+    (array_agg(r.debtor_response_at   ORDER BY r.debtor_response_at DESC NULLS LAST)
+       FILTER (WHERE r.debtor_response_type <> 'SILENT'))[1]                      AS latest_response_at,
     count(*) FILTER (WHERE r.tier = 'MANUAL')                                     AS manual_count,
     max(r.sent_at) FILTER (WHERE r.tier = 'MANUAL')                               AS last_manual_at
   FROM public.collection_reminders r

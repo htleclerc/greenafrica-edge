@@ -670,7 +670,7 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
 
         <h2>Summary</h2>
         <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString('en-US')}</span></div>
         <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
 
         <div class="alert ${t.alertClass}">${t.alertText}</div>
@@ -684,8 +684,8 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         to: p.to,
         cc: p.cc,
         subject: t.subject,
-        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
-        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString('en-US')}` }),
+        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}/owner/invoices`,
         attachments: p.pdfBuffer
             ? [{ filename: `${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) }]
             : undefined,
