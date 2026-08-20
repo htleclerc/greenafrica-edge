@@ -24,6 +24,8 @@ export interface InvoiceAdminFilters {
     search?: string;
     dateFrom?: string;
     dateTo?: string;
+    sortKey?: string;
+    sortDir?: 'asc' | 'desc';
     page: number;
     pageSize: number;
 }
@@ -33,6 +35,12 @@ function first(v: string | string[] | undefined): string | undefined {
     if (Array.isArray(v)) return v[0];
     return v ?? undefined;
 }
+
+/** Colonnes triables. Toute clé absente d'ici retombe sur l'ordre par défaut. */
+export const INVOICE_SORT_KEYS = [
+    'invoice_ref', 'debtor_name', 'created_at', 'tax_amount_usd',
+    'status', 'jurisdiction_name', 'document_type',
+] as const;
 
 const filtersSchema = z.object({
     documentType: z.enum(['PROFORMA', 'FINAL', 'COMPLEMENT', 'REFUND']).optional().catch(undefined),
@@ -44,6 +52,8 @@ const filtersSchema = z.object({
     search: z.string().trim().min(1).optional().catch(undefined),
     dateFrom: z.string().regex(DATE_RE).optional().catch(undefined),
     dateTo: z.string().regex(DATE_RE).optional().catch(undefined),
+    sortKey: z.enum(INVOICE_SORT_KEYS).optional().catch(undefined),
+    sortDir: z.enum(['asc', 'desc']).optional().catch(undefined),
     page: z.number().int().min(1).catch(1),
     pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).catch(DEFAULT_PAGE_SIZE),
 });
@@ -65,6 +75,8 @@ export function parseInvoiceFilters(
         search: first(searchParams.search),
         dateFrom: first(searchParams.dateFrom),
         dateTo: first(searchParams.dateTo),
+        sortKey: first(searchParams.sortKey),
+        sortDir: first(searchParams.sortDir),
         page: Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1,
         pageSize: Number.isFinite(rawSize) ? Math.min(MAX_PAGE_SIZE, Math.max(1, rawSize)) : DEFAULT_PAGE_SIZE,
     });
@@ -162,8 +174,15 @@ export async function listInvoicesAdmin(
     }
 
     const offset = (filters.page - 1) * filters.pageSize;
+    // Revalide au point d'usage : listInvoicesAdmin peut être appelée directement
+    // (tests, futurs appelants) sans passer par parseInvoiceFilters. La liste blanche
+    // doit donc tenir ici aussi, pas seulement en amont.
+    const safeSortKey = filtersSchema.shape.sortKey.parse(filters.sortKey);
+    const sortKey = safeSortKey ?? 'created_at';
+    const ascending = safeSortKey ? filters.sortDir !== 'desc' : false;
     const { data, count, error } = await q
-        .order('created_at', { ascending: false })
+        .order(sortKey, { ascending })
+        .order('id', { ascending: true }) // départage déterministe des égalités
         .range(offset, offset + filters.pageSize - 1);
 
     if (error) throw new Error(`listInvoicesAdmin: ${error.message}`);

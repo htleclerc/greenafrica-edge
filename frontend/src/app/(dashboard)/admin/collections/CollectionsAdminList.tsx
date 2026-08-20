@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as Dialog from '@radix-ui/react-dialog';
-import { OsTable, type OsColumn } from '@/components/ui/OsTable';
+import { OsTable, type OsColumn, type OsSort } from '@/components/ui/OsTable';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
@@ -47,14 +47,26 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
         router.push(`?${params.toString()}`);
     }
 
+    // Tri serveur : la clé et la direction vivent dans l'URL, comme les autres filtres.
+    const sort: OsSort | null = filters.sortKey ? { key: filters.sortKey, dir: filters.sortDir ?? 'asc' } : null;
+    const onSortChange = (next: OsSort) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('sortKey', next.key);
+        params.set('sortDir', next.dir);
+        params.delete('page'); // un changement de tri renvoie en page 1
+        router.push(`?${params.toString()}`);
+    };
+
+    // Les `key` triables ci-dessous doivent correspondre exactement à COLLECTION_SORT_KEYS
+    // (service). 'response' n'a pas d'équivalent dans la liste blanche : non triable.
     const columns: OsColumn<CollectionAdminRow>[] = [
-        { key: 'debtor', header: t('col_debtor'), render: (r) => <span className="text-sm">{r.debtor_name ?? '—'}</span> },
-        { key: 'invoice', header: t('col_invoice'), render: (r) => <span className="font-mono text-xs">{r.invoice_ref ?? r.transaction_id.slice(0, 8)}</span> },
-        { key: 'outstanding', header: t('col_outstanding'), className: 'text-right', render: (r) => <span className="font-mono text-sm tabular-nums">${r.outstanding_usd.toLocaleString()}</span> },
-        { key: 'status', header: t('col_status'), render: (r) => <OsBadge variant={r.status === 'PAID' ? 'paid' : r.status === 'OVERDUE' ? 'overdue' : r.status === 'DISPUTED' ? 'disputed' : 'pending'} label={r.status} /> },
-        { key: 'tier', header: t('col_tier'), render: (r) => <OsBadge variant={tierVariant(r.latest_tier)} label={r.latest_tier ?? '—'} /> },
+        { key: 'debtor_name', header: t('col_debtor'), sortable: true, render: (r) => <span className="text-sm">{r.debtor_name ?? '—'}</span> },
+        { key: 'invoice_ref', header: t('col_invoice'), sortable: true, render: (r) => <span className="font-mono text-xs">{r.invoice_ref ?? r.transaction_id.slice(0, 8)}</span> },
+        { key: 'outstanding_usd', header: t('col_outstanding'), className: 'text-right', sortable: true, render: (r) => <span className="font-mono text-sm tabular-nums">${r.outstanding_usd.toLocaleString()}</span> },
+        { key: 'status', header: t('col_status'), sortable: true, render: (r) => <OsBadge variant={r.status === 'PAID' ? 'paid' : r.status === 'OVERDUE' ? 'overdue' : r.status === 'DISPUTED' ? 'disputed' : 'pending'} label={r.status} /> },
+        { key: 'latest_tier', header: t('col_tier'), sortable: true, render: (r) => <OsBadge variant={tierVariant(r.latest_tier)} label={r.latest_tier ?? '—'} /> },
         { key: 'response', header: t('col_response'), render: (r) => <OsBadge variant={responseVariant(r.latest_response_type)} label={r.latest_response_type ?? 'SILENT'} /> },
-        { key: 'count', header: t('col_count'), className: 'text-right', render: (r) => <span className="text-xs tabular-nums">{r.reminder_count}</span> },
+        { key: 'reminder_count', header: t('col_count'), className: 'text-right', sortable: true, render: (r) => <span className="text-xs tabular-nums">{r.reminder_count}</span> },
     ];
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -79,7 +91,8 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
             </div>
 
             <OsTable columns={columns} rows={rows} keyExtractor={(r) => r.transaction_id}
-                onRowClick={(r) => setSelected(r)} emptyMessage={t('empty')} />
+                onRowClick={(r) => setSelected(r)} emptyMessage={t('empty')}
+                sort={sort} onSortChange={onSortChange} />
 
             <div className="flex items-center justify-between mt-3 text-xs text-[var(--os-text-muted)]">
                 <span>{t('pagination', { start: (page - 1) * pageSize + 1, end: Math.min(page * pageSize, total), total })}</span>

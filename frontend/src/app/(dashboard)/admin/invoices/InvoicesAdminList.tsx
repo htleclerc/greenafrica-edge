@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Download, ShieldCheck } from 'lucide-react';
-import { OsTable, type OsColumn } from '@/components/ui/OsTable';
+import { OsTable, type OsColumn, type OsSort } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
@@ -25,7 +25,10 @@ interface Props {
 
 const DOC_TYPES = ['PROFORMA', 'FINAL', 'COMPLEMENT', 'REFUND'] as const;
 const MODES = ['MARITIME', 'AIR'] as const;
-const STATUSES = ['PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'CANCELLED'] as const;
+// Valeurs réelles de l'énumération transaction_status. PARTIAL et CANCELLED n'existaient
+// pas côté DB : le filtre passait ces valeurs telles quelles à .eq('status', …) et ne
+// pouvait donc jamais rien retourner.
+const STATUSES = ['PENDING', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'DISPUTED', 'VOID'] as const;
 
 function docVariant(d: InvoiceAdminRow['document_type']): BadgeVariant {
     if (d === 'PROFORMA') return 'warning';
@@ -69,27 +72,42 @@ export function InvoicesAdminList({ rows, total, page, pageSize, filters, option
         setParam('search', search.trim() || null);
     };
 
+    // Tri serveur : la clé et la direction vivent dans l'URL, comme les autres filtres.
+    const sort: OsSort | null = filters.sortKey ? { key: filters.sortKey, dir: filters.sortDir ?? 'asc' } : null;
+    const onSortChange = (next: OsSort) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('sortKey', next.key);
+        params.set('sortDir', next.dir);
+        params.delete('page'); // un changement de tri renvoie en page 1
+        router.push(`?${params.toString()}`);
+    };
+
+    // Les `key` triables ci-dessous doivent correspondre exactement à INVOICE_SORT_KEYS
+    // (service). 'mode', 'flag', 'due' et 'actions' n'ont pas d'équivalent dans la liste
+    // blanche : non triables.
     const columns: OsColumn<InvoiceAdminRow>[] = [
         {
-            key: 'ref',
+            key: 'invoice_ref',
             header: t('col_ref'),
+            sortable: true,
             render: (r) => (
                 <span className="font-mono text-xs text-[var(--os-text-primary)]">
                     {r.invoice_ref ?? r.id.slice(0, 8)}
                 </span>
             ),
         },
-        { key: 'type', header: t('col_type'), render: (r) => <OsBadge variant={docVariant(r.document_type)} label={r.document_type} /> },
+        { key: 'document_type', header: t('col_type'), sortable: true, render: (r) => <OsBadge variant={docVariant(r.document_type)} label={r.document_type} /> },
         { key: 'mode', header: t('col_mode'), render: (r) => <OsBadge variant={r.mode === 'AIR' ? 'info' : 'draft'} label={r.mode} /> },
-        { key: 'debtor', header: t('col_debtor'), render: (r) => <span className="text-sm">{r.debtor_name ?? '—'}</span> },
+        { key: 'debtor_name', header: t('col_debtor'), sortable: true, render: (r) => <span className="text-sm">{r.debtor_name ?? '—'}</span> },
         { key: 'flag', header: t('col_flag'), render: (r) => <span className="text-sm tabular-nums">{r.flag_country ?? '—'}</span> },
-        { key: 'jurisdiction', header: t('col_jurisdiction'), render: (r) => <span className="text-sm">{r.jurisdiction_name ?? '—'}</span> },
+        { key: 'jurisdiction_name', header: t('col_jurisdiction'), sortable: true, render: (r) => <span className="text-sm">{r.jurisdiction_name ?? '—'}</span> },
         {
-            key: 'created',
+            key: 'created_at',
             header: t('col_created'),
+            sortable: true,
             render: (r) => <span className="text-xs text-[var(--os-text-muted)] tabular-nums">{new Date(r.created_at).toLocaleDateString()}</span>,
         },
-        { key: 'amount', header: t('col_amount'), className: 'text-right', render: (r) => <span className="font-mono text-sm tabular-nums">{usd(r.tax_amount_usd)}</span> },
+        { key: 'tax_amount_usd', header: t('col_amount'), className: 'text-right', sortable: true, render: (r) => <span className="font-mono text-sm tabular-nums">{usd(r.tax_amount_usd)}</span> },
         {
             key: 'due',
             header: t('col_due'),
@@ -100,7 +118,7 @@ export function InvoicesAdminList({ rows, total, page, pageSize, filters, option
                 </span>
             ),
         },
-        { key: 'status', header: t('col_status'), render: (r) => <OsBadge variant={statusVariant(r.status)} label={r.status} /> },
+        { key: 'status', header: t('col_status'), sortable: true, render: (r) => <OsBadge variant={statusVariant(r.status)} label={r.status} /> },
         {
             key: 'actions',
             header: '',
@@ -159,6 +177,8 @@ export function InvoicesAdminList({ rows, total, page, pageSize, filters, option
                 keyExtractor={(r) => r.id}
                 onRowClick={(r) => { if (r.shipowner_id) router.push(`/admin/armateurs/${r.shipowner_id}`); }}
                 emptyMessage={t('empty')}
+                sort={sort}
+                onSortChange={onSortChange}
             />
 
             <div className="flex items-center justify-between text-sm text-[var(--os-text-muted)]">
