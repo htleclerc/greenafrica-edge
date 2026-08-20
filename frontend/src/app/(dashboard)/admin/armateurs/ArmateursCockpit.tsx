@@ -103,14 +103,21 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
         });
     }
 
-    const stateBadge = (state: string) => {
+    const stateBadge = React.useCallback((state: string) => {
         if (state === 'ACTIVE') return <OsBadge variant="active" label={t('state.active')} />;
         if (state === 'INVITED') return <OsBadge variant="warning" label={t('state.invited')} />;
         return <OsBadge variant="archived" label={t('state.ghost')} />;
-    };
+    }, [t]);
 
-    // Mémoïsé sur `[t]` : `useClientSort` mémoïse `sortedRows` sur la référence de
-    // `columns`, un tableau reconstruit à chaque rendu recalculerait le tri à chaque fois.
+    // Mémoïsé : `useClientSort` mémoïse `sortedRows` sur la référence de `columns`,
+    // un tableau reconstruit à chaque rendu recalculerait le tri à chaque fois.
+    // Dépendances : `t` (libellés), `canInvite` (prop — la colonne actions en dépend ;
+    // submitInvite/submitEditEmail appellent router.refresh(), qui réconcilie de nouvelles
+    // props sur ce client component déjà monté, sans démontage : un canInvite non listé ici
+    // resterait périmé après un refresh), `stateBadge` (stabilisé ci-dessus par son propre
+    // useCallback). openEditEmail/openInvite ne sont pas listées : ce sont des déclarations
+    // de fonction qui ne ferment que sur des setters useState, stables par garantie React —
+    // leur identité par rendu n'affecte pas le comportement capturé.
     const columns: OsColumn<ArmateurCockpitRow>[] = React.useMemo(() => [
         {
             key: 'name',
@@ -223,8 +230,7 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
                 </div>
             ),
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    ], [t]);
+    ], [t, canInvite, stateBadge]);
 
     const { sort, onSortChange, sortedRows } = useClientSort(visible, columns);
 
