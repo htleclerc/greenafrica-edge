@@ -732,6 +732,10 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
 // le squelette jsPDF de generateInvoicePdf, en version allégée.
 
 export interface StatementLine {
+    // Requis (pas une commodité) : sans transactionId, une ligne de relevé ne
+    // peut pas être reliée à sa transaction d'origine — ce qui bloquerait
+    // l'insert groupé collection_reminders du récap consolidé (Task 12).
+    transactionId: string;
     invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number;
 }
 export interface StatementPayment {

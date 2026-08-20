@@ -838,6 +838,61 @@ export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<
     });
 }
 
+// ── Consolidated collection recap email (Task 12 — on-demand, not archived) ─
+// Distinct from sendStatementReadyEmail above: that one announces an
+// INFORMATIONAL monthly statement and points to the portal ("not an
+// invoice"). This one carries a recovery tone, lists every open pro-forma
+// with its age, and always attaches the PDF (never optional) — it is a
+// collection gesture sent on demand by staff, not a courtesy notice.
+// Mixing the two tones would blur what the recipient is being told.
+
+export interface CollectionRecapParams {
+    to: string;
+    cc?: string[];
+    recipientName: string;
+    lines: { invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number }[];
+    totalOutstandingUsd: number;
+    jurisdictionName: string;
+    pdfBuffer: Uint8Array;
+}
+
+export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promise<EmailResult> {
+    const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString()} outstanding`;
+    const rows = p.lines.map((l) => `
+        <div class="meta-row">
+            <span class="meta-label" style="font-family:monospace">${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d</span>
+            <span class="meta-value">$${l.outstandingUsd.toLocaleString()}</span>
+        </div>`).join('');
+    const content = `
+        <h1>Consolidated Recovery Statement</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>The following pro-forma invoices remain unpaid on your account with the ${escapeHtml(p.jurisdictionName)} Maritime Carbon Tax Authority.</p>
+
+        <h2>Outstanding Invoices (${p.lines.length})</h2>
+        ${rows}
+
+        <div class="alert alert-warn">Total outstanding: <strong>$${p.totalOutstandingUsd.toLocaleString()}</strong>. Please settle these invoices promptly to avoid further collection action.</div>
+
+        <a href="${appUrl()}/owner/invoices" class="btn">Pay Outstanding Invoices →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">A consolidated statement is attached as a PDF for your records.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        cc: p.cc,
+        subject,
+        html: emailLayout(content, {
+            previewText: `${p.lines.length} invoice(s) — $${p.totalOutstandingUsd.toLocaleString()} outstanding`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
+        text: `Consolidated statement of account\n\n${p.lines.map((l) => `${l.invoiceRef} — ${l.vesselName} — ${l.ageDays}d — $${l.outstandingUsd.toLocaleString()}`).join('\n')}\n\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        attachments: [
+            { filename: `consolidated-recap-${new Date().toISOString().slice(0, 10)}.pdf`, content: Buffer.from(p.pdfBuffer) },
+        ],
+    });
+}
+
 // ── 11. Wallet top-up email (Plan 7F) ──────────────────────────────────────
 
 export interface WalletTopupParams {
