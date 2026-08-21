@@ -4182,7 +4182,12 @@
       "repAttach": "Attach",
       "repRevoke": "Revoke",
       "repRevoked": "Revoked",
-      "repManageAll": "Manage all mappings"
+      "repManageAll": "Manage all mappings",
+      "repInvite": "Add by email",
+      "repInviteEmail": "Representative email",
+      "repInviteName": "Representative name",
+      "repInviteSubmit": "Create and attach",
+      "repInviteHint": "Creates the account and attaches it. No email is sent — access goes through the next reminder."
     }
   },
   "AdminReglements": {

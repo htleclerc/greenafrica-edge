@@ -14,6 +14,7 @@ import { inviteShipowner } from '@/actions/inviteShipowner';
 import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { anonymizeOwner } from '@/actions/anonymizeOwner';
 import { createOwnerAgentMapping } from '@/actions/createOwnerAgentMapping';
+import { addOwnerRepresentative } from '@/actions/addOwnerRepresentative';
 import { deactivateOwnerAgentMapping } from '@/actions/deactivateOwnerAgentMapping';
 import { sendManualReminder } from '@/actions/sendManualReminder';
 import { sendConsolidatedRecap } from '@/actions/sendConsolidatedRecap';
@@ -1018,6 +1019,36 @@ function RepresentativesCard({ detail, onSaved, agents }: RepresentativesCardPro
     const [attachError, setAttachError] = React.useState<string | null>(null);
     const [attachPending, startAttachTransition] = React.useTransition();
 
+    // Second chemin de rattachement : par ADRESSE, pour un representant qui
+    // n'a pas encore de compte. Le selecteur ci-dessus ne propose que des
+    // profils existants, or agent_profile_id est NOT NULL — il fallait donc
+    // deja avoir un compte pour pouvoir en obtenir un. C'est le cas d'une
+    // reponse a la campagne venant d'une adresse absente du referentiel.
+    const [inviteOpen, setInviteOpen] = React.useState(false);
+    const [inviteEmail, setInviteEmail] = React.useState('');
+    const [inviteName, setInviteName] = React.useState('');
+    const [inviteError, setInviteError] = React.useState<string | null>(null);
+    const [invitePending, startInviteTransition] = React.useTransition();
+
+    function submitInvite() {
+        setInviteError(null);
+        startInviteTransition(async () => {
+            const result = await addOwnerRepresentative({
+                shipownerId: detail.id,
+                email: inviteEmail.trim(),
+                fullName: inviteName.trim(),
+            });
+            if (!result.ok) {
+                setInviteError(result.reason);
+                return;
+            }
+            setInviteOpen(false);
+            setInviteEmail('');
+            setInviteName('');
+            onSaved();
+        });
+    }
+
     const [revokingId, setRevokingId] = React.useState<string | null>(null);
     const [revokeError, setRevokeError] = React.useState<string | null>(null);
     const [revokePending, startRevokeTransition] = React.useTransition();
@@ -1201,10 +1232,55 @@ function RepresentativesCard({ detail, onSaved, agents }: RepresentativesCardPro
                     </div>
                 )}
 
+                {inviteOpen && (
+                    <div className="flex flex-wrap items-end gap-3 p-3 rounded-xl border border-[var(--os-border)] bg-[var(--os-surface-2)]">
+                        <div className="flex-1 min-w-[220px]">
+                            <OsInput
+                                type="email"
+                                label={t('detail.repInviteEmail')}
+                                placeholder="contact@armateur.com"
+                                value={inviteEmail}
+                                onChange={(e) => setInviteEmail(e.target.value)}
+                                disabled={invitePending}
+                            />
+                        </div>
+                        <div className="flex-1 min-w-[180px]">
+                            <OsInput
+                                label={t('detail.repInviteName')}
+                                value={inviteName}
+                                onChange={(e) => setInviteName(e.target.value)}
+                                disabled={invitePending}
+                            />
+                        </div>
+                        <OsButton
+                            variant="primary"
+                            onClick={submitInvite}
+                            loading={invitePending}
+                            disabled={invitePending || !inviteEmail.trim() || inviteName.trim().length < 2}
+                        >
+                            {t('detail.repInviteSubmit')}
+                        </OsButton>
+                        <OsButton variant="ghost" onClick={() => setInviteOpen(false)} disabled={invitePending}>
+                            {t('cancel')}
+                        </OsButton>
+                        <p className="text-[11px] w-full text-[var(--os-text-muted)]">{t('detail.repInviteHint')}</p>
+                        {inviteError && <p className="text-xs text-[#EF4444] w-full">{inviteError}</p>}
+                    </div>
+                )}
+
                 <div className="flex items-center gap-3">
                     {!attachOpen && (
                         <OsButton variant="secondary" size="sm" onClick={openAttach}>
                             {t('detail.repAttach')}
+                        </OsButton>
+                    )}
+                    {!inviteOpen && (
+                        <OsButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => { setInviteError(null); setInviteOpen(true); }}
+                        >
+                            {t('detail.repInvite')}
                         </OsButton>
                     )}
                     <Link href="/admin/owner-agent-mappings" className="text-xs text-[#00D97E] hover:underline ml-auto">

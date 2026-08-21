@@ -4185,7 +4185,12 @@
       "repAttach": "إلحاق",
       "repRevoke": "إلغاء",
       "repRevoked": "ملغى",
-      "repManageAll": "إدارة جميع الروابط"
+      "repManageAll": "إدارة جميع الروابط",
+      "repInvite": "إضافة بالبريد الإلكتروني",
+      "repInviteEmail": "البريد الإلكتروني للممثل",
+      "repInviteName": "اسم الممثل",
+      "repInviteSubmit": "إنشاء وربط",
+      "repInviteHint": "يُنشئ الحساب ويربطه. لا يُرسل أي بريد إلكتروني — يتم الوصول عبر التذكير التالي."
     }
   },
   "AdminReglements": {

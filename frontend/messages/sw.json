@@ -4185,7 +4185,12 @@
       "repAttach": "Unganisha",
       "repRevoke": "Batilisha",
       "repRevoked": "Imebatilishwa",
-      "repManageAll": "Simamia ramani zote"
+      "repManageAll": "Simamia ramani zote",
+      "repInvite": "Ongeza kwa barua pepe",
+      "repInviteEmail": "Barua pepe ya mwakilishi",
+      "repInviteName": "Jina la mwakilishi",
+      "repInviteSubmit": "Unda na uunganishe",
+      "repInviteHint": "Huunda akaunti na kuiunganisha. Hakuna barua pepe inayotumwa — ufikiaji hupitia ukumbusho ujao."
     }
   },
   "AdminReglements": {

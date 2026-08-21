@@ -4182,7 +4182,12 @@
       "repAttach": "Ku lifaaq",
       "repRevoke": "Baabi'i",
       "repRevoked": "La baabi'iyay",
-      "repManageAll": "Maamul dhammaan xiriirrada"
+      "repManageAll": "Maamul dhammaan xiriirrada",
+      "repInvite": "Ku dar iimayl",
+      "repInviteEmail": "Iimaylka wakiilka",
+      "repInviteName": "Magaca wakiilka",
+      "repInviteSubmit": "Abuur oo ku xidh",
+      "repInviteHint": "Wuxuu abuuraa akoonka oo ku xidhaa. Iimayl lama dirayo — gelitaanku wuxuu maraa xasuusinta xigta."
     }
   },
   "AdminReglements": {

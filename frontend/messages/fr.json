@@ -4182,7 +4182,12 @@
       "repAttach": "Rattacher",
       "repRevoke": "Révoquer",
       "repRevoked": "Révoqué",
-      "repManageAll": "Gérer tous les mappages"
+      "repManageAll": "Gérer tous les mappages",
+      "repInvite": "Ajouter par e-mail",
+      "repInviteEmail": "E-mail du représentant",
+      "repInviteName": "Nom du représentant",
+      "repInviteSubmit": "Créer et rattacher",
+      "repInviteHint": "Crée le compte et le rattache. Aucun e-mail n'est envoyé — l'accès passe par la relance suivante."
     }
   },
   "AdminReglements": {

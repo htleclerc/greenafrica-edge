@@ -4219,7 +4219,12 @@
       "repAttach": "Vincular",
       "repRevoke": "Revogar",
       "repRevoked": "Revogado",
-      "repManageAll": "Gerir todos os mapeamentos"
+      "repManageAll": "Gerir todos os mapeamentos",
+      "repInvite": "Adicionar por e-mail",
+      "repInviteEmail": "E-mail do representante",
+      "repInviteName": "Nome do representante",
+      "repInviteSubmit": "Criar e associar",
+      "repInviteHint": "Cria a conta e associa-a. Não é enviado nenhum e-mail — o acesso passa pelo próximo aviso."
     }
   },
   "AdminReglements": {
