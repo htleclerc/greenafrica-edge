@@ -5,6 +5,7 @@ const base = {
     shipownerBillingEmail: null,
     agentEmail: null,
     vesselOwnerEmail: null,
+    ownerCcEmails: [] as string[],
     jurisdictionCcEmails: [] as string[],
     platformCcEmail: null,
 };
@@ -83,5 +84,26 @@ describe('resolveInvoiceRecipients — copies', () => {
             jurisdictionCcEmails: ['finance@so.gov'],
             platformCcEmail: 'archive@greengate.africa',
         })).toBeNull();
+    });
+
+    it("ajoute les copies propres à l'armateur, après l'agent", () => {
+        expect(resolveInvoiceRecipients({
+            ...base,
+            shipownerBillingEmail: 'billing@armateur.com',
+            agentEmail: 'agent@port.com',
+            ownerCcEmails: ['finance@armateur.com', 'ops@armateur.com'],
+            jurisdictionCcEmails: ['finance@somaliland.gov'],
+        })).toEqual({
+            to: 'billing@armateur.com',
+            cc: ['agent@port.com', 'finance@armateur.com', 'ops@armateur.com', 'finance@somaliland.gov'],
+        });
+    });
+
+    it('ne duplique pas une copie déjà destinataire principal', () => {
+        expect(resolveInvoiceRecipients({
+            ...base,
+            shipownerBillingEmail: 'billing@armateur.com',
+            ownerCcEmails: ['BILLING@armateur.com'],
+        })).toEqual({ to: 'billing@armateur.com', cc: [] });
     });
 });

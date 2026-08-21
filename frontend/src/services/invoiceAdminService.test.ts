@@ -63,6 +63,22 @@ function makeChain(result: { data: unknown[]; count: number | null }) {
     return chain;
 }
 
+// Faux query-builder chaînable capturant les appels (mêmes patron que collectionAdminService.test.ts),
+// utile pour asserter l'ordre exact des appels .order() successifs.
+function makeDb(rows: Record<string, unknown>[], count: number) {
+    const calls: { method: string; args: unknown[] }[] = [];
+    const builder: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'gt', 'gte', 'lte', 'or', 'order']) {
+        builder[m] = (...args: unknown[]) => { calls.push({ method: m, args }); return builder; };
+    }
+    builder.range = (..._args: unknown[]) => {
+        calls.push({ method: 'range', args: _args });
+        return Promise.resolve({ data: rows, count, error: null });
+    };
+    const db = { from: (t: string) => { calls.push({ method: 'from', args: [t] }); return builder; } };
+    return { db: db as never, calls };
+}
+
 describe('listInvoicesAdmin', () => {
     it('interroge la vue, applique les filtres et pagine via range', async () => {
         const chain = makeChain({ data: [], count: 0 });
@@ -106,6 +122,20 @@ describe('listInvoicesAdmin', () => {
         expect(chain.eq).not.toHaveBeenCalled();
         expect(chain.gt).not.toHaveBeenCalled();
         expect(chain.or).not.toHaveBeenCalled();
+    });
+
+    it('trie sur une clé autorisée', async () => {
+        const { db, calls } = makeDb([], 0);
+        await listInvoicesAdmin(db, { page: 1, pageSize: 25, sortKey: 'tax_amount_usd', sortDir: 'asc' });
+        const orderCalls = calls.filter((c) => c.method === 'order');
+        expect(orderCalls[0]).toEqual({ method: 'order', args: ['tax_amount_usd', { ascending: true }] });
+    });
+
+    it('ignore une clé de tri hors liste blanche', async () => {
+        const { db, calls } = makeDb([], 0);
+        await listInvoicesAdmin(db, { page: 1, pageSize: 25, sortKey: 'evil; DROP TABLE', sortDir: 'asc' });
+        const orderCalls = calls.filter((c) => c.method === 'order');
+        expect(orderCalls[0].args[0]).toBe('created_at');
     });
 });
 

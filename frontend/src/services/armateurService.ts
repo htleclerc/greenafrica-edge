@@ -15,6 +15,15 @@ export interface ArmateurCockpitRow {
     total_invoiced_usd: number;
     total_paid_usd: number;
     total_outstanding_usd: number;
+    overdue_count: number;
+    next_due_date: string | null;
+    last_auto_tier: string | null;
+    last_reminder_at: string | null;
+    latest_response_type: string | null;
+    // mig 127 : portée réelle de sendConsolidatedRecap (PENDING/OVERDUE/
+    // PARTIALLY_PAID, sans condition de date) — overdue_count seul sous-annonce
+    // les factures ouvertes pas encore échues.
+    open_count: number;
 }
 
 export async function listArmateursCockpit(db: SupabaseClient): Promise<ArmateurCockpitRow[]> {
@@ -38,6 +47,12 @@ export async function listArmateursCockpit(db: SupabaseClient): Promise<Armateur
         total_invoiced_usd: Number(r.total_invoiced_usd),
         total_paid_usd: Number(r.total_paid_usd),
         total_outstanding_usd: Number(r.total_outstanding_usd),
+        overdue_count: Number(r.overdue_count ?? 0),
+        next_due_date: (r.next_due_date as string | null) ?? null,
+        last_auto_tier: (r.last_auto_tier as string | null) ?? null,
+        last_reminder_at: (r.last_reminder_at as string | null) ?? null,
+        latest_response_type: (r.latest_response_type as string | null) ?? null,
+        open_count: Number(r.open_count ?? 0),
     }));
 }
 
@@ -54,6 +69,8 @@ export interface ArmateurProformaRow {
     tax_amount_usd: number;
     partial_paid_usd: number;
     status: string;
+    due_date: string | null;
+    collections_status: string | null;
     content_hash: string | null;
     verify_signature: string | null;
 }
@@ -80,8 +97,20 @@ export interface ArmateurReminderRow {
     id: string;
     tier: string;
     sent_at: string;
+    template_used: string;
     debtor_response_type: string;
     escalated_bailiff: boolean;
+}
+
+export interface ArmateurRepresentativeRow {
+    id: string;
+    profile_id: string;
+    full_name: string;
+    email: string;
+    priority: number;
+    active: boolean;
+    valid_from: string;
+    valid_until: string | null;
 }
 
 export interface ArmateurDetail {
@@ -92,6 +121,7 @@ export interface ArmateurDetail {
     address: string | null;
     official_email: string | null;
     official_email_source: string | null;
+    billing_cc_emails: string[];
     ops_email: string | null;
     finance_email: string | null;
     phone_e164: string | null;
@@ -112,10 +142,18 @@ export interface ArmateurDetail {
     swift_bic: string | null;
     bank_name: string | null;
     anonymized_at: string | null;
+    totals: {
+        invoicedUsd: number;
+        paidUsd: number;
+        outstandingUsd: number;
+        overdueCount: number;
+        nextDueDate: string | null;
+    };
     vessels: ArmateurVesselRow[];
     proformas: ArmateurProformaRow[];
     payments: ArmateurPaymentRow[];
     reminders: ArmateurReminderRow[];
+    representatives: ArmateurRepresentativeRow[];
 }
 
 export async function getArmateurDetail(
@@ -126,11 +164,28 @@ export async function getArmateurDetail(
     const { data: s } = await db.from('shipowners').select('*').eq('id', id).is('iata_code', null).maybeSingle();
     if (!s) return null;
 
-    const [vesselsRes, txRes] = await Promise.all([
+    const [vesselsRes, txRes, recRes, repRes] = await Promise.all([
         db.from('vessels').select('id, imo_number, name, category, gross_tonnage_dwt, flag_code').eq('shipowner_id', id),
-        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, content_hash, verify_signature')
+        db.from('transactions').select('id, invoice_ref, created_at, tax_amount_usd, partial_paid_usd, status, due_date, collections_status, content_hash, verify_signature')
           .eq('shipowner_id', id).eq('document_type', 'PROFORMA').eq('mode', 'MARITIME')
           .order('created_at', { ascending: false }),
+        // Totaux de compte : déjà agrégés par la vue (Task 1, mig 121) — on ne les
+        // recalcule pas ici. Repli à zéro/valeurs neutres si la ligne est absente
+        // (ex: shipowner sans aucune transaction ne produit pas forcément de ligne).
+        db.from('v_armateur_recouvrement')
+          .select('total_invoiced_usd, total_paid_usd, total_outstanding_usd, overdue_count, next_due_date')
+          .eq('id', id).maybeSingle(),
+        // Représentants (Task 9) : toutes les lignes (actives ET révoquées), triées
+        // par priorité croissante — la fiche doit pouvoir montrer l'historique, pas
+        // seulement l'état courant. owner_agent_mappings porte DEUX FK vers profiles
+        // (agent_profile_id et created_by, migration 024) : un embed `profiles(...)`
+        // non qualifié est ambigu pour PostgREST et échoue à l'exécution (PGRST201)
+        // malgré un typage qui compile — d'où le hint explicite sur le nom de la FK,
+        // déjà utilisé pour cette même relation dans ownerAgentMappingService.ts.
+        db.from('owner_agent_mappings')
+          .select('id, agent_profile_id, priority, active, valid_from, valid_until, profiles!owner_agent_mappings_agent_profile_id_fkey(full_name, email)')
+          .eq('shipowner_id', id)
+          .order('priority', { ascending: true }),
     ]);
     const txIds = (txRes.data ?? []).map((t) => t.id as string);
     const [payRes, remRes] = await Promise.all([
@@ -138,13 +193,26 @@ export async function getArmateurDetail(
           ? db.from('payments').select('id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
           : Promise.resolve({ data: [] as unknown[] }),
         txIds.length
-          ? db.from('collection_reminders').select('id, tier, sent_at, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
+          // template_used est requis par groupManualReminders (Tâche 13) pour
+          // regrouper les lignes MANUAL d'un même récapitulatif consolidé.
+          ? db.from('collection_reminders').select('id, tier, sent_at, template_used, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
           : Promise.resolve({ data: [] as unknown[] }),
     ]);
 
     // Narrowing explicite depuis les lignes shipowners (types manuels — pas de any).
     const row = s as Record<string, unknown>;
     const str = (k: string) => (row[k] as string | null) ?? null;
+
+    // PostgREST renvoie les NUMERIC/BIGINT en string → Number(...). Repli à zéro/null
+    // si la vue ne renvoie aucune ligne pour cet armateur (ex : aucune transaction).
+    const recRow = recRes.data as Record<string, unknown> | null;
+    const totals = {
+        invoicedUsd: Number(recRow?.total_invoiced_usd ?? 0),
+        paidUsd: Number(recRow?.total_paid_usd ?? 0),
+        outstandingUsd: Number(recRow?.total_outstanding_usd ?? 0),
+        overdueCount: Number(recRow?.overdue_count ?? 0),
+        nextDueDate: (recRow?.next_due_date as string | null | undefined) ?? null,
+    };
 
     // L'IBAN est chiffré au repos (mig 047) — jamais renvoyé brut au client.
     // Déchiffré + masqué côté serveur, et seulement pour les rôles habilités à voir la facturation.
@@ -165,6 +233,7 @@ export async function getArmateurDetail(
         address: str('address'),
         official_email: str('official_email'),
         official_email_source: str('official_email_source'),
+        billing_cc_emails: (row.billing_cc_emails as string[] | null) ?? [],
         ops_email: str('ops_email'),
         finance_email: str('finance_email'),
         phone_e164: str('phone_e164'),
@@ -185,6 +254,7 @@ export async function getArmateurDetail(
         swift_bic: str('swift_bic'),
         bank_name: str('bank_name'),
         anonymized_at: str('anonymized_at'),
+        totals,
         vessels: (vesselsRes.data ?? []).map((v) => ({
             id: v.id as string, imo_number: v.imo_number as string, name: v.name as string,
             category: v.category as string, gross_tonnage_dwt: Number(v.gross_tonnage_dwt),
@@ -194,6 +264,8 @@ export async function getArmateurDetail(
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
             partial_paid_usd: Number(t.partial_paid_usd ?? 0), status: t.status as string,
+            due_date: (t.due_date as string | null) ?? null,
+            collections_status: (t.collections_status as string | null) ?? null,
             content_hash: (t.content_hash as string | null) ?? null,
             verify_signature: (t.verify_signature as string | null) ?? null,
         })),
@@ -204,7 +276,32 @@ export async function getArmateurDetail(
         })),
         reminders: ((remRes.data ?? []) as Record<string, unknown>[]).map((r) => ({
             id: r.id as string, tier: r.tier as string, sent_at: r.sent_at as string,
+            template_used: r.template_used as string,
             debtor_response_type: r.debtor_response_type as string, escalated_bailiff: !!r.escalated_bailiff,
         })),
+        representatives: ((repRes.data ?? []) as Record<string, unknown>[]).map((m) => {
+            // PostgREST renvoie une relation jointe en objet OU en tableau selon la
+            // cardinalité qu'il infère — normaliser avant lecture (même patron que
+            // escalateCollection.ts:84), sinon un typage naïf compile et casse au
+            // premier shipowner dont l'inférence choisit le tableau.
+            type JoinedProfile = { full_name: string | null; email: string };
+            const rawProfile = m.profiles as JoinedProfile | JoinedProfile[] | null;
+            const p = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+            return {
+                id: m.id as string,
+                profile_id: m.agent_profile_id as string,
+                full_name: p?.full_name ?? p?.email ?? '—',
+                email: p?.email as string,
+                priority: Number(m.priority),
+                active: !!m.active,
+                valid_from: m.valid_from as string,
+                valid_until: (m.valid_until as string | null) ?? null,
+            };
+        })
+        // Le tri par priorité croissante est déjà demandé à la requête
+        // (.order('priority', ...)) mais on le refait ici, JS-side : c'est ce
+        // tri, pas l'ordre SQL, qui détermine le représentant principal côté UI,
+        // et on ne suppose jamais qu'un appelant futur retire l'.order() sans y penser.
+        .sort((a, b) => a.priority - b.priority),
     };
 }

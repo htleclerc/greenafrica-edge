@@ -6,8 +6,8 @@ const data: StatementData = {
     jurisdiction: 'Republic of Djibouti',
     periodLabel: 'July 2026',
     openLines: [
-        { invoiceRef: 'PRO-2026-30-aaaa', vesselName: 'GG DEMO STAR', issuedAt: '2026-06-10', ageDays: 20, outstandingUsd: 16500 },
-        { invoiceRef: 'PRO-2026-30-bbbb', vesselName: 'GG DEMO PIONEER', issuedAt: '2026-06-14', ageDays: 16, outstandingUsd: 11492 },
+        { transactionId: 'txn-aaaa', invoiceRef: 'PRO-2026-30-aaaa', vesselName: 'GG DEMO STAR', issuedAt: '2026-06-10', ageDays: 20, outstandingUsd: 16500 },
+        { transactionId: 'txn-bbbb', invoiceRef: 'PRO-2026-30-bbbb', vesselName: 'GG DEMO PIONEER', issuedAt: '2026-06-14', ageDays: 16, outstandingUsd: 11492 },
     ],
     payments: [
         { confirmedAt: '2026-06-20', receiptRef: 'RCT-2026-0001', amountUsd: 5000 },

@@ -54,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'cash-desk',    icon: <Banknote className="w-5 h-5" />,      href: '/admin/cash-desk',       labelKey: 'nav_cash_desk',    section: 'admin' },
     { key: 'wallets',      icon: <Wallet className="w-5 h-5" />,        href: '/admin/wallets',         labelKey: 'nav_wallets',      section: 'admin' },
     { key: 'jurisdictions', icon: <Globe2 className="w-5 h-5" />,      href: '/admin/jurisdictions',   labelKey: 'nav_jurisdictions', section: 'admin' },
+    { key: 'reglements', icon: <Banknote className="w-5 h-5" />, href: '/admin/reglements', labelKey: 'nav_reglements', section: 'admin' },
     { key: 'admin-invoices', icon: <FileText className="w-5 h-5" />, href: '/admin/invoices', labelKey: 'nav_admin_invoices', section: 'admin' },
     { key: 'admin-collections', icon: <Scale className="w-5 h-5" />, href: '/admin/collections', labelKey: 'nav_admin_collections', section: 'admin' },
     { key: 'staff',         icon: <Users className="w-5 h-5" />,        href: '/admin/staff',           labelKey: 'nav_staff',         section: 'admin' },

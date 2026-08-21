@@ -12,6 +12,7 @@ import { loginDestination } from '@/lib/auth/loginDestination';
 import { safeInternalPath } from '@/lib/auth/safeInternalPath';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
+import { requestLoginLink } from '@/actions/requestLoginLink';
 
 // Maps ?error= param values (set by requireOwner / middleware) to i18n keys
 // under OwnerPortal.login.errors.
@@ -55,6 +56,7 @@ function enterDemo(role: UserRole) {
 function LoginPageInner() {
     const t = useTranslations('Auth');
     const tErrors = useTranslations('OwnerPortal.login.errors');
+    const tMagic = useTranslations('Auth.magicLink');
     const searchParams = useSearchParams();
 
     const [email, setEmail]       = React.useState('');
@@ -63,6 +65,10 @@ function LoginPageInner() {
     const [loading, setLoading]   = React.useState(false);
     const [error, setError]       = React.useState('');
     const [showDemo, setShowDemo] = React.useState(false);
+    // Second chemin d'entree. Les armateurs ont ete importes sans mot de
+    // passe : le formulaire mot de passe ne leur ouvre rien.
+    const [mode, setMode] = React.useState<'password' | 'link'>('password');
+    const [linkSent, setLinkSent] = React.useState(false);
 
     // Read query params set by requireOwner / middleware redirects.
     const errorParam = searchParams.get('error');
@@ -70,6 +76,18 @@ function LoginPageInner() {
 
     // Banner message from a server-side redirect (e.g. requireOwner blocked access).
     const redirectBanner = errorParam ? tErrors(resolveErrorKey(errorParam)) : null;
+
+    async function handleLinkSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        const res = await requestLoginLink({ email: email.trim() });
+        setLoading(false);
+        // Adresse connue ou non, l'ecran est le meme : il ne doit pas
+        // renseigner sur qui detient un compte, ni sur qui est debiteur.
+        if (res.ok) { setLinkSent(true); return; }
+        setError(tMagic('rateLimited'));
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -215,7 +233,64 @@ function LoginPageInner() {
                             </div>
                         )}
 
-                        {/* Form — no role selector, role is auto-detected from the account */}
+                        {/* Deux chemins d'entree. Le mot de passe reste celui du
+                            personnel ; le lien sert aux armateurs, importes sans mot
+                            de passe et donc sans aucun moyen d'entrer jusqu'ici. */}
+                        <div className="flex gap-1 p-1 mb-4 rounded-xl" style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
+                            {(['password', 'link'] as const).map((m) => (
+                                <button
+                                    key={m}
+                                    type="button"
+                                    onClick={() => { setMode(m); setError(''); setLinkSent(false); }}
+                                    className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all"
+                                    style={mode === m
+                                        ? { backgroundColor: 'var(--os-surface-1)', color: 'var(--os-text-primary)', border: '1px solid var(--os-border)' }
+                                        : { color: 'var(--os-text-muted)' }}
+                                >
+                                    {m === 'password' ? tMagic('tabPassword') : tMagic('tabLink')}
+                                </button>
+                            ))}
+                        </div>
+
+                        {mode === 'link' ? (
+                            linkSent ? (
+                                <div className="flex items-start gap-2 px-3 py-3 rounded-lg" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                    <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-emerald-300">{tMagic('sent')}</p>
+                                </div>
+                            ) : (
+                            <form onSubmit={handleLinkSubmit} className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
+                                        {tMagic('emailLabel')}
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="operations@armateur.com"
+                                        className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all"
+                                        style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
+                                    />
+                                    <p className="text-[11px] mt-1" style={{ color: 'var(--os-text-muted)' }}>{tMagic('hint')}</p>
+                                </div>
+
+                                {error && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                        <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                                        <p className="text-xs text-red-400">{error}</p>
+                                    </div>
+                                )}
+
+                                <OsButton type="submit" variant="primary" size="lg" loading={loading}
+                                    iconRight={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
+                                    className="w-full mt-1">
+                                    {tMagic('submit')}
+                                </OsButton>
+                            </form>
+                            )
+                        ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
@@ -276,6 +351,7 @@ function LoginPageInner() {
                                 {t('btn_access_platform')}
                             </OsButton>
                         </form>
+                        )}
 
                         <p className="text-center text-xs mt-4" style={{ color: 'var(--os-text-muted)' }}>
                             {t('no_account')}{' '}

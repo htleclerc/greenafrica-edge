@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths';
 
 /**
  * Centralized email service for Green Gate OS notifications.
@@ -594,7 +595,7 @@ export async function sendPaymentRejectedEmail(p: PaymentRejectedParams): Promis
         <h2>Next Steps</h2>
         <p>Please review the reason above and submit a new payment via your portal. If you believe this is an error, contact our support team.</p>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">Review Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Review Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -618,6 +619,8 @@ export interface ProformaReminderParams {
     ageDays: number;
     /** Palier de relance — pilote le ton. Absent = rappel courtois générique. */
     tier?: 'J3' | 'J7' | 'J15' | 'J30' | 'J45';
+    /** PDF de la pro-forma, joint quand il est disponible. Absent = envoi quand même. */
+    pdfBuffer?: Uint8Array;
 }
 
 /** Objet + bandeau d'alerte selon le palier. */
@@ -668,12 +671,12 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
 
         <h2>Summary</h2>
         <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString('en-US')}</span></div>
         <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
 
         <div class="alert ${t.alertClass}">${t.alertText}</div>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">Pay Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Pay Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -682,8 +685,11 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         to: p.to,
         cc: p.cc,
         subject: t.subject,
-        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
-        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString('en-US')}` }),
+        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}${OWNER_INVOICES_PATH}`,
+        attachments: p.pdfBuffer
+            ? [{ filename: `${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) }]
+            : undefined,
     });
 }
 
@@ -786,7 +792,7 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
 
         <div class="alert alert-warn">Please review and settle this pro-forma invoice from your portal. Late settlement may incur port-clearance delays and interest.</div>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">View Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -795,7 +801,7 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `${p.invoiceRef} issued — $${p.amountUsd.toLocaleString()}` }),
-        text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
     });
 }
 
@@ -822,14 +828,69 @@ export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<
 
         <div class="alert alert-warn">This is an informational statement, not an invoice. Open pro-formas remain payable from your portal.</div>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">View Statements →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Statements →</a>
     `;
     return sendEmail({
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Statement ${p.periodLabel} — $${p.totalOutstandingUsd.toLocaleString()} due` }),
-        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
         attachments: p.pdfBuffer ? [{ filename: `statement-${p.periodLabel.replace(/\s/g, '-')}.pdf`, content: Buffer.from(p.pdfBuffer) }] : undefined,
+    });
+}
+
+// ── Consolidated collection recap email (Task 12 — on-demand, not archived) ─
+// Distinct from sendStatementReadyEmail above: that one announces an
+// INFORMATIONAL monthly statement and points to the portal ("not an
+// invoice"). This one carries a recovery tone, lists every open pro-forma
+// with its age, and always attaches the PDF (never optional) — it is a
+// collection gesture sent on demand by staff, not a courtesy notice.
+// Mixing the two tones would blur what the recipient is being told.
+
+export interface CollectionRecapParams {
+    to: string;
+    cc?: string[];
+    recipientName: string;
+    lines: { invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number }[];
+    totalOutstandingUsd: number;
+    jurisdictionName: string;
+    pdfBuffer: Uint8Array;
+}
+
+export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promise<EmailResult> {
+    const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`;
+    const rows = p.lines.map((l) => `
+        <div class="meta-row">
+            <span class="meta-label" style="font-family:monospace">${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d</span>
+            <span class="meta-value">$${l.outstandingUsd.toLocaleString('en-US')}</span>
+        </div>`).join('');
+    const content = `
+        <h1>Consolidated Recovery Statement</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>The following pro-forma invoices remain unpaid on your account with the ${escapeHtml(p.jurisdictionName)} Maritime Carbon Tax Authority.</p>
+
+        <h2>Outstanding Invoices (${p.lines.length})</h2>
+        ${rows}
+
+        <div class="alert alert-warn">Total outstanding: <strong>$${p.totalOutstandingUsd.toLocaleString('en-US')}</strong>. Please settle these invoices promptly to avoid further collection action.</div>
+
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Pay Outstanding Invoices →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">A consolidated statement is attached as a PDF for your records.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        cc: p.cc,
+        subject,
+        html: emailLayout(content, {
+            previewText: `${p.lines.length} invoice(s) — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
+        text: `Consolidated statement of account\n\n${p.lines.map((l) => `${l.invoiceRef} — ${l.vesselName} — ${l.ageDays}d — $${l.outstandingUsd.toLocaleString('en-US')}`).join('\n')}\n\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}${OWNER_INVOICES_PATH}`,
+        attachments: [
+            { filename: `consolidated-recap-${new Date().toISOString().slice(0, 10)}.pdf`, content: Buffer.from(p.pdfBuffer) },
+        ],
     });
 }
 
@@ -857,14 +918,14 @@ export async function sendWalletTopupEmail(p: WalletTopupParams): Promise<EmailR
 
         <p>Your wallet balance can be applied automatically to future pro-forma invoices, or manually from the portal.</p>
 
-        <a href="${appUrl()}/owner/wallet" class="btn">View Wallet →</a>
+        <a href="${appUrl()}${OWNER_WALLET_PATH}" class="btn">View Wallet →</a>
     `;
 
     return sendEmail({
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Wallet credited: +$${p.amountUsd.toLocaleString()}` }),
-        text: `Wallet topped up: +$${p.amountUsd.toLocaleString()}\nNew balance: $${p.newBalanceUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/wallet`,
+        text: `Wallet topped up: +$${p.amountUsd.toLocaleString()}\nNew balance: $${p.newBalanceUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_WALLET_PATH}`,
     });
 }
 
@@ -914,6 +975,47 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
 // no i18n: the destination is always shipowners.official_email, never a
 // visitor-facing surface, so a single English copy is sufficient (see spec
 // 2026-08-12 G4).
+
+export interface LoginLinkParams {
+    to: string;
+    recipientName?: string;
+    /** Lien miné par generateLink — à usage unique et de courte durée. */
+    link: string;
+}
+
+/**
+ * Lien de connexion au portail.
+ *
+ * Le lien est miné côté serveur puis envoyé par Resend, comme le code d'accès
+ * navire : les modèles GoTrue ne sont pas configurés (tous les blocs
+ * [auth.email.template.*] sont commentés dans supabase/config.toml), et
+ * laisser Supabase l'envoyer produirait un courriel par défaut, hors charte,
+ * et non traduit.
+ *
+ * Le message ne dit jamais quel dossier il ouvre : il part parfois vers une
+ * adresse simplement reconnue, et nommer l'armateur renseignerait un tiers
+ * sur qui est débiteur.
+ */
+export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResult> {
+    const content = `
+        <h1>Sign in to Green Gate</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>Use the button below to open your Green Gate account. No password is required.</p>
+
+        <a href="${p.link}" class="btn">Sign In →</a>
+
+        <div class="alert alert-warn">This link can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: 'Your Green Gate sign-in link',
+        html: emailLayout(content, { previewText: 'Your sign-in link — single use, expires shortly' }),
+        text: `Sign in to Green Gate\n\nOpen this link to access your account (single use, expires shortly):\n${p.link}\n\nIf you did not request it, ignore this email — no account changes will be made.`,
+    });
+}
 
 export interface VesselAccessCodeParams {
     to: string;
@@ -1010,7 +1112,7 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
 
         ${railGuidance}
 
-        <a href="${appUrl()}/owner/invoices" class="btn">View Invoices →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Invoices →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">— Solid Technology</p>
     `;
@@ -1019,6 +1121,6 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Refund of $${p.amountUsd.toLocaleString()} issued for ${p.invoiceRef}` }),
-        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}/owner/invoices`,
+        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
     });
 }

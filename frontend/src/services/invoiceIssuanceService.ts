@@ -133,6 +133,8 @@ export interface InvoiceRecipientsInput {
     agentEmail: string | null;
     /** Propriétaire du navire (vessels.owner_id → profiles.email). */
     vesselOwnerEmail: string | null;
+    /** Copies propres à l'armateur (shipowners.billing_cc_emails). */
+    ownerCcEmails: string[];
     /** Copies propres à l'État émetteur (jurisdictions.billing_cc_emails). */
     jurisdictionCcEmails: string[];
     /** Copie plateforme unique (PLATFORM_BILLING_CC). */
@@ -149,8 +151,8 @@ const cleanEmail = (value: string | null | undefined): string | null => {
  *
  * Destinataire principal en cascade : contact de facturation de l'armateur →
  * agent maritime → propriétaire du navire. L'agent passe en copie s'il n'est
- * pas déjà le destinataire principal, puis viennent les copies de l'État
- * émetteur et celle de la plateforme.
+ * pas déjà le destinataire principal, puis viennent les copies propres à
+ * l'armateur, celles de l'État émetteur et celle de la plateforme.
  *
  * Renvoie `null` quand aucun destinataire principal n'est joignable : une
  * créance existe indépendamment de la joignabilité de son débiteur, et il
@@ -172,6 +174,7 @@ export function resolveInvoiceRecipients(
     const cc: string[] = [];
     const candidates = [
         cleanEmail(input.agentEmail),
+        ...input.ownerCcEmails.map(cleanEmail),
         ...input.jurisdictionCcEmails.map(cleanEmail),
         cleanEmail(input.platformCcEmail),
     ];
@@ -509,7 +512,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     const { data: shipowner } = txRecord.shipowner_id
         ? await admin
             .from('shipowners')
-            .select('official_email')
+            .select('official_email, billing_cc_emails')
             .eq('id', txRecord.shipowner_id)
             .maybeSingle()
         : { data: null };
@@ -526,6 +529,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         shipownerBillingEmail: (shipowner?.official_email as string | null) ?? null,
         agentEmail: (agentProfile?.email as string | null) ?? null,
         vesselOwnerEmail,
+        ownerCcEmails: (shipowner?.billing_cc_emails as string[] | null) ?? [],
         jurisdictionCcEmails: await fetchJurisdictionBillingCc(admin, txRecord.jurisdiction_id),
         platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
     });

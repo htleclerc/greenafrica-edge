@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient } from '@/lib/supabase/tenant';
-import { CheckCircle2, Clock, AlertTriangle, Shield, XCircle, FileText, Receipt, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Shield, XCircle, FileText, Receipt, RotateCcw } from 'lucide-react';
 import { parseInvoiceRef, verifyInvoiceSignature } from '@/services/invoiceService';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
+import { paymentBadge, type VerifyStatus } from './paymentBadge';
 
 /**
  * Public verification page — anyone can scan the QR on a printed pro-forma
@@ -43,7 +44,7 @@ interface VerifyResult {
     portCall?: string;
     transactionType?: string;
     amountUsd?: number;
-    status?: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPT' | 'DISPUTED';
+    status?: VerifyStatus;
     paidAt?: string | null;
     createdAt?: string;
     contentHash?: string;
@@ -257,45 +258,6 @@ function describeDocument(documentType: DocumentType): DocumentDescriptor {
     }
 }
 
-interface PaymentBadge {
-    label: string;
-    color: string;
-    bg: string;
-    Icon: typeof CheckCircle2;
-}
-
-/** Map (documentType, status) → a verifier-facing payment badge.
- *
- *  For PROFORMA the badge expresses "what the agent is expected to do":
- *    PENDING → "To Pay", OVERDUE → "Overdue", PAID → "Paid in Advance".
- *  For FINAL/COMPLEMENT (a receipt) it expresses settlement state:
- *    PAID → "Paid", PENDING → "Unpaid", OVERDUE → "In Default of Payment".
- *  REFUND has no payment status — caller should skip the badge entirely. */
-function paymentBadge(
-    descriptor: DocumentDescriptor,
-    status: VerifyResult['status'],
-): PaymentBadge | null {
-    if (descriptor.kind === 'refund') return null;
-    const s = status ?? 'PENDING';
-
-    if (s === 'EXEMPT') {
-        return { label: 'Exempt',   color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)', Icon: Shield };
-    }
-    if (s === 'DISPUTED') {
-        return { label: 'Disputed', color: '#F97316', bg: 'rgba(249,115,22,0.1)', Icon: AlertTriangle };
-    }
-
-    if (descriptor.kind === 'receipt') {
-        if (s === 'PAID')    return { label: 'Paid',                 color: '#10B981', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 };
-        if (s === 'OVERDUE') return { label: 'In Default of Payment', color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  Icon: AlertTriangle };
-        return                       { label: 'Unpaid',               color: '#EAB308', bg: 'rgba(234,179,8,0.1)',  Icon: Clock };
-    }
-
-    // proforma
-    if (s === 'PAID')    return { label: 'Paid in Advance', color: '#10B981', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 };
-    if (s === 'OVERDUE') return { label: 'Overdue',         color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  Icon: AlertTriangle };
-    return                       { label: 'To Pay',          color: '#EAB308', bg: 'rgba(234,179,8,0.1)',  Icon: Clock };
-}
 
 function formatDate(iso?: string, withTime = false): string {
     if (!iso) return '—';

@@ -22,6 +22,17 @@ export function periodBounds(now: Date): { periodStart: Date; periodEnd: Date; l
     return { periodStart, periodEnd, label };
 }
 
+/**
+ * Bornes du mois EN COURS : [1er du mois, maintenant]. Pour un récap envoyé à la
+ * demande. `periodBounds` vise le mois écoulé et reste réservé au cron mensuel.
+ */
+export function currentMonthBounds(now: Date): { periodStart: Date; periodEnd: Date; label: string } {
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth();
+    const periodStart = new Date(Date.UTC(y, m, 1));
+    return { periodStart, periodEnd: new Date(now.getTime()), label: `${MONTHS[m]} ${y}` };
+}
+
 /** statements/<shipownerId>/<YYYY-MM>.pdf */
 export function statementStoragePath(shipownerId: string, periodStart: Date): string {
     const ym = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -46,13 +57,14 @@ export async function composeOwnerStatement(
 ): Promise<OwnerStatementResult> {
     const { data: txRaw } = await admin
         .from('transactions')
-        .select('invoice_ref, vessel_name, created_at, tax_amount_usd, partial_paid_usd')
+        .select('id, invoice_ref, vessel_name, created_at, tax_amount_usd, partial_paid_usd')
         .eq('document_type', 'PROFORMA')
         .eq('shipowner_id', input.shipownerId)
         .in('status', ['PENDING', 'OVERDUE', 'PARTIALLY_PAID']);
     const openLines: StatementLine[] = ((txRaw ?? []) as Record<string, unknown>[]).map((r) => {
         const outstanding = Number(r.tax_amount_usd) - Number(r.partial_paid_usd ?? 0);
         return {
+            transactionId: String(r.id ?? ''),
             invoiceRef: String(r.invoice_ref ?? '—'),
             vesselName: String(r.vessel_name ?? ''),
             issuedAt: String(r.created_at).slice(0, 10),

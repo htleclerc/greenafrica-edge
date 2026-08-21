@@ -9,8 +9,9 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import * as Dialog from '@radix-ui/react-dialog';
 import { inviteShipowner } from '@/actions/inviteShipowner';
-import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
+import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { filterArmateurs, type ArmateurFilterState, type SanctionFilter } from './armateurFilters';
+import { useClientSort } from '@/hooks/useClientSort';
 import type { ArmateurCockpitRow } from '@/services/armateurService';
 
 interface Props {
@@ -92,7 +93,10 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
         if (!emailTarget) return;
         setEmailError(null);
         startEmailTransition(async () => {
-            const result = await updateArmateurEmail({ shipownerId: emailTarget.id, email: emailValue });
+            const result = await updateArmateurContacts({
+                shipownerId: emailTarget.id,
+                officialEmail: emailValue,
+            });
             if (!result.ok) {
                 setEmailError(result.reason);
                 return;
@@ -102,16 +106,27 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
         });
     }
 
-    const stateBadge = (state: string) => {
+    const stateBadge = React.useCallback((state: string) => {
         if (state === 'ACTIVE') return <OsBadge variant="active" label={t('state.active')} />;
         if (state === 'INVITED') return <OsBadge variant="warning" label={t('state.invited')} />;
         return <OsBadge variant="archived" label={t('state.ghost')} />;
-    };
+    }, [t]);
 
-    const columns: OsColumn<ArmateurCockpitRow>[] = [
+    // Mémoïsé : `useClientSort` mémoïse `sortedRows` sur la référence de `columns`,
+    // un tableau reconstruit à chaque rendu recalculerait le tri à chaque fois.
+    // Dépendances : `t` (libellés), `canInvite` (prop — la colonne actions en dépend ;
+    // submitInvite/submitEditEmail appellent router.refresh(), qui réconcilie de nouvelles
+    // props sur ce client component déjà monté, sans démontage : un canInvite non listé ici
+    // resterait périmé après un refresh), `stateBadge` (stabilisé ci-dessus par son propre
+    // useCallback). openEditEmail/openInvite ne sont pas listées : ce sont des déclarations
+    // de fonction qui ne ferment que sur des setters useState, stables par garantie React —
+    // leur identité par rendu n'affecte pas le comportement capturé.
+    const columns: OsColumn<ArmateurCockpitRow>[] = React.useMemo(() => [
         {
             key: 'name',
             header: t('col.name'),
+            sortable: true,
+            sortValue: (r) => r.name,
             render: (r) => <span className="font-medium text-[var(--os-text-primary)]">{r.name}</span>,
         },
         {
@@ -138,28 +153,60 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
             key: 'proformas',
             header: t('col.proformas'),
             className: 'text-right',
+            sortable: true,
+            sortValue: (r) => r.proforma_count,
             render: (r) => <span className="text-xs tabular-nums">{r.proforma_count}</span>,
         },
         {
             key: 'invoiced',
             header: t('col.invoiced'),
             className: 'text-right',
+            sortable: true,
+            sortValue: (r) => r.total_invoiced_usd,
             render: (r) => <span className="text-xs tabular-nums">{usd(r.total_invoiced_usd)}</span>,
         },
         {
             key: 'paid',
             header: t('col.paid'),
             className: 'text-right',
+            sortable: true,
+            sortValue: (r) => r.total_paid_usd,
             render: (r) => <span className="text-xs tabular-nums">{usd(r.total_paid_usd)}</span>,
         },
         {
             key: 'outstanding',
             header: t('col.outstanding'),
             className: 'text-right',
+            sortable: true,
+            sortValue: (r) => r.total_outstanding_usd,
             render: (r) => (
                 <span className="text-xs tabular-nums font-semibold text-[var(--os-text-primary)]">
                     {usd(r.total_outstanding_usd)}
                 </span>
+            ),
+        },
+        {
+            key: 'overdue',
+            header: t('col.overdue'),
+            className: 'text-right',
+            sortable: true,
+            sortValue: (r) => r.overdue_count,
+            render: (r) => r.overdue_count > 0
+                ? <OsBadge variant="overdue" label={String(r.overdue_count)} />
+                : <span className="text-xs text-[var(--os-text-muted)]">—</span>,
+        },
+        {
+            key: 'lastReminder',
+            header: t('col.lastReminder'),
+            sortable: true,
+            sortValue: (r) => r.last_reminder_at,
+            render: (r) => (
+                <div className="flex items-center gap-1.5">
+                    {r.last_auto_tier && <OsBadge variant="warning" label={r.last_auto_tier} size="sm" />}
+                    <span className="text-xs text-[var(--os-text-muted)]">
+                        {r.last_reminder_at ? new Date(r.last_reminder_at).toLocaleDateString() : '—'}
+                    </span>
+                </div>
             ),
         },
         {
@@ -186,7 +233,9 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
                 </div>
             ),
         },
-    ];
+    ], [t, canInvite, stateBadge]);
+
+    const { sort, onSortChange, sortedRows } = useClientSort(visible, columns);
 
     return (
         <>
@@ -246,10 +295,12 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
 
             <OsTable
                 columns={columns}
-                rows={visible}
+                rows={sortedRows}
                 keyExtractor={(r) => r.id}
                 emptyMessage={t('empty')}
                 onRowClick={(r) => router.push('/admin/armateurs/' + r.id)}
+                sort={sort}
+                onSortChange={onSortChange}
             />
 
             <Dialog.Root open={inviteTarget !== null} onOpenChange={(o) => !o && closeInvite()}>
