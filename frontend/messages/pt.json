@@ -3576,7 +3576,9 @@
         "created": "Solicitação de pagamento criada",
         "intro": "Faça upload de um comprovante de pagamento (opcional, mas recomendado).",
         "done": "Pronto — seu pagamento está aguardando revisão."
-      }
+      },
+      "comingSoon": "Em breve",
+      "comingSoonHint": "Este meio de pagamento ainda não está disponível."
     },
     "proofUpload": {
       "title": "Enviar comprovante de pagamento (MT103)",

@@ -25,6 +25,17 @@ export interface PortalFeatureFlags {
     walletTopupEnabled: boolean;
     notificationSmsEnabled: boolean;
     airSelfServiceEnabled: boolean;
+    /**
+     * Montre les rails de paiement sans prestataire actif, marqués « bientôt
+     * disponible », au lieu de les omettre. Éteint par défaut : l'écran de
+     * paiement ne propose alors que ce qui fonctionne réellement.
+     *
+     * Ne concerne QUE l'indisponibilité structurelle. Un portefeuille vide ou
+     * insuffisant reste visible avec son motif quoi qu'il arrive — l'armateur
+     * peut agir dessus, le masquer le laisserait croire que le moyen n'existe
+     * pas.
+     */
+    showUnavailableRails: boolean;
 }
 
 /**
@@ -39,6 +50,7 @@ const FLAG_KEYS: Record<keyof PortalFeatureFlags, string> = {
     walletTopupEnabled: 'feature.wallet_topup_enabled',
     notificationSmsEnabled: 'feature.notification_sms_enabled',
     airSelfServiceEnabled: 'feature.air_self_service_enabled',
+    showUnavailableRails: 'feature.show_unavailable_rails',
 };
 
 const ALL_KEYS = Object.values(FLAG_KEYS);
@@ -52,6 +64,7 @@ function defaultFlags(): PortalFeatureFlags {
         walletTopupEnabled: false,
         notificationSmsEnabled: false,
         airSelfServiceEnabled: false,
+        showUnavailableRails: false,
     };
 }
 

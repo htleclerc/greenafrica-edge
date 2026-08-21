@@ -3234,7 +3234,9 @@
         "created": "Lacag bixinta wareejinta waa la diiwaan galiyay. Waxaa la sugayaa caddayntaada + xaqiijinta maamulaha.",
         "intro": "Ku lifaaq xaqiijintaada SWIFT MT103 hadda (ikhtiyaari — waxaad sidoo kale ka samayn kartaa liiska biillada dambe).",
         "done": "Dhammee"
-      }
+      },
+      "comingSoon": "Dhawaan",
+      "comingSoonHint": "Habkan lacag bixinta weli lama furin."
     },
     "proofUpload": {
       "addButton": "Ku dar caddaynta lacag bixinta",

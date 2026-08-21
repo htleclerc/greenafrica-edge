@@ -3122,7 +3122,9 @@
         "created": "Ombi la malipo limeundwa",
         "intro": "Pakia uthibitisho wa malipo (hiari lakini inashauriwa).",
         "done": "Imekamilika — malipo yako yanasubiri ukaguzi."
-      }
+      },
+      "comingSoon": "Inakuja hivi karibuni",
+      "comingSoonHint": "Njia hii ya malipo bado haijafunguliwa."
     },
     "proofUpload": {
       "addButton": "Ongeza uthibitisho",

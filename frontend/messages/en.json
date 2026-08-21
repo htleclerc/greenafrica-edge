@@ -3234,7 +3234,9 @@
         "created": "Wire payment recorded. Awaiting your proof + admin verification.",
         "intro": "Attach your SWIFT MT103 confirmation now (optional — you can also do it later from the invoice list).",
         "done": "Done"
-      }
+      },
+      "comingSoon": "Coming soon",
+      "comingSoonHint": "This payment method is not open yet."
     },
     "proofUpload": {
       "addButton": "Add proof of payment",

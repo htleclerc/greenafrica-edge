@@ -15,6 +15,20 @@ interface RailEligibility {
 
 interface AvailabilityResponse {
     rails: RailEligibility[];
+    showUnavailable?: boolean;
+}
+
+/**
+ * Un rail sans prestataire actif est une indisponibilite STRUCTURELLE : il
+ * n'est pas encore ouvert. Un portefeuille vide ou insuffisant est
+ * CONTEXTUEL — le moyen existe, c'est ce paiement-ci qui ne passe pas.
+ *
+ * Les confondre serait nuisible : un armateur dont le portefeuille est a sec
+ * doit comprendre pourquoi, sinon il croira que le moyen n'existe pas et ne
+ * l'alimentera jamais.
+ */
+function isComingSoon(r: RailEligibility): boolean {
+    return !r.eligible && r.reason === 'no_active_provider';
 }
 
 const RAIL_META: Record<Rail, { icon: React.ComponentType<{ className?: string }>; color: string; key: string }> = {
@@ -98,18 +112,33 @@ export function StepRailPicker() {
                             <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-[var(--os-text-primary)]">{t(`rail.${meta.key}.label`)}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-semibold text-[var(--os-text-primary)]">{t(`rail.${meta.key}.label`)}</p>
+                                {isComingSoon(r) && (
+                                    <span
+                                        className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                        style={{ backgroundColor: 'rgba(234,179,8,0.12)', color: '#EAB308' }}
+                                    >
+                                        {t('comingSoon')}
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-[11px] text-[var(--os-text-muted)] mt-0.5">
                                 {r.eligible
                                     ? t(`rail.${meta.key}.hint`, { provider: r.providers[0]?.provider ?? '' })
-                                    : t(r.reason ? `reason.${r.reason}` : 'railNotAvailable')}
+                                    : isComingSoon(r)
+                                        ? t('comingSoonHint')
+                                        : t(r.reason ? `reason.${r.reason}` : 'railNotAvailable')}
                             </p>
                         </div>
                     </button>
                 );
             })}
-            {rails.every((r) => !r.eligible) && (
+            {rails.length > 0 && rails.every((r) => !r.eligible) && (
                 <p className="text-xs text-[#EAB308] mt-2">{t('noRailEligible')}</p>
+            )}
+            {rails.length === 0 && (
+                <p className="text-xs text-[#EAB308] mt-2 py-2">{t('noRailEligible')}</p>
             )}
         </div>
     );

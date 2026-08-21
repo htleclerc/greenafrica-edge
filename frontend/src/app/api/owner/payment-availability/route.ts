@@ -108,5 +108,18 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    return NextResponse.json({ rails });
+    // Un rail structurellement indisponible — aucun prestataire actif — n'est
+    // pas descendu au navigateur quand le drapeau est eteint. Le filtrage se
+    // fait ICI et non cote client : masquer a l'affichage laisserait
+    // l'information dans la charge utile, et renseignerait sur l'outillage de
+    // la plateforme quiconque ouvre l'onglet reseau.
+    //
+    // Le portefeuille echappe a ce filtre quel que soit le drapeau : « solde
+    // insuffisant » est une information actionnable, pas une indisponibilite.
+    // Le masquer laisserait croire que le moyen n'existe pas.
+    const visible = flags.showUnavailableRails
+        ? rails
+        : rails.filter((r) => r.eligible || r.rail === 'WALLET');
+
+    return NextResponse.json({ rails: visible, showUnavailable: flags.showUnavailableRails });
 }

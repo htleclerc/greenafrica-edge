@@ -49,6 +49,7 @@ describe('feature-flags', () => {
             walletTopupEnabled: true,
             notificationSmsEnabled: true,
             airSelfServiceEnabled: false,
+            showUnavailableRails: false,
         });
     });
 
@@ -64,6 +65,7 @@ describe('feature-flags', () => {
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
+            showUnavailableRails: false,
         });
     });
 
@@ -84,6 +86,7 @@ describe('feature-flags', () => {
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
+            showUnavailableRails: false,
         });
     });
 
@@ -123,6 +126,7 @@ describe('feature-flags', () => {
             walletTopupEnabled: false,
             notificationSmsEnabled: false,
             airSelfServiceEnabled: false,
+            showUnavailableRails: false,
         });
     });
 
@@ -188,11 +192,11 @@ describe('feature-flags — onlinePaypalEnabled', () => {
         expect(flags.onlinePaypalEnabled).toBe(false);
     });
 
-    it('la cle PayPal fait partie du SELECT unique (7 cles)', async () => {
+    it('la cle PayPal fait partie du SELECT unique (8 cles)', async () => {
         const { _readPortalFeatureFlagsImpl } = await import('./feature-flags');
         await _readPortalFeatureFlagsImpl();
         const inCall = mockSupabase.from.mock.results[0].value.select.mock.results[0].value.in;
         expect(inCall.mock.calls[0][1]).toContain('feature.online_payment_paypal_enabled');
-        expect(inCall.mock.calls[0][1]).toHaveLength(7);
+        expect(inCall.mock.calls[0][1]).toHaveLength(8);
     });
 });
