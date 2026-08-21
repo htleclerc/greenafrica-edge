@@ -237,3 +237,36 @@ describe('partition du referentiel — qui recoit un compte', () => {
         expect(sanctionnes.filter((d) => d.contactEmail).length).toBeGreaterThan(0);
     });
 });
+
+describe('un profil ne peut posseder qu’un seul armateur', () => {
+    const rows = JSON.parse(
+        readFileSync(
+            join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json'),
+            'utf8',
+        ),
+    ) as unknown[][];
+    const dossiers = parseSuiviArmateurs(rows);
+    const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
+    const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
+
+    it('detecte les adresses servant plusieurs dossiers a mettre en service', () => {
+        // Poser le meme profile_id sur deux armateurs casse le portail :
+        // requirePrincipal fait .eq('profile_id').maybeSingle() et rend
+        // PGRST116 « The result contains 2 rows », et current_shipowner_id()
+        // — qui porte le RLS — fait LIMIT 1 sans ORDER BY.
+        // Le premier dossier possede le compte, les suivants sont rattaches.
+        const parAdresse = new Map<string, string[]>();
+        for (const d of cibles) {
+            const e = (d.contactEmail as string).toLowerCase();
+            parAdresse.set(e, [...(parAdresse.get(e) ?? []), d.consRef]);
+        }
+        const partagees = [...parAdresse.entries()].filter(([, refs]) => refs.length > 1);
+
+        expect(partagees).toEqual([
+            ['faros@farosshipping.example', ['PRO-CONS-2026-008', 'PRO-CONS-2026-021']],
+        ]);
+        // 36 dossiers joignables, 35 comptes distincts : un seul rattachement.
+        expect(parAdresse.size).toBe(35);
+        expect(cibles.length).toBe(36);
+    });
+});

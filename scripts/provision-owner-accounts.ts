@@ -66,29 +66,70 @@ async function main() {
     let crees = 0;
     let repris = 0;
     let dejaActifs = 0;
+    let rattaches = 0;
+
+    // UN PROFIL NE POSSÈDE QU'UN SEUL ARMATEUR.
+    //
+    // Deux dossiers peuvent partager une adresse — faros@farosshipping.example
+    // porte PRO-CONS-2026-008 et -021. Poser le même profile_id sur les deux
+    // casse le portail : requirePrincipal fait .eq('profile_id').maybeSingle()
+    // et rend PGRST116 « The result contains 2 rows », tandis que
+    // current_shipowner_id(), qui porte le RLS, fait LIMIT 1 sans ORDER BY et
+    // devient non déterministe.
+    //
+    // Le PREMIER dossier de l'ordre possède le compte ; les suivants sont
+    // rattachés par owner_agent_mappings, ce qui est exactement le mécanisme
+    // prévu pour un représentant.
+    const profileParEmail = new Map<string, string>();
 
     for (const o of cibles) {
-        // Idempotence : un dossier déjà rattaché et actif n'est pas retouché.
-        if (o.profile_id && o.account_state === 'ACTIVE') { dejaActifs += 1; continue; }
+        const email = (o.official_email as string).trim().toLowerCase();
 
-        log(`  ${o.seed_ref} ${o.name} <${o.official_email}>`);
-        if (!EXECUTE) { crees += 1; continue; }
+        // Idempotence : un dossier déjà rattaché et actif n'est pas retouché.
+        if (o.profile_id && o.account_state === 'ACTIVE') {
+            dejaActifs += 1;
+            profileParEmail.set(email, o.profile_id);
+            continue;
+        }
+
+        const dejaVue = profileParEmail.get(email);
+        log(`  ${o.seed_ref} ${o.name} <${email}>${dejaVue ? '  [adresse déjà servie → rattachement]' : ''}`);
+        if (!EXECUTE) { if (dejaVue) rattaches += 1; else crees += 1; continue; }
 
         const { profileId, created } = await provisionOwnerAccount(db, {
-            email: o.official_email as string,
-            fullName: o.name,
+            email, fullName: o.name,
         });
+
+        if (dejaVue) {
+            // Second dossier de cette adresse : rattachement, pas possession.
+            rattaches += 1;
+            const { data: existing } = await db
+                .from('owner_agent_mappings')
+                .select('id')
+                .eq('shipowner_id', o.id)
+                .eq('agent_profile_id', profileId)
+                .limit(1);
+            if (((existing ?? []) as unknown[]).length === 0) {
+                const { error } = await db.from('owner_agent_mappings').insert({
+                    shipowner_id: o.id, agent_profile_id: profileId, priority: 10, active: true,
+                });
+                if (error) throw new Error(`rattachement ${o.seed_ref} : ${error.message}`);
+            }
+            continue;
+        }
+
         if (created) crees += 1; else repris += 1;
+        profileParEmail.set(email, profileId);
 
         const { error: upErr } = await db
             .from('shipowners')
             .update({ profile_id: profileId, account_state: 'ACTIVE' })
             .eq('id', o.id);
-        if (upErr) throw new Error(`rattachement ${o.seed_ref} : ${upErr.message}`);
+        if (upErr) throw new Error(`mise en service ${o.seed_ref} : ${upErr.message}`);
     }
 
     console.log('');
-    log(`comptes créés ${crees} · comptes repris ${repris} · déjà actifs ${dejaActifs}`);
+    log(`comptes créés ${crees} · comptes repris ${repris} · déjà actifs ${dejaActifs} · dossiers rattachés ${rattaches}`);
     log(`hors de portée du portail : ${sansAdresse.length} sans adresse, ${sanctionnes.length} sous sanctions`);
     if (!EXECUTE) log('SIMULATION — relancer avec --execute pour appliquer');
 }
