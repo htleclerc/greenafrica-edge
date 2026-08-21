@@ -1,17 +1,25 @@
 # Fly.io deployment config for Green-Gate OS Go backend
 # Deploy: fly deploy --config backend/fly.toml
 #
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+# Two process groups in one Fly app:
+#   - api      → cmd/api binary, public HTTP on :8080
+#   - scraper  → cmd/scraper binary, no public ports (background worker)
 #
+# Scale independently:
+#   fly scale count api=1 scraper=0   # default — scraper off
+#   fly scale count scraper=1          # turn scraper on (still gated by
+#                                      # feature.equasis_scraper_enabled)
+# Restart one without touching the other:
+#   fly machine restart <id>           # find via `fly machines list`
 
-app = 'greengate-prod'
+app = 'africgreen'
 primary_region = 'ams'
 
 [build]
 
 [processes]
-  api = '/africgreen-api'
-  scraper = '/africgreen-scraper'
+  api = "/africgreen-api"
+  scraper = "/africgreen-scraper"
 
 [http_service]
   internal_port = 8080
@@ -19,10 +27,21 @@ primary_region = 'ams'
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 1
-  processes = ['api']
+  processes = ["api"]
 
 [[vm]]
+  # `memory` and `memory_mb` are mutually exclusive — keeping the 1 GB form.
+  # The stray `memory_mb = 256` previously won, starving the Go backend.
+  #
+  # ATTENTION — cette correction a deja ete perdue une fois. `fly launch`
+  # regenere ce fichier depuis zero : la branche flyio-new-files (b88a70e) a
+  # ainsi reintroduit `memory_mb = 256` et efface ces commentaires, et la
+  # version degradee a vecu sur main sans etre remarquee. Relire ce bloc apres
+  # tout passage de `fly launch`, et ne jamais committer sa sortie telle quelle.
+  #
+  # `app` reste 'africgreen' (staging) : la production surcharge via
+  # `--app greengate-prod` dans deploy-production.yml, pour que le meme fichier
+  # serve les deux environnements.
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
