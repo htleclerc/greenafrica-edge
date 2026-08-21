@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
     parseConsRefs, parseSuiviArmateurs, parseVesselDetail,
@@ -184,5 +186,54 @@ describe('parseVesselDetail', () => {
             '1 139,0', '45 558,00', '', '', '']]);
         expect(v.emissionsTco2).toBeCloseTo(1139.0, 1);
         expect(v.amountUsd).toBeCloseTo(45558.0, 2);
+    });
+});
+
+describe('partition du referentiel — qui recoit un compte', () => {
+    // Cette regle decide qui obtient un acces au portail sur un portefeuille
+    // de 1 316 124,00 USD. Elle est verrouillee sur le referentiel committe,
+    // pour qu'un changement de fichier ou de regle soit visible plutot que
+    // silencieux.
+    const rows = JSON.parse(
+        readFileSync(
+            join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json'),
+            'utf8',
+        ),
+    ) as unknown[][];
+    const dossiers = parseSuiviArmateurs(rows);
+    const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
+
+    const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
+    const sansAdresse = dossiers.filter((d) => !d.contactEmail && !sanctionne(d.consRef));
+    const sanctionnes = dossiers.filter((d) => sanctionne(d.consRef));
+
+    it('compte 74 dossiers pour 1 316 124,00 USD', () => {
+        expect(dossiers).toHaveLength(74);
+        expect(dossiers.reduce((s, d) => s + d.totalUsd, 0)).toBeCloseTo(1_316_124.0, 2);
+    });
+
+    it('ouvre 36 comptes, pour 681 304,00 USD', () => {
+        expect(cibles).toHaveLength(36);
+        expect(cibles.reduce((s, d) => s + d.totalUsd, 0)).toBeCloseTo(681_304.0, 2);
+    });
+
+    it('laisse 35 dossiers hors de portee faute d’adresse, 486 709,20 USD', () => {
+        expect(sansAdresse).toHaveLength(35);
+        expect(sansAdresse.reduce((s, d) => s + d.totalUsd, 0)).toBeCloseTo(486_709.2, 2);
+    });
+
+    it('exclut les 3 dossiers sous sanctions, 148 110,80 USD', () => {
+        expect(sanctionnes).toHaveLength(3);
+        expect(sanctionnes.reduce((s, d) => s + d.totalUsd, 0)).toBeCloseTo(148_110.8, 2);
+    });
+
+    it('n’oublie personne : les trois parts couvrent exactement le portefeuille', () => {
+        expect(cibles.length + sansAdresse.length + sanctionnes.length).toBe(dossiers.length);
+    });
+
+    it('aucun dossier sanctionne ne porte d’adresse exploitable par erreur', () => {
+        // Morgan Navigation et Petrofleet EN ONT une : c'est la liste figee,
+        // pas l'absence d'adresse, qui les protege.
+        expect(sanctionnes.filter((d) => d.contactEmail).length).toBeGreaterThan(0);
     });
 });
