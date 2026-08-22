@@ -3,7 +3,9 @@
 // the principal is an operator). Always fetches data through principal.supabase
 // so RLS is scoped to the authenticated shipowner — never a platform client.
 
+import { Download, Receipt } from 'lucide-react';
 import type { Principal } from '@/lib/auth/requirePrincipal';
+import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { VesselsTable, type VesselRow } from '@/components/owner/vessels/VesselsTable';
 import { AircraftTable, type AircraftRow } from '@/components/owner/vessels/AircraftTable';
 import { ModeBadge } from '@/components/owner/ModeBadge';
@@ -12,6 +14,8 @@ import { ApproxFlag } from '@/components/owner/ApproxFlag';
 interface RecentInvoice {
     id: string;
     invoice_ref: string | null;
+    content_hash: string | null;
+    invoice_pdf_url: string | null;
     vessel_name: string;
     tax_amount_usd: number;
     status: string;
@@ -30,7 +34,7 @@ interface Props {
 }
 
 export async function OperatorVesselsPage({ principal }: Props) {
-    const [vesselsRes, aircraftRes, invoicesRes] = await Promise.all([
+    const [vesselsRes, aircraftRes, invoicesRes, receiptRes] = await Promise.all([
         principal.supabase
             .from('vessels')
             .select('id, name, mmsi, imo_number, flag_code, category, last_zone, compliance_status')
@@ -43,14 +47,32 @@ export async function OperatorVesselsPage({ principal }: Props) {
             .order('registration'),
         principal.supabase
             .from('transactions')
-            .select('id, invoice_ref, vessel_name, tax_amount_usd, status, created_at, mode, breakdown_json')
+            .select('id, invoice_ref, content_hash, invoice_pdf_url, vessel_name, tax_amount_usd, status, created_at, mode, breakdown_json')
             .order('created_at', { ascending: false })
             .limit(5),
+        // Recus des paiements confirmes. Meme requete que la page factures :
+        // RLS mig 058 la borne a l'armateur, ordre croissant pour que le
+        // dernier recu d'une facture ecrase les precedents dans la table.
+        principal.supabase
+            .from('payments')
+            .select('transaction_id, receipt_ref, confirmed_at')
+            .eq('shipowner_id', principal.shipowner.id)
+            .eq('status', 'CONFIRMED')
+            .not('receipt_ref', 'is', null)
+            .order('confirmed_at', { ascending: true }),
     ]);
 
     const vessels: VesselRow[] = (vesselsRes.data ?? []) as VesselRow[];
     const aircraft: AircraftRow[] = (aircraftRes.data ?? []) as AircraftRow[];
     const recent: RecentInvoice[] = (invoicesRes.data ?? []) as RecentInvoice[];
+
+    const receiptByTxn = new Map<string, string>();
+    for (const p of (receiptRes.data ?? []) as {
+        transaction_id: string;
+        receipt_ref: string | null;
+    }[]) {
+        if (p.receipt_ref) receiptByTxn.set(p.transaction_id, p.receipt_ref);
+    }
 
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
@@ -114,6 +136,32 @@ export async function OperatorVesselsPage({ principal }: Props) {
                                 <div className="text-right flex-shrink-0">
                                     <p className="text-sm font-bold tabular-nums text-[var(--os-text-primary)]">${Number(inv.tax_amount_usd).toLocaleString()}</p>
                                     <p className="text-[10px] text-[var(--os-text-muted)]">{inv.status} · {new Date(inv.created_at).toLocaleDateString()}</p>
+                                    <div className="flex items-center justify-end gap-3 mt-1.5">
+                                        {buildInvoiceDownloadUrl(inv) && (
+                                            <a
+                                                href={buildInvoiceDownloadUrl(inv) as string}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:underline"
+                                                aria-label={`Download PDF for ${inv.invoice_ref ?? inv.id}`}
+                                            >
+                                                <Download className="w-3 h-3" />
+                                                PDF
+                                            </a>
+                                        )}
+                                        {receiptByTxn.get(inv.id) && (
+                                            <a
+                                                href={`/api/receipts/${encodeURIComponent(receiptByTxn.get(inv.id) as string)}/download`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:underline"
+                                                aria-label={`Download receipt ${receiptByTxn.get(inv.id)}`}
+                                            >
+                                                <Receipt className="w-3 h-3" />
+                                                Receipt
+                                            </a>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
