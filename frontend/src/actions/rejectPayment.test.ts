@@ -49,6 +49,16 @@ vi.mock('@/lib/auth/requireRole', () => ({
     })),
 }));
 
+// Porte du rail monetaire (mig 130) : role SUPERADMIN/FINANCE_ADMIN, ou
+// sous-permission can_settle_payments.
+vi.mock('@/lib/auth/requireSettlementRights', () => ({
+    requireSettlementRights: vi.fn(async () => ({
+        user: { id: 'admin-1', fullName: 'Admin', role: 'FINANCE_ADMIN' },
+        supabase: mockSupabase,
+        error: null,
+    })),
+}));
+
 beforeEach(() => {
     canConfirmReturn = true;
     updateCalls.length = 0;

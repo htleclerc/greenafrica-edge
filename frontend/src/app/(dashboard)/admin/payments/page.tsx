@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { PaymentProvidersPanel } from '@/components/dashboard/admin/PaymentProvidersPanel';
 import { PaymentsAdminPanel } from '@/components/dashboard/admin/PaymentsAdmin/PaymentsAdminPanel';
+import { hasSettlementRights } from '@/lib/auth/requireSettlementRights';
 
 export const metadata: Metadata = {
     title: 'Payments | Green Gate',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_ROLES = new Set(['SUPERADMIN', 'FINANCE_ADMIN']);
+
 
 export default async function PaymentsAdminRoute() {
     const supabase = await createClient();
@@ -20,10 +21,13 @@ export default async function PaymentsAdminRoute() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_active, can_settle_payments')
         .eq('id', auth.user.id)
         .single();
-    if (!profile?.role || !ALLOWED_ROLES.has(profile.role)) {
+    // Meme regle que les actions confirmPayment / rejectPayment : role, ou
+    // sous-permission can_settle_payments (mig 130). Les trois portes du rail
+    // monetaire partagent une seule definition.
+    if (!profile || !hasSettlementRights(profile)) {
         redirect('/dashboard');
     }
 
