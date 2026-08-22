@@ -1,25 +1,18 @@
 import * as React from 'react';
 import { useRole } from '@/lib/RoleContext';
+import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 import { createClient } from '@/lib/supabase/client';
+import { markNotificationRead } from '@/actions/markNotificationRead';
+import { markAllNotificationsRead } from '@/actions/markAllNotificationsRead';
+import {
+    ownerRowToNotification, sortNotifications,
+    type AppNotification, type OwnerNotificationRow,
+} from '@/lib/notifications';
+import { applyReadState, loadReadIds, persistReadIds } from '@/lib/notificationReadState';
 import { mockSecureVessels, mockTransactions } from '@/mock/datas/secureMock';
 import { VesselComplianceStatus, TransactionStatus } from '@/types/secure';
 
-export type NotificationType = 'registration' | 'vessel_alert' | 'payment' | 'compliance' | 'system';
-
-export interface AppNotification {
-    id: string;
-    type: NotificationType;
-    /** i18n key for the title (resolved in component via t()) */
-    titleKey: string;
-    /** i18n key for the message (resolved in component via t()) */
-    messageKey: string;
-    /** Interpolation params for messageKey */
-    messageParams?: Record<string, string | number>;
-    /** ISO timestamp or relative string */
-    createdAt: string;
-    read: boolean;
-    href?: string;
-}
+export type { AppNotification, NotificationType } from '@/lib/notifications';
 
 interface NotificationsResult {
     notifications: AppNotification[];
@@ -28,6 +21,18 @@ interface NotificationsResult {
     markRead: (id: string) => void;
     markAllRead: () => void;
 }
+
+/**
+ * Prefixe d'espace de noms des alertes derivees.
+ *
+ * Les notifications d'armateur portent deja une cle pleinement qualifiee
+ * (`OwnerPortal.notifications.kind.X.title`) ; les alertes derivees vivaient
+ * sous `Dashboard.notif_*` et etaient resolues par un traducteur deja borne a
+ * cet espace. La cloche resout desormais depuis la racine, pour melanger les
+ * deux sources : on qualifie donc les clefs derivees a la source.
+ */
+const DERIVED_NS = 'Dashboard.';
+const derived = (key: string) => DERIVED_NS + key;
 
 // ── Demo notifications generated from mock data ──────────────────────────────
 
@@ -45,8 +50,8 @@ function buildDemoNotifications(): AppNotification[] {
         notifications.push({
             id: `demo-compliance-${v.id}`,
             type: 'compliance',
-            titleKey: isNonCompliant ? 'notif_noncompliant_title' : 'notif_payment_due_title',
-            messageKey: isNonCompliant ? 'notif_noncompliant_msg' : 'notif_payment_due_msg',
+            titleKey: isNonCompliant ? derived('notif_noncompliant_title') : derived('notif_payment_due_title'),
+            messageKey: isNonCompliant ? derived('notif_noncompliant_msg') : derived('notif_payment_due_msg'),
             messageParams: {
                 vessel: v.name,
                 imo: v.imoNumber,
@@ -64,8 +69,8 @@ function buildDemoNotifications(): AppNotification[] {
         notifications.push({
             id: `demo-overdue-${txn.id}`,
             type: 'payment',
-            titleKey: 'notif_overdue_title',
-            messageKey: 'notif_overdue_msg',
+            titleKey: derived('notif_overdue_title'),
+            messageKey: derived('notif_overdue_msg'),
             messageParams: {
                 vessel: txn.vesselName,
                 amount: txn.taxAmountUsd.toLocaleString('en-US'),
@@ -82,8 +87,8 @@ function buildDemoNotifications(): AppNotification[] {
         notifications.push({
             id: `demo-pending-${txn.id}`,
             type: 'payment',
-            titleKey: 'notif_pending_title',
-            messageKey: 'notif_pending_msg',
+            titleKey: derived('notif_pending_title'),
+            messageKey: derived('notif_pending_msg'),
             messageParams: {
                 vessel: txn.vesselName,
                 amount: txn.taxAmountUsd.toLocaleString('en-US'),
@@ -102,8 +107,8 @@ function buildDemoNotifications(): AppNotification[] {
         notifications.push({
             id: `demo-paid-${txn.id}`,
             type: 'system',
-            titleKey: 'notif_received_title',
-            messageKey: 'notif_received_msg',
+            titleKey: derived('notif_received_title'),
+            messageKey: derived('notif_received_msg'),
             messageParams: {
                 vessel: txn.vesselName,
                 amount: txn.taxAmountUsd.toLocaleString('en-US'),
@@ -121,8 +126,8 @@ function buildDemoNotifications(): AppNotification[] {
         notifications.push({
             id: `demo-eez-${v.id}`,
             type: 'vessel_alert',
-            titleKey: 'notif_new_vessel_title',
-            messageKey: 'notif_new_vessel_msg',
+            titleKey: derived('notif_new_vessel_title'),
+            messageKey: derived('notif_new_vessel_msg'),
             messageParams: { vessel: v.name, port: v.portCall },
             createdAt: new Date(now - (3 + i) * 3600_000).toISOString(),
             read: true,
@@ -134,8 +139,8 @@ function buildDemoNotifications(): AppNotification[] {
     notifications.push({
         id: 'demo-reg-1',
         type: 'registration',
-        titleKey: 'notif_registration_title',
-        messageKey: 'notif_registration_msg',
+        titleKey: derived('notif_registration_title'),
+        messageKey: derived('notif_registration_msg'),
         messageParams: { org: 'Gulf Marine Services FZCO' },
         createdAt: new Date(now - 24 * 3600_000).toISOString(),
         read: true,
@@ -143,12 +148,7 @@ function buildDemoNotifications(): AppNotification[] {
     });
 
     // Sort: unread first, then by createdAt descending
-    notifications.sort((a, b) => {
-        if (a.read !== b.read) return a.read ? 1 : -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    return notifications;
+    return sortNotifications(notifications);
 }
 
 // ── Real notifications (derived from DB state) ──────────────────────────────
@@ -175,8 +175,8 @@ async function fetchRealNotifications(supabase: ReturnType<typeof createClient>)
             notifications.push({
                 id: `reg-${row.id}`,
                 type: 'registration',
-                titleKey: 'notif_registration_title',
-                messageKey: 'notif_registration_msg',
+                titleKey: derived('notif_registration_title'),
+                messageKey: derived('notif_registration_msg'),
                 messageParams: { org: String(row.org_name) },
                 createdAt: row.created_at as string,
                 read: false,
@@ -200,8 +200,8 @@ async function fetchRealNotifications(supabase: ReturnType<typeof createClient>)
                 notifications.push({
                     id: `txn-${row.id}`,
                     type: 'payment',
-                    titleKey: 'notif_overdue_title',
-                    messageKey: 'notif_overdue_msg',
+                    titleKey: derived('notif_overdue_title'),
+                    messageKey: derived('notif_overdue_msg'),
                     messageParams: {
                         vessel: String(row.vessel_name),
                         amount: Number(row.tax_amount_usd).toLocaleString(),
@@ -232,8 +232,8 @@ async function fetchRealNotifications(supabase: ReturnType<typeof createClient>)
                 notifications.push({
                     id: `vessel-${row.id}`,
                     type: 'compliance',
-                    titleKey: isNonCompliant ? 'notif_noncompliant_title' : 'notif_payment_due_title',
-                    messageKey: isNonCompliant ? 'notif_noncompliant_msg' : 'notif_payment_due_msg',
+                    titleKey: isNonCompliant ? derived('notif_noncompliant_title') : derived('notif_payment_due_title'),
+                    messageKey: isNonCompliant ? derived('notif_noncompliant_msg') : derived('notif_payment_due_msg'),
                     messageParams: {
                         vessel: String(row.name),
                         imo: String(row.imo_number ?? ''),
@@ -249,58 +249,107 @@ async function fetchRealNotifications(supabase: ReturnType<typeof createClient>)
         // vessels table may not exist yet
     }
 
-    notifications.sort((a, b) => {
-        if (a.read !== b.read) return a.read ? 1 : -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    return { notifications: sortNotifications(notifications), pendingRegistrations };
+}
 
-    return { notifications, pendingRegistrations };
+// ── Notifications d'armateur (vraies lignes persistees) ─────────────────────
+
+/**
+ * Lit les notifications reellement emises pour l'armateur connecte.
+ *
+ * `owner_notifications` porte RLS sans aucune politique (mig 053) : un client
+ * de session n'y verrait rien. La route API fait la bascule service-role
+ * derriere le controle d'authentification, c'est donc elle qu'on interroge.
+ */
+async function fetchOwnerNotifications(): Promise<AppNotification[]> {
+    const res = await fetch('/api/owner/notifications?limit=20', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`notifications: ${res.status}`);
+    const data = (await res.json()) as { notifications?: OwnerNotificationRow[] };
+    return sortNotifications((data.notifications ?? []).map(ownerRowToNotification));
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Alimente la cloche du tableau de bord.
+ *
+ * Deux sources, une seule sortie :
+ *   - **operateur** : les lignes de `owner_notifications`, celles-la memes qui
+ *     declenchent les e-mails. Le lu est persiste cote serveur (`read_at`).
+ *   - **staff** : faute de table, des alertes derivees de l'etat courant. Le lu
+ *     est memorise dans le navigateur, sans quoi chaque rafraichissement les
+ *     rendait toutes non lues (cf. lib/notificationReadState).
+ */
 export function useNotifications(): NotificationsResult {
     const { isDemo, ready } = useRole();
+    const { kind } = usePrincipalKind();
     const [notifications, setNotifications] = React.useState<AppNotification[]>([]);
     const [pendingRegistrations, setPendingRegistrations] = React.useState(0);
+    // Le lu local ne concerne que les sources sans persistance serveur.
+    const readIdsRef = React.useRef<Set<string>>(new Set());
+    const isOperator = kind === 'operator';
 
     React.useEffect(() => {
         if (!ready) return;
+        readIdsRef.current = loadReadIds();
+        let cancelled = false;
 
-        if (isDemo) {
-            setNotifications(buildDemoNotifications());
-            setPendingRegistrations(2);
+        async function load() {
+            if (isDemo) {
+                setNotifications(applyReadState(buildDemoNotifications(), readIdsRef.current));
+                setPendingRegistrations(2);
+                return;
+            }
 
-            // Refresh demo timestamps every 60s so relative times update
-            const interval = setInterval(() => {
-                setNotifications(buildDemoNotifications());
-            }, 60_000);
-            return () => clearInterval(interval);
+            if (isOperator) {
+                try {
+                    const rows = await fetchOwnerNotifications();
+                    if (!cancelled) {
+                        // Le lu vient de `read_at` : rien a rejouer localement.
+                        setNotifications(rows);
+                        setPendingRegistrations(0);
+                    }
+                } catch {
+                    // Une cloche muette vaut mieux qu'un tableau de bord casse.
+                    if (!cancelled) setNotifications([]);
+                }
+                return;
+            }
+
+            const supabase = createClient();
+            const { notifications: n, pendingRegistrations: pending } =
+                await fetchRealNotifications(supabase);
+            if (cancelled) return;
+            setNotifications(applyReadState(n, readIdsRef.current));
+            setPendingRegistrations(pending);
         }
 
-        const supabase = createClient();
-        fetchRealNotifications(supabase).then(({ notifications: n, pendingRegistrations: p }) => {
-            setNotifications(n);
-            setPendingRegistrations(p);
-        });
-
-        const interval = setInterval(() => {
-            fetchRealNotifications(supabase).then(({ notifications: n, pendingRegistrations: p }) => {
-                setNotifications(n);
-                setPendingRegistrations(p);
-            });
-        }, 60_000);
-
-        return () => clearInterval(interval);
-    }, [isDemo, ready]);
+        void load();
+        const interval = setInterval(() => { void load(); }, 60_000);
+        return () => { cancelled = true; clearInterval(interval); };
+    }, [isDemo, ready, isOperator]);
 
     const markRead = React.useCallback((id: string) => {
-        setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-    }, []);
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        if (isOperator) {
+            // Persistance serveur ; l'echec est trace, il n'interrompt pas la lecture.
+            void markNotificationRead({ notificationId: id })
+                .catch((e) => console.error('[useNotifications] markNotificationRead:', e));
+        } else {
+            readIdsRef.current = persistReadIds([id]);
+        }
+    }, [isOperator]);
 
     const markAllRead = React.useCallback(() => {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    }, []);
+        setNotifications((prev) => {
+            if (!isOperator) readIdsRef.current = persistReadIds(prev.map((n) => n.id));
+            return prev.map((n) => ({ ...n, read: true }));
+        });
+        if (isOperator) {
+            void markAllNotificationsRead()
+                .catch((e) => console.error('[useNotifications] markAllNotificationsRead:', e));
+        }
+    }, [isOperator]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 

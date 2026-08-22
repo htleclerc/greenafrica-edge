@@ -98,8 +98,32 @@ interface DashboardTopBarProps {
     onMobileMenuToggle?: () => void;
 }
 
+/**
+ * Résout une clé i18n dynamique sans jamais lever.
+ *
+ * next-intl échoue sur une clé manquante ; les notifications portent des clés
+ * calculées à partir de données, on affiche donc la cle brute en dernier
+ * recours plutôt que de casser la barre entiere.
+ */
+function safeT(
+    t: (key: string, params?: Record<string, string | number>) => string,
+    key: string,
+    params?: Record<string, string | number>,
+): string {
+    try {
+        return t(key, params);
+    } catch {
+        return key;
+    }
+}
+
 export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notifications: externalNotifs, unreadCount: externalUnread, onMarkRead, onMarkAllRead, onMobileMenuToggle }: DashboardTopBarProps) {
     const t = useTranslations('Dashboard');
+    // Les notifications viennent de deux espaces de noms (`Dashboard.notif_*`
+    // pour les alertes dérivées, `OwnerPortal.notifications.*` pour les lignes
+    // d'armateur) : leurs clés sont pleinement qualifiees et se résolvent depuis
+    // la racine, pas depuis le namespace de la barre.
+    const tRoot = useTranslations();
     const isOnline   = kpis.systemStatus === 'ONLINE';
     const isDegraded = kpis.systemStatus === 'DEGRADED';
 
@@ -264,8 +288,11 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                                         system:       { icon: <CheckCircle className="w-3.5 h-3.5" />, color: '#10B981' },
                                     };
                                     const resolved = typeConfig[n.type] ?? typeConfig.system;
-                                    const title = t(n.titleKey);
-                                    const message = n.messageParams ? t(n.messageKey, n.messageParams) : t(n.messageKey);
+                                    // Une clé absente ne doit pas faire tomber la barre :
+                                    // une ligne peut arriver avec un type que la locale
+                                    // de l'utilisateur ne connaît pas encore.
+                                    const title = safeT(tRoot, n.titleKey, n.messageParams);
+                                    const message = safeT(tRoot, n.messageKey, n.messageParams);
                                     const relTime = formatRelativeTime(n.createdAt, t);
                                     return (
                                     <div
