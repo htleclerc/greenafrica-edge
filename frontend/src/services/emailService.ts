@@ -1,5 +1,14 @@
 import { Resend } from 'resend';
 import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths';
+import {
+    TX_AGENT_INVITE_HTML,
+    TX_MONTHLY_STATEMENT_HTML,
+    TX_OVERDUE_REMINDER_HTML,
+    TX_PAYMENT_CONFIRMATION_HTML,
+    TX_PROFORMA_INVOICE_HTML,
+    TX_VESSEL_ACCESS_CODE_HTML,
+} from '@/emails/templates';
+import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
 
 /**
  * Centralized email service for Green Gate OS notifications.
@@ -37,6 +46,25 @@ function fromAddress(): string {
 
 function replyTo(): string | undefined {
     return process.env.EMAIL_REPLY_TO || undefined;
+}
+
+/**
+ * Etat souverain porte en pied des e-mails transactionnels. Le Somaliland est
+ * l'emetteur historique : les envois qui ne resolvent pas la juridiction de
+ * leur transaction retombent dessus, comme le faisait `emailLayout`.
+ */
+const DEFAULT_SOVEREIGN = 'Republic of Somaliland';
+
+/**
+ * Montant en dollars, formate explicitement en en-US.
+ *
+ * `toLocaleString()` sans locale suit celle du PROCESSUS : le meme montant
+ * sort « 11,492 » sur un hote anglophone et « 11 492 » sur un hote francophone,
+ * avec une espace insecable etroite. Une facture ne doit pas dependre de la
+ * configuration ICU de la machine qui l'envoie.
+ */
+function usd(amountUsd: number): string {
+    return `$${amountUsd.toLocaleString('en-US')}`;
 }
 
 function appUrl(): string {
@@ -192,47 +220,27 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
     const docName = isInvoice ? 'Tax Invoice' : 'Pro-forma Invoice';
     const subject = `[${p.badge}] ${docName} ${p.invoiceRef} — ${p.vesselName}`;
 
-    const badgeColors: Record<string, { bg: string; fg: string }> = {
-        'PAID':     { bg: '#10B981', fg: '#0A1110' },
-        'EXEMPT':   { bg: '#0EA5E9', fg: '#FFFFFF' },
-        'OVERDUE':  { bg: '#DC2626', fg: '#FFFFFF' },
-        'DISPUTED': { bg: '#F97316', fg: '#FFFFFF' },
-        'TO PAY':   { bg: '#EAB308', fg: '#0A1110' },
-    };
-    const badge = badgeColors[p.badge];
-
-    const content = `
-        <h1>${docName} ${escapeHtml(p.invoiceRef)}</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the ${escapeHtml(p.jurisdictionName)}.</p>
-
-        <div style="display:inline-block;padding:6px 14px;background:${badge.bg};color:${badge.fg};font-weight:800;letter-spacing:1.5px;border-radius:4px;font-size:12px;margin:8px 0">${p.badge}</div>
-
-        <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Reference</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Due Date</span><span class="meta-value" style="color:${p.badge === 'OVERDUE' ? '#EF4444' : '#FFFFFF'}">${escapeHtml(p.dueDate)}</span></div>
-
-        ${isInvoice
-            ? '<div class="alert alert-success">This invoice has been settled. Document attached for your records.</div>'
-            : '<div class="alert alert-warn">Payment is required within 30 days of issuance. Late payment incurs 1.5% monthly interest.</div>'}
-
-        <p>You can verify the authenticity and current status of this document at any time by clicking below or scanning the QR code on the PDF.</p>
-
-        <a href="${escapeHtml(p.verifyUrl)}" class="btn">Verify Document Status →</a>
-
-        <p style="margin-top:24px;font-size:12px;color:#64748B">Reference this document number in any correspondence: <strong style="color:#FFFFFF">${escapeHtml(p.invoiceRef)}</strong></p>
-    `;
+    // Gabarit « 1c » issu du projet design : tables inline, 600 px, Outlook-safe.
+    // Les valeurs sont echappees par renderEmailTemplate — ne rien pre-formater
+    // en HTML ici.
+    const html = renderEmailTemplate(TX_PROFORMA_INVOICE_HTML, {
+        docName,
+        docNameLower: docName.toLowerCase(),
+        invoiceRef: p.invoiceRef,
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        jurisdictionName: p.jurisdictionName,
+        amount: usd(p.amountUsd),
+        dueDate: p.dueDate,
+        badge: p.badge,
+        verifyUrl: p.verifyUrl,
+    });
 
     return sendEmail({
         to: p.to,
         cc: p.cc,
         subject,
-        html: emailLayout(content, {
-            previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}`,
-            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
-        }),
+        html,
         text: `${docName} ${p.invoiceRef}\n\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nStatus: ${p.badge}\nDue: ${p.dueDate}\n\nVerify at: ${p.verifyUrl}`,
         attachments: [
             {
@@ -255,41 +263,29 @@ export interface PaymentConfirmationParams {
     receiptUrl?: string;
     receiptRef?: string;          // RCT-YYYY-XXXX
     receiptPdfBuffer?: Uint8Array; // Attach the receipt PDF directly
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendPaymentConfirmationEmail(p: PaymentConfirmationParams): Promise<EmailResult> {
     const subject = `Payment Received — ${p.invoiceRef} ($${p.amountUsd.toLocaleString()})`;
-    const content = `
-        <h1>Payment Confirmed ✓</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>We have successfully received payment for vessel <strong>${escapeHtml(p.vesselName)}</strong>. Thank you for your prompt settlement.</p>
-
-        <div class="alert alert-success">Your account is now in good standing. Port clearance has been issued.</div>
-
-        <h2>Payment Details</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        ${p.receiptRef
-            ? `<div class="meta-row"><span class="meta-label">Receipt</span><span class="meta-value" style="font-family:monospace;color:#10B981">${escapeHtml(p.receiptRef)}</span></div>`
-            : ''}
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Settled On</span><span class="meta-value">${escapeHtml(p.paidAt)}</span></div>
-
-        ${p.receiptPdfBuffer
-            ? '<p style="margin-top:16px;font-size:13px;color:#10B981"><strong>Your official receipt is attached to this email as a PDF.</strong> Retain it for your records and tax filings.</p>'
-            : ''}
-
-        ${p.receiptUrl
-            ? `<a href="${escapeHtml(p.receiptUrl)}" class="btn">Download Receipt Online →</a>`
-            : ''}
-
-        <p style="margin-top:20px">A complete transaction record is available in your portal under <em>Invoices &amp; Payments</em>.</p>
-    `;
+    const html = renderEmailTemplate(TX_PAYMENT_CONFIRMATION_HTML, {
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        invoiceRef: p.invoiceRef,
+        // Le recu est optionnel : un encaissement confirme avant generation du
+        // PDF ne doit pas bloquer l'envoi.
+        receiptRef: p.receiptRef ?? '—',
+        amount: usd(p.amountUsd),
+        paidAt: p.paidAt,
+        portalUrl: `${appUrl()}${OWNER_INVOICES_PATH}`,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Payment of $${p.amountUsd.toLocaleString()} confirmed` }),
+        html,
         text: `Payment confirmed for ${p.invoiceRef}\nReceipt: ${p.receiptRef || 'see attachment'}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nPaid: ${p.paidAt}`,
         attachments: p.receiptPdfBuffer
             ? [{
@@ -387,33 +383,26 @@ export interface OverdueAlertParams {
     amountUsd: number;
     daysOverdue: number;
     verifyUrl: string;
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<EmailResult> {
     const subject = `URGENT: Overdue Payment — ${p.vesselName} (${p.daysOverdue}d)`;
-    const content = `
-        <h1 style="color:#EF4444">⚠ Overdue Payment Notice</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-
-        <div class="alert alert-danger"><strong>Port Gate Locked.</strong> Vessel <strong>${escapeHtml(p.vesselName)}</strong> has an overdue carbon tax obligation that requires immediate attention.</div>
-
-        <h2>Outstanding Balance</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Days Overdue</span><span class="meta-value" style="color:#EF4444">${p.daysOverdue} days</span></div>
-
-        <p>To restore port clearance, please settle the outstanding balance immediately. Late payment incurs <strong>1.5% monthly interest</strong> as per the Maritime Carbon Tax Act (2024).</p>
-
-        <a href="${escapeHtml(p.verifyUrl)}" class="btn">Pay Now →</a>
-
-        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 10 business days of invoice issuance.</p>
-    `;
+    const html = renderEmailTemplate(TX_OVERDUE_REMINDER_HTML, {
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        invoiceRef: p.invoiceRef,
+        amount: usd(p.amountUsd),
+        daysOverdue: p.daysOverdue,
+        payUrl: p.verifyUrl,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `${p.daysOverdue} days overdue — $${p.amountUsd.toLocaleString()}` }),
+        html,
         text: `OVERDUE: ${p.invoiceRef}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nDays overdue: ${p.daysOverdue}\n\nPay at: ${p.verifyUrl}`,
     });
 }
@@ -438,35 +427,19 @@ export interface ArmateurInviteParams {
 
 export async function sendArmateurInviteEmail(p: ArmateurInviteParams): Promise<EmailResult> {
     const subject = `You're invited to Green Gate — Set up your shipping agent account`;
-    const orgLine = p.orgName
-        ? `<div class="meta-row"><span class="meta-label">Organization</span><span class="meta-value">${escapeHtml(p.orgName)}</span></div>`
-        : '';
-    const content = `
-        <h1>Welcome to Green Gate</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p><strong>${escapeHtml(p.inviterName)}</strong> has invited you to join the Green Gate Sovereign Carbon Platform as a <strong>Shipping Agent</strong>.</p>
-
-        <h2>Account Details</h2>
-        <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
-        <div class="meta-row"><span class="meta-label">Role</span><span class="meta-value">Shipping Agent</span></div>
-        ${orgLine}
-
-        <p>Click the button below to activate your account and choose your password. The link is valid for <strong>${p.ttlHours} hours</strong>.</p>
-
-        <a href="${escapeHtml(p.inviteUrl)}" class="btn">Activate My Account →</a>
-
-        <div class="alert alert-warn" style="margin-top:24px">
-            For your security, this link can only be used once and expires in ${p.ttlHours} hours.
-            If it expires, ask ${escapeHtml(p.inviterName)} to issue a new invitation.
-        </div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If you did not expect this invitation, you can safely ignore this email — no account will be created without you setting a password.</p>
-    `;
+    const html = renderEmailTemplate(TX_AGENT_INVITE_HTML, {
+        recipientName: p.recipientName,
+        inviterName: p.inviterName,
+        email: p.to,
+        orgName: p.orgName ?? '—',
+        ttlHours: p.ttlHours,
+        inviteUrl: p.inviteUrl,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `${p.inviterName} invited you to Green Gate` }),
+        html,
         text: `You've been invited to Green Gate as a Shipping Agent by ${p.inviterName}.\n\nActivate your account: ${p.inviteUrl}\n\nThis link expires in ${p.ttlHours} hours.`,
     });
 }
@@ -813,27 +786,26 @@ export interface StatementReadyParams {
     periodLabel: string;
     totalOutstandingUsd: number;
     pdfBuffer?: Uint8Array;
+    /** Nombre de pro-formas emis sur la periode, affiche au recapitulatif. */
+    invoiceCount?: number;
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<EmailResult> {
     const subject = `Account statement — ${p.periodLabel}`;
-    const content = `
-        <h1>Monthly Account Statement</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Your account statement for <strong>${escapeHtml(p.periodLabel)}</strong> is available.</p>
-
-        <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">${escapeHtml(p.periodLabel)}</span></div>
-        <div class="meta-row"><span class="meta-label">Total Outstanding</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.totalOutstandingUsd.toLocaleString()}</span></div>
-
-        <div class="alert alert-warn">This is an informational statement, not an invoice. Open pro-formas remain payable from your portal.</div>
-
-        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Statements →</a>
-    `;
+    const html = renderEmailTemplate(TX_MONTHLY_STATEMENT_HTML, {
+        recipientName: p.recipientName,
+        periodLabel: p.periodLabel,
+        invoiceCount: p.invoiceCount ?? 0,
+        amount: usd(p.totalOutstandingUsd),
+        portalUrl: `${appUrl()}${OWNER_INVOICES_PATH}`,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Statement ${p.periodLabel} — $${p.totalOutstandingUsd.toLocaleString()} due` }),
+        html,
         text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
         attachments: p.pdfBuffer ? [{ filename: `statement-${p.periodLabel.replace(/\s/g, '-')}.pdf`, content: Buffer.from(p.pdfBuffer) }] : undefined,
     });
@@ -1025,24 +997,15 @@ export interface VesselAccessCodeParams {
 
 export async function sendVesselAccessCodeEmail(p: VesselAccessCodeParams): Promise<EmailResult> {
     const subject = `Your Green Gate access code: ${p.code}`;
-    const content = `
-        <h1>Your Access Code</h1>
-        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
-        <p>Use the code below to link your account and access your vessel's carbon tax records on Green Gate.</p>
-
-        <div style="text-align:center;margin:24px 0">
-            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
-        </div>
-
-        <div class="alert alert-warn">This code can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Enter this code on the Green Gate portal to complete your account linking.</p>
-    `;
+    const html = renderEmailTemplate(TX_VESSEL_ACCESS_CODE_HTML, {
+        recipientName: p.recipientName ?? 'Shipowner',
+        code: p.code,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Your access code: ${p.code}` }),
+        html,
         text: `Your Green Gate access code: ${p.code}\n\nEnter this code on the portal to link your account. This code can only be used once and expires shortly.`,
     });
 }
