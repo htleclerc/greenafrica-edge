@@ -40,8 +40,39 @@ function getResend(): Resend {
     return resendClient;
 }
 
+/**
+ * Adresse d'expédition.
+ *
+ * Le repli n'est PAS un confort : c'est le dernier rempart contre un envoi
+ * refusé en silence. `EMAIL_FROM` a porté `noreply@africgreen.africa` —
+ * l'ancien nom du projet — pendant que le compte Resend ne vérifiait que
+ * `greengate.africa` et `mail.greengate.africa`. Chaque envoi était rejeté
+ * pour domaine non vérifié : relances, pro-formas, liens de connexion,
+ * relevés. Sans bruit, puisque `sendEmail` capture l'erreur et rend
+ * `{ success: false }` que la plupart des appelants ne traitent pas comme
+ * bloquant.
+ *
+ * Le repli doit donc rester une adresse VÉRIFIÉE, et la valeur configurée est
+ * journalisée à la première divergence pour qu'un domaine étranger se voie.
+ */
+const VERIFIED_SENDER_DOMAINS = ['greengate.africa', 'mail.greengate.africa'];
+const FALLBACK_SENDER = 'noreply@greengate.africa';
+
+let senderWarned = false;
+
 function fromAddress(): string {
-    return process.env.EMAIL_FROM || 'noreply@greengate.africa';
+    const configured = process.env.EMAIL_FROM?.trim();
+    if (!configured) return FALLBACK_SENDER;
+
+    const domain = configured.split('@')[1]?.toLowerCase() ?? '';
+    if (!VERIFIED_SENDER_DOMAINS.includes(domain) && !senderWarned) {
+        senderWarned = true;
+        console.error(
+            `[Email] EMAIL_FROM=${configured} : domaine « ${domain} » absent des domaines vérifiés `
+            + `(${VERIFIED_SENDER_DOMAINS.join(', ')}). Tous les envois seront refusés.`,
+        );
+    }
+    return configured;
 }
 
 function replyTo(): string | undefined {

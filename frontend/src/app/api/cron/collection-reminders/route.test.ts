@@ -157,7 +157,14 @@ describe('GET /api/cron/collection-reminders', () => {
         });
     });
 
-    it('n\'estampille pas emailed_at quand l\'envoi e-mail échoue, mais trace quand même la notif et le registre', async () => {
+    it('n\'inscrit RIEN au registre quand l\'envoi e-mail échoue', async () => {
+        // Inscrire malgré l'échec scellait un mensonge : `dueTier` s'arrête dès
+        // que le palier figure dans `sentTiers`, et l'unicité (transaction_id,
+        // tier) interdit toute reprise. Le palier était brûlé, la rampe
+        // avançait, et un débiteur pouvait atteindre « dernier avis avant
+        // huissier » sans avoir jamais reçu une lettre — avec un registre
+        // affirmant le contraire. Sur une créance portée au contentieux, la
+        // preuve elle-même devenait fausse.
         sendProformaReminderEmailMock.mockResolvedValueOnce({ success: false, error: 'resend down' });
         const created = new Date(Date.now() - 15 * 86_400_000).toISOString();
         const { client, captured } = makeClient({
@@ -172,9 +179,17 @@ describe('GET /api/cron/collection-reminders', () => {
         const res = await GET(req(`Bearer ${CRON_SECRET}`));
         expect(res.status).toBe(200);
 
+        // Le palier reste dû : la relance repartira tant qu'elle n'est pas
+        // réellement partie.
+        expect(captured.reminderInserts).toHaveLength(0);
         expect(captured.emailedAtUpdates).toHaveLength(0);
+        // La notif in-app est déjà créée à ce stade — elle sert de filet au
+        // notification-email-loop, qui la rattrapera puisque emailed_at est nul.
         expect(notifyOwnerMock).toHaveBeenCalledTimes(1);
-        expect(captured.reminderInserts).toHaveLength(1);
+
+        const body = await res.json();
+        expect(body.failed).toBe(1);
+        expect(body.sent).toBe(0);
     });
 
     it('n\'écrit rien pour une pro-forma DISPUTED', async () => {

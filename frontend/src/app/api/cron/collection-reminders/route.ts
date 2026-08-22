@@ -185,8 +185,28 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 }
             }
 
-            // 4) Puis le registre durable. L'unicité (transaction_id, tier) est le
-            //    garde-fou dur contre un doublon en cas de passes concurrentes.
+            // 4) Puis le registre durable — SEULEMENT si l'envoi a réussi.
+            //
+            //    L'inscrire malgré un échec scellait un mensonge : `dueTier`
+            //    s'arrête dès que le palier figure dans `sentTiers`, et
+            //    l'unicité (transaction_id, tier) interdit toute reprise. Le
+            //    palier était donc brûlé, la rampe avançait, et un débiteur
+            //    pouvait atteindre « dernier avis avant huissier » sans avoir
+            //    jamais reçu une seule lettre — avec un registre affirmant le
+            //    contraire. Sur une créance portée au contentieux, c'est la
+            //    preuve elle-même qui devient fausse.
+            //
+            //    Laisser la ligne absente rend le palier à nouveau dû au
+            //    prochain passage : la relance repart tant qu'elle n'est pas
+            //    réellement partie.
+            if (!emailResult.success) {
+                counts.failed += 1;
+                log.error('reminder_not_recorded_send_failed', {
+                    txnId: p.id, tier, error: emailResult.error,
+                });
+                continue;
+            }
+
             const { error: insErr } = await admin.from('collection_reminders').insert({
                 transaction_id: p.id,
                 tier,
