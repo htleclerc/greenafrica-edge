@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { InvoicesTable, type InvoiceRow } from './InvoicesTable';
+
+const refresh = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
+
+const issueOwnerProforma = vi.fn();
+vi.mock('@/actions/issueOwnerProforma', () => ({
+    issueOwnerProforma: (...args: unknown[]) => issueOwnerProforma(...args),
+}));
 
 function row(overrides: Partial<InvoiceRow> = {}): InvoiceRow {
     return {
@@ -36,7 +44,7 @@ describe('InvoicesTable — document availability', () => {
     it('shows an explicit not-issued marker instead of an empty cell', () => {
         render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
         expect(screen.queryByRole('link', { name: /Download PDF/i })).not.toBeInTheDocument();
-        expect(screen.getByText(/not issued/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Issue PDF/i })).toBeInTheDocument();
     });
 
     it('keeps the Pay and Dispute actions available while the document is pending issuance', () => {
@@ -52,7 +60,33 @@ describe('InvoicesTable — document availability', () => {
                 walletBalanceUsdMinor={0}
             />,
         );
-        expect(screen.queryByText(/not issued/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Issue PDF/i })).not.toBeInTheDocument();
+    });
+
+    // Le marqueur passif « PDF not issued » est devenu un bouton : un pro-forma
+    // que le pipeline n'a pas rendu peut etre emis a la demande par l'armateur,
+    // depuis le montant deja en base.
+    it('issues the missing PDF on demand and refreshes the list', async () => {
+        issueOwnerProforma.mockResolvedValueOnce({ invoiceRef: 'PRO-2026-81be71091a2b' });
+        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /Issue PDF/i }));
+
+        await waitFor(() =>
+            expect(issueOwnerProforma).toHaveBeenCalledWith({
+                transactionId: '81be7109-0cca-4dc8-a077-eda4f4011570',
+            }),
+        );
+        await waitFor(() => expect(refresh).toHaveBeenCalled());
+    });
+
+    it('surfaces an issuance failure next to the row', async () => {
+        issueOwnerProforma.mockRejectedValueOnce(new Error('Invoice not found'));
+        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /Issue PDF/i }));
+
+        expect(await screen.findByText('Invoice not found')).toBeInTheDocument();
     });
 
     it('still renders the receipt link alongside a not-issued document', () => {
@@ -64,6 +98,6 @@ describe('InvoicesTable — document availability', () => {
         );
         const table = screen.getByRole('table');
         expect(within(table).getByRole('link', { name: /receipt/i })).toBeInTheDocument();
-        expect(within(table).getByText(/not issued/i)).toBeInTheDocument();
+        expect(within(table).getByRole('button', { name: /Issue PDF/i })).toBeInTheDocument();
     });
 });

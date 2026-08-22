@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Download, CreditCard, Scale, Receipt, Paperclip, FileClock } from 'lucide-react';
+import { Download, CreditCard, Scale, Receipt, Paperclip, FileClock, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { issueOwnerProforma } from '@/actions/issueOwnerProforma';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
@@ -58,9 +60,32 @@ interface Props {
 }
 
 export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
+    const router = useRouter();
     const [payTarget, setPayTarget] = React.useState<InvoiceRow | null>(null);
     const [disputeTarget, setDisputeTarget] = React.useState<InvoiceRow | null>(null);
     const [proofTarget, setProofTarget] = React.useState<InvoiceRow | null>(null);
+    // Emission a la demande d'un PDF manquant : id de la ligne en cours, et
+    // message d'echec par ligne (l'erreur doit rester a cote du bouton).
+    const [issuingId, setIssuingId] = React.useState<string | null>(null);
+    const [issueError, setIssueError] = React.useState<Record<string, string>>({});
+
+    async function issue(r: InvoiceRow) {
+        setIssuingId(r.id);
+        setIssueError((e) => ({ ...e, [r.id]: '' }));
+        try {
+            await issueOwnerProforma({ transactionId: r.id });
+            // Le lien de telechargement est calcule cote serveur : il faut
+            // relire la page pour qu'il apparaisse.
+            router.refresh();
+        } catch (e) {
+            setIssueError((prev) => ({
+                ...prev,
+                [r.id]: e instanceof Error ? e.message : 'Issue failed',
+            }));
+        } finally {
+            setIssuingId(null);
+        }
+    }
 
     const isPayable = (r: InvoiceRow) =>
         r.document_type === 'PROFORMA' && r.status === 'PENDING';
@@ -142,12 +167,24 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                         </a>
                     ) : (
                         expectsDocument(r) && (
-                            <span
-                                className="inline-flex items-center gap-1.5 text-xs text-[var(--os-text-muted)]"
-                                title="The port authority has not issued the PDF for this charge yet. You can still pay or dispute it."
-                            >
-                                <FileClock className="w-3.5 h-3.5" />
-                                PDF not issued
+                            <span className="inline-flex items-center gap-1.5">
+                                <button
+                                    onClick={() => issue(r)}
+                                    disabled={issuingId === r.id}
+                                    className="inline-flex items-center gap-1.5 text-xs text-[var(--os-text-muted)] hover:text-emerald-400 transition-colors disabled:opacity-50"
+                                    aria-label={`Issue PDF for ${r.invoice_ref ?? r.id}`}
+                                    title="No PDF has been issued for this charge yet — generate it now from the recorded amount."
+                                >
+                                    {issuingId === r.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <FileClock className="w-3.5 h-3.5" />
+                                    )}
+                                    {issuingId === r.id ? 'Issuing…' : 'Issue PDF'}
+                                </button>
+                                {issueError[r.id] && (
+                                    <span className="text-[10px] text-[#EF4444]">{issueError[r.id]}</span>
+                                )}
                             </span>
                         )
                     )}
