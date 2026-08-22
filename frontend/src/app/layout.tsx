@@ -1,7 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { ThemeProvider } from '@/components/theme-provider';
-import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, Space_Grotesk, Sora } from 'next/font/google';
+import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono, Space_Grotesk, Sora } from 'next/font/google';
 import './globals.css';
 
 const plex = IBM_Plex_Sans({
@@ -15,6 +15,16 @@ const plexArabic = IBM_Plex_Sans_Arabic({
     subsets: ['arabic'],
     weight: ['400', '500', '600', '700'],
     variable: '--font-plex-arabic',
+    display: 'swap',
+});
+
+// Les montants, références de facture, IMO et libellés techniques en capitales sont
+// rendus en monospace : ce n'est pas décoratif, ça aligne les colonnes de chiffres et
+// rend deux IMO comparables à l'œil.
+const plexMono = IBM_Plex_Mono({
+    subsets: ['latin', 'latin-ext'],
+    weight: ['400', '500', '600'],
+    variable: '--font-plex-mono',
     display: 'swap',
 });
 
@@ -66,7 +76,7 @@ export default async function RootLayout({
                 {/* Blocking script to set theme before paint — avoids flash */}
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var s=localStorage.getItem('africgreen_skin');s=s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald';document.documentElement.setAttribute('data-skin',s);document.documentElement.setAttribute('data-theme',s==='institutional'?'light':'dark')}catch(e){}})()`,
+                        __html: `(function(){try{var d=document.documentElement;var s=localStorage.getItem('africgreen_skin');s=s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald';d.setAttribute('data-skin',s);var p=localStorage.getItem('africgreen_theme_pref');var t=(p==='dark'||p==='light')?p:(s==='institutional'?'light':'dark');d.setAttribute('data-theme',t);localStorage.setItem('theme',t)}catch(e){}})()`,
                     }}
                 />
                 {/* reCAPTCHA for shipowner registration */}
@@ -78,7 +88,7 @@ export default async function RootLayout({
                     />
                 )}
             </head>
-            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${spaceGrotesk.variable} ${sora.variable}`} suppressHydrationWarning>
+            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${plexMono.variable} ${spaceGrotesk.variable} ${sora.variable}`} suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider
                         attribute="data-theme"

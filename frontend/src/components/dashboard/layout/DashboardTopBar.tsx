@@ -11,6 +11,7 @@ import { DashboardKpis, SecureUser, UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { SkinSwitcher } from '@/components/layout/SkinSwitcher';
+import { DashboardThemeToggle } from '@/components/dashboard/layout/DashboardThemeToggle';
 import { useTranslations } from 'next-intl';
 
 // ── Country flag emoji from ISO 3166-1 alpha-2 ──────────────────────────────
@@ -312,10 +313,12 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                     )}
                 </div>
 
-                {/* Locale + Skin — desktop only */}
+                {/* Locale + habillage + nuit/jour — desktop only.
+                    Le thème est un axe distinct du skin : voir SkinContext. */}
                 <div className="dashboard-topbar-extras">
                     <LocaleSwitcher variant="dashboard" />
                     <SkinSwitcher variant="topbar" />
+                    <DashboardThemeToggle />
                 </div>
 
                 {/* Separator */}

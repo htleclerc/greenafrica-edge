@@ -2,12 +2,16 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import { listUnclaimedAlerts } from '@/services/arrivalAlertService';
+import { listOperatorArrivals } from '@/services/operatorArrivals';
+import type { ArrivalAlertWithVessel } from '@/types/secure/arrivalAlert';
 import { IncomingVesselsList } from './IncomingVesselsList';
 
 export const metadata = {
     title: 'Incoming Vessels | Green Gate',
     description: 'Vessels approaching Somaliland ports, awaiting agent claim and pro-forma issuance.',
 };
+
+export const dynamic = 'force-dynamic';
 
 export default async function IncomingVesselsPage() {
     const supabase = await createClient();
@@ -24,14 +28,27 @@ export default async function IncomingVesselsPage() {
         redirect('/dashboard');
     }
 
-    const alerts = await listUnclaimedAlerts(supabase);
+    // Deux lectures de la même file : la vue opérateur (triée, avec la solvabilité
+    // de l'armateur) et les alertes brutes, dont le dialogue de prise en charge a
+    // besoin telles quelles. `listUnclaimedAlerts` est déjà appelée à l'intérieur
+    // de `listOperatorArrivals` ; la refaire ici évite de faire remonter la forme
+    // brute à travers la vue opérateur, qui n'a pas à la connaître.
+    const [arrivals, alerts] = await Promise.all([
+        listOperatorArrivals(supabase),
+        listUnclaimedAlerts(supabase),
+    ]);
+
+    const alertsById = Object.fromEntries(
+        alerts.map((a) => [a.id, a]),
+    ) as Record<string, ArrivalAlertWithVessel>;
+
     const t = await getTranslations('IncomingVessels');
 
     return (
-        <div className="px-6 py-4">
-            <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
-            <p className="text-sm text-[var(--os-text-muted)] mb-6">{t('subtitle')}</p>
-            <IncomingVesselsList alerts={alerts} />
-        </div>
+        <IncomingVesselsList
+            arrivals={arrivals}
+            alertsById={alertsById}
+            portLabel={t('portLabel')}
+        />
     );
 }

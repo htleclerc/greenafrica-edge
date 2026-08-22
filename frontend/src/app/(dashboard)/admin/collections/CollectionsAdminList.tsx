@@ -4,17 +4,22 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as Dialog from '@radix-ui/react-dialog';
-import { OsTable, type OsColumn, type OsSort } from '@/components/ui/OsTable';
+import { type OsSort } from '@/components/ui/OsTable';
+import { OsGridTable, type OsGridColumn } from '@/components/ui/OsGridTable';
+import { OsUrgencyPill } from '@/components/ui/OsUrgencyPill';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
+import { usdGrouped } from '@/lib/osMoney';
+import { type OsAccent } from '@/lib/osAccent';
 import { createClient } from '@/lib/supabase/client';
 import { recordDebtorResponse } from '@/actions/recordDebtorResponse';
 import { escalateCollection } from '@/actions/escalateCollection';
 import { sendManualReminder } from '@/actions/sendManualReminder';
 import { groupManualReminders } from '@/lib/groupManualReminders';
+import { tierVariant } from '@/services/collectionAdminService';
 import {
-    tierVariant, responseVariant, type CollectionAdminRow, type CollectionAdminFilters,
+    responseVariant, type CollectionAdminRow, type CollectionAdminFilters,
 } from '@/services/collectionAdminService';
 
 const RESPONSE_TYPES = ['ACKNOWLEDGE', 'DISPUTE', 'PAYMENT_PROMISE', 'PARTIAL_PAYMENT', 'PAID', 'REFUSED'] as const;
@@ -31,6 +36,17 @@ interface ReminderRow {
     id: string; tier: string; sent_at: string; sent_email: string; cc_emails: string[] | null;
     template_used: string; debtor_response_type: string; debtor_response_at: string | null;
     escalated_bailiff: boolean;
+}
+
+/**
+ * Accent du liseré de ligne — même code couleur que la file d'étapes du haut,
+ * pour qu'un dossier garde sa couleur de la colonne d'étape à la ligne de liste.
+ */
+function tierAccent(tier: string | null): OsAccent {
+    if (tier === 'J3' || tier === 'J7') return 'warning';
+    if (tier === 'J15' || tier === 'J30') return 'mid';
+    if (tier === 'J45' || tier === 'BAILIFF' || tier === 'JUDICIAL') return 'danger';
+    return 'neutral';
 }
 
 interface Props {
@@ -65,30 +81,56 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
         router.push(`?${params.toString()}`);
     };
 
-    // Les `key` triables ci-dessous doivent correspondre exactement à COLLECTION_SORT_KEYS
-    // (service). 'response' n'a pas d'équivalent dans la liste blanche : non triable.
-    const columns: OsColumn<CollectionAdminRow>[] = [
-        { key: 'debtor_name', header: t('col_debtor'), sortable: true, render: (r) => <span className="text-sm">{r.debtor_name ?? '—'}</span> },
-        { key: 'invoice_ref', header: t('col_invoice'), sortable: true, render: (r) => <span className="font-mono text-xs">{r.invoice_ref ?? r.transaction_id.slice(0, 8)}</span> },
-        { key: 'outstanding_usd', header: t('col_outstanding'), className: 'text-right', sortable: true, render: (r) => <span className="font-mono text-sm tabular-nums">${r.outstanding_usd.toLocaleString()}</span> },
-        { key: 'status', header: t('col_status'), sortable: true, render: (r) => <OsBadge variant={r.status === 'PAID' ? 'paid' : r.status === 'OVERDUE' ? 'overdue' : r.status === 'DISPUTED' ? 'disputed' : 'pending'} label={r.status} /> },
-        { key: 'latest_tier', header: t('col_tier'), sortable: true, render: (r) => <OsBadge variant={tierVariant(r.latest_tier)} label={r.latest_tier ?? '—'} /> },
-        { key: 'response', header: t('col_response'), render: (r) => <OsBadge variant={responseVariant(r.latest_response_type)} label={r.latest_response_type ?? 'SILENT'} /> },
+    // Les `key` triables ci-dessous doivent correspondre exactement a COLLECTION_SORT_KEYS
+    // (service). 'response' n'a pas d'equivalent dans la liste blanche : non triable.
+    const columns: OsGridColumn<CollectionAdminRow>[] = [
         {
-            key: 'reminder_count', header: t('col_count'), className: 'text-right', sortable: true,
-            // mig 126 : reminder_count (la rampe légale J3…JUDICIAL) exclut désormais
-            // les relances MANUAL — sans ce complément, une créance relancée
-            // uniquement à la main afficherait zéro relance. manual_count est affiché
-            // à part, avec son propre libellé, pour ne jamais laisser croire qu'il
-            // s'agit d'une étape de la rampe.
+            key: 'debtor_name', header: t('col_debtor'), width: '1.4fr', primary: true,
             render: (r) => (
-                <span className="text-xs tabular-nums whitespace-nowrap">
+                <span className="flex min-w-0 flex-col gap-px">
+                    <span className="truncate text-[13.5px] font-semibold text-[var(--os-text-primary)]">
+                        {r.debtor_name ?? '\u2014'}
+                    </span>
+                    <span className="truncate font-mono text-[11px] text-[var(--os-text-muted)]">
+                        {r.invoice_ref ?? r.transaction_id.slice(0, 8)}
+                    </span>
+                </span>
+            ),
+        },
+        {
+            key: 'status', header: t('col_status'), width: '0.9fr',
+            render: (r) => (
+                <OsBadge
+                    variant={r.status === 'PAID' ? 'paid' : r.status === 'OVERDUE' ? 'overdue' : r.status === 'DISPUTED' ? 'disputed' : 'pending'}
+                    label={r.status}
+                />
+            ),
+        },
+        {
+            key: 'latest_tier', header: t('col_tier'), width: '0.9fr',
+            render: (r) => (
+                <OsUrgencyPill accent={tierAccent(r.latest_tier)}>{r.latest_tier ?? '\u2014'}</OsUrgencyPill>
+            ),
+        },
+        {
+            key: 'response', header: t('col_response'), width: '0.9fr', secondary: true,
+            render: (r) => <OsBadge variant={responseVariant(r.latest_response_type)} label={r.latest_response_type ?? 'SILENT'} />,
+        },
+        {
+            key: 'reminder_count', header: t('col_count'), width: '0.7fr', secondary: true,
+            // mig 126 : reminder_count (la rampe legale J3...JUDICIAL) exclut desormais
+            // les relances MANUAL - sans ce complement, une creance relancee uniquement
+            // a la main afficherait zero relance. manual_count est affiche a part, avec
+            // son propre libelle, pour ne jamais laisser croire qu'il s'agit d'une
+            // etape de la rampe.
+            render: (r) => (
+                <span className="font-mono text-xs tabular-nums whitespace-nowrap text-[var(--os-text-secondary)]">
                     {r.reminder_count}
                     {r.manual_count > 0 && (
                         <span
                             className="text-[var(--os-text-muted)]"
                             title={t('col_count_manual_tooltip', {
-                                date: r.last_manual_at ? new Date(r.last_manual_at).toLocaleDateString() : '—',
+                                date: r.last_manual_at ? new Date(r.last_manual_at).toLocaleDateString() : '\u2014',
                             })}
                         >
                             {' '}+{r.manual_count} {t('col_count_manual')}
@@ -97,6 +139,24 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
                 </span>
             ),
         },
+        {
+            key: 'outstanding_usd', header: t('col_outstanding'), width: '0.9fr', align: 'end',
+            render: (r) => (
+                <span className="font-mono text-[13.5px] tabular-nums text-[var(--os-text-primary)]">
+                    {usdGrouped(r.outstanding_usd)}
+                </span>
+            ),
+        },
+    ];
+
+    // La grille dense n'a pas d'en-tete cliquable (ses en-tetes sont des libelles
+    // techniques, pas des controles) : le tri serveur passe par cette barre, dont
+    // les cles restent celles de COLLECTION_SORT_KEYS.
+    const sortableColumns: { key: string; label: string }[] = [
+        { key: 'debtor_name', label: t('col_debtor') },
+        { key: 'outstanding_usd', label: t('col_outstanding') },
+        { key: 'latest_sent_at', label: t('col_tier') },
+        { key: 'reminder_count', label: t('col_count') },
     ];
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -120,9 +180,34 @@ export function CollectionsAdminList({ rows, total, page, pageSize, filters, jur
                     options={RESPONSE_TYPES.map((s) => ({ value: s, label: s }))} />
             </div>
 
-            <OsTable columns={columns} rows={rows} keyExtractor={(r) => r.transaction_id}
-                onRowClick={(r) => setSelected(r)} emptyMessage={t('empty')}
-                sort={sort} onSortChange={onSortChange} />
+            <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[12.5px] text-[var(--os-text-muted)]">
+                <span>{t('sortBy')}</span>
+                {sortableColumns.map((c) => {
+                    const active = sort?.key === c.key;
+                    return (
+                        <button
+                            key={c.key}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => onSortChange({ key: c.key, dir: active && sort?.dir === 'asc' ? 'desc' : 'asc' })}
+                            className={`rounded-md px-2 py-1 transition-colors duration-150 hover:text-[var(--os-text-primary)] ${active ? 'bg-[var(--os-surface-2)] font-semibold text-[var(--os-text-primary)]' : ''}`}
+                        >
+                            {c.label}
+                            {active && <span aria-hidden> {sort?.dir === 'desc' ? '\u2193' : '\u2191'}</span>}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <OsGridTable
+                columns={columns}
+                rows={rows}
+                keyExtractor={(r) => r.transaction_id}
+                rowAccent={(r) => (r.status === 'PAID' ? null : tierAccent(r.latest_tier))}
+                onRowClick={(r) => setSelected(r)}
+                rowLabel={(r) => t('timeline_title', { debtor: r.debtor_name ?? '\u2014', ref: r.invoice_ref ?? r.transaction_id.slice(0, 8) })}
+                emptyMessage={t('empty')}
+            />
 
             <div className="flex items-center justify-between mt-3 text-xs text-[var(--os-text-muted)]">
                 <span>{t('pagination', { start: (page - 1) * pageSize + 1, end: Math.min(page * pageSize, total), total })}</span>

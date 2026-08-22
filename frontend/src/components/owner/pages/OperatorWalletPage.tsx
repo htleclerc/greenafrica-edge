@@ -5,9 +5,11 @@
 
 import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
+import { OsPageHeader } from '@/components/ui/OsPageHeader';
 import { createTenantClient } from '@/lib/supabase/tenant';
 import { getWalletForOwner, listLedgerEntries, predictNextTax } from '@/services/walletService';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
+import { usdGrouped } from '@/lib/osMoney';
 import { WalletPageClient } from '@/components/owner/Wallet/WalletPageClient';
 import { PAYPAL_RETURNS, type PaypalReturn } from '@/components/owner/pages/OperatorInvoicesPage';
 
@@ -48,6 +50,7 @@ export async function OperatorWalletPage({
     stripeReturn = null,
     paypalReturn = null,
 }: Props) {
+    const tw = await getTranslations('OwnerPortal.wallet');
     const flags = await readPortalFeatureFlags();
     const topupEnabled = flags.walletTopupEnabled;
 
@@ -58,14 +61,9 @@ export async function OperatorWalletPage({
 
     if (!wallet) {
         return (
-            <div className="px-6 py-6 max-w-6xl mx-auto">
+            <div className="mx-auto flex max-w-6xl flex-col gap-[18px] p-4 sm:p-6">
                 <TopupReturnBanner stripeReturn={stripeReturn} paypalReturn={paypalReturn} />
-                <header className="mb-6">
-                    <h1 className="text-2xl font-semibold">Wallet</h1>
-                    <p className="text-sm text-[var(--os-text-muted)] mt-1">
-                        Your wallet is empty. Top it up to apply credits to future invoices.
-                    </p>
-                </header>
+                <OsPageHeader title={tw('title')} subtitle={tw('emptySubtitle')} />
                 <WalletPageClient
                     walletId="pending"
                     initialBalanceUsdMinor={0}
@@ -84,11 +82,12 @@ export async function OperatorWalletPage({
     ]);
 
     return (
-        <div className="px-6 py-6 max-w-6xl mx-auto">
+        <div className="mx-auto flex max-w-6xl flex-col gap-[18px] p-4 sm:p-6">
             <TopupReturnBanner stripeReturn={stripeReturn} paypalReturn={paypalReturn} />
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold">Wallet</h1>
-            </header>
+            <OsPageHeader
+                title={tw('title')}
+                subtitle={tw('subtitle', { amount: usdGrouped(wallet.balance_usd_minor / 100) })}
+            />
             <WalletPageClient
                 walletId={wallet.id}
                 initialBalanceUsdMinor={wallet.balance_usd_minor}

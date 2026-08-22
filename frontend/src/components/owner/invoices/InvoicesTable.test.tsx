@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { InvoicesTable, type InvoiceRow } from './InvoicesTable';
+import en from '../../../../messages/en.json';
 
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
@@ -24,13 +26,30 @@ function row(overrides: Partial<InvoiceRow> = {}): InvoiceRow {
         download_url: '/api/invoices/PRO-2026-81be71091a2b/download?h=aaa&s=bbb',
         receipt_ref: null,
         pending_wire_payment_id: null,
+        due_date: null,
+        partial_paid_usd: 0,
+        emissions_tco2: 287.3,
+        breakdown_json: null,
         ...overrides,
     };
 }
 
+/**
+ * L'écran s'ouvre sur l'onglet « Ouvertes » et sélectionne la première ligne :
+ * les assertions portent donc sur le panneau de détail, qui est l'endroit où les
+ * actions d'une facture vivent depuis la refonte 2c.
+ */
+function renderTable(rows: InvoiceRow[]) {
+    return render(
+        <NextIntlClientProvider locale="en" messages={en}>
+            <InvoicesTable rows={rows} walletBalanceUsdMinor={0} />
+        </NextIntlClientProvider>,
+    );
+}
+
 describe('InvoicesTable — document availability', () => {
     it('links to the PDF when the document has been issued', () => {
-        render(<InvoicesTable rows={[row()]} walletBalanceUsdMinor={0} />);
+        renderTable([row()]);
         const link = screen.getByRole('link', { name: /Download PDF/i });
         expect(link).toHaveAttribute(
             'href',
@@ -42,25 +61,20 @@ describe('InvoicesTable — document availability', () => {
     // download_url is null. The actions cell used to render nothing at all, which
     // read as "the pro-forma is missing" rather than "not issued yet".
     it('shows an explicit not-issued marker instead of an empty cell', () => {
-        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
+        renderTable([row({ download_url: null })]);
         expect(screen.queryByRole('link', { name: /Download PDF/i })).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Issue PDF/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Issue the PDF/i })).toBeInTheDocument();
     });
 
     it('keeps the Pay and Dispute actions available while the document is pending issuance', () => {
-        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
-        expect(screen.getByRole('button', { name: /^Pay$/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Dispute/i })).toBeInTheDocument();
+        renderTable([row({ download_url: null })]);
+        expect(screen.getByRole('button', { name: /^Pay \$/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Dispute$/i })).toBeInTheDocument();
     });
 
     it('does not mark a refund row as awaiting a pro-forma', () => {
-        render(
-            <InvoicesTable
-                rows={[row({ document_type: 'REFUND', status: 'PAID', download_url: null })]}
-                walletBalanceUsdMinor={0}
-            />,
-        );
-        expect(screen.queryByRole('button', { name: /Issue PDF/i })).not.toBeInTheDocument();
+        renderTable([row({ document_type: 'REFUND', status: 'PAID', download_url: null })]);
+        expect(screen.queryByRole('button', { name: /Issue the PDF/i })).not.toBeInTheDocument();
     });
 
     // Le marqueur passif « PDF not issued » est devenu un bouton : un pro-forma
@@ -68,9 +82,9 @@ describe('InvoicesTable — document availability', () => {
     // depuis le montant deja en base.
     it('issues the missing PDF on demand and refreshes the list', async () => {
         issueOwnerProforma.mockResolvedValueOnce({ invoiceRef: 'PRO-2026-81be71091a2b' });
-        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
+        renderTable([row({ download_url: null })]);
 
-        fireEvent.click(screen.getByRole('button', { name: /Issue PDF/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Issue the PDF/i }));
 
         await waitFor(() =>
             expect(issueOwnerProforma).toHaveBeenCalledWith({
@@ -82,22 +96,48 @@ describe('InvoicesTable — document availability', () => {
 
     it('surfaces an issuance failure next to the row', async () => {
         issueOwnerProforma.mockRejectedValueOnce(new Error('Invoice not found'));
-        render(<InvoicesTable rows={[row({ download_url: null })]} walletBalanceUsdMinor={0} />);
+        renderTable([row({ download_url: null })]);
 
-        fireEvent.click(screen.getByRole('button', { name: /Issue PDF/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Issue the PDF/i }));
 
         expect(await screen.findByText('Invoice not found')).toBeInTheDocument();
     });
 
     it('still renders the receipt link alongside a not-issued document', () => {
-        render(
-            <InvoicesTable
-                rows={[row({ download_url: null, receipt_ref: 'RCP-2026-0001', status: 'PAID' })]}
-                walletBalanceUsdMinor={0}
-            />,
-        );
-        const table = screen.getByRole('table');
-        expect(within(table).getByRole('link', { name: /receipt/i })).toBeInTheDocument();
-        expect(within(table).getByRole('button', { name: /Issue PDF/i })).toBeInTheDocument();
+        renderTable([row({ download_url: null, receipt_ref: 'RCP-2026-0001', status: 'PAID' })]);
+        expect(screen.getByRole('link', { name: /Receipt/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Issue the PDF/i })).toBeInTheDocument();
+    });
+});
+
+describe('InvoicesTable — file de travail', () => {
+    it('classe chaque facture dans sa famille et compte les onglets', () => {
+        renderTable([
+            row({ id: 'a', invoice_ref: 'OPEN-1', status: 'PENDING' }),
+            row({ id: 'b', invoice_ref: 'PAID-1', status: 'PAID' }),
+            row({ id: 'c', invoice_ref: 'DISP-1', status: 'DISPUTED' }),
+        ]);
+        expect(screen.getByRole('tab', { name: /Open · 1/ })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /Paid · 1/ })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /Disputed · 1/ })).toBeInTheDocument();
+    });
+
+    // La règle du handoff : sans sélection le bouton primaire retombe sur
+    // « Payer tout », avec sélection il porte le total sélectionné.
+    it('fait porter au bouton primaire le total de la sélection', () => {
+        renderTable([
+            row({ id: 'a', invoice_ref: 'OPEN-1', tax_amount_usd: 10_000 }),
+            row({ id: 'b', invoice_ref: 'OPEN-2', tax_amount_usd: 5_000 }),
+        ]);
+        expect(screen.getByRole('button', { name: /Pay all/i })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /Select invoice OPEN-2/i }));
+        expect(screen.getByRole('button', { name: /Pay the invoice/i })).toBeInTheDocument();
+    });
+
+    it('déduit les acomptes du reste dû plutôt que d’afficher le montant facturé', () => {
+        renderTable([row({ tax_amount_usd: 11_492, partial_paid_usd: 1_492 })]);
+        // 11 492 − 1 492 = 10 000, rendu par usdGrouped (espace insécable étroite).
+        expect(screen.getByRole('button', { name: /Pay \$10\s000/ })).toBeInTheDocument();
     });
 });

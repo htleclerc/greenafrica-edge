@@ -7,6 +7,7 @@ import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
 import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/InvoicesTable';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 
 interface RawTxn {
     id: string;
@@ -19,6 +20,12 @@ interface RawTxn {
     status: string;
     paid_at: string | null;
     created_at: string;
+    // Le panneau de détail montre la décomposition émissions × tarif, pas le
+    // seul montant : c'est elle qui rend la facture contestable ou acceptable.
+    due_date: string | null;
+    partial_paid_usd: number | null;
+    emissions_tco2: number | null;
+    breakdown_json: unknown;
 }
 
 /**
@@ -57,7 +64,9 @@ export async function OperatorInvoicesPage({
         principal.supabase
             .from('transactions')
             .select(
-                'id, invoice_ref, content_hash, invoice_pdf_url, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at',
+                // Chaîne littérale d'un seul tenant : PostgREST infère le type
+                // des lignes depuis ce littéral, une concaténation le lui retire.
+                'id, invoice_ref, content_hash, invoice_pdf_url, document_type, vessel_name, tax_amount_usd, status, paid_at, created_at, due_date, partial_paid_usd, emissions_tco2, breakdown_json',
             )
             .order('created_at', { ascending: false })
             .limit(200),
@@ -112,11 +121,21 @@ export async function OperatorInvoicesPage({
         pendingWireByTxn.set(p.transaction_id, p.id);
     }
 
+    // Ce qui a ete encaisse se lit dans `payments`, jamais dans
+    // `partial_paid_usd` : cette colonne est gelee par la migration 089 et vaut
+    // zero sur toute facture en cours, si bien que l'armateur voyait reclamer
+    // le montant plein d'une facture qu'il avait deja reglee en partie.
+    const confirmedPaidByTxn = await confirmedPaidUsdByTransaction(
+        principal.supabase,
+        txns.map((t) => t.id),
+    );
+
     const rows: InvoiceRow[] = txns.map((txn) => ({
         ...txn,
         download_url: buildInvoiceDownloadUrl(txn),
         receipt_ref: receiptByTxn.get(txn.id) ?? null,
         pending_wire_payment_id: pendingWireByTxn.get(txn.id) ?? null,
+        confirmed_paid_usd: confirmedPaidByTxn.get(txn.id) ?? 0,
     }));
 
     const { data: statementsRaw } = await principal.supabase
@@ -129,16 +148,7 @@ export async function OperatorInvoicesPage({
     }[];
 
     return (
-        <div className="px-6 py-6 max-w-6xl mx-auto">
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">
-                    Invoices
-                </h1>
-                <p className="text-sm text-[var(--os-text-muted)] mt-1">
-                    Pro-formas, final assessments, complements and refunds for your fleet.
-                </p>
-            </header>
-
+        <div className="mx-auto flex max-w-6xl flex-col gap-[18px] p-4 sm:p-6">
             {stripeReturn === 'success' && (
                 <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 mb-4 text-sm text-emerald-200">
                     {t('stripeReturn.success')}
@@ -167,7 +177,7 @@ export async function OperatorInvoicesPage({
             )}
 
             {statements.length > 0 && (
-                <section className="mt-8">
+                <section>
                     <h2 className="text-lg font-semibold text-[var(--os-text-primary)] mb-3">{t('statements_title')}</h2>
                     <div className="os-card divide-y divide-[var(--os-border)]">
                         {statements.map((s) => (

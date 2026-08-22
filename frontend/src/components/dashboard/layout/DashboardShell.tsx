@@ -38,6 +38,7 @@ function resolveNav(pathname: string): { key: string; label: string } {
     if (pathname.startsWith('/dashboard/audit'))       return { key: 'audit',        label: 'Audit Trail' };
     if (pathname.startsWith('/dashboard/validations')) return { key: 'validations',  label: 'Validation des agents' };
     if (pathname.startsWith('/dashboard/settings'))    return { key: 'settings',     label: 'Paramètres' };
+    if (pathname.startsWith('/admin/validations'))     return { key: 'admin-validations', label: 'Validations' };
     if (pathname.startsWith('/admin/tax-settings'))    return { key: 'tax-settings', label: 'Taxe carbone — Paramètres' };
     if (pathname.startsWith('/admin/revenue'))         return { key: 'revenue',      label: 'Tableau des recettes' };
     if (pathname.startsWith('/admin/payments'))        return { key: 'payments',     label: 'Fournisseurs de paiement' };

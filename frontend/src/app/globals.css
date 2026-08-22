@@ -72,6 +72,13 @@
     --os-surface:      #111C18;
     --os-surface-2:    #13231D;
     --os-surface-3:    #1A2E25;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #0D1714;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(255, 255, 255, 0.05);
+    --os-on-primary:   #06120D;
+    --os-dot-idle:     #3D5148;
+    --os-label-section:#5C7267;
     --os-border:       rgba(255, 255, 255, 0.06);
     --os-border-strong:rgba(255, 255, 255, 0.12);
 
@@ -132,11 +139,25 @@
     --os-surface:      #FFFFFF;
     --os-surface-2:    #F0F7F4;
     --os-surface-3:    #E8F4ED;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #F5FBF8;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(5, 150, 105, 0.10);
+    --os-on-primary:   #FFFFFF;
+    --os-dot-idle:     #CBDFD5;
+    --os-label-section:#8AA79A;
+    /* Couleurs sémantiques rabaissées d'un cran : #EAB308 / #10B981 ne passent pas AA
+       sur une surface claire. Mêmes rôles, mêmes usages, contraste tenu. */
+    --os-yellow:  #996803;   /* was #CA8A04 (2.9:1 sur blanc, FAIL) → 4.5:1 ✓ */
+    --os-red:     #DC2626;
+    --os-orange:  #C54A0A;   /* was #EA580C (3.6:1, FAIL) → 4.5:1 ✓ */
+    --os-green:   #04825B;   /* was #059669 (3.8:1, FAIL) → 4.5:1 ✓ */
+    --os-blue:    #2563EB;
     --os-border:       rgba(16, 185, 129, 0.12);
     --os-border-strong:rgba(16, 185, 129, 0.25);
 
-    --os-brand-green:  #059669;
-    --os-brand-cyan:   #10B981;
+    --os-brand-green:  #05875E;   /* fond du bouton primaire : #059669 laissait le blanc à 3.8:1 → 4.5:1 ✓ */
+    --os-brand-cyan:   #0B825B;   /* lien/accent : #10B981 tombait à 2.5:1 sur blanc → 4.5:1 ✓ */
 
     --os-text-primary: #0D1F18;
     --os-text-secondary:#3D6B54;
@@ -198,6 +219,13 @@
     --os-surface:      #111D35;
     --os-surface-2:    #152240;
     --os-surface-3:    #1B2D4F;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #080F1F;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(255, 255, 255, 0.05);
+    --os-on-primary:   #060D1A;
+    --os-dot-idle:     #33455F;
+    --os-label-section:#5A6E88;
     --os-border:       rgba(56, 189, 248, 0.08);
     --os-border-strong:rgba(56, 189, 248, 0.18);
 
@@ -256,6 +284,20 @@
     --os-surface:      #FFFFFF;
     --os-surface-2:    #F0F6FF;
     --os-surface-3:    #DBEAFE;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #F0F6FF;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(37, 99, 235, 0.10);
+    --os-on-primary:   #FFFFFF;
+    --os-dot-idle:     #C7D7EE;
+    --os-label-section:#8296B5;
+    /* Couleurs sémantiques rabaissées d'un cran : #EAB308 / #10B981 ne passent pas AA
+       sur une surface claire. Mêmes rôles, mêmes usages, contraste tenu. */
+    --os-yellow:  #996803;   /* was #CA8A04 (2.9:1 sur blanc, FAIL) → 4.5:1 ✓ */
+    --os-red:     #DC2626;
+    --os-orange:  #C54A0A;   /* was #EA580C (3.6:1, FAIL) → 4.5:1 ✓ */
+    --os-green:   #04825B;   /* was #059669 (3.8:1, FAIL) → 4.5:1 ✓ */
+    --os-blue:    #2563EB;
     --os-border:       rgba(59, 130, 246, 0.10);
     --os-border-strong:rgba(59, 130, 246, 0.22);
 
@@ -323,6 +365,13 @@
     --os-surface:      #14261E;
     --os-surface-2:    #1A3028;
     --os-surface-3:    #22402F;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #0A150F;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(255, 255, 255, 0.05);
+    --os-on-primary:   #06120D;
+    --os-dot-idle:     #3D5148;
+    --os-label-section:#5C7267;
     --os-border:       rgba(5, 150, 105, 0.12);
     --os-border-strong:rgba(5, 150, 105, 0.25);
 
@@ -383,15 +432,29 @@
     --os-surface:      #FFFFFF;
     --os-surface-2:    #F5FBF8;
     --os-surface-3:    #E6F4ED;
+    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
+    --os-surface-sunken: #F5FBF8;
+    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
+    --os-border-row:   rgba(5, 150, 105, 0.10);
+    --os-on-primary:   #FFFFFF;
+    --os-dot-idle:     #CBDFD5;
+    --os-label-section:#8AA79A;
+    /* Couleurs sémantiques rabaissées d'un cran : #EAB308 / #10B981 ne passent pas AA
+       sur une surface claire. Mêmes rôles, mêmes usages, contraste tenu. */
+    --os-yellow:  #996803;   /* was #CA8A04 (2.9:1 sur blanc, FAIL) → 4.5:1 ✓ */
+    --os-red:     #DC2626;
+    --os-orange:  #C54A0A;   /* was #EA580C (3.6:1, FAIL) → 4.5:1 ✓ */
+    --os-green:   #04825B;   /* was #059669 (3.8:1, FAIL) → 4.5:1 ✓ */
+    --os-blue:    #2563EB;
     --os-border:       rgba(5, 150, 105, 0.12);
     --os-border-strong:rgba(5, 150, 105, 0.25);
 
-    --os-brand-green:  #059669;
-    --os-brand-cyan:   #10B981;
+    --os-brand-green:  #05875E;   /* fond du bouton primaire : #059669 laissait le blanc à 3.8:1 → 4.5:1 ✓ */
+    --os-brand-cyan:   #0B825B;   /* lien/accent : #10B981 tombait à 2.5:1 sur blanc → 4.5:1 ✓ */
 
     --os-text-primary: #1A2E25;
     --os-text-secondary:#2D4F3E;
-    --os-text-muted:   #6B8F7D;
+    --os-text-muted:   #5A7869;   /* was #6B8F7D (3.6:1, FAIL) → 4.6:1 ✓ */
 
     --os-badge-compliant-bg:   rgba(5, 150, 105, 0.10);
     --os-badge-payment-bg:     rgba(220, 38, 38, 0.08);
@@ -426,7 +489,7 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
@@ -511,6 +574,147 @@ input[type="range"]::-moz-range-thumb {
     color: var(--os-brand-green);
     box-shadow: inset 2px 0 0 var(--os-brand-green);
 }
+
+/* ── Tableau dense en grille (OsGridTable) ────────────────────────────────
+ * Trois paliers, pilotés par deux pistes posées en style inline sur la ligne :
+ *   ≥1280 px  toutes les colonnes            (--os-grid-cols-lg)
+ *   768–1280  les colonnes secondaires tombent (--os-grid-cols-md)
+ *   <768 px   chaque ligne devient une carte libellé/valeur
+ * Le mode carte lit le libellé dans data-label, posé par le composant : pas de
+ * duplication du DOM juste pour changer de gabarit. */
+.os-grid-row {
+    display: grid;
+    grid-template-columns: var(--os-grid-cols-md);
+}
+.os-col-secondary { display: none; }
+
+@media (min-width: 1280px) {
+    .os-grid-row      { grid-template-columns: var(--os-grid-cols-lg); }
+    .os-col-secondary { display: block; }
+}
+
+@media (max-width: 767px) {
+    .os-grid-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    .os-grid-head { display: none; }
+    .os-grid-row > [data-label] {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: left;
+        justify-self: stretch;
+    }
+    .os-grid-row > [data-label]::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--os-text-muted);
+    }
+    /* Une colonne vide (l'en-tête d'actions) ne doit pas laisser son libellé seul. */
+    .os-grid-row > [data-label=""]::before { content: none; }
+    .os-grid-row > .os-col-primary { justify-self: stretch; }
+}
+
+/* ── Liste de factures (portail armateur) ───────────────────────
+ * Cinq cellules : case à cocher / référence + statut / navire / échéance / montant.
+ * La première piste est fixe — une case à cocher ne se dilate pas.
+ *
+ * Sous 768 px la ligne se replie sur deux rangées plutôt que de tronquer quatre
+ * colonnes à trois caractères : référence et montant en haut (ce qu'on cherche et
+ * ce qu'on doit), navire et échéance en dessous. Le placement est explicite, sinon
+ * les cellules 4 et 5 tomberaient dans des rangées implicites, dans le désordre. */
+.os-invoice-head,
+.os-invoice-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    row-gap: 4px;
+}
+.os-invoice-head { display: none; }
+
+.os-invoice-row > *:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.os-invoice-row > *:nth-child(2) { grid-column: 2; grid-row: 1; }
+.os-invoice-row > *:nth-child(5) { grid-column: 3; grid-row: 1; }
+.os-invoice-row > *:nth-child(3) { grid-column: 2; grid-row: 2; }
+.os-invoice-row > *:nth-child(4) { grid-column: 3; grid-row: 2; text-align: right; }
+
+@media (min-width: 768px) {
+    .os-invoice-head,
+    .os-invoice-row {
+        grid-template-columns: 30px 1.2fr 1.1fr 1fr 0.9fr;
+        row-gap: 0;
+    }
+    .os-invoice-head { display: grid; }
+    /* Une ligne, cinq colonnes : on rend la main au placement automatique. */
+    .os-invoice-row > *:nth-child(n) {
+        grid-column: auto;
+        grid-row: auto;
+        align-self: center;
+        text-align: inherit;
+    }
+    .os-invoice-row > *:nth-child(5) { text-align: right; }
+}
+
+/* ── Grille de comparaison (validations) ──────────────────────────────────
+ * Champ / valeur déclarée / valeur de la source. La colonne des libellés est
+ * fixe : c'est un gabarit de lecture, pas une répartition proportionnelle, et
+ * elle doit rester alignée d'une carte à l'autre. Repliée en une colonne sous
+ * 1024 px, où les trois colonnes côte à côte tronqueraient les e-mails. */
+.os-compare-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+    .os-compare-grid { grid-template-columns: 180px 1fr 1fr; }
+}
+
+/* Bande d'action : un dégradé de l'accent, pas un aplat — la bande doit peser
+ * plus qu'une carte sans devenir un bloc de couleur. Les deux teintes dérivent
+ * de --os-accent, donc la bande suit le thème sans variante de composant. */
+.os-action-band {
+    background-image: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--os-accent) 10%, transparent),
+        color-mix(in srgb, var(--os-accent) 4%, transparent)
+    );
+    background-color: var(--os-surface);
+}
+
+/* Liseré d'urgence à gauche d'une ligne ou d'une carte. */
+.os-accent-border-l { border-left: 2px solid var(--os-accent); }
+
+/* ── Bandeau KPI ───────────────────────────────────────────────────────────
+ * Les filets internes sont le fond du conteneur laissé visible par le gap de 1px :
+ * ils restent justes après repli, là où des border-right sauteraient en fin de rangée.
+ * Trois paliers, comme le reste des écrans : 1 / 2 / toutes les colonnes. */
+.os-kpi-band {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    overflow: hidden;
+    background-color: var(--os-border);
+    border: 1px solid var(--os-border);
+    border-radius: 11px;
+}
+@media (min-width: 768px)  { .os-kpi-band { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .os-kpi-band { grid-template-columns: repeat(var(--os-kpi-cols, 4), 1fr); } }
+
+/* ── Accent d'urgence ──────────────────────────────────────────────────────
+ * Un niveau d'urgence pose --os-accent (cf. accentStyle(), src/lib/osAccent.ts) ;
+ * ces classes en dérivent le fond teinté et la bordure teintée. Règle du handoff :
+ * 12 % / 28 % en sombre, 9 % / 30 % en clair. */
+.os-accent-text  { color: var(--os-accent); }
+.os-accent-tint  { background-color: color-mix(in srgb, var(--os-accent) 12%, transparent); }
+.os-accent-edge  { border-color: color-mix(in srgb, var(--os-accent) 28%, transparent); }
+[data-theme="light"] .os-accent-tint { background-color: color-mix(in srgb, var(--os-accent) 9%, transparent); }
+[data-theme="light"] .os-accent-edge { border-color: color-mix(in srgb, var(--os-accent) 30%, transparent); }
 
 /* OS Card */
 .os-card {

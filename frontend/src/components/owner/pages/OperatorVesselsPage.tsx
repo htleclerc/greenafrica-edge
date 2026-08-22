@@ -1,12 +1,20 @@
-// Reusable server component for the operator fleet view.
-// Used by both /owner/vessels (via thin wrapper) and /dashboard/vessels (when
-// the principal is an operator). Always fetches data through principal.supabase
-// so RLS is scoped to the authenticated shipowner — never a platform client.
+// Ma flotte (2b du handoff de refonte).
+//
+// Deux niveaux de lecture : les navires qui exigent une action sont des cartes,
+// les navires conformes des lignes de tableau. L'en-tete énonce le verdict
+// (« 6 navires, 2 exigent une action ») plutôt que le simple decompte.
+//
+// Utilise par /owner/vessels (via un fin adaptateur) et par /dashboard/vessels
+// quand le principal est un opérateur. Toutes les lectures passent par
+// principal.supabase, donc bornées par RLS — jamais un client plateforme.
 
 import { Download, Receipt } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import type { Principal } from '@/lib/auth/requirePrincipal';
+import { OsPageHeader } from '@/components/ui/OsPageHeader';
+import { getOwnerFleet } from '@/services/ownerFleet';
 import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
-import { VesselsTable, type VesselRow } from '@/components/owner/vessels/VesselsTable';
+import { FleetBoard } from '@/components/owner/vessels/FleetBoard';
 import { AircraftTable, type AircraftRow } from '@/components/owner/vessels/AircraftTable';
 import { ModeBadge } from '@/components/owner/ModeBadge';
 import { ApproxFlag } from '@/components/owner/ApproxFlag';
@@ -34,11 +42,8 @@ interface Props {
 }
 
 export async function OperatorVesselsPage({ principal }: Props) {
-    const [vesselsRes, aircraftRes, invoicesRes, receiptRes] = await Promise.all([
-        principal.supabase
-            .from('vessels')
-            .select('id, name, mmsi, imo_number, flag_code, category, last_zone, compliance_status')
-            .order('name'),
+    const [fleet, aircraftRes, invoicesRes, receiptRes] = await Promise.all([
+        getOwnerFleet(principal.supabase),
         // RLS (mig-074 policy) scopes aircraft to the operating shipowner via
         // shipowners.profile_id = auth.uid(); no manual operator filter required.
         principal.supabase
@@ -62,7 +67,6 @@ export async function OperatorVesselsPage({ principal }: Props) {
             .order('confirmed_at', { ascending: true }),
     ]);
 
-    const vessels: VesselRow[] = (vesselsRes.data ?? []) as VesselRow[];
     const aircraft: AircraftRow[] = (aircraftRes.data ?? []) as AircraftRow[];
     const recent: RecentInvoice[] = (invoicesRes.data ?? []) as RecentInvoice[];
 
@@ -74,35 +78,19 @@ export async function OperatorVesselsPage({ principal }: Props) {
         if (p.receipt_ref) receiptByTxn.set(p.transaction_id, p.receipt_ref);
     }
 
-    return (
-        <div className="px-6 py-6 max-w-6xl mx-auto">
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">Fleet</h1>
-                <p className="text-sm text-[var(--os-text-muted)] mt-1">
-                    {vessels.length} {vessels.length === 1 ? 'vessel' : 'vessels'}
-                    {aircraft.length > 0 && (
-                        <> · {aircraft.length} {aircraft.length === 1 ? 'aircraft' : 'aircraft'}</>
-                    )}{' '}
-                    on file.
-                </p>
-            </header>
+    const t = await getTranslations('OwnerPortal.fleet');
 
-            <section>
-                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">
-                    Vessels
-                    <ModeBadge mode="MARITIME" />
-                </h2>
-                {vesselsRes.error ? (
-                    <div className="os-card p-4 text-sm" style={{ color: '#FCA5A5' }}>
-                        Failed to load vessels: {vesselsRes.error.message}
-                    </div>
-                ) : (
-                    <VesselsTable rows={vessels} vesselBasePath="/dashboard/vessels" />
-                )}
-            </section>
+    return (
+        <div className="mx-auto flex max-w-6xl flex-col gap-[18px] p-4 sm:p-6">
+            <OsPageHeader
+                title={t('verdict', { total: fleet.counts.all, action: fleet.actionCount })}
+                subtitle={t('subtitle')}
+            />
+
+            <FleetBoard fleet={fleet} vesselBasePath="/dashboard/vessels" />
 
             {(aircraft.length > 0 || aircraftRes.error) && (
-                <section className="mt-8">
+                <section>
                     <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">
                         Aircraft
                         <ModeBadge mode="AIR" />
@@ -118,7 +106,7 @@ export async function OperatorVesselsPage({ principal }: Props) {
             )}
 
             {recent.length > 0 && (
-                <section className="mt-8">
+                <section>
                     <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">
                         Recent invoices
                     </h2>

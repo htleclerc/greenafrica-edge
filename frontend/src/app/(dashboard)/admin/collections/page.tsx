@@ -1,10 +1,13 @@
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import {
     parseCollectionFilters, listCollectionsAdmin, listCollectionFilterOptions,
 } from '@/services/collectionAdminService';
+import { loadCollectionFunnel, loadPriorityDossier } from '@/services/collectionFunnel';
 import { CollectionsAdminList } from './CollectionsAdminList';
+import { CollectionsFunnel } from './CollectionsFunnel';
+import { CollectionsHeader } from './CollectionsHeader';
+import { PriorityDossier } from './PriorityDossier';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,16 +25,23 @@ export default async function AdminCollectionsPage({
     if (!profile || !STAFF_ROLES.includes(profile.role)) redirect('/dashboard');
 
     const filters = parseCollectionFilters(await searchParams);
-    const [page, options] = await Promise.all([
+    const [page, options, funnel] = await Promise.all([
         listCollectionsAdmin(supabase, filters),
         listCollectionFilterOptions(supabase),
+        loadCollectionFunnel(supabase, filters),
     ]);
-    const t = await getTranslations('AdminCollections');
+
+    // Le dossier prioritaire dépend de la file : il se charge après elle, pas en
+    // parallèle. Un seul aller-retour de plus, sur un identifiant déjà connu.
+    const priority = funnel.priorityTransactionId
+        ? await loadPriorityDossier(supabase, funnel.priorityTransactionId)
+        : null;
 
     return (
-        <div className="p-4 sm:p-6">
-            <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('title')}</h1>
-            <p className="text-sm text-[var(--os-text-muted)] mb-4">{t('subtitle')}</p>
+        <div className="flex flex-col gap-[18px] p-4 sm:p-6">
+            <CollectionsHeader funnel={funnel} />
+            <CollectionsFunnel funnel={funnel} />
+            {priority && <PriorityDossier dossier={priority} />}
             <CollectionsAdminList
                 rows={page.rows}
                 total={page.total}

@@ -35,6 +35,10 @@ export function WalletPageClient({
 
     const balanceUsd = initialBalanceUsdMinor / 100;
 
+    // Dernier approvisionnement : la ligne de contexte de la carte de solde.
+    // Le registre est déjà trié du plus récent au plus ancien côté service.
+    const lastTopup = initialLedger.find((r) => r.kind === 'TOPUP') ?? null;
+
     // Filter ledger client-side for v1 (no server-side pagination)
     const visibleLedger = ledgerFilters.length === 0
         ? initialLedger
@@ -55,7 +59,7 @@ export function WalletPageClient({
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_1fr]">
                 <BalanceCard
                     balanceUsd={balanceUsd}
                     autoApplyEnabled={autoApply}
@@ -63,11 +67,18 @@ export function WalletPageClient({
                     onOpenTopup={() => setTopupOpen(true)}
                     togglePending={togglePending}
                     topupEnabled={topupEnabled}
+                    lastTopupAt={lastTopup?.created_at ?? null}
+                    lastTopupUsd={lastTopup ? lastTopup.amount_signed_usd_minor / 100 : null}
                 />
-                <PredictionCard prediction={prediction} currentBalanceUsd={balanceUsd} />
+                <PredictionCard
+                    prediction={prediction}
+                    currentBalanceUsd={balanceUsd}
+                    onOpenTopup={topupEnabled ? () => setTopupOpen(true) : undefined}
+                />
             </div>
             <LedgerTable
                 rows={visibleLedger}
+                currentBalanceUsdMinor={initialBalanceUsdMinor}
                 onFilterChange={setLedgerFilters}
                 activeFilters={ledgerFilters}
             />
