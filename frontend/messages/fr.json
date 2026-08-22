@@ -3257,7 +3257,8 @@
         "step2": "Téléversez le SWIFT MT103 ou l’avis de votre banque à l’écran suivant.",
         "step3": "Le service financier rapproche les fonds sur le compte puis confirme le paiement — rien n’est prélevé ici.",
         "topupHint": "Une recharge n’a pas de référence de facture : indiquez aussi le nom de votre société dans le motif du virement.",
-        "bankReferenceOptional": "Facultatif — laissez vide si votre banque ne l’a pas encore émise."
+        "bankReferenceOptional": "Facultatif — laissez vide si votre banque ne l’a pas encore émise.",
+        "download": "Télécharger l’ordre de virement (PDF)"
       }
     },
     "proofUpload": {

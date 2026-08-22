@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowLeft, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Download } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
@@ -17,6 +17,13 @@ export function StepRailParams() {
     // sinon un marqueur de recharge — le service financier n'a que le libelle
     // du releve pour rapprocher les fonds.
     const wireReferenceLabel = ctx.invoiceRef ?? 'TOPUP';
+
+    // Ordre de virement a remettre a sa banque. Une facture est identifiee par
+    // son id : le montant est alors relu en base cote serveur. Une recharge n'a
+    // pas de ligne en base, le montant saisi voyage donc en clair.
+    const wireDownloadHref = ctx.transactionId
+        ? `/api/owner/wire-instructions?transactionId=${encodeURIComponent(ctx.transactionId)}`
+        : `/api/owner/wire-instructions?amountUsd=${encodeURIComponent(ctx.amountUsd.toFixed(2))}`;
 
     function set(k: string, v: string) {
         setLocal((s) => ({ ...s, [k]: v }));
@@ -108,6 +115,15 @@ export function StepRailParams() {
                         <p className="text-[10px] text-[var(--os-text-muted)] mt-2 leading-relaxed">
                             {WIRE_BENEFICIARY.bankAddress}
                         </p>
+                        <a
+                            href={wireDownloadHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-3 text-xs text-emerald-400 hover:underline"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            {t('wire.download')}
+                        </a>
                     </div>
 
                     <ol className="flex flex-col gap-1 text-[11px] text-[var(--os-text-secondary)] leading-relaxed list-decimal list-inside">
