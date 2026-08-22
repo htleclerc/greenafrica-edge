@@ -61,6 +61,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 import { sendConsolidatedRecap } from './sendConsolidatedRecap';
 
 const OWNER = '22222222-2222-4222-8222-222222222222';
+const VESSEL = '33333333-3333-4333-8333-333333333333';
 
 const OPEN_LINES = [
     { transactionId: 'txn-1', invoiceRef: 'PRO-1', vesselName: 'MV A', issuedAt: '2026-08-01', ageDays: 19, outstandingUsd: 16500 },
@@ -105,6 +106,7 @@ function setup(opts: {
         totalOutstandingUsd: lines.reduce((s, l) => s + l.outstandingUsd, 0),
         paymentsInMonthUsd: 0,
         openCount: lines.length,
+        asOf: new Date('2026-08-20T14:30:00Z'),
     });
 
     platformFromMock.mockImplementation((t: string) => {
@@ -199,6 +201,30 @@ describe('sendConsolidatedRecap — gardes', () => {
 });
 
 describe('sendConsolidatedRecap — envoi', () => {
+    it('restreint le récapitulatif à un navire et le dit sur le document', async () => {
+        // « Consolidé par navire » : le même moteur, borné à un seul navire.
+        // Le PDF doit porter cette portée, sinon deux documents au même en-tête
+        // annoncent deux totaux différents.
+        const r = await sendConsolidatedRecap({ shipownerId: OWNER, vesselId: VESSEL });
+        expect(r).toMatchObject({ ok: true });
+
+        expect(composeOwnerStatementMock).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ shipownerId: OWNER, vesselId: VESSEL }),
+        );
+        expect(generateStatementPdfMock).toHaveBeenCalledWith(expect.objectContaining({
+            vesselScope: OPEN_LINES[0].vesselName,
+            asOfIso: expect.any(String),
+        }));
+    });
+
+    it('ne marque aucune portée navire sur un récapitulatif de dossier', async () => {
+        await sendConsolidatedRecap({ shipownerId: OWNER });
+        expect(generateStatementPdfMock).toHaveBeenCalledWith(expect.objectContaining({
+            vesselScope: null,
+        }));
+    });
+
     it('réussit et trace UN SEUL insert groupé de lignes MANUAL partageant le même sent_at', async () => {
         const cap = setup({});
         const r = await sendConsolidatedRecap({ shipownerId: OWNER });

@@ -23,7 +23,13 @@ export const AUTO_TIERS: ReminderTier[] = TIER_THRESHOLDS.map((t) => t.tier);
 export const PAYMENT_PROMISE_GRACE_DAYS = 7;
 
 /** Statuts de transaction pour lesquels l'escalade continue. Tout autre = arrêt. */
-const ESCALATABLE_STATUSES = new Set(['PENDING', 'OVERDUE']);
+// PARTIALLY_PAID en fait partie : un reglement partiel ne solde pas la
+// creance, il en reduit le montant. L'exclure faisait sortir du recouvrement,
+// definitivement, tout debiteur ayant verse un acompte — la rampe s'arretait
+// au premier centime recu. La relance annonce desormais le RESTE du (cf.
+// api/cron/collection-reminders), ce qui rend cette poursuite legitime :
+// reclamer le montant plein a quelqu'un qui a deja paye ne l'aurait pas ete.
+const ESCALATABLE_STATUSES = new Set(['PENDING', 'OVERDUE', 'PARTIALLY_PAID']);
 
 /** Palier attendu pour un âge donné : le plus tardif dont le seuil est atteint. */
 export function tierForAge(ageDays: number): ReminderTier | null {

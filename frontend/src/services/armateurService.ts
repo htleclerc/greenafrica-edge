@@ -62,12 +62,22 @@ export function maskIban(iban: string | null): string | null {
     return `•••• ${tail}`;
 }
 
+/** Statuts qui n'ouvrent aucune creance (cf. migration 132). */
+const NON_CLAIMABLE_STATUSES = ['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED'];
+
 export interface ArmateurProformaRow {
     id: string;
     invoice_ref: string | null;
     created_at: string;
     tax_amount_usd: number;
+    /**
+     * Colonne gelee par la migration 089 et jamais ecrite : elle vaut zero sur
+     * toute facture en cours. Conservee parce que d'anciens appelants la
+     * lisent — ne jamais s'en servir pour calculer un reste du.
+     */
     partial_paid_usd: number;
+    /** Reste du reel : montant taxe moins les paiements CONFIRMED. */
+    outstanding_usd: number;
     status: string;
     due_date: string | null;
     collections_status: string | null;
@@ -190,7 +200,7 @@ export async function getArmateurDetail(
     const txIds = (txRes.data ?? []).map((t) => t.id as string);
     const [payRes, remRes] = await Promise.all([
         txIds.length
-          ? db.from('payments').select('id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
+          ? db.from('payments').select('id, transaction_id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
           : Promise.resolve({ data: [] as unknown[] }),
         txIds.length
           // template_used est requis par groupManualReminders (Tâche 13) pour
@@ -198,6 +208,15 @@ export async function getArmateurDetail(
           ? db.from('collection_reminders').select('id, tier, sent_at, template_used, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
           : Promise.resolve({ data: [] as unknown[] }),
     ]);
+
+    // Encaissements CONFIRMED par facture — la seule source du reste du.
+    const paidByTxn = new Map<string, number>();
+    for (const p of ((payRes.data ?? []) as Record<string, unknown>[])) {
+        if (String(p.status) !== 'CONFIRMED') continue;
+        const key = String(p.transaction_id ?? '');
+        if (!key) continue;
+        paidByTxn.set(key, (paidByTxn.get(key) ?? 0) + Number(p.amount_usd_minor ?? 0) / 100);
+    }
 
     // Narrowing explicite depuis les lignes shipowners (types manuels — pas de any).
     const row = s as Record<string, unknown>;
@@ -263,7 +282,11 @@ export async function getArmateurDetail(
         proformas: (txRes.data ?? []).map((t) => ({
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
-            partial_paid_usd: Number(t.partial_paid_usd ?? 0), status: t.status as string,
+            partial_paid_usd: Number(t.partial_paid_usd ?? 0),
+            outstanding_usd: NON_CLAIMABLE_STATUSES.includes(String(t.status))
+                ? 0
+                : Math.max(Number(t.tax_amount_usd) - (paidByTxn.get(t.id as string) ?? 0), 0),
+            status: t.status as string,
             due_date: (t.due_date as string | null) ?? null,
             collections_status: (t.collections_status as string | null) ?? null,
             content_hash: (t.content_hash as string | null) ?? null,

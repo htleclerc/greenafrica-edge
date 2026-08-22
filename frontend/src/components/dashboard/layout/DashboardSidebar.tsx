@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard,
+    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { JurisdictionSwitcher } from './JurisdictionSwitcher';
 import { ModeSwitcher } from './ModeSwitcher';
-import { OPERATOR_NAV, vesselsNavLabelKey, isAirOnly, type OperatorNavItem } from '@/lib/auth/operatorNav';
+import { operatorNavFor, vesselsNavLabelKey, isAirOnly, type OperatorNavItem } from '@/lib/auth/operatorNav';
 import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 
 export const SIDEBAR_COLLAPSED = 56;
@@ -61,12 +61,16 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'armateurs',     icon: <Building2 className="w-5 h-5" />,    href: '/admin/armateurs',       labelKey: 'nav_armateurs',     section: 'admin' },
     { key: 'airlines',      icon: <Plane className="w-5 h-5" />,        href: '/admin/airlines',        labelKey: 'nav_airlines',      section: 'admin' },
     { key: 'vessel-identity', icon: <IdCard className="w-5 h-5" />,     href: '/admin/vessel-identity', labelKey: 'nav_vessel_identity', section: 'admin' },
+    // File d'arbitrage unifiee : identites navire, agents, ports d'origine.
+    // Les trois ecrans specialises restent accessibles, chaque carte y renvoie.
+    { key: 'admin-validations', icon: <ShieldCheck className="w-5 h-5" />, href: '/admin/validations', labelKey: 'nav_admin_validations', section: 'admin' },
 ];
 
 // Icon map for operator nav items. Keyed by OperatorNavItem.key.
 const OPERATOR_ICONS: Record<string, React.ReactNode> = {
     dashboard:     <LayoutDashboard className="w-5 h-5" />,
     vessels:       <Ship className="w-5 h-5" />,
+    'my-fleet':    <Anchor className="w-5 h-5" />,
     invoices:      <FileText className="w-5 h-5" />,
     wallet:        <Wallet className="w-5 h-5" />,
     simulator:     <Calculator className="w-5 h-5" />,
@@ -109,11 +113,12 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
         );
 
     // ── Skeleton nav (while principal kind is resolving) ──────────────────────
-    // Render 8 placeholder rows to match the operator nav height and avoid the
-    // layout jumping between a staff nav (many items) and operator nav (8 items).
+    // Render 9 placeholder rows to match the operator nav height and avoid the
+    // layout jumping between a staff nav (many items) and operator nav (9 items,
+    // 8 for an air-only operator).
     const renderSkeletonNav = () => (
         <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5 mt-1">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array.from({ length: 9 }).map((_, i) => (
                 <div
                     key={i}
                     className="flex items-center gap-2.5 px-2.5 rounded-xl"
@@ -142,7 +147,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     const airOnly = isAirOnly(modes);
     const renderOperatorNav = () => (
         <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
-            {OPERATOR_NAV.map((item) => {
+            {operatorNavFor(modes).map((item) => {
                 const isVessels = item.key === 'vessels';
                 return (
                     <OperatorNavButton

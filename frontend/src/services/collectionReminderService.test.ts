@@ -37,7 +37,7 @@ describe('dueTier', () => {
         expect(dueTier({ ...base, ageDays: 30, sentTiers: ['J3', 'J7', 'J15'] })).toBe('J30');
     });
 
-    it('arrête l\'escalade hors PENDING/OVERDUE', () => {
+    it('arrête l\'escalade sur un statut qui ne doit plus rien', () => {
         for (const status of ['PAID', 'EXEMPT', 'VOID', 'WAIVED', 'CANCELLED']) {
             expect(dueTier({ ...base, status, ageDays: 45 })).toBeNull();
         }
@@ -45,6 +45,14 @@ describe('dueTier', () => {
 
     it('escalade sur OVERDUE comme sur PENDING', () => {
         expect(dueTier({ ...base, status: 'OVERDUE', ageDays: 45 })).toBe('J45');
+    });
+
+    it('poursuit une créance réglée en partie', () => {
+        // PARTIALLY_PAID était exclu : verser un acompte suffisait à sortir
+        // définitivement du recouvrement, la rampe s'arrêtant au premier
+        // centime reçu. En production, trois dossiers y échappaient pour
+        // 52 717,99 USD de reste dû.
+        expect(dueTier({ ...base, status: 'PARTIALLY_PAID', ageDays: 45 })).toBe('J45');
     });
 
     it('met en pause sur une contestation (réponse DISPUTE)', () => {

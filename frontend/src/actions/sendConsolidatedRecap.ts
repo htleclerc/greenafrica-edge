@@ -14,7 +14,12 @@ const STAFF_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'];
 
 const inputSchema = z.object({
     shipownerId: z.string().uuid(),
-});
+    /**
+     * Restreint le recapitulatif a un seul navire. Absent, il porte sur tout
+     * le dossier — comportement inchange.
+     */
+    vesselId: z.string().uuid().optional(),
+}).strict();
 
 /**
  * Envoie à la demande, à un armateur, le récapitulatif consolidé de TOUTES ses
@@ -38,7 +43,7 @@ export async function sendConsolidatedRecap(
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const parsed = inputSchema.safeParse(raw);
     if (!parsed.success) return { ok: false, reason: parsed.error.issues[0]?.message ?? 'invalid input' };
-    const { shipownerId } = parsed.data;
+    const { shipownerId, vesselId } = parsed.data;
 
     // 1. Auth + rôle staff + is_active.
     const supabase = await createClient();
@@ -85,7 +90,7 @@ export async function sendConsolidatedRecap(
     const now = new Date();
     const { periodStart, periodEnd, label } = currentMonthBounds(now);
     const tenant = createTenantClient(jurisdictionId);
-    const result = await composeOwnerStatement(tenant, { shipownerId, periodStart, periodEnd, now });
+    const result = await composeOwnerStatement(tenant, { shipownerId, periodStart, periodEnd, now, vesselId });
     if (result.openLines.length === 0) return { ok: false, reason: 'nothing outstanding' };
 
     // 5. PDF généré EN MÉMOIRE — jamais écrit dans owner_statements ni dans le
@@ -99,6 +104,10 @@ export async function sendConsolidatedRecap(
         payments: result.payments,
         totalOutstandingUsd: result.totalOutstandingUsd,
         paymentsInMonthUsd: result.paymentsInMonthUsd,
+        asOfIso: result.asOf.toISOString(),
+        // Toutes les lignes portent le meme navire quand la portee est
+        // restreinte : le nom se lit sur la premiere, sans requete de plus.
+        vesselScope: vesselId ? (result.openLines[0]?.vesselName ?? null) : null,
     });
 
     // 6. Destinataires (cascade + CC facturation de la juridiction). Pas d'agent
@@ -135,6 +144,8 @@ export async function sendConsolidatedRecap(
         details_json: {
             event: 'CONSOLIDATED_RECAP_SENT', recipient: recipients.to, cc: recipients.cc,
             invoiceCount: result.openLines.length,
+            vesselId: vesselId ?? null,
+            asOf: result.asOf.toISOString(),
         },
     });
 

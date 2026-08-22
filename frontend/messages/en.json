@@ -100,7 +100,8 @@
     "impact": "Impact",
     "resources": "Resources",
     "about": "About",
-    "partnership": "Partnership"
+    "partnership": "Partnership",
+    "nav_admin_validations": "Validations"
   },
   "Landing": {
     "badge": "SOVEREIGN CARBON INTELLIGENCE PROTOCOL",
@@ -842,7 +843,9 @@
     "nav_admin_invoices": "Invoices",
     "nav_admin_collections": "Collections",
     "nav_airlines": "Airlines",
-    "nav_vessel_identity": "Vessel Identity"
+    "nav_vessel_identity": "Vessel Identity",
+    "theme_switch_to_light": "Switch to light theme",
+    "theme_switch_to_dark": "Switch to dark theme"
   },
   "AdminStaff": {
     "page_title": "Staff Management",
@@ -1109,7 +1112,13 @@
     "simulator_air_aircraft_type": "Aircraft type",
     "simulator_air_lto_cycles": "LTO cycles",
     "simulator_air_methodology_note": "ICAO LTO methodology: emissions per Landing & Take-Off cycle (taxi, take-off, climb, approach below 3000 ft).",
-    "simulator_air_emissions_label": "Estimated emissions"
+    "simulator_air_emissions_label": "Estimated emissions",
+    "settings_theme_mode": "Night or day",
+    "settings_theme_mode_desc": "Independent of the visual theme: pick the brightness that suits you, whichever skin you use.",
+    "settings_theme_auto": "Automatic",
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light",
+    "settings_theme_auto_hint": "Follows the visual theme — currently: {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "Active Vessels in EEZ",
@@ -2834,7 +2843,19 @@
       "cancel": "Cancel",
       "confirm": "Claim and generate pro-forma",
       "claiming": "Claiming…"
-    }
+    },
+    "verdict": "{count, plural, =0 {No vessel expected} =1 {1 vessel expected} other {# vessels expected}}",
+    "portLabel": "Port of Berbera",
+    "offline": "Offline",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Berthing imminent} =1 {Berthing in 1 min} other {Berthing in # min}}",
+    "etaHours": "{count, plural, =1 {In 1 h} other {In # h}}",
+    "etaDays": "{count, plural, =1 {Tomorrow} other {In # days}}",
+    "etaPassed": "Berthing overdue",
+    "etaUnknown": "ETA unknown",
+    "ownerInDefault": "Shipowner in default — {amount} unpaid. Departure subject to authorisation.",
+    "ownerClear": "Tax up to date · nothing to do",
+    "reportToAuthority": "Report to the authority"
   },
   "AdminEscalations": {
     "title": "Escalations",
@@ -3016,6 +3037,7 @@
       "vessels": "Vessels",
       "aircraft": "Aircraft",
       "fleet": "Fleet",
+      "myFleet": "Manage fleet",
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",
@@ -3061,7 +3083,26 @@
         "paidYtd": "Paid YTD"
       },
       "quickActions": "Quick actions",
-      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>."
+      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>.",
+      "verdict": "{count, plural, =0 {Nothing to handle today} =1 {1 thing to handle today} other {# things to handle today}}",
+      "context": "{owner} · current tax period",
+      "seeAll": "See all invoices",
+      "payAll": "Pay all · {amount}",
+      "emptyGood": "Nothing to handle. All your taxes are up to date.",
+      "more": "{count, plural, =1 {1 more due date} other {# more due dates}}",
+      "kpi": {
+        "outstanding": "Total outstanding",
+        "outstandingNote": "{count, plural, =0 {no open invoice} =1 {1 open invoice} other {# open invoices}}",
+        "vessels": "Active vessels",
+        "vesselsNote": "attached to your account",
+        "paidYtd": "Paid in {year}",
+        "paidYtdNote": "since January",
+        "wallet": "Wallet balance",
+        "walletNote": "available immediately"
+      },
+      "fleetTitle": "My fleet",
+      "openFleet": "Open My fleet",
+      "fleetSummary": "{count, plural, =0 {No vessel attached yet.} =1 {1 vessel attached to your account.} other {# vessels attached to your account.}}"
     },
     "vessels": {
       "title": "Vessels",
@@ -3287,10 +3328,13 @@
         "autoApply": "Auto-apply to invoices",
         "autoApplyOn": "Enabled",
         "autoApplyOff": "Disabled",
-        "topupCta": "Top up wallet"
+        "topupCta": "Top up wallet",
+        "lastTopup": "Last top-up on {date} · {amount}",
+        "noTopupYet": "No top-up yet.",
+        "refundCta": "Request a refund"
       },
       "predictionCard": {
-        "title": "Next 30 days",
+        "title": "Recommended provision",
         "estimate30d": "~{count} vessel passages → ~${amount} USD",
         "confidence": "Confidence: {level}",
         "confidenceLevel": {
@@ -3299,7 +3343,13 @@
           "high": "high"
         },
         "notEnoughData": "Not enough activity in the last 90 days to predict (< 5 alerts).",
-        "insufficientWarning": "Estimated need exceeds current balance — recommended top-up: ${amount}"
+        "insufficientWarning": "Estimated need exceeds current balance — recommended top-up: ${amount}",
+        "gapSentence": "{amount} short to cover the next 30 days of due dates.",
+        "covered": "Your balance covers the {amount} due over the next 30 days.",
+        "due30d": "Due within 30 d",
+        "currentBalance": "Current balance",
+        "toProvision": "To provision",
+        "provisionCta": "Provision {amount}"
       },
       "ledger": {
         "title": "Movements",
@@ -3308,7 +3358,9 @@
           "date": "Date",
           "amount": "Amount",
           "kind": "Kind",
-          "note": "Note"
+          "note": "Note",
+          "reference": "Reference",
+          "balance": "Balance"
         },
         "kind": {
           "TOPUP": "Top-up",
@@ -3317,6 +3369,12 @@
           "PROFORMA_APPLY": "Applied to invoice",
           "ADMIN_ADJUSTMENT": "Admin adjustment",
           "FX_DIFFERENCE": "FX difference"
+        },
+        "filterLabel": "Filter movements",
+        "direction": {
+          "all": "All",
+          "in": "Credits",
+          "out": "Debits"
         }
       },
       "topupReturn": {
@@ -3324,7 +3382,10 @@
         "cancel": "Top-up cancelled. Nothing was charged.",
         "pending": "Top-up is being verified. Your balance will update shortly.",
         "failed": "The top-up could not be completed. Nothing was charged — try again or choose another payment method."
-      }
+      },
+      "title": "Wallet",
+      "subtitle": "Balance of {amount} · recommended provision and movements",
+      "emptySubtitle": "Your wallet is empty. Top it up to credit your next invoices."
     },
     "notifications": {
       "title": "Notifications",
@@ -3407,6 +3468,131 @@
           "body": "An action is required on {invoice_ref}."
         }
       }
+    },
+    "queue": {
+      "title": "Carbon tax — {vessel}",
+      "fleetWide": "fleet",
+      "due": "due {date}",
+      "pay": "Pay",
+      "overdueBy": "{count, plural, =1 {Overdue · 1 d} other {Overdue · # d}}",
+      "dueToday": "Due today",
+      "inDays": "{count, plural, =1 {In 1 d} other {In # d}}",
+      "onCall": "On port call"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {No vessel attached} =1 {1 vessel} other {# vessels}} · {action, plural, =0 {none needs action} =1 {1 needs action} other {# need action}}",
+      "subtitle": "AIS positions and open invoices, matched vessel by vessel",
+      "tabsLabel": "Filter the fleet",
+      "tab": {
+        "all": "All",
+        "action": "Action required",
+        "inPort": "In port",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "status": {
+        "overdue": "Overdue",
+        "toPay": "To pay",
+        "proforma": "Pro-forma",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "col": {
+        "vessel": "Vessel",
+        "type": "Type",
+        "position": "Position",
+        "status": "Status",
+        "paidYtd": "Paid this year"
+      },
+      "detail": "Details",
+      "empty": "No vessel in this selection.",
+      "openVessel": "Open the file for {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Next due date",
+        "onCall": "on port call",
+        "emissions": "Emissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Due",
+        "estimate": "Estimate",
+        "payBefore": "Pay before {date}",
+        "payNow": "Pay now",
+        "seeProforma": "View the pro-forma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} to settle",
+      "context": "{count, plural, =0 {No open invoice} =1 {1 open invoice} other {# open invoices}}{overdue, plural, =0 {} =1 { · 1 overdue} other { · # overdue}}",
+      "payAll": "Pay all · {amount}",
+      "paySelection": "{count, plural, =1 {Pay the invoice · {amount}} other {Pay the # invoices · {amount}}}",
+      "tabsLabel": "Filter invoices",
+      "tab": {
+        "open": "Open",
+        "paid": "Paid",
+        "disputed": "Disputed",
+        "draft": "Drafts"
+      },
+      "col": {
+        "reference": "Reference",
+        "vessel": "Vessel",
+        "due": "Due date",
+        "amount": "Amount"
+      },
+      "select": "Select invoice {ref}",
+      "onCall": "on port call",
+      "empty": "No invoice in this family.",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Sovereign rate in force",
+      "totalDue": "Total due",
+      "remainingDue": "Remaining due",
+      "pay": "Pay {amount}",
+      "downloadPdf": "Download PDF",
+      "issuePdf": "Issue the PDF",
+      "issuing": "Issuing…",
+      "issuePdfHint": "No PDF has been issued for this charge yet — generate it now from the recorded amount.",
+      "dispute": "Dispute",
+      "attachProof": "Attach proof of payment",
+      "close": "Close",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      },
+      "methodLegend": "Payment method",
+      "method": {
+        "wire": {
+          "label": "Bank transfer",
+          "hint": "Confirmed within 24–48 h"
+        },
+        "wallet": {
+          "label": "AfricGreen wallet",
+          "covers": "Balance {balance} — sufficient",
+          "short": "Balance {balance} — insufficient"
+        },
+        "desk": {
+          "label": "Port cash desk",
+          "hint": "Cash · immediate receipt"
+        }
+      },
+      "receipt": "Receipt"
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
+      "required": "Action required",
+      "title": "Pay the carbon tax for {vessel}",
+      "fleetWide": "your fleet",
+      "meta": "Invoice {ref} · due date passed on {date}",
+      "terms": "USD · net 30",
+      "payNow": "Pay now",
+      "dispute": "Dispute"
     }
   },
   "AdminEquasis": {
@@ -3784,6 +3970,25 @@
       "fileTooBig": "File exceeds the 5MB limit.",
       "fileMime": "File type not supported (use PDF or image).",
       "submitFailed": "Could not record the cash payment."
+    },
+    "offlineBadge": "Offline",
+    "offlineNote": "Offline: the receipt is numbered locally and synced when the network returns.",
+    "methodLegend": "Tender received",
+    "method": {
+      "cash": "Cash",
+      "mobileMoney": "Mobile money",
+      "cheque": "Cheque",
+      "transfer": "Transfer"
+    },
+    "due": {
+      "invoice": "Selected invoice",
+      "allOpen": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "toCollect": "To collect"
+    },
+    "remainder": {
+      "exact": "Exact amount · no change due",
+      "change": "Change due: {amount}",
+      "short": "{amount} short — the balance will stay partial."
     }
   },
   "AdminWallets": {
@@ -4039,7 +4244,57 @@
     "remind_now_confirm": "Send a manual reminder to {debtor} for {ref}? This is sent immediately and cannot be undone.",
     "manual_group": "Consolidated recap — {count} invoices",
     "col_count_manual": "manual",
-    "col_count_manual_tooltip": "Manual reminders outside the ramp — last on {date}"
+    "col_count_manual_tooltip": "Manual reminders outside the ramp — last on {date}",
+    "verdict": "{count, plural, =0 {No file to move forward} =1 {1 file to move forward} other {# files to move forward}}",
+    "rule": "Rule in force: reminder at D+3, formal notice at D+15, authority escalation at D+45",
+    "treatQueue": "Work the queue",
+    "sortBy": "Sort by:",
+    "stage": {
+      "reminder": "Reminder — D+3",
+      "formal": "Formal notice — D+15",
+      "authority": "Authority escalation — D+45",
+      "settled": "Settled this week"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {View the reminder} other {View the # reminders}}",
+      "formal": "Prepare the letters",
+      "authority": "Refer to the port authority",
+      "settled": "View details"
+    },
+    "stageOthers": "{count, plural, =1 {+1 other} other {+# others}}",
+    "stageEmpty": "Nothing at this stage.",
+    "stageSettledAmount": "{amount} collected",
+    "funnelTruncated": "Totals and previews computed over the 1,000 largest files. The counts shown are exact.",
+    "priorityTitle": "Priority file — {debtor}",
+    "priorityOpenFile": "Open the full file",
+    "panelHistory": "History",
+    "panelExposure": "Exposure",
+    "panelNext": "Next action",
+    "consequenceBailiff": "Bailiff escalation: the debt moves to legal recovery, with a served formal notice and the invoice attached.",
+    "consequenceJudicial": "Judicial escalation: the debt goes to litigation, the last step of the ramp.",
+    "consequenceRamp": "The ramp does not allow escalation on this file yet: the D+45 reminder must go out before the bailiff.",
+    "grantPlan": "Grant a payment plan",
+    "grantPlanConfirm": "Record a payment plan granted to {debtor} for {ref}? The debt is marked as a payment promise, which suspends the reminder ramp.",
+    "remindersWithManual": "{count} · +{manual} manual",
+    "tier": {
+      "J3": "Reminder D+3",
+      "J7": "Reminder D+7",
+      "J15": "Formal notice D+15",
+      "J30": "Formal notice D+30",
+      "J45": "Pre-bailiff D+45",
+      "BAILIFF": "Bailiff",
+      "JUDICIAL": "Judicial",
+      "MANUAL": "Manual reminder"
+    },
+    "response": {
+      "SILENT": "No response",
+      "ACKNOWLEDGE": "Acknowledged",
+      "DISPUTE": "Dispute",
+      "PAYMENT_PROMISE": "Payment promise",
+      "PARTIAL_PAYMENT": "Partial payment",
+      "PAID": "Paid",
+      "REFUSED": "Refused"
+    }
   },
   "AdminVesselIdentity": {
     "title": "Vessel Identity",
@@ -4243,6 +4498,61 @@
       "repInviteName": "Representative name",
       "repInviteSubmit": "Create and attach",
       "repInviteHint": "Creates the account and attaches it. No email is sent — access goes through the next reminder."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
+      "context": "{outstanding} outstanding · {total} registered shipowners",
+      "export": "Export list",
+      "campaign": "Start a reminder campaign",
+      "sortedBy": "Sorted by: debt age",
+      "tabsLabel": "Filter shipowners"
+    },
+    "daysAgo": "{count, plural, =1 {1 day} other {# days}}",
+    "daysShort": "{count} d",
+    "manualReminder": "Manual reminder",
+    "noContact": "None",
+    "rowLabel": "Open the file for {name}",
+    "close": "Close",
+    "campaignTitle": "Start a reminder campaign",
+    "campaignBody": "{count, plural, =1 {Send the consolidated recap to 1 shipowner, covering {amount} outstanding} other {Send the consolidated recap to # shipowners, covering {amount} outstanding}}? Sending is immediate and irreversible.",
+    "campaignConfirm": "{count, plural, =1 {Send 1 reminder} other {Send # reminders}}",
+    "campaignDone": "{sent, plural, =0 {No reminder sent} =1 {1 reminder sent} other {# reminders sent}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}.",
+    "campaignAllFailed": "No reminder could be sent. Check the official email addresses before retrying.",
+    "campaignEmpty": "No remindable file in the current selection.",
+    "kpi": {
+      "outstanding": "Total outstanding",
+      "outstandingNote": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "aged": "Overdue > 30 d",
+      "agedNote": "{count, plural, =1 {1 shipowner} other {# shipowners}}",
+      "collected": "Collected",
+      "collectedNote": "portfolio to date",
+      "avgAge": "Average age",
+      "avgAgeNote": "across overdue files",
+      "recovery": "Recovery rate",
+      "recoveryNote": "collected / invoiced"
+    },
+    "tab": {
+      "defaulting": "In default",
+      "all": "All",
+      "escalated": "Escalated",
+      "kyc": "Incomplete KYC"
+    },
+    "status": {
+      "sanctioned": "Sanctioned",
+      "escalated": "Escalated",
+      "default": "In default",
+      "late": "Overdue",
+      "disputed": "Disputed",
+      "kyc": "Incomplete KYC",
+      "clear": "Up to date"
+    },
+    "action": {
+      "collections": "Formal notice",
+      "remind": "Remind",
+      "arbitrate": "Arbitrate",
+      "checkKyc": "Check KYC",
+      "file": "File",
+      "noEmail": "No official address — cannot send a reminder."
     }
   },
   "AdminReglements": {
@@ -4453,5 +4763,47 @@
     "cta_payment": "See my notices",
     "dismiss": "Dismiss",
     "help": "How it works"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Nothing awaiting arbitration} =1 {1 item awaiting arbitration} other {# items awaiting arbitration}}",
+    "breakdown": "{vessels} vessel identities · {agents} agents · {ports} origin ports",
+    "tabsLabel": "Filter by item type",
+    "kind": {
+      "vessel-identity": "Vessel identity",
+      "agent": "Agent",
+      "origin-port": "Origin port"
+    },
+    "approveConforming": "{count, plural, =0 {None conforming} =1 {Approve the conforming one} other {Approve the # conforming}}",
+    "noConforming": "No conforming item: every remaining file carries at least one discrepancy.",
+    "submitted": "submitted by {by} · {date}",
+    "colField": "Field",
+    "colDeclared": "Declared",
+    "colSource": "Official source",
+    "field": {
+      "email": "Official email",
+      "ownerName": "Legal name",
+      "country": "Country",
+      "manager": "Manager",
+      "rawDestination": "AIS destination",
+      "matchedPort": "Matched port",
+      "editDistance": "Edit distance"
+    },
+    "divergences": "{count, plural, =1 {1 discrepancy to arbitrate} other {# discrepancies to arbitrate}}",
+    "conforming": "No discrepancy — only fills in empty fields.",
+    "openSpecialised": "Open the dedicated screen",
+    "approve": "Approve",
+    "reject": "Reject",
+    "working": "Working…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "empty": "Nothing to arbitrate in this family.",
+    "errorOn": "{title}: {reason}",
+    "reasonRequired": "A reason of at least 3 characters is required.",
+    "rejectTitle": "Reject this item",
+    "rejectBody": "Reject \"{title}\"? The reason is recorded in the audit trail.",
+    "rejectReasonLabel": "Rejection reason",
+    "bulkTitle": "Approve the conforming items",
+    "bulkBody": "{count, plural, =1 {Approve 1 conforming item} other {Approve # conforming items}}? None of them carries a discrepancy: approving only fills in empty fields. Some approvals send an email.",
+    "bulkDone": "{done, plural, =0 {No item approved} =1 {1 item approved} other {# items approved}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}."
   }
 }

@@ -360,10 +360,10 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
             header: t('col.due'),
             className: 'text-right',
             sortable: true,
-            sortValue: (p) => p.tax_amount_usd - p.partial_paid_usd,
+            sortValue: (p) => p.outstanding_usd,
             render: (p) => (
                 <span className="text-xs tabular-nums font-semibold text-[var(--os-text-primary)]">
-                    {usd(p.tax_amount_usd - p.partial_paid_usd)}
+                    {usd(p.outstanding_usd)}
                 </span>
             ),
         },

@@ -92,7 +92,14 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 counts.failed += 1;
                 continue;
             }
-            const data = await composeOwnerStatement(admin, { shipownerId: owner.id, periodStart, periodEnd, now });
+            // asOf = periodEnd : le relevé de juillet porte le solde AU
+            // 31 JUILLET, pas celui du jour où le cron a tourné. Sans cet
+            // arrêté, un document intitulé « July 2026 » listait des factures
+            // émises en août, et son total n'était pas reproductible — deux
+            // générations du même relevé donnaient deux montants.
+            const data = await composeOwnerStatement(admin, {
+                shipownerId: owner.id, periodStart, periodEnd, now, asOf: periodEnd,
+            });
             if (data.openCount === 0) {
                 log.info('skipped_empty', { ownerId: owner.id });
                 counts.skipped += 1;
@@ -107,6 +114,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 payments: data.payments,
                 totalOutstandingUsd: data.totalOutstandingUsd,
                 paymentsInMonthUsd: data.paymentsInMonthUsd,
+                asOfIso: data.asOf.toISOString(),
             });
             const path = statementStoragePath(owner.id, periodStart);
 

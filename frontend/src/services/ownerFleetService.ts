@@ -1,4 +1,6 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
+import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 
 export interface FleetVessel {
     id: string;
@@ -14,9 +16,6 @@ export interface FleetVessel {
     canRemove: boolean;
 }
 
-/** Statuts qui laissent une somme à devoir. */
-const OUTSTANDING = ['PENDING', 'PARTIALLY_PAID', 'OVERDUE'];
-
 /**
  * Flotte de l'armateur de la session, avec ce qu'il faut pour décider des
  * gestes offerts à l'écran.
@@ -28,7 +27,9 @@ const OUTSTANDING = ['PENDING', 'PARTIALLY_PAID', 'OVERDUE'];
  *
  * `invoiceCount` compte les factures vivantes — payées comprises, car une
  * facture payée ancre elle aussi le navire au dossier. `outstandingUsd` ne
- * somme que ce qui reste dû.
+ * somme que ce qui reste dû, en retranchant les paiements CONFIRMED lus dans
+ * `payments` — jamais `partial_paid_usd`, que la migration 089 gèle à zéro sur
+ * toute facture en cours (cf. services/confirmedPayments).
  */
 export async function listOwnerFleet(
     supabase: SupabaseClient,
@@ -46,17 +47,26 @@ export async function listOwnerFleet(
 
     const { data: txns, error: tErr } = await supabase
         .from('transactions')
-        .select('vessel_id, tax_amount_usd, status')
+        .select('id, vessel_id, tax_amount_usd, partial_paid_usd, status')
         .in('vessel_id', rows.map((v) => String(v.id)))
         .neq('status', 'VOID');
     if (tErr) throw new Error(`factures de la flotte : ${tErr.message}`);
 
+    const txnRows = (txns ?? []) as Record<string, unknown>[];
+    const paidByTxn = await confirmedPaidUsdByTransaction(
+        supabase,
+        txnRows.map((t) => String(t.id)),
+    );
+
     const byVessel = new Map<string, { count: number; usd: number }>();
-    for (const t of (txns ?? []) as Record<string, unknown>[]) {
+    for (const t of txnRows) {
         const key = String(t.vessel_id);
         const acc = byVessel.get(key) ?? { count: 0, usd: 0 };
         acc.count += 1;
-        if (OUTSTANDING.includes(String(t.status))) acc.usd += Number(t.tax_amount_usd ?? 0);
+        acc.usd += outstandingUsd(
+            t as unknown as OutstandingColumns,
+            paidByTxn.get(String(t.id)) ?? 0,
+        );
         byVessel.set(key, acc);
     }
 

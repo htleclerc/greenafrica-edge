@@ -5,6 +5,7 @@ import { resolveInvoiceRecipients } from '@/services/invoiceIssuanceService';
 import { fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc } from '@/lib/jurisdictionName';
 import { notifyOwner } from '@/services/notificationService';
 import { sendProformaReminderEmail } from '@/services/emailService';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 import {
     dueTier, reminderTemplate, type ReminderTier, type DebtorResponseType,
 } from '@/services/collectionReminderService';
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
         .from('transactions')
         .select('id, invoice_ref, tax_amount_usd, vessel_name, status, created_at, shipowner_id, agent_profile_id, jurisdiction_id')
         .eq('document_type', 'PROFORMA')
-        .in('status', ['PENDING', 'OVERDUE'])
+        .in('status', ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'])
         .not('shipowner_id', 'is', null)
         .limit(ROW_LIMIT);
 
@@ -78,6 +79,21 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     }
 
     const proformas = (proformasRaw ?? []) as ProformaRow[];
+
+    // Ce qui reste du, lu dans les paiements CONFIRMED. Relancer sur
+    // `tax_amount_usd` reclamait le montant plein d'une facture deja reglee en
+    // partie — et `partial_paid_usd`, gelee par la mig 089, n'aurait rien
+    // corrige. Une lettre de recouvrement qui annonce un montant faux se
+    // retourne contre celui qui l'envoie.
+    let paidByTxn = new Map<string, number>();
+    try {
+        paidByTxn = await confirmedPaidUsdByTransaction(admin, proformas.map((p) => p.id));
+    } catch (e) {
+        // Sans cette lecture, tout montant annonce serait suspect : on ne
+        // relance pas plutot que de relancer a tort.
+        log.error('paid_amounts_unavailable', { error: e instanceof Error ? e.message : String(e) });
+        return NextResponse.json({ error: 'paid_amounts_unavailable' }, { status: 500 });
+    }
 
     for (const p of proformas) {
         counts.scanned += 1;
@@ -105,6 +121,14 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 now,
             });
             if (!tier) { counts.skipped += 1; continue; }
+
+            // Creance eteinte par les paiements alors que le statut n'a pas
+            // suivi (recompute rate, encaissement hors rail) : ne pas relancer.
+            if (Number(p.tax_amount_usd) - (paidByTxn.get(p.id) ?? 0) <= 0.005) {
+                log.info('reminder_skipped_settled', { txnId: p.id, tier });
+                counts.skipped += 1;
+                continue;
+            }
 
             // Destinataires : cascade armateur + copies juridiction/plateforme + huissier dès J45.
             const { data: owner } = p.shipowner_id
@@ -135,10 +159,11 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             const { templateId } = reminderTemplate(tier);
             const ageDays = ageInDays(p.created_at, now);
+            const outstandingUsd = Number(p.tax_amount_usd) - (paidByTxn.get(p.id) ?? 0);
             const bodyParams = {
                 transaction_id: p.id,
                 invoice_ref: p.invoice_ref,
-                amount_usd: p.tax_amount_usd,
+                amount_usd: outstandingUsd,
                 vessel_name: p.vessel_name,
                 tier,
                 age_days: ageDays,
@@ -154,7 +179,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 cc: recipients.cc,
                 recipientName,
                 invoiceRef: p.invoice_ref ?? '—',
-                amountUsd: p.tax_amount_usd,
+                amountUsd: outstandingUsd,
                 ageDays,
                 tier,
             });

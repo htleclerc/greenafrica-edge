@@ -182,7 +182,7 @@ export function AirlineDetail({ detail, canInvite, canAnonymize }: Props) {
             className: 'text-right',
             render: (p) => (
                 <span className="text-xs tabular-nums font-semibold text-[var(--os-text-primary)]">
-                    {usd(p.tax_amount_usd - p.partial_paid_usd)}
+                    {usd(p.outstanding_usd)}
                 </span>
             ),
         },

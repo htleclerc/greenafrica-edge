@@ -5,7 +5,7 @@ vi.mock('@/services/notificationService', () => ({ notifyOwner: notifyOwnerMock 
 vi.mock('@/services/statementService', () => ({
     periodBounds: () => ({ periodStart: new Date('2026-06-01T00:00:00Z'), periodEnd: new Date('2026-07-01T00:00:00Z'), label: 'June 2026' }),
     statementStoragePath: () => 'statements/own-1/2026-06.pdf',
-    composeOwnerStatement: vi.fn().mockResolvedValue({ openLines: [], payments: [], totalOutstandingUsd: 500, paymentsInMonthUsd: 0, openCount: 1 }),
+    composeOwnerStatement: vi.fn().mockResolvedValue({ openLines: [], payments: [], totalOutstandingUsd: 500, paymentsInMonthUsd: 0, openCount: 1, asOf: new Date('2026-07-01T00:00:00Z') }),
 }));
 vi.mock('@/services/invoiceService', () => ({ generateStatementPdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])) }));
 vi.mock('@/lib/jurisdictionName', () => ({ fetchJurisdictionName: vi.fn().mockResolvedValue('Republic of Somaliland') }));
@@ -97,9 +97,26 @@ describe('GET /api/cron/monthly-statements', () => {
         expect(notifyOwnerMock).not.toHaveBeenCalled();
     });
 
+    it('arrête le solde à la fin de la période, pas au jour du run', async () => {
+        // Un relevé « July 2026 » généré le 1er août doit porter le solde AU
+        // 31 JUILLET. Sans arrêté, il listait les factures émises depuis, et
+        // deux générations du même relevé donnaient deux totaux — un document
+        // comptable non reproductible.
+        const { client } = makeClient([
+            { id: 'own-1', name: 'Owner One', official_email: 'o1@x.com', total_outstanding_usd: 500 },
+        ]);
+        __setClientForTest(client);
+        await GET(req(`Bearer ${CRON_SECRET}`));
+
+        const arg = vi.mocked(composeOwnerStatement).mock.calls[0][1];
+        expect(arg.asOf).toBeInstanceOf(Date);
+        expect(arg.asOf!.toISOString()).toBe(arg.periodEnd.toISOString());
+    });
+
     it('saute un armateur dont le relevé composé n\'a rien à reporter (openCount 0)', async () => {
         vi.mocked(composeOwnerStatement).mockResolvedValueOnce({
             openLines: [], payments: [], totalOutstandingUsd: 0, paymentsInMonthUsd: 0, openCount: 0,
+            asOf: new Date('2026-07-01T00:00:00Z'),
         });
         const { client, captured } = makeClient([
             { id: 'own-1', name: 'Owner One', official_email: 'o1@x.com', total_outstanding_usd: 500 },

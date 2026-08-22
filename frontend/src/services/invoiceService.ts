@@ -922,6 +922,14 @@ export interface StatementData {
     payments: StatementPayment[];
     totalOutstandingUsd: number;
     paymentsInMonthUsd: number;
+    /**
+     * Date d'arrete du solde (ISO). Un total sans sa date d'arrete n'est pas
+     * verifiable : le lecteur ne peut pas savoir a quoi le comparer, ni le
+     * recalculer. Absent, le document reste lisible mais muet sur ce point.
+     */
+    asOfIso?: string;
+    /** Renseigne quand le consolide ne porte que sur un navire. */
+    vesselScope?: string | null;
 }
 
 export async function generateStatementPdf(data: StatementData): Promise<Uint8Array> {
@@ -948,11 +956,21 @@ export async function generateStatementPdf(data: StatementData): Promise<Uint8Ar
     doc.setTextColor(100, 116, 139); doc.setFontSize(10);
     doc.text(`Statement period: ${data.periodLabel}`, margin, 46);
 
+    let headerY = 46;
+    if (data.asOfIso) {
+        headerY += 5;
+        doc.text(`Balance as of: ${data.asOfIso.slice(0, 10)}`, margin, headerY);
+    }
+    if (data.vesselScope) {
+        headerY += 5;
+        doc.text(`Vessel: ${data.vesselScope}`, margin, headerY);
+    }
+
     // Informational disclaimer
     doc.setTextColor(148, 163, 184); doc.setFontSize(8);
-    doc.text('Informational account statement — not an invoice or a formal notice.', margin, 52);
+    doc.text('Informational account statement — not an invoice or a formal notice.', margin, headerY + 6);
 
-    let y = 62;
+    let y = headerY + 16;
 
     // Open pro-formas
     doc.setTextColor(13, 31, 24); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);

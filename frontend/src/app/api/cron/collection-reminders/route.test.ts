@@ -38,14 +38,36 @@ function req(auth: string | null): Request {
 // emailed_at sur owner_notifications.
 function makeClient(opts: {
     proformas?: Record<string, unknown>[];
+    payments?: Record<string, unknown>[];
+    paymentsError?: { message: string };
 }) {
     const captured = {
         reminderInserts: [] as Record<string, unknown>[],
         emailedAtUpdates: [] as { id: string; payload: Record<string, unknown> }[],
     };
     const proformas = opts.proformas ?? [];
+    const payments = opts.payments ?? [];
 
     const from = (table: string) => {
+        if (table === 'payments') {
+            // Encaissements confirmes, lus en un lot avant la boucle.
+            let rows = [...payments];
+            const chain: Record<string, unknown> = {};
+            chain.select = () => chain;
+            chain.in = (col: string, vals: unknown[]) => {
+                rows = rows.filter((r) => vals.includes(r[col]));
+                return chain;
+            };
+            chain.eq = (col: string, val: unknown) => {
+                rows = rows.filter((r) => r[col] === val);
+                return chain;
+            };
+            chain.then = (res: (v: unknown) => unknown) =>
+                Promise.resolve(
+                    opts.paymentsError ? { data: null, error: opts.paymentsError } : { data: rows, error: null },
+                ).then(res);
+            return chain;
+        }
         if (table === 'transactions') {
             // Chaîne alignée sur la route : .eq('document_type').in('status').not('shipowner_id').limit()
             return {
@@ -190,6 +212,69 @@ describe('GET /api/cron/collection-reminders', () => {
         const body = await res.json();
         expect(body.failed).toBe(1);
         expect(body.sent).toBe(0);
+    });
+
+    it('relance sur le reste dû, pas sur le montant plein de la facture', async () => {
+        // `partial_paid_usd` est gelée (mig 089) : la relance annonçait le
+        // montant plein d'une facture déjà réglée en partie. Une mise en
+        // demeure qui réclame ce qui a été payé se retourne contre son auteur.
+        const created = new Date(Date.now() - 15 * 86_400_000).toISOString();
+        const { client } = makeClient({
+            proformas: [{
+                id: 'txn-4', invoice_ref: 'PRO-2026-30-dddd', tax_amount_usd: 28999.99,
+                vessel_name: 'RASHA', status: 'PARTIALLY_PAID', created_at: created,
+                shipowner_id: 'own-4', agent_profile_id: null, jurisdiction_id: 'jur-so',
+            }],
+            payments: [{ transaction_id: 'txn-4', amount_usd_minor: 398512, status: 'CONFIRMED' }],
+        });
+        __setClientForTest(client);
+
+        await GET(req(`Bearer ${CRON_SECRET}`));
+        expect(sendProformaReminderEmailMock).toHaveBeenCalledWith(expect.objectContaining({
+            amountUsd: expect.closeTo(25014.87, 2),
+        }));
+        expect(notifyOwnerMock.mock.calls[0][1].params.amount_usd).toBeCloseTo(25014.87, 2);
+    });
+
+    it('ne relance pas une créance éteinte par les paiements', async () => {
+        // Statut resté en arrière (recompute manqué, encaissement hors rail) :
+        // le montant fait foi, pas le libellé.
+        const created = new Date(Date.now() - 45 * 86_400_000).toISOString();
+        const { client, captured } = makeClient({
+            proformas: [{
+                id: 'txn-5', invoice_ref: 'PRO-2026-30-eeee', tax_amount_usd: 500,
+                vessel_name: 'MV W', status: 'PENDING', created_at: created,
+                shipowner_id: 'own-5', agent_profile_id: null, jurisdiction_id: 'jur-so',
+            }],
+            payments: [{ transaction_id: 'txn-5', amount_usd_minor: 50000, status: 'CONFIRMED' }],
+        });
+        __setClientForTest(client);
+
+        const res = await GET(req(`Bearer ${CRON_SECRET}`));
+        const body = await res.json();
+        expect(sendProformaReminderEmailMock).not.toHaveBeenCalled();
+        expect(captured.reminderInserts).toHaveLength(0);
+        expect(body.skipped).toBe(1);
+    });
+
+    it('n envoie rien du tout si les encaissements sont illisibles', async () => {
+        // Relancer sans connaître ce qui a été payé, c'est accepter d'annoncer
+        // un montant faux à un débiteur. Mieux vaut ne pas relancer.
+        const created = new Date(Date.now() - 15 * 86_400_000).toISOString();
+        const { client, captured } = makeClient({
+            proformas: [{
+                id: 'txn-6', invoice_ref: 'PRO-2026-30-ffff', tax_amount_usd: 500,
+                vessel_name: 'MV V', status: 'PENDING', created_at: created,
+                shipowner_id: 'own-6', agent_profile_id: null, jurisdiction_id: 'jur-so',
+            }],
+            paymentsError: { message: 'timeout' },
+        });
+        __setClientForTest(client);
+
+        const res = await GET(req(`Bearer ${CRON_SECRET}`));
+        expect(res.status).toBe(500);
+        expect(sendProformaReminderEmailMock).not.toHaveBeenCalled();
+        expect(captured.reminderInserts).toHaveLength(0);
     });
 
     it('n\'écrit rien pour une pro-forma DISPUTED', async () => {

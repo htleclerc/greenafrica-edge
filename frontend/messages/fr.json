@@ -100,7 +100,8 @@
     "impact": "Impact",
     "resources": "Ressources",
     "about": "À Propos",
-    "partnership": "Partenariat"
+    "partnership": "Partenariat",
+    "nav_admin_validations": "Validations"
   },
   "Landing": {
     "badge": "PROTOCOLE D'INTELLIGENCE CARBONE SOUVERAIN",
@@ -703,7 +704,9 @@
     "nav_admin_invoices": "Factures",
     "nav_admin_collections": "Recouvrement",
     "nav_airlines": "Compagnies",
-    "nav_vessel_identity": "Identité des navires"
+    "nav_vessel_identity": "Identité des navires",
+    "theme_switch_to_light": "Passer en thème clair",
+    "theme_switch_to_dark": "Passer en thème sombre"
   },
   "AdminStaff": {
     "page_title": "Gestion du personnel",
@@ -1109,7 +1112,13 @@
     "simulator_air_aircraft_type": "Type d'avion",
     "simulator_air_lto_cycles": "Cycles LTO",
     "simulator_air_methodology_note": "Méthodologie ICAO LTO : émissions par cycle atterrissage-décollage (roulage, décollage, montée, approche sous 3000 ft).",
-    "simulator_air_emissions_label": "Émissions estimées"
+    "simulator_air_emissions_label": "Émissions estimées",
+    "settings_theme_mode": "Nuit ou jour",
+    "settings_theme_mode_desc": "Indépendant de l’habillage : choisissez la luminosité qui vous convient, quel que soit le thème visuel.",
+    "settings_theme_auto": "Automatique",
+    "settings_theme_dark": "Sombre",
+    "settings_theme_light": "Clair",
+    "settings_theme_auto_hint": "Suit l’habillage — actuellement : {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -2834,7 +2843,19 @@
       "cancel": "Annuler",
       "confirm": "Prendre en charge et générer le pro-forma",
       "claiming": "Prise en charge…"
-    }
+    },
+    "verdict": "{count, plural, =0 {Aucun navire attendu} =1 {1 navire attendu} other {# navires attendus}}",
+    "portLabel": "Port de Berbera",
+    "offline": "Hors ligne",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Accostage imminent} =1 {Accostage dans 1 min} other {Accostage dans # min}}",
+    "etaHours": "{count, plural, =1 {Dans 1 h} other {Dans # h}}",
+    "etaDays": "{count, plural, =1 {Demain} other {Dans # jours}}",
+    "etaPassed": "Accostage dépassé",
+    "etaUnknown": "ETA inconnue",
+    "ownerInDefault": "Armateur en défaut — {amount} impayés. Appareillage soumis à autorisation.",
+    "ownerClear": "Taxe à jour · rien à faire",
+    "reportToAuthority": "Signaler à l'autorité"
   },
   "AdminEscalations": {
     "title": "Escalades",
@@ -3016,6 +3037,7 @@
       "vessels": "Navires",
       "aircraft": "Aéronefs",
       "fleet": "Flotte",
+      "myFleet": "Gérer la flotte",
       "invoices": "Factures",
       "alerts": "Alertes",
       "signOut": "Se déconnecter",
@@ -3061,7 +3083,26 @@
         "paidYtd": "Payé YTD"
       },
       "quickActions": "Actions rapides",
-      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives."
+      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives.",
+      "verdict": "{count, plural, =0 {Rien à traiter aujourd'hui} =1 {1 chose à traiter aujourd'hui} other {# choses à traiter aujourd'hui}}",
+      "context": "{owner} · période fiscale en cours",
+      "seeAll": "Voir toutes les factures",
+      "payAll": "Payer tout · {amount}",
+      "emptyGood": "Rien à traiter. Toutes vos taxes sont à jour.",
+      "more": "{count, plural, =1 {1 autre échéance} other {# autres échéances}}",
+      "kpi": {
+        "outstanding": "Encours total",
+        "outstandingNote": "{count, plural, =0 {aucune facture ouverte} =1 {1 facture ouverte} other {# factures ouvertes}}",
+        "vessels": "Navires actifs",
+        "vesselsNote": "rattachés à votre compte",
+        "paidYtd": "Payé en {year}",
+        "paidYtdNote": "cumul depuis janvier",
+        "wallet": "Solde portefeuille",
+        "walletNote": "disponible immédiatement"
+      },
+      "fleetTitle": "Ma flotte",
+      "openFleet": "Ouvrir Ma flotte",
+      "fleetSummary": "{count, plural, =0 {Aucun navire rattaché pour l’instant.} =1 {1 navire rattaché à votre compte.} other {# navires rattachés à votre compte.}}"
     },
     "vessels": {
       "title": "Navires",
@@ -3287,10 +3328,13 @@
         "autoApply": "Imputation auto aux factures",
         "autoApplyOn": "Activé",
         "autoApplyOff": "Désactivé",
-        "topupCta": "Recharger le wallet"
+        "topupCta": "Recharger le wallet",
+        "lastTopup": "Dernier approvisionnement le {date} · {amount}",
+        "noTopupYet": "Aucun approvisionnement pour l’instant.",
+        "refundCta": "Demander un remboursement"
       },
       "predictionCard": {
-        "title": "30 prochains jours",
+        "title": "Provision recommandée",
         "estimate30d": "~{count} passages → ~${amount} USD",
         "confidence": "Confiance : {level}",
         "confidenceLevel": {
@@ -3299,7 +3343,13 @@
           "high": "élevée"
         },
         "notEnoughData": "Pas assez d'activité sur les 90 derniers jours pour prédire (< 5 alertes).",
-        "insufficientWarning": "Le besoin estimé dépasse le solde actuel — recharge recommandée : ${amount}"
+        "insufficientWarning": "Le besoin estimé dépasse le solde actuel — recharge recommandée : ${amount}",
+        "gapSentence": "Il manque {amount} pour couvrir les échéances des 30 prochains jours.",
+        "covered": "Votre solde couvre les {amount} d’échéances des 30 prochains jours.",
+        "due30d": "Échéances à 30 j",
+        "currentBalance": "Solde actuel",
+        "toProvision": "À provisionner",
+        "provisionCta": "Provisionner {amount}"
       },
       "ledger": {
         "title": "Mouvements",
@@ -3308,7 +3358,9 @@
           "date": "Date",
           "amount": "Montant",
           "kind": "Type",
-          "note": "Note"
+          "note": "Note",
+          "reference": "Référence",
+          "balance": "Solde"
         },
         "kind": {
           "TOPUP": "Recharge",
@@ -3317,6 +3369,12 @@
           "PROFORMA_APPLY": "Imputé à une facture",
           "ADMIN_ADJUSTMENT": "Ajustement admin",
           "FX_DIFFERENCE": "Écart de change"
+        },
+        "filterLabel": "Filtrer les mouvements",
+        "direction": {
+          "all": "Tous",
+          "in": "Entrées",
+          "out": "Sorties"
         }
       },
       "topupReturn": {
@@ -3324,7 +3382,10 @@
         "cancel": "Recharge annulée. Aucun montant n’a été prélevé.",
         "pending": "Recharge en cours de vérification. Votre solde sera mis à jour sous peu.",
         "failed": "La recharge n’a pas pu aboutir. Aucun montant n’a été prélevé — réessayez ou choisissez un autre moyen de paiement."
-      }
+      },
+      "title": "Portefeuille",
+      "subtitle": "Solde de {amount} · provision recommandée et mouvements",
+      "emptySubtitle": "Votre portefeuille est vide. Alimentez-le pour créditer vos prochaines factures."
     },
     "notifications": {
       "title": "Notifications",
@@ -3407,6 +3468,131 @@
           "body": "Une action est requise sur {invoice_ref}."
         }
       }
+    },
+    "queue": {
+      "title": "Taxe carbone — {vessel}",
+      "fleetWide": "flotte",
+      "due": "échéance {date}",
+      "pay": "Payer",
+      "overdueBy": "{count, plural, =1 {En retard · 1 j} other {En retard · # j}}",
+      "dueToday": "Échéance aujourd'hui",
+      "inDays": "{count, plural, =1 {Dans 1 j} other {Dans # j}}",
+      "onCall": "À l'escale"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {Aucun navire rattaché} =1 {1 navire} other {# navires}} · {action, plural, =0 {aucun n’exige d’action} =1 {1 exige une action} other {# exigent une action}}",
+      "subtitle": "Positions AIS et factures ouvertes, croisées navire par navire",
+      "tabsLabel": "Filtrer la flotte",
+      "tab": {
+        "all": "Tous",
+        "action": "Action requise",
+        "inPort": "En escale",
+        "compliant": "Conformes",
+        "exempt": "Exonérés"
+      },
+      "status": {
+        "overdue": "En retard",
+        "toPay": "À payer",
+        "proforma": "Proforma",
+        "compliant": "Conforme",
+        "exempt": "Exonéré"
+      },
+      "col": {
+        "vessel": "Navire",
+        "type": "Type",
+        "position": "Position",
+        "status": "Statut",
+        "paidYtd": "Payé cette année"
+      },
+      "detail": "Détail",
+      "empty": "Aucun navire dans cette sélection.",
+      "openVessel": "Ouvrir la fiche de {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Prochaine échéance",
+        "onCall": "à l’escale",
+        "emissions": "Émissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Dû",
+        "estimate": "Estimation",
+        "payBefore": "Payer avant le {date}",
+        "payNow": "Payer maintenant",
+        "seeProforma": "Voir la proforma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} à régler",
+      "context": "{count, plural, =0 {Aucune facture ouverte} =1 {1 facture ouverte} other {# factures ouvertes}}{overdue, plural, =0 {} =1 { · dont 1 en retard} other { · dont # en retard}}",
+      "payAll": "Payer tout · {amount}",
+      "paySelection": "{count, plural, =1 {Payer la facture · {amount}} other {Payer les # factures · {amount}}}",
+      "tabsLabel": "Filtrer les factures",
+      "tab": {
+        "open": "Ouvertes",
+        "paid": "Payées",
+        "disputed": "Contestées",
+        "draft": "Brouillons"
+      },
+      "col": {
+        "reference": "Référence",
+        "vessel": "Navire",
+        "due": "Échéance",
+        "amount": "Montant"
+      },
+      "select": "Sélectionner la facture {ref}",
+      "onCall": "à l’escale",
+      "empty": "Aucune facture dans cette famille.",
+      "status": {
+        "overdue": "En retard",
+        "dueSoon": "À payer",
+        "upcoming": "À venir",
+        "paid": "Payée"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Tarif souverain en vigueur",
+      "totalDue": "Total dû",
+      "remainingDue": "Reste dû",
+      "pay": "Payer {amount}",
+      "downloadPdf": "Télécharger PDF",
+      "issuePdf": "Émettre le PDF",
+      "issuing": "Émission…",
+      "issuePdfHint": "Aucun PDF n’a encore été émis pour cette facture — le générer maintenant depuis le montant enregistré.",
+      "dispute": "Contester",
+      "attachProof": "Joindre un justificatif",
+      "close": "Fermer",
+      "status": {
+        "overdue": "En retard",
+        "dueSoon": "À payer",
+        "upcoming": "À venir",
+        "paid": "Payée"
+      },
+      "methodLegend": "Moyen de paiement",
+      "method": {
+        "wire": {
+          "label": "Virement bancaire",
+          "hint": "Confirmation sous 24–48 h"
+        },
+        "wallet": {
+          "label": "Portefeuille AfricGreen",
+          "covers": "Solde {balance} — suffisant",
+          "short": "Solde {balance} — insuffisant"
+        },
+        "desk": {
+          "label": "Guichet du port",
+          "hint": "Espèces · reçu immédiat"
+        }
+      },
+      "receipt": "Reçu"
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {jour de retard} other {jours de retard}}",
+      "required": "Action requise",
+      "title": "Payer la taxe carbone de {vessel}",
+      "fleetWide": "votre flotte",
+      "meta": "Facture {ref} · échéance dépassée le {date}",
+      "terms": "USD · net 30",
+      "payNow": "Payer maintenant",
+      "dispute": "Contester"
     }
   },
   "AdminEquasis": {
@@ -3784,6 +3970,25 @@
       "fileTooBig": "Le fichier dépasse la limite de 5 Mo.",
       "fileMime": "Type de fichier non supporté (PDF ou image uniquement).",
       "submitFailed": "Impossible d'enregistrer le paiement espèces."
+    },
+    "offlineBadge": "Hors ligne",
+    "offlineNote": "Hors ligne : le reçu est numéroté localement et synchronisé au retour du réseau.",
+    "methodLegend": "Moyen reçu",
+    "method": {
+      "cash": "Espèces",
+      "mobileMoney": "Mobile money",
+      "cheque": "Chèque",
+      "transfer": "Virement"
+    },
+    "due": {
+      "invoice": "Facture retenue",
+      "allOpen": "{count, plural, =1 {1 facture ouverte} other {# factures ouvertes}}",
+      "toCollect": "À encaisser"
+    },
+    "remainder": {
+      "exact": "Solde exact · aucun reliquat",
+      "change": "À rendre : {amount}",
+      "short": "Il manque {amount} — le solde restera partiel."
     }
   },
   "AdminWallets": {
@@ -4039,7 +4244,57 @@
     "remind_now_confirm": "Envoyer une relance manuelle à {debtor} pour {ref} ? Cet envoi est immédiat et irréversible.",
     "manual_group": "Récapitulatif consolidé — {count} factures",
     "col_count_manual": "manuel",
-    "col_count_manual_tooltip": "Relances manuelles hors procédure — dernière le {date}"
+    "col_count_manual_tooltip": "Relances manuelles hors procédure — dernière le {date}",
+    "verdict": "{count, plural, =0 {Aucun dossier à faire avancer} =1 {1 dossier à faire avancer} other {# dossiers à faire avancer}}",
+    "rule": "Règle en vigueur : relance à J+3, mise en demeure à J+15, escalade autorité à J+45",
+    "treatQueue": "Traiter la file",
+    "sortBy": "Trier par :",
+    "stage": {
+      "reminder": "Relance — J+3",
+      "formal": "Mise en demeure — J+15",
+      "authority": "Escalade autorité — J+45",
+      "settled": "Réglés cette semaine"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {Voir la relance} other {Voir les # relances}}",
+      "formal": "Préparer les courriers",
+      "authority": "Saisir l'autorité portuaire",
+      "settled": "Voir le détail"
+    },
+    "stageOthers": "{count, plural, =1 {+1 autre} other {+# autres}}",
+    "stageEmpty": "Rien à cette étape.",
+    "stageSettledAmount": "{amount} encaissés",
+    "funnelTruncated": "Cumuls et aperçus calculés sur les 1 000 dossiers les plus lourds. Les comptes affichés, eux, sont exacts.",
+    "priorityTitle": "Dossier prioritaire — {debtor}",
+    "priorityOpenFile": "Ouvrir la fiche complète",
+    "panelHistory": "Historique",
+    "panelExposure": "Exposition",
+    "panelNext": "Action suivante",
+    "consequenceBailiff": "Escalade huissier : la créance passe au recouvrement légal, avec mise en demeure signifiée et facture jointe.",
+    "consequenceJudicial": "Escalade judiciaire : la créance part au contentieux, dernière étape de la rampe.",
+    "consequenceRamp": "La rampe n'autorise pas encore l'escalade sur ce dossier : la relance J45 doit partir avant l'huissier.",
+    "grantPlan": "Accorder un échéancier",
+    "grantPlanConfirm": "Enregistrer un échéancier accordé à {debtor} pour {ref} ? La créance est marquée comme promesse de paiement, ce qui suspend la rampe de relance.",
+    "remindersWithManual": "{count} · +{manual} manuelles",
+    "tier": {
+      "J3": "Relance J+3",
+      "J7": "Relance J+7",
+      "J15": "Mise en demeure J+15",
+      "J30": "Mise en demeure J+30",
+      "J45": "Pré-huissier J+45",
+      "BAILIFF": "Huissier",
+      "JUDICIAL": "Judiciaire",
+      "MANUAL": "Relance manuelle"
+    },
+    "response": {
+      "SILENT": "Sans réponse",
+      "ACKNOWLEDGE": "Accusé de réception",
+      "DISPUTE": "Contestation",
+      "PAYMENT_PROMISE": "Promesse de paiement",
+      "PARTIAL_PAYMENT": "Paiement partiel",
+      "PAID": "Payé",
+      "REFUSED": "Refus"
+    }
   },
   "AdminVesselIdentity": {
     "title": "Identité des navires",
@@ -4243,6 +4498,61 @@
       "repInviteName": "Nom du représentant",
       "repInviteSubmit": "Créer et rattacher",
       "repInviteHint": "Crée le compte et le rattache. Aucun e-mail n'est envoyé — l'accès passe par la relance suivante."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {Aucun armateur en défaut de paiement} =1 {1 armateur en défaut de paiement} other {# armateurs en défaut de paiement}}",
+      "context": "{outstanding} d'encours · {total} armateurs enregistrés",
+      "export": "Exporter la liste",
+      "campaign": "Lancer une campagne de relance",
+      "sortedBy": "Trier par : ancienneté de la dette",
+      "tabsLabel": "Filtrer les armateurs"
+    },
+    "daysAgo": "{count, plural, =1 {1 jour} other {# jours}}",
+    "daysShort": "{count} j",
+    "manualReminder": "Relance manuelle",
+    "noContact": "Aucun",
+    "rowLabel": "Ouvrir la fiche de {name}",
+    "close": "Fermer",
+    "campaignTitle": "Lancer une campagne de relance",
+    "campaignBody": "{count, plural, =1 {Envoyer le récapitulatif consolidé à 1 armateur, pour {amount} d'encours} other {Envoyer le récapitulatif consolidé à # armateurs, pour {amount} d'encours}} ? Les envois sont immédiats et irréversibles.",
+    "campaignConfirm": "{count, plural, =1 {Envoyer 1 relance} other {Envoyer # relances}}",
+    "campaignDone": "{sent, plural, =0 {Aucune relance envoyée} =1 {1 relance envoyée} other {# relances envoyées}}{failed, plural, =0 {} =1 {, 1 échec} other {, # échecs}}.",
+    "campaignAllFailed": "Aucune relance n'a pu partir. Vérifiez les adresses officielles avant de réessayer.",
+    "campaignEmpty": "Aucun dossier relançable dans la sélection courante.",
+    "kpi": {
+      "outstanding": "Encours total",
+      "outstandingNote": "{count, plural, =1 {1 facture ouverte} other {# factures ouvertes}}",
+      "aged": "En retard > 30 j",
+      "agedNote": "{count, plural, =1 {1 armateur} other {# armateurs}}",
+      "collected": "Encaissé",
+      "collectedNote": "cumul sur le portefeuille",
+      "avgAge": "Ancienneté moyenne",
+      "avgAgeNote": "sur les dossiers échus",
+      "recovery": "Taux de recouvrement",
+      "recoveryNote": "encaissé / facturé"
+    },
+    "tab": {
+      "defaulting": "En défaut",
+      "all": "Tous",
+      "escalated": "Escaladés",
+      "kyc": "KYC incomplet"
+    },
+    "status": {
+      "sanctioned": "Sanctionné",
+      "escalated": "Escaladé",
+      "default": "En défaut",
+      "late": "En retard",
+      "disputed": "Contesté",
+      "kyc": "KYC incomplet",
+      "clear": "À jour"
+    },
+    "action": {
+      "collections": "Mise en demeure",
+      "remind": "Relancer",
+      "arbitrate": "Arbitrer",
+      "checkKyc": "Vérifier KYC",
+      "file": "Fiche",
+      "noEmail": "Aucune adresse officielle — impossible de relancer."
     }
   },
   "AdminReglements": {
@@ -4453,5 +4763,47 @@
     "cta_payment": "Voir mes avis",
     "dismiss": "Masquer",
     "help": "Comment ça marche"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Rien en attente d'arbitrage} =1 {1 élément en attente d'arbitrage} other {# éléments en attente d'arbitrage}}",
+    "breakdown": "{vessels} identités navire · {agents} agents · {ports} ports d’origine",
+    "tabsLabel": "Filtrer par type d’élément",
+    "kind": {
+      "vessel-identity": "Identité navire",
+      "agent": "Agent",
+      "origin-port": "Port d’origine"
+    },
+    "approveConforming": "{count, plural, =0 {Aucun conforme} =1 {Approuver le conforme} other {Approuver les # conformes}}",
+    "noConforming": "Aucun élément conforme : chaque dossier restant porte au moins un écart.",
+    "submitted": "soumis par {by} · {date}",
+    "colField": "Champ",
+    "colDeclared": "Déclaré",
+    "colSource": "Source officielle",
+    "field": {
+      "email": "E-mail officiel",
+      "ownerName": "Raison sociale",
+      "country": "Pays",
+      "manager": "Gestionnaire",
+      "rawDestination": "Destination AIS",
+      "matchedPort": "Port rapproché",
+      "editDistance": "Distance d’édition"
+    },
+    "divergences": "{count, plural, =1 {1 écart à arbitrer} other {# écarts à arbitrer}}",
+    "conforming": "Aucun écart — ne fait que compléter des champs vides.",
+    "openSpecialised": "Ouvrir l’écran dédié",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "working": "En cours…",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "empty": "Rien à arbitrer dans cette famille.",
+    "errorOn": "{title} : {reason}",
+    "reasonRequired": "Un motif d’au moins 3 caractères est requis.",
+    "rejectTitle": "Rejeter cet élément",
+    "rejectBody": "Rejeter « {title} » ? Le motif est enregistré dans la piste d’audit.",
+    "rejectReasonLabel": "Motif du rejet",
+    "bulkTitle": "Approuver les éléments conformes",
+    "bulkBody": "{count, plural, =1 {Approuver 1 élément conforme} other {Approuver # éléments conformes}} ? Aucun d'eux ne porte d'écart : l'approbation ne fait que compléter des champs vides. Certaines approbations déclenchent un e-mail.",
+    "bulkDone": "{done, plural, =0 {Aucun élément approuvé} =1 {1 élément approuvé} other {# éléments approuvés}}{failed, plural, =0 {} =1 {, 1 échec} other {, # échecs}}."
   }
 }

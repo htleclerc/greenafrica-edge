@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { OPERATOR_NAV, vesselsNavLabelKey, isAirOnly, type OperatorMode } from './operatorNav';
+import { OPERATOR_NAV, operatorNavFor, vesselsNavLabelKey, isAirOnly, type OperatorMode } from './operatorNav';
 
 describe('OPERATOR_NAV', () => {
-    it('has exactly 8 items', () => {
-        expect(OPERATOR_NAV).toHaveLength(8);
+    it('has exactly 9 items', () => {
+        expect(OPERATOR_NAV).toHaveLength(9);
     });
 
     it('every item has key, href, and labelKey', () => {
@@ -28,6 +28,7 @@ describe('OPERATOR_NAV', () => {
         expect(keys).toEqual([
             'dashboard',
             'vessels',
+            'my-fleet',
             'invoices',
             'wallet',
             'simulator',
@@ -35,6 +36,28 @@ describe('OPERATOR_NAV', () => {
             'disputes',
             'notifications',
         ]);
+    });
+});
+
+describe('operatorNavFor', () => {
+    it('expose la gestion de flotte a un armateur maritime', () => {
+        // Le panneau libre-service existait deja, sans aucun lien vers lui :
+        // l'armateur ne pouvait ni renommer, ni retirer, ni contester un
+        // navire sans taper l'URL a la main.
+        const keys = operatorNavFor(['MARITIME']).map((i) => i.key);
+        expect(keys).toContain('my-fleet');
+        expect(operatorNavFor(['MARITIME', 'AIR']).map((i) => i.key)).toContain('my-fleet');
+    });
+
+    it('la retire a un exploitant exclusivement aerien', () => {
+        // listOwnerFleet ne lit que `vessels` : l'entree ouvrirait un ecran vide.
+        const nav = operatorNavFor(['AIR']);
+        expect(nav.map((i) => i.key)).not.toContain('my-fleet');
+        expect(nav).toHaveLength(OPERATOR_NAV.length - 1);
+    });
+
+    it('rend la liste complete quand les modes sont inconnus', () => {
+        expect(operatorNavFor([])).toEqual(OPERATOR_NAV);
     });
 });
 

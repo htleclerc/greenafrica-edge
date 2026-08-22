@@ -10,7 +10,11 @@ import { listOwnerFleet } from './ownerFleetService';
  * référence — la compter bloquerait le retrait de navires qui ne doivent plus
  * rien.
  */
-function supa(vessels: Record<string, unknown>[], txns: Record<string, unknown>[]) {
+function supa(
+    vessels: Record<string, unknown>[],
+    txns: Record<string, unknown>[],
+    payments: Record<string, unknown>[] = [],
+) {
     const make = (rows: Record<string, unknown>[]) => {
         let filtered = [...rows];
         const chain: Record<string, unknown> = {};
@@ -35,7 +39,11 @@ function supa(vessels: Record<string, unknown>[], txns: Record<string, unknown>[
         return chain;
     };
     return {
-        from: (t: string) => make(t === 'vessels' ? vessels : txns),
+        from: (t: string) => {
+            if (t === 'vessels') return make(vessels);
+            if (t === 'payments') return make(payments);
+            return make(txns);
+        },
     } as never;
 }
 
@@ -51,7 +59,7 @@ const VENIZ = {
 describe('listOwnerFleet', () => {
     it('interdit le retrait d’un navire facturé', async () => {
         const fleet = await listOwnerFleet(
-            supa([MAYAR], [{ vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING' }]),
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING' }]),
             'own-1',
         );
         expect(fleet[0]).toMatchObject({ name: 'MAYAR', invoiceCount: 1, canRemove: false });
@@ -67,7 +75,7 @@ describe('listOwnerFleet', () => {
         // Sans ce filtre, la pro-forma du seed passée en VOID lors de la
         // rebascule bloquerait a vie le retrait du navire.
         const fleet = await listOwnerFleet(
-            supa([MAYAR], [{ vessel_id: 'v1', tax_amount_usd: 28999.99, status: 'VOID' }]),
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 28999.99, status: 'VOID' }]),
             'own-1',
         );
         expect(fleet[0]).toMatchObject({ invoiceCount: 0, canRemove: true, outstandingUsd: 0 });
@@ -76,9 +84,9 @@ describe('listOwnerFleet', () => {
     it('ne compte dans le solde que ce qui reste dû', async () => {
         const fleet = await listOwnerFleet(
             supa([MAYAR], [
-                { vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING' },
-                { vessel_id: 'v1', tax_amount_usd: 10000, status: 'PAID' },
-                { vessel_id: 'v1', tax_amount_usd: 5000, status: 'OVERDUE' },
+                { id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING' },
+                { id: 'tx2', vessel_id: 'v1', tax_amount_usd: 10000, status: 'PAID' },
+                { id: 'tx3', vessel_id: 'v1', tax_amount_usd: 5000, status: 'OVERDUE' },
             ]),
             'own-1',
         );
@@ -86,6 +94,51 @@ describe('listOwnerFleet', () => {
         expect(fleet[0].invoiceCount).toBe(3);
         expect(fleet[0].outstandingUsd).toBeCloseTo(73832, 2);
         expect(fleet[0].canRemove).toBe(false);
+    });
+
+    it('retranche les reglements partiels deja encaisses', async () => {
+        // Cette ligne sommait le montant plein : un armateur ayant regle la
+        // moitie d'une facture voyait sur son portail une dette superieure a
+        // celle que son propre releve mensuel lui reclamait. Deux chiffres pour
+        // une meme creance, dont un faux.
+        const fleet = await listOwnerFleet(
+            supa([MAYAR], [
+                { id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, partial_paid_usd: 20000, status: 'PARTIALLY_PAID' },
+            ]),
+            'own-1',
+        );
+        expect(fleet[0].outstandingUsd).toBeCloseTo(48832, 2);
+        expect(fleet[0].canRemove).toBe(false);
+    });
+
+    it('retranche un paiement confirme, la ou vit vraiment l encaissement', async () => {
+        // En production, les 3 factures PARTIALLY_PAID portent
+        // partial_paid_usd = 0 : la migration 089 gele la colonne et la 051 ne
+        // l'ecrit jamais. Le reste du ne peut donc se lire que dans `payments`,
+        // sans quoi la plateforme reclame a l'armateur une somme qu'il a deja
+        // versee.
+        const fleet = await listOwnerFleet(
+            supa(
+                [MAYAR],
+                [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, partial_paid_usd: 0, status: 'PARTIALLY_PAID' }],
+                [{ transaction_id: 'tx1', amount_usd_minor: 2000000, status: 'CONFIRMED' }],
+            ),
+            'own-1',
+        );
+        expect(fleet[0].outstandingUsd).toBeCloseTo(48832, 2);
+    });
+
+    it('ignore un paiement qui n est pas confirme', async () => {
+        // Un virement annonce mais non encaisse n'eteint aucune dette.
+        const fleet = await listOwnerFleet(
+            supa(
+                [MAYAR],
+                [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, partial_paid_usd: 0, status: 'PENDING' }],
+                [{ transaction_id: 'tx1', amount_usd_minor: 2000000, status: 'INITIATED' }],
+            ),
+            'own-1',
+        );
+        expect(fleet[0].outstandingUsd).toBeCloseTo(68832, 2);
     });
 
     it('rend une flotte vide sans interroger les factures', async () => {
