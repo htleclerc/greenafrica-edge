@@ -23,6 +23,7 @@ import {
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
 import { getIssuerProfile } from '@/services/issuerProfileService';
+import { buildCalculationSteps } from '@/services/invoiceCalculationSteps';
 import { fetchJurisdictionMeta, fetchJurisdictionBillingCc } from '../lib/jurisdictionName';
 
 /**
@@ -286,7 +287,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     // ── 1. Reload the authoritative transaction ─────────────────────────
     const { data: tx, error: txErr } = await admin
         .from('transactions')
-        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id, shipowner_id, agent_profile_id')
+        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id, shipowner_id, agent_profile_id, breakdown_json')
         .eq('id', transactionId)
         .single();
     if (txErr || !tx) {
@@ -415,6 +416,36 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         debtorContact = [o?.official_email, o?.phone_e164].filter(Boolean).join(' · ') || null;
     }
 
+    // Gestionnaire ISM, quand une identite a ete appariee au navire (mig 115).
+    // `contact_blocked` porte la garde sanctions OFAC/UN : un candidat bloque
+    // ne voit pas ses contacts imprimes sur un document que nous diffusons.
+    // Une table absente ou en erreur ne doit pas empecher l'emission — le
+    // document imprime « — », ce que fait deja le gabarit.
+    let ismName: string | null = null;
+    let ismContact: string | null = null;
+    if (tx.vessel_id) {
+        const { data: identity } = await admin
+            .from('vessel_identity_candidates')
+            .select('ism_manager_name, ism_manager_email, manager_name, manager_email, manager_country, contact_blocked')
+            .eq('matched_vessel_id', tx.vessel_id)
+            .eq('status', 'MATCHED')
+            .order('matched_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        const id = identity as {
+            ism_manager_name?: string | null; ism_manager_email?: string | null;
+            manager_name?: string | null; manager_email?: string | null;
+            manager_country?: string | null; contact_blocked?: boolean | null;
+        } | null;
+        if (id && id.contact_blocked !== true) {
+            const name = id.ism_manager_name ?? id.manager_name ?? null;
+            ismName = name && id.manager_country && !id.ism_manager_name
+                ? `${name} (${id.manager_country})`
+                : name;
+            ismContact = id.ism_manager_email ?? id.manager_email ?? null;
+        }
+    }
+
     const invoiceData: InvoiceData = {
         invoiceRef,
         vesselName: tx.vessel_name,
@@ -445,7 +476,19 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
             ownerName,
             ownerAddress: debtorAddress,
             ownerContact: debtorContact,
+            ismName,
+            ismContact,
         },
+        // Chaine reellement appliquee par le moteur, quand la transaction la
+        // porte. Les lignes inserees directement en base n'ont pas de
+        // breakdown_json : le detail se limite alors a ce qui est opposable.
+        calculationSteps: buildCalculationSteps({
+            breakdown: (tx as { breakdown_json?: unknown }).breakdown_json ?? null,
+            emissionsTco2,
+            ratePerTco2: effectiveRate,
+            totalUsd,
+            decreeReference: issuer.decreeReference,
+        }),
     };
 
     let pdfBuffer: Uint8Array;
