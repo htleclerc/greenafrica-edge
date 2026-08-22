@@ -55,7 +55,7 @@ export interface IssuerProfile {
  * 2026-08-19 — c'est la même source que le seed de la mig 131, pas une
  * seconde vérité : si les deux divergent un jour, la base fait foi.
  */
-const FALLBACK: IssuerProfile = {
+export const DEFAULT_ISSUER_PROFILE: IssuerProfile = {
     issuerName: 'SOLIDE TECHNOLOGY (Concessionaire)',
     issuerLegalName: 'SOLIDE TECHNOLOGY LIMITED',
     issuerAddress: 'Masalaha Street, M.Haybe District, Hargeisa, Somaliland',
@@ -72,7 +72,7 @@ const FALLBACK: IssuerProfile = {
     paymentTermsDays: 45,
     latePenaltyUsd: 20000,
     disputePeriodDays: 10,
-    escalationLine: 'Reminder → formal notice (copy Direction) → bailiff Eidle Advocats + Antwerp Bar',
+    escalationLine: 'Reminder > formal notice (copy Direction) > bailiff Eidle Advocats + Antwerp Bar',
     bailiffName: 'Eidle Advocats + Antwerp Bar',
     legalBasisUrl: 'https://greengate.africa/legal-basis',
     bankAccounts: [{
@@ -186,10 +186,10 @@ export async function getIssuerProfile(
         .from('jurisdiction_issuer_profile')
         .select(COLUMNS);
 
-    if (error || !data) return FALLBACK;
+    if (error || !data) return DEFAULT_ISSUER_PROFILE;
 
     const rows = data as unknown as ProfileRow[];
-    const base = overlay(FALLBACK, rows.find((r) => r.jurisdiction_id === null) ?? null);
+    const base = overlay(DEFAULT_ISSUER_PROFILE, rows.find((r) => r.jurisdiction_id === null) ?? null);
     if (!jurisdictionId) return base;
     return overlay(base, rows.find((r) => r.jurisdiction_id === jurisdictionId) ?? null);
 }

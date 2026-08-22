@@ -148,7 +148,7 @@ SELECT
     45,
     20000.00,
     10,
-    'Reminder → formal notice (copy Direction) → bailiff Eidle Advocats + Antwerp Bar',
+    'Reminder > formal notice (copy Direction) > bailiff Eidle Advocats + Antwerp Bar',
     'Eidle Advocats + Antwerp Bar',
     'https://greengate.africa/legal-basis',
     '[

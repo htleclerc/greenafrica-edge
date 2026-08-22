@@ -22,6 +22,7 @@ import {
     type InvoiceBadge,
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
+import { getIssuerProfile } from '@/services/issuerProfileService';
 import { fetchJurisdictionMeta, fetchJurisdictionBillingCc } from '../lib/jurisdictionName';
 
 /**
@@ -393,6 +394,27 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         };
     }
 
+    // Profil emetteur : coordonnees, compte de collecte, delais et rampe de
+    // recouvrement imprimes en pied de page 1 et sur toute la page 2. Defaut
+    // plateforme surcharge par la juridiction (mig 131).
+    const issuer = await getIssuerProfile(admin, jurisdictionId);
+
+    // Contacts du debiteur. L'armateur est en base ; le gestionnaire ISM et le
+    // P&I Club ne le sont pas encore — la page 2 les marque « — » plutot que
+    // d'inventer, un pro-forma etant opposable.
+    let debtorAddress: string | null = null;
+    let debtorContact: string | null = null;
+    if (tx.shipowner_id) {
+        const { data: owner } = await admin
+            .from('shipowners')
+            .select('address, official_email, phone_e164')
+            .eq('id', tx.shipowner_id)
+            .maybeSingle();
+        const o = owner as { address?: string | null; official_email?: string | null; phone_e164?: string | null } | null;
+        debtorAddress = o?.address ?? null;
+        debtorContact = [o?.official_email, o?.phone_e164].filter(Boolean).join(' · ') || null;
+    }
+
     const invoiceData: InvoiceData = {
         invoiceRef,
         vesselName: tx.vessel_name,
@@ -413,6 +435,17 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         badge,
         verifyUrl,
         lineItems,
+        issuer,
+        voyage: {
+            // `port_call` est le seul element d'escale que la transaction
+            // porte ; ETD, ATA et ATD ne sont pas releves aujourd'hui.
+            arrivalPort: (tx.port_call as string | null) ?? null,
+        },
+        debtor: {
+            ownerName,
+            ownerAddress: debtorAddress,
+            ownerContact: debtorContact,
+        },
     };
 
     let pdfBuffer: Uint8Array;
