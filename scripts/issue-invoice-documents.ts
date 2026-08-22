@@ -28,6 +28,10 @@
 // du PDF. Les QR deja distribues continuent donc de verifier a l'identique.
 // L'objet de stockage, lui, est ecrase : l'ancien PDF disparait.
 //
+// L'origine des QR vient de --origin, sinon de NEXT_PUBLIC_APP_URL. Une origine
+// localhost est REFUSEE en execution (--allow-localhost-origin pour forcer) :
+// elle produirait des QR inexploitables sans que le PDF le signale.
+//
 // N'envoie JAMAIS d'e-mail : le backfill rattrape des documents manquants, il ne
 // relance pas les armateurs. La relance reste l'action « Print & Send » du staff.
 //
@@ -53,6 +57,7 @@ const flag = (name: string): string | undefined => {
 
 const RERENDER = args.includes('--rerender');
 const LIMIT = Number(flag('limit') ?? '0') || 0;
+const ALLOW_LOCAL_ORIGIN = args.includes('--allow-localhost-origin');
 const ONLY_ID = flag('id');
 const ACTOR_EMAIL = flag('actor');
 const ORIGIN = flag('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
@@ -150,6 +155,24 @@ async function main() {
 
     if (!EXECUTE) {
         console.log('\n🔍 Dry-run — relancez avec --execute pour émettre les documents.');
+        return;
+    }
+
+    // L'origine part de NEXT_PUBLIC_APP_URL, qui vaut localhost dans
+    // frontend/.env.local. Elle est encodee dans le QR /verify de chaque page 1
+    // — un document emis avec une origine locale porte un QR inexploitable, et
+    // rien dans le PDF ne le signale. Sur un lot de plusieurs centaines, la
+    // reprise coute un second passage complet.
+    if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(ORIGIN) && !ALLOW_LOCAL_ORIGIN) {
+        console.error(
+            `
+❌ Origine locale (${ORIGIN}) : les QR /verify seraient inexploitables.
+`
+            + `   Passez --origin https://greengate.africa, ou --allow-localhost-origin`
+            + ` si c'est bien un test local.
+`,
+        );
+        process.exitCode = 1;
         return;
     }
 
