@@ -151,6 +151,9 @@ async function createStripePayment(payment: PaymentRequest): Promise<PaymentResu
       'cancel_url': cancelUrl(payment.invoiceRef),
       'metadata[transaction_id]': payment.transactionId,
       'metadata[vessel_imo]': payment.metadata.vesselImo,
+      // Managed Payments (merchant of record) est activé par défaut côté
+      // compte et refuse `payment_method_types` — on l'écarte explicitement.
+      'managed_payments[enabled]': 'false',
       'payment_method_types[0]': 'card',
     }),
   });

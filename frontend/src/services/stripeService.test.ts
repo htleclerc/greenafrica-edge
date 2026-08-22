@@ -56,6 +56,34 @@ describe('stripeService', () => {
                 stripeSessionId: 'cs_test_123',
             });
             expect(checkoutSessionsCreate).toHaveBeenCalledTimes(1);
+            // Managed Payments desactive : sinon Stripe rejette
+            // payment_method_types et exige un tax_code produit.
+            expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    managed_payments: { enabled: false },
+                    payment_method_types: ['card'],
+                }),
+            );
+        });
+
+        it('returns a null PaymentIntent when Stripe has not created one yet', async () => {
+            // API 2026-04-22 : le PI n'existe qu'a la validation de l'acheteur.
+            checkoutSessionsCreate.mockResolvedValueOnce({
+                id: 'cs_test_123',
+                url: 'https://checkout.stripe.com/c/pay/cs_test_123',
+                payment_intent: null,
+            });
+            const { createCheckoutSession } = await import('./stripeService');
+            const result = await createCheckoutSession({
+                amountUsdMinor: 12345,
+                paymentId: 'pay-1',
+                invoiceId: 'inv-1',
+                shipownerId: 'so-1',
+                successUrl: 'https://app.example.com/owner/payment/success',
+                cancelUrl: 'https://app.example.com/owner/payment/cancel',
+            });
+            expect(result.stripePaymentIntentId).toBeNull();
+            expect(result.stripeSessionId).toBe('cs_test_123');
         });
 
         it('throws when STRIPE_SECRET_KEY is missing', async () => {

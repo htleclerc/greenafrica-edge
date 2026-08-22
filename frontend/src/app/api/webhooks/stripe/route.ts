@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient } from '@/lib/supabase/tenant';
-import { verifyWebhookSignature } from '@/services/stripeService';
+import { retrievePaymentIntent, verifyWebhookSignature } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 import { applyPaymentConfirmationEffects } from '@/services/paymentConfirmationEffects';
 import { scopedLogger } from '@/lib/logger';
@@ -15,6 +15,9 @@ const log = scopedLogger('stripe-webhook');
  * Dispatches on event type; idempotent on terminal payment statuses.
  *
  * Handled events (v1):
+ *   - checkout.session.completed    -> lie le PaymentIntent (cree seulement a
+ *     la validation depuis l'API 2026-04-22) a la ligne indexee sur `cs_...`,
+ *     puis CONFIRMED si `payment_status === 'paid'`.
  *   - payment_intent.succeeded      → UPDATE payments → CONFIRMED + capture
  *     stripe_charge_id, payment_method_type, fx_rate_source='STRIPE_SETTLE'
  *     into rail_details; puis délègue les effets (reçu PDF, e-mail,
@@ -52,6 +55,7 @@ function serviceClient(): SupabaseClient {
 interface PaymentRow {
     id: string;
     status: string;
+    external_reference: string | null;
     transaction_id: string | null;
     shipowner_id: string;
     amount_usd_minor: number;
@@ -65,12 +69,30 @@ async function findStripePayment(
 ): Promise<PaymentRow | null> {
     const { data, error } = await admin
         .from('payments')
-        .select('id, status, transaction_id, shipowner_id, amount_usd_minor, currency, rail_details')
+        .select('id, status, external_reference, transaction_id, shipowner_id, amount_usd_minor, currency, rail_details')
         .eq('external_reference', paymentIntentId)
         .eq('rail', 'STRIPE')
         .maybeSingle();
     if (error) throw error;
     return data as PaymentRow | null;
+}
+
+/**
+ * Resout la ligne `payments` d'une Checkout Session. Depuis l'API 2026-04-22
+ * le PaymentIntent n'existe pas a l'ouverture de la session : `initiatePayment`
+ * indexe alors la ligne sur `cs_...`, et `checkout.session.completed` la
+ * reindexe sur `pi_...`. On tente donc les deux references.
+ */
+async function findStripePaymentByRefs(
+    admin: SupabaseClient,
+    paymentIntentId: string | null,
+    sessionId: string,
+): Promise<PaymentRow | null> {
+    if (paymentIntentId) {
+        const byPi = await findStripePayment(admin, paymentIntentId);
+        if (byPi) return byPi;
+    }
+    return findStripePayment(admin, sessionId);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -108,6 +130,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             }
             case 'payment_intent.payment_failed': {
                 await handlePaymentFailed(
+                    admin,
+                    event.data.object as unknown as Record<string, unknown>,
+                );
+                break;
+            }
+            case 'checkout.session.completed': {
+                await handleCheckoutCompleted(
                     admin,
                     event.data.object as unknown as Record<string, unknown>,
                 );
@@ -152,6 +181,20 @@ async function handlePaymentSucceeded(
         log.warn('webhook_payment_not_found', { stripePiId: piId });
         return;
     }
+    await confirmStripePayment(admin, payment, pi);
+}
+
+/**
+ * Passe une ligne `payments` STRIPE a CONFIRMED a partir du PaymentIntent
+ * (objet du webhook `payment_intent.succeeded`, ou PI relu depuis l'API par
+ * `checkout.session.completed`). Idempotent sur les statuts terminaux.
+ */
+async function confirmStripePayment(
+    admin: SupabaseClient,
+    payment: PaymentRow,
+    pi: Record<string, unknown>,
+): Promise<void> {
+    const piId = (pi.id as string | undefined) ?? payment.external_reference ?? 'unknown';
     if (TERMINAL_STATUSES.has(payment.status)) {
         log.info('webhook_idempotent_skip', {
             stripePiId: piId,
@@ -288,14 +331,77 @@ async function handlePaymentFailed(
     }
 }
 
+/**
+ * `checkout.session.completed` — l'acheteur a valide sur Stripe Checkout.
+ *
+ * Deux roles :
+ *   1. reecrire `external_reference` (et `rail_details.stripe_payment_intent_id`)
+ *      avec le PaymentIntent, desormais cree seulement a cet instant ;
+ *   2. confirmer le paiement quand `payment_status === 'paid'`, sans attendre
+ *      `payment_intent.succeeded` (dont l'ordre d'arrivee n'est pas garanti —
+ *      s'il arrive d'abord, il ne trouve pas encore la ligne).
+ */
+async function handleCheckoutCompleted(
+    admin: SupabaseClient,
+    session: Record<string, unknown>,
+): Promise<void> {
+    const sessionId = session.id as string;
+    const piId = (session.payment_intent as string | null) ?? null;
+
+    const payment = await findStripePaymentByRefs(admin, piId, sessionId);
+    if (!payment) {
+        log.warn('webhook_payment_not_found', { stripeSessionId: sessionId });
+        return;
+    }
+
+    if (piId && payment.external_reference !== piId) {
+        const rebound: Record<string, unknown> = {
+            ...(payment.rail_details ?? {}),
+            stripe_payment_intent_id: piId,
+        };
+        const { error } = await admin
+            .from('payments')
+            .update({ external_reference: piId, rail_details: rebound })
+            .eq('id', payment.id);
+        if (error) throw error;
+        payment.external_reference = piId;
+        payment.rail_details = rebound;
+        log.info('webhook_payment_intent_bound', {
+            paymentId: payment.id,
+            stripeSessionId: sessionId,
+            stripePiId: piId,
+        });
+    }
+
+    if (session.payment_status !== 'paid') return;
+    if (TERMINAL_STATUSES.has(payment.status)) return;
+
+    // Le PI porte latest_charge / payment_method_types, absents de la session.
+    // Fail-soft : si la relecture echoue, on confirme quand meme le paiement.
+    let pi: Record<string, unknown> = { id: piId ?? undefined };
+    if (piId) {
+        try {
+            pi = (await retrievePaymentIntent(piId)) as unknown as Record<string, unknown>;
+        } catch (e) {
+            log.warn('webhook_pi_retrieve_failed', {
+                paymentId: payment.id,
+                stripePiId: piId,
+                error: e instanceof Error ? e.message : String(e),
+            });
+        }
+    }
+
+    await confirmStripePayment(admin, payment, pi);
+}
+
 async function handleCheckoutExpired(
     admin: SupabaseClient,
     session: Record<string, unknown>,
 ): Promise<void> {
-    const piId = session.payment_intent as string | null;
-    if (!piId) return;
+    const sessionId = session.id as string;
+    const piId = (session.payment_intent as string | null) ?? null;
 
-    const payment = await findStripePayment(admin, piId);
+    const payment = await findStripePaymentByRefs(admin, piId, sessionId);
     if (!payment) return;
     if (TERMINAL_STATUSES.has(payment.status)) return;
 
@@ -306,6 +412,7 @@ async function handleCheckoutExpired(
     if (error) throw error;
 
     log.info('webhook_checkout_expired', {
+        stripeSessionId: sessionId,
         stripePiId: piId,
         paymentId: payment.id,
     });

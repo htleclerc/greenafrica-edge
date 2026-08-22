@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { createPlatformClient } from '@/lib/supabase/tenant';
-import { retrievePaymentIntent } from '@/services/stripeService';
+import { retrieveCheckoutSession, retrievePaymentIntent } from '@/services/stripeService';
 import { resolveSystemActor } from '@/lib/system-actor';
 
 /**
@@ -13,6 +13,11 @@ import { resolveSystemActor } from '@/lib/system-actor';
  *
  * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. We
  * verify the header exactly; everything else returns 401.
+ *
+ * Reference externe : `initiatePayment` ecrit l'id de Checkout Session
+ * (`cs_...`) tant que Stripe n'a pas cree le PaymentIntent (API 2026-04-22).
+ * On relit alors la session pour recuperer le `pi_...` (et on reindexe la
+ * ligne au passage) ; une session `expired` sans PI vaut CANCELLED.
  *
  * Decision rules per row (rail=STRIPE, status=PROCESSING, age > 10 min):
  *   - pi.status === 'succeeded' → CONFIRMED (no receipt/email — the
@@ -87,7 +92,46 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         }
 
         try {
-            const pi = await retrievePaymentIntent(piId);
+            // `cs_...` : le PaymentIntent n'existait pas a l'ouverture de la
+            // session. On le resout via la session, et on reindexe la ligne.
+            let resolvedPiId = piId;
+            if (piId.startsWith('cs_')) {
+                const session = await retrieveCheckoutSession(piId);
+                const sessionPi = typeof session.payment_intent === 'string'
+                    ? session.payment_intent
+                    : session.payment_intent?.id ?? null;
+
+                if (!sessionPi) {
+                    // Pas de PI : la session est soit encore ouverte, soit
+                    // expiree sans paiement.
+                    if (session.status === 'expired'
+                        || new Date(row.created_at).getTime() < timeoutCutoffMs) {
+                        const { error: updErr } = await admin
+                            .from('payments')
+                            .update({
+                                status: 'CANCELLED',
+                                rejected_reason: 'Timeout: Stripe Checkout not completed within 1h',
+                            })
+                            .eq('id', row.id)
+                            .eq('status', 'PROCESSING');
+                        if (updErr) throw updErr;
+                        results.push({ id: row.id, outcome: 'CANCELLED_TIMEOUT' });
+                    } else {
+                        results.push({ id: row.id, outcome: 'STILL_PENDING' });
+                    }
+                    continue;
+                }
+
+                resolvedPiId = sessionPi;
+                const { error: refErr } = await admin
+                    .from('payments')
+                    .update({ external_reference: sessionPi })
+                    .eq('id', row.id)
+                    .eq('status', 'PROCESSING');
+                if (refErr) throw refErr;
+            }
+
+            const pi = await retrievePaymentIntent(resolvedPiId);
 
             if (pi.status === 'succeeded') {
                 const systemActorId = await resolveSystemActor(admin);

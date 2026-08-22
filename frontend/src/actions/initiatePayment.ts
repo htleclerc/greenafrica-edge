@@ -97,11 +97,15 @@ async function initiateStripe(
         cancelUrl: `${baseUrl}/owner/invoices?stripe=cancel`,
     });
 
+    // Le PaymentIntent n'existe pas encore à l'ouverture de la session (API
+    // 2026-04-22) : on indexe la ligne sur l'id de session, et le webhook
+    // `checkout.session.completed` réécrit `external_reference` avec le
+    // PaymentIntent dès qu'il est connu.
     const data = await insertPaymentRow(admin, {
         ...rowCommon,
         rail: 'STRIPE',
         status: 'PROCESSING',
-        external_reference: session.stripePaymentIntentId,
+        external_reference: session.stripePaymentIntentId ?? session.stripeSessionId,
         rail_details: {
             ...railDetails,
             stripe_session_id: session.stripeSessionId,
