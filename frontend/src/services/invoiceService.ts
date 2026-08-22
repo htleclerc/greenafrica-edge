@@ -177,7 +177,11 @@ export function buildVerifyUrl(
   const resolved =
     options?.origin
     || process.env.NEXT_PUBLIC_APP_URL
-    || (typeof window !== 'undefined' ? window.location.origin : '');
+    || (typeof window !== 'undefined' ? window.location.origin : '')
+    // Dernier recours : une URL ABSOLUE. Un QR code ne se scanne pas en
+    // relatif — sans origine, « /verify/REF » sortait imprimé tel quel et le
+    // telephone n'avait rien a ouvrir.
+    || 'http://localhost:3300';
   const base = resolved.replace(/\/+$/, '');
   const path = `${base}/verify/${encodeURIComponent(invoiceRef)}`;
   if (options?.contentHash && options?.signature) {

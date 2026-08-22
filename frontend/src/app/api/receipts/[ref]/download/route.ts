@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const ADMIN_ROLES = new Set(['FINANCE_ADMIN', 'SUPERADMIN']);
 
@@ -43,11 +44,18 @@ export async function GET(
         if (!ownerLink) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Issue 5-minute signed URL
-    const { data: signed, error } = await supabase.storage
+    // Le bucket `documents` est prive depuis la migration 017 : la propriete
+    // est prouvee ci-dessus avec le client RLS, mais l'URL signee se mint avec
+    // le client service — meme decoupage que /api/statements/[id]/download.
+    const admin = createPlatformClient();
+    const { data: signed, error } = await admin.storage
         .from('documents')
         .createSignedUrl(payment.receipt_storage_path as string, 300);
     if (error || !signed) {
+        console.error(
+            `[Receipt Download] signedUrl failed for ${payment.receipt_storage_path}:`,
+            error?.message,
+        );
         return NextResponse.json({ error: 'Could not sign URL' }, { status: 500 });
     }
 
