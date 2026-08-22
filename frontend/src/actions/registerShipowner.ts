@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { enforceRateLimit } from '@/lib/rateLimit';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
 const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
@@ -201,7 +202,7 @@ async function insertPendingReview(
     supabase: SupabaseClient,
     data: RegisterShipownerInput,
 ): Promise<void> {
-    await supabase.from('shipowners').insert({
+    const { data: created } = await supabase.from('shipowners').insert({
         name: data.name,
         imo_company_no: data.imo_company_no,
         country_code: data.country_code,
@@ -215,7 +216,20 @@ async function insertPendingReview(
         proof_doc_type: data.proof_doc_type,
         kyc_level_b_completed_at: new Date().toISOString(),
         account_state: 'PENDING_REVIEW',
-    });
+    }).select('id, jurisdiction_id').maybeSingle();
     // No audit_log — anonymous user violates NOT NULL on user_id.
     // The shipowners row's created_at + account_state IS the audit trail.
+
+    // La juridiction vient du DEFAULT de colonne tant que le signup est
+    // mono-pays ; on la relit plutôt que de la supposer.
+    const row = created as { id: string; jurisdiction_id: string | null } | null;
+    if (row?.jurisdiction_id) {
+        await notifyStaffSafe(supabase, {
+            jurisdictionId: row.jurisdiction_id,
+            kind: 'REGISTRATION_SUBMITTED',
+            params: { org: data.name },
+            deepLink: '/admin/registrations',
+            dedupKey: row.id,
+        });
+    }
 }

@@ -90,3 +90,53 @@ export function sortNotifications(items: readonly AppNotification[]): AppNotific
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 }
+
+/** Une ligne de `v_staff_notifications` (mig 133). */
+export interface StaffNotificationRow {
+    id: string;
+    kind: string;
+    title_key: string;
+    body_key: string;
+    body_params: Record<string, unknown>;
+    deep_link: string | null;
+    read_at: string | null;
+    created_at: string;
+}
+
+/**
+ * Famille visuelle d'un fait staff.
+ *
+ * Elle suit la nature du geste attendu, pas la table d'origine : un
+ * encaissement au guichet et une réponse de débiteur touchent tous deux au rail
+ * monétaire, une inscription et une validation relèvent de l'arbitrage.
+ */
+export function typeForStaffKind(kind: string): NotificationType {
+    switch (kind) {
+        case 'VALIDATION_PENDING':
+        case 'REGISTRATION_SUBMITTED':
+            return 'registration';
+        case 'COLLECTION_ESCALATED':
+        case 'DISPUTE_OPENED':
+            return 'compliance';
+        case 'DEBTOR_RESPONDED':
+        case 'CASH_PAYMENT_RECORDED':
+            return 'payment';
+        default:
+            return 'system';
+    }
+}
+
+/** Convertit une ligne staff au format de la cloche. */
+export function staffRowToNotification(row: StaffNotificationRow): AppNotification {
+    return {
+        id: row.id,
+        type: typeForStaffKind(row.kind),
+        titleKey: row.title_key,
+        messageKey: row.body_key,
+        messageParams: sanitizeParams(row.body_params),
+        createdAt: row.created_at,
+        read: row.read_at !== null,
+        href: row.deep_link ?? undefined,
+    };
+}
+

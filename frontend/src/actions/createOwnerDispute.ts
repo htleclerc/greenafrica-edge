@@ -2,6 +2,8 @@
 
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
+import { createPlatformClient } from '@/lib/supabase/tenant';
 
 const REASONS = [
     'EMISSION_CALCULATION',
@@ -55,7 +57,7 @@ export async function createOwnerDispute(
     // Fetch the transaction to get vessel_id + amount. RLS scopes to our own.
     const { data: txn, error: txnErr } = await supabase
         .from('transactions')
-        .select('id, vessel_id, tax_amount_usd')
+        .select('id, vessel_id, tax_amount_usd, jurisdiction_id, invoice_ref, shipowner:shipowners (name)')
         .eq('id', parsed.data.transactionId)
         .single();
     if (txnErr || !txn) {
@@ -78,6 +80,27 @@ export async function createOwnerDispute(
 
     if (error) {
         return { ok: false, reason: error.message };
+    }
+
+    // L'action tourne sous le client de session d'un ARMATEUR : il n'a aucun
+    // droit d'écriture sur staff_notifications (mig 133, aucune policy INSERT).
+    // L'émission passe donc par le client plateforme.
+    const t = txn as unknown as {
+        jurisdiction_id: string | null; invoice_ref: string | null;
+        shipowner: { name: string } | { name: string }[] | null;
+    };
+    if (t.jurisdiction_id) {
+        const owner = Array.isArray(t.shipowner) ? t.shipowner[0] : t.shipowner;
+        await notifyStaffSafe(createPlatformClient(), {
+            jurisdictionId: t.jurisdiction_id,
+            kind: 'DISPUTE_OPENED',
+            params: {
+                debtor: owner?.name ?? '\u2014',
+                ref: t.invoice_ref ?? dispute.ref ?? parsed.data.transactionId.slice(0, 8),
+            },
+            deepLink: '/dashboard/disputes',
+            dedupKey: dispute.id,
+        });
     }
 
     return { ok: true, disputeId: dispute.id, ref: dispute.ref };

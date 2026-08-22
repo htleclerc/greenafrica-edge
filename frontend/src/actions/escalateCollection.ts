@@ -9,6 +9,7 @@ import {
     fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc, fetchJurisdictionName,
 } from '@/lib/jurisdictionName';
 import { sendCollectionEscalationEmail } from '@/services/emailService';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const STAFF_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'];
 
@@ -128,6 +129,19 @@ export async function escalateCollection(
         // l'enregistrer — ne pas la maquiller en doublon.
         if (insErr.code === '23505') return { ok: false, reason: `already escalated to ${tier}` };
         return { ok: false, reason: `notice sent but ledger write failed: ${insErr.message}` };
+    }
+
+    // La notification suit l'écriture du registre, jamais avant : on ne
+    // signale que ce qui est effectivement tracé. La clé de dédup porte le
+    // palier — réescalader au même palier ne renotifie pas.
+    if (jurisdictionId) {
+        await notifyStaffSafe(platform, {
+            jurisdictionId,
+            kind: 'COLLECTION_ESCALATED',
+            params: { debtor: owner?.name ?? invoiceRef, ref: invoiceRef, tier },
+            deepLink: '/admin/collections',
+            dedupKey: `${transactionId}:${tier}`,
+        });
     }
 
     revalidatePath('/admin/collections');

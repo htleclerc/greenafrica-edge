@@ -4815,5 +4815,34 @@
     "bulkTitle": "Approuver les éléments conformes",
     "bulkBody": "{count, plural, =1 {Approuver 1 élément conforme} other {Approuver # éléments conformes}} ? Aucun d'eux ne porte d'écart : l'approbation ne fait que compléter des champs vides. Certaines approbations déclenchent un e-mail.",
     "bulkDone": "{done, plural, =0 {Aucun élément approuvé} =1 {1 élément approuvé} other {# éléments approuvés}}{failed, plural, =0 {} =1 {, 1 échec} other {, # échecs}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "Nouvel élément à arbitrer",
+        "body": "{subject} attend une décision dans la file de validation."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "Nouvelle demande d’inscription",
+        "body": "{org} a déposé une demande d’accès."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "Dossier escaladé",
+        "body": "{debtor} — {ref} est passé au palier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Réponse d’un débiteur",
+        "body": "Réponse « {response} » enregistrée sur un dossier au palier {tier}. La rampe est suspendue."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Encaissement au guichet",
+        "body": "{amount} encaissés pour {debtor}, en attente de validation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Facture contestée",
+        "body": "{debtor} conteste la facture {ref}."
+      }
+    },
+    "empty": "Rien de neuf."
   }
 }

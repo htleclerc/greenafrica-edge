@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/client';
 import { markNotificationRead } from '@/actions/markNotificationRead';
 import { markAllNotificationsRead } from '@/actions/markAllNotificationsRead';
 import {
+    markStaffNotificationRead, markAllStaffNotificationsRead,
+} from '@/actions/markStaffNotificationsRead';
+import { staffRowToNotification, type StaffNotificationRow } from '@/lib/notifications';
+import {
     ownerRowToNotification, sortNotifications,
     type AppNotification, type OwnerNotificationRow,
 } from '@/lib/notifications';
@@ -151,105 +155,45 @@ function buildDemoNotifications(): AppNotification[] {
     return sortNotifications(notifications);
 }
 
-// ── Real notifications (derived from DB state) ──────────────────────────────
+// ── Notifications du staff (mig 133) ────────────────────────────────────────
 
-async function fetchRealNotifications(supabase: ReturnType<typeof createClient>): Promise<{
-    notifications: AppNotification[];
-    pendingRegistrations: number;
-}> {
-    const notifications: AppNotification[] = [];
-
-    // 1. Pending registrations
-    const { data: regs, count: regCount } = await supabase
-        .from('registration_requests')
-        .select('id, contact_name, org_name, created_at', { count: 'exact' })
-        .eq('status', 'PENDING')
+/**
+ * Lit le fil du staff.
+ *
+ * `v_staff_notifications` est une vue `security_invoker` : les policies de la
+ * mig 133 s'appliquent, elle ne rend donc que les faits de la juridiction de
+ * l'agent et adresses a son role, avec SON etat de lecture. Un client de
+ * session suffit — pas de bascule service-role.
+ */
+async function fetchStaffNotifications(
+    supabase: ReturnType<typeof createClient>,
+): Promise<AppNotification[]> {
+    const { data, error } = await supabase
+        .from('v_staff_notifications')
+        .select('id, kind, title_key, body_key, body_params, deep_link, read_at, created_at')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(30);
+    if (error) throw new Error(`staff notifications: ${error.message}`);
+    return sortNotifications(
+        ((data ?? []) as unknown as StaffNotificationRow[]).map(staffRowToNotification),
+    );
+}
 
-    const pendingRegistrations = regCount ?? 0;
-
-    if (regs) {
-        for (const reg of regs) {
-            const row = reg as Record<string, unknown>;
-            notifications.push({
-                id: `reg-${row.id}`,
-                type: 'registration',
-                titleKey: derived('notif_registration_title'),
-                messageKey: derived('notif_registration_msg'),
-                messageParams: { org: String(row.org_name) },
-                createdAt: row.created_at as string,
-                read: false,
-                href: '/dashboard/validations',
-            });
-        }
-    }
-
-    // 2. Overdue transactions
-    try {
-        const { data: overdue } = await supabase
-            .from('transactions')
-            .select('id, vessel_name, tax_amount_usd, created_at')
-            .eq('status', 'OVERDUE')
-            .order('created_at', { ascending: false })
-            .limit(3);
-
-        if (overdue) {
-            for (const txn of overdue) {
-                const row = txn as Record<string, unknown>;
-                notifications.push({
-                    id: `txn-${row.id}`,
-                    type: 'payment',
-                    titleKey: derived('notif_overdue_title'),
-                    messageKey: derived('notif_overdue_msg'),
-                    messageParams: {
-                        vessel: String(row.vessel_name),
-                        amount: Number(row.tax_amount_usd).toLocaleString(),
-                    },
-                    createdAt: row.created_at as string,
-                    read: false,
-                    href: '/dashboard/invoices',
-                });
-            }
-        }
-    } catch {
-        // transactions table may not exist yet
-    }
-
-    // 3. Non-compliant vessels
-    try {
-        const { data: nonCompliant } = await supabase
-            .from('vessels')
-            .select('id, name, imo_number, compliance_status, updated_at')
-            .in('compliance_status', ['NON_COMPLIANT', 'PAYMENT_DUE'])
-            .order('updated_at', { ascending: false })
-            .limit(3);
-
-        if (nonCompliant) {
-            for (const v of nonCompliant) {
-                const row = v as Record<string, unknown>;
-                const isNonCompliant = row.compliance_status === 'NON_COMPLIANT';
-                notifications.push({
-                    id: `vessel-${row.id}`,
-                    type: 'compliance',
-                    titleKey: isNonCompliant ? derived('notif_noncompliant_title') : derived('notif_payment_due_title'),
-                    messageKey: isNonCompliant ? derived('notif_noncompliant_msg') : derived('notif_payment_due_msg'),
-                    messageParams: {
-                        vessel: String(row.name),
-                        imo: String(row.imo_number ?? ''),
-                        amount: '0',
-                    },
-                    createdAt: row.updated_at as string,
-                    read: false,
-                    href: '/dashboard/vessels',
-                });
-            }
-        }
-    } catch {
-        // vessels table may not exist yet
-    }
-
-    return { notifications: sortNotifications(notifications), pendingRegistrations };
+/**
+ * Compte les inscriptions en attente, pour la pastille de la barre laterale.
+ *
+ * C'est un compte de travail restant, pas un evenement : il se derive
+ * legitimement de l'etat courant, la ou la cloche ne montre plus que des faits
+ * datés (mig 133).
+ */
+async function fetchPendingRegistrations(
+    supabase: ReturnType<typeof createClient>,
+): Promise<number> {
+    const { count } = await supabase
+        .from('registration_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'PENDING');
+    return count ?? 0;
 }
 
 // ── Notifications d'armateur (vraies lignes persistees) ─────────────────────
@@ -317,10 +261,14 @@ export function useNotifications(): NotificationsResult {
             }
 
             const supabase = createClient();
-            const { notifications: n, pendingRegistrations: pending } =
-                await fetchRealNotifications(supabase);
+            const [rows, pending] = await Promise.all([
+                fetchStaffNotifications(supabase).catch(() => [] as AppNotification[]),
+                fetchPendingRegistrations(supabase).catch(() => 0),
+            ]);
             if (cancelled) return;
-            setNotifications(applyReadState(n, readIdsRef.current));
+            // Le lu vient de `staff_notification_reads` : plus rien a rejouer
+            // depuis le navigateur, contrairement aux alertes dérivées d'avant.
+            setNotifications(rows);
             setPendingRegistrations(pending);
         }
 
@@ -331,25 +279,36 @@ export function useNotifications(): NotificationsResult {
 
     const markRead = React.useCallback((id: string) => {
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        // Persistance serveur des deux côtés ; l'échec est tracé, il n'interrompt
+        // pas la lecture.
         if (isOperator) {
-            // Persistance serveur ; l'echec est trace, il n'interrompt pas la lecture.
             void markNotificationRead({ notificationId: id })
                 .catch((e) => console.error('[useNotifications] markNotificationRead:', e));
-        } else {
+        } else if (isDemo) {
+            // Les notifications de démonstration sont synthétiques : aucune table
+            // derrière elles, leur lu ne peut vivre que dans le navigateur.
             readIdsRef.current = persistReadIds([id]);
+        } else {
+            void markStaffNotificationRead({ notificationId: id })
+                .catch((e) => console.error('[useNotifications] markStaffNotificationRead:', e));
         }
-    }, [isOperator]);
+    }, [isOperator, isDemo]);
 
     const markAllRead = React.useCallback(() => {
         setNotifications((prev) => {
-            if (!isOperator) readIdsRef.current = persistReadIds(prev.map((n) => n.id));
+            if (!isOperator && isDemo) {
+                readIdsRef.current = persistReadIds(prev.map((n) => n.id));
+            }
             return prev.map((n) => ({ ...n, read: true }));
         });
         if (isOperator) {
             void markAllNotificationsRead()
                 .catch((e) => console.error('[useNotifications] markAllNotificationsRead:', e));
+        } else if (!isDemo) {
+            void markAllStaffNotificationsRead()
+                .catch((e) => console.error('[useNotifications] markAllStaffNotificationsRead:', e));
         }
-    }, [isOperator]);
+    }, [isOperator, isDemo]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 

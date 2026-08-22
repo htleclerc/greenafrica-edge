@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const schema = z.object({
     imoNumber: z.string().trim().min(3).max(20),
@@ -83,7 +84,9 @@ export async function createEquasisProposal(
     let shipownerId: string | null = null;
     const { data: vessel } = await admin
         .from('vessels')
-        .select('shipowner_id')
+        // jurisdiction_id sert à router la notification : la file de propositions
+        // est globale, le navire est le seul à porter un pays ici.
+        .select('shipowner_id, jurisdiction_id')
         .eq('imo_number', parsed.data.imoNumber)
         .maybeSingle();
     if (vessel?.shipowner_id) {
@@ -106,6 +109,20 @@ export async function createEquasisProposal(
 
     if (error) {
         return { ok: false, reason: error.message };
+    }
+
+    // Sans navire rattaché, aucune juridiction : la proposition reste visible à
+    // l'écran (la file est globale) mais on ne peut pas la router vers une
+    // équipe. Mieux vaut ne pas notifier que notifier le mauvais pays.
+    const jurisdictionId = (vessel as { jurisdiction_id?: string | null } | null)?.jurisdiction_id;
+    if (jurisdictionId) {
+        await notifyStaffSafe(admin, {
+            jurisdictionId,
+            kind: 'VALIDATION_PENDING',
+            params: { subject: `IMO ${parsed.data.imoNumber}` },
+            deepLink: '/admin/validations',
+            dedupKey: proposal.id,
+        });
     }
 
     return { ok: true, proposalId: proposal.id };

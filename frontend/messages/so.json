@@ -4818,5 +4818,34 @@
     "bulkTitle": "Approve the conforming items",
     "bulkBody": "{count, plural, =1 {Approve 1 conforming item} other {Approve # conforming items}}? None of them carries a discrepancy: approving only fills in empty fields. Some approvals send an email.",
     "bulkDone": "{done, plural, =0 {No item approved} =1 {1 item approved} other {# items approved}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "New item to arbitrate",
+        "body": "{subject} is awaiting a decision in the validation queue."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "New registration request",
+        "body": "{org} has submitted an access request."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "File escalated",
+        "body": "{debtor} — {ref} moved to tier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Debtor response",
+        "body": "Response \"{response}\" recorded on a file at tier {tier}. The ramp is suspended."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Cash desk collection",
+        "body": "{amount} collected for {debtor}, awaiting confirmation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Invoice disputed",
+        "body": "{debtor} is disputing invoice {ref}."
+      }
+    },
+    "empty": "Nothing new."
   }
 }
