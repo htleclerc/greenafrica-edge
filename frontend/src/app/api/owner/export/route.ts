@@ -3,6 +3,7 @@ import { requireOwner } from '@/lib/auth/requireOwner';
 import { getOwnerKycProfile } from '@/services/ownerKycService';
 import { listPaymentsForShipowner } from '@/services/paymentService';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { outstandingUsd } from '@/lib/outstanding';
 
 interface ExportVessel {
     imo_number: string;
@@ -10,9 +11,6 @@ interface ExportVessel {
     category: string;
     flag_code: string | null;
 }
-
-/** Statuts qui n'ouvrent aucune creance (cf. migration 132). */
-const NON_CLAIMABLE = ['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED'];
 
 interface ExportInvoice {
     invoice_ref: string | null;
@@ -115,9 +113,7 @@ export async function GET() {
         tax_amount_usd: Number(t.tax_amount_usd),
         status: t.status as string,
         partial_paid_usd: Number(t.partial_paid_usd ?? 0),
-        outstanding_usd: NON_CLAIMABLE.includes(String(t.status))
-            ? 0
-            : Math.max(Number(t.tax_amount_usd) - (paidByTxn.get(t.id as string) ?? 0), 0),
+        outstanding_usd: outstandingUsd(t as never, paidByTxn.get(t.id as string) ?? 0),
     }));
 
     const paymentsOut: ExportPayment[] = payments.map((p) => ({

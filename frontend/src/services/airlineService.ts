@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { decryptIban } from './kycService';
 import { maskIban } from './armateurService';
+import { outstandingUsd } from '@/lib/outstanding';
 
 export interface AirlineCockpitRow {
     id: string;
@@ -55,9 +56,6 @@ export interface AirlineAircraftRow {
     mtow_kg: number | null;
     compliance_status: string;
 }
-
-/** Statuts qui n'ouvrent aucune creance (cf. migration 132). */
-const NON_CLAIMABLE_STATUSES = ['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED'];
 
 export interface AirlineProformaRow {
     id: string;
@@ -224,9 +222,9 @@ export async function getAirlineDetail(
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
             partial_paid_usd: Number(t.partial_paid_usd ?? 0),
-            outstanding_usd: NON_CLAIMABLE_STATUSES.includes(String(t.status))
-                ? 0
-                : Math.max(Number(t.tax_amount_usd) - (paidByTxn.get(t.id as string) ?? 0), 0),
+            outstanding_usd: outstandingUsd(
+                t as never, paidByTxn.get(t.id as string) ?? 0,
+            ),
             status: t.status as string,
             content_hash: (t.content_hash as string | null) ?? null,
             verify_signature: (t.verify_signature as string | null) ?? null,

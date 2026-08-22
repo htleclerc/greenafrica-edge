@@ -1,55 +1,81 @@
 import { describe, it, expect } from 'vitest';
-import { isOutstanding, outstandingUsd, OUTSTANDING_STATUSES } from './outstanding';
+import {
+    isClaimable, outstandingUsd, paidUsd,
+    NON_CLAIMABLE_STATUSES, SETTLED_STATUSES,
+} from './outstanding';
 
 describe('outstandingUsd', () => {
-    it('retranche ce qui a deja ete encaisse', () => {
-        // Le calcul de la flotte ignorait `partial_paid_usd` : l'armateur
-        // voyait 1 000 la ou la plateforme lui reclamait 400.
-        expect(outstandingUsd({ status: 'PARTIALLY_PAID', tax_amount_usd: 1000, partial_paid_usd: 600 })).toBe(400);
+    it('retranche les paiements confirmés', () => {
+        // La flotte sommait le montant plein : l'armateur voyait 1 000 là où la
+        // plateforme lui réclamait 400.
+        expect(outstandingUsd({ status: 'PARTIALLY_PAID', tax_amount_usd: 1000 }, 600)).toBe(400);
     });
 
-    it('rend zero sur un statut qui ne doit rien', () => {
-        expect(outstandingUsd({ status: 'PAID', tax_amount_usd: 1000, partial_paid_usd: 1000 })).toBe(0);
-        expect(outstandingUsd({ status: 'VOID', tax_amount_usd: 1000 })).toBe(0);
-        expect(outstandingUsd({ status: 'DISPUTED', tax_amount_usd: 1000 })).toBe(0);
+    it('retient aussi les règlements antérieurs à la table payments', () => {
+        // `partial_paid_usd` porte la SEULE trace des factures soldées avant le
+        // rail v7 (backfill mig 022, table `payments` démarrée vide en mig 048).
+        // L'ignorer faisait ressortir cinq factures soldées comme dues pour
+        // 32 482 USD sur staging.
+        expect(outstandingUsd({ status: 'OVERDUE', tax_amount_usd: 8256, partial_paid_usd: 8000 }, 0))
+            .toBe(256);
     });
 
-    it('traite l absence de reglement partiel comme zero', () => {
-        expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: 500, partial_paid_usd: null })).toBe(500);
-        expect(outstandingUsd({ status: 'OVERDUE', tax_amount_usd: 500 })).toBe(500);
-    });
-
-    it('ne rend jamais un avoir', () => {
-        // Un sur-encaissement se regle par un remboursement, pas par une dette
-        // negative qui viendrait effacer une autre facture dans un total.
-        expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: 100, partial_paid_usd: 130 })).toBe(0);
-    });
-
-    it('accepte les numeriques rendus en chaine par PostgREST', () => {
-        expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: '250.50', partial_paid_usd: '50.50' })).toBe(200);
-    });
-
-    it('retranche le montant encaisse passe en second argument', () => {
-        // Source reelle de l'encaissement : les paiements CONFIRMED.
-        expect(outstandingUsd({ status: 'PARTIALLY_PAID', tax_amount_usd: 68832, partial_paid_usd: 0 }, 12055.57))
-            .toBeCloseTo(56776.43, 2);
-    });
-
-    it('retient le plus grand des deux encaissements connus, jamais leur somme', () => {
-        // Les additionner compterait deux fois une ligne renseignee par le
-        // backfill de la migration 022.
+    it('retient le plus grand des deux encaissements, jamais leur somme', () => {
+        // Ils couvrent deux époques, pas deux règlements distincts.
         expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: 1000, partial_paid_usd: 400 }, 250)).toBe(600);
         expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: 1000, partial_paid_usd: 250 }, 400)).toBe(600);
     });
 
-    it('rend zero quand l encaissement couvre le montant', () => {
-        expect(outstandingUsd({ status: 'PARTIALLY_PAID', tax_amount_usd: 1000 }, 1200)).toBe(0);
+    it('ne réclame rien sur une facture marquée payée', () => {
+        // Le statut PAID est l'affirmation de règlement de la plateforme
+        // (recompute_transaction_status, mig 051). Une trace manquante est une
+        // anomalie à signaler, pas une somme à réclamer au débiteur.
+        expect(outstandingUsd({ status: 'PAID', tax_amount_usd: 12500 }, 0)).toBe(0);
     });
 
-    it('isOutstanding couvre exactement les trois statuts debiteurs', () => {
-        expect(OUTSTANDING_STATUSES).toEqual(['PENDING', 'PARTIALLY_PAID', 'OVERDUE']);
-        expect(isOutstanding('PENDING')).toBe(true);
-        expect(isOutstanding('PAID')).toBe(false);
-        expect(isOutstanding(null)).toBe(false);
+    it('ne réclame rien sur une facture annulée, exemptée ou remplacée par un avoir', () => {
+        for (const status of NON_CLAIMABLE_STATUSES) {
+            expect(outstandingUsd({ status, tax_amount_usd: 1000 }, 0)).toBe(0);
+        }
+    });
+
+    it('laisse due une facture contestée', () => {
+        // Une contestation est une demande, pas une extinction — même règle que
+        // la vue v_transaction_outstanding.
+        expect(outstandingUsd({ status: 'DISPUTED', tax_amount_usd: 1000 }, 300)).toBe(700);
+    });
+
+    it('ne rend jamais un avoir', () => {
+        expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: 100 }, 130)).toBe(0);
+    });
+
+    it('accepte les numériques rendus en chaîne par PostgREST', () => {
+        expect(outstandingUsd({ status: 'PENDING', tax_amount_usd: '250.50', partial_paid_usd: '50.50' })).toBe(200);
+    });
+});
+
+describe('paidUsd', () => {
+    it('ne borne pas l encaissement au montant facturé', () => {
+        // Un trop-perçu doit rester visible pour être remboursé.
+        expect(paidUsd({ status: 'PENDING', tax_amount_usd: 100 }, 130)).toBe(130);
+    });
+});
+
+describe('isClaimable', () => {
+    it('garde les factures payées dans le périmètre réclamable', () => {
+        // La colonne sert aux totaux facturé/payé : en sortir les factures
+        // soldées ferait diminuer le total facturé à mesure qu'un dossier règle.
+        expect(isClaimable('PAID')).toBe(true);
+        expect(isClaimable('PENDING')).toBe(true);
+        expect(isClaimable('DISPUTED')).toBe(true);
+    });
+
+    it('exclut ce qui n ouvre aucune créance', () => {
+        for (const status of NON_CLAIMABLE_STATUSES) expect(isClaimable(status)).toBe(false);
+    });
+
+    it('énumère les mêmes statuts que la vue SQL', () => {
+        expect([...NON_CLAIMABLE_STATUSES]).toEqual(['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED']);
+        expect([...SETTLED_STATUSES]).toEqual(['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED', 'PAID']);
     });
 });

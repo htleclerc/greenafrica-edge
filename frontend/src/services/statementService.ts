@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { StatementLine, StatementPayment } from './invoiceService';
+import { NON_CLAIMABLE_STATUSES, paidUsd } from '@/lib/outstanding';
 
 export interface OwnerStatementResult {
     openLines: StatementLine[];
@@ -18,10 +19,14 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
  * Statuts qui n'ouvrent aucune creance : une pro-forma annulee, exemptee ou
  * remplacee par un avoir ne se reclame pas. Tout le reste est du — une
  * contestation est une demande, pas une extinction. Meme regle que la vue
- * `v_transaction_outstanding` (migration 132) : les ecrans, la base et le
- * document ne doivent pas repondre trois chiffres differents.
+ * `v_transaction_outstanding` : les ecrans, la base et le document ne doivent
+ * pas repondre trois chiffres differents.
+ *
+ * PAID n'y figure pas, contrairement a la vue : un releve arrete a une date
+ * PASSEE doit faire reapparaitre une facture qui n'etait pas encore reglee a
+ * cette date-la. C'est le solde reconstruit qui tranche, pas le statut du jour.
  */
-const NON_CLAIMABLE = ['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED'];
+const NON_CLAIMABLE = NON_CLAIMABLE_STATUSES;
 
 /** Bornes du mois écoulé : [1er du mois précédent, 1er du mois courant) + libellé. */
 export function periodBounds(now: Date): { periodStart: Date; periodEnd: Date; label: string } {
@@ -79,10 +84,13 @@ export interface ComposeInput {
  * Compose les données du relevé : pro-formas encore dues à la date d'arrêté +
  * paiements confirmés de la période.
  *
- * Le reste dû se calcule `tax_amount_usd - paiements CONFIRMED anterieurs a
- * l'arrete`, JAMAIS `tax_amount_usd - partial_paid_usd` : cette colonne est
- * gelee par la migration 089 et n'est jamais ecrite, si bien que l'ancien
- * calcul reclamait le montant plein d'une facture deja reglee en partie.
+ * Le reste dû se calcule `tax_amount_usd - encaissements anterieurs a
+ * l'arrete`, et l'encaissement se lit dans les paiements CONFIRMED — avec
+ * `partial_paid_usd` en repli pour les factures reglees AVANT que cette table
+ * existe (cf. lib/outstanding). Le calcul d'origine, `tax_amount_usd -
+ * partial_paid_usd`, reclamait le montant plein d'une facture deja reglee en
+ * partie : la colonne, gelee par la mig 089, vaut zero sur toute facture
+ * emise depuis.
  */
 export async function composeOwnerStatement(
     admin: SupabaseClient,
@@ -92,7 +100,7 @@ export async function composeOwnerStatement(
 
     let q = admin
         .from('transactions')
-        .select('id, invoice_ref, vessel_name, created_at, tax_amount_usd, status')
+        .select('id, invoice_ref, vessel_name, created_at, tax_amount_usd, partial_paid_usd, status')
         .eq('document_type', 'PROFORMA')
         .eq('shipowner_id', input.shipownerId)
         .not('status', 'in', `(${NON_CLAIMABLE.join(',')})`)
@@ -121,7 +129,11 @@ export async function composeOwnerStatement(
     const openLines: StatementLine[] = [];
     for (const r of txns) {
         const id = String(r.id ?? '');
-        const outstanding = Number(r.tax_amount_usd ?? 0) - (paidByTxn.get(id) ?? 0);
+        // `partial_paid_usd` porte la seule trace des reglements anterieurs a la
+        // table `payments` : l'ignorer ferait figurer une facture soldee de
+        // longue date sur le releve d'un armateur.
+        const paid = paidUsd(r as never, paidByTxn.get(id) ?? 0);
+        const outstanding = Number(r.tax_amount_usd ?? 0) - paid;
         // Le centime de tolerance evite qu'un arrondi de conversion fasse
         // figurer une facture soldee dans un relevé.
         if (outstanding <= 0.005) continue;

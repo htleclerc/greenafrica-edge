@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { decryptIban } from './kycService';
+import { outstandingUsd } from '@/lib/outstanding';
 
 export interface ArmateurCockpitRow {
     id: string;
@@ -61,9 +62,6 @@ export function maskIban(iban: string | null): string | null {
     const tail = iban.slice(-4);
     return `•••• ${tail}`;
 }
-
-/** Statuts qui n'ouvrent aucune creance (cf. migration 132). */
-const NON_CLAIMABLE_STATUSES = ['VOID', 'EXEMPT', 'CREDIT_NOTE_ISSUED'];
 
 export interface ArmateurProformaRow {
     id: string;
@@ -283,9 +281,9 @@ export async function getArmateurDetail(
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
             partial_paid_usd: Number(t.partial_paid_usd ?? 0),
-            outstanding_usd: NON_CLAIMABLE_STATUSES.includes(String(t.status))
-                ? 0
-                : Math.max(Number(t.tax_amount_usd) - (paidByTxn.get(t.id as string) ?? 0), 0),
+            outstanding_usd: outstandingUsd(
+                t as never, paidByTxn.get(t.id as string) ?? 0,
+            ),
             status: t.status as string,
             due_date: (t.due_date as string | null) ?? null,
             collections_status: (t.collections_status as string | null) ?? null,

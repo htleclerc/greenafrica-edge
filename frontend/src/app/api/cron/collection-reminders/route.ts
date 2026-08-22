@@ -6,6 +6,7 @@ import { fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc } from '@/lib/ju
 import { notifyOwner } from '@/services/notificationService';
 import { sendProformaReminderEmail } from '@/services/emailService';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { outstandingUsd } from '@/lib/outstanding';
 import {
     dueTier, reminderTemplate, type ReminderTier, type DebtorResponseType,
 } from '@/services/collectionReminderService';
@@ -42,6 +43,7 @@ interface ProformaRow {
     id: string;
     invoice_ref: string | null;
     tax_amount_usd: number;
+    partial_paid_usd: number | null;
     vessel_name: string;
     status: string;
     created_at: string;
@@ -67,7 +69,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
     const { data: proformasRaw, error: selErr } = await admin
         .from('transactions')
-        .select('id, invoice_ref, tax_amount_usd, vessel_name, status, created_at, shipowner_id, agent_profile_id, jurisdiction_id')
+        .select('id, invoice_ref, tax_amount_usd, partial_paid_usd, vessel_name, status, created_at, shipowner_id, agent_profile_id, jurisdiction_id')
         .eq('document_type', 'PROFORMA')
         .in('status', ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'])
         .not('shipowner_id', 'is', null)
@@ -124,7 +126,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             // Creance eteinte par les paiements alors que le statut n'a pas
             // suivi (recompute rate, encaissement hors rail) : ne pas relancer.
-            if (Number(p.tax_amount_usd) - (paidByTxn.get(p.id) ?? 0) <= 0.005) {
+            if (outstandingUsd(p as never, paidByTxn.get(p.id) ?? 0) <= 0.005) {
                 log.info('reminder_skipped_settled', { txnId: p.id, tier });
                 counts.skipped += 1;
                 continue;
@@ -159,11 +161,11 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             const { templateId } = reminderTemplate(tier);
             const ageDays = ageInDays(p.created_at, now);
-            const outstandingUsd = Number(p.tax_amount_usd) - (paidByTxn.get(p.id) ?? 0);
+            const remainingUsd = outstandingUsd(p as never, paidByTxn.get(p.id) ?? 0);
             const bodyParams = {
                 transaction_id: p.id,
                 invoice_ref: p.invoice_ref,
-                amount_usd: outstandingUsd,
+                amount_usd: remainingUsd,
                 vessel_name: p.vessel_name,
                 tier,
                 age_days: ageDays,
@@ -179,7 +181,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 cc: recipients.cc,
                 recipientName,
                 invoiceRef: p.invoice_ref ?? '—',
-                amountUsd: outstandingUsd,
+                amountUsd: remainingUsd,
                 ageDays,
                 tier,
             });
