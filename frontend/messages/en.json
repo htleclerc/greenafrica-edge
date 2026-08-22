@@ -711,11 +711,18 @@
     "magicLink": {
       "tabPassword": "Password",
       "tabLink": "Sign-in link",
-      "emailLabel": "Email address",
       "submit": "Send me a sign-in link",
-      "hint": "We email you a single-use link. No password needed.",
-      "sent": "If this address is registered, a sign-in link has just been sent to it.",
-      "rateLimited": "Too many attempts. Please try again in a few minutes."
+      "hint": "Enter your email address, or your vessel's IMO (7 digits) or MMSI (9 digits). We send a single-use link and a 6-digit code.",
+      "sent": "If this address is registered, a sign-in link and code have just been sent to it.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes.",
+      "queryLabel": "Email, IMO or MMSI",
+      "sentToHint": "Sign-in link and code sent to {hint}.",
+      "sentVessel": "Vessel: {vessel}",
+      "codeLabel": "6-digit code",
+      "codeSubmit": "Sign in",
+      "codeHint": "Or simply click the link in the email — either one works.",
+      "badCode": "Invalid or expired code.",
+      "retry": "Use a different email or vessel"
     }
   },
   "Dashboard": {

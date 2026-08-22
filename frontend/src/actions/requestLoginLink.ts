@@ -5,38 +5,55 @@ import { headers } from 'next/headers';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 import { resolveLoginTarget } from '@/services/auth/loginAllowlist';
+import { resolveOwnerByVesselIdentifier } from '@/services/auth/vesselOwnerLookup';
+import { classifyVesselIdentifier } from '@/lib/vessels/identifier';
+import { maskEmailHint } from '@/lib/vessels/maskEmail';
 import { isContactBlocked } from '@/domain/sanctions/contactGuard';
 import { sendLoginLinkEmail } from '@/services/emailService';
 import { scopedLogger } from '@/lib/logger';
 
 const log = scopedLogger('requestLoginLink');
 
-// `.strict()` volontaire : le formulaire ne propose qu'une adresse. Un champ
+// `.strict()` volontaire : le formulaire ne propose qu'un champ. Un champ
 // supplémentaire est le signe d'une tentative de détournement, pas d'une
 // évolution légitime — le payload est refusé tel quel, jamais nettoyé.
-const schema = z.object({ email: z.string() }).strict();
+const schema = z.object({ query: z.string() }).strict();
 
 export type RequestLoginLinkResult =
-    | { ok: true }
+    | { ok: true; via: 'email' }
+    /** Chemin navire : l'indice dit à l'armateur quelle boîte surveiller. */
+    | { ok: true; via: 'vessel'; emailHint: string; vesselName: string | null }
+    /** Navire non résolu — volontairement indistinguable d'un envoi réussi. */
+    | { ok: true; via: 'vessel-unknown' }
     | { ok: false; reason: 'rate_limited' };
 
 /**
- * Envoie un lien de connexion à une adresse DÉJÀ ENREGISTRÉE.
+ * Envoie un accès au portail à une cible DÉJÀ ENREGISTRÉE.
  *
- * Ne crée jamais de compte : le lien ouvre un compte existant, il n'inscrit
- * personne. C'est la contrainte posée par le PO — pas d'inscription par lien
- * magique.
+ * Deux chemins derrière un seul champ, distingués par la forme de la saisie :
  *
- * LA RÉPONSE EST INVARIABLE. Succès, adresse inconnue, saisie invalide,
- * armateur sanctionné, échec de minage, échec d'envoi : tout rend
- * `{ ok: true }`. Seul le plafond de débit se distingue, et il ne renseigne
- * pas sur l'existence d'un compte. Sans cette uniformité, le formulaire
- * deviendrait un révélateur de débiteurs — on saurait qui doit de l'argent à
- * Berbera en essayant des adresses.
+ *   — une ADRESSE : la cible vient de la liste d'autorisation (armateur,
+ *     représentant rattaché). La réponse est strictement INVARIABLE, sans
+ *     indice : l'écran de connexion ne doit jamais dire qui détient un compte.
+ *
+ *   — un IMO (7 chiffres, somme de contrôle vérifiée) ou un MMSI (9 chiffres) :
+ *     la cible est l'armateur qui doit la taxe pour ce navire. L'armateur ne
+ *     connaît pas l'adresse enregistrée — souvent celle d'un manager —, donc un
+ *     INDICE MASQUÉ lui dit quelle boîte surveiller. C'est un oracle assumé,
+ *     borné par le double plafond et par la somme de contrôle IMO qui empêche
+ *     qu'une faute de frappe désigne le navire d'un tiers.
+ *
+ * Le courriel porte LE LIEN ET LE CODE. `generateLink` rend les deux d'un même
+ * appel ; les proposer ensemble évite qu'un client de messagerie qui réécrit
+ * ou neutralise les liens ne condamne l'accès.
+ *
+ * Ne crée jamais de compte : l'accès ouvre un compte existant.
  */
 export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkResult> {
     const parsed = schema.safeParse(raw);
-    if (!parsed.success) return { ok: true };
+    if (!parsed.success) return { ok: true, via: 'email' };
+
+    const query = parsed.data.query.trim();
 
     const h = await headers();
     const ipQuota = await enforceRateLimit('login-link', getClientId(h));
@@ -46,67 +63,101 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
     try {
         admin = createPlatformClient();
     } catch {
-        return { ok: true };
+        return { ok: true, via: 'email' };
     }
 
-    const target = await resolveLoginTarget(admin, parsed.data.email);
-    if (!target) return { ok: true };
+    // Une saisie sans arobase est traitée comme un identifiant de navire. Le
+    // classement rejette hors ligne tout ce qui n'est ni 7 ni 9 chiffres :
+    // aucun appel serveur, aucun quota consommé.
+    if (!query.includes('@')) {
+        const classified = classifyVesselIdentifier(query);
+        if (!classified.ok) return { ok: true, via: 'vessel-unknown' };
 
-    // Règle métier absolue : un armateur sous sanctions ne reçoit jamais de
-    // contact direct de la plateforme. Le recouvrement passe par la saisie
-    // in rem via Me Eidle Omer.
+        const owner = await resolveOwnerByVesselIdentifier(admin, classified.identifier);
+        if (!owner) return { ok: true, via: 'vessel-unknown' };
+
+        if (isContactBlocked({
+            name: owner.name, is_ofac_sdn: owner.isOfacSdn, is_un_prohibited: owner.isUnProhibited,
+        })) {
+            log.warn('sanctioned_login_blocked', { shipownerId: owner.id, via: 'vessel' });
+            // Même réponse qu'un navire inconnu : un armateur sanctionné ne
+            // doit pas apprendre qu'il est identifié par ce chemin.
+            return { ok: true, via: 'vessel-unknown' };
+        }
+
+        const ownerQuota = await enforceRateLimit('login-link', `owner:${owner.id}`);
+        if (!ownerQuota.allowed) return { ok: false, reason: 'rate_limited' };
+
+        const sent = await mintAndSend(admin, owner.officialEmail, owner.name, owner.vesselName);
+        if (!sent) return { ok: true, via: 'vessel-unknown' };
+
+        return {
+            ok: true,
+            via: 'vessel',
+            emailHint: maskEmailHint(owner.officialEmail),
+            vesselName: owner.vesselName,
+        };
+    }
+
+    // ── Chemin adresse : réponse invariable, jamais d'indice ──────────────
+    const target = await resolveLoginTarget(admin, query);
+    if (!target) return { ok: true, via: 'email' };
+
     if (isContactBlocked({
         name: target.shipownerName,
         is_ofac_sdn: target.isOfacSdn,
         is_un_prohibited: target.isUnProhibited,
     })) {
-        log.warn('sanctioned_login_blocked', { shipownerId: target.shipownerId });
-        return { ok: true };
+        log.warn('sanctioned_login_blocked', { shipownerId: target.shipownerId, via: 'email' });
+        return { ok: true, via: 'email' };
     }
 
     // Copie de facturation : reconnue par la liste d'autorisation, mais aucun
-    // lien n'est envoyé pour l'instant. Une session issue d'une copie doit
-    // être restreinte à la lecture des factures, or la portée n'est portée
-    // nulle part dans la session — `requirePrincipal` ne résout qu'un
-    // armateur. Ouvrir le portail complet à un comptable en copie lui
-    // donnerait les litiges, la conformité et les moyens de paiement.
-    // Recevoir un double n'est pas détenir le compte.
+    // accès n'est envoyé. La portée « lecture seule » qu'exige la spec n'est
+    // portée nulle part dans la session — ouvrir le portail complet à un
+    // comptable en copie lui donnerait litiges, conformité et moyens de
+    // paiement. Recevoir un double n'est pas détenir le compte.
     if (target.scope === 'BILLING_CC') {
         log.info('billing_cc_link_deferred', { shipownerId: target.shipownerId });
-        return { ok: true };
+        return { ok: true, via: 'email' };
     }
 
-    // Second plafond, keyé sur l'armateur : sans lui, faire varier l'IP
-    // suffirait à inonder sa boîte.
     const ownerQuota = await enforceRateLimit('login-link', `owner:${target.shipownerId}`);
     if (!ownerQuota.allowed) return { ok: false, reason: 'rate_limited' };
 
-    // On mine le jeton nous-mêmes : les modèles GoTrue ne sont pas configurés
-    // (tous les blocs [auth.email.template.*] sont commentés dans
-    // supabase/config.toml), l'armateur recevrait un courriel par défaut.
+    await mintAndSend(admin, target.deliveryEmail, target.shipownerName, null);
+    return { ok: true, via: 'email' };
+}
+
+/**
+ * Mine le jeton et envoie lien + code.
+ *
+ * On mine nous-mêmes plutôt que de laisser GoTrue envoyer : les modèles
+ * `[auth.email.template.*]` sont tous commentés dans `supabase/config.toml`,
+ * le destinataire recevrait un courriel par défaut, hors charte et non
+ * traduit. Un seul appel rend `action_link` ET `email_otp`.
+ */
+async function mintAndSend(
+    admin: ReturnType<typeof createPlatformClient>,
+    email: string,
+    recipientName: string,
+    vesselName: string | null,
+): Promise<boolean> {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
     const { data, error } = await admin.auth.admin.generateLink({
         type: 'magiclink',
-        email: target.deliveryEmail,
+        email,
         options: { redirectTo: `${appUrl}/owner/auth/callback` },
     });
 
-    if (error || !data?.properties?.action_link) {
-        log.warn('link_generate_failed', {
-            shipownerId: target.shipownerId,
-            error: error?.message,
-        });
-        return { ok: true };
+    const link = data?.properties?.action_link;
+    const code = data?.properties?.email_otp;
+    if (error || !link || !code) {
+        log.warn('link_generate_failed', { error: error?.message });
+        return false;
     }
 
-    const sent = await sendLoginLinkEmail({
-        to: target.deliveryEmail,
-        recipientName: target.shipownerName,
-        link: data.properties.action_link,
-    });
-    if (!sent.success) {
-        log.warn('link_send_failed', { shipownerId: target.shipownerId, error: sent.error });
-    }
-
-    return { ok: true };
+    const sent = await sendLoginLinkEmail({ to: email, recipientName, link, code, vesselName });
+    if (!sent.success) log.warn('link_send_failed', { error: sent.error });
+    return sent.success;
 }

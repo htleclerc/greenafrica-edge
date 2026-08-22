@@ -596,11 +596,18 @@
     "magicLink": {
       "tabPassword": "Nenosiri",
       "tabLink": "Kiungo cha kuingia",
-      "emailLabel": "Anwani ya barua pepe",
       "submit": "Nitumie kiungo cha kuingia",
-      "hint": "Tunakutumia kiungo cha matumizi moja. Hakuna nenosiri linalohitajika.",
-      "sent": "Ikiwa anwani hii imesajiliwa, kiungo cha kuingia kimetumwa kwake.",
-      "rateLimited": "Majaribio mengi mno. Tafadhali jaribu tena baada ya dakika chache."
+      "hint": "Weka barua pepe yako, au IMO (tarakimu 7) au MMSI (tarakimu 9) ya meli yako. Tunatuma kiungo cha matumizi moja na msimbo wa tarakimu 6.",
+      "sent": "Ikiwa anwani hii imesajiliwa, kiungo cha kuingia na msimbo vimetumwa kwake.",
+      "rateLimited": "Majaribio mengi mno. Tafadhali jaribu tena baada ya dakika chache.",
+      "queryLabel": "Barua pepe, IMO au MMSI",
+      "sentToHint": "Kiungo na msimbo vimetumwa kwa {hint}.",
+      "sentVessel": "Meli: {vessel}",
+      "codeLabel": "Msimbo wa tarakimu 6",
+      "codeSubmit": "Ingia",
+      "codeHint": "Au bofya kiungo ulichopokea kwa barua pepe — chochote kinafanya kazi.",
+      "badCode": "Msimbo si sahihi au umeisha muda.",
+      "retry": "Tumia barua pepe au meli nyingine"
     }
   },
   "Dashboard": {

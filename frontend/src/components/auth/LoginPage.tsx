@@ -13,6 +13,7 @@ import { safeInternalPath } from '@/lib/auth/safeInternalPath';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { requestLoginLink } from '@/actions/requestLoginLink';
+import { verifyLoginCode } from '@/actions/verifyLoginCode';
 
 // Maps ?error= param values (set by requireOwner / middleware) to i18n keys
 // under OwnerPortal.login.errors.
@@ -68,7 +69,14 @@ function LoginPageInner() {
     // Second chemin d'entree. Les armateurs ont ete importes sans mot de
     // passe : le formulaire mot de passe ne leur ouvre rien.
     const [mode, setMode] = React.useState<'password' | 'link'>('password');
+    // Un seul champ accepte une adresse, un IMO (7 chiffres) ou un MMSI (9).
+    const [quickQuery, setQuickQuery] = React.useState('');
     const [linkSent, setLinkSent] = React.useState(false);
+    // Indice masque : renseigne UNIQUEMENT sur le chemin navire, ou l'armateur
+    // ne connait pas l'adresse enregistree — souvent celle d'un manager.
+    const [emailHint, setEmailHint] = React.useState<string | null>(null);
+    const [sentVessel, setSentVessel] = React.useState<string | null>(null);
+    const [code, setCode] = React.useState('');
 
     // Read query params set by requireOwner / middleware redirects.
     const errorParam = searchParams.get('error');
@@ -81,12 +89,25 @@ function LoginPageInner() {
         e.preventDefault();
         setError('');
         setLoading(true);
-        const res = await requestLoginLink({ email: email.trim() });
+        const res = await requestLoginLink({ query: quickQuery.trim() });
         setLoading(false);
+        if (!res.ok) { setError(tMagic('rateLimited')); return; }
         // Adresse connue ou non, l'ecran est le meme : il ne doit pas
-        // renseigner sur qui detient un compte, ni sur qui est debiteur.
-        if (res.ok) { setLinkSent(true); return; }
-        setError(tMagic('rateLimited'));
+        // renseigner sur qui detient un compte. Seul le chemin NAVIRE affiche
+        // un indice, et seulement quand une cible a ete trouvee.
+        setEmailHint(res.via === 'vessel' ? res.emailHint : null);
+        setSentVessel(res.via === 'vessel' ? res.vesselName : null);
+        setLinkSent(true);
+    }
+
+    async function handleCodeSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        const res = await verifyLoginCode({ query: quickQuery.trim(), code: code.trim() });
+        setLoading(false);
+        if (res.ok) { window.location.href = res.redirectTo; return; }
+        setError(res.reason === 'rate_limited' ? tMagic('rateLimited') : tMagic('badCode'));
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -254,22 +275,65 @@ function LoginPageInner() {
 
                         {mode === 'link' ? (
                             linkSent ? (
-                                <div className="flex items-start gap-2 px-3 py-3 rounded-lg" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                                    <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-emerald-300">{tMagic('sent')}</p>
-                                </div>
+                                <form onSubmit={handleCodeSubmit} className="flex flex-col gap-4">
+                                    <div className="flex items-start gap-2 px-3 py-3 rounded-lg" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                        <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                        <div className="text-xs text-emerald-300">
+                                            <p>{emailHint ? tMagic('sentToHint', { hint: emailHint }) : tMagic('sent')}</p>
+                                            {sentVessel && (
+                                                <p className="mt-1 opacity-80">{tMagic('sentVessel', { vessel: sentVessel })}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
+                                            {tMagic('codeLabel')}
+                                        </label>
+                                        <input
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            maxLength={6}
+                                            value={code}
+                                            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="••••••"
+                                            className="w-full h-12 px-4 rounded-xl text-center text-lg font-mono tracking-[0.5em] outline-none transition-all"
+                                            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
+                                        />
+                                        <p className="text-[11px] mt-1" style={{ color: 'var(--os-text-muted)' }}>{tMagic('codeHint')}</p>
+                                    </div>
+
+                                    {error && (
+                                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                            <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                                            <p className="text-xs text-red-400">{error}</p>
+                                        </div>
+                                    )}
+
+                                    <OsButton type="submit" variant="primary" size="lg" loading={loading}
+                                        disabled={loading || code.length < 6}
+                                        iconRight={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
+                                        className="w-full mt-1">
+                                        {tMagic('codeSubmit')}
+                                    </OsButton>
+
+                                    <button type="button" className="text-xs text-emerald-400 hover:underline"
+                                        onClick={() => { setLinkSent(false); setCode(''); setError(''); }}>
+                                        {tMagic('retry')}
+                                    </button>
+                                </form>
                             ) : (
                             <form onSubmit={handleLinkSubmit} className="flex flex-col gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
-                                        {tMagic('emailLabel')}
+                                        {tMagic('queryLabel')}
                                     </label>
                                     <input
-                                        type="email"
+                                        type="text"
                                         required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="operations@armateur.com"
+                                        value={quickQuery}
+                                        onChange={(e) => setQuickQuery(e.target.value)}
+                                        placeholder="operations@armateur.com  ·  9167057"
                                         className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all"
                                         style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                     />

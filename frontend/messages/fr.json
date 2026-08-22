@@ -849,11 +849,18 @@
     "magicLink": {
       "tabPassword": "Mot de passe",
       "tabLink": "Lien de connexion",
-      "emailLabel": "Adresse e-mail",
       "submit": "Recevoir un lien de connexion",
-      "hint": "Nous vous envoyons un lien à usage unique. Aucun mot de passe n'est nécessaire.",
-      "sent": "Si cette adresse est enregistrée, un lien de connexion vient de lui être envoyé.",
-      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes."
+      "hint": "Saisissez votre adresse e-mail, ou l'IMO (7 chiffres) ou le MMSI (9 chiffres) de votre navire. Nous envoyons un lien à usage unique et un code à 6 chiffres.",
+      "sent": "Si cette adresse est enregistrée, un lien de connexion et un code viennent de lui être envoyés.",
+      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes.",
+      "queryLabel": "E-mail, IMO ou MMSI",
+      "sentToHint": "Lien de connexion et code envoyés à {hint}.",
+      "sentVessel": "Navire : {vessel}",
+      "codeLabel": "Code à 6 chiffres",
+      "codeSubmit": "Se connecter",
+      "codeHint": "Ou cliquez simplement le lien reçu par e-mail — l'un ou l'autre fonctionne.",
+      "badCode": "Code invalide ou expiré.",
+      "retry": "Utiliser une autre adresse ou un autre navire"
     }
   },
   "DashboardPages": {

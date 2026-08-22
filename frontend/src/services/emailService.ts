@@ -953,6 +953,14 @@ export interface LoginLinkParams {
     recipientName?: string;
     /** Lien miné par generateLink — à usage unique et de courte durée. */
     link: string;
+    /**
+     * Code à six chiffres, issu du MÊME jeton que le lien : consommer l'un
+     * consomme l'autre. Les deux sont proposés ensemble parce qu'un client de
+     * messagerie qui réécrit ou neutralise les liens condamnerait l'accès.
+     */
+    code: string;
+    /** Navire ayant permis de retrouver le compte, quand l'accès vient d'un IMO. */
+    vesselName?: string | null;
 }
 
 /**
@@ -969,23 +977,35 @@ export interface LoginLinkParams {
  * sur qui est débiteur.
  */
 export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResult> {
+    // Rappelle le navire quand l'accès a été demandé par IMO ou MMSI : c'est
+    // souvent un manager qui reçoit, pour une flotte entière. Sans cette ligne
+    // il ne saurait pas de quel dossier il s'agit.
+    const vesselLine = p.vesselName
+        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        : '';
+
     const content = `
         <h1>Sign in to Green Gate</h1>
         <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
-        <p>Use the button below to open your Green Gate account. No password is required.</p>
+        <p>Use the button below to open your Green Gate account, or enter the code on the sign-in page. No password is required.</p>
+        ${vesselLine}
 
         <a href="${p.link}" class="btn">Sign In →</a>
 
-        <div class="alert alert-warn">This link can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
+        <div style="text-align:center;margin:20px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you did not request this, you can safely ignore this email: no account changes will be made.</div>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
     `;
 
     return sendEmail({
         to: p.to,
-        subject: 'Your Green Gate sign-in link',
-        html: emailLayout(content, { previewText: 'Your sign-in link — single use, expires shortly' }),
-        text: `Sign in to Green Gate\n\nOpen this link to access your account (single use, expires shortly):\n${p.link}\n\nIf you did not request it, ignore this email — no account changes will be made.`,
+        subject: `Your Green Gate sign-in code: ${p.code}`,
+        html: emailLayout(content, { previewText: `Sign-in code ${p.code} — single use, expires shortly` }),
+        text: `Sign in to Green Gate\n\n${p.vesselName ? `Vessel: ${p.vesselName}\n\n` : ''}Code: ${p.code}\n\nOr open this link (single use, expires shortly):\n${p.link}\n\nThe link and the code are the same credential — using either one consumes both. If you did not request this, ignore this email; no account changes will be made.`,
     });
 }
 

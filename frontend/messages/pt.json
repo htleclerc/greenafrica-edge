@@ -1039,11 +1039,18 @@
     "magicLink": {
       "tabPassword": "Palavra-passe",
       "tabLink": "Ligação de acesso",
-      "emailLabel": "Endereço de e-mail",
       "submit": "Receber uma ligação de acesso",
-      "hint": "Enviamos-lhe uma ligação de utilização única. Não é necessária palavra-passe.",
-      "sent": "Se este endereço estiver registado, foi-lhe enviada uma ligação de acesso.",
-      "rateLimited": "Demasiadas tentativas. Tente novamente dentro de alguns minutos."
+      "hint": "Introduza o seu e-mail, ou o IMO (7 dígitos) ou MMSI (9 dígitos) do seu navio. Enviamos uma ligação de utilização única e um código de 6 dígitos.",
+      "sent": "Se este endereço estiver registado, foi-lhe enviada uma ligação de acesso e um código.",
+      "rateLimited": "Demasiadas tentativas. Tente novamente dentro de alguns minutos.",
+      "queryLabel": "E-mail, IMO ou MMSI",
+      "sentToHint": "Ligação e código enviados para {hint}.",
+      "sentVessel": "Navio: {vessel}",
+      "codeLabel": "Código de 6 dígitos",
+      "codeSubmit": "Entrar",
+      "codeHint": "Ou clique na ligação recebida por e-mail — qualquer uma funciona.",
+      "badCode": "Código inválido ou expirado.",
+      "retry": "Usar outro e-mail ou navio"
     }
   },
   "Dashboard": {

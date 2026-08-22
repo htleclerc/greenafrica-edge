@@ -711,11 +711,18 @@
     "magicLink": {
       "tabPassword": "Furaha sirta ah",
       "tabLink": "Xiriirka gelitaanka",
-      "emailLabel": "Cinwaanka iimaylka",
       "submit": "Ii soo dir xiriirka gelitaanka",
-      "hint": "Waxaan kuu soo dirnaa xiriir hal mar la isticmaalo. Furaha sirta ah looma baahna.",
-      "sent": "Haddii cinwaankan la diiwaan geliyay, xiriirka gelitaanka ayaa hadda loo diray.",
-      "rateLimited": "Isku dayo aad u badan. Fadlan dhowr daqiiqo ka dib isku day."
+      "hint": "Geli iimaylkaaga, ama IMO (7 lambar) ama MMSI (9 lambar) ee markabkaaga. Waxaan dirnaa xiriir hal mar la isticmaalo iyo koodh 6 lambar ah.",
+      "sent": "Haddii cinwaankan la diiwaan geliyay, xiriir gelitaan iyo koodh ayaa loo diray.",
+      "rateLimited": "Isku dayo aad u badan. Fadlan dhowr daqiiqo ka dib isku day.",
+      "queryLabel": "Iimayl, IMO ama MMSI",
+      "sentToHint": "Xiriirka iyo koodhka waxaa loo diray {hint}.",
+      "sentVessel": "Markabka: {vessel}",
+      "codeLabel": "Koodh 6 lambar ah",
+      "codeSubmit": "Gal",
+      "codeHint": "Ama gujiso xiriirka iimaylka — mid kastaa wuu shaqeeyaa.",
+      "badCode": "Koodhku waa khalad ama wuu dhacay.",
+      "retry": "Isticmaal iimayl ama markab kale"
     }
   },
   "Dashboard": {
