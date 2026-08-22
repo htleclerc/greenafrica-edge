@@ -3149,7 +3149,9 @@
         "payerNameRequired": "Jina la mlipaji linahitajika",
         "noRail": "Tafadhali chagua njia ya malipo",
         "amountRequired": "Kiasi kinahitajika",
-        "noTransactionForWallet": "Hakuna muamala unaopatikana kwa malipo ya pochi"
+        "noTransactionForWallet": "Hakuna muamala unaopatikana kwa malipo ya pochi",
+        "proofRequired": "Ambatisha uthibitisho wa malipo kabla ya kuwasilisha.",
+        "proofUploadFailed": "Uthibitisho haukuweza kupakiwa."
       },
       "reason": {
         "wallet_empty": "Pochi ni tupu",
@@ -3170,8 +3172,11 @@
       },
       "proofStep": {
         "created": "Ombi la malipo limeundwa",
-        "intro": "Pakia uthibitisho wa malipo (hiari lakini inashauriwa).",
-        "done": "Imekamilika — malipo yako yanasubiri ukaguzi."
+        "intro": "Ambatisha uthibitisho wako wa SWIFT MT103. Bila huo, ankara inabaki wazi.",
+        "done": "Imekamilika — malipo yako yanasubiri ukaguzi.",
+        "required": "Uthibitisho wa malipo (unahitajika)",
+        "requiredHint": "Ambatisha uthibitisho wako wa SWIFT MT103. Bila huo, fedha haiwezi kuthibitisha malipo uliyotangaza.",
+        "uploadFailed": "Malipo yamesajiliwa, lakini uthibitisho haukuweza kupakiwa. Ambatisha hapa chini."
       },
       "comingSoon": "Inakuja hivi karibuni",
       "comingSoonHint": "Njia hii ya malipo bado haijafunguliwa.",
@@ -3202,13 +3207,16 @@
       "addButton": "Ongeza uthibitisho",
       "hint": "PDF, JPG, PNG — upeo MB 5",
       "dialogTitle": "Pakia uthibitisho wa malipo",
-      "intro": "Ambatisha risiti ya uhamisho wa benki, ujumbe wa SWIFT MT103, au uthibitisho wa pesa ya simu.",
+      "intro": "Pakia uthibitisho wako wa SWIFT MT103. Msimamizi atauhakiki kabla ankara haijawekwa kuwa imelipwa.",
       "removeAria": "Ondoa faili",
       "errors": {
         "tooLarge": "Faili kubwa mno (upeo MB 5)",
         "uploadFailed": "Upakiaji umeshindwa — jaribu tena",
         "deleteFailed": "Kufuta kumeshindwa — jaribu tena"
-      }
+      },
+      "done": "Imekamilika",
+      "contextMissing": "Ulitangaza malipo ya ankara hii, lakini bado hakuna uthibitisho ulioambatishwa. Fedha haiwezi kuthibitisha bila huo.",
+      "contextProvided": "Uthibitisho tayari umeambatishwa kwa malipo uliyotangaza. Unaweza kuongeza au kubadilisha faili."
     },
     "wallet": {
       "balanceCard": {
@@ -3470,7 +3478,9 @@
           "hint": "Cash · immediate receipt"
         }
       },
-      "receipt": "Risiti"
+      "receipt": "Risiti",
+      "completeProof": "Ongeza uthibitisho unaokosekana",
+      "reviewProof": "Kagua uthibitisho"
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",

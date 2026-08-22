@@ -29,8 +29,10 @@ export interface InvoiceRow {
     download_url: string | null;
     /** Receipt reference of the latest CONFIRMED payment, or null if none. */
     receipt_ref: string | null;
-    /** Payment id of an INITIATED/PROCESSING wire payment for this invoice, or null. */
-    pending_wire_payment_id: string | null;
+    /** Paiement DECLARE encore en attente de rapprochement, ou null. */
+    pending_declared_payment_id: string | null;
+    /** Vrai si ce paiement porte deja au moins une piece justificative. */
+    pending_payment_has_proof?: boolean;
     /** Échéance — pilote l'urgence de la ligne. */
     due_date?: string | null;
     /** Acomptes déjà encaissés, déduits du reste dû. */
@@ -282,12 +284,13 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                     invoiceRef={disputeTarget.invoice_ref ?? disputeTarget.id.slice(0, 8)}
                 />
             )}
-            {proofTarget?.pending_wire_payment_id && (
+            {proofTarget?.pending_declared_payment_id && (
                 <AttachProofDialog
                     open
                     onOpenChange={(o) => !o && setProofTarget(null)}
-                    paymentId={proofTarget.pending_wire_payment_id}
+                    paymentId={proofTarget.pending_declared_payment_id}
                     invoiceRef={proofTarget.invoice_ref ?? proofTarget.id.slice(0, 8)}
+                    hasProof={proofTarget.pending_payment_has_proof ?? false}
                 />
             )}
         </div>

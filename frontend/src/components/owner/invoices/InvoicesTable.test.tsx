@@ -25,7 +25,7 @@ function row(overrides: Partial<InvoiceRow> = {}): InvoiceRow {
         created_at: '2026-04-26T18:58:12.360325+00:00',
         download_url: '/api/invoices/PRO-2026-81be71091a2b/download?h=aaa&s=bbb',
         receipt_ref: null,
-        pending_wire_payment_id: null,
+        pending_declared_payment_id: null,
         due_date: null,
         partial_paid_usd: 0,
         emissions_tco2: 287.3,
@@ -139,5 +139,50 @@ describe('InvoicesTable — file de travail', () => {
         renderTable([row({ tax_amount_usd: 11_492, partial_paid_usd: 1_492 })]);
         // 11 492 − 1 492 = 10 000, rendu par usdGrouped (espace insécable étroite).
         expect(screen.getByRole('button', { name: /Pay \$10\s000/ })).toBeInTheDocument();
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Justificatif de paiement — un fichier se rattache TOUJOURS a un paiement
+// declare. L'ecran proposait « Attach proof of payment » sans jamais dire s'il
+// en manquait un, et la boite se contentait d'une croix : rien ne validait le
+// geste, l'armateur ne savait pas si sa piece etait prise en compte.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('InvoicesTable — justificatif de paiement', () => {
+    it('n offre aucun rattachement tant qu aucun paiement n est declare', () => {
+        renderTable([row({ pending_declared_payment_id: null })]);
+        expect(screen.queryByText(/missing proof/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Review proof/i)).not.toBeInTheDocument();
+    });
+
+    it('reclame la piece manquante d un paiement declare', () => {
+        renderTable([row({ pending_declared_payment_id: 'pay-1', pending_payment_has_proof: false })]);
+        expect(screen.getByText(/Add the missing proof/i)).toBeInTheDocument();
+    });
+
+    it('propose de revoir la piece quand il y en a deja une', () => {
+        // Le meme libelle dans les deux cas laissait croire qu'il manquait
+        // toujours quelque chose — ou jamais rien.
+        renderTable([row({ pending_declared_payment_id: 'pay-1', pending_payment_has_proof: true })]);
+        expect(screen.getByText(/Review proof of payment/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Add the missing proof/i)).not.toBeInTheDocument();
+    });
+
+    it('ouvre une boite qui dit ce qu elle complete et se valide', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ proofs: [] }) });
+        renderTable([row({ pending_declared_payment_id: 'pay-1', pending_payment_has_proof: false })]);
+        fireEvent.click(screen.getByText(/Add the missing proof/i));
+
+        expect(await screen.findByText(/no proof is attached yet/i)).toBeInTheDocument();
+        // Un geste finalisant, pas seulement une croix.
+        const done = screen.getByText('Done');
+        expect(done).toBeInTheDocument();
+
+        refresh.mockClear();
+        fireEvent.click(done);
+        // La fermeture rafraichit : sinon l'ecran continue de reclamer ce qui
+        // vient d'etre fourni.
+        await waitFor(() => expect(refresh).toHaveBeenCalled());
     });
 });

@@ -3261,7 +3261,9 @@
         "payerNameRequired": "Payer name is required.",
         "noRail": "Please pick a payment method first.",
         "amountRequired": "Amount must be greater than 0.",
-        "noTransactionForWallet": "WALLET rail requires an invoice."
+        "noTransactionForWallet": "WALLET rail requires an invoice.",
+        "proofRequired": "Attach your proof of payment before submitting.",
+        "proofUploadFailed": "The proof could not be uploaded."
       },
       "reason": {
         "wallet_empty": "Your wallet has no balance to apply.",
@@ -3282,8 +3284,11 @@
       },
       "proofStep": {
         "created": "Wire payment recorded. Awaiting your proof + admin verification.",
-        "intro": "Attach your SWIFT MT103 confirmation now (optional — you can also do it later from the invoice list).",
-        "done": "Done"
+        "intro": "Attach your SWIFT MT103 confirmation. Without it the invoice stays open.",
+        "done": "Done",
+        "required": "Proof of payment (required)",
+        "requiredHint": "Attach your SWIFT MT103 confirmation. Finance cannot reconcile a declared payment without it.",
+        "uploadFailed": "Payment registered, but the proof could not be uploaded. Attach it below."
       },
       "comingSoon": "Coming soon",
       "comingSoonHint": "This payment method is not open yet.",
@@ -3320,7 +3325,10 @@
         "tooLarge": "File is too large (max {max} MB).",
         "uploadFailed": "Upload failed. Please try again.",
         "deleteFailed": "Could not remove the file."
-      }
+      },
+      "done": "Done",
+      "contextMissing": "You declared a payment for this invoice, but no proof is attached yet. Finance cannot reconcile it without one.",
+      "contextProvided": "A proof is already attached to the payment you declared. You can add or replace files."
     },
     "wallet": {
       "balanceCard": {
@@ -3582,7 +3590,9 @@
           "hint": "Cash · immediate receipt"
         }
       },
-      "receipt": "Receipt"
+      "receipt": "Receipt",
+      "completeProof": "Add the missing proof",
+      "reviewProof": "Review proof of payment"
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",

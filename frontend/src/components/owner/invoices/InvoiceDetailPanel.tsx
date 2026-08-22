@@ -202,14 +202,23 @@ export function InvoiceDetailPanel({
 
                 {issueError && <p className="text-[11px] text-[var(--os-red)]">{issueError}</p>}
 
-                {invoice.pending_wire_payment_id && (
+                {/* Un justificatif se rattache TOUJOURS a un paiement declare.
+                    Le bouton n'apparait donc que si l'armateur en a declare un
+                    et qu'il reste a rapprocher — et il dit lequel des deux
+                    gestes il propose : completer une declaration a laquelle il
+                    manque sa piece, ou revoir celle deja fournie. */}
+                {invoice.pending_declared_payment_id && (
                     <button
                         type="button"
                         onClick={onAttachProof}
-                        className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)]"
+                        className={`flex h-10 items-center justify-center gap-1.5 rounded-[10px] border px-3 text-[13px] transition-colors duration-150 hover:bg-[var(--os-surface-2)] ${
+                            invoice.pending_payment_has_proof
+                                ? 'border-[var(--os-border-strong)] text-[var(--os-text-secondary)]'
+                                : 'border-amber-500/40 text-amber-300'
+                        }`}
                     >
                         <Paperclip className="size-3.5" aria-hidden />
-                        {t('attachProof')}
+                        {invoice.pending_payment_has_proof ? t('reviewProof') : t('completeProof')}
                     </button>
                 )}
             </div>

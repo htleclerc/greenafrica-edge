@@ -3622,7 +3622,9 @@
         "payerNameRequired": "Nome do pagador é obrigatório",
         "noRail": "Por favor, selecione um método de pagamento",
         "amountRequired": "Valor é obrigatório",
-        "noTransactionForWallet": "Nenhuma transação disponível para pagamento via carteira"
+        "noTransactionForWallet": "Nenhuma transação disponível para pagamento via carteira",
+        "proofRequired": "Anexe o comprovativo de pagamento antes de submeter.",
+        "proofUploadFailed": "Não foi possível enviar o comprovativo."
       },
       "reason": {
         "wallet_empty": "Carteira vazia",
@@ -3643,8 +3645,11 @@
       },
       "proofStep": {
         "created": "Solicitação de pagamento criada",
-        "intro": "Faça upload de um comprovante de pagamento (opcional, mas recomendado).",
-        "done": "Pronto — seu pagamento está aguardando revisão."
+        "intro": "Anexe a sua confirmação SWIFT MT103. Sem ela, a fatura permanece em aberto.",
+        "done": "Pronto — seu pagamento está aguardando revisão.",
+        "required": "Comprovativo de pagamento (obrigatório)",
+        "requiredHint": "Anexe a sua confirmação SWIFT MT103. Sem ela, a tesouraria não consegue reconciliar um pagamento declarado.",
+        "uploadFailed": "Pagamento registado, mas o comprovativo não pôde ser enviado. Anexe-o abaixo."
       },
       "comingSoon": "Em breve",
       "comingSoonHint": "Este meio de pagamento ainda não está disponível.",
@@ -3684,13 +3689,16 @@
       "addButton": "Adicionar comprovante",
       "hint": "PDF, JPG, PNG — máx. 5 MB",
       "dialogTitle": "Enviar comprovante de pagamento",
-      "intro": "Anexe seu recibo de transferência bancária, mensagem SWIFT MT103 ou confirmação de dinheiro móvel.",
+      "intro": "Carregue a sua confirmação SWIFT MT103. Um administrador irá verificá-la antes de a fatura ser marcada como paga.",
       "removeAria": "Remover arquivo",
       "errors": {
         "tooLarge": "Arquivo muito grande (máx. 5 MB)",
         "uploadFailed": "Falha no upload — tente novamente",
         "deleteFailed": "Falha ao excluir — tente novamente"
-      }
+      },
+      "done": "Concluído",
+      "contextMissing": "Declarou um pagamento para esta fatura, mas ainda não anexou nenhum comprovativo. A tesouraria não consegue reconciliá-lo sem ele.",
+      "contextProvided": "Já existe um comprovativo anexado ao pagamento declarado. Pode adicionar ou substituir ficheiros."
     },
     "wallet": {
       "title": "Minha Carteira",
@@ -3965,7 +3973,9 @@
           "hint": "Cash · immediate receipt"
         }
       },
-      "receipt": "Recibo"
+      "receipt": "Recibo",
+      "completeProof": "Adicionar o comprovativo em falta",
+      "reviewProof": "Rever o comprovativo"
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",

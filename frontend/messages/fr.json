@@ -3261,7 +3261,9 @@
         "payerNameRequired": "Le nom du payeur est requis.",
         "noRail": "Veuillez d'abord choisir un moyen de paiement.",
         "amountRequired": "Le montant doit être supérieur à 0.",
-        "noTransactionForWallet": "Le rail WALLET nécessite une facture."
+        "noTransactionForWallet": "Le rail WALLET nécessite une facture.",
+        "proofRequired": "Joignez votre justificatif de paiement avant de soumettre.",
+        "proofUploadFailed": "Le justificatif n'a pas pu être envoyé."
       },
       "reason": {
         "wallet_empty": "Votre wallet ne dispose d’aucun solde.",
@@ -3282,8 +3284,11 @@
       },
       "proofStep": {
         "created": "Virement enregistré. En attente de votre preuve + vérification admin.",
-        "intro": "Joignez votre confirmation SWIFT MT103 maintenant (facultatif — possible aussi plus tard depuis la liste des factures).",
-        "done": "Terminé"
+        "intro": "Joignez votre confirmation SWIFT MT103. Sans elle, la facture reste ouverte.",
+        "done": "Terminé",
+        "required": "Justificatif de paiement (obligatoire)",
+        "requiredHint": "Joignez votre confirmation SWIFT MT103. Sans elle, le service financier ne peut rapprocher un versement déclaré.",
+        "uploadFailed": "Paiement enregistré, mais le justificatif n'a pas pu être envoyé. Joignez-le ci-dessous."
       },
       "comingSoon": "Bientôt disponible",
       "comingSoonHint": "Ce moyen de paiement n'est pas encore ouvert.",
@@ -3320,7 +3325,10 @@
         "tooLarge": "Fichier trop volumineux (max {max} Mo).",
         "uploadFailed": "Échec du téléversement. Réessayez.",
         "deleteFailed": "Suppression du fichier impossible."
-      }
+      },
+      "done": "Terminé",
+      "contextMissing": "Vous avez déclaré un paiement pour cette facture, mais aucun justificatif n'y est encore joint. Le service financier ne peut pas le rapprocher sans pièce.",
+      "contextProvided": "Un justificatif est déjà joint au paiement que vous avez déclaré. Vous pouvez en ajouter ou le remplacer."
     },
     "wallet": {
       "balanceCard": {
@@ -3582,7 +3590,9 @@
           "hint": "Espèces · reçu immédiat"
         }
       },
-      "receipt": "Reçu"
+      "receipt": "Reçu",
+      "completeProof": "Ajouter le justificatif manquant",
+      "reviewProof": "Revoir le justificatif"
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {jour de retard} other {jours de retard}}",

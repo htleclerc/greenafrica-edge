@@ -3261,7 +3261,9 @@
         "payerNameRequired": "Magaca bixiyaha waa waajib.",
         "noRail": "Fadlan dooro hab lacag bixin marka hore.",
         "amountRequired": "Qaddarka waa inuu ka weyn yahay 0.",
-        "noTransactionForWallet": "Jidka WALLET wuxuu u baahan yahay biil."
+        "noTransactionForWallet": "Jidka WALLET wuxuu u baahan yahay biil.",
+        "proofRequired": "Ku lifaaq caddaynta lacag-bixinta ka hor inta aadan gudbin.",
+        "proofUploadFailed": "Caddaynta lama soo gelin karin."
       },
       "reason": {
         "wallet_empty": "Boorsadaadu waxba baalan ma leh.",
@@ -3282,8 +3284,11 @@
       },
       "proofStep": {
         "created": "Lacag bixinta wareejinta waa la diiwaan galiyay. Waxaa la sugayaa caddayntaada + xaqiijinta maamulaha.",
-        "intro": "Ku lifaaq xaqiijintaada SWIFT MT103 hadda (ikhtiyaari — waxaad sidoo kale ka samayn kartaa liiska biillada dambe).",
-        "done": "Dhammee"
+        "intro": "Ku lifaaq xaqiijinta SWIFT MT103. La’aanteed qaansheegtu way furan tahay.",
+        "done": "Dhammee",
+        "required": "Caddaynta lacag-bixinta (waa qasab)",
+        "requiredHint": "Ku lifaaq xaqiijinta SWIFT MT103. La’aanteed maaliyaddu ma xaqiijin karto lacag-bixin la sheegay.",
+        "uploadFailed": "Lacag-bixinta waa la diiwaan geliyay, laakiin caddaynta lama soo gelin karin. Hoos ku lifaaq."
       },
       "comingSoon": "Dhawaan",
       "comingSoonHint": "Habkan lacag bixinta weli lama furin.",
@@ -3314,13 +3319,16 @@
       "addButton": "Ku dar caddaynta lacag bixinta",
       "hint": "PDF ama sawir, ilaa {max} MB. Waxaad ku dari kartaa dhowr faylal.",
       "dialogTitle": "Caddaynta lacag bixinta — {ref}",
-      "intro": "Soo geli xaqiijintaada SWIFT MT103. Maamule ayaa xaqiijin doona kahor inta biilka aan loo dhawaaqin inuu la bixiyay.",
+      "intro": "Soo geli xaqiijinta SWIFT MT103. Maamule ayaa hubin doona ka hor inta qaansheegta lagu calaamadin la bixiyay.",
       "removeAria": "Ka saar {name}",
       "errors": {
         "tooLarge": "Faylku aad buu u weyn yahay (ugu badan {max} MB).",
         "uploadFailed": "Soo gelintii wey ku guuldareysatay. Fadlan isku day mar kale.",
         "deleteFailed": "Faylka laga saari waayay."
-      }
+      },
+      "done": "Waa dhammaatay",
+      "contextMissing": "Waxaad u sheegtay lacag-bixin qaansheegtan, laakiin weli caddayn lama lifaaqin. Maaliyaddu ma xaqiijin karto la’aanteed.",
+      "contextProvided": "Caddayn horey ayaa loogu lifaaqay lacag-bixinta aad sheegtay. Waad ku dari kartaa ama beddeli kartaa faylasha."
     },
     "wallet": {
       "balanceCard": {
@@ -3582,7 +3590,9 @@
           "hint": "Cash · immediate receipt"
         }
       },
-      "receipt": "Rasiidh"
+      "receipt": "Rasiidh",
+      "completeProof": "Ku dar caddaynta maqan",
+      "reviewProof": "Dib u eeg caddaynta"
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
