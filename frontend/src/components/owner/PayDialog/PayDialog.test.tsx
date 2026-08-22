@@ -94,7 +94,10 @@ describe('PayDialog', () => {
         expect(screen.queryByText(/Bank wire/i)).not.toBeInTheDocument();
     });
 
-    it('blocks Step 2 → 3 if WIRE_TRANSFER bank reference missing', async () => {
+    // Le virement n'est plus une action « en direct » : l'armateur y lit les
+    // coordonnees du compte a crediter, la reference bancaire n'existe pas
+    // encore a cet instant et ne peut donc pas bloquer l'etape.
+    it('shows the beneficiary account for WIRE_TRANSFER and advances without a bank reference', async () => {
         (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
             ok: true,
             json: async () => ({
@@ -104,8 +107,14 @@ describe('PayDialog', () => {
         setup();
         await waitFor(() => screen.getByText(/Bank wire/i));
         fireEvent.click(screen.getByText(/Bank wire/i).closest('button')!);
+
+        // Coordonnees bancaires + reference a porter sur le virement.
+        expect(await screen.findByText('MT12SYPL39480821090981701607644')).toBeInTheDocument();
+        expect(screen.getByText('SYPLMTM2XXX')).toBeInTheDocument();
+        expect(screen.getByText('INV-001')).toBeInTheDocument();
+
         fireEvent.click(screen.getByText('Next'));
-        expect(await screen.findByText(/Bank reference is required/)).toBeInTheDocument();
+        expect(await screen.findByText(/Submit payment/i)).toBeInTheDocument();
     });
 });
 

@@ -40,12 +40,42 @@ const RAIL_META: Record<Rail, { icon: React.ComponentType<{ className?: string }
     WALLET:        { icon: Wallet,     color: '#8B5CF6', key: 'wallet' },
 };
 
+/** Format court en dollars, pour les libelles de la bascule mixte. */
+function usd(minor: number): string {
+    return (minor / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+}
+
 export function StepRailPicker() {
     const t = useTranslations('OwnerPortal.payDialog');
     const ctx = usePayDialog();
     const [loading, setLoading] = React.useState(true);
     const [rails, setRails] = React.useState<RailEligibility[]>([]);
     const [fetchError, setFetchError] = React.useState<string | null>(null);
+
+    const totalUsdMinor = Math.round(ctx.amountUsd * 100);
+
+    // Paiement mixte : un portefeuille non vide qui ne couvre pas la facture
+    // servait a rien jusqu'ici — le rail WALLET restait grise et le credit
+    // dormait. On propose de le consommer et de ne payer que le reste.
+    //
+    // Reserve aux factures en USD : le portefeuille est tenu en USD, melanger
+    // deux devises dans un meme reglement demanderait un taux verrouille sur
+    // la part portefeuille, ce que le grand livre ne porte pas.
+    const canSplit =
+        ctx.mode === 'invoice'
+        && ctx.currency === 'USD'
+        && ctx.walletBalanceUsdMinor > 0
+        && ctx.walletBalanceUsdMinor < totalUsdMinor;
+    const splitOn = ctx.walletApplyUsdMinor > 0;
+    const remainderUsdMinor = totalUsdMinor - ctx.walletApplyUsdMinor;
+
+    // Un solde qui ne couvre plus rien (facture revue a la baisse, credit
+    // consomme ailleurs) doit relacher la bascule, sinon le reste a payer
+    // deviendrait negatif.
+    React.useEffect(() => {
+        if (!canSplit && ctx.walletApplyUsdMinor > 0) ctx.setWalletApplyUsdMinor(0);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canSplit]);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -55,14 +85,18 @@ export function StepRailPicker() {
                 const url = new URL('/api/owner/payment-availability', window.location.origin);
                 url.searchParams.set('currency', ctx.currency);
                 url.searchParams.set('walletBalanceUsdMinor', String(ctx.walletBalanceUsdMinor));
-                url.searchParams.set('amountUsdMinor', String(Math.round(ctx.amountUsd * 100)));
+                // L'eligibilite porte sur ce qui reste a payer sur le rail,
+                // pas sur le total de la facture.
+                url.searchParams.set('amountUsdMinor', String(remainderUsdMinor));
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data: AvailabilityResponse = await res.json();
                 if (!cancelled) {
                     // Topup mode: hide WALLET — can't top-up wallet from itself.
+                    // Paiement mixte : le portefeuille est deja engage en
+                    // totalite, le proposer une seconde fois n'a pas de sens.
                     const filtered = data.rails.filter(
-                        (r) => !(ctx.mode === 'topup' && r.rail === 'WALLET'),
+                        (r) => r.rail !== 'WALLET' || (ctx.mode !== 'topup' && !splitOn),
                     );
                     setRails(filtered);
                 }
@@ -74,7 +108,7 @@ export function StepRailPicker() {
         }
         load();
         return () => { cancelled = true; };
-    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode]);
+    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode, remainderUsdMinor, splitOn]);
 
     function pickRail(r: RailEligibility) {
         ctx.setRail(r.rail);
@@ -91,8 +125,38 @@ export function StepRailPicker() {
 
     return (
         <div className="flex flex-col gap-2">
+            {canSplit && (
+                <label
+                    className="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer"
+                    style={{
+                        borderColor: splitOn ? '#8B5CF6' : 'var(--os-border)',
+                        backgroundColor: 'var(--os-surface-2)',
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        checked={splitOn}
+                        onChange={(e) =>
+                            ctx.setWalletApplyUsdMinor(e.target.checked ? ctx.walletBalanceUsdMinor : 0)
+                        }
+                        className="mt-0.5 accent-[#8B5CF6]"
+                    />
+                    <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-semibold text-[var(--os-text-primary)]">
+                            {t('splitWallet.label', { wallet: usd(ctx.walletBalanceUsdMinor) })}
+                        </span>
+                        <span className="block text-[11px] text-[var(--os-text-muted)] mt-0.5">
+                            {splitOn
+                                ? t('splitWallet.on', { remainder: usd(remainderUsdMinor) })
+                                : t('splitWallet.hint')}
+                        </span>
+                    </span>
+                </label>
+            )}
             <p className="text-xs text-[var(--os-text-muted)] mb-1">
-                {t('chooseRail', { currency: ctx.currency })}
+                {splitOn
+                    ? t('chooseRailRemainder', { amount: usd(remainderUsdMinor) })
+                    : t('chooseRail', { currency: ctx.currency })}
             </p>
             {rails.map((r) => {
                 const meta = RAIL_META[r.rail];

@@ -14,6 +14,9 @@ const mockSupabase = {
         select: vi.fn(() => ({
             eq: () => ({
                 maybeSingle: async () => ({ data: transactionRow, error: null }),
+                // Controle de propriete du paiement mixte : la facture doit
+                // appartenir a l'armateur de la session.
+                single: async () => ({ data: ownedTransactionRow, error: null }),
                 order: () => ({
                     limit: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
                 }),
@@ -45,6 +48,12 @@ vi.mock('@/lib/auth/requireOwner', () => ({
 }));
 
 let transactionRow: { invoice_ref: string | null } | null = { invoice_ref: 'INV-2026-abc' };
+let ownedTransactionRow: { id: string; shipowner_id: string } = { id: 'tx-1', shipowner_id: 'so-1' };
+const applyWalletCreditMock = vi.fn();
+
+vi.mock('@/services/walletApplyService', () => ({
+    applyWalletCredit: (...a: unknown[]) => applyWalletCreditMock(...a),
+}));
 const createPaypalOrderMock = vi.fn();
 const paypalConfiguredMock = vi.fn(() => true);
 
@@ -66,6 +75,8 @@ beforeEach(() => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
     transactionRow = { invoice_ref: 'INV-2026-abc' };
+    ownedTransactionRow = { id: 'tx-1', shipowner_id: 'so-1' };
+    applyWalletCreditMock.mockReset().mockResolvedValue({ walletId: 'w-1', paymentId: 'wpay-1' });
     createPaypalOrderMock.mockReset().mockResolvedValue({ orderId: 'ORDER-1', approveUrl: 'https://paypal.com/approve/ORDER-1' });
     paypalConfiguredMock.mockReset().mockReturnValue(true);
     vi.clearAllMocks();
@@ -259,5 +270,92 @@ describe('initiatePayment — rail PAYPAL', () => {
             source: 'owner_initiated',
             paypal_order_id: 'ORDER-1',
         });
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Paiement mixte : une partie au portefeuille, le reste sur un rail externe.
+// Ce que ces tests tiennent : `amount` ne porte QUE le reste, le portefeuille
+// n'est debite qu'apres l'accord du prestataire, et un top-up ne peut pas etre
+// finance par le portefeuille lui-meme.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('initiatePayment — paiement mixte portefeuille + rail', () => {
+    const TX = '123e4567-e89b-12d3-a456-426614174010';
+
+    it('debite le portefeuille et n insere que le reste sur STRIPE', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        const out = await initiatePayment({
+            transactionId: TX,
+            amount: '80.00', currency: 'USD', rail: 'STRIPE',
+            railDetails: {},
+            walletApplyUsdMinor: 2000,
+        });
+
+        expect(applyWalletCreditMock).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                transactionId: TX,
+                shipownerId: 'so-1',
+                actorUserId: 'u-1',
+                amountMinor: 2000,
+            }),
+        );
+        expect(inserted[0]).toMatchObject({
+            rail: 'STRIPE',
+            amount_usd_minor: 8000,
+            rail_details: expect.objectContaining({ wallet_applied_usd_minor: 2000 }),
+        });
+        expect(out.checkoutUrl).toBe('https://checkout.stripe.com/c/cs_test_123');
+    });
+
+    it('ne debite pas le portefeuille si Stripe refuse la session', async () => {
+        const { createCheckoutSession } = await import('@/services/stripeService');
+        (createCheckoutSession as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Stripe down'));
+
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: TX,
+            amount: '80.00', currency: 'USD', rail: 'STRIPE',
+            railDetails: {},
+            walletApplyUsdMinor: 2000,
+        })).rejects.toThrow(/Stripe down/);
+
+        expect(applyWalletCreditMock).not.toHaveBeenCalled();
+        expect(inserted).toHaveLength(0);
+    });
+
+    it('refuse de financer une recharge avec le portefeuille', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: null,
+            amount: '80.00', currency: 'USD', rail: 'STRIPE',
+            railDetails: {},
+            walletApplyUsdMinor: 2000,
+        })).rejects.toThrow(/top-up/i);
+        expect(applyWalletCreditMock).not.toHaveBeenCalled();
+    });
+
+    it('refuse une facture qui n appartient pas a l armateur', async () => {
+        ownedTransactionRow = { id: 'tx-1', shipowner_id: 'so-OTHER' };
+        const { initiatePayment } = await import('./initiatePayment');
+        await expect(initiatePayment({
+            transactionId: TX,
+            amount: '80.00', currency: 'USD', rail: 'STRIPE',
+            railDetails: {},
+            walletApplyUsdMinor: 2000,
+        })).rejects.toThrow(/Not your transaction/);
+        expect(applyWalletCreditMock).not.toHaveBeenCalled();
+    });
+
+    it('applique le portefeuille avant l INSERT sur un rail manuel', async () => {
+        const { initiatePayment } = await import('./initiatePayment');
+        await initiatePayment({
+            transactionId: TX,
+            amount: '80.00', currency: 'USD', rail: 'WIRE_TRANSFER',
+            railDetails: { bank_reference: null },
+            walletApplyUsdMinor: 2000,
+        });
+        expect(applyWalletCreditMock).toHaveBeenCalledOnce();
+        expect(inserted[0]).toMatchObject({ rail: 'WIRE_TRANSFER', amount_usd_minor: 8000 });
     });
 });

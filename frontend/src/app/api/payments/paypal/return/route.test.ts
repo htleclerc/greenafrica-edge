@@ -68,7 +68,7 @@ beforeEach(() => {
     tenantClientMock.mockReset();
     selectFilters.length = 0;
 
-    paymentRow = { id: 'pay-1', shipowner_id: 'so-1', status: 'PROCESSING' };
+    paymentRow = { id: 'pay-1', shipowner_id: 'so-1', status: 'PROCESSING', transaction_id: 't-1' };
 
     requireOwnerMock.mockResolvedValue({
         userId: 'u-1',
@@ -94,6 +94,15 @@ describe('GET /api/payments/paypal/return — chemin nominal', () => {
             payerEmail: 'p@example.com',
         });
         expect(locationOf(res)).toContain('/dashboard/invoices?paypal=success');
+    });
+
+    it('renvoie une recharge de portefeuille sur le portefeuille, pas les factures', async () => {
+        // Un top-up n'a pas de facture en face : transaction_id est nul.
+        paymentRow = { id: 'pay-1', shipowner_id: 'so-1', status: 'PROCESSING', transaction_id: null };
+
+        const res = await GET(req('?token=ORDER-1&PayerID=PAYER-1'));
+
+        expect(locationOf(res)).toContain('/dashboard/wallet?paypal=success');
     });
 
     it('utilise un client scope a la juridiction de l armateur', async () => {

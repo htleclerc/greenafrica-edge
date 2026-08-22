@@ -3177,7 +3177,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Dir wareejinta oo gali tixraaca bangiga hoosta.",
+        "wire_transfer": "U wareeji qaddarka akoonka hoose, kadibna ku lifaaq caddaynta wareejinta.",
         "mobile_money": "Gali lambarka taleefoonka ee loo isticmaalay wareejinta {provider}.",
         "third_party": "Aqoonso dhinaca saddexaad ee kaaga bixinaya.",
         "wallet": "Ku dabaq balankaaga boorsada biilkan.",
@@ -3203,7 +3203,9 @@
         "rail": "Habka",
         "provider": "Bixiyaha",
         "details": "Faahfaahinta",
-        "disclaimer": "Gudbitaanku wuxuu diiwaan galiyaa lacag bixintaada sida BILAABATAY. Xisaabaadku wuu dib-u-eegi doonaa oo 24 saac gudahood xaqiijiyaa."
+        "disclaimer": "Gudbitaanku wuxuu diiwaan galiyaa lacag bixintaada sida BILAABATAY. Xisaabaadku wuu dib-u-eegi doonaa oo 24 saac gudahood xaqiijiyaa.",
+        "split": "Qaybinta",
+        "splitValue": "{wallet} boorsada · {remainder} {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Tixraaca bangiga waa waajib.",
@@ -3236,7 +3238,27 @@
         "done": "Dhammee"
       },
       "comingSoon": "Dhawaan",
-      "comingSoonHint": "Habkan lacag bixinta weli lama furin."
+      "comingSoonHint": "Habkan lacag bixinta weli lama furin.",
+      "splitWallet": {
+        "label": "Isticmaal hadhaagayga {wallet}",
+        "hint": "Hadhaagaagu ma daboolayo qaddarka oo dhan — isticmaal oo bixi faraqa kaliya.",
+        "on": "Waxaa hadhay {remainder} oo lagu bixinayo habka hoose."
+      },
+      "chooseRailRemainder": "Dooro hab lagu bixiyo {amount} ee hadhay:",
+      "wire": {
+        "accountTitle": "Akoonka la bixinayo",
+        "beneficiary": "Qofka la bixinayo",
+        "bank": "Bangiga",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Tixraaca",
+        "amount": "Qaddarka",
+        "step1": "Ka dir wareejinta bangigaaga adigoo ku qoraya tixraaca kore.",
+        "step2": "Soo geli SWIFT MT103 ama rasiidka bangigaaga shaashadda xigta.",
+        "step3": "Qaybta maaliyadda ayaa xaqiijinaysa lacagta gashay kadibna ansixinaysa lacag bixinta — halkan waxba lagama jarayo.",
+        "topupHint": "Buuxinta lacagta ma laha tixraac faktuur: ku dar magaca shirkaddaada sababta wareejinta.",
+        "bankReferenceOptional": "Ikhtiyaari — ka tag madhan haddii bangigaagu weli soo saarin."
+      }
     },
     "proofUpload": {
       "addButton": "Ku dar caddaynta lacag bixinta",
@@ -3287,6 +3309,12 @@
           "ADMIN_ADJUSTMENT": "Hagaajinta maamulaha",
           "FX_DIFFERENCE": "Farqiga xawaalaadda"
         }
+      },
+      "topupReturn": {
+        "success": "Buuxinta lacagta waa la helay — hadhaaga boorsadaada waa la cusboonaysiiyay.",
+        "cancel": "Buuxinta lacagta waa la joojiyay. Wax lacag ah lagama jarin.",
+        "pending": "Buuxinta lacagta waa la xaqiijinayaa. Hadhaagaaga wuxuu cusboonaan doonaa dhawaan.",
+        "failed": "Buuxinta lacagta lama dhammaystiri karin. Wax lacag ah lagama jarin — isku day mar kale ama dooro hab kale oo lacag bixin ah."
       }
     },
     "notifications": {

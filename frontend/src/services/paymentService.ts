@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { WIRE_BENEFICIARY } from '@/lib/payments/wireBeneficiary';
 
 /**
  * Multi-Provider Payment Service — Admin-Configurable
@@ -338,14 +339,14 @@ function createWireTransfer(payment: PaymentRequest): PaymentResult {
     provider: 'wire_transfer',
     status: 'pending',
     wireInstructions: {
-      beneficiary: 'Solide Technology Limited',
+      beneficiary: WIRE_BENEFICIARY.beneficiary,
       // IBAN-based Maltese account — no separate domestic account number was
       // provided, so the IBAN also serves as the account identifier here.
-      accountNumber: 'MT12SYPL39480821090981701607644',
-      bank: 'SYSTEM PAY SERVICES (MALTA) LIMITED',
-      bankAddress: 'Ruby Workspaces, 3 Triq Santandrija, St Julians, STJ 9023, MT',
-      swiftCode: 'SYPLMTM2XXX',
-      iban: 'MT12SYPL39480821090981701607644',
+      accountNumber: WIRE_BENEFICIARY.iban,
+      bank: WIRE_BENEFICIARY.bank,
+      bankAddress: WIRE_BENEFICIARY.bankAddress,
+      swiftCode: WIRE_BENEFICIARY.swiftCode,
+      iban: WIRE_BENEFICIARY.iban,
       reference: ref,
       amount: `${payment.currency} ${payment.amount.toFixed(2)}`,
       currency: payment.currency,

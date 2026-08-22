@@ -3065,7 +3065,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Toa marejeo ya uhamisho wa benki.",
+        "wire_transfer": "Tuma kiasi kwenye akaunti iliyo hapa chini, kisha ambatisha uthibitisho.",
         "mobile_money": "Toa maelezo ya muamala wa pesa ya simu.",
         "third_party": "Toa maelezo ya mlipaji wa tatu.",
         "wallet": "Salio la pochi yako litatumika.",
@@ -3091,7 +3091,9 @@
         "rail": "Njia",
         "provider": "Mtoa huduma",
         "details": "Maelezo",
-        "disclaimer": "Kwa kuwasilisha, unathibitisha kuwa maelezo ya malipo ni sahihi."
+        "disclaimer": "Kwa kuwasilisha, unathibitisha kuwa maelezo ya malipo ni sahihi.",
+        "split": "Mgawanyo",
+        "splitValue": "{wallet} kutoka pochi · {remainder} kwa {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Marejeo ya benki yanahitajika",
@@ -3124,7 +3126,27 @@
         "done": "Imekamilika — malipo yako yanasubiri ukaguzi."
       },
       "comingSoon": "Inakuja hivi karibuni",
-      "comingSoonHint": "Njia hii ya malipo bado haijafunguliwa."
+      "comingSoonHint": "Njia hii ya malipo bado haijafunguliwa.",
+      "splitWallet": {
+        "label": "Tumia salio langu la {wallet}",
+        "hint": "Salio lako halitoshi kiasi chote — litumie na ulipe tofauti pekee.",
+        "on": "Imebaki {remainder} ya kulipa kwa njia iliyo hapa chini."
+      },
+      "chooseRailRemainder": "Chagua njia ya kulipa {amount} zilizobaki:",
+      "wire": {
+        "accountTitle": "Akaunti ya mpokeaji",
+        "beneficiary": "Mpokeaji",
+        "bank": "Benki",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Kumbukumbu",
+        "amount": "Kiasi",
+        "step1": "Tuma malipo kutoka benki yako ukitaja kumbukumbu iliyo hapo juu.",
+        "step2": "Pakia SWIFT MT103 au risiti ya benki yako kwenye skrini inayofuata.",
+        "step3": "Idara ya fedha italinganisha fedha zilizoingia kisha kuthibitisha malipo — hakuna kinachotozwa hapa.",
+        "topupHint": "Kuongeza salio hakuna kumbukumbu ya ankara: andika pia jina la kampuni yako kwenye maelezo ya malipo.",
+        "bankReferenceOptional": "Si lazima — acha wazi kama benki yako bado haijaitoa."
+      }
     },
     "proofUpload": {
       "addButton": "Ongeza uthibitisho",
@@ -3175,6 +3197,12 @@
           "ADMIN_ADJUSTMENT": "Marekebisho ya msimamizi",
           "FX_DIFFERENCE": "Tofauti ya sarafu"
         }
+      },
+      "topupReturn": {
+        "success": "Malipo ya kuongeza salio yamepokelewa — salio la pochi yako limesasishwa.",
+        "cancel": "Kuongeza salio kumeghairiwa. Hakuna kiasi kilichotozwa.",
+        "pending": "Kuongeza salio kunathibitishwa. Salio lako litasasishwa hivi karibuni.",
+        "failed": "Kuongeza salio hakukukamilika. Hakuna kiasi kilichotozwa — jaribu tena au chagua njia nyingine ya malipo."
       }
     },
     "notifications": {

@@ -3519,7 +3519,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Forneça sua referência de transferência bancária.",
+        "wire_transfer": "Transfira o montante para a conta abaixo e anexe o comprovativo.",
         "mobile_money": "Forneça os detalhes da transação de dinheiro móvel.",
         "third_party": "Forneça os detalhes do pagador terceiro.",
         "wallet": "Seu saldo na carteira será utilizado.",
@@ -3545,7 +3545,9 @@
         "rail": "Método",
         "provider": "Provedor",
         "details": "Detalhes",
-        "disclaimer": "Ao enviar, você confirma que os detalhes do pagamento estão corretos."
+        "disclaimer": "Ao enviar, você confirma que os detalhes do pagamento estão corretos.",
+        "split": "Repartição",
+        "splitValue": "{wallet} da carteira · {remainder} por {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Referência bancária é obrigatória",
@@ -3578,7 +3580,27 @@
         "done": "Pronto — seu pagamento está aguardando revisão."
       },
       "comingSoon": "Em breve",
-      "comingSoonHint": "Este meio de pagamento ainda não está disponível."
+      "comingSoonHint": "Este meio de pagamento ainda não está disponível.",
+      "splitWallet": {
+        "label": "Usar o meu crédito de {wallet}",
+        "hint": "O seu saldo não cobre a totalidade — aplique-o e pague apenas a diferença.",
+        "on": "Faltam {remainder} a pagar com o meio abaixo."
+      },
+      "chooseRailRemainder": "Escolha um meio para os {amount} restantes:",
+      "wire": {
+        "accountTitle": "Conta beneficiária",
+        "beneficiary": "Beneficiário",
+        "bank": "Banco",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Referência",
+        "amount": "Montante",
+        "step1": "Emita a transferência no seu banco, indicando a referência acima.",
+        "step2": "Carregue o SWIFT MT103 ou o comprovativo do seu banco no ecrã seguinte.",
+        "step3": "O departamento financeiro concilia os fundos na conta e confirma o pagamento — nada é cobrado aqui.",
+        "topupHint": "Uma recarga não tem referência de fatura: indique também o nome da sua empresa na descrição da transferência.",
+        "bankReferenceOptional": "Opcional — deixe vazio se o seu banco ainda não a emitiu."
+      }
     },
     "proofUpload": {
       "title": "Enviar comprovante de pagamento (MT103)",
@@ -3647,6 +3669,12 @@
           "ADMIN_ADJUSTMENT": "Ajuste administrativo",
           "FX_DIFFERENCE": "Diferença cambial"
         }
+      },
+      "topupReturn": {
+        "success": "Recarga recebida — o saldo da sua carteira foi atualizado.",
+        "cancel": "Recarga cancelada. Nenhum valor foi cobrado.",
+        "pending": "A recarga está a ser verificada. O seu saldo será atualizado em breve.",
+        "failed": "Não foi possível concluir a recarga. Nenhum valor foi cobrado — tente novamente ou escolha outro meio de pagamento."
       }
     },
     "notifications": {

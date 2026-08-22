@@ -38,12 +38,16 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                     amountMinor: Math.round(ctx.amountUsd * 100),
                 });
             } else {
+                // Paiement mixte : `amount` ne porte QUE le reste a payer sur
+                // le rail, la part portefeuille voyage a part.
+                const remainderUsd = ctx.amountUsd - ctx.walletApplyUsdMinor / 100;
                 const result = await initiatePayment({
                     transactionId: ctx.transactionId,
-                    amount: ctx.amountUsd.toFixed(2),
+                    amount: remainderUsd.toFixed(2),
                     currency: ctx.currency,
                     rail: ctx.rail,
                     railDetails: ctx.railDetails,
+                    walletApplyUsdMinor: ctx.walletApplyUsdMinor || undefined,
                 });
 
                 // Rails à checkout externe (STRIPE, PAYPAL) : l'action renvoie une
@@ -111,6 +115,20 @@ export function StepConfirm({ onClose }: { onClose: () => void }) {
                             {ctx.amountUsd.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
                         </p>
                     </div>
+                    {ctx.walletApplyUsdMinor > 0 && (
+                        <div className="col-span-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                                {t('summary.split')}
+                            </p>
+                            <p className="text-sm text-[var(--os-text-primary)]">
+                                {t('summary.splitValue', {
+                                    wallet: (ctx.walletApplyUsdMinor / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' }),
+                                    remainder: (ctx.amountUsd - ctx.walletApplyUsdMinor / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' }),
+                                    rail: ctx.rail ?? '',
+                                })}
+                            </p>
+                        </div>
+                    )}
                     <div>
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">{t('summary.rail')}</p>
                         <p className="text-sm font-bold text-[var(--os-text-primary)]">{ctx.rail}</p>

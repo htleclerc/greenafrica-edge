@@ -24,6 +24,13 @@ export interface PayDialogContextValue extends PayDialogState {
     amountUsd: number;
     currency: string;
     walletBalanceUsdMinor: number;
+    /**
+     * Part de la facture reglee depuis le portefeuille, en cents USD. Zero =
+     * paiement simple. Non nulle = paiement mixte : le rail choisi ne couvre
+     * plus que `amountUsd - walletApplyUsdMinor / 100`.
+     */
+    walletApplyUsdMinor: number;
+    setWalletApplyUsdMinor: (n: number) => void;
     setStep: (step: Step) => void;
     setRail: (rail: Rail | null) => void;
     setRailDetails: (d: Record<string, unknown>) => void;
@@ -54,6 +61,7 @@ export function PayDialogProvider(
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [amountUsd, setAmountUsd] = React.useState<number>(props.amountUsd);
+    const [walletApplyUsdMinor, setWalletApplyUsdMinor] = React.useState(0);
 
     // Keep amountUsd in sync if the parent updates the prop (e.g. invoice mode re-renders).
     React.useEffect(() => {
@@ -62,6 +70,7 @@ export function PayDialogProvider(
 
     const reset = React.useCallback(() => {
         setStep('rail');
+        setWalletApplyUsdMinor(0);
         setRail(null);
         setRailDetails({});
         setChosenProvider(null);
@@ -77,6 +86,8 @@ export function PayDialogProvider(
         amountUsd,
         currency: props.currency,
         walletBalanceUsdMinor: props.walletBalanceUsdMinor,
+        walletApplyUsdMinor,
+        setWalletApplyUsdMinor,
         setStep, setRail, setRailDetails, setChosenProvider, setSubmitting, setError, setAmountUsd, reset,
     };
 

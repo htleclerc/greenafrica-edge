@@ -3177,7 +3177,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Effectuez le virement et saisissez la référence bancaire ci-dessous.",
+        "wire_transfer": "Virez le montant sur le compte ci-dessous, puis joignez votre preuve de virement.",
         "mobile_money": "Saisissez le numéro de téléphone utilisé pour le transfert {provider}.",
         "third_party": "Identifiez le tiers qui paie pour votre compte.",
         "wallet": "Appliquez votre solde wallet à cette facture.",
@@ -3203,7 +3203,9 @@
         "rail": "Méthode",
         "provider": "Prestataire",
         "details": "Détails",
-        "disclaimer": "L'envoi enregistre votre paiement comme INITIATED. Le service finance vérifie et confirme sous 24h."
+        "disclaimer": "L'envoi enregistre votre paiement comme INITIATED. Le service finance vérifie et confirme sous 24h.",
+        "split": "Ventilation",
+        "splitValue": "{wallet} au portefeuille · {remainder} par {rail}"
       },
       "errors": {
         "bankReferenceRequired": "La référence bancaire est requise.",
@@ -3236,7 +3238,27 @@
         "done": "Terminé"
       },
       "comingSoon": "Bientôt disponible",
-      "comingSoonHint": "Ce moyen de paiement n'est pas encore ouvert."
+      "comingSoonHint": "Ce moyen de paiement n'est pas encore ouvert.",
+      "splitWallet": {
+        "label": "Utiliser mon crédit de {wallet}",
+        "hint": "Votre solde ne couvre pas la totalité — appliquez-le et ne payez que la différence.",
+        "on": "Reste {remainder} à régler avec le moyen ci-dessous."
+      },
+      "chooseRailRemainder": "Choisissez un moyen pour les {amount} restants :",
+      "wire": {
+        "accountTitle": "Compte bénéficiaire",
+        "beneficiary": "Bénéficiaire",
+        "bank": "Banque",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Référence",
+        "amount": "Montant",
+        "step1": "Émettez le virement depuis votre banque en portant la référence ci-dessus.",
+        "step2": "Téléversez le SWIFT MT103 ou l’avis de votre banque à l’écran suivant.",
+        "step3": "Le service financier rapproche les fonds sur le compte puis confirme le paiement — rien n’est prélevé ici.",
+        "topupHint": "Une recharge n’a pas de référence de facture : indiquez aussi le nom de votre société dans le motif du virement.",
+        "bankReferenceOptional": "Facultatif — laissez vide si votre banque ne l’a pas encore émise."
+      }
     },
     "proofUpload": {
       "addButton": "Ajouter une preuve de paiement",
@@ -3287,6 +3309,12 @@
           "ADMIN_ADJUSTMENT": "Ajustement admin",
           "FX_DIFFERENCE": "Écart de change"
         }
+      },
+      "topupReturn": {
+        "success": "Recharge reçue — le solde de votre portefeuille a été mis à jour.",
+        "cancel": "Recharge annulée. Aucun montant n’a été prélevé.",
+        "pending": "Recharge en cours de vérification. Votre solde sera mis à jour sous peu.",
+        "failed": "La recharge n’a pas pu aboutir. Aucun montant n’a été prélevé — réessayez ou choisissez un autre moyen de paiement."
       }
     },
     "notifications": {

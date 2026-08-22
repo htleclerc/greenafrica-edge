@@ -3177,7 +3177,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Send the wire and enter the bank reference below.",
+        "wire_transfer": "Wire the amount to the account below, then attach your proof of transfer.",
         "mobile_money": "Enter the phone number used for the {provider} transfer.",
         "third_party": "Identify the third party paying on your behalf.",
         "wallet": "Apply your wallet balance to this invoice.",
@@ -3203,7 +3203,9 @@
         "rail": "Method",
         "provider": "Provider",
         "details": "Details",
-        "disclaimer": "Submitting registers your payment as INITIATED. Finance reviews and confirms it within 24h."
+        "disclaimer": "Submitting registers your payment as INITIATED. Finance reviews and confirms it within 24h.",
+        "split": "Split",
+        "splitValue": "{wallet} from wallet · {remainder} by {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Bank reference is required.",
@@ -3236,7 +3238,27 @@
         "done": "Done"
       },
       "comingSoon": "Coming soon",
-      "comingSoonHint": "This payment method is not open yet."
+      "comingSoonHint": "This payment method is not open yet.",
+      "splitWallet": {
+        "label": "Use my {wallet} wallet credit",
+        "hint": "Your balance does not cover the full amount — apply it and pay only the difference.",
+        "on": "Remaining {remainder} to pay with the method below."
+      },
+      "chooseRailRemainder": "Pick a method for the remaining {amount}:",
+      "wire": {
+        "accountTitle": "Beneficiary account",
+        "beneficiary": "Beneficiary",
+        "bank": "Bank",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Reference",
+        "amount": "Amount",
+        "step1": "Send the wire from your bank, quoting the reference above.",
+        "step2": "Upload the SWIFT MT103 or your bank receipt on the next screen.",
+        "step3": "Finance reconciles the funds against the account and confirms the payment — nothing is charged here.",
+        "topupHint": "A top-up has no invoice reference: also put your company name in the wire message so finance can match it.",
+        "bankReferenceOptional": "Optional — leave empty if your bank has not issued it yet."
+      }
     },
     "proofUpload": {
       "addButton": "Add proof of payment",
@@ -3287,6 +3309,12 @@
           "ADMIN_ADJUSTMENT": "Admin adjustment",
           "FX_DIFFERENCE": "FX difference"
         }
+      },
+      "topupReturn": {
+        "success": "Top-up received — your wallet balance has been updated.",
+        "cancel": "Top-up cancelled. Nothing was charged.",
+        "pending": "Top-up is being verified. Your balance will update shortly.",
+        "failed": "The top-up could not be completed. Nothing was charged — try again or choose another payment method."
       }
     },
     "notifications": {
