@@ -1,16 +1,20 @@
 import { jsPDF } from 'jspdf';
-import { WIRE_BENEFICIARY, type WireBeneficiary } from '@/lib/payments/wireBeneficiary';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { type WireBeneficiary } from '@/lib/payments/wireBeneficiary';
+import { getIssuerProfile, toWireBeneficiary } from '@/services/issuerProfileService';
 
 /**
  * Coordonnées bancaires applicables à une juridiction.
  *
- * Aujourd'hui le concessionnaire qui perçoit est unique, donc toutes les
- * juridictions partagent le compte par défaut. Le paramètre existe pour que le
- * jour où une juridiction encaissera sur son propre compte, le remplacement se
- * fasse ICI — un seul point — et non dans chaque écran qui affiche un IBAN.
+ * Depuis la mig 131 elles viennent de `jurisdiction_issuer_profile` : compte de
+ * défaut, surchargeable juridiction par juridiction. Le service ne lève jamais
+ * — sans ligne en base, il rend les coordonnées connues plutôt que rien.
  */
-export async function getWireBeneficiary(_jurisdictionId: string): Promise<WireBeneficiary> {
-    return WIRE_BENEFICIARY;
+export async function getWireBeneficiary(
+    client: SupabaseClient,
+    jurisdictionId: string | null,
+): Promise<WireBeneficiary> {
+    return toWireBeneficiary(await getIssuerProfile(client, jurisdictionId));
 }
 
 export interface WireInstructionsData {

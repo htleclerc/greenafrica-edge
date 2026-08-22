@@ -46,3 +46,6 @@ docs/*
 !docs/designs/
 !docs/reviews/
 !docs/onboarding
+
+# Fichiers temporaires Word/Excel
+~$*

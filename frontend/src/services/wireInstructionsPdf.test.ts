@@ -52,11 +52,49 @@ describe('generateWireInstructionsPdf', () => {
 });
 
 describe('getWireBeneficiary', () => {
-    it('sert le compte du concessionnaire pour toute juridiction', async () => {
-        // Un seul concessionnaire perçoit aujourd'hui. Ce test tient la
-        // promesse du point de substitution unique : le jour où une
-        // juridiction encaisse sur son compte, c'est ici que ça se voit.
-        await expect(getWireBeneficiary('00000000-0000-4000-8000-00000000534f'))
+    /** Client minimal : `.from().select()` rend les lignes fournies. */
+    function fakeClient(rows: unknown[], error: unknown = null) {
+        return {
+            from: () => ({ select: async () => ({ data: rows, error }) }),
+        } as unknown as Parameters<typeof getWireBeneficiary>[0];
+    }
+
+    it('sert le compte de defaut quand la juridiction n en surcharge pas', async () => {
+        const rows = [{
+            jurisdiction_id: null,
+            bank_accounts: [{
+                holder: 'Solide Technology Limited',
+                bank: 'SYSTEM PAY SERVICES (MALTA) LIMITED',
+                bank_address: WIRE_BENEFICIARY.bankAddress,
+                swift: 'SYPLMTM2XXX',
+                iban: 'MT12SYPL39480821090981701607644',
+                is_primary: true,
+            }],
+        }];
+        await expect(getWireBeneficiary(fakeClient(rows), 'jur-1'))
+            .resolves.toEqual(WIRE_BENEFICIARY);
+    });
+
+    it('sert le compte de la juridiction quand elle en declare un', async () => {
+        // La promesse du point de substitution unique : le jour ou une
+        // juridiction encaisse sur son propre compte, rien d'autre ne bouge.
+        const rows = [
+            { jurisdiction_id: null, bank_accounts: [{ holder: 'Defaut', bank: 'B', swift: 'S', iban: 'MT00', is_primary: true }] },
+            { jurisdiction_id: 'jur-dj', bank_accounts: [{ holder: 'Tresor Djibouti', bank: 'BCD', bank_address: 'Djibouti', swift: 'BCDJDJJD', iban: 'DJ2100', is_primary: true }] },
+        ];
+        await expect(getWireBeneficiary(fakeClient(rows), 'jur-dj')).resolves.toEqual({
+            beneficiary: 'Tresor Djibouti',
+            bank: 'BCD',
+            bankAddress: 'Djibouti',
+            swiftCode: 'BCDJDJJD',
+            iban: 'DJ2100',
+        });
+    });
+
+    it('retombe sur les coordonnees connues si la table est injoignable', async () => {
+        // Un document fiscal ne reste pas bloque parce qu'une table de
+        // configuration ne repond pas.
+        await expect(getWireBeneficiary(fakeClient([], { message: 'boom' }), 'jur-1'))
             .resolves.toEqual(WIRE_BENEFICIARY);
     });
 });

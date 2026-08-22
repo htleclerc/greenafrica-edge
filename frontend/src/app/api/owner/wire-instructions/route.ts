@@ -30,11 +30,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
     const transactionId = url.searchParams.get('transactionId');
 
+    const admin = createTenantClient(ctx.jurisdictionId);
+
     let amountUsd: number;
     let invoiceRef: string | null = null;
 
     if (transactionId) {
-        const admin = createTenantClient(ctx.jurisdictionId);
         const { data: tx, error } = await admin
             .from('transactions')
             .select('id, shipowner_id, invoice_ref, tax_amount_usd')
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         amountUsd = raw;
     }
 
-    const beneficiary = await getWireBeneficiary(ctx.jurisdictionId);
+    const beneficiary = await getWireBeneficiary(admin, ctx.jurisdictionId);
     const pdf = generateWireInstructionsPdf({
         beneficiary,
         reference: wireReference(invoiceRef, ctx.shipowner.id),
