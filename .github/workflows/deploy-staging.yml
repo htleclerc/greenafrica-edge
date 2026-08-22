@@ -42,10 +42,38 @@ jobs:
           version: latest
 
       # Same proven path as production: direct Postgres auth via the pooler URL.
-      - name: Run migrations
-        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
+      # Le 2026-08-22, ce job echouait sur « tenant/user postgres.<ref> not
+      # found » : le secret de l'environnement pointait un pooler qui n'heberge
+      # pas ce projet. L'erreur brute de pgx ne nomme ni le secret ni
+      # l'environnement — de quoi chercher longtemps du cote des migrations.
+      - name: Verify SUPABASE_DB_URL is set
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL est vide pour l'environnement GitHub « staging ». Renseigne-le depuis Supabase > Project Settings > Database > Connection string."
+            exit 1
+          fi
+          case "$SUPABASE_DB_URL" in
+            postgres://*|postgresql://*) ;;
+            *) echo "::error::SUPABASE_DB_URL ne ressemble pas a une URL Postgres (environnement « staging »)."; exit 1 ;;
+          esac
+
+      - name: Run migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          # pipefail sinon le statut du pipe est celui de `tee` : un push en
+          # echec passerait pour un succes et les deploiements suivants
+          # partiraient sur une base non migree.
+          set -o pipefail
+          if ! supabase db push --db-url "$SUPABASE_DB_URL" --yes 2>&1 | tee push.log; then
+            if grep -qi "tenant/user\|Tenant or user not found" push.log; then
+              echo "::error::Le pooler refuse le couple hote/tenant : le secret SUPABASE_DB_URL de l'environnement « staging » ne correspond pas a ce projet Supabase (mauvaise region de pooler, ou reference de projet obsolete). Recopie la Connection string depuis le dashboard."
+            fi
+            echo "::error::Migrations non appliquees — les deploiements qui en dependent seront SAUTES."
+            exit 1
+          fi
 
   # ── Go backend deploy (Fly.io) ──────────────────────────────────────────
   backend:
@@ -123,11 +151,22 @@ jobs:
   healthcheck:
     name: Health Checks
     runs-on: ubuntu-latest
-    needs: [backend]
+    # Depend des deux deploiements et s'execute meme si l'un echoue ou est
+    # saute — meme correctif que la production le 2026-08-19. Sans `always()`,
+    # un job `migrations` en echec faisait sauter backend PUIS healthcheck :
+    # la staging cessait d'etre deployee sans que rien ne le dise.
+    needs: [backend, deploy]
+    if: ${{ always() }}
     # Resolves PRODUCTION_URL / BACKEND_URL to the STAGING secrets.
     environment: staging
 
     steps:
+      - name: Report skipped deployments
+        if: ${{ needs.backend.result != 'success' || needs.deploy.result == 'skipped' }}
+        run: |
+          echo "::warning::Deploiement incomplet — backend: ${{ needs.backend.result }}, frontend: ${{ needs.deploy.result }}. Les controles ci-dessous portent sur la VERSION DEJA EN LIGNE, pas sur ce commit."
+          echo "### Deploiement incomplet — backend \`${{ needs.backend.result }}\` · frontend \`${{ needs.deploy.result }}\`" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Wait for deploy propagation
         run: sleep 15
 
