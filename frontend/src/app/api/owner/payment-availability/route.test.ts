@@ -12,6 +12,18 @@ vi.mock('@/services/paymentService', () => ({
 vi.mock('@/lib/feature-flags', () => ({
     readPortalFeatureFlags: vi.fn(),
 }));
+// Le RIB servi avec les rails vient de la base (mig 131) ; ces tests portent
+// sur l'eligibilite, pas sur les coordonnees.
+vi.mock('@/lib/auth/tenantContext', () => ({
+    getServerJurisdictionId: vi.fn(async () => 'jur-1'),
+}));
+vi.mock('@/services/issuerProfileService', async (orig) => {
+    const actual = await orig<typeof import('@/services/issuerProfileService')>();
+    return {
+        ...actual,
+        getIssuerProfile: vi.fn(async () => actual.DEFAULT_ISSUER_PROFILE),
+    };
+});
 
 import { GET } from './route';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';

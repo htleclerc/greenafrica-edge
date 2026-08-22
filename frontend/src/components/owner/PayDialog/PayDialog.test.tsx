@@ -102,6 +102,15 @@ describe('PayDialog', () => {
             ok: true,
             json: async () => ({
                 rails: [{ rail: 'WIRE_TRANSFER', eligible: true, providers: [{ provider: 'wire_transfer', routes_rail: ['WIRE_TRANSFER'], display_order: 5 }] }],
+                // Le RIB vient desormais du serveur avec les rails.
+                wire: {
+                    beneficiary: 'Solide Technology Limited',
+                    bank: 'SYSTEM PAY SERVICES (MALTA) LIMITED',
+                    bankAddress: 'Ruby Workspaces, St Julians, Malta',
+                    swiftCode: 'SYPLMTM2XXX',
+                    iban: 'MT12SYPL39480821090981701607644',
+                    depositReference: null,
+                },
             }),
         });
         setup();

@@ -3146,7 +3146,8 @@
         "step3": "Idara ya fedha italinganisha fedha zilizoingia kisha kuthibitisha malipo — hakuna kinachotozwa hapa.",
         "topupHint": "Kuongeza salio hakuna kumbukumbu ya ankara: andika pia jina la kampuni yako kwenye maelezo ya malipo.",
         "bankReferenceOptional": "Si lazima — acha wazi kama benki yako bado haijaitoa.",
-        "download": "Pakua agizo la malipo (PDF)"
+        "download": "Pakua agizo la malipo (PDF)",
+        "depositReference": "Kumbukumbu ya amana"
       }
     },
     "proofUpload": {

@@ -16,6 +16,10 @@ interface RailEligibility {
 interface AvailabilityResponse {
     rails: RailEligibility[];
     showUnavailable?: boolean;
+    wire?: {
+        beneficiary: string; bank: string; bankAddress: string;
+        swiftCode: string; iban: string; depositReference: string | null;
+    };
 }
 
 /**
@@ -77,6 +81,10 @@ export function StepRailPicker() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canSplit]);
 
+    // Setter de useState : stable, donc citable en dependance sans relancer
+    // la requete a chaque rendu (contrairement a `ctx` entier).
+    const { setWire } = ctx;
+
     React.useEffect(() => {
         let cancelled = false;
         async function load() {
@@ -91,6 +99,7 @@ export function StepRailPicker() {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data: AvailabilityResponse = await res.json();
+                if (!cancelled && data.wire) setWire(data.wire);
                 if (!cancelled) {
                     // Topup mode: hide WALLET — can't top-up wallet from itself.
                     // Paiement mixte : le portefeuille est deja engage en
@@ -108,7 +117,7 @@ export function StepRailPicker() {
         }
         load();
         return () => { cancelled = true; };
-    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode, remainderUsdMinor, splitOn]);
+    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode, remainderUsdMinor, splitOn, setWire]);
 
     function pickRail(r: RailEligibility) {
         ctx.setRail(r.rail);

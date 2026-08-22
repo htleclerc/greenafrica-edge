@@ -5,7 +5,6 @@ import { ArrowLeft, Check, Copy, Download } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
-import { WIRE_BENEFICIARY } from '@/lib/payments/wireBeneficiary';
 import { usePayDialog } from './usePayDialogContext';
 
 export function StepRailParams() {
@@ -17,6 +16,11 @@ export function StepRailParams() {
     // sinon un marqueur de recharge — le service financier n'a que le libelle
     // du releve pour rapprocher les fonds.
     const wireReferenceLabel = ctx.invoiceRef ?? 'TOPUP';
+
+    // Résolu par l'étape précédente depuis la base (mig 131). Absent tant que
+    // la route n'a pas répondu — le bloc RIB attend plutôt que d'afficher un
+    // compte compilé dans le bundle, qui pourrait ne plus être le bon.
+    const wire = ctx.wire;
 
     // Ordre de virement a remettre a sa banque. Une facture est identifiee par
     // son id : le montant est alors relu en base cote serveur. Une recharge n'a
@@ -101,19 +105,26 @@ export function StepRailParams() {
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
                             {t('wire.accountTitle')}
                         </p>
+                        {!wire ? (
+                            <p className="text-xs text-[var(--os-text-muted)]">{t('loadingRails')}</p>
+                        ) : (
                         <dl className="flex flex-col gap-1.5">
-                            <WireLine label={t('wire.beneficiary')} value={WIRE_BENEFICIARY.beneficiary} />
-                            <WireLine label={t('wire.bank')} value={WIRE_BENEFICIARY.bank} />
-                            <WireLine label={t('wire.iban')} value={WIRE_BENEFICIARY.iban} mono copyable />
-                            <WireLine label={t('wire.swift')} value={WIRE_BENEFICIARY.swiftCode} mono copyable />
+                            <WireLine label={t('wire.beneficiary')} value={wire.beneficiary} />
+                            <WireLine label={t('wire.bank')} value={wire.bank} />
+                            <WireLine label={t('wire.iban')} value={wire.iban} mono copyable />
+                            <WireLine label={t('wire.swift')} value={wire.swiftCode} mono copyable />
                             <WireLine label={t('wire.reference')} value={wireReferenceLabel} mono copyable highlight />
+                            {wire.depositReference && (
+                                <WireLine label={t('wire.depositReference')} value={wire.depositReference} mono copyable highlight />
+                            )}
                             <WireLine
                                 label={t('wire.amount')}
                                 value={ctx.amountUsd.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
                             />
                         </dl>
+                        )}
                         <p className="text-[10px] text-[var(--os-text-muted)] mt-2 leading-relaxed">
-                            {WIRE_BENEFICIARY.bankAddress}
+                            {wire?.bankAddress ?? ''}
                         </p>
                         <a
                             href={wireDownloadHref}

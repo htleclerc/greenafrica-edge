@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { selectProvidersForRail } from '@/services/paymentService';
 import { paypalConfigured } from '@/services/paypalService';
 import { readPortalFeatureFlags, type PortalFeatureFlags } from '@/lib/feature-flags';
+import { getIssuerProfile, primaryAccount } from '@/services/issuerProfileService';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 
 const OWNER_RAILS = ['STRIPE', 'PAYPAL', 'WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET'] as const;
 type Rail = typeof OWNER_RAILS[number];
@@ -121,5 +123,24 @@ export async function GET(req: NextRequest) {
         ? rails
         : rails.filter((r) => r.eligible || r.rail === 'WALLET');
 
-    return NextResponse.json({ rails: visible, showUnavailable: flags.showUnavailableRails });
+    // Coordonnées du compte à créditer, servies avec les rails : l'écran de
+    // virement les affichait depuis une constante compilée dans le bundle, donc
+    // insensible à la mig 131. Le dialogue interroge déjà cette route, autant
+    // qu'il y lise aussi le RIB plutôt que d'en ouvrir une seconde.
+    const jurisdictionId = await getServerJurisdictionId().catch(() => null);
+    const profile = await getIssuerProfile(supabase, jurisdictionId);
+    const account = primaryAccount(profile);
+
+    return NextResponse.json({
+        rails: visible,
+        showUnavailable: flags.showUnavailableRails,
+        wire: {
+            beneficiary: account.holder,
+            bank: account.bank,
+            bankAddress: account.bankAddress ?? '',
+            swiftCode: account.swift,
+            iban: account.iban ?? account.accountNumber ?? '',
+            depositReference: account.depositReference,
+        },
+    });
 }

@@ -3258,7 +3258,8 @@
         "step3": "Finance reconciles the funds against the account and confirms the payment — nothing is charged here.",
         "topupHint": "A top-up has no invoice reference: also put your company name in the wire message so finance can match it.",
         "bankReferenceOptional": "Optional — leave empty if your bank has not issued it yet.",
-        "download": "Download the transfer order (PDF)"
+        "download": "Download the transfer order (PDF)",
+        "depositReference": "Deposit reference"
       }
     },
     "proofUpload": {

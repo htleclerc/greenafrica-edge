@@ -9,14 +9,32 @@
 // rattraper les lignes orphelines.
 //
 // Usage :
-//   npx tsx scripts/issue-invoice-documents.ts                  → dry-run (aucun write)
-//   npx tsx scripts/issue-invoice-documents.ts --execute        → émet les documents
-//   npx tsx scripts/issue-invoice-documents.ts --execute --id <uuid>       → une seule transaction
-//   npx tsx scripts/issue-invoice-documents.ts --execute --actor <email>   → auteur de l'audit
-//   npx tsx scripts/issue-invoice-documents.ts --execute --origin https://greengate.africa
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts                  → dry-run (aucun write)
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --execute        → émet les documents
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --execute --id <uuid>       → une seule transaction
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --execute --actor <email>   → auteur de l'audit
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --execute --origin https://greengate.africa
+//
+// Mode RE-RENDU (--rerender) : reprend au contraire les transactions qui ONT
+// deja un PDF, pour les regenerer au gabarit courant. Sert apres un changement
+// de mise en page ou de coordonnees emetteur.
+//
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --rerender                 → dry-run
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts --rerender --execute --limit 20
+//
+// Le re-rendu est SANS RISQUE pour la chaine de verification : content_hash et
+// verify_signature sont en ecriture unique et portent sur les CHAMPS fiscaux
+// (reference, IMO, navire, armateur, total, dates, mode), jamais sur les octets
+// du PDF. Les QR deja distribues continuent donc de verifier a l'identique.
+// L'objet de stockage, lui, est ecrase : l'ancien PDF disparait.
 //
 // N'envoie JAMAIS d'e-mail : le backfill rattrape des documents manquants, il ne
 // relance pas les armateurs. La relance reste l'action « Print & Send » du staff.
+//
+// NOTE tsx : depuis que le generateur importe le profil emetteur et le module
+// de mise en page par l'alias `@/`, il faut lui passer le tsconfig du frontend :
+//   npx tsx --tsconfig frontend/tsconfig.json scripts/issue-invoice-documents.ts ...
+// Sans lui, la resolution echoue sur « Cannot find module '@/services/...' ».
 //
 // Lit les credentials dans frontend/.env.local (NEXT_PUBLIC_SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY, INVOICE_SIGNING_SECRET, NEXT_PUBLIC_APP_URL).
@@ -33,6 +51,8 @@ const flag = (name: string): string | undefined => {
     return i >= 0 ? args[i + 1] : undefined;
 };
 
+const RERENDER = args.includes('--rerender');
+const LIMIT = Number(flag('limit') ?? '0') || 0;
 const ONLY_ID = flag('id');
 const ACTOR_EMAIL = flag('actor');
 const ORIGIN = flag('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
@@ -87,12 +107,20 @@ async function findPending(): Promise<PendingTxn[]> {
     let query = supabase
         .from('transactions')
         .select('id, invoice_ref, invoice_pdf_url, document_type, vessel_name, status, tax_amount_usd, jurisdiction_id')
+        .order('created_at', { ascending: true });
+
+    if (RERENDER) {
+        // Ces lignes ont deja un document : on le regenere au gabarit courant.
+        query = query.not('invoice_pdf_url', 'is', null);
+    } else {
         // A row is "document-less" as soon as the storage path is missing — even
         // when a ref/hash pair was written, because the download route resolves
         // the object from invoice_pdf_url and 404s without it.
-        .is('invoice_pdf_url', null)
-        .order('created_at', { ascending: true });
+        query = query.is('invoice_pdf_url', null);
+    }
     if (ONLY_ID) query = query.eq('id', ONLY_ID);
+    // Un re-rendu de masse s'echelonne : --limit borne le lot.
+    if (LIMIT > 0) query = query.limit(LIMIT);
 
     const { data, error } = await query;
     if (error) throw new Error(`transactions lookup failed: ${error.message}`);
@@ -102,7 +130,11 @@ async function findPending(): Promise<PendingTxn[]> {
 async function main() {
     const pending = await findPending();
 
-    console.log(`\n📄 Transactions sans document émis : ${pending.length}`);
+    console.log(
+        RERENDER
+            ? `\n♻️  Transactions à re-rendre au gabarit courant : ${pending.length}`
+            : `\n📄 Transactions sans document émis : ${pending.length}`,
+    );
     for (const t of pending) {
         console.log(
             `   • ${t.id}  ${(t.document_type ?? '—').padEnd(10)} ${t.status.padEnd(8)} ` +
@@ -145,7 +177,10 @@ async function main() {
         }
     }
 
-    console.log(`\n✅ ${issued} document(s) émis${failed ? `, ❌ ${failed} en échec` : ''}.`);
+    console.log(
+        `\n✅ ${issued} document(s) ${RERENDER ? 're-rendus' : 'émis'}`
+        + `${failed ? `, ❌ ${failed} en échec` : ''}.`,
+    );
     if (failed) process.exitCode = 1;
 }
 

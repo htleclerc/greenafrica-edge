@@ -3600,7 +3600,8 @@
         "step3": "O departamento financeiro concilia os fundos na conta e confirma o pagamento — nada é cobrado aqui.",
         "topupHint": "Uma recarga não tem referência de fatura: indique também o nome da sua empresa na descrição da transferência.",
         "bankReferenceOptional": "Opcional — deixe vazio se o seu banco ainda não a emitiu.",
-        "download": "Descarregar a ordem de transferência (PDF)"
+        "download": "Descarregar a ordem de transferência (PDF)",
+        "depositReference": "Referência de depósito"
       }
     },
     "proofUpload": {
