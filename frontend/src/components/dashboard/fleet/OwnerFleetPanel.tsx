@@ -130,12 +130,34 @@ export function OwnerFleetPanel({ fleet }: Props) {
                         </div>
 
                         <div className="flex flex-col items-end gap-1 min-w-[140px]">
+                            {/* C'est l'ECHEANCE qui decide de l'alarme, pas la
+                                simple existence d'une facture. Un navire dont
+                                tout etait regle s'affichait aussi alarmant
+                                qu'un impaye, et une somme due dans trois
+                                semaines aussi urgente qu'une somme en retard.
+                                Rouge = delai depasse. Orange = il reste a
+                                payer, dans les temps. Vert = solde. Bleu =
+                                aucune facture. Le reglement partiel se lit
+                                dans le libelle : c'est une information, pas un
+                                degre d'urgence. */}
                             <OsBadge
-                                variant={v.canRemove ? 'processing' : 'payment_due'}
-                                label={v.canRemove ? t('noInvoice') : t('invoiceCount', { count: v.invoiceCount })}
+                                variant={
+                                    v.canRemove ? 'draft'
+                                        : v.outstandingUsd <= 0 ? 'paid'
+                                            : v.overdue ? 'payment_due'
+                                                : 'processing'
+                                }
+                                label={
+                                    v.canRemove ? t('noInvoice')
+                                        : v.outstandingUsd <= 0
+                                            ? t('invoiceCountSettled', { count: v.invoiceCount })
+                                            : v.partiallyPaid
+                                                ? t('invoiceCountPartial', { count: v.invoiceCount })
+                                                : t('invoiceCount', { count: v.invoiceCount })
+                                }
                             />
                             {v.outstandingUsd > 0 && (
-                                <span className="text-xs text-[#EAB308]">
+                                <span className="text-xs" style={{ color: v.overdue ? '#EF4444' : '#F97316' }}>
                                     ${v.outstandingUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             )}
@@ -183,7 +205,9 @@ export function OwnerFleetPanel({ fleet }: Props) {
                     </div>
 
                     {!v.canRemove && (
-                        <p className="text-[11px] mt-2 text-[var(--os-text-muted)]">{t('detachBlocked')}</p>
+                        <p className="text-[11px] mt-2 text-[var(--os-text-muted)]">
+                            {v.outstandingUsd > 0 ? t('detachBlocked') : t('detachBlockedSettled')}
+                        </p>
                     )}
                 </OsCard>
             ))}

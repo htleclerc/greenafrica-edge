@@ -12,6 +12,14 @@ export interface FleetVessel {
     /** Factures VIVANTES visant ce navire — les annulées ne comptent pas. */
     invoiceCount: number;
     outstandingUsd: number;
+    /**
+     * Une facture encore due a dépassé son échéance. C'est cela qui justifie
+     * l'alarme rouge — pas la simple existence d'une somme à payer, qui peut
+     * n'être due que dans trois semaines.
+     */
+    overdue: boolean;
+    /** Un versement a déjà été encaissé, sans solder la totalité. */
+    partiallyPaid: boolean;
     /** Faux dès qu'une facture vivante vise le navire : le geste devient « contester ». */
     canRemove: boolean;
 }
@@ -47,7 +55,7 @@ export async function listOwnerFleet(
 
     const { data: txns, error: tErr } = await supabase
         .from('transactions')
-        .select('id, vessel_id, tax_amount_usd, partial_paid_usd, status')
+        .select('id, vessel_id, tax_amount_usd, partial_paid_usd, status, due_date')
         .in('vessel_id', rows.map((v) => String(v.id)))
         .neq('status', 'VOID');
     if (tErr) throw new Error(`factures de la flotte : ${tErr.message}`);
@@ -58,20 +66,33 @@ export async function listOwnerFleet(
         txnRows.map((t) => String(t.id)),
     );
 
-    const byVessel = new Map<string, { count: number; usd: number }>();
+    const now = Date.now();
+    const byVessel = new Map<string, {
+        count: number; usd: number; overdue: boolean; partiallyPaid: boolean;
+    }>();
     for (const t of txnRows) {
         const key = String(t.vessel_id);
-        const acc = byVessel.get(key) ?? { count: 0, usd: 0 };
+        const acc = byVessel.get(key) ?? { count: 0, usd: 0, overdue: false, partiallyPaid: false };
         acc.count += 1;
-        acc.usd += outstandingUsd(
-            t as unknown as OutstandingColumns,
-            paidByTxn.get(String(t.id)) ?? 0,
-        );
+
+        const paid = paidByTxn.get(String(t.id)) ?? 0;
+        const due = outstandingUsd(t as unknown as OutstandingColumns, paid);
+        acc.usd += due;
+
+        // Les deux drapeaux ne portent QUE sur ce qui reste à payer : une
+        // facture soldée hier n'a pas à teindre le navire en rouge parce que
+        // son échéance est passée.
+        if (due > 0) {
+            const deadline = t.due_date ? new Date(String(t.due_date)).getTime() : null;
+            if (deadline !== null && deadline < now) acc.overdue = true;
+            if (paid > 0 || Number(t.partial_paid_usd ?? 0) > 0) acc.partiallyPaid = true;
+        }
         byVessel.set(key, acc);
     }
 
     return rows.map((v) => {
-        const acc = byVessel.get(String(v.id)) ?? { count: 0, usd: 0 };
+        const acc = byVessel.get(String(v.id))
+            ?? { count: 0, usd: 0, overdue: false, partiallyPaid: false };
         return {
             id: String(v.id),
             name: String(v.name),
@@ -81,6 +102,8 @@ export async function listOwnerFleet(
             complianceStatus: String(v.compliance_status),
             invoiceCount: acc.count,
             outstandingUsd: acc.usd,
+            overdue: acc.overdue,
+            partiallyPaid: acc.partiallyPaid,
             canRemove: acc.count === 0,
         };
     });

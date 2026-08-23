@@ -1774,7 +1774,10 @@
     "confirmDetach": "Remover este navio da sua frota?",
     "detachBlocked": "Este navio tem uma fatura e não pode ser removido. Se não for seu, conteste a fatura.",
     "dispute": "Contestar",
-    "title": "A minha frota"
+    "title": "A minha frota",
+    "invoiceCountSettled": "{count} fatura(s) · liquidada(s)",
+    "detachBlockedSettled": "Este navio tem uma fatura liquidada e permanece no processo. Uma taxação paga não pode ser desassociada.",
+    "invoiceCountPartial": "{count} fatura(s) · parcialmente paga(s)"
   },
   "VesselsPage": {
     "status_compliant": "CONFORME",

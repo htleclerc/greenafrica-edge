@@ -62,6 +62,11 @@ export async function OperatorVesselDetailPage({
             'id, name, mmsi, imo_number, call_sign, flag_code, category, gross_tonnage_dwt, engine_power_kw, design_speed_knots, compliance_status, estimated_emissions_tco2, tax_liability_usd, last_zone',
         )
         .eq('id', vesselId)
+        // Meme perimetre que la liste : le detail n'est accessible que pour les
+        // navires du dossier de l'armateur. La RLS seule laisserait passer un
+        // navire rattache par le lien agent hérité (`owner_id`, mig 073), qui
+        // ne figure dans aucune de ses listes.
+        .eq('shipowner_id', principal.shipowner.id)
         .maybeSingle();
 
     if (!vessel) notFound();

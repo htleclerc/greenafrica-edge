@@ -1312,7 +1312,10 @@
     "confirmDetach": "Ondoa meli hii kwenye kundi lako?",
     "detachBlocked": "Meli hii ina ankara na haiwezi kuondolewa. Kama si yako, pinga ankara.",
     "dispute": "Pinga",
-    "title": "Meli zangu"
+    "title": "Meli zangu",
+    "invoiceCountSettled": "ankara {count} · zimelipwa",
+    "detachBlockedSettled": "Meli hii ina ankara iliyolipwa na inabaki kwenye jalada. Ushuru uliolipwa hauwezi kuondolewa.",
+    "invoiceCountPartial": "ankara {count} · zimelipwa kwa sehemu"
   },
   "VesselsPage": {
     "status_compliant": "INAZINGATIA",

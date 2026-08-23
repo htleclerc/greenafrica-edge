@@ -1343,7 +1343,10 @@
     "confirmDetach": "Markabkan ka saar raxankaaga?",
     "detachBlocked": "Markabkan qaansheeg ayuu leeyahay, lagamana saari karo. Haddii uusan kaaga ahayn, ka hor imow qaansheegta.",
     "dispute": "Ka hor imow",
-    "title": "Raxankayga"
+    "title": "Raxankayga",
+    "invoiceCountSettled": "{count} qaansheeg · la bixiyay",
+    "detachBlockedSettled": "Markabkan wuxuu wataa qaansheeg la bixiyay wuxuuna ku hadhayaa faylka. Canshuur la bixiyay lama gooyn karo.",
+    "invoiceCountPartial": "{count} qaansheeg · qayb ahaan la bixiyay"
   },
   "VesselsPage": {
     "status_compliant": "WAAFAQSAN",

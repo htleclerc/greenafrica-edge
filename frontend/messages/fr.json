@@ -1427,7 +1427,10 @@
     "confirmDetach": "Retirer ce navire de votre flotte ?",
     "detachBlocked": "Ce navire porte une facture et ne peut pas être retiré. S'il n'est pas le vôtre, contestez la facture.",
     "dispute": "Contester",
-    "title": "Ma flotte"
+    "title": "Ma flotte",
+    "invoiceCountSettled": "{count} facture(s) · réglée(s)",
+    "detachBlockedSettled": "Ce navire porte une facture réglée et reste au dossier. Une taxation acquittée ne se détache pas.",
+    "invoiceCountPartial": "{count} facture(s) · partiellement réglée(s)"
   },
   "VesselsPage": {
     "status_compliant": "CONFORME",

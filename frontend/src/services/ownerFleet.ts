@@ -205,8 +205,26 @@ function push<T>(map: Map<string, T[]>, key: string, value: T) {
     else map.set(key, [value]);
 }
 
-/** Charge la flotte de l'armateur. Toutes les lectures sont bornées par RLS. */
-export async function getOwnerFleet(db: SupabaseClient, now: Date = new Date()): Promise<OwnerFleet> {
+/**
+ * Charge la flotte de l'armateur.
+ *
+ * Les navires sont bornés EXPLICITEMENT à son dossier. S'en remettre à la
+ * seule RLS ne suffit pas : celle-ci autorise aussi la lecture d'un navire
+ * dont `owner_id` vaut l'utilisateur courant (« Shipping agents see own
+ * fleet », mig 073), un lien hérité du modèle agent antérieur aux dossiers
+ * armateurs. Un navire rattaché par cette seule voie apparaissait donc ici et
+ * nulle part ailleurs — l'écran « Ma flotte », lui, filtre sur `shipowner_id`
+ * et annonçait « aucun navire » quand celui-ci en montrait deux, avec une
+ * somme due. Une flotte, une définition.
+ *
+ * Les factures restent bornées par la RLS de `transactions`, qui passe déjà
+ * par `shipowners.profile_id` : même périmètre, pas de filtre à doubler.
+ */
+export async function getOwnerFleet(
+    db: SupabaseClient,
+    shipownerId: string,
+    now: Date = new Date(),
+): Promise<OwnerFleet> {
     const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString();
     const TXN_COLUMNS =
         'id, vessel_id, vessel_imo, tax_amount_usd, partial_paid_usd, emissions_tco2, due_date, document_type, status';
@@ -214,6 +232,7 @@ export async function getOwnerFleet(db: SupabaseClient, now: Date = new Date()):
     const [vesselsRes, openRes, paidRes] = await Promise.all([
         db.from('vessels')
             .select('id, name, imo_number, category, last_zone, compliance_status')
+            .eq('shipowner_id', shipownerId)
             .order('name'),
         db.from('transactions').select(TXN_COLUMNS).in('status', OPEN_STATUSES).limit(500),
         db.from('transactions').select(TXN_COLUMNS).eq('status', 'PAID').gte('paid_at', startOfYear).limit(500),

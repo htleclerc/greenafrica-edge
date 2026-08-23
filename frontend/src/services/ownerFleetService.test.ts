@@ -141,6 +141,57 @@ describe('listOwnerFleet', () => {
         expect(fleet[0].outstandingUsd).toBeCloseTo(68832, 2);
     });
 
+    it('signale une échéance dépassée, pas la simple existence d une dette', async () => {
+        // C'est l'échéance qui décide de l'alarme à l'écran : une somme due
+        // dans trois semaines ne se lit pas comme une somme en retard.
+        const hier = new Date(Date.now() - 86_400_000).toISOString();
+        const demain = new Date(Date.now() + 86_400_000).toISOString();
+
+        const enRetard = await listOwnerFleet(
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'OVERDUE', due_date: hier }]),
+            'own-1',
+        );
+        expect(enRetard[0].overdue).toBe(true);
+
+        const dansLesTemps = await listOwnerFleet(
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING', due_date: demain }]),
+            'own-1',
+        );
+        expect(dansLesTemps[0].overdue).toBe(false);
+    });
+
+    it('ne compte pas comme en retard une facture soldée dont l échéance est passée', async () => {
+        // Sans cette garde, un navire à jour resterait teint en rouge à vie.
+        const hier = new Date(Date.now() - 86_400_000).toISOString();
+        const fleet = await listOwnerFleet(
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'PAID', due_date: hier }]),
+            'own-1',
+        );
+        expect(fleet[0].overdue).toBe(false);
+        expect(fleet[0].outstandingUsd).toBe(0);
+    });
+
+    it('marque le règlement partiel', async () => {
+        const fleet = await listOwnerFleet(
+            supa(
+                [MAYAR],
+                [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, partial_paid_usd: 0, status: 'PARTIALLY_PAID', due_date: null }],
+                [{ transaction_id: 'tx1', amount_usd_minor: 2000000, status: 'CONFIRMED' }],
+            ),
+            'own-1',
+        );
+        expect(fleet[0].partiallyPaid).toBe(true);
+        expect(fleet[0].outstandingUsd).toBeCloseTo(48832, 2);
+    });
+
+    it('ne marque aucun règlement partiel sur une facture intacte', async () => {
+        const fleet = await listOwnerFleet(
+            supa([MAYAR], [{ id: 'tx1', vessel_id: 'v1', tax_amount_usd: 68832, status: 'PENDING', due_date: null }]),
+            'own-1',
+        );
+        expect(fleet[0].partiallyPaid).toBe(false);
+    });
+
     it('rend une flotte vide sans interroger les factures', async () => {
         const fleet = await listOwnerFleet(supa([], []), 'own-inconnu');
         expect(fleet).toEqual([]);

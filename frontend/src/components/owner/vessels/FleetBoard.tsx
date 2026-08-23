@@ -139,7 +139,14 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
         >
             <header className="flex items-start justify-between gap-2.5">
                 <div className="flex min-w-0 flex-col gap-0.5">
-                    <h3 className="truncate text-[15px] font-semibold text-[var(--os-text-primary)]">{vessel.name}</h3>
+                    <h3 className="truncate text-[15px] font-semibold text-[var(--os-text-primary)]">
+                        <Link
+                            href={`${vesselBasePath}/${vessel.id}`}
+                            className="hover:text-[var(--os-brand-cyan)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
+                        >
+                            {vessel.name}
+                        </Link>
+                    </h3>
                     <p className="truncate font-mono text-[11px] text-[var(--os-text-muted)]">
                         {vessel.imoNumber ? `IMO ${vessel.imoNumber}` : '—'}
                         {vessel.category && <span className="font-sans"> · {vessel.category}</span>}
@@ -165,31 +172,47 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
                 </Pair>
             </dl>
 
-            <Link
-                href={
-                    vessel.status === 'proforma'
-                        ? `${vesselBasePath}/${vessel.id}`
-                        : '/dashboard/invoices'
-                }
-                className={`
-                    flex h-10 items-center justify-center rounded-[10px] px-3 text-[13.5px] font-semibold
-                    transition-opacity duration-150
-                    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]
-                    ${primary
-                        ? 'bg-[var(--os-brand-green)] text-[var(--os-on-primary)] hover:opacity-90'
-                        : vessel.status === 'toPay'
-                            ? 'border border-[var(--os-brand-green)]/35 text-[var(--os-brand-cyan)] hover:bg-[var(--os-brand-green)]/10'
-                            : 'border border-[var(--os-border-strong)] text-[var(--os-text-secondary)] hover:bg-[var(--os-surface-2)]'}
-                `}
-            >
-                {/* Le libellé porte l'échéance : « Payer avant le 31 août » dit
-                    quoi faire ET quand, là où « Payer » laisse chercher la date. */}
-                {vessel.status === 'proforma'
-                    ? t('card.seeProforma')
-                    : vessel.nextDueDate
-                        ? t('card.payBefore', { date: new Date(vessel.nextDueDate).toLocaleDateString() })
-                        : t('card.payNow')}
-            </Link>
+            {/* Deux chemins, pas un. L'action principale mène au paiement ; le
+                détail du navire doit rester atteignable pour TOUS les navires,
+                pas seulement pour ceux que leur conformité relègue au tableau.
+                Un armateur qui veut vérifier une émission ou une escale avant
+                de payer n'avait, sur cette carte, aucun moyen d'y accéder. */}
+            <div className="flex items-stretch gap-2">
+                <Link
+                    href={
+                        vessel.status === 'proforma'
+                            ? `${vesselBasePath}/${vessel.id}`
+                            : '/dashboard/invoices'
+                    }
+                    className={`
+                        flex h-10 flex-1 items-center justify-center rounded-[10px] px-3 text-[13.5px] font-semibold
+                        transition-opacity duration-150
+                        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]
+                        ${primary
+                            ? 'bg-[var(--os-brand-green)] text-[var(--os-on-primary)] hover:opacity-90'
+                            : vessel.status === 'toPay'
+                                ? 'border border-[var(--os-brand-green)]/35 text-[var(--os-brand-cyan)] hover:bg-[var(--os-brand-green)]/10'
+                                : 'border border-[var(--os-border-strong)] text-[var(--os-text-secondary)] hover:bg-[var(--os-surface-2)]'}
+                    `}
+                >
+                    {/* Le libellé porte l'échéance : « Payer avant le 31 août » dit
+                        quoi faire ET quand, là où « Payer » laisse chercher la date. */}
+                    {vessel.status === 'proforma'
+                        ? t('card.seeProforma')
+                        : vessel.nextDueDate
+                            ? t('card.payBefore', { date: new Date(vessel.nextDueDate).toLocaleDateString() })
+                            : t('card.payNow')}
+                </Link>
+
+                {vessel.status !== 'proforma' && (
+                    <Link
+                        href={`${vesselBasePath}/${vessel.id}`}
+                        className="flex h-10 items-center justify-center rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
+                    >
+                        {t('detail')}
+                    </Link>
+                )}
+            </div>
         </article>
     );
 }

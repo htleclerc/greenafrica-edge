@@ -1343,7 +1343,10 @@
     "confirmDetach": "Remove this vessel from your fleet?",
     "detachBlocked": "This vessel carries an invoice and cannot be removed. If it is not yours, dispute the invoice.",
     "dispute": "Dispute",
-    "title": "My Fleet"
+    "title": "My Fleet",
+    "invoiceCountSettled": "{count} invoice(s) · settled",
+    "detachBlockedSettled": "This vessel carries a settled invoice and stays on file. A paid assessment cannot be detached.",
+    "invoiceCountPartial": "{count} invoice(s) · part-paid"
   },
   "VesselsPage": {
     "status_compliant": "COMPLIANT",

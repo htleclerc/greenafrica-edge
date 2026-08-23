@@ -1312,7 +1312,10 @@
     "confirmDetach": "هل تريد إزالة هذه السفينة من أسطولك؟",
     "detachBlocked": "هذه السفينة عليها فاتورة ولا يمكن إزالتها. إن لم تكن لك، فاعترض على الفاتورة.",
     "dispute": "اعتراض",
-    "title": "أسطولي"
+    "title": "أسطولي",
+    "invoiceCountSettled": "{count} فاتورة · مسددة",
+    "detachBlockedSettled": "تحمل هذه السفينة فاتورة مسددة وتبقى في الملف. لا يمكن فصل ضريبة مدفوعة.",
+    "invoiceCountPartial": "{count} فاتورة · مسددة جزئيًا"
   },
   "VesselsPage": {
     "status_compliant": "ممتثل",

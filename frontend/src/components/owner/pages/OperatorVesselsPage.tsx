@@ -43,7 +43,7 @@ interface Props {
 
 export async function OperatorVesselsPage({ principal }: Props) {
     const [fleet, aircraftRes, invoicesRes, receiptRes] = await Promise.all([
-        getOwnerFleet(principal.supabase),
+        getOwnerFleet(principal.supabase, principal.shipowner.id),
         // RLS (mig-074 policy) scopes aircraft to the operating shipowner via
         // shipowners.profile_id = auth.uid(); no manual operator filter required.
         principal.supabase
