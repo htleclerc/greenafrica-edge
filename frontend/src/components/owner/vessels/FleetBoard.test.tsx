@@ -74,14 +74,20 @@ describe('FleetBoard — accès au détail', () => {
             .toHaveAttribute('href', '/dashboard/vessels/v-star');
     });
 
-    it('n ajoute pas de second lien redondant sur une pro-forma', () => {
-        // Sur ce statut, l'action principale mène DÉJÀ au détail du navire :
-        // deux liens vers la même page ne feraient qu'encombrer.
+    it('n ajoute pas de bouton Détail sur une carte qui y mène déjà', () => {
+        // Sur une pro-forma, l'action principale de la carte ouvre DÉJÀ la
+        // fiche du navire : un second bouton juste à côté n'encombrerait que
+        // l'écran. Le tableau, lui, garde le sien — c'est un autre endroit.
         renderBoard(fleetOf([vessel({ id: 'v-pro', status: 'proforma', nextDueDate: null })]));
-        const detailLinks = screen
-            .getAllByRole('link')
-            .filter((l) => l.getAttribute('href') === '/dashboard/vessels/v-pro');
-        expect(detailLinks.length).toBeLessThanOrEqual(2);
+        const card = screen.getByRole('article');
+        expect(within(card).queryByText('Details')).not.toBeInTheDocument();
+    });
+
+    it('ajoute un bouton Détail sur une carte dont l action mène au paiement', () => {
+        renderBoard(fleetOf([vessel({ id: 'v-star', status: 'overdue' })]));
+        const card = screen.getByRole('article');
+        expect(within(card).getByText('Details'))
+            .toHaveAttribute('href', '/dashboard/vessels/v-star');
     });
 
     it('conserve le lien détail des navires conformes', () => {
@@ -90,5 +96,35 @@ describe('FleetBoard — accès au détail', () => {
         );
         expect(within(container).getByRole('link', { name: /Details/i }))
             .toHaveAttribute('href', '/dashboard/vessels/v-pioneer');
+    });
+});
+
+describe('FleetBoard — inventaire complet', () => {
+    it('liste TOUS les navires dans le tableau, y compris ceux mis en carte', () => {
+        // Le tableau excluait les navires a traiter, deja rendus en carte : le
+        // bandeau annoncait « 2 vessels » et la liste n'en montrait qu'un.
+        // L'armateur qui cherchait le sien devait deviner qu'il etait plus haut.
+        renderBoard(fleetOf([
+            vessel({ id: 'v-star', name: 'GG DEMO STAR', needsAction: true }),
+            vessel({
+                id: 'v-pioneer', name: 'GG DEMO PIONEER',
+                status: 'compliant', needsAction: false, outstandingUsd: 0,
+            }),
+        ]));
+
+        const detailLinks = screen
+            .getAllByRole('link')
+            .map((l) => l.getAttribute('href'));
+        expect(detailLinks).toContain('/dashboard/vessels/v-star');
+        expect(detailLinks).toContain('/dashboard/vessels/v-pioneer');
+
+        // Le navire a traiter parait DEUX fois : une carte d'appel a l'action,
+        // et sa ligne d'inventaire. La redondance est voulue.
+        expect(screen.getAllByText('GG DEMO STAR').length).toBe(2);
+    });
+
+    it('garde la carte d appel a l action au-dessus du tableau', () => {
+        renderBoard(fleetOf([vessel({ id: 'v-star', needsAction: true })]));
+        expect(screen.getByRole('link', { name: /Pay before/i })).toBeInTheDocument();
     });
 });

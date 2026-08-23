@@ -36,8 +36,13 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
     const [tab, setTab] = React.useState<FleetTab>('all');
 
     const visible = fleet.vessels.filter((v) => matchesFleetTab(v, tab));
+    // Les cartes mettent en avant les navires a traiter ; le tableau reste
+    // l'inventaire COMPLET. Un navire mis en carte en sortait auparavant, si
+    // bien que la liste annoncait deux navires et n'en montrait qu'un —
+    // l'armateur qui cherchait le sien devait deviner qu'il etait plus haut.
+    // La redondance est voulue : un appel a l'action, puis la flotte entiere.
     const cards = visible.filter((v) => v.needsAction);
-    const rows = visible.filter((v) => !v.needsAction);
+    const rows = visible;
 
     const columns: OsGridColumn<FleetVessel>[] = [
         {
