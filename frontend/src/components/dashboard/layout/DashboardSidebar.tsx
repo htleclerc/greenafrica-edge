@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import {
     Map, Ship, FileText, Leaf, AlertTriangle,
-    BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
+    BarChart2, Settings, DollarSign, TrendingUp,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
     LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck,
@@ -44,7 +44,11 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'green-ledger', icon: <Leaf className="w-5 h-5" />,          href: '/dashboard/projects',    labelKey: 'nav_green_ledger', section: 'ops' },
     { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      labelKey: 'nav_alerts',       section: 'ops' },
     { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },
-    { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', labelKey: 'nav_validations',  section: 'admin' },
+    // `/dashboard/validations` n'est plus annoncee : elle lit
+    // `registration_requests`, une file sans producteur depuis que l'inscription
+    // staff est passee sur invitation. Les agents a arbitrer vivent desormais
+    // dans /admin/validations, sur la file vivante. La route reste joignable par
+    // URL pour consulter l'historique.
     { key: 'registrations', icon: <Users className="w-5 h-5" />,         href: '/admin/registrations',   labelKey: 'nav_registrations', section: 'admin' },
     { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
     { key: 'origin-port-proposals', icon: <Anchor className="w-5 h-5" />, href: '/admin/origin-port-proposals', labelKey: 'nav_origin_port_proposals', section: 'admin' },
@@ -107,7 +111,10 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
 
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
     const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
-        .map((item) => item.key === 'validations' && pendingRegistrations > 0
+        // La pastille suit la file vivante (`shipowners PENDING_REVIEW`), donc
+        // l'écran qui la traite : /admin/registrations. Elle décorait
+        // « validations », dont la table n'a plus de producteur.
+        .map((item) => item.key === 'registrations' && pendingRegistrations > 0
             ? { ...item, badge: pendingRegistrations }
             : item
         );

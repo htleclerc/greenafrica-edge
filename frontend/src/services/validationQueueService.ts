@@ -141,35 +141,54 @@ export function destinationToItem(p: DestinationProposal): ValidationItem {
     };
 }
 
-interface RegistrationRow {
+/**
+ * Une inscription d'opérateur en attente de revue.
+ *
+ * La file vivante est `shipowners` en `PENDING_REVIEW`, PAS
+ * `registration_requests` : cette dernière n'a plus de producteur depuis que
+ * l'inscription staff est passée sur invitation (la route publique rend 410) et
+ * que le self-service opérateur dépose directement un armateur à revoir.
+ */
+interface PendingOwnerRow {
     id: string;
-    org_name: string | null;
-    contact_name: string | null;
-    contact_email: string | null;
-    entity_type: string | null;
-    requested_role: string | null;
-    jurisdiction: string | null;
+    name: string | null;
+    official_email: string | null;
+    country_code: string | null;
+    imo_company_no: string | null;
+    kyc_level_b_completed_at: string | null;
+    proof_doc_url: string | null;
+    is_ofac_sdn: boolean | null;
+    is_un_prohibited: boolean | null;
     created_at: string;
-    flagged: boolean | null;
 }
 
 /**
- * Traduit une demande d'inscription.
+ * Traduit une inscription en attente.
  *
  * Il n'y a rien à comparer ici : on lit une candidature, pas un écart entre deux
- * sources. Une demande signalée (`flagged`) n'entre jamais dans le lot — c'est
- * justement celle qui demande un regard.
+ * sources.
+ *
+ * Est « conforme » — donc approuvable en lot — un dossier dont la pièce
+ * justificative est déposée, le KYC-B complété, l'adresse officielle connue, et
+ * qui ne porte aucune sanction. Approuver active le compte : le lot ne doit
+ * jamais toucher un dossier incomplet ni une entité sanctionnée.
  */
-export function registrationToItem(r: RegistrationRow): ValidationItem {
+export function pendingOwnerToItem(r: PendingOwnerRow): ValidationItem {
+    const sanctioned = Boolean(r.is_ofac_sdn) || Boolean(r.is_un_prohibited);
+    const complete = Boolean(r.kyc_level_b_completed_at) && Boolean(r.proof_doc_url) && Boolean(r.official_email);
     return {
         id: r.id,
         kind: 'agent',
-        title: `${r.org_name ?? '—'} — ${r.contact_name ?? r.contact_email ?? '—'}`,
-        submittedBy: r.contact_email,
+        title: `${r.name ?? '—'} — ${r.official_email ?? '—'}`,
+        submittedBy: r.official_email,
         submittedAt: r.created_at,
-        summary: [r.entity_type, r.requested_role, r.jurisdiction].filter(Boolean).join(' · '),
-        href: '/dashboard/validations',
-        conforming: !r.flagged,
+        summary: [
+            r.country_code,
+            r.imo_company_no ? `IMO ${r.imo_company_no}` : null,
+            sanctioned ? 'sanctionné' : null,
+        ].filter(Boolean).join(' · '),
+        href: '/admin/registrations',
+        conforming: complete && !sanctioned,
     };
 }
 
@@ -178,9 +197,9 @@ export async function loadValidationQueue(db: SupabaseClient): Promise<Validatio
     const [equasis, destinations, registrations] = await Promise.all([
         listPendingProposals(db),
         listPendingDestinationProposals(),
-        db.from('registration_requests')
-            .select('id, org_name, contact_name, contact_email, entity_type, requested_role, jurisdiction, created_at, flagged')
-            .in('status', ['PENDING', 'MORE_INFO'])
+        db.from('shipowners')
+            .select('id, name, official_email, country_code, imo_company_no, kyc_level_b_completed_at, proof_doc_url, is_ofac_sdn, is_un_prohibited, created_at')
+            .eq('account_state', 'PENDING_REVIEW')
             .order('created_at', { ascending: true }),
     ]);
 
@@ -189,7 +208,7 @@ export async function loadValidationQueue(db: SupabaseClient): Promise<Validatio
     const items = [
         ...equasis.map(equasisToItem),
         ...destinations.map(destinationToItem),
-        ...((registrations.data ?? []) as RegistrationRow[]).map(registrationToItem),
+        ...((registrations.data ?? []) as PendingOwnerRow[]).map(pendingOwnerToItem),
     ].sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
 
     return {

@@ -7,7 +7,8 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 import { applyEquasisProposal } from './applyEquasisProposal';
 import { rejectEquasisProposal } from './rejectEquasisProposal';
 import { approveDestinationProposal } from './approveDestinationProposal';
-import { approveRegistrationRequest } from '@/services/registrationApproval';
+import { approveShipownerRegistration } from './approveShipownerRegistration';
+import { rejectShipownerRegistration } from './rejectShipownerRegistration';
 
 const schema = z.object({
     kind: z.enum(['vessel-identity', 'agent', 'origin-port']),
@@ -67,8 +68,8 @@ export async function resolveValidationItem(raw: unknown): Promise<ResolveResult
 
         case 'agent':
             result = decision === 'approve'
-                ? await approveRegistration(id, reason, auth.user.id)
-                : await rejectRegistration(id, reason!);
+                ? await approveOwnerRegistration(id)
+                : await rejectOwnerRegistration(id, reason!);
             break;
     }
 
@@ -125,24 +126,19 @@ async function rejectDestinationProposal(id: string, reason: string): Promise<Re
 }
 
 /**
- * Approuve une demande d'inscription.
+ * Approuve une inscription d'opérateur.
  *
- * Reprend la route `/api/auth/approve` — activation du profil et e-mail
- * d'approbation — en l'appelant depuis le serveur, pour que la file unifiée
- * n'ait pas sa propre version de l'activation de compte.
+ * Délègue aux actions de `/admin/registrations` plutôt que d'ouvrir un second
+ * chemin d'activation de compte : elles portent déjà la garde de juridiction, le
+ * refus des dossiers non `PENDING_REVIEW` et l'e-mail d'approbation. Deux
+ * chemins finiraient par diverger, et c'est un compte qu'on active.
  */
-async function approveRegistration(id: string, note: string | undefined, reviewerId: string): Promise<ResolveResult> {
-    const result = await approveRegistrationRequest(id, note ?? null, reviewerId);
-    return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+async function approveOwnerRegistration(id: string): Promise<ResolveResult> {
+    const result = await approveShipownerRegistration({ shipownerId: id });
+    return result.ok ? { ok: true } : { ok: false, reason: result.message ?? 'approval failed' };
 }
 
-async function rejectRegistration(id: string, reason: string): Promise<ResolveResult> {
-    const admin = createPlatformClient();
-    const { error } = await admin
-        .from('registration_requests')
-        .update({ status: 'REJECTED', review_note: reason, reviewed_at: new Date().toISOString() })
-        .eq('id', id)
-        .in('status', ['PENDING', 'MORE_INFO']);
-    if (error) return { ok: false, reason: error.message };
-    return { ok: true };
+async function rejectOwnerRegistration(id: string, reason: string): Promise<ResolveResult> {
+    const result = await rejectShipownerRegistration({ shipownerId: id, reason });
+    return result.ok ? { ok: true } : { ok: false, reason: result.message ?? 'rejection failed' };
 }

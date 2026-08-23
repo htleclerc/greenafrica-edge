@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    comparisonRow, equasisToItem, destinationToItem, registrationToItem,
+    comparisonRow, equasisToItem, destinationToItem, pendingOwnerToItem,
     ORIGIN_PORT_CONFIDENT_DISTANCE,
 } from './validationQueueService';
 import type { EquasisProposal } from './equasisProposalService';
@@ -97,22 +97,48 @@ describe('destinationToItem', () => {
     });
 });
 
-describe('registrationToItem', () => {
+describe('pendingOwnerToItem', () => {
     const base = {
-        id: 'r-1', org_name: 'Berbera Port Services', contact_name: 'Amina Haji',
-        contact_email: 'amina@bps.example', entity_type: 'SHIPPING_AGENT',
-        requested_role: 'SHIPPING_AGENT', jurisdiction: 'Somaliland',
-        created_at: '2026-08-18T10:00:00Z', flagged: false,
+        id: 'so-1',
+        name: 'Berbera Port Services',
+        official_email: 'ops@bps.example',
+        country_code: 'SO',
+        imo_company_no: '1234567',
+        kyc_level_b_completed_at: '2026-08-18T10:00:00Z',
+        proof_doc_url: 'proofs/bps.pdf',
+        is_ofac_sdn: false,
+        is_un_prohibited: false,
+        created_at: '2026-08-18T10:00:00Z',
     };
 
     it('n’a rien à comparer — une candidature n’est pas un écart entre deux sources', () => {
-        expect(registrationToItem(base).comparison).toBeUndefined();
-        expect(registrationToItem(base).summary).toBe('SHIPPING_AGENT · SHIPPING_AGENT · Somaliland');
+        expect(pendingOwnerToItem(base).comparison).toBeUndefined();
+        expect(pendingOwnerToItem(base).summary).toBe('SO · IMO 1234567');
     });
-    it('exclut du lot une demande signalée', () => {
-        expect(registrationToItem({ ...base, flagged: true }).conforming).toBe(false);
+
+    // Approuver active le compte : le lot ne doit jamais toucher un dossier
+    // incomplet ni une entité sanctionnée.
+    it('n’approuve en lot qu’un dossier complet et sans sanction', () => {
+        expect(pendingOwnerToItem(base).conforming).toBe(true);
     });
-    it('retombe sur l’e-mail quand le contact n’a pas de nom', () => {
-        expect(registrationToItem({ ...base, contact_name: null }).title).toContain('amina@bps.example');
+    it('sort du lot un KYC-B non complété', () => {
+        expect(pendingOwnerToItem({ ...base, kyc_level_b_completed_at: null }).conforming).toBe(false);
+    });
+    it('sort du lot un dossier sans pièce justificative', () => {
+        expect(pendingOwnerToItem({ ...base, proof_doc_url: null }).conforming).toBe(false);
+    });
+    it('sort du lot un dossier sans adresse officielle — on ne pourrait pas l’activer', () => {
+        expect(pendingOwnerToItem({ ...base, official_email: null }).conforming).toBe(false);
+    });
+    it('sort du lot une entité sanctionnée, et le dit', () => {
+        const ofac = pendingOwnerToItem({ ...base, is_ofac_sdn: true });
+        expect(ofac.conforming).toBe(false);
+        expect(ofac.summary).toContain('sanctionné');
+    });
+
+    // La file vivante est `shipowners PENDING_REVIEW` : le lien doit mener à
+    // l'écran qui la traite, pas à l'ancien /dashboard/validations.
+    it('renvoie vers l’écran des inscriptions', () => {
+        expect(pendingOwnerToItem(base).href).toBe('/admin/registrations');
     });
 });

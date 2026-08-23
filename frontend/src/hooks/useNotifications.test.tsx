@@ -63,7 +63,8 @@ beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
     tables.v_staff_notifications = [staffRow];
-    tables.registration_requests = [{ id: 'r1' }];
+    // La file vivante des inscriptions : shipowners PENDING_REVIEW.
+    tables.shipowners = [{ id: 'so1' }];
 });
 
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -114,7 +115,8 @@ describe('useNotifications — staff (table mig 133)', () => {
 
     // Le compte de travail restant se dérive légitimement, lui : ce n'est pas
     // un fait daté mais un reste à traiter.
-    it('compte séparément les inscriptions en attente, pour la barre latérale', async () => {
+    // La pastille comptait `registration_requests`, qui n'a plus de producteur.
+    it('compte les inscriptions sur la file vivante (shipowners PENDING_REVIEW)', async () => {
         const { result } = renderHook(() => useNotifications());
         await waitFor(() => expect(result.current.pendingRegistrations).toBe(1));
     });

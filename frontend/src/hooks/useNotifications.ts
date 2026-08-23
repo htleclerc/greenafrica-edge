@@ -7,10 +7,9 @@ import { markAllNotificationsRead } from '@/actions/markAllNotificationsRead';
 import {
     markStaffNotificationRead, markAllStaffNotificationsRead,
 } from '@/actions/markStaffNotificationsRead';
-import { staffRowToNotification, type StaffNotificationRow } from '@/lib/notifications';
 import {
-    ownerRowToNotification, sortNotifications,
-    type AppNotification, type OwnerNotificationRow,
+    ownerRowToNotification, staffRowToNotification, sortNotifications,
+    type AppNotification, type OwnerNotificationRow, type StaffNotificationRow,
 } from '@/lib/notifications';
 import { applyReadState, loadReadIds, persistReadIds } from '@/lib/notificationReadState';
 import { mockSecureVessels, mockTransactions } from '@/mock/datas/secureMock';
@@ -180,30 +179,34 @@ async function fetchStaffNotifications(
 }
 
 /**
- * Compte les inscriptions en attente, pour la pastille de la barre laterale.
+ * Compte les inscriptions en attente, pour la pastille de la barre latérale.
  *
- * C'est un compte de travail restant, pas un evenement : il se derive
- * legitimement de l'etat courant, la ou la cloche ne montre plus que des faits
- * datés (mig 133).
+ * La file vivante est `shipowners` en `PENDING_REVIEW` : `registration_requests`
+ * n'a plus de producteur depuis que l'inscription staff est passée sur
+ * invitation (route publique en 410) et que le self-service opérateur dépose
+ * directement un armateur à revoir.
+ *
+ * C'est un compte de travail restant, pas un événement : il se dérive
+ * légitimement de l'état courant, là où la cloche ne montre que des faits datés.
  */
 async function fetchPendingRegistrations(
     supabase: ReturnType<typeof createClient>,
 ): Promise<number> {
     const { count } = await supabase
-        .from('registration_requests')
+        .from('shipowners')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'PENDING');
+        .eq('account_state', 'PENDING_REVIEW');
     return count ?? 0;
 }
 
-// ── Notifications d'armateur (vraies lignes persistees) ─────────────────────
+// ── Notifications d'armateur (mig 053) ──────────────────────────────────────
 
 /**
- * Lit les notifications reellement emises pour l'armateur connecte.
+ * Lit les notifications réellement émises pour l'armateur connecté.
  *
  * `owner_notifications` porte RLS sans aucune politique (mig 053) : un client
  * de session n'y verrait rien. La route API fait la bascule service-role
- * derriere le controle d'authentification, c'est donc elle qu'on interroge.
+ * derrière le contrôle d'authentification, c'est donc elle qu'on interroge.
  */
 async function fetchOwnerNotifications(): Promise<AppNotification[]> {
     const res = await fetch('/api/owner/notifications?limit=20', { cache: 'no-store' });
@@ -217,12 +220,13 @@ async function fetchOwnerNotifications(): Promise<AppNotification[]> {
 /**
  * Alimente la cloche du tableau de bord.
  *
- * Deux sources, une seule sortie :
- *   - **operateur** : les lignes de `owner_notifications`, celles-la memes qui
- *     declenchent les e-mails. Le lu est persiste cote serveur (`read_at`).
- *   - **staff** : faute de table, des alertes derivees de l'etat courant. Le lu
- *     est memorise dans le navigateur, sans quoi chaque rafraichissement les
- *     rendait toutes non lues (cf. lib/notificationReadState).
+ * Trois sources, une seule sortie — toutes persistées, le lu compris :
+ *   - **opérateur** : `owner_notifications` (mig 053), celles-là mêmes qui
+ *     déclenchent les e-mails. Lu écrit dans `read_at`.
+ *   - **staff** : `v_staff_notifications` (mig 133). Lu écrit dans
+ *     `staff_notification_reads`, une marque par personne.
+ *   - **démonstration** : des notifications synthétiques, sans table derrière
+ *     elles — seul cas où le lu vit dans le navigateur.
  */
 export function useNotifications(): NotificationsResult {
     const { isDemo, ready } = useRole();
