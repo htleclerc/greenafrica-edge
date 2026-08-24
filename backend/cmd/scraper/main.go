@@ -6,14 +6,15 @@
 // Two fetchers, selected by EQUASIS_FETCHER env (default "fixture"):
 //   - "fixture" → reads backend/testdata/equasis/<imo>.html from disk
 //   - "http"    → stub that errors. Real Equasis access requires legal
-//                 sign-off, session auth, and a CAPTCHA strategy. The
-//                 wiring is here so flipping that on is a one-day change.
+//     sign-off, session auth, and a CAPTCHA strategy. The
+//     wiring is here so flipping that on is a one-day change.
 //
 // Gated by feature.equasis_scraper_enabled. When OFF, the loop sleeps
 // 30s between checks and never pops messages.
 //
 // Run locally:
-//   cd backend && go run ./cmd/scraper
+//
+//	cd backend && go run ./cmd/scraper
 //
 // Required env: SUPABASE_DB_URL (defaults to local supabase). Optional
 // env: EQUASIS_FETCHER, EQUASIS_FIXTURES_DIR (overrides ../testdata/equasis).
@@ -34,6 +35,7 @@ import (
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
+	"github.com/htleclerc/africgreen/backend/internal/backoff"
 	"github.com/htleclerc/africgreen/backend/internal/config"
 	"github.com/htleclerc/africgreen/backend/internal/equasis"
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
@@ -45,14 +47,14 @@ const (
 	pollIdleDelay        = 5 * time.Second
 	pollDisabledDelay    = 30 * time.Second
 	healthAddr           = ":8081"
-
-	// Backoff applique a TOUTE erreur DB (lecture du drapeau ou pop de la
-	// file). Sans lui, une coupure fait reconnecter le worker toutes les 30s
-	// indefiniment, ce qui arme le disjoncteur de Supavisor (ECIRCUITBREAKER)
-	// et bloque alors les connexions legitimes du reste de la stack.
-	dbBackoffMin = 5 * time.Second
-	dbBackoffMax = 5 * time.Minute
 )
+
+// Backoff applique a TOUTE erreur DB (lecture du drapeau ou pop de la file).
+// Sans lui, une coupure fait reconnecter le worker toutes les 30s
+// indefiniment, ce qui arme le disjoncteur de Supavisor (ECIRCUITBREAKER) et
+// bloque alors les connexions legitimes du reste de la stack. Meme politique
+// que l'ingesteur AIS, cf internal/backoff.
+var dbBackoff = backoff.Policy{Min: 5 * time.Second, Max: 5 * time.Minute}
 
 // Fetcher returns Equasis HTML for an IMO number.
 type Fetcher interface {
@@ -81,7 +83,7 @@ func main() {
 	go startHealth(ctx)
 
 	log.Println("[scraper] entering main loop")
-	var dbBackoff time.Duration
+	var wait time.Duration
 	for {
 		select {
 		case <-ctx.Done():
@@ -92,12 +94,12 @@ func main() {
 
 		enabled, err := appcfg.GetBool(ctx, "feature.equasis_scraper_enabled")
 		if err != nil {
-			dbBackoff = nextBackoff(dbBackoff)
-			log.Printf("[scraper] feature flag read failed: %v — assuming OFF, retry in %s", err, dbBackoff)
-			sleepCtx(ctx, dbBackoff)
+			wait = dbBackoff.Next(wait)
+			log.Printf("[scraper] feature flag read failed: %v — assuming OFF, retry in %s", err, wait)
+			sleepCtx(ctx, wait)
 			continue
 		}
-		dbBackoff = 0
+		wait = 0
 		if !enabled {
 			sleepCtx(ctx, pollDisabledDelay)
 			continue
@@ -105,26 +107,15 @@ func main() {
 
 		processed, err := pollOnce(ctx, db, fetcher)
 		if err != nil {
-			dbBackoff = nextBackoff(dbBackoff)
-			log.Printf("[scraper] poll: %v — retry in %s", err, dbBackoff)
-			sleepCtx(ctx, dbBackoff)
+			wait = dbBackoff.Next(wait)
+			log.Printf("[scraper] poll: %v — retry in %s", err, wait)
+			sleepCtx(ctx, wait)
 			continue
 		}
 		if !processed {
 			sleepCtx(ctx, pollIdleDelay)
 		}
 	}
-}
-
-// nextBackoff doubles prev, clamped to [dbBackoffMin, dbBackoffMax].
-func nextBackoff(prev time.Duration) time.Duration {
-	if prev < dbBackoffMin {
-		return dbBackoffMin
-	}
-	if next := prev * 2; next < dbBackoffMax {
-		return next
-	}
-	return dbBackoffMax
 }
 
 // pollOnce pops at most one message, processes it, and returns true if

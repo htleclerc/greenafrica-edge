@@ -5,28 +5,9 @@ import (
 	"database/sql"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/supadb"
 )
-
-func TestNextBackoff(t *testing.T) {
-	cases := []struct {
-		prev, want time.Duration
-	}{
-		{0, dbBackoffMin},
-		{time.Second, dbBackoffMin},
-		{dbBackoffMin, 10 * time.Second},
-		{2 * time.Minute, 4 * time.Minute},
-		{4 * time.Minute, dbBackoffMax},
-		{dbBackoffMax, dbBackoffMax},
-	}
-	for _, c := range cases {
-		if got := nextBackoff(c.prev); got != c.want {
-			t.Errorf("nextBackoff(%s) = %s, want %s", c.prev, got, c.want)
-		}
-	}
-}
 
 func openTestDB(t *testing.T) *sql.DB {
 	t.Helper()
