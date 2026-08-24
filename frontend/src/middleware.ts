@@ -97,6 +97,9 @@ const AUTH_ROUTES = ['/login', '/post-login'];
 // Public auth routes — accessible whether logged in or not
 const PUBLIC_AUTH_ROUTES = ['/forgot-password', '/reset-password', '/pending-approval', '/auth/callback'];
 
+/** L'ecran d'elevation, joignable pendant qu'on exige justement l'elevation. */
+const MFA_CHALLENGE_PATH = '/mfa';
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
@@ -145,7 +148,7 @@ export async function middleware(request: NextRequest) {
         (demoAllowed && demoCookie === 'true')
         || (!!demoSecret && demoCookie === demoSecret);
 
-    const { supabaseResponse, user } = await updateSession(request);
+    const { supabaseResponse, user, mfaPending } = await updateSession(request);
 
     const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
     const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
@@ -174,6 +177,21 @@ export async function middleware(request: NextRequest) {
     if (isProtected && !user && !isDemo) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
+        url.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(url);
+    }
+
+    // Second facteur enrole mais pas franchi : rien de protege ne s'ouvre avant.
+    // Le controle est ici, sur le chemin de TOUTES les routes gardees, et non
+    // dans chaque page — une page ajoutee demain herite de la regle.
+    if (
+        user
+        && mfaPending
+        && (isProtected || isOwnerProtected)
+        && !pathname.startsWith(MFA_CHALLENGE_PATH)
+    ) {
+        const url = request.nextUrl.clone();
+        url.pathname = MFA_CHALLENGE_PATH;
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
     }

@@ -6,9 +6,16 @@
 #   - scraper  → cmd/scraper binary, no public ports (background worker)
 #
 # Scale independently:
-#   fly scale count api=1 scraper=0   # default — scraper off
-#   fly scale count scraper=1          # turn scraper on (still gated by
+#   fly scale count scraper=0          # arrete le worker
+#   fly scale count scraper=1          # le relance (toujours soumis au flag
 #                                      # feature.equasis_scraper_enabled)
+#
+# ATTENTION — `scraper=0` NE SURVIT PAS A UN DEPLOIEMENT. Tant que le groupe
+# est declare dans [processes], `fly deploy` recree une machine par groupe.
+# Constate le 2026-08-24 sur les deux environnements : les quatre machines
+# scraper mises a zero le matin etaient de retour apres le deploiement.
+# Pour supprimer durablement le worker, retirer le groupe ci-dessous — le
+# mettre a zero ne suffit pas. Le vrai garde-fou reste le flag en base.
 # Restart one without touching the other:
 #   fly machine restart <id>           # find via `fly machines list`
 
