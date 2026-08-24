@@ -61,10 +61,17 @@ export function LocaleSwitcher({ variant = 'navbar' }: LocaleSwitcherProps) {
                     <button
                         key={l.code}
                         onClick={() => switchLocale(l.code)}
-                        className={`px-2 py-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-md text-[10px] font-bold tracking-wider transition-all ${
-                            isActive ? 'bg-emerald-500 text-white' : ''
-                        }`}
-                        style={!isActive ? { color: isDashboard ? 'var(--os-text-muted)' : 'var(--ais-nav-text-muted)' } : undefined}
+                        className="px-2 py-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-md text-[10px] font-bold tracking-wider transition-all"
+                        style={
+                            isActive
+                                // La pastille suit l'habillage : marine sur Navy, vert sur
+                                // Emerald. Elle codait `bg-emerald-500 text-white`, soit du
+                                // vert sur un écran bleu — et 2,5:1, sous le seuil AA dans
+                                // les quatre combinaisons. `--os-on-primary` porte le bon
+                                // contraste dans chacune : sombre sur vert vif, blanc sur marine.
+                                ? { backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }
+                                : { color: isDashboard ? 'var(--os-text-muted)' : 'var(--ais-nav-text-muted)' }
+                        }
                     >
                         {l.label}
                     </button>
