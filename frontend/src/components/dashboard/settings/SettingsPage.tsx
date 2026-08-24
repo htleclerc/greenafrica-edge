@@ -233,7 +233,7 @@ function ProfileTab({ profile }: { profile: ProfileSettings }) {
                         <Input value={fullName} onChange={setFullName} />
                     </Field>
                     {/* L'adresse reste en lecture : elle doit suivre auth.users, et le
-                        verrou de la mig 138 la refuse de toute façon. */}
+                        verrou de la mig 140 la refuse de toute façon. */}
                     <Field label={t('settings_official_email')}>
                         <Input value={user.email} readOnly />
                     </Field>

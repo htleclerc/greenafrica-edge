@@ -26,7 +26,7 @@ const blank = (v: string | undefined) => (v && v.length > 0 ? v : null);
  * Met à jour ce qu'une personne peut changer sur elle-même.
  *
  * Aucune colonne de privilège n'est nommée ici, et ce n'est pas ce qui protège :
- * le verrou de la mig 138 refuse tout ce qui sort de sa liste blanche, même si
+ * le verrou de la mig 140 refuse tout ce qui sort de sa liste blanche, même si
  * cette action se mettait un jour à envoyer davantage. Le contrôle est en base,
  * là où il tient quel que soit l'appelant — y compris un PATCH PostgREST direct.
  */

@@ -102,7 +102,7 @@ export async function notifyOwner(
                 .eq('id', input.shipownerId)
                 .single();
 
-            // Les préférences (mig 138) ne gouvernent QUE l'information : alertes
+            // Les préférences (mig 140) ne gouvernent QUE l'information : alertes
             // navire, relances, relevé. Un mouvement d'argent, un refus, un fait
             // de sécurité partent toujours — se taire dessus parce qu'une case a
             // été décochée serait une faute, pas une préférence.

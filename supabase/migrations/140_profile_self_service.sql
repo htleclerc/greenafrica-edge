@@ -1,4 +1,4 @@
--- 138 — Le profil devient modifiable, et le verrou cesse d'être une liste noire
+-- 140 — Le profil devient modifiable, et le verrou cesse d'être une liste noire
 --
 -- Deux choses, liées : on ouvre l'écriture de quelques champs à leur
 -- propriétaire, donc il faut d'abord s'assurer que TOUT le reste est fermé.
@@ -13,7 +13,7 @@ ALTER TABLE public.profiles
     ADD COLUMN IF NOT EXISTS notification_prefs JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 COMMENT ON COLUMN public.profiles.notification_prefs IS
-'Mig 138 : préférences d''envoi, {clé: booléen}. Une clé absente vaut le défaut
+'Mig 140 : préférences d''envoi, {clé: booléen}. Une clé absente vaut le défaut
 applicatif. Ne gouverne QUE les notifications d''information — les faits de
 sécurité et d''argent partent toujours.';
 
@@ -76,7 +76,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.profiles_privileged_column_guard() IS
-'Mig 138 : liste BLANCHE des colonnes qu''un profil peut modifier sur lui-même.
+'Mig 140 : liste BLANCHE des colonnes qu''un profil peut modifier sur lui-même.
 Remplace la liste noire des migs 119/130, qui laissait passer can_record_cash,
 credit_limit_usd, operational_site, eez_suspended, is_demo et country_code.
 service_role et SUPERADMIN bypassent, comme avant.';
