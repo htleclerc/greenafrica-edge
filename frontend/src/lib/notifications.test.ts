@@ -61,10 +61,26 @@ describe('ownerRowToNotification', () => {
             amount_usd: 48_200, invoice_ref: 'GG-2026-0418',
         });
     });
-    it('convertit ce qui n’est ni chaîne ni nombre, et écarte les vides', () => {
-        const messy = { ...row, body_params: { flag: true, nothing: null, nested: { a: 1 } } };
+    it('convertit ce qui n’est ni chaîne ni nombre', () => {
+        const messy = { ...row, body_params: { flag: true, nested: { a: 1 } } };
         expect(ownerRowToNotification(messy).messageParams).toEqual({
             flag: 'true', nested: '[object Object]',
+        });
+    });
+
+    /**
+     * Écarter la clé faisait échouer le formatage entier : next-intl refuse une
+     * phrase dont un paramètre manque, la barre affichait la clé brute et
+     * journalisait une FORMATTING_ERROR à chaque rendu. Vu en vrai sur des
+     * relances émises pour des transactions sans référence de pro-forma.
+     */
+    it('remplace une valeur nulle par un tiret plutôt que de retirer la clé', () => {
+        const partial = {
+            ...row,
+            body_params: { invoice_ref: null, amount_usd: 5040, age_days: 64 },
+        };
+        expect(ownerRowToNotification(partial).messageParams).toEqual({
+            invoice_ref: '—', amount_usd: 5040, age_days: 64,
         });
     });
     it('supporte un body_params absent', () => {
