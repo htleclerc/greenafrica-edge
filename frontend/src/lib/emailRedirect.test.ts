@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { applyEmailRedirect, redirectTarget } from './emailRedirect';
+import { applyEmailRedirect, redirectTarget, type Redirectable } from './emailRedirect';
 
 const ORIGINAL = process.env.EMAIL_REDIRECT_TO;
 
@@ -87,7 +87,8 @@ describe('redirection des e-mails hors production', () => {
         });
 
         it("n'invente pas de champ absent", () => {
-            const out = applyEmailRedirect({ to: 'a@b.c', subject: 's', text: 'corps' });
+            const message: Redirectable = { to: 'a@b.c', subject: 's', text: 'corps' };
+            const out = applyEmailRedirect(message);
             expect(out.message.html).toBeUndefined();
         });
 
