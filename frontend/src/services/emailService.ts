@@ -153,6 +153,36 @@ async function sendEmail(params: {
 
 // ── Shared layout ──────────────────────────────────────────────────────────
 
+// Bordure du séparateur. Une couleur pleine et non un rgba() : Outlook ignore
+// l'alpha et rendrait un trait noir. #1F2A26 est le rendu exact de
+// rgba(255,255,255,0.06) sur le fond de carte #111C18.
+const META_BORDER = '#1F2A26';
+
+/**
+ * Une ligne « étiquette → valeur » d'un bloc de métadonnées.
+ *
+ * En **table**, pas en flexbox : Gmail supprime `display:flex`, et les deux
+ * cellules retombaient alors collées l'une à l'autre (« VesselGG DEMO STAR »).
+ * Les styles sont **en ligne** pour la même raison : le `<style>` de l'en-tête
+ * n'est pas garanti hors du client web de Gmail.
+ *
+ * N'échappe rien : l'appelant passe déjà des valeurs échappées, et certaines
+ * lignes portent délibérément du balisage.
+ */
+function metaRow(
+    label: string,
+    value: string,
+    styles?: { label?: string; value?: string },
+): string {
+    const cell = `padding:10px 0;border-bottom:1px solid ${META_BORDER};font-size:13px;`;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;width:100%">
+<tr>
+<td align="left" style="${cell}color:#64748B;${styles?.label ?? ''}">${label}</td>
+<td align="right" style="${cell}color:#FFFFFF;font-weight:600;${styles?.value ?? ''}">${value}</td>
+</tr>
+</table>`;
+}
+
 function emailLayout(content: string, options?: { previewText?: string; sovereignLine?: string }): string {
     const preview = options?.previewText ?? '';
     // Pied de page souverain. Par défaut le Somaliland (émetteur historique) ;
@@ -180,9 +210,6 @@ function emailLayout(content: string, options?: { previewText?: string; sovereig
     h1 { color: #FFFFFF; font-size: 22px; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.3px; }
     h2 { color: #10B981; font-size: 13px; font-weight: 700; margin: 24px 0 10px; text-transform: uppercase; letter-spacing: 1.5px; }
     p { margin: 0 0 14px; color: #CBD5E1; }
-    .meta-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
-    .meta-label { color: #64748B; }
-    .meta-value { color: #FFFFFF; font-weight: 600; }
     .btn { display: inline-block; padding: 12px 24px; background: #10B981; color: #0A1110 !important; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.3px; margin: 16px 0; }
     .btn-outline { background: transparent; border: 1px solid #10B981; color: #10B981 !important; }
     .alert { padding: 12px 14px; border-radius: 8px; font-size: 13px; margin: 14px 0; }
@@ -346,9 +373,9 @@ export async function sendRegistrationApprovalEmail(p: RegistrationApprovalParam
         <p>Your application to access the Green Gate Sovereign Carbon Platform has been reviewed and <strong>approved</strong>.</p>
 
         <h2>Account Details</h2>
-        <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
-        <div class="meta-row"><span class="meta-label">Role</span><span class="meta-value">${escapeHtml(p.role.replace('_', ' '))}</span></div>
-        <div class="meta-row"><span class="meta-label">Site</span><span class="meta-value">${escapeHtml(p.operationalSite.replace('_', ' '))}</span></div>
+        ${metaRow(`Email`, escapeHtml(p.to))}
+        ${metaRow(`Role`, escapeHtml(p.role.replace('_', ' ')))}
+        ${metaRow(`Site`, escapeHtml(p.operationalSite.replace('_', ' ')))}
 
         ${p.temporaryPassword
             ? `<div class="alert alert-warn">A temporary password has been set: <strong style="font-family:monospace">${escapeHtml(p.temporaryPassword)}</strong>. You will be required to change it on first login.</div>`
@@ -385,9 +412,9 @@ export async function sendPartnershipConfirmationEmail(p: PartnershipConfirmatio
         <p>We have received your partnership request from <strong>${escapeHtml(p.organizationName)}</strong>. Our team will review it and respond within <strong>5 business days</strong>.</p>
 
         <h2>Request Summary</h2>
-        <div class="meta-row"><span class="meta-label">Reference</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.requestId)}</span></div>
-        <div class="meta-row"><span class="meta-label">Organization</span><span class="meta-value">${escapeHtml(p.organizationName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Type</span><span class="meta-value">${escapeHtml(p.partnershipType.replace('_', ' '))}</span></div>
+        ${metaRow(`Reference`, escapeHtml(p.requestId), { value: 'font-family:monospace' })}
+        ${metaRow(`Organization`, escapeHtml(p.organizationName))}
+        ${metaRow(`Type`, escapeHtml(p.partnershipType.replace('_', ' ')))}
 
         <div class="alert alert-success">Your request is in our queue. Please reference <strong>${escapeHtml(p.requestId)}</strong> in any follow-up correspondence.</div>
 
@@ -674,9 +701,9 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         <p>Pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been outstanding for <strong>${p.ageDays} days</strong>.</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString('en-US')}</span></div>
-        <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString('en-US')}`, { value: 'color:#EAB308;font-size:16px' })}
+        ${metaRow(`Age`, `${p.ageDays} days`)}
 
         <div class="alert ${t.alertClass}">${t.alertText}</div>
 
@@ -734,7 +761,7 @@ function escalationTone(tier: 'BAILIFF' | 'JUDICIAL', invoiceRef: string): {
 export async function sendCollectionEscalationEmail(p: CollectionEscalationParams): Promise<EmailResult> {
     const t = escalationTone(p.tier, p.invoiceRef);
     const vesselRow = p.vesselName
-        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        ? metaRow(`Vessel`, escapeHtml(p.vesselName))
         : '';
     const content = `
         <h1>${t.heading}</h1>
@@ -742,9 +769,9 @@ export async function sendCollectionEscalationEmail(p: CollectionEscalationParam
         <p>Regarding outstanding pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong>:</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
         ${vesselRow}
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#EF4444;font-size:16px' })}
 
         <div class="alert alert-danger">${t.alertText}</div>
 
@@ -782,7 +809,7 @@ export interface ProformaIssuedParams {
 export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<EmailResult> {
     const subject = `Pro-forma invoice ${p.invoiceRef} — $${p.amountUsd.toLocaleString()}`;
     const assetRow = p.vesselName
-        ? `<div class="meta-row"><span class="meta-label">Asset</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        ? metaRow(`Asset`, escapeHtml(p.vesselName))
         : '';
     const content = `
         <h1>Pro-forma Invoice Issued</h1>
@@ -790,9 +817,9 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
         <p>A pro-forma carbon-tax invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been issued for your account.</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
         ${assetRow}
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#EAB308;font-size:16px' })}
 
         <div class="alert alert-warn">Please review and settle this pro-forma invoice from your portal. Late settlement may incur port-clearance delays and interest.</div>
 
@@ -863,10 +890,7 @@ export interface CollectionRecapParams {
 export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promise<EmailResult> {
     const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`;
     const rows = p.lines.map((l) => `
-        <div class="meta-row">
-            <span class="meta-label" style="font-family:monospace">${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d</span>
-            <span class="meta-value">$${l.outstandingUsd.toLocaleString('en-US')}</span>
-        </div>`).join('');
+        ${metaRow(`${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d`, `$${l.outstandingUsd.toLocaleString('en-US')}`, { label: 'font-family:monospace' })}`).join('');
     const content = `
         <h1>Consolidated Recovery Statement</h1>
         <p>Dear ${escapeHtml(p.recipientName)},</p>
@@ -916,8 +940,8 @@ export async function sendWalletTopupEmail(p: WalletTopupParams): Promise<EmailR
         <div class="alert alert-success">Credit applied: <strong>+$${p.amountUsd.toLocaleString()}</strong></div>
 
         <h2>Wallet Summary</h2>
-        <div class="meta-row"><span class="meta-label">Top-up Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">+$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">New Balance</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.newBalanceUsd.toLocaleString()}</span></div>
+        ${metaRow(`Top-up Amount`, `+$${p.amountUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
+        ${metaRow(`New Balance`, `$${p.newBalanceUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
 
         <p>Your wallet balance can be applied automatically to future pro-forma invoices, or manually from the portal.</p>
 
@@ -1012,7 +1036,7 @@ export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResul
     // souvent un manager qui reçoit, pour une flotte entière. Sans cette ligne
     // il ne saurait pas de quel dossier il s'agit.
     const vesselLine = p.vesselName
-        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        ? metaRow(`Vessel`, escapeHtml(p.vesselName))
         : '';
 
     const content = `
@@ -1068,7 +1092,7 @@ export async function sendMemberInvitedEmail(p: MemberInvitedParams): Promise<Em
         <h1>${p.updated ? 'Account access updated' : 'New access to your account'}</h1>
         <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
         <p>${escapeHtml(p.invitedBy)} ${verb} <strong>${escapeHtml(p.memberName)}</strong> (${escapeHtml(p.memberEmail)}) on your Green Gate account.</p>
-        <div class="meta-row"><span class="meta-label">Rights</span><span class="meta-value">${rights}</span></div>
+        ${metaRow(`Rights`, rights)}
         <a href="${appUrl()}/owner/profile" class="btn">Review account members →</a>
         <div class="alert alert-warn">If this access was not expected, remove it from the members section of your profile. Removing an access takes effect immediately.</div>
     `;
@@ -1200,10 +1224,10 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
         <div class="alert alert-success">Refund amount: <strong>$${p.amountUsd.toLocaleString()}</strong></div>
 
         <h2>Refund Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Method</span><span class="meta-value">${escapeHtml(railLabel)}</span></div>
-        <div class="meta-row"><span class="meta-label">Executed</span><span class="meta-value">${escapeHtml(p.executedAt)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
+        ${metaRow(`Amount`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
+        ${metaRow(`Method`, escapeHtml(railLabel))}
+        ${metaRow(`Executed`, escapeHtml(p.executedAt))}
 
         ${railGuidance}
 

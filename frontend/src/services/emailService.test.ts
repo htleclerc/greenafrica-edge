@@ -17,6 +17,7 @@ import {
     sendWalletTopupEmail,
     sendKycRejectedEmail,
     sendVesselAccessCodeEmail,
+    sendLoginLinkEmail,
 } from './emailService';
 
 beforeEach(() => {
@@ -143,5 +144,56 @@ describe('sendVesselAccessCodeEmail', () => {
         await sendVesselAccessCodeEmail({ to: 'contact@hornshipping.com', code: '222222' });
         const call = sendMock.mock.calls[0][0];
         expect(call.html).toContain('Dear Shipowner');
+    });
+});
+
+/**
+ * Garde de non-régression : les blocs « étiquette → valeur » étaient en
+ * flexbox, que Gmail supprime. Les deux cellules retombaient collées — le
+ * destinataire lisait « VesselGG DEMO STAR ». Ils sont en table depuis, avec
+ * des styles en ligne, parce que le `<style>` de l'en-tête n'est pas garanti
+ * partout non plus.
+ */
+describe('lignes de métadonnées — ce que Gmail sait rendre', () => {
+    async function loginHtml(): Promise<string> {
+        await sendLoginLinkEmail({
+            to: 'owner@example.com',
+            recipientName: 'Green Gate Demo Armateur',
+            link: 'https://greengate.africa/auth/sl?t=abc',
+            code: '688664',
+            vesselName: 'GG DEMO STAR',
+        });
+        return sendMock.mock.calls[0][0].html as string;
+    }
+
+    it('rend la ligne en table, jamais en flex', async () => {
+        const html = await loginHtml();
+        expect(html).toContain('<td align="right"');
+        expect(html).not.toContain('class="meta-row"');
+        // Le bug d'origine : les deux libellés bout à bout, sans cellule entre eux.
+        expect(html).not.toContain('VesselGG DEMO STAR');
+    });
+
+    it('porte ses couleurs en ligne, pas seulement dans le <style>', async () => {
+        const html = await loginHtml();
+        expect(html).toMatch(/<td align="left" style="[^"]*color:#64748B/);
+        expect(html).toMatch(/<td align="right" style="[^"]*color:#FFFFFF/);
+    });
+
+    it('sépare la bordure en couleur pleine — Outlook ignore l’alpha d’un rgba()', async () => {
+        const html = await loginHtml();
+        expect(html).toContain('border-bottom:1px solid #1F2A26');
+        // Seulement dans les cellules : le <style> de la mise en page garde ses
+        // rgba pour l'en-tête et le pied, qui ne sont pas l'objet de ce correctif.
+        const cells = html.match(/<td [^>]*>/g) ?? [];
+        expect(cells.length).toBeGreaterThan(0);
+        expect(cells.some((c) => c.includes('rgba'))).toBe(false);
+    });
+
+    it('garde l’étiquette et la valeur séparées et lisibles', async () => {
+        const html = await loginHtml();
+        const row = html.slice(html.indexOf('>Vessel<') - 400, html.indexOf('>Vessel<') + 400);
+        expect(row).toContain('GG DEMO STAR');
+        expect(row).toContain('</td>');
     });
 });
