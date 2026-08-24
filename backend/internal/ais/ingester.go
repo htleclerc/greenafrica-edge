@@ -97,7 +97,20 @@ type Stats struct {
 	MessagesTotal int64     `json:"messages_total"`
 	LastMessageAt time.Time `json:"last_message_at,omitempty"`
 	Errors        int64     `json:"errors"`
+
+	// Health is derived, never stored. `Running` only says the goroutine is
+	// alive — it stayed true for 37 days on staging with 0 message and 49 250
+	// connection errors, and nothing surfaced it. A supervision field that
+	// cannot go red is worse than none.
+	Health       string `json:"health"`                  // ok | degraded | stopped
+	HealthReason string `json:"health_reason,omitempty"` // filled when not ok
 }
+
+// staleAfter is how long the ingester may go without a single message before
+// its health is reported degraded. aisstream delivers continuously in a
+// covered area, so a silent minute is already suspicious; 5 min avoids
+// flapping on a reconnect.
+const staleAfter = 5 * time.Minute
 
 // NewIngesterWithDeps constructs an Ingester with db + hooks wired in.
 // Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition
@@ -183,8 +196,32 @@ func (ing *Ingester) Stop() {
 // GetStats returns current ingestion statistics.
 func (ing *Ingester) GetStats() Stats {
 	ing.mu.Lock()
-	defer ing.mu.Unlock()
-	return ing.stats
+	st := ing.stats
+	ing.mu.Unlock()
+	st.Health, st.HealthReason = health(st, time.Now())
+	return st
+}
+
+// health derives the reported health from the raw counters. Split out from
+// GetStats so it can be tested without an ingester.
+func health(st Stats, now time.Time) (string, string) {
+	if !st.Running {
+		return "stopped", ""
+	}
+	if st.LastMessageAt.IsZero() {
+		if st.StartedAt.IsZero() || now.Sub(st.StartedAt) < staleAfter {
+			return "ok", "" // just started, nothing received yet — not a verdict
+		}
+		return "degraded", fmt.Sprintf(
+			"aucun message depuis le demarrage il y a %s (%d erreurs de connexion)",
+			now.Sub(st.StartedAt).Truncate(time.Minute), st.Errors)
+	}
+	if d := now.Sub(st.LastMessageAt); d > staleAfter {
+		return "degraded", fmt.Sprintf(
+			"dernier message il y a %s (%d erreurs de connexion)",
+			d.Truncate(time.Minute), st.Errors)
+	}
+	return "ok", ""
 }
 
 // run spawns two parallel goroutines:
