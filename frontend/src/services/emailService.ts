@@ -1040,6 +1040,87 @@ export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResul
     });
 }
 
+export interface MemberInvitedParams {
+    to: string;
+    recipientName?: string;
+    memberName: string;
+    memberEmail: string;
+    invitedBy: string;
+    /** Libellés des droits accordés ; vide = consultation seule. */
+    granted: string[];
+    updated: boolean;
+}
+
+/**
+ * Prévient le titulaire qu'un membre a ouvert (ou modifié) un accès au compte.
+ *
+ * Écrit à l'adresse officielle du dossier : c'est le seul canal qui atteint le
+ * titulaire sans qu'il ait à ouvrir le portail. Le message dit qui a agi — sans
+ * cela, il ne reste qu'un accès apparu de nulle part.
+ */
+export async function sendMemberInvitedEmail(p: MemberInvitedParams): Promise<EmailResult> {
+    const rights = p.granted.length > 0
+        ? p.granted.map((g) => escapeHtml(g)).join(', ')
+        : 'View only';
+    const verb = p.updated ? 'updated the access of' : 'granted access to';
+
+    const content = `
+        <h1>${p.updated ? 'Account access updated' : 'New access to your account'}</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>${escapeHtml(p.invitedBy)} ${verb} <strong>${escapeHtml(p.memberName)}</strong> (${escapeHtml(p.memberEmail)}) on your Green Gate account.</p>
+        <div class="meta-row"><span class="meta-label">Rights</span><span class="meta-value">${rights}</span></div>
+        <a href="${appUrl()}/owner/profile" class="btn">Review account members →</a>
+        <div class="alert alert-warn">If this access was not expected, remove it from the members section of your profile. Removing an access takes effect immediately.</div>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: p.updated
+            ? `Access updated for ${p.memberEmail}`
+            : `New access to your Green Gate account: ${p.memberEmail}`,
+        html: emailLayout(content, { previewText: `${p.memberEmail} — ${rights}` }),
+        text: `${p.invitedBy} ${verb} ${p.memberName} (${p.memberEmail}) on your Green Gate account.
+Rights: ${p.granted.length > 0 ? p.granted.join(', ') : 'View only'}
+
+Review members: ${appUrl()}/owner/profile
+
+If this access was not expected, remove it from your profile.`,
+    });
+}
+
+export interface MemberRevokedParams {
+    to: string;
+    recipientName?: string;
+    memberEmail: string;
+    revokedBy: string;
+}
+
+/**
+ * Prévient le titulaire qu'un accès au compte a été fermé.
+ *
+ * Le pendant de `sendMemberInvitedEmail` : `can_invite` porte les deux gestes,
+ * donc un membre peut fermer l'accès d'un autre. Ne signaler que l'ouverture
+ * laisserait passer le retrait, qui est le plus lourd de conséquences.
+ */
+export async function sendMemberRevokedEmail(p: MemberRevokedParams): Promise<EmailResult> {
+    const content = `
+        <h1>Account access removed</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>${escapeHtml(p.revokedBy)} removed <strong>${escapeHtml(p.memberEmail)}</strong>&apos;s access to your Green Gate account. The removal took effect immediately.</p>
+        <a href="${appUrl()}/owner/profile" class="btn">Review account members →</a>
+        <div class="alert alert-warn">If this removal was not intended, you can invite the person again from the members section of your profile.</div>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: `Access removed for ${p.memberEmail}`,
+        html: emailLayout(content, { previewText: `${p.memberEmail} no longer has access` }),
+        text: `${p.revokedBy} removed ${p.memberEmail}'s access to your Green Gate account.
+
+Review members: ${appUrl()}/owner/profile`,
+    });
+}
+
 export interface VesselAccessCodeParams {
     to: string;
     recipientName?: string;

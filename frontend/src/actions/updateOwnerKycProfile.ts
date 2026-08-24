@@ -28,7 +28,7 @@ const inputSchema = z.object({
 });
 
 export async function updateOwnerKycProfile(input: z.infer<typeof inputSchema>): Promise<{ ok: true }> {
-    const session = await requireOwner();
+    const session = await requireOwner('holder');
     const data = inputSchema.parse(input);
     const admin = createTenantClient(session.jurisdictionId);
 

@@ -201,7 +201,7 @@ async function initiatePaypal(
 export async function initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentResult> {
     const parsed = schema.parse(input);
 
-    const ctx = await requireOwner();
+    const ctx = await requireOwner('canPay');
     if (!OWNER_RAILS.includes(parsed.rail as typeof OWNER_RAILS[number])) {
         throw new Error(`owner cannot initiate rail=${parsed.rail}`);
     }

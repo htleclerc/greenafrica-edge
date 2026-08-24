@@ -294,16 +294,24 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
     const [recapOpen, setRecapOpen] = React.useState(false);
     const [recapError, setRecapError] = React.useState<string | null>(null);
     const [recapPending, startRecapTransition] = React.useTransition();
+    // Portée de l'envoi : tout le dossier, ou un seul navire. Le moteur sait
+    // composer les deux depuis toujours ; il n'existait aucun moyen de le lui
+    // demander.
+    const [recapVesselId, setRecapVesselId] = React.useState<string>('');
 
     function confirmRecap() {
         setRecapError(null);
         startRecapTransition(async () => {
-            const result = await sendConsolidatedRecap({ shipownerId: detail.id });
+            const result = await sendConsolidatedRecap({
+                shipownerId: detail.id,
+                ...(recapVesselId ? { vesselId: recapVesselId } : {}),
+            });
             if (!result.ok) {
                 setRecapError(result.reason);
                 return;
             }
             setRecapOpen(false);
+            setRecapVesselId('');
             router.refresh();
         });
     }
@@ -770,6 +778,23 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                         <Dialog.Description className="text-sm text-[var(--os-text-muted)] mb-4">
                             {t('sendRecapConfirmBody', { name: detail.name, count: openProformaCount })}
                         </Dialog.Description>
+                        <label className="mb-4 flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                                {t('recapScope')}
+                            </span>
+                            <select
+                                value={recapVesselId}
+                                onChange={(e) => setRecapVesselId(e.target.value)}
+                                disabled={recapPending}
+                                className="h-9 rounded-[10px] border border-[var(--os-border)] bg-[var(--os-surface)] px-2.5 text-[13px] text-[var(--os-text-primary)]"
+                            >
+                                <option value="">{t('recapScopeAll')}</option>
+                                {detail.vessels.map((v) => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                            </select>
+                        </label>
+
                         {recapError && <p className="text-xs text-[#EF4444] mb-3">{recapError}</p>}
                         <div className="mt-1 flex justify-end gap-2">
                             <OsButton variant="ghost" onClick={() => setRecapOpen(false)} disabled={recapPending}>

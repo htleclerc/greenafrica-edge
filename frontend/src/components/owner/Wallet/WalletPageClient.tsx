@@ -17,6 +17,11 @@ interface Props {
     prediction: NextTaxPrediction;
     /** Plan 7H-1 Task 5.3 — gates the "Top up" CTA + PayDialog topup mode. */
     topupEnabled?: boolean;
+    /**
+     * Droit de payer (mig 135). Approvisionner et basculer l'application
+     * automatique sont deux gestes d'argent : ils tombent ensemble.
+     */
+    canPay: boolean;
 }
 
 export function WalletPageClient({
@@ -26,12 +31,17 @@ export function WalletPageClient({
     initialLedger,
     prediction,
     topupEnabled = true,
+    canPay,
 }: Props) {
     const router = useRouter();
     const [autoApply, setAutoApply] = React.useState(initialAutoApply);
     const [togglePending, setTogglePending] = React.useState(false);
     const [topupOpen, setTopupOpen] = React.useState(false);
     const [ledgerFilters, setLedgerFilters] = React.useState<LedgerKind[]>([]);
+
+    // Un membre sans le droit de payer garde la lecture du portefeuille et de
+    // son registre ; seuls les deux gestes disparaissent.
+    const canTopup = topupEnabled && canPay;
 
     const balanceUsd = initialBalanceUsdMinor / 100;
 
@@ -66,14 +76,15 @@ export function WalletPageClient({
                     onToggleAutoApply={handleToggleAutoApply}
                     onOpenTopup={() => setTopupOpen(true)}
                     togglePending={togglePending}
-                    topupEnabled={topupEnabled}
+                    topupEnabled={canTopup}
+                    canToggleAutoApply={canPay}
                     lastTopupAt={lastTopup?.created_at ?? null}
                     lastTopupUsd={lastTopup ? lastTopup.amount_signed_usd_minor / 100 : null}
                 />
                 <PredictionCard
                     prediction={prediction}
                     currentBalanceUsd={balanceUsd}
-                    onOpenTopup={topupEnabled ? () => setTopupOpen(true) : undefined}
+                    onOpenTopup={canTopup ? () => setTopupOpen(true) : undefined}
                 />
             </div>
             <LedgerTable
@@ -95,7 +106,7 @@ export function WalletPageClient({
                     amountUsd={0}
                     currency="USD"
                     walletBalanceUsdMinor={initialBalanceUsdMinor}
-                    topupEnabled={topupEnabled}
+                    topupEnabled={canTopup}
                 />
             )}
         </>

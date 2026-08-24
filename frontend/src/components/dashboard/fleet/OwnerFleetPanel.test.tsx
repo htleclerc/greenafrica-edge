@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { OwnerFleetPanel } from './OwnerFleetPanel';
 import type { FleetVessel } from '@/services/ownerFleetService';
+import { OWNER_ALL_PRIVILEGES, NO_PRIVILEGES, type OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import en from '../../../../messages/en.json';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -28,10 +29,14 @@ function vessel(overrides: Partial<FleetVessel> = {}): FleetVessel {
     };
 }
 
-function renderPanel(fleet: FleetVessel[]) {
+function renderPanel(
+    fleet: FleetVessel[],
+    privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES,
+    isMember = false,
+) {
     return render(
         <NextIntlClientProvider locale="en" messages={en}>
-            <OwnerFleetPanel fleet={fleet} />
+            <OwnerFleetPanel fleet={fleet} privileges={privileges} isMember={isMember} />
         </NextIntlClientProvider>,
     );
 }
@@ -94,5 +99,25 @@ describe('OwnerFleetPanel — ce que la couleur annonce', () => {
         ]);
         // Le total du bandeau et le montant de la ligne portent la même somme.
         expect(screen.getAllByText(/16,500\.00/).length).toBeGreaterThanOrEqual(1);
+    });
+});
+
+describe('OwnerFleetPanel — sous-permissions du membre invité', () => {
+    it('retire renommer et retirer au membre qui ne gère pas la flotte', () => {
+        renderPanel([vessel({ canRemove: true })], NO_PRIVILEGES, true);
+        expect(screen.queryByRole('button', { name: en.MyFleet.rename })).toBeNull();
+        expect(screen.queryByRole('button', { name: en.MyFleet.detach })).toBeNull();
+        expect(screen.getByText(en.MyFleet.restricted)).toBeInTheDocument();
+    });
+
+    it('laisse la flotte lisible : le navire et son encours restent affichés', () => {
+        renderPanel([vessel()], NO_PRIVILEGES, true);
+        expect(screen.getByText('GG DEMO STAR')).toBeInTheDocument();
+    });
+
+    it('ne dit rien au titulaire, qui a tout', () => {
+        renderPanel([vessel({ canRemove: true })]);
+        expect(screen.getByRole('button', { name: en.MyFleet.rename })).toBeInTheDocument();
+        expect(screen.queryByText(en.MyFleet.restricted)).toBeNull();
     });
 });

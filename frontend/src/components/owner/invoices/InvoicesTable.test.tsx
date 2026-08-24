@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { InvoicesTable, type InvoiceRow } from './InvoicesTable';
+import { OWNER_ALL_PRIVILEGES, NO_PRIVILEGES, type OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import en from '../../../../messages/en.json';
 
 const refresh = vi.fn();
@@ -39,10 +40,19 @@ function row(overrides: Partial<InvoiceRow> = {}): InvoiceRow {
  * les assertions portent donc sur le panneau de détail, qui est l'endroit où les
  * actions d'une facture vivent depuis la refonte 2c.
  */
-function renderTable(rows: InvoiceRow[]) {
+function renderTable(
+    rows: InvoiceRow[],
+    privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES,
+    isMember = false,
+) {
     return render(
         <NextIntlClientProvider locale="en" messages={en}>
-            <InvoicesTable rows={rows} walletBalanceUsdMinor={0} />
+            <InvoicesTable
+                rows={rows}
+                walletBalanceUsdMinor={0}
+                privileges={privileges}
+                isMember={isMember}
+            />
         </NextIntlClientProvider>,
     );
 }
@@ -184,5 +194,38 @@ describe('InvoicesTable — justificatif de paiement', () => {
         // La fermeture rafraichit : sinon l'ecran continue de reclamer ce qui
         // vient d'etre fourni.
         await waitFor(() => expect(refresh).toHaveBeenCalled());
+    });
+});
+
+/**
+ * Les sous-permissions de la mig 135 masquent l'action ; elles ne la protègent
+ * pas. Ces cas gardent la promesse inverse de celle des actions serveur : ne pas
+ * proposer un geste qui sera refusé une fois le formulaire rempli.
+ */
+describe('InvoicesTable — sous-permissions du membre invité', () => {
+    it('cache payer et contester à un membre qui n’a ni l’un ni l’autre', () => {
+        renderTable([row()], NO_PRIVILEGES, true);
+        expect(screen.queryByRole('button', { name: /^Pay /i })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Dispute/i })).toBeNull();
+    });
+
+    it('explique l’absence au membre, jamais au titulaire', () => {
+        const { unmount } = renderTable([row()], NO_PRIVILEGES, true);
+        expect(screen.getByText(en.OwnerPortal.invoiceDetail.restricted)).toBeInTheDocument();
+        unmount();
+
+        renderTable([row()], OWNER_ALL_PRIVILEGES, false);
+        expect(screen.queryByText(en.OwnerPortal.invoiceDetail.restricted)).toBeNull();
+    });
+
+    it('laisse contester un membre qui n’a que ce droit', () => {
+        renderTable([row()], { ...NO_PRIVILEGES, canDispute: true }, true);
+        expect(screen.getByRole('button', { name: /Dispute/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /^Pay /i })).toBeNull();
+    });
+
+    it('garde le téléchargement du PDF, qui ne demande aucun droit', () => {
+        renderTable([row()], NO_PRIVILEGES, true);
+        expect(screen.getByRole('link', { name: /Download PDF/i })).toBeInTheDocument();
     });
 });

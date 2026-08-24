@@ -25,6 +25,7 @@ const OWNER = {
 function admin(tables: {
     shipowners?: Record<string, unknown>[];
     mappings?: Record<string, unknown>[];
+    members?: Record<string, unknown>[];
     cc?: Record<string, unknown>[];
 }) {
     const calls: string[] = [];
@@ -73,6 +74,7 @@ function admin(tables: {
             from: (t: string) => {
                 calls.push(t);
                 if (t === 'owner_agent_mappings') return make(tables.mappings ?? []);
+                if (t === 'owner_members') return make(tables.members ?? []);
                 return make(t === 'shipowners' && tables.cc ? tables.cc : (tables.shipowners ?? []));
             },
         } as never,
@@ -130,6 +132,52 @@ describe('resolveLoginTarget', () => {
         const t = await resolveLoginTarget(a.client, 'morgan.navigation@mail.example');
         expect(t?.isUnProhibited).toBe(true);
         expect(t?.scope).toBe('OWNER');
+    });
+
+    it('reconnaît un membre du compte, et lui envoie le lien à SON adresse', async () => {
+        const a = admin({
+            shipowners: [],
+            members: [{
+                shipowner_id: 'own-1', active: true,
+                profiles: { email: 'compta@farosshipping.com' },
+                shipowners: OWNER,
+            }],
+        });
+        const t = await resolveLoginTarget(a.client, 'compta@farosshipping.com');
+        expect(t).toMatchObject({ shipownerId: 'own-1', scope: 'MEMBER' });
+        // Envoyer le lien à l'armateur priverait le membre de l'accès qu'on
+        // vient de lui accorder.
+        expect(t?.deliveryEmail).toBe('compta@farosshipping.com');
+    });
+
+    it('ignore une appartenance révoquée', async () => {
+        const a = admin({
+            shipowners: [],
+            members: [{
+                shipowner_id: 'own-1', active: false,
+                profiles: { email: 'ancien@farosshipping.com' },
+                shipowners: OWNER,
+            }],
+        });
+        expect(await resolveLoginTarget(a.client, 'ancien@farosshipping.com')).toBeNull();
+    });
+
+    // Un membre a des droits explicitement cochés ; un représentant n'a qu'un
+    // lien de correspondance. La revendication la plus forte l'emporte.
+    it('fait primer l’appartenance sur le rattachement', async () => {
+        const shared = 'double@farosshipping.com';
+        const a = admin({
+            shipowners: [],
+            members: [{
+                shipowner_id: 'own-1', active: true,
+                profiles: { email: shared }, shipowners: OWNER,
+            }],
+            mappings: [{
+                shipowner_id: 'own-1', active: true,
+                profiles: { email: shared }, shipowners: OWNER,
+            }],
+        });
+        expect((await resolveLoginTarget(a.client, shared))?.scope).toBe('MEMBER');
     });
 
     it('reconnaît un représentant rattaché et actif', async () => {

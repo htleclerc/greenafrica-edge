@@ -54,6 +54,20 @@ export async function createOwnerDispute(
         return { ok: false, reason: 'only shipowners can open disputes via this action' };
     }
 
+    // Contester est une sous-permission (mig 135) : un membre qui ne l'a pas
+    // consulte la facture sans pouvoir la contester. La policy WITH CHECK de la
+    // table le refuserait aussi — on le dit ici pour un motif lisible plutôt
+    // qu'une erreur de contrainte.
+    const { data: membership } = await supabase
+        .from('owner_members')
+        .select('can_dispute')
+        .eq('profile_id', auth.user.id)
+        .eq('active', true)
+        .maybeSingle();
+    if (membership && (membership as { can_dispute: boolean }).can_dispute !== true) {
+        return { ok: false, reason: 'forbidden' };
+    }
+
     // Fetch the transaction to get vessel_id + amount. RLS scopes to our own.
     const { data: txn, error: txnErr } = await supabase
         .from('transactions')

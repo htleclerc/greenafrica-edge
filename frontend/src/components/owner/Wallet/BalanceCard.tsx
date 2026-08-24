@@ -11,6 +11,12 @@ interface Props {
     onToggleAutoApply: () => void;
     onOpenTopup: () => void;
     togglePending: boolean;
+    /**
+     * Faux pour un membre invité sans le droit de payer (mig 135) : il voit
+     * l'état de l'application automatique, qui décide de ses factures, mais
+     * ne le change pas.
+     */
+    canToggleAutoApply?: boolean;
     /** Plan 7H-1 Task 5.3 — when false, hides the "Top up" CTA. */
     topupEnabled?: boolean;
     /** Date du dernier approvisionnement, si le portefeuille en a déjà reçu un. */
@@ -27,7 +33,7 @@ interface Props {
  */
 export function BalanceCard({
     balanceUsd, autoApplyEnabled, onToggleAutoApply, onOpenTopup, togglePending,
-    topupEnabled = true, lastTopupAt = null, lastTopupUsd = null,
+    topupEnabled = true, canToggleAutoApply = true, lastTopupAt = null, lastTopupUsd = null,
 }: Props) {
     const t = useTranslations('OwnerPortal.wallet');
 
@@ -75,7 +81,7 @@ export function BalanceCard({
                 <button
                     type="button"
                     onClick={onToggleAutoApply}
-                    disabled={togglePending}
+                    disabled={togglePending || !canToggleAutoApply}
                     aria-pressed={autoApplyEnabled}
                     className="rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-150 disabled:opacity-50"
                     style={{

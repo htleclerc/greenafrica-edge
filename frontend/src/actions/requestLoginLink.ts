@@ -113,10 +113,13 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
     }
 
     // Copie de facturation : reconnue par la liste d'autorisation, mais aucun
-    // accès n'est envoyé. La portée « lecture seule » qu'exige la spec n'est
-    // portée nulle part dans la session — ouvrir le portail complet à un
-    // comptable en copie lui donnerait litiges, conformité et moyens de
-    // paiement. Recevoir un double n'est pas détenir le compte.
+    // accès n'est envoyé. Recevoir un double n'est pas détenir le compte.
+    //
+    // La mig 135 a donné une portée à la session (owner_members, avec ses
+    // sous-permissions) — mais elle vaut pour un MEMBRE explicitement invité,
+    // pas pour une adresse mise en copie. Une copie n'a jamais été un accès et
+    // ne le devient pas : pour qu'un comptable agisse, on l'invite comme membre
+    // avec les cases qui conviennent.
     if (target.scope === 'BILLING_CC') {
         log.info('billing_cc_link_deferred', { shipownerId: target.shipownerId });
         return { ok: true, via: 'email' };

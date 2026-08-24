@@ -1430,7 +1430,8 @@
     "title": "Ma flotte",
     "invoiceCountSettled": "{count} facture(s) · réglée(s)",
     "detachBlockedSettled": "Ce navire porte une facture réglée et reste au dossier. Une taxation acquittée ne se détache pas.",
-    "invoiceCountPartial": "{count} facture(s) · partiellement réglée(s)"
+    "invoiceCountPartial": "{count} facture(s) · partiellement réglée(s)",
+    "restricted": "Gérer les navires n’est pas inclus dans votre accès à ce compte. Le titulaire peut vous l’accorder."
   },
   "VesselsPage": {
     "status_compliant": "CONFORME",
@@ -3477,6 +3478,14 @@
         "OWNER_ESCALATION": {
           "title": "Avis d’escalade",
           "body": "Une action est requise sur {invoice_ref}."
+        },
+        "MEMBER_INVITED": {
+          "title": "Nouvel accès au compte",
+          "body": "{invited_by} a ouvert un accès à {member_email}. Droits : {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Accès au compte retiré",
+          "body": "{revoked_by} a retiré l’accès de {member_email}."
         }
       }
     },
@@ -3595,7 +3604,8 @@
       },
       "receipt": "Reçu",
       "completeProof": "Ajouter le justificatif manquant",
-      "reviewProof": "Revoir le justificatif"
+      "reviewProof": "Revoir le justificatif",
+      "restricted": "Certaines actions ne sont pas incluses dans votre accès à ce compte. Le titulaire peut vous les accorder."
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {jour de retard} other {jours de retard}}",
@@ -3606,6 +3616,13 @@
       "terms": "USD · net 30",
       "payNow": "Payer maintenant",
       "dispute": "Contester"
+    },
+    "statement": {
+      "title": "Relevé consolidé",
+      "asOfLabel": "Solde arrêté au",
+      "download": "Télécharger le PDF",
+      "hintFleet": "Toutes les factures encore dues sur votre flotte, à la date choisie. Établi à la demande — il ne remplace pas votre relevé mensuel.",
+      "hintVessel": "Toutes les factures encore dues pour ce navire, à la date choisie."
     }
   },
   "AdminEquasis": {
@@ -3791,7 +3808,61 @@
       "proofC": "Voir le justificatif de facturation",
       "noProofB": "Aucun document KYC-B enregistré",
       "noProofC": "Aucun document de facturation enregistré"
-    }
+    },
+    "billingCc": {
+      "title": "Copies de facturation",
+      "subtitle": "Les adresses qui reçoivent une copie de vos factures, relances et relevés.",
+      "scopeNotice": "Ces adresses reçoivent les documents. Elles ne donnent aucun accès au portail : personne ne peut s’y connecter avec. Pour qu’un collègue agisse sur votre compte, il faudra l’inviter comme membre — cette fonction arrive.",
+      "addLabel": "Ajouter une adresse",
+      "add": "Ajouter",
+      "remove": "Retirer {email}",
+      "empty": "Aucune copie. Vous seul recevez les documents.",
+      "remaining": "{count, plural, =0 {Plafond atteint} =1 {1 adresse encore possible} other {# adresses encore possibles}}",
+      "saved": "Enregistré.",
+      "errors": {
+        "invalid": "Adresse e-mail invalide.",
+        "invalid_email": "Adresse e-mail invalide.",
+        "isPrimary": "C’est déjà votre adresse principale — elle reçoit tout par défaut.",
+        "duplicate": "Cette adresse est déjà dans la liste.",
+        "tooMany": "Maximum {max} adresses en copie.",
+        "too_many": "Maximum {max} adresses en copie."
+      }
+    },
+    "members": {
+      "title": "Membres du compte",
+      "subtitle": "Les personnes autorisées à agir sur votre compte, et ce que chacune peut faire.",
+      "readOnlyNotice": "Vous pouvez consulter les membres de ce compte. Inviter ou retirer quelqu’un demande le droit « inviter des membres ».",
+      "empty": "Aucun membre. Vous êtes seul à accéder à ce compte.",
+      "revoke": "Retirer l’accès de {email}",
+      "revokedTitle": "Accès retirés",
+      "revokedOn": "retiré le {date}",
+      "privilege": {
+        "canPay": "Payer",
+        "canDispute": "Contester",
+        "canManageVessels": "Gérer les navires",
+        "canInvite": "Inviter des membres",
+        "none": "Consultation seule"
+      },
+      "form": {
+        "fullName": "Nom du collègue",
+        "email": "Son adresse e-mail",
+        "privileges": "Ce qu’il pourra faire",
+        "notYours": "Vous ne détenez pas ce droit — vous ne pouvez pas l’accorder.",
+        "submit": "Inviter"
+      },
+      "errors": {
+        "forbidden": "Vous n’avez pas le droit d’inviter des membres.",
+        "self": "Vous ne pouvez pas vous inviter vous-même.",
+        "already_holder": "Cette personne est déjà titulaire de ce compte.",
+        "holds_other_account": "Cette personne est titulaire d’un autre compte — l’invitation resterait sans effet.",
+        "member_of_other_account": "Cette personne est déjà membre d’un autre compte.",
+        "not_found": "Membre introuvable.",
+        "not_an_operator": "Action réservée aux comptes armateur.",
+        "provisioning failed": "La création du compte a échoué. Réessayez.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire."
   },
   "AdminRegistrations": {
     "title": "Demandes d'inscription",
@@ -4566,7 +4637,9 @@
       "checkKyc": "Vérifier KYC",
       "file": "Fiche",
       "noEmail": "Aucune adresse officielle — impossible de relancer."
-    }
+    },
+    "recapScope": "Portée",
+    "recapScopeAll": "Toute la flotte"
   },
   "AdminReglements": {
     "title": "Règlements",

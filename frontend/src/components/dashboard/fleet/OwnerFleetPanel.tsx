@@ -10,11 +10,18 @@ import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { renameOwnerVessel, detachOwnerVessel } from '@/actions/updateOwnerVessel';
+import type { OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import { OWNER_INVOICES_PATH } from '@/lib/routes/ownerPaths';
 import type { FleetVessel } from '@/services/ownerFleetService';
 
 interface Props {
     fleet: FleetVessel[];
+    /**
+     * Sous-permissions de la personne connectée (mig 135). Elles retirent le
+     * geste de l'écran ; le refus qui compte reste celui de l'action serveur.
+     */
+    privileges: OwnerPrivileges;
+    isMember: boolean;
 }
 
 /**
@@ -29,7 +36,7 @@ interface Props {
  * litige ici : le parcours y existe déjà, avec son motif et sa pièce jointe.
  * Un second chemin finirait par diverger du premier.
  */
-export function OwnerFleetPanel({ fleet }: Props) {
+export function OwnerFleetPanel({ fleet, privileges, isMember }: Props) {
     const t = useTranslations('MyFleet');
     const router = useRouter();
 
@@ -163,8 +170,9 @@ export function OwnerFleetPanel({ fleet }: Props) {
                             )}
                         </div>
 
-                        {editingId !== v.id && (
+                        {editingId !== v.id && (privileges.canManageVessels || privileges.canDispute) && (
                             <div className="flex flex-wrap items-center gap-2">
+                                {privileges.canManageVessels && (
                                 <OsButton
                                     variant="secondary" size="sm" disabled={pending}
                                     icon={<Pencil className="w-3.5 h-3.5" />}
@@ -172,8 +180,9 @@ export function OwnerFleetPanel({ fleet }: Props) {
                                 >
                                     {t('rename')}
                                 </OsButton>
+                                )}
 
-                                {v.canRemove ? (
+                                {!privileges.canManageVessels ? null : v.canRemove ? (
                                     confirmDetachId === v.id ? (
                                         <>
                                             <span className="text-xs text-[var(--os-text-muted)]">{t('confirmDetach')}</span>
@@ -193,14 +202,20 @@ export function OwnerFleetPanel({ fleet }: Props) {
                                             {t('detach')}
                                         </OsButton>
                                     )
-                                ) : (
+                                ) : privileges.canDispute ? (
                                     <Link href={OWNER_INVOICES_PATH}>
                                         <OsButton variant="secondary" size="sm" icon={<Scale className="w-3.5 h-3.5" />}>
                                             {t('dispute')}
                                         </OsButton>
                                     </Link>
-                                )}
+                                ) : null}
                             </div>
+                        )}
+
+                        {/* Le titulaire a tout : seul un membre a besoin de
+                            comprendre pourquoi le geste manque. */}
+                        {isMember && !privileges.canManageVessels && (
+                            <p className="text-[11px] mt-2 text-[var(--os-text-muted)]">{t('restricted')}</p>
                         )}
                     </div>
 

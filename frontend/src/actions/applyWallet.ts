@@ -23,7 +23,7 @@ const schema = z.object({
 export async function applyWallet(input: { transactionId: string; amountMinor: number }) {
     const parsed = schema.parse(input);
 
-    const ctx = await requireOwner();
+    const ctx = await requireOwner('canPay');
 
     log.info('action_invoked', {
         transactionId: parsed.transactionId,

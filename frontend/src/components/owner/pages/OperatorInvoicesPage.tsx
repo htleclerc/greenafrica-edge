@@ -9,6 +9,7 @@ import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/InvoicesTable';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 import { RAILS_REQUIRING_PROOF } from '@/lib/payments/proofRequirement';
+import { StatementDownload } from '@/components/owner/StatementDownload';
 
 interface RawTxn {
     id: string;
@@ -193,8 +194,14 @@ export async function OperatorInvoicesPage({
                 <InvoicesTable
                     rows={rows}
                     walletBalanceUsdMinor={walletBalanceUsdMinor}
+                    privileges={principal.privileges}
+                    isMember={principal.isMember}
                 />
             )}
+
+            <div className="mt-8">
+                <StatementDownload />
+            </div>
 
             {statements.length > 0 && (
                 <section>

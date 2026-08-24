@@ -1,6 +1,6 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
 
-export type LoginScope = 'OWNER' | 'REPRESENTATIVE' | 'BILLING_CC';
+export type LoginScope = 'OWNER' | 'MEMBER' | 'REPRESENTATIVE' | 'BILLING_CC';
 
 export interface LoginTarget {
     shipownerId: string;
@@ -18,10 +18,12 @@ const OWNER_COLUMNS =
 /**
  * Résout une adresse en un armateur ouvrable.
  *
- * Trois sources, par priorité décroissante :
+ * Quatre sources, par priorité décroissante :
  *   1. l'adresse officielle de l'armateur ;
- *   2. un représentant rattaché et actif (owner_agent_mappings) ;
- *   3. un destinataire en copie de facturation
+ *   2. un membre du compte, actif (owner_members, mig 135) — revendication plus
+ *      forte qu'un rattachement : ses droits sont explicitement cochés ;
+ *   3. un représentant rattaché et actif (owner_agent_mappings) ;
+ *   4. un destinataire en copie de facturation
  *      (`shipowners.billing_cc_emails`, colonne TEXT[] de la mig 122 — ce
  *      n'est pas une table).
  *
@@ -68,6 +70,20 @@ export async function resolveLoginTarget(
         .limit(2);
     const ownerRows = (owners ?? []) as Record<string, unknown>[];
     if (ownerRows.length > 0) return toTarget(ownerRows[0], 'OWNER', email);
+
+    // Membre du compte (mig 135). Passe AVANT le rattachement : un membre a des
+    // droits explicites, un représentant n'a qu'un lien de correspondance.
+    const { data: member } = await admin
+        .from('owner_members')
+        .select(`shipowner_id, active, profiles!inner(email), shipowners!inner(${OWNER_COLUMNS})`)
+        .eq('profiles.email', email)
+        .eq('active', true)
+        .maybeSingle();
+    if (member) {
+        const row = member as Record<string, unknown>;
+        const so = (row.shipowners ?? row) as Record<string, unknown>;
+        return toTarget(so, 'MEMBER', email);
+    }
 
     const { data: rep } = await admin
         .from('owner_agent_mappings')

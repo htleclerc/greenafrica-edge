@@ -204,7 +204,61 @@
       "proofC": "Ver documento comprovativo de faturação",
       "noProofB": "Nenhum documento KYC-B registado",
       "noProofC": "Nenhum documento de faturação registado"
-    }
+    },
+    "billingCc": {
+      "title": "Billing copies",
+      "subtitle": "Addresses that receive a copy of your invoices, reminders and statements.",
+      "scopeNotice": "These addresses receive documents. They grant no portal access: nobody can sign in with them. To let a colleague act on your account, you will need to invite them as a member — that is coming.",
+      "addLabel": "Add an address",
+      "add": "Add",
+      "remove": "Remove {email}",
+      "empty": "No copies. You alone receive the documents.",
+      "remaining": "{count, plural, =0 {Limit reached} =1 {1 address left} other {# addresses left}}",
+      "saved": "Saved.",
+      "errors": {
+        "invalid": "Invalid email address.",
+        "invalid_email": "Invalid email address.",
+        "isPrimary": "That is already your primary address — it receives everything by default.",
+        "duplicate": "That address is already in the list.",
+        "tooMany": "At most {max} copy addresses.",
+        "too_many": "At most {max} copy addresses."
+      }
+    },
+    "members": {
+      "title": "Account members",
+      "subtitle": "People allowed to act on your account, and what each of them can do.",
+      "readOnlyNotice": "You can view this account’s members. Inviting or removing someone requires the “invite members” right.",
+      "empty": "No members. You are the only one with access to this account.",
+      "revoke": "Remove {email}’s access",
+      "revokedTitle": "Access removed",
+      "revokedOn": "removed on {date}",
+      "privilege": {
+        "canPay": "Pay",
+        "canDispute": "Dispute",
+        "canManageVessels": "Manage vessels",
+        "canInvite": "Invite members",
+        "none": "View only"
+      },
+      "form": {
+        "fullName": "Colleague’s name",
+        "email": "Their email address",
+        "privileges": "What they will be able to do",
+        "notYours": "You do not hold this right — you cannot grant it.",
+        "submit": "Invite"
+      },
+      "errors": {
+        "forbidden": "You are not allowed to invite members.",
+        "self": "You cannot invite yourself.",
+        "already_holder": "That person already holds this account.",
+        "holds_other_account": "That person holds another account — the invitation would have no effect.",
+        "member_of_other_account": "That person is already a member of another account.",
+        "not_found": "Member not found.",
+        "not_an_operator": "Reserved for shipowner accounts.",
+        "provisioning failed": "Account creation failed. Please retry.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
   },
   "AdminRegistrations": {
     "title": "Cadastros de Armadores",
@@ -1777,7 +1831,8 @@
     "title": "A minha frota",
     "invoiceCountSettled": "{count} fatura(s) · liquidada(s)",
     "detachBlockedSettled": "Este navio tem uma fatura liquidada e permanece no processo. Uma taxação paga não pode ser desassociada.",
-    "invoiceCountPartial": "{count} fatura(s) · parcialmente paga(s)"
+    "invoiceCountPartial": "{count} fatura(s) · parcialmente paga(s)",
+    "restricted": "Managing vessels is not part of your access to this account. The account holder can grant it to you."
   },
   "VesselsPage": {
     "status_compliant": "CONFORME",
@@ -3857,6 +3912,14 @@
         "OWNER_ESCALATION": {
           "title": "Aviso de Escalonamento",
           "body": "Sua conta foi sinalizada para revisão."
+        },
+        "MEMBER_INVITED": {
+          "title": "New account access",
+          "body": "{invited_by} granted access to {member_email}. Rights: {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Account access removed",
+          "body": "{revoked_by} removed {member_email}’s access."
         }
       }
     },
@@ -3978,7 +4041,8 @@
       },
       "receipt": "Recibo",
       "completeProof": "Adicionar o comprovativo em falta",
-      "reviewProof": "Rever o comprovativo"
+      "reviewProof": "Rever o comprovativo",
+      "restricted": "Some actions are not part of your access to this account. The account holder can grant them to you."
     },
     "actionBand": {
       "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
@@ -3989,6 +4053,13 @@
       "terms": "USD · net 30",
       "payNow": "Pay now",
       "dispute": "Dispute"
+    },
+    "statement": {
+      "title": "Extrato consolidado",
+      "asOfLabel": "Saldo à data de",
+      "download": "Descarregar PDF",
+      "hintFleet": "Todas as faturas ainda em dívida na sua frota, à data escolhida. Emitido a pedido — não substitui o seu extrato mensal.",
+      "hintVessel": "Todas as faturas ainda em dívida para este navio, à data escolhida."
     }
   },
   "AdminEquasis": {
@@ -4602,7 +4673,9 @@
       "checkKyc": "Check KYC",
       "file": "File",
       "noEmail": "No official address — cannot send a reminder."
-    }
+    },
+    "recapScope": "Âmbito",
+    "recapScopeAll": "Toda a frota"
   },
   "AdminReglements": {
     "title": "Liquidações",

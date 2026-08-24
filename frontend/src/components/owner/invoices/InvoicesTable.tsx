@@ -12,6 +12,7 @@ import { accentStyle, type OsAccent } from '@/lib/osAccent';
 import { usdGrouped } from '@/lib/osMoney';
 import { daysToDue, urgencyOf } from '@/services/ownerWorkQueue';
 import { OpenDisputeDialog } from './OpenDisputeDialog';
+import type { OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import { AttachProofDialog } from './AttachProofDialog';
 import { InvoiceDetailPanel } from './InvoiceDetailPanel';
 
@@ -74,6 +75,9 @@ const URGENCY_ACCENT: Record<string, OsAccent> = {
 interface Props {
     rows: InvoiceRow[];
     walletBalanceUsdMinor: number;
+    /** Sous-permissions de la personne connectée (mig 135). */
+    privileges: OwnerPrivileges;
+    isMember: boolean;
 }
 
 /**
@@ -83,7 +87,7 @@ interface Props {
  * pilotent le libellé du bouton primaire de page, qui affiche le total
  * sélectionné ; sans sélection il retombe sur « Payer tout ».
  */
-export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
+export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMember }: Props) {
     const t = useTranslations('OwnerPortal.invoicesList');
     const router = useRouter();
 
@@ -156,7 +160,7 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                 title={t('verdict', { amount: usdGrouped(totalUsd) })}
                 subtitle={t('context', { count: counts.open, overdue: overdueCount })}
                 actions={
-                    openRows.length > 0 && (
+                    openRows.length > 0 && privileges.canPay && (
                         <button
                             type="button"
                             onClick={() => setPayTarget(checkedRows[0] ?? openRows[0])}
@@ -254,6 +258,8 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor }: Props) {
                     <InvoiceDetailPanel
                         invoice={selected}
                         walletBalanceUsdMinor={walletBalanceUsdMinor}
+                        privileges={privileges}
+                        isMember={isMember}
                         onPay={() => setPayTarget(selected)}
                         onDispute={() => setDisputeTarget(selected)}
                         onAttachProof={() => setProofTarget(selected)}

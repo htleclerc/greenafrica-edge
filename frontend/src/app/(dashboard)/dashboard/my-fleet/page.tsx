@@ -29,5 +29,11 @@ export default async function MyFleetRoute() {
     if (!shipownerId) redirect('/login?error=no_owner_record');
 
     const fleet = await listOwnerFleet(principal.supabase, shipownerId);
-    return <OwnerFleetPanel fleet={fleet} />;
+    return (
+        <OwnerFleetPanel
+            fleet={fleet}
+            privileges={principal.privileges}
+            isMember={principal.isMember}
+        />
+    );
 }

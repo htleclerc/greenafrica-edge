@@ -8,7 +8,7 @@ const schema = z.object({ paymentId: z.string().uuid() });
 export async function cancelPayment(input: { paymentId: string }) {
     const parsed = schema.parse(input);
 
-    const ctx = await requireOwner();
+    const ctx = await requireOwner('canPay');
 
     // Owner-scoped: rely on owner-bound supabase client + RLS payments_owner_cancel
     const { error } = await ctx.supabase

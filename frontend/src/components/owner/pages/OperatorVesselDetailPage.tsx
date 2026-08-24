@@ -10,6 +10,7 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { StatementDownload } from '@/components/owner/StatementDownload';
 
 /**
  * Facture visant ce navire. Le rattachement se fait par `vessel_id`, jamais par
@@ -240,6 +241,10 @@ export async function OperatorVesselDetailPage({
                     </p>
                 )}
             </section>
+
+            <div className="mb-6">
+                <StatementDownload vesselId={vesselId} />
+            </div>
 
             <section className="os-card p-5">
                 <h2 className="text-sm font-semibold text-[var(--os-text-primary)] mb-3">

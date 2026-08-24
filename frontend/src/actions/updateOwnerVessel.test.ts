@@ -12,13 +12,25 @@ let vesselRow: Record<string, unknown> | null = {
 vi.mock('@/lib/supabase/server', () => ({
     createClient: async () => ({
         auth: { getUser: async () => ({ data: { user: authUser } }) },
-        from: (t: string) => ({
-            select: () => ({
-                eq: () => ({ maybeSingle: async () => ({ data: t === 'shipowners' ? ownerRow : vesselRow }) }),
-            }),
-        }),
+        // `eq` et `limit` sont chaînables : la résolution du compte s'appuie sur
+        // RLS (mig 135) et n'a plus de filtre explicite, la lecture des
+        // appartenances filtre sur deux colonnes.
+        from: (t: string) => {
+            const data =
+                t === 'shipowners' ? ownerRow
+                : t === 'owner_members' ? memberRow
+                : vesselRow;
+            const chain: Record<string, unknown> = {};
+            for (const m of ['select', 'eq', 'limit']) chain[m] = () => chain;
+            chain.maybeSingle = async () => ({ data });
+            return chain;
+        },
     }),
 }));
+
+// Aucune appartenance par défaut : l'appelant est le titulaire, qui détient
+// tout. Les cas « membre » la posent explicitement.
+let memberRow: { can_manage_vessels: boolean } | null = null;
 
 let liveInvoiceCount = 0;
 const updateVessel = vi.fn(() => ({ eq: async () => ({ error: null }) }));
@@ -50,6 +62,7 @@ beforeEach(() => {
     ownerRow = { ...OWNER };
     vesselRow = { id: VESSEL_ID, name: 'MAYAR', shipowner_id: 'own-1', previous_names: [] };
     liveInvoiceCount = 0;
+    memberRow = null;
 });
 
 describe('renameOwnerVessel', () => {
@@ -148,5 +161,42 @@ describe('detachOwnerVessel', () => {
         // ni contournee ni assouplie.
         expect(updateVessel).toHaveBeenCalledTimes(1);
         expect(updateVessel).toHaveBeenCalledWith({ shipowner_id: null });
+    });
+});
+
+/**
+ * Gérer la flotte est une sous-permission (mig 135) : un membre invité peut voir
+ * les navires du compte sans pouvoir les toucher. La garde vit dans
+ * `loadOwnVessel`, donc elle couvre les DEUX gestes — c'est ce que ces cas
+ * vérifient, plutôt que de ne tester que le renommage.
+ */
+describe('sous-permission « gérer les navires »', () => {
+    it('refuse le renommage à un membre qui ne l’a pas', async () => {
+        memberRow = { can_manage_vessels: false };
+        const r = await renameOwnerVessel({ vesselId: VESSEL_ID, name: 'MAYAR STAR' });
+        expect(r).toEqual({ ok: false, reason: 'forbidden' });
+        expect(updateVessel).not.toHaveBeenCalled();
+    });
+
+    it('refuse aussi le retrait — la garde couvre les deux gestes', async () => {
+        memberRow = { can_manage_vessels: false };
+        const r = await detachOwnerVessel({ vesselId: VESSEL_ID });
+        expect(r).toEqual({ ok: false, reason: 'forbidden' });
+        expect(updateVessel).not.toHaveBeenCalled();
+    });
+
+    it('laisse agir le membre qui la détient', async () => {
+        memberRow = { can_manage_vessels: true };
+        expect(await renameOwnerVessel({ vesselId: VESSEL_ID, name: 'MAYAR STAR' }))
+            .toEqual({ ok: true });
+        expect(updateVessel).toHaveBeenCalled();
+    });
+
+    it('n’exige aucune ligne d’appartenance du titulaire', async () => {
+        // Le titulaire n'a pas de ligne owner_members : exiger qu'il s'invite
+        // lui-même serait un piège à comptes verrouillés.
+        memberRow = null;
+        expect(await renameOwnerVessel({ vesselId: VESSEL_ID, name: 'MAYAR STAR' }))
+            .toEqual({ ok: true });
     });
 });

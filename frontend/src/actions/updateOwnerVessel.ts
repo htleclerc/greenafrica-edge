@@ -33,9 +33,25 @@ async function loadOwnVessel(vesselId: string): Promise<OwnVesselContext | { err
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return { error: 'not authenticated' };
 
+    // Le compte est résolu par current_shipowner_id() côté base (mig 135) : la
+    // lecture sans filtre ne peut rendre que le compte de l'appelant, qu'il en
+    // soit titulaire ou membre invité. Le contrôle porte donc toujours sur une
+    // valeur de session, jamais sur une valeur venue du client.
     const { data: owner } = await supabase
-        .from('shipowners').select('id, name').eq('profile_id', auth.user.id).maybeSingle();
+        .from('shipowners').select('id, name').limit(1).maybeSingle();
     if (!owner) return { error: 'no owner record' };
+
+    // Gérer la flotte est une sous-permission : un membre qui ne l'a pas voit
+    // les navires mais ne les modifie pas.
+    const { data: membership } = await supabase
+        .from('owner_members')
+        .select('can_manage_vessels')
+        .eq('profile_id', auth.user.id)
+        .eq('active', true)
+        .maybeSingle();
+    if (membership && (membership as { can_manage_vessels: boolean }).can_manage_vessels !== true) {
+        return { error: 'forbidden' };
+    }
 
     const { data: vessel } = await supabase
         .from('vessels')

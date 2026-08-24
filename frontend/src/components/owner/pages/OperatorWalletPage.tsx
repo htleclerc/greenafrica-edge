@@ -71,6 +71,7 @@ export async function OperatorWalletPage({
                     initialLedger={[]}
                     prediction={{ estimated_count_30d: 0, estimated_amount_30d_usd: 0, confidence: 'low' }}
                     topupEnabled={topupEnabled}
+                    canPay={principal.privileges.canPay}
                 />
             </div>
         );
@@ -95,6 +96,7 @@ export async function OperatorWalletPage({
                 initialLedger={ledger}
                 prediction={prediction}
                 topupEnabled={topupEnabled}
+                canPay={principal.privileges.canPay}
             />
         </div>
     );

@@ -8,6 +8,7 @@ import { accentStyle, type OsAccent } from '@/lib/osAccent';
 import { usdGrouped } from '@/lib/osMoney';
 import { buildCalculationSteps } from '@/services/invoiceCalculationSteps';
 import { daysToDue, urgencyOf } from '@/services/ownerWorkQueue';
+import type { OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import type { InvoiceRow } from './InvoicesTable';
 
 const URGENCY_ACCENT: Record<string, OsAccent> = {
@@ -37,6 +38,15 @@ const METHODS: Method[] = ['wire', 'wallet', 'desk'];
 interface Props {
     invoice: InvoiceRow;
     walletBalanceUsdMinor: number;
+    /**
+     * Sous-permissions de la personne connectée (mig 135). Elles masquent
+     * l'action, elles ne la protègent pas : le refus qui compte est celui de
+     * l'action serveur et de la policy. Masquer sert à ne pas proposer un geste
+     * qui sera refusé après coup, une fois le formulaire rempli.
+     */
+    privileges: OwnerPrivileges;
+    /** Vrai pour un membre invité : lui seul a besoin qu'on explique l'absence. */
+    isMember: boolean;
     onPay: () => void;
     onDispute: () => void;
     onAttachProof: () => void;
@@ -58,7 +68,7 @@ interface Props {
  * pas diverger, ce qui est la condition pour qu'une contestation porte.
  */
 export function InvoiceDetailPanel({
-    invoice, walletBalanceUsdMinor, onPay, onDispute, onAttachProof,
+    invoice, walletBalanceUsdMinor, privileges, isMember, onPay, onDispute, onAttachProof,
     onIssuePdf, issuing, issueError, onClose,
 }: Props) {
     const t = useTranslations('OwnerPortal.invoiceDetail');
@@ -143,7 +153,7 @@ export function InvoiceDetailPanel({
             </div>
 
             <div className="flex flex-col gap-2.5 px-[18px] pb-[18px]">
-                {payable && (
+                {payable && privileges.canPay && (
                     <button
                         type="button"
                         onClick={onPay}
@@ -190,6 +200,7 @@ export function InvoiceDetailPanel({
                             {t('receipt')}
                         </a>
                     )}
+                    {privileges.canDispute && (
                     <button
                         type="button"
                         onClick={onDispute}
@@ -198,7 +209,14 @@ export function InvoiceDetailPanel({
                         <Scale className="size-3.5" aria-hidden />
                         {t('dispute')}
                     </button>
+                    )}
                 </div>
+
+                {/* Un titulaire n'a rien à lire ici : il a tout. Un membre, si,
+                    sinon l'absence du bouton se lit comme une panne. */}
+                {isMember && (!privileges.canPay || !privileges.canDispute) && (
+                    <p className="text-[11.5px] text-[var(--os-text-muted)]">{t('restricted')}</p>
+                )}
 
                 {issueError && <p className="text-[11px] text-[var(--os-red)]">{issueError}</p>}
 
@@ -207,7 +225,7 @@ export function InvoiceDetailPanel({
                     et qu'il reste a rapprocher — et il dit lequel des deux
                     gestes il propose : completer une declaration a laquelle il
                     manque sa piece, ou revoir celle deja fournie. */}
-                {invoice.pending_declared_payment_id && (
+                {invoice.pending_declared_payment_id && privileges.canPay && (
                     <button
                         type="button"
                         onClick={onAttachProof}
@@ -224,7 +242,7 @@ export function InvoiceDetailPanel({
             </div>
 
             {/* ── Moyen de paiement ────────────────────────────────────────── */}
-            {payable && (
+            {payable && privileges.canPay && (
                 <fieldset className="flex flex-col gap-2 border-t border-[var(--os-border)] px-[18px] py-3.5">
                     <legend className="mb-1 text-[13px] font-semibold text-[var(--os-text-primary)]">
                         {t('methodLegend')}
