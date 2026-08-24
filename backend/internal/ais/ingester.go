@@ -279,27 +279,96 @@ func (ing *Ingester) run() {
 
 // subscribeFn is the function called after a WebSocket dial to send the
 // subscription payload (bounding boxes + message type filter).
-type subscribeFn func(*websocket.Conn, *config.Config) error
+type subscribeFn func(*Ingester, *websocket.Conn) error
 
-// connectRegional sends the subscription for the existing regional PositionReport feed.
-// Covers Red Sea + Gulf of Aden + Arabian Sea + NW Indian Ocean (DEBUG bbox).
-func connectRegional(conn *websocket.Conn, cfg *config.Config) error {
-	sub := map[string]interface{}{
-		"APIKey": cfg.AISStreamAPIKey,
-		"BoundingBoxes": [][]interface{}{
-			{[]float64{5.0, 40.0}, []float64{25.0, 75.0}},
-		},
-		// Filter to position reports only (skip static-only updates)
-		"FilterMessageTypes": []string{"PositionReport"},
+// defaultRegionalBoxes couvre les routes d'approche de Berbera et Zeila, pas
+// seulement leur voisinage. Une seule boite autour de la Corne ne sert a rien :
+// mesure du 2026-08-24, aisstream n'a aucun recepteur terrestre dans le golfe
+// d'Aden (10 min d'ecoute, zero message, contre 25 instantanes en Manche).
+// L'interet est donc de voir le navire la ou il EST visible, en amont.
+//
+// Format aisstream : [[lat_min, lon_min], [lat_max, lon_max]].
+var defaultRegionalBoxes = [][]([]float64){
+	{{12, 32}, {32, 44}},   // Mer Rouge + approches de Suez
+	{{0, 40}, {28, 78}},    // Golfe d'Aden, mer d'Arabie, golfe d'Oman
+	{{-36, 20}, {2, 56}},   // Afrique de l'Est + canal du Mozambique (route du Cap)
+	{{-12, 78}, {22, 106}}, // Ocean Indien est + approches de Malacca
+}
+
+// regionalBoxes renvoie les boites d'abonnement, lues dans app_config
+// (`ais.regional_bounding_boxes`) pour qu'un elargissement soit un changement
+// de configuration et non un deploiement. Toute absence ou erreur retombe sur
+// le defaut : ce flux ne doit jamais s'arreter faute de configuration.
+func (ing *Ingester) regionalBoxes() [][]([]float64) {
+	if ing.db == nil {
+		return defaultRegionalBoxes
 	}
-	return conn.WriteJSON(sub)
+	ctx := ing.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	var raw []byte
+	err := ing.db.QueryRowContext(ctx,
+		`SELECT value FROM public.app_config WHERE key='ais.regional_bounding_boxes'`).Scan(&raw)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Printf("[AIS] lecture de ais.regional_bounding_boxes: %v — repli sur le defaut", err)
+		}
+		return defaultRegionalBoxes
+	}
+	boxes, ok := parseBoxes(raw)
+	if !ok {
+		log.Printf("[AIS] ais.regional_bounding_boxes illisible ou mal formee — repli sur le defaut")
+		return defaultRegionalBoxes
+	}
+	return boxes
+}
+
+// parseBoxes valide la configuration avant de s'en servir. Une boite mal
+// formee envoyee a aisstream ne provoque pas d'erreur : l'abonnement est
+// accepte et le flux reste simplement vide — exactement le genre de panne
+// muette qu'on passe la journee a debusquer. On refuse donc en bloc et on
+// retombe sur un defaut connu, plutot que d'accepter a moitie.
+func parseBoxes(raw []byte) ([][]([]float64), bool) {
+	var boxes [][]([]float64)
+	if err := json.Unmarshal(raw, &boxes); err != nil || len(boxes) == 0 {
+		return nil, false
+	}
+	for _, b := range boxes {
+		if len(b) != 2 || len(b[0]) != 2 || len(b[1]) != 2 {
+			return nil, false
+		}
+		latMin, lonMin, latMax, lonMax := b[0][0], b[0][1], b[1][0], b[1][1]
+		if latMin < -90 || latMax > 90 || lonMin < -180 || lonMax > 180 {
+			return nil, false
+		}
+		if latMin >= latMax || lonMin >= lonMax {
+			return nil, false // coins inverses : aisstream accepte et n'envoie rien
+		}
+	}
+	return boxes, true
+}
+
+// connectRegional sends the subscription for the regional PositionReport feed.
+func connectRegional(ing *Ingester, conn *websocket.Conn) error {
+	boxes := ing.regionalBoxes()
+	bb := make([][]interface{}, 0, len(boxes))
+	for _, b := range boxes {
+		bb = append(bb, []interface{}{b[0], b[1]})
+	}
+	log.Printf("[AIS] abonnement regional : %d boite(s)", len(bb))
+	return conn.WriteJSON(map[string]interface{}{
+		"APIKey":             ing.cfg.AISStreamAPIKey,
+		"BoundingBoxes":      bb,
+		"FilterMessageTypes": []string{"PositionReport"},
+	})
 }
 
 // connectGlobalStatic sends the subscription for global ShipStaticData.
 // Uses 4 world quadrants to avoid edge cases on a single global bounding box.
-func connectGlobalStatic(conn *websocket.Conn, cfg *config.Config) error {
+func connectGlobalStatic(ing *Ingester, conn *websocket.Conn) error {
 	sub := map[string]interface{}{
-		"APIKey": cfg.AISStreamAPIKey,
+		"APIKey": ing.cfg.AISStreamAPIKey,
 		"BoundingBoxes": [][]interface{}{
 			{[]float64{-90.0, -180.0}, []float64{0.0, 0.0}},
 			{[]float64{-90.0, 0.0}, []float64{0.0, 180.0}},
@@ -436,7 +505,7 @@ func (ing *Ingester) connectAndRead(sub subscribeFn) error {
 	}
 	defer conn.Close()
 
-	if err := sub(conn, ing.cfg); err != nil {
+	if err := sub(ing, conn); err != nil {
 		return fmt.Errorf("subscribe: %w", err)
 	}
 	log.Println("[AIS] Connected to aisstream.io")

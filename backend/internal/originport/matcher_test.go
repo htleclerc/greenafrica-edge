@@ -4,14 +4,14 @@ import "testing"
 
 func TestNormalize(t *testing.T) {
 	cases := map[string]string{
-		"":                     "",
-		"BERBERA":              "BERBERA",
-		"berbera":              "BERBERA",
-		"  Berbera ":           "BERBERA",
+		"":                    "",
+		"BERBERA":             "BERBERA",
+		"berbera":             "BERBERA",
+		"  Berbera ":          "BERBERA",
 		"BERBERA, SOMALILAND": "BERBERA SOMALILAND",
-		"BBR>DJB":              "BBR DJB",
-		"BBR / DJB":            "BBR DJB",
-		"Berbara":              "BERBARA",
+		"BBR>DJB":             "BBR DJB",
+		"BBR / DJB":           "BBR DJB",
+		"Berbara":             "BERBARA",
 	}
 	for in, want := range cases {
 		got := Normalize(in)
@@ -46,30 +46,42 @@ func TestMatchDestination(t *testing.T) {
 		"ZEILA":   {"ZEILA", "ZEYLA", "ZELA"},
 	}
 	cases := []struct {
-		raw    string
-		kind   MatchKind
-		port   string // "" if MatchNone
-		score  int    // 0 unless MatchPropose
+		raw   string
+		kind  MatchKind
+		port  string // "" if MatchNone
+		score int    // 0 unless MatchPropose
 	}{
 		// Direct match in allow-list
 		{"BERBERA", MatchAllow, "BERBERA", 0},
 		{"berbera", MatchAllow, "BERBERA", 0},
 		{"BBR", MatchAllow, "BERBERA", 0},
 		{"  BBR  ", MatchAllow, "BERBERA", 0},
-		{"BERBERA, SOMALILAND", MatchAllow, "BERBERA", 0},  // substring match
+		{"BERBERA, SOMALILAND", MatchAllow, "BERBERA", 0}, // la ponctuation devient un espace
 		{"SOMALILAND BERBERA", MatchAllow, "BERBERA", 0},
 		{"ZEILA", MatchAllow, "ZEILA", 0},
 		{"ZEYLA", MatchAllow, "ZEILA", 0},
 		// Fuzzy proposals (Levenshtein <= 2 vs canonical name, not in allow-list)
-		{"BERBERR", MatchPropose, "BERBERA", 1},   // typo, not in allow-list
-		{"BARBARA", MatchPropose, "BERBERA", 2},   // 2 swaps
-		{"ZELLA",   MatchPropose, "ZEILA",   1},
+		{"BERBERR", MatchPropose, "BERBERA", 1}, // typo, not in allow-list
+		{"BARBARA", MatchPropose, "BERBERA", 2}, // 2 swaps
+		{"ZELLA", MatchPropose, "ZEILA", 1},
+		// Faux positifs mesures le 2026-08-24 sur dix minutes du flux
+		// ShipStaticData mondial. Avec l'ancien `strings.Contains`, chacun de
+		// ces navires — en route pour la Norvege ou l'Allemagne — declenchait
+		// un arrival_alerts a Berbera, donc une pro-forma de taxe carbone.
+		{"TONSBERG", MatchNone, "", 0},             // contenait SBE
+		{"T. SPITSBERGEN", MatchNone, "", 0},       // SPIT-SBE-RGEN
+		{"BAD GODESBERG FAEHRE", MatchNone, "", 0}, // GODE-SBE-RG
+		{"BBREMERHAVEN", MatchNone, "", 0},         // contenait BBR
+		// Les formes legitimes restent reconnues
+		{"SOMA BBR", MatchAllow, "BERBERA", 0},
+		{"BBR ANCHORAGE", MatchAllow, "BERBERA", 0},
+		{"FOR SBE", MatchAllow, "BERBERA", 0},
 		// No match: unrelated ports
-		{"DJIBOUTI",  MatchNone, "", 0},
-		{"DJB",       MatchNone, "", 0},
-		{"BOSASO",    MatchNone, "", 0},
+		{"DJIBOUTI", MatchNone, "", 0},
+		{"DJB", MatchNone, "", 0},
+		{"BOSASO", MatchNone, "", 0},
 		{"MOGADISHU", MatchNone, "", 0},
-		{"DUBAI",     MatchNone, "", 0},
+		{"DUBAI", MatchNone, "", 0},
 		// Edge cases
 		{"", MatchNone, "", 0},
 		{"   ", MatchNone, "", 0},

@@ -63,6 +63,22 @@ func (w *Watcher) OnStaticData(ctx context.Context, r StaticReport) (string, err
 	res := MatchDestination(r.Destination, allow)
 	switch res.Kind {
 	case MatchAllow:
+		if w.observeOnly(ctx) {
+			// Mode observation : on enregistre ce qu'on AURAIT facture, sans
+			// rien declencher. Une destination declaree est une intention, pas
+			// une arrivee — et personne ne sait aujourd'hui combien de navires
+			// annoncent reellement Berbera ou Zeila. Une semaine de collecte
+			// coute zero et repond a la question avant qu'on engage une
+			// depense sur une source de donnees.
+			//
+			// La ligne se reconnait a fuzzy_score = 0 : une proposition floue
+			// a toujours une distance d'au moins 1.
+			if perr := w.insertProposal(ctx, r, res); perr != nil {
+				return "", perr
+			}
+			w.cache.Put(r.MMSI, VesselState{IMO: r.IMO, Destination: res.Normalized})
+			return "", nil
+		}
 		alertID, ierr := w.insertAlert(ctx, r, res)
 		if ierr != nil {
 			return "", ierr
@@ -82,6 +98,20 @@ func (w *Watcher) OnStaticData(ctx context.Context, r StaticReport) (string, err
 		w.cache.Put(r.MMSI, VesselState{IMO: r.IMO, Destination: res.Normalized})
 		return "", nil
 	}
+}
+
+// observeOnly indique si une correspondance d'allow-list doit etre seulement
+// enregistree au lieu de creer une alerte d'arrivee.
+//
+// TOUTE erreur de lecture — cle absente, base injoignable — renvoie true. Le
+// defaut penche du cote qui ne facture pas : sur une taxe souveraine, un
+// incident d'infrastructure ne doit jamais pouvoir emettre une pro-forma.
+func (w *Watcher) observeOnly(ctx context.Context) bool {
+	v, err := w.cfg.GetBool(ctx, "feature.ais_global_observe_only")
+	if err != nil {
+		return true
+	}
+	return v
 }
 
 func (w *Watcher) loadAllowList(ctx context.Context) (AllowList, error) {
