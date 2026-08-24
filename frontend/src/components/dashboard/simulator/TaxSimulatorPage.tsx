@@ -217,7 +217,7 @@ function MetricRow({ label, value, sub, highlight }: { label: string; value: str
             </div>
             <span
                 className={`text-sm font-bold tabular-nums ${highlight ? '' : ''}`}
-                style={{ color: highlight ? '#10B981' : 'var(--os-text-primary)' }}
+                style={{ color: highlight ? 'var(--os-brand-green)' : 'var(--os-text-primary)' }}
             >
                 {value}
             </span>
@@ -394,7 +394,7 @@ function MaritimeSimulator() {
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--os-text-primary)' }}>
-                        <Calculator className="w-5 h-5 text-emerald-500" />
+                        <Calculator className="w-5 h-5 text-[var(--os-brand-green)]" />
                         {t('simulator_title')}
                     </h1>
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
@@ -404,7 +404,7 @@ function MaritimeSimulator() {
                 {tariff.ratePerTco2 !== null && !tariff.loading && (
                     <div
                         className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-                        style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
+                        style={{ backgroundColor: 'color-mix(in srgb, var(--os-brand-green) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--os-brand-green) 20%, transparent)', color: 'var(--os-brand-green)' }}
                     >
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         {t('simulator_official_rate', { rate: tariff.ratePerTco2, currency: tariff.currency })}
@@ -452,13 +452,13 @@ function MaritimeSimulator() {
                                     className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:brightness-125 hover:scale-[1.03] active:scale-[0.97]"
                                     style={{
                                         backgroundColor: inputs.category === p.category && inputs.enginePowerKw === p.enginePowerKw
-                                            ? 'rgba(16,185,129,0.12)'
+                                            ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)'
                                             : 'var(--os-surface-2)',
                                         color: inputs.category === p.category && inputs.enginePowerKw === p.enginePowerKw
-                                            ? '#10B981'
+                                            ? 'var(--os-brand-green)'
                                             : 'var(--os-text-muted)',
                                         border: inputs.category === p.category && inputs.enginePowerKw === p.enginePowerKw
-                                            ? '1px solid rgba(16,185,129,0.3)'
+                                            ? '1px solid color-mix(in srgb, var(--os-brand-green) 30%, transparent)'
                                             : '1px solid var(--os-border)',
                                     }}
                                 >
@@ -474,7 +474,7 @@ function MaritimeSimulator() {
                                 <select
                                     value={inputs.category}
                                     onChange={(e) => set('category', e.target.value as VesselCategory)}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-[color-mix(in_srgb,var(--os-brand-green)_40%,transparent)] transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     {Object.entries(CATEGORY_I18N_KEY).map(([k, i18nKey]) => (
@@ -489,7 +489,7 @@ function MaritimeSimulator() {
                                 <select
                                     value={inputs.fuelType}
                                     onChange={(e) => set('fuelType', e.target.value as 'HFO' | 'MDO')}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-[color-mix(in_srgb,var(--os-brand-green)_40%,transparent)] transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     <option value="HFO">{t('simulator_fuel_hfo')}</option>
@@ -535,9 +535,9 @@ function MaritimeSimulator() {
                                         onClick={() => set('includePortVicinity', !inputs.includePortVicinity)}
                                         className="text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-all cursor-pointer hover:brightness-125 active:scale-[0.97]"
                                         style={{
-                                            backgroundColor: inputs.includePortVicinity ? 'rgba(16,185,129,0.12)' : 'var(--os-surface-2)',
-                                            color: inputs.includePortVicinity ? '#10B981' : 'var(--os-text-muted)',
-                                            border: `1px solid ${inputs.includePortVicinity ? 'rgba(16,185,129,0.3)' : 'var(--os-border)'}`,
+                                            backgroundColor: inputs.includePortVicinity ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)' : 'var(--os-surface-2)',
+                                            color: inputs.includePortVicinity ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
+                                            border: `1px solid ${inputs.includePortVicinity ? 'color-mix(in srgb, var(--os-brand-green) 30%, transparent)' : 'var(--os-border)'}`,
                                         }}
                                     >
                                         {inputs.includePortVicinity ? `✓ ${t('simulator_port_included')}` : t('simulator_port_excluded')}
@@ -579,7 +579,7 @@ function MaritimeSimulator() {
                                             <td className="py-2" style={{ color: 'var(--os-text-muted)' }}>{row.cat}</td>
                                             <td className="py-2 text-right tabular-nums" style={{ color: 'var(--os-text-primary)' }}>${row.base}/tCO₂</td>
                                             <td className="py-2 text-right tabular-nums" style={{ color: 'var(--os-text-muted)' }}>×{row.mult.toFixed(1)}</td>
-                                            <td className="py-2 text-right tabular-nums font-bold" style={{ color: '#10B981' }}>${(row.effective).toFixed(2)}/tCO₂</td>
+                                            <td className="py-2 text-right tabular-nums font-bold" style={{ color: 'var(--os-brand-green)' }}>${(row.effective).toFixed(2)}/tCO₂</td>
                                         </tr>
                                     )) : (
                                         <tr>
@@ -635,7 +635,7 @@ function MaritimeSimulator() {
                             </div>
                             <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--os-border)' }}>
                                 <span>{t('simulator_blended_rate')}</span>
-                                <span className="font-bold" style={{ color: '#10B981' }}>
+                                <span className="font-bold" style={{ color: 'var(--os-brand-green)' }}>
                                     {result ? `$${fmt(result.effectiveRate, 2)} / tCO₂` : '—'}
                                 </span>
                             </div>
@@ -694,8 +694,8 @@ function MaritimeSimulator() {
                         <button
                             onClick={handleGenerateEstimatePdf}
                             disabled={pdfStatus === 'generating' || result === null}
-                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-emerald-600 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: '#10B981', color: '#fff' }}
+                            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-bold transition-all cursor-pointer hover:opacity-90 hover:shadow-[0_0_20px_color-mix(in srgb, var(--os-brand-green) 30%, transparent)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                            style={{ backgroundColor: 'var(--os-brand-green)', color: '#fff' }}
                         >
                             {pdfStatus === 'generating' ? (
                                 <>
@@ -810,7 +810,7 @@ function MaritimeSimulator() {
                             <button
                                 onClick={downloadEstimate}
                                 className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-opacity hover:opacity-90"
-                                style={{ backgroundColor: '#10B981', color: '#052e1c' }}
+                                style={{ backgroundColor: 'var(--os-brand-green)', color: '#052e1c' }}
                             >
                                 <Download className="w-3.5 h-3.5" />
                                 {t('simulator_pdf_download')}
@@ -872,7 +872,7 @@ function AirSimulator() {
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--os-text-primary)' }}>
-                        <Plane className="w-5 h-5 text-emerald-500" />
+                        <Plane className="w-5 h-5 text-[var(--os-brand-green)]" />
                         {t('simulator_title')}
                     </h1>
                     <p className="text-sm mt-0.5" style={{ color: 'var(--os-text-muted)' }}>
@@ -882,7 +882,7 @@ function AirSimulator() {
                 {tariff.ratePerTco2 !== null && !tariff.loading && (
                     <div
                         className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-                        style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}
+                        style={{ backgroundColor: 'color-mix(in srgb, var(--os-brand-green) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--os-brand-green) 20%, transparent)', color: 'var(--os-brand-green)' }}
                     >
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         {t('simulator_official_rate', { rate: tariff.ratePerTco2, currency: tariff.currency })}
@@ -927,7 +927,7 @@ function AirSimulator() {
                                 <select
                                     value={inputs.icaoType}
                                     onChange={(e) => setInputs((prev) => ({ ...prev, icaoType: e.target.value }))}
-                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-emerald-500/40 transition-colors"
+                                    className="w-full h-10 px-3 rounded-xl text-sm outline-none appearance-none cursor-pointer hover:border-[color-mix(in_srgb,var(--os-brand-green)_40%,transparent)] transition-colors"
                                     style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                                 >
                                     {AIRCRAFT_PRESETS.map((p) => (
@@ -991,7 +991,7 @@ function AirSimulator() {
                             </div>
                             <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--os-border)' }}>
                                 <span>{t('simulator_blended_rate')}</span>
-                                <span className="font-bold" style={{ color: '#10B981' }}>
+                                <span className="font-bold" style={{ color: 'var(--os-brand-green)' }}>
                                     {result ? `$${fmt(result.rate, 2)} / tCO₂` : '—'}
                                 </span>
                             </div>
@@ -1074,8 +1074,8 @@ export function TaxSimulatorPage() {
                         onClick={() => setMode('MARITIME')}
                         className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-semibold transition-all cursor-pointer"
                         style={{
-                            backgroundColor: mode === 'MARITIME' ? 'rgba(16,185,129,0.12)' : 'transparent',
-                            color: mode === 'MARITIME' ? '#10B981' : 'var(--os-text-muted)',
+                            backgroundColor: mode === 'MARITIME' ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)' : 'transparent',
+                            color: mode === 'MARITIME' ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
                         }}
                     >
                         <Ship className="w-4 h-4" />
@@ -1085,8 +1085,8 @@ export function TaxSimulatorPage() {
                         onClick={() => setMode('AIR')}
                         className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-semibold transition-all cursor-pointer"
                         style={{
-                            backgroundColor: mode === 'AIR' ? 'rgba(16,185,129,0.12)' : 'transparent',
-                            color: mode === 'AIR' ? '#10B981' : 'var(--os-text-muted)',
+                            backgroundColor: mode === 'AIR' ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)' : 'transparent',
+                            color: mode === 'AIR' ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
                         }}
                     >
                         <Plane className="w-4 h-4" />
@@ -1121,7 +1121,7 @@ function FaqPanel() {
             style={{ backgroundColor: 'var(--os-surface)', border: '1px solid var(--os-border)' }}
         >
             <div className="flex items-center gap-2 mb-3">
-                <HelpCircle className="w-3.5 h-3.5" style={{ color: '#10B981' }} />
+                <HelpCircle className="w-3.5 h-3.5" style={{ color: 'var(--os-brand-green)' }} />
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
                     {t('simulator_faq_title')}
                 </p>
@@ -1142,13 +1142,13 @@ function FaqPanel() {
                                 <ChevronDown
                                     className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 transition-transform"
                                     style={{
-                                        color: isOpen ? '#10B981' : 'var(--os-text-muted)',
+                                        color: isOpen ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
                                         transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                                     }}
                                 />
                                 <span
                                     className="text-xs font-semibold"
-                                    style={{ color: isOpen ? '#10B981' : 'var(--os-text-primary)' }}
+                                    style={{ color: isOpen ? 'var(--os-brand-green)' : 'var(--os-text-primary)' }}
                                 >
                                     {t(item.q as Parameters<typeof t>[0])}
                                 </span>

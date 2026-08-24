@@ -138,7 +138,7 @@ export function RevenueDashboard() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                             <XAxis dataKey="category" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                             <Bar dataKey="revenue" name="Revenue" radius={[4, 4, 0, 0]}>
                                 {REVENUE_BY_CATEGORY.map((_, i) => (
                                     <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} fillOpacity={0.85} />
@@ -228,7 +228,7 @@ export function RevenueDashboard() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                             <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                             <Legend wrapperStyle={{ fontSize: 10, color: '#64748B' }} />
                             <Bar dataKey="current" name="This Year"  fill="#00D97E" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
                             <Bar dataKey="prev"    name="Last Year"  fill="#1E3A2F"  radius={[4, 4, 0, 0]} />
