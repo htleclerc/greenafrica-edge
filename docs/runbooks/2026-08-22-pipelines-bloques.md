@@ -86,11 +86,52 @@ machines tournent (`africgreen.fly.dev` et `greengate-prod.fly.dev` répondent
 `deployment-01KXV5T8W8D7E60VWYRC3HRJNN`, dernière mise à jour le **2026-07-18**.
 Aucun correctif du backend Go ne peut être livré d'ici là.
 
-**Ce qui reste possible sans build.** Les opérations Machines de `flyctl` ne
-passent pas par Depot : `fly scale count`, `fly machine stop/restart`,
-`fly secrets set` fonctionnent. Un déploiement d'urgence reste faisable en
-contournant Depot avec `fly deploy --local-only` (exige un démon Docker local
-en marche).
+**Le blocage est au niveau du compte, pas de Depot.** Mesuré le 2026-08-24 :
+`fly deploy --remote-only --depot=false --build-only`, qui passe par le builder
+distant historique et non par Depot, se fait refuser de la même façon.
+
+```
+WARN Failed to start remote builder heartbeat: Your account has overdue invoices.
+Error: failed to fetch an image or build from source: Your account has overdue invoices.
+```
+
+Aucune option de `flyctl` ne contourne cela : Fly ferme **toute** construction
+côté serveur. Ne pas perdre de temps à chercher un drapeau.
+
+**Ce qui reste possible sans build.** Les opérations Machines ne sont pas
+concernées : `fly scale count`, `fly machine stop/restart`, `fly secrets set`
+fonctionnent (quatre machines détruites le 2026-08-24 sans encombre). La seule
+voie de livraison restante est `fly deploy --local-only`, qui construit sur le
+poste — exige un démon Docker local en marche, et le push vers le registre reste
+à vérifier.
+
+### Le jeton Fly expire aussi — et masque la vraie cause
+
+Le 2026-08-24, une fois la porte CI et les migrations enfin vertes, le job
+`Fly.io Backend` a échoué en 8 s sur une **autre** erreur :
+
+```
+Error: Authenticate: token validation error
+```
+
+Les secrets `FLY_API_TOKEN` des environnements `staging` et `production`
+dataient des 18 et 19 juillet et n'étaient plus acceptés. Régénérés le
+2026-08-24 avec `fly tokens create deploy -a <app>` — un jeton distinct par
+app, pour qu'une fuite sur la staging ne donne pas la prod — puis installés via
+`gh secret set FLY_API_TOKEN --env <staging|production>`.
+
+Après quoi le déploiement atteint le builder et retombe sur le 403 ci-dessus.
+Retenir l'ordre des couches, il a coûté trois diagnostics successifs :
+**porte CI → migrations → jeton → facturation**. Chaque étage masquait le
+suivant, et le job en échec ne disait jamais qu'il y en avait un autre derrière.
+
+### Secrets morts à supprimer
+
+Un `SUPABASE_DB_URL` (2026-06-11) et un `FLY_API_TOKEN` (2026-04-17) existent au
+niveau **dépôt**. Ils sont invisibles pour les jobs qui déclarent
+`environment:`, donc inertes — mais ils apparaissent dans `gh secret list` et
+font croire que le secret est à jour alors que c'est la version d'environnement
+qui compte. À supprimer une fois la chaîne verte.
 
 ---
 
