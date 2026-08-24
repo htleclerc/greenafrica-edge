@@ -40,11 +40,18 @@ import (
 )
 
 const (
-	queueName        = "scrape_queue"
+	queueName            = "scrape_queue"
 	visibilityTimeoutSec = 30
-	pollIdleDelay    = 5 * time.Second
-	pollDisabledDelay = 30 * time.Second
-	healthAddr       = ":8081"
+	pollIdleDelay        = 5 * time.Second
+	pollDisabledDelay    = 30 * time.Second
+	healthAddr           = ":8081"
+
+	// Backoff applique a TOUTE erreur DB (lecture du drapeau ou pop de la
+	// file). Sans lui, une coupure fait reconnecter le worker toutes les 30s
+	// indefiniment, ce qui arme le disjoncteur de Supavisor (ECIRCUITBREAKER)
+	// et bloque alors les connexions legitimes du reste de la stack.
+	dbBackoffMin = 5 * time.Second
+	dbBackoffMax = 5 * time.Minute
 )
 
 // Fetcher returns Equasis HTML for an IMO number.
@@ -74,6 +81,7 @@ func main() {
 	go startHealth(ctx)
 
 	log.Println("[scraper] entering main loop")
+	var dbBackoff time.Duration
 	for {
 		select {
 		case <-ctx.Done():
@@ -84,9 +92,12 @@ func main() {
 
 		enabled, err := appcfg.GetBool(ctx, "feature.equasis_scraper_enabled")
 		if err != nil {
-			log.Printf("[scraper] feature flag read failed: %v — assuming OFF", err)
-			enabled = false
+			dbBackoff = nextBackoff(dbBackoff)
+			log.Printf("[scraper] feature flag read failed: %v — assuming OFF, retry in %s", err, dbBackoff)
+			sleepCtx(ctx, dbBackoff)
+			continue
 		}
+		dbBackoff = 0
 		if !enabled {
 			sleepCtx(ctx, pollDisabledDelay)
 			continue
@@ -94,14 +105,26 @@ func main() {
 
 		processed, err := pollOnce(ctx, db, fetcher)
 		if err != nil {
-			log.Printf("[scraper] poll: %v", err)
-			sleepCtx(ctx, pollIdleDelay)
+			dbBackoff = nextBackoff(dbBackoff)
+			log.Printf("[scraper] poll: %v — retry in %s", err, dbBackoff)
+			sleepCtx(ctx, dbBackoff)
 			continue
 		}
 		if !processed {
 			sleepCtx(ctx, pollIdleDelay)
 		}
 	}
+}
+
+// nextBackoff doubles prev, clamped to [dbBackoffMin, dbBackoffMax].
+func nextBackoff(prev time.Duration) time.Duration {
+	if prev < dbBackoffMin {
+		return dbBackoffMin
+	}
+	if next := prev * 2; next < dbBackoffMax {
+		return next
+	}
+	return dbBackoffMax
 }
 
 // pollOnce pops at most one message, processes it, and returns true if
@@ -124,19 +147,19 @@ func pollOnce(ctx context.Context, db *sql.DB, fetcher Fetcher) (bool, error) {
 		// Specific errors are logged but ack the message — retrying a
 		// missing fixture or a CAPTCHA-walled page won't help.
 		log.Printf("[scraper] fetch %s failed: %v — ack and skip", imo, err)
-		_ = ackMessage(ctx, db, msg.MsgID)
+		ack(ctx, db, msg.MsgID, imo)
 		return true, nil
 	}
 
 	prop, perr := equasis.Parse(html)
 	if errors.Is(perr, equasis.ErrCaptcha) {
 		log.Printf("[scraper] %s: captcha wall, ack and skip", imo)
-		_ = ackMessage(ctx, db, msg.MsgID)
+		ack(ctx, db, msg.MsgID, imo)
 		return true, nil
 	}
 	if errors.Is(perr, equasis.ErrIMONotFound) {
 		log.Printf("[scraper] %s: vessel not found, ack and skip", imo)
-		_ = ackMessage(ctx, db, msg.MsgID)
+		ack(ctx, db, msg.MsgID, imo)
 		return true, nil
 	}
 	if perr != nil {
@@ -149,7 +172,7 @@ func pollOnce(ctx context.Context, db *sql.DB, fetcher Fetcher) (bool, error) {
 		log.Printf("[scraper] %s: insert failed: %v — leaving for retry", imo, err)
 		return true, nil
 	}
-	_ = ackMessage(ctx, db, msg.MsgID)
+	ack(ctx, db, msg.MsgID, imo)
 	log.Printf("[scraper] %s: proposal inserted", imo)
 	return true, nil
 }
@@ -186,9 +209,21 @@ func popMessage(ctx context.Context, db *sql.DB) (*queueMsg, error) {
 	return &queueMsg{MsgID: msgID.Int64, IMO: payload.IMO}, nil
 }
 
+// ack archives the message and logs loudly on failure. A silently dropped
+// ack means the message is redelivered forever and every retry re-inserts a
+// proposal: that is exactly how 425k duplicate fixture rows accumulated.
+func ack(ctx context.Context, db *sql.DB, msgID int64, imo string) {
+	if err := ackMessage(ctx, db, msgID); err != nil {
+		log.Printf("[scraper] ACK FAILED msg=%d imo=%s: %v — le message sera redelivre et redouble les propositions", msgID, imo, err)
+	}
+}
+
 func ackMessage(ctx context.Context, db *sql.DB, msgID int64) error {
+	// Les casts sont obligatoires : pgmq.archive a deux surcharges
+	// (bigint et bigint[]) et pgx envoie des parametres non types, d'ou
+	// « function pgmq.archive(unknown, unknown) is not unique ».
 	_, err := db.ExecContext(ctx,
-		`SELECT pgmq.archive($1, $2)`, queueName, msgID)
+		`SELECT pgmq.archive($1::text, $2::bigint)`, queueName, msgID)
 	return err
 }
 

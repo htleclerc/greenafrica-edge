@@ -1,0 +1,77 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/htleclerc/africgreen/backend/internal/supadb"
+)
+
+func TestNextBackoff(t *testing.T) {
+	cases := []struct {
+		prev, want time.Duration
+	}{
+		{0, dbBackoffMin},
+		{time.Second, dbBackoffMin},
+		{dbBackoffMin, 10 * time.Second},
+		{2 * time.Minute, 4 * time.Minute},
+		{4 * time.Minute, dbBackoffMax},
+		{dbBackoffMax, dbBackoffMax},
+	}
+	for _, c := range cases {
+		if got := nextBackoff(c.prev); got != c.want {
+			t.Errorf("nextBackoff(%s) = %s, want %s", c.prev, got, c.want)
+		}
+	}
+}
+
+func openTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	url := os.Getenv("SUPABASE_DB_URL")
+	if url == "" {
+		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+	}
+	db, err := supadb.Open(url)
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+// Regression: `SELECT pgmq.archive($1, $2)` without casts fails with
+// "function pgmq.archive(unknown, unknown) is not unique" — pgmq exposes both
+// a bigint and a bigint[] overload and pgx sends untyped parameters. The
+// error used to be discarded at the call site, so every message was
+// redelivered forever and re-inserted a proposal on each pass.
+func TestAckMessage_ArchivesInsteadOfHittingOverloadAmbiguity(t *testing.T) {
+	db := openTestDB(t)
+	ctx := context.Background()
+
+	var msgID int64
+	if err := db.QueryRowContext(ctx,
+		`SELECT pgmq.send($1::text, $2::jsonb)`, queueName, `{"imo":"0000000"}`,
+	).Scan(&msgID); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.ExecContext(context.Background(),
+			`SELECT pgmq.delete($1::text, $2::bigint)`, queueName, msgID)
+	})
+
+	if err := ackMessage(ctx, db, msgID); err != nil {
+		t.Fatalf("ackMessage: %v", err)
+	}
+
+	var still int
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM pgmq.q_scrape_queue WHERE msg_id = $1`, msgID).Scan(&still); err != nil {
+		t.Fatalf("count queue: %v", err)
+	}
+	if still != 0 {
+		t.Fatalf("msg %d still in queue after ack — it will be redelivered and duplicate proposals", msgID)
+	}
+}
