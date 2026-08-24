@@ -51,6 +51,19 @@ func TestWatcher_AllowMatch_CreatesUnclaimedAlert(t *testing.T) {
 		`UPDATE public.app_config SET value='false'::jsonb
 		  WHERE key='feature.ais_global_enabled'`)
 
+	// Ce test porte sur le chemin qui ALERTE. Depuis la mig 139, le mode
+	// observation est actif par defaut et une correspondance d'allow-list
+	// n'ecrit qu'une proposition — il faut donc le couper explicitement ici.
+	// Le chemin par defaut est couvert par TestWatcher_ObserveOnly_*.
+	if _, err := db.ExecContext(context.Background(),
+		`INSERT INTO public.app_config (key, value) VALUES ('feature.ais_global_observe_only', 'false'::jsonb)
+		 ON CONFLICT (key) DO UPDATE SET value = 'false'::jsonb`); err != nil {
+		t.Fatalf("observe_only setup: %v", err)
+	}
+	defer db.ExecContext(context.Background(),
+		`UPDATE public.app_config SET value='true'::jsonb
+		  WHERE key='feature.ais_global_observe_only'`)
+
 	// Fixture vessel
 	var vesselID string
 	err = db.QueryRowContext(context.Background(),
