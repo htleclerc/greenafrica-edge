@@ -1,17 +1,23 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
-    User, Shield, Bell, Globe, Monitor, Key,
+    User, Shield, Bell, Globe, Monitor,
     Save, CheckCircle2, Eye,
     LogOut, Trash2, Download, Clock, Smartphone,
-    Mail, Lock,
+    Lock,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { SkinSwitcher } from '@/components/layout/SkinSwitcher';
 import { ThemePreferencePicker } from '@/components/dashboard/settings/ThemePreferencePicker';
 import { UserRole, OperationalSite } from '@/types/secure';
+import { changePassword } from '@/actions/changePassword';
+import { MIN_PASSWORD_LENGTH } from '@/lib/auth/passwordPolicy';
+import { enrollMfa, verifyMfaEnrollment, unenrollMfa } from '@/actions/mfa';
+import { revokeSession } from '@/actions/revokeSession';
+import type { SecurityOverview } from '@/services/securityService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +34,14 @@ const SITE_I18N_KEY: Record<OperationalSite, string> = {
     [OperationalSite.NATIONAL_HQ]:   'settings_site_national_hq',
     [OperationalSite.ZEILA_PORT]:    'settings_site_zeila',
     [OperationalSite.DJIBOUTI_PORT]: 'settings_site_djibouti',
+};
+
+// Les motifs rendus par l'action, traduits ici. Un motif inconnu retombe sur
+// un message générique plutôt que d'afficher un identifiant technique.
+const PASSWORD_ERROR: Record<string, string> = {
+    wrong_current_password: 'settings_pwd_err_wrong_current',
+    too_short:              'settings_pwd_err_too_short',
+    unchanged:              'settings_pwd_err_unchanged',
 };
 
 const TAB_I18N_KEY: Record<string, string> = {
@@ -252,59 +266,203 @@ function ProfileTab() {
     );
 }
 
-function SecurityTab() {
+function SecurityTab({ security }: { security: SecurityOverview }) {
     const t = useTranslations('DashboardPages');
-    const [mfa] = React.useState(true);
+    const router = useRouter();
+    const [pending, startTransition] = React.useTransition();
+
+    const [currentPassword, setCurrentPassword] = React.useState('');
+    const [newPassword, setNewPassword] = React.useState('');
+    const [confirmPassword, setConfirmPassword] = React.useState('');
+    const [reveal, setReveal] = React.useState(false);
+    const [pwdError, setPwdError] = React.useState<string | null>(null);
+    const [pwdDone, setPwdDone] = React.useState(false);
+
+    // Un enrôlement en cours n'est PAS une protection : le facteur reste non
+    // vérifié tant que le code du téléphone n'a pas été confirmé.
+    const [enrolling, setEnrolling] = React.useState<{ factorId: string; qrCode: string; secret: string } | null>(null);
+    const [code, setCode] = React.useState('');
+    const [mfaError, setMfaError] = React.useState<string | null>(null);
+
+    const factor = security.factors[0] ?? null;
+    const otherSessions = security.sessions.filter((s) => !s.isCurrent).length;
+
+    function submitPassword() {
+        setPwdError(null);
+        setPwdDone(false);
+        if (newPassword !== confirmPassword) { setPwdError(t('settings_passwords_mismatch')); return; }
+        startTransition(async () => {
+            const r = await changePassword({ currentPassword, newPassword });
+            if (!r.ok) { setPwdError(t(PASSWORD_ERROR[r.reason] ?? 'settings_err_generic')); return; }
+            setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+            setPwdDone(true);
+            router.refresh();
+        });
+    }
+
+    function startEnrollment() {
+        setMfaError(null);
+        startTransition(async () => {
+            const r = await enrollMfa();
+            if (!r.ok) { setMfaError(t('settings_err_generic')); return; }
+            setEnrolling({ factorId: r.factorId, qrCode: r.qrCode, secret: r.secret });
+        });
+    }
+
+    function confirmEnrollment() {
+        if (!enrolling) return;
+        setMfaError(null);
+        startTransition(async () => {
+            const r = await verifyMfaEnrollment({ factorId: enrolling.factorId, code });
+            if (!r.ok) { setMfaError(t('settings_mfa_err_invalid_code')); return; }
+            setEnrolling(null); setCode('');
+            router.refresh();
+        });
+    }
+
+    function disableMfa() {
+        if (!factor) return;
+        setMfaError(null);
+        startTransition(async () => {
+            const r = await unenrollMfa({ factorId: factor.id });
+            if (!r.ok) { setMfaError(t('settings_err_generic')); return; }
+            router.refresh();
+        });
+    }
+
+    function closeOtherSessions() {
+        startTransition(async () => {
+            for (const s of security.sessions.filter((x) => !x.isCurrent)) {
+                await revokeSession({ sessionId: s.id });
+            }
+            router.refresh();
+        });
+    }
 
     return (
         <div className="flex flex-col gap-8">
             <Section title={t('settings_change_password')} description={t('settings_change_password_desc')}>
-                <ComingSoonBanner t={t} />
                 <div className="flex flex-col gap-4 max-w-sm">
                     <Field label={t('settings_current_password')}>
                         <div className="relative">
-                            <Input value="" readOnly type="password" placeholder="••••••••••••" />
-                            <button disabled className="absolute right-3 top-1/2 -translate-y-1/2 disabled:opacity-50" style={{ color: 'var(--os-text-muted)' }}>
+                            <Input value={currentPassword} onChange={setCurrentPassword} type={reveal ? 'text' : 'password'} />
+                            <button
+                                type="button"
+                                onClick={() => setReveal((v) => !v)}
+                                aria-label={t('settings_password_reveal')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2"
+                                style={{ color: 'var(--os-text-muted)' }}
+                            >
                                 <Eye className="w-4 h-4" />
                             </button>
                         </div>
                     </Field>
                     <Field label={t('settings_new_password')}>
-                        <div className="relative">
-                            <Input value="" readOnly type="password" placeholder="••••••••••••" />
-                            <button disabled className="absolute right-3 top-1/2 -translate-y-1/2 disabled:opacity-50" style={{ color: 'var(--os-text-muted)' }}>
-                                <Eye className="w-4 h-4" />
-                            </button>
-                        </div>
+                        <Input value={newPassword} onChange={setNewPassword} type={reveal ? 'text' : 'password'} />
                     </Field>
                     <Field label={t('settings_confirm_password')}>
-                        <Input value="" readOnly type="password" placeholder="••••••••••••" />
+                        <Input value={confirmPassword} onChange={setConfirmPassword} type={reveal ? 'text' : 'password'} />
                     </Field>
+
+                    {pwdError && <p className="text-xs" style={{ color: '#EF4444' }}>{pwdError}</p>}
+                    {pwdDone && <p className="text-xs text-emerald-400">{t('settings_password_changed')}</p>}
+
+                    <button
+                        type="button"
+                        onClick={submitPassword}
+                        disabled={pending || !currentPassword || newPassword.length < MIN_PASSWORD_LENGTH}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
+                    >
+                        <Lock className="w-4 h-4" />
+                        {t('settings_password_save')}
+                    </button>
                 </div>
             </Section>
 
             <Section title={t('settings_mfa_title')} description={t('settings_mfa_desc')}>
-                <ComingSoonBanner t={t} />
-                <div className="pointer-events-none opacity-60">
-                    <Toggle checked={mfa} onChange={() => undefined} label={t('settings_mfa_toggle')} />
-                    {mfa && (
+                {factor ? (
+                    <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
                             <Smartphone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                             <div>
                                 <p className="text-xs font-semibold text-emerald-400">{t('settings_mfa_enabled')}</p>
-                                <p className="text-[11px]" style={{ color: 'var(--os-text-muted)' }}>{t('settings_mfa_configured')}</p>
+                                <p className="text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
+                                    {t('settings_mfa_since', { date: new Date(factor.enrolledAt).toLocaleDateString() })}
+                                </p>
                             </div>
-                            <button className="ml-auto text-[11px] font-semibold text-emerald-400">{t('settings_mfa_reconfigure')}</button>
                         </div>
-                    )}
-                </div>
+                        {mfaError && <p className="text-xs" style={{ color: '#EF4444' }}>{mfaError}</p>}
+                        <button
+                            type="button"
+                            onClick={disableMfa}
+                            disabled={pending}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit disabled:opacity-50"
+                            style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                        >
+                            {t('settings_mfa_disable')}
+                        </button>
+                    </div>
+                ) : enrolling ? (
+                    <div className="flex flex-col gap-4 max-w-sm">
+                        <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>{t('settings_mfa_scan')}</p>
+                        {/* SVG rendu par GoTrue : le secret ne passe par aucun service tiers. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={enrolling.qrCode} alt={t('settings_mfa_scan')} className="w-44 h-44 rounded-xl bg-white p-2" />
+                        <Field label={t('settings_mfa_secret')}>
+                            <p className="font-mono text-xs break-all px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-secondary)' }}>
+                                {enrolling.secret}
+                            </p>
+                        </Field>
+                        <Field label={t('settings_mfa_code')}>
+                            <Input value={code} onChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))} />
+                        </Field>
+                        {mfaError && <p className="text-xs" style={{ color: '#EF4444' }}>{mfaError}</p>}
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={confirmEnrollment}
+                                disabled={pending || code.length !== 6}
+                                className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                                style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
+                            >
+                                {t('settings_mfa_confirm')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setEnrolling(null); setCode(''); setMfaError(null); }}
+                                className="px-4 py-2.5 rounded-xl text-sm font-semibold"
+                                style={{ color: 'var(--os-text-muted)', border: '1px solid var(--os-border)' }}
+                            >
+                                {t('settings_mfa_cancel')}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>{t('settings_mfa_none')}</p>
+                        {mfaError && <p className="text-xs" style={{ color: '#EF4444' }}>{mfaError}</p>}
+                        <button
+                            type="button"
+                            onClick={startEnrollment}
+                            disabled={pending}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit disabled:opacity-50"
+                            style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
+                        >
+                            <Shield className="w-4 h-4" />
+                            {t('settings_mfa_enable')}
+                        </button>
+                    </div>
+                )}
             </Section>
 
             <Section title={t('settings_danger_zone')} description={t('settings_danger_zone_desc')}>
                 <div className="flex flex-col gap-3">
                     <button
-                        disabled
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                        onClick={closeOtherSessions}
+                        disabled={pending || otherSessions === 0}
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold w-fit disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
                     >
                         <LogOut className="w-4 h-4" />
@@ -312,7 +470,8 @@ function SecurityTab() {
                     </button>
                     <button
                         disabled
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={t('settings_deletion_unavailable')}
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold w-fit disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
                     >
                         <Trash2 className="w-4 h-4" />
@@ -486,83 +645,111 @@ function PreferencesTab() {
     );
 }
 
-function SessionsTab() {
-    const t = useTranslations('DashboardPages');
-    const SESSIONS = [
-        { id: '1', device: 'Chrome 122 — Windows 11',   ip: '197.231.44.12', location: 'Berbera, Somaliland',  lastKey: 'settings_active_now',        current: true },
-        { id: '2', device: 'Firefox 124 — macOS 14',    ip: '197.231.44.88', location: 'Hargeisa, Somaliland', lastKey: 'settings_2h_ago',          current: false },
-        { id: '3', device: 'Safari Mobile — iOS 17',    ip: '41.220.14.55',  location: 'Djibouti',             lastKey: 'settings_yesterday',             current: false },
-        { id: '4', device: 'Chrome 121 — Ubuntu 22.04', ip: '197.231.45.01', location: 'Berbera, Somaliland',  lastKey: 'settings_3d_ago',           current: false },
-    ];
+/**
+ * Décrit un appareil à partir de son en-tête `User-Agent`.
+ *
+ * Volontairement grossier : deux familles suffisent à reconnaître « ce n'est
+ * pas moi ». Une chaîne inconnue est rendue telle quelle plutôt que devinée —
+ * mieux vaut un libellé brut qu'un appareil inventé sur un écran de sécurité.
+ */
+export function describeDevice(ua: string | null): string {
+    if (!ua) return '';
+    const browser =
+        /Edg\//.test(ua) ? 'Edge'
+        : /OPR\//.test(ua) ? 'Opera'
+        : /Chrome\//.test(ua) ? 'Chrome'
+        : /Firefox\//.test(ua) ? 'Firefox'
+        : /Safari\//.test(ua) ? 'Safari'
+        : null;
+    const os =
+        /Windows NT/.test(ua) ? 'Windows'
+        : /Android/.test(ua) ? 'Android'
+        : /(iPhone|iPad|iOS)/.test(ua) ? 'iOS'
+        : /Mac OS X/.test(ua) ? 'macOS'
+        : /Linux/.test(ua) ? 'Linux'
+        : null;
+    if (!browser && !os) return ua;
+    return [browser, os].filter(Boolean).join(' — ');
+}
 
-    const [sessions, setSessions] = React.useState(SESSIONS);
+function SessionsTab({ security }: { security: SecurityOverview }) {
+    const t = useTranslations('DashboardPages');
+    const router = useRouter();
+    const [pending, startTransition] = React.useTransition();
+    const [error, setError] = React.useState<string | null>(null);
 
     function revoke(id: string) {
-        setSessions((prev) => prev.filter((s) => s.id !== id));
+        setError(null);
+        startTransition(async () => {
+            const r = await revokeSession({ sessionId: id });
+            if (!r.ok) { setError(t('settings_err_generic')); return; }
+            router.refresh();
+        });
     }
 
     return (
         <div className="flex flex-col gap-6">
             <Section title={t('settings_sessions_title')} description={t('settings_sessions_desc')}>
-                <div className="flex flex-col gap-3">
-                    {sessions.map((s) => (
-                        <div
-                            key={s.id}
-                            className="flex items-center gap-4 px-4 py-3.5 rounded-xl"
-                            style={{
-                                backgroundColor: s.current ? 'rgba(16,185,129,0.06)' : 'var(--os-surface)',
-                                border: s.current ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--os-border)',
-                            }}
-                        >
-                            <Monitor className="w-5 h-5 flex-shrink-0" style={{ color: s.current ? '#10B981' : 'var(--os-text-muted)' }} />
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--os-text-primary)' }}>{s.device}</p>
-                                    {s.current && (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-emerald-400" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
-                                            {t('settings_current_session')}
-                                        </span>
+                {security.sessions.length === 0 ? (
+                    <p className="text-sm" style={{ color: 'var(--os-text-muted)' }}>{t('settings_sessions_empty')}</p>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        {security.sessions.map((s) => {
+                            const device = describeDevice(s.userAgent) || t('settings_session_unknown_device');
+                            return (
+                                <div
+                                    key={s.id}
+                                    className="flex items-center gap-4 px-4 py-3.5 rounded-xl"
+                                    style={{
+                                        backgroundColor: s.isCurrent ? 'rgba(16,185,129,0.06)' : 'var(--os-surface)',
+                                        border: s.isCurrent ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--os-border)',
+                                    }}
+                                >
+                                    <Monitor className="w-5 h-5 flex-shrink-0" style={{ color: s.isCurrent ? '#10B981' : 'var(--os-text-muted)' }} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--os-text-primary)' }}>{device}</p>
+                                            {s.isCurrent && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-emerald-400" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
+                                                    {t('settings_current_session')}
+                                                </span>
+                                            )}
+                                            {/* Une session qui a franchi le second facteur n'a pas la même
+                                                valeur qu'une autre : c'est ce qu'on cherche en cas de doute. */}
+                                            {s.elevated && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(37,99,235,0.10)', color: 'var(--os-blue)' }}>
+                                                    {t('settings_session_elevated')}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs" style={{ color: 'var(--os-text-muted)' }}>
+                                            {s.ip && <span className="flex items-center gap-1"><Lock className="w-3 h-3" />{s.ip}</span>}
+                                            {s.lastSeenAt && (
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    {new Date(s.lastSeenAt).toLocaleString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {!s.isCurrent && (
+                                        <button
+                                            type="button"
+                                            onClick={() => revoke(s.id)}
+                                            disabled={pending}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 disabled:opacity-50"
+                                            style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                                        >
+                                            <LogOut className="w-3.5 h-3.5" />
+                                            {t('settings_revoke')}
+                                        </button>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-3 mt-0.5 text-xs" style={{ color: 'var(--os-text-muted)' }}>
-                                    <span className="flex items-center gap-1"><Lock className="w-3 h-3" />{s.ip}</span>
-                                    <span>·</span>
-                                    <span>{s.location}</span>
-                                    <span>·</span>
-                                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{t(s.lastKey as Parameters<typeof t>[0])}</span>
-                                </div>
-                            </div>
-                            {!s.current && (
-                                <button
-                                    onClick={() => revoke(s.id)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0"
-                                    style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
-                                >
-                                    <LogOut className="w-3.5 h-3.5" />
-                                    {t('settings_revoke')}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </Section>
-
-            <Section title={t('settings_login_security')}>
-                <div className="flex flex-col gap-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--os-surface)', border: '1px solid var(--os-border)' }}>
-                    {[
-                        { icon: Mail,  label: t('settings_login_notif_email'), active: true },
-                        { icon: Shield, label: t('settings_auto_block'), active: true },
-                        { icon: Key,   label: t('settings_token_rotation'), active: false },
-                    ].map(({ icon: Icon, label, active }) => (
-                        <div key={label} className="flex items-center gap-3 py-2.5 border-b last:border-0" style={{ borderColor: 'var(--os-border)' }}>
-                            <Icon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--os-text-muted)' }} />
-                            <span className="text-sm flex-1" style={{ color: 'var(--os-text-secondary)' }}>{label}</span>
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: active ? '#10B981' : '#EF4444' }}>
-                                {active ? t('settings_enabled') : t('settings_disabled')}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
+                {error && <p className="mt-3 text-xs" style={{ color: '#EF4444' }}>{error}</p>}
             </Section>
         </div>
     );
@@ -570,16 +757,16 @@ function SessionsTab() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export function SettingsPage() {
+export function SettingsPage({ security }: { security: SecurityOverview }) {
     const t = useTranslations('DashboardPages');
     const [activeTab, setActiveTab] = React.useState<TabKey>('profile');
 
     const CONTENT: Record<TabKey, React.ReactNode> = {
         profile:       <ProfileTab />,
-        security:      <SecurityTab />,
+        security:      <SecurityTab security={security} />,
         notifications: <NotificationsTab />,
         preferences:   <PreferencesTab />,
-        sessions:      <SessionsTab />,
+        sessions:      <SessionsTab security={security} />,
     };
 
     return (

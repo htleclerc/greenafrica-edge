@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
             '[middleware] configuration Supabase absente — session non resolue, ' +
             'les routes protegees redirigeront vers /login',
         );
-        return { supabaseResponse, user: null };
+        return { supabaseResponse, user: null, mfaPending: false };
     }
 
     const supabase = createServerClient(
@@ -57,11 +57,26 @@ export async function updateSession(request: NextRequest) {
     // Refresh session — do not add logic between createServerClient and getUser
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        return { supabaseResponse, user };
+
+        // Un second facteur enrole ne protege RIEN tant que l'application
+        // n'exige pas l'elevation : GoTrue laisse ouvrir une session AAL1 et
+        // s'en remet a nous. `nextLevel` vaut 'aal2' des qu'un facteur verifie
+        // existe ; l'ecart avec `currentLevel` est donc exactement « il a une
+        // MFA, il ne l'a pas encore franchie ».
+        //
+        // La lecture est locale (claims du jeton), sans appel reseau : un echec
+        // signifie qu'il n'y a pas de session, cas ou `user` est deja nul.
+        let mfaPending = false;
+        if (user) {
+            const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            mfaPending = aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2';
+        }
+
+        return { supabaseResponse, user, mfaPending };
     } catch (err) {
         // Panne reseau ou Supabase injoignable : on degrade au lieu de rendre
         // le site entier indisponible.
         console.error('[middleware] echec de resolution de session:', err);
-        return { supabaseResponse, user: null };
+        return { supabaseResponse, user: null, mfaPending: false };
     }
 }
