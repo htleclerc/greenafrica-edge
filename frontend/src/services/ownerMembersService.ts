@@ -29,7 +29,10 @@ export async function listOwnerMembers(
     const { data, error } = await db
         .from('owner_members')
         .select(
-            'id, profile_id, can_pay, can_dispute, can_manage_vessels, can_invite, active, created_at, revoked_at, profiles!inner(email, full_name)',
+            // Contrainte nommée : `owner_members` référence `profiles` deux fois
+            // (le membre et celui qui l'a invité). Sans la nommer, PostgREST
+            // refuse l'embed comme ambigu et l'écran annonce « aucun membre ».
+            'id, profile_id, can_pay, can_dispute, can_manage_vessels, can_invite, active, created_at, revoked_at, profiles!owner_members_profile_id_fkey(email, full_name)',
         )
         .eq('shipowner_id', shipownerId)
         .order('active', { ascending: false })
