@@ -1,8 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase.generated';
 
-// La vue n'est pas dans supabase.generated.ts (même patron que collectionAdminService).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Client = SupabaseClient<any>;
+type Client = SupabaseClient<Database>;
 
 export interface Bucket { usd: number; count: number }
 

@@ -29,7 +29,7 @@ describe('stageOf', () => {
         expect(stageOf({ ...base, latest_tier: 'J30' }, NOW)).toBe('formal');
     });
     it('regroupe J45, huissier et judiciaire sous l’escalade autorité', () => {
-        for (const tier of ['J45', 'BAILIFF', 'JUDICIAL']) {
+        for (const tier of ['J45', 'BAILIFF', 'JUDICIAL'] as const) {
             expect(stageOf({ ...base, latest_tier: tier }, NOW)).toBe('authority');
         }
     });
@@ -46,7 +46,7 @@ describe('stageOf', () => {
         expect(stageOf(paid, NOW)).toBe('settled');
     });
     it('un dossier réglé sort de la rampe même si son palier est une escalade', () => {
-        const paid = { ...base, status: 'PAID', latest_tier: 'BAILIFF', latest_response_at: daysAgo(1) };
+        const paid: ScanRow = { ...base, status: 'PAID', latest_tier: 'BAILIFF', latest_response_at: daysAgo(1) };
         expect(stageOf(paid, NOW)).toBe('settled');
     });
 });

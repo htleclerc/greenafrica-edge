@@ -1,10 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { CollectionAdminFilters } from './collectionAdminService';
+import type { Database } from '@/types/supabase.generated';
+import type { CollectionAdminFilters, CollectionTier } from './collectionAdminService';
 
-// Même client non typé que collectionAdminService : v_collection_admin n'est pas
-// dans supabase.generated.ts.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Client = SupabaseClient<any>;
+type Client = SupabaseClient<Database>;
 
 /**
  * Étapes de la procédure de recouvrement, dans l'ordre où l'agent les fait
@@ -15,7 +13,7 @@ type Client = SupabaseClient<any>;
 export type FunnelStage = 'reminder' | 'formal' | 'authority' | 'settled';
 
 /** Paliers de la rampe rattachés à chaque étape. `settled` se lit sur le statut. */
-export const STAGE_TIERS: Record<Exclude<FunnelStage, 'settled'>, string[]> = {
+export const STAGE_TIERS: Record<Exclude<FunnelStage, 'settled'>, CollectionTier[]> = {
     reminder:  ['J3', 'J7'],
     formal:    ['J15', 'J30'],
     authority: ['J45', 'BAILIFF', 'JUDICIAL'],
@@ -75,7 +73,7 @@ interface ScanRow {
     invoice_ref: string | null;
     outstanding_usd: number;
     status: string;
-    latest_tier: string | null;
+    latest_tier: CollectionTier | null;
     latest_sent_at: string | null;
     latest_response_at: string | null;
 }
@@ -156,9 +154,6 @@ function applyFilters<Q extends { eq: (c: string, v: string) => Q; or: (f: strin
     return out;
 }
 
-const SCAN_COLUMNS =
-    'transaction_id, debtor_name, invoice_ref, outstanding_usd, status, latest_tier, latest_sent_at, latest_response_at';
-
 /**
  * Construit la file de recouvrement par étape.
  *
@@ -187,7 +182,12 @@ export async function loadCollectionFunnel(
         return count ?? 0;
     }
 
-    let scan = db.from('v_collection_admin').select(SCAN_COLUMNS, { count: 'exact' });
+    // Colonnes en clair et non via une constante : `select()` n’infère les
+    // types que sur un littéral.
+    let scan = db.from('v_collection_admin').select(
+        'transaction_id, debtor_name, invoice_ref, outstanding_usd, status, latest_tier, latest_sent_at, latest_response_at',
+        { count: 'exact' },
+    );
     scan = applyFilters(scan, filters);
 
     const [reminder, formal, authority, settled, scanned] = await Promise.all([
@@ -200,15 +200,15 @@ export async function loadCollectionFunnel(
 
     if (scanned.error) throw new Error(`loadCollectionFunnel(scan): ${scanned.error.message}`);
 
-    const rows = ((scanned.data ?? []) as Record<string, unknown>[]).map((r): ScanRow => ({
+    const rows = (scanned.data ?? []).map((r): ScanRow => ({
         transaction_id: String(r.transaction_id),
-        debtor_name: (r.debtor_name as string | null) ?? null,
-        invoice_ref: (r.invoice_ref as string | null) ?? null,
+        debtor_name: r.debtor_name,
+        invoice_ref: r.invoice_ref,
         outstanding_usd: Number(r.outstanding_usd),
-        status: String(r.status ?? ''),
-        latest_tier: (r.latest_tier as string | null) ?? null,
-        latest_sent_at: (r.latest_sent_at as string | null) ?? null,
-        latest_response_at: (r.latest_response_at as string | null) ?? null,
+        status: r.status ?? '',
+        latest_tier: r.latest_tier,
+        latest_sent_at: r.latest_sent_at,
+        latest_response_at: r.latest_response_at,
     }));
 
     return buildFunnel(

@@ -1,9 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/supabase.generated';
 
-// `staff_notifications` n'est pas dans supabase.generated.ts tant que les types
-// n'ont pas été régénérés après la mig 133 — même patron que collectionAdminService.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Client = SupabaseClient<any>;
+type Client = SupabaseClient<Database>;
 
 /**
  * Faits notifiables du staff (mig 133).
@@ -11,15 +9,15 @@ type Client = SupabaseClient<any>;
  * Peu nombreux, et volontairement : un type ne se crée que si son texte, son
  * lien profond ET son destinataire diffèrent réellement d'un type existant.
  */
-export type StaffNotificationKind =
-    | 'VALIDATION_PENDING'
-    | 'REGISTRATION_SUBMITTED'
-    | 'COLLECTION_ESCALATED'
-    | 'DEBTOR_RESPONDED'
-    | 'CASH_PAYMENT_RECORDED'
-    | 'DISPUTE_OPENED';
+export type StaffNotificationKind = Database['public']['Enums']['staff_notification_kind'];
 
-export type StaffRole = 'PORT_OFFICER' | 'FINANCE_ADMIN' | 'MANAGER' | 'SUPERADMIN';
+// Le sous-ensemble de `user_role` qui reçoit des notifications staff.
+// `Extract` plutôt qu'une union libre : renommer un rôle en base casse ici,
+// à la compilation, plutôt qu'à l'insertion.
+export type StaffRole = Extract<
+    Database['public']['Enums']['user_role'],
+    'PORT_OFFICER' | 'FINANCE_ADMIN' | 'MANAGER' | 'SUPERADMIN'
+>;
 
 /**
  * Qui reçoit quoi, par défaut.
@@ -53,7 +51,10 @@ export interface NotifyStaffInput {
     jurisdictionId: string;
     kind: StaffNotificationKind;
     /** Interpolations du message. Restent en JSONB, jamais de texte pré-traduit. */
-    params?: Record<string, unknown>;
+    // `Json` et non `Record<string, unknown>` : la colonne est du jsonb, et
+    // `unknown` laisserait passer une valeur non sérialisable qui n'échouerait
+    // qu'à l'insertion.
+    params?: Record<string, Json>;
     deepLink?: string;
     /**
      * Clé métier stable — identifiant de transaction, de proposition. Rend
@@ -114,7 +115,7 @@ export async function notifyStaff(
         return { ok: false, reason: error.message };
     }
 
-    return { ok: true, id: (data?.id as string | undefined) ?? null, deduped: false };
+    return { ok: true, id: data?.id ?? null, deduped: false };
 }
 
 /**
