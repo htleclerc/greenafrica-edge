@@ -17,6 +17,9 @@ import { changePassword } from '@/actions/changePassword';
 import { MIN_PASSWORD_LENGTH } from '@/lib/auth/passwordPolicy';
 import { enrollMfa, verifyMfaEnrollment, unenrollMfa } from '@/actions/mfa';
 import { revokeSession } from '@/actions/revokeSession';
+import { updateOwnProfile, updateNotificationPrefs } from '@/actions/updateOwnProfile';
+import { NOTIFICATION_PREF_KEYS, type NotificationPrefKey } from '@/lib/notificationPrefs';
+import type { ProfileSettings } from '@/services/profileSettingsService';
 import type { SecurityOverview } from '@/services/securityService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -176,76 +179,103 @@ function PreferencesSelect({ value, onChange, options }: { value: string; onChan
 
 // ── Tabs content ──────────────────────────────────────────────────────────────
 
-function ProfileTab() {
+function ProfileTab({ profile }: { profile: ProfileSettings }) {
     const t = useTranslations('DashboardPages');
     const { user } = useRole();
-    const [fullName] = React.useState(user.fullName);
-    const [phone]    = React.useState('+252 63 000 0000');
-    const [bio]      = React.useState('');
+    const router = useRouter();
+    const [pending, startTransition] = React.useTransition();
 
-    const initials = fullName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+    const [fullName, setFullName] = React.useState(profile.fullName || user.fullName);
+    const [phone, setPhone] = React.useState(profile.phone ?? '');
+    const [bio, setBio] = React.useState(profile.bio ?? '');
+    const [timezone, setTimezone] = React.useState(profile.timezone);
+    const [error, setError] = React.useState<string | null>(null);
+    const [saved, setSaved] = React.useState(false);
+
+    const initials = (fullName || user.fullName).split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+    // L'identifiant technique ne se montre qu'à qui en fait quelque chose : le
+    // support, pour rapprocher un compte d'une ligne de journal. Pour son
+    // titulaire il n'est ni actionnable ni mémorisable, et il traîne dans les
+    // captures d'écran qu'on envoie au support, justement.
+    const showsUserId = user.role === UserRole.SUPERADMIN;
+
+    function save() {
+        setError(null);
+        setSaved(false);
+        startTransition(async () => {
+            const r = await updateOwnProfile({ fullName, phone, bio, timezone });
+            if (!r.ok) { setError(t('settings_err_generic')); return; }
+            setSaved(true);
+            router.refresh();
+        });
+    }
 
     return (
         <div className="flex flex-col gap-8">
-            <ComingSoonBanner t={t} />
-
-            {/* Avatar */}
             <Section title={t('settings_profile_photo')}>
                 <div className="flex items-center gap-4">
                     <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
-                        style={{ backgroundColor: '#10B981' }}
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0"
+                        style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
                     >
                         {initials}
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <button
-                            disabled
-                            className="text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: 'var(--os-surface-2)', color: 'var(--os-text-secondary)', border: '1px solid var(--os-border)' }}
-                        >
-                            {t('settings_change_photo')}
-                        </button>
-                        <p className="text-[11px]" style={{ color: 'var(--os-text-muted)' }}>{t('settings_photo_hint')}</p>
-                    </div>
+                    <p className="text-[11px]" style={{ color: 'var(--os-text-muted)' }}>
+                        {t('settings_photo_initials')}
+                    </p>
                 </div>
             </Section>
 
-            {/* Identity */}
             <Section title={t('settings_identity')} description={t('settings_identity_desc')}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_full_name')}>
-                        <Input value={fullName} readOnly />
+                        <Input value={fullName} onChange={setFullName} />
                     </Field>
+                    {/* L'adresse reste en lecture : elle doit suivre auth.users, et le
+                        verrou de la mig 138 la refuse de toute façon. */}
                     <Field label={t('settings_official_email')}>
                         <Input value={user.email} readOnly />
                     </Field>
                     <Field label={t('settings_phone')}>
-                        <Input value={phone} readOnly type="tel" />
+                        <Input value={phone} onChange={setPhone} type="tel" />
                     </Field>
                     <Field label={t('settings_timezone')}>
-                        <Input value={user.timezone} readOnly />
+                        <Input value={timezone} onChange={setTimezone} />
                     </Field>
                 </div>
                 <Field label={t('settings_bio')}>
                     <textarea
                         value={bio}
-                        readOnly
+                        onChange={(e) => setBio(e.target.value.slice(0, 500))}
                         placeholder={t('settings_bio_placeholder')}
                         rows={3}
                         className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none transition-all"
-                        style={{ backgroundColor: 'var(--os-bg)', border: '1px solid var(--os-border)', color: 'var(--os-text-muted)', cursor: 'default' }}
+                        style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)', color: 'var(--os-text-primary)' }}
                     />
                 </Field>
+
+                {error && <p className="mt-3 text-xs" style={{ color: 'var(--os-red)' }}>{error}</p>}
+                {saved && <p className="mt-3 text-xs text-emerald-400">{t('settings_saved')}</p>}
+
+                <button
+                    type="button"
+                    onClick={save}
+                    disabled={pending || fullName.trim().length < 2}
+                    className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
+                >
+                    <Save className="w-4 h-4" />
+                    {t('settings_save')}
+                </button>
             </Section>
 
-            {/* Role (read-only) */}
             <Section title={t('settings_role_assignment')} description={t('settings_role_assignment_desc')}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <Field label={t('settings_role')}>
                         <div
                             className="flex items-center gap-2 h-10 px-3 rounded-xl text-sm"
-                            style={{ backgroundColor: 'var(--os-bg)', border: '1px solid var(--os-border)', color: '#10B981' }}
+                            style={{ backgroundColor: 'var(--os-bg)', border: '1px solid var(--os-border)', color: 'var(--os-brand-cyan)' }}
                         >
                             <Shield className="w-3.5 h-3.5 flex-shrink-0" />
                             {t(ROLE_I18N_KEY[user.role])}
@@ -254,17 +284,75 @@ function ProfileTab() {
                     <Field label={t('settings_operational_site')}>
                         <Input value={t(SITE_I18N_KEY[user.operationalSite])} readOnly />
                     </Field>
-                    <Field label={t('settings_user_id')}>
-                        <Input value={user.id} readOnly />
-                    </Field>
+                    {showsUserId && (
+                        <Field label={t('settings_user_id')}>
+                            <Input value={user.id} readOnly />
+                        </Field>
+                    )}
                     <Field label={t('settings_last_login')}>
-                        <Input value={new Date(user.lastLogin).toLocaleString('fr-FR')} readOnly />
+                        <Input value={new Date(user.lastLogin).toLocaleString()} readOnly />
                     </Field>
                 </div>
             </Section>
         </div>
     );
 }
+
+function NotificationsTab({ profile }: { profile: ProfileSettings }) {
+    const t = useTranslations('DashboardPages');
+    const router = useRouter();
+    const [pending, startTransition] = React.useTransition();
+    const [prefs, setPrefs] = React.useState(profile.notificationPrefs);
+    const [error, setError] = React.useState<string | null>(null);
+
+    function toggle(key: NotificationPrefKey, value: boolean) {
+        const next = { ...prefs, [key]: value };
+        setPrefs(next);
+        setError(null);
+        startTransition(async () => {
+            const r = await updateNotificationPrefs({ prefs: next });
+            if (!r.ok) {
+                // Remettre la bascule comme elle était : la laisser dans sa
+                // nouvelle position ferait croire au réglage enregistré.
+                setPrefs(prefs);
+                setError(t('settings_err_generic'));
+                return;
+            }
+            router.refresh();
+        });
+    }
+
+    const LABEL: Record<NotificationPrefKey, string> = {
+        vessel_alert: t('settings_notif_vessel_alert'),
+        payment_due: t('settings_notif_payment_due'),
+        monthly_statement: t('settings_notif_monthly_statement'),
+    };
+
+    return (
+        <div className="flex flex-col gap-6">
+            <Section title={t('settings_notif_email')} description={t('settings_notif_email_desc')}>
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--os-border)' }}>
+                    {NOTIFICATION_PREF_KEYS.map((key) => (
+                        <div key={key} className="px-4" style={{ backgroundColor: 'var(--os-surface)' }}>
+                            <Toggle
+                                checked={prefs[key]}
+                                onChange={(v) => !pending && toggle(key, v)}
+                                label={LABEL[key]}
+                            />
+                        </div>
+                    ))}
+                </div>
+                {error && <p className="mt-3 text-xs" style={{ color: 'var(--os-red)' }}>{error}</p>}
+                {/* Dire ce que la page ne gouverne PAS vaut mieux que laisser
+                    croire qu'on peut tout couper. */}
+                <p className="mt-3 text-[11.5px]" style={{ color: 'var(--os-text-muted)' }}>
+                    {t('settings_notif_always_sent')}
+                </p>
+            </Section>
+        </div>
+    );
+}
+
 
 function SecurityTab({ security }: { security: SecurityOverview }) {
     const t = useTranslations('DashboardPages');
@@ -483,76 +571,7 @@ function SecurityTab({ security }: { security: SecurityOverview }) {
     );
 }
 
-function NotificationsTab() {
-    const t = useTranslations('DashboardPages');
-    const notifs = {
-        vessel_alert:     true,
-        payment_due:      true,
-        new_declaration:  false,
-        system_update:    true,
-        weekly_report:    true,
-        audit_activity:   false,
-        email_digest:     true,
-        sms_critical:     false,
-    } as const;
 
-    const groups = [
-        {
-            title: t('settings_notif_operational'),
-            description: t('settings_notif_operational_desc'),
-            items: [
-                { key: 'vessel_alert',    label: t('settings_notif_vessel_alert') },
-                { key: 'payment_due',     label: t('settings_notif_payment_due') },
-                { key: 'new_declaration', label: t('settings_notif_new_declaration') },
-            ],
-        },
-        {
-            title: t('settings_notif_system_admin'),
-            items: [
-                { key: 'system_update',  label: t('settings_notif_system_update') },
-                { key: 'audit_activity', label: t('settings_notif_audit_activity') },
-            ],
-        },
-        {
-            title: t('settings_notif_reports'),
-            items: [
-                { key: 'weekly_report', label: t('settings_notif_weekly_report') },
-                { key: 'email_digest',  label: t('settings_notif_email_digest') },
-            ],
-        },
-        {
-            title: t('settings_notif_channels'),
-            items: [
-                { key: 'sms_critical', label: t('settings_notif_sms_critical') },
-            ],
-        },
-    ] as const;
-
-    return (
-        <div className="flex flex-col gap-8">
-            <ComingSoonBanner t={t} />
-            <div className="pointer-events-none opacity-60">
-                {groups.map((g) => (
-                    <Section key={g.title} title={g.title} description={'description' in g ? g.description : undefined}>
-                        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--os-border)' }}>
-                            <div style={{ backgroundColor: 'var(--os-surface-2)' }}>
-                                {g.items.map(({ key, label }) => (
-                                    <div key={key} className="px-4" style={{ backgroundColor: 'var(--os-surface)' }}>
-                                        <Toggle
-                                            checked={notifs[key as keyof typeof notifs]}
-                                            onChange={() => undefined}
-                                            label={label}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </Section>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 function PreferencesTab() {
     const t = useTranslations('DashboardPages');
@@ -757,20 +776,23 @@ function SessionsTab({ security }: { security: SecurityOverview }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export function SettingsPage({ security }: { security: SecurityOverview }) {
+export function SettingsPage({ security, profile }: {
+    security: SecurityOverview;
+    profile: ProfileSettings;
+}) {
     const t = useTranslations('DashboardPages');
     const [activeTab, setActiveTab] = React.useState<TabKey>('profile');
 
     const CONTENT: Record<TabKey, React.ReactNode> = {
-        profile:       <ProfileTab />,
+        profile:       <ProfileTab profile={profile} />,
         security:      <SecurityTab security={security} />,
-        notifications: <NotificationsTab />,
+        notifications: <NotificationsTab profile={profile} />,
         preferences:   <PreferencesTab />,
         sessions:      <SessionsTab security={security} />,
     };
 
     return (
-        <div className="flex flex-col gap-0 min-h-full">
+        <div className="flex flex-col gap-0 min-h-[calc(100vh-5.5rem)]">
             {/* Page header */}
             <div
                 className="px-3 sm:px-6 py-3 sm:py-5 border-b"
@@ -785,7 +807,7 @@ export function SettingsPage({ security }: { security: SecurityOverview }) {
             <div className="flex flex-col sm:flex-row flex-1">
                 {/* Vertical tab sidebar */}
                 <nav
-                    className="flex sm:flex-col gap-1 p-3 flex-shrink-0 border-b sm:border-b-0 sm:border-r overflow-x-auto sm:overflow-x-visible"
+                    className="flex sm:flex-col gap-1 p-3 flex-shrink-0 border-b sm:border-b-0 sm:border-r overflow-x-auto sm:overflow-x-visible sm:h-auto sm:self-stretch"
                     style={{
                         width: undefined,
                         backgroundColor: 'var(--os-surface)',

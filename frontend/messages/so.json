@@ -944,8 +944,6 @@
     "settings_preferences": "Doorashooyinka",
     "settings_sessions": "Xiriiriyeyaasha Firfircoon",
     "settings_profile_photo": "Sawirka Xogta Shakhsiga",
-    "settings_change_photo": "Beddel sawirka",
-    "settings_photo_hint": "JPG, PNG — ugu badan 2 MB",
     "settings_identity": "Aqoonsiga",
     "settings_identity_desc": "Macluumaadka la xiriira akoonkaaga dowladda.",
     "settings_full_name": "Magaca Buuxa",
@@ -980,19 +978,8 @@
     "settings_danger_zone_desc": "Ficilada aan la noqon karin ee la xiriira akoonkaaga.",
     "settings_disconnect_sessions": "Ka kala gooy dhammaan xiriiriyeyaasha firfircoon",
     "settings_request_deletion": "Codso tirtiridda akoonka",
-    "settings_notif_operational": "Digniinaha Hawlgalka",
-    "settings_notif_operational_desc": "Ogeysiisyada la xiriira markabka iyo waafaqsanaanta.",
     "settings_notif_vessel_alert": "Digniin ka-bixitaan ka dhan ah markabka",
     "settings_notif_payment_due": "Canshuurta dib-u-dhacday",
-    "settings_notif_new_declaration": "Bayaanka DCS cusub la helay",
-    "settings_notif_system_admin": "Nidaamka & Maamulka",
-    "settings_notif_system_update": "Cusboonaysiinta nidaamka",
-    "settings_notif_audit_activity": "Hawlaha diiwaanka kormeerka",
-    "settings_notif_reports": "Warbixinnada & Koobaridda",
-    "settings_notif_weekly_report": "Warbixin toddobaadleh tooska ah",
-    "settings_notif_email_digest": "Koobarida email maalinlaha ah",
-    "settings_notif_channels": "Kanaalada Kale",
-    "settings_notif_sms_critical": "SMS kaliya digniinaha xasaasiga ah",
     "settings_lang_region": "Luqadda & Gobolka",
     "settings_interface_language": "Luqadda Xarunta",
     "settings_date_format": "Qaabka Taariikhda",
@@ -1127,7 +1114,12 @@
     "settings_sessions_empty": "No open session.",
     "settings_session_elevated": "Second factor",
     "settings_session_unknown_device": "Unidentified device",
-    "settings_deletion_unavailable": "Account deletion still goes through support."
+    "settings_deletion_unavailable": "Account deletion still goes through support.",
+    "settings_photo_initials": "Initials are derived from your name. Uploading a photo is not offered yet.",
+    "settings_notif_email": "Email notifications",
+    "settings_notif_email_desc": "What you want to receive. Covers informational messages only.",
+    "settings_notif_monthly_statement": "Monthly account statement",
+    "settings_notif_always_sent": "Payment confirmations, refusals, KYC decisions and changes to who can access your account are always sent — they cannot be turned off."
   },
   "Overview": {
     "kpi_active_vessels": "Maraakiibta Firfircoon ee EEZ",
@@ -3605,10 +3597,6 @@
           "label": "AfricGreen wallet",
           "covers": "Balance {balance} — sufficient",
           "short": "Balance {balance} — insufficient"
-        },
-        "desk": {
-          "label": "Port cash desk",
-          "hint": "Cash · immediate receipt"
         }
       },
       "receipt": "Rasiidh",

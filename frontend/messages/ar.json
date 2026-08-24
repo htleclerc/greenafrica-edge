@@ -829,8 +829,6 @@
     "settings_preferences": "التفضيلات",
     "settings_sessions": "الجلسات النشطة",
     "settings_profile_photo": "صورة الملف الشخصي",
-    "settings_change_photo": "تغيير الصورة",
-    "settings_photo_hint": "JPG، PNG — الحد الأقصى 2 ميجابايت",
     "settings_identity": "الهوية",
     "settings_identity_desc": "المعلومات المرتبطة بحسابك الحكومي.",
     "settings_full_name": "الاسم الكامل",
@@ -865,19 +863,8 @@
     "settings_danger_zone_desc": "إجراءات لا رجعة فيها تتعلق بحسابك.",
     "settings_disconnect_sessions": "قطع جميع الجلسات النشطة",
     "settings_request_deletion": "طلب حذف الحساب",
-    "settings_notif_operational": "التنبيهات التشغيلية",
-    "settings_notif_operational_desc": "إشعارات تتعلق بالسفن والامتثال.",
     "settings_notif_vessel_alert": "تنبيه عدم امتثال السفينة",
     "settings_notif_payment_due": "دفع ضريبي متأخر",
-    "settings_notif_new_declaration": "تم استلام تصريح DCS جديد",
-    "settings_notif_system_admin": "النظام والإدارة",
-    "settings_notif_system_update": "تحديثات النظام",
-    "settings_notif_audit_activity": "نشاط سجل التدقيق",
-    "settings_notif_reports": "التقارير والملخصات",
-    "settings_notif_weekly_report": "تقرير أسبوعي تلقائي",
-    "settings_notif_email_digest": "ملخص البريد الإلكتروني اليومي",
-    "settings_notif_channels": "القنوات البديلة",
-    "settings_notif_sms_critical": "رسائل SMS للتنبيهات الحرجة فقط",
     "settings_lang_region": "اللغة والمنطقة",
     "settings_interface_language": "لغة الواجهة",
     "settings_date_format": "تنسيق التاريخ",
@@ -1012,7 +999,12 @@
     "settings_sessions_empty": "No open session.",
     "settings_session_elevated": "Second factor",
     "settings_session_unknown_device": "Unidentified device",
-    "settings_deletion_unavailable": "Account deletion still goes through support."
+    "settings_deletion_unavailable": "Account deletion still goes through support.",
+    "settings_photo_initials": "Initials are derived from your name. Uploading a photo is not offered yet.",
+    "settings_notif_email": "Email notifications",
+    "settings_notif_email_desc": "What you want to receive. Covers informational messages only.",
+    "settings_notif_monthly_statement": "Monthly account statement",
+    "settings_notif_always_sent": "Payment confirmations, refusals, KYC decisions and changes to who can access your account are always sent — they cannot be turned off."
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",
@@ -3493,10 +3485,6 @@
           "label": "AfricGreen wallet",
           "covers": "Balance {balance} — sufficient",
           "short": "Balance {balance} — insufficient"
-        },
-        "desk": {
-          "label": "Port cash desk",
-          "hint": "Cash · immediate receipt"
         }
       },
       "receipt": "إيصال",
