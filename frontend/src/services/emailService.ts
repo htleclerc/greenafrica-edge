@@ -1,3 +1,4 @@
+import { applyEmailRedirect, redirectTarget } from '@/lib/emailRedirect';
 import { Resend } from 'resend';
 import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths';
 import {
@@ -120,15 +121,26 @@ async function sendEmail(params: {
 }): Promise<EmailResult> {
     try {
         const resend = getResend();
+        // Hors production, tout part vers EMAIL_REDIRECT_TO. La redirection est
+        // appliquée ici, au seul endroit qui parle à Resend, pour qu'aucun des
+        // douze expéditeurs de ce fichier ne puisse l'oublier.
+        const { message: sortant, redirected, originalRecipients } =
+            applyEmailRedirect(params);
+        if (redirected) {
+            console.info(
+                `[Email] REDIRIGÉ vers ${redirectTarget()} — aurait été envoyé à : ` +
+                `${originalRecipients.join(', ') || '(aucun)'} — sujet : ${params.subject}`,
+            );
+        }
         const result = await resend.emails.send({
             from: fromAddress(),
-            to: Array.isArray(params.to) ? params.to : [params.to],
+            to: Array.isArray(sortant.to) ? sortant.to : [sortant.to],
             // Resend rejette un tableau vide : on omet le champ plutôt que de
             // l'envoyer vide.
-            ...(params.cc?.length ? { cc: params.cc } : {}),
-            subject: params.subject,
-            html: params.html,
-            text: params.text,
+            ...(sortant.cc?.length ? { cc: sortant.cc } : {}),
+            subject: sortant.subject,
+            html: sortant.html,
+            text: sortant.text,
             replyTo: replyTo(),
             attachments: params.attachments?.map((a) => ({
                 filename: a.filename,

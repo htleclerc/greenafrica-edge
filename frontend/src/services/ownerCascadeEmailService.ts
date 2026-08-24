@@ -1,3 +1,4 @@
+import { applyEmailRedirect, redirectTarget } from '@/lib/emailRedirect';
 import { Resend } from 'resend';
 
 /**
@@ -90,11 +91,25 @@ export async function sendOwnerCascadeEmail(
     try {
         const resend = getResend();
         const from = process.env.EMAIL_FROM ?? 'noreply@africgreen.example';
-        const result = await resend.emails.send({
-            from,
+        // Ce service a son propre client Resend et ne passe pas par
+        // emailService : sans cette ligne, la cascade armateur — le chemin qui
+        // écrit précisément aux armateurs — échapperait à la redirection.
+        const { message: sortant, redirected, originalRecipients } = applyEmailRedirect({
             to: input.toEmail,
             subject: renderSubject(input),
             text: renderBody(input),
+        });
+        if (redirected) {
+            console.info(
+                `[OwnerCascade] REDIRIGÉ vers ${redirectTarget()} — aurait été envoyé à : ` +
+                `${originalRecipients.join(', ') || '(aucun)'}`,
+            );
+        }
+        const result = await resend.emails.send({
+            from,
+            to: sortant.to,
+            subject: sortant.subject,
+            text: sortant.text,
             attachments: [
                 {
                     filename: `${input.invoiceRef}.pdf`,
