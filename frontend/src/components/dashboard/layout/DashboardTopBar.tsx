@@ -265,7 +265,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={markAllRead}
-                                        className="text-[10px] font-semibold text-[#10B981] hover:text-[#34D399] transition-colors"
+                                        className="text-[10px] font-semibold text-[var(--os-brand-green)] hover:text-[var(--os-brand-cyan)] transition-colors"
                                     >
                                         {t('mark_all_read')}
                                     </button>
@@ -298,7 +298,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                                     <div
                                         key={n.id}
                                         className="flex items-start gap-3 px-4 py-3 border-b border-[var(--os-border)] last:border-0 transition-colors hover:bg-[var(--os-surface-2)] cursor-pointer"
-                                        style={{ backgroundColor: n.read ? 'transparent' : 'rgba(16,185,129,0.03)' }}
+                                        style={{ backgroundColor: n.read ? 'transparent' : 'color-mix(in srgb, var(--os-brand-green) 4%, transparent)' }}
                                         onClick={() => {
                                             if (onMarkRead) onMarkRead(n.id);
                                             if (n.href) window.location.href = n.href;
@@ -314,7 +314,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                                             <div className="flex items-start justify-between gap-2">
                                                 <p className="text-xs font-semibold text-[var(--os-text-primary)] leading-tight">{title}</p>
                                                 {!n.read && (
-                                                    <span className="w-2 h-2 rounded-full bg-[#10B981] flex-shrink-0 mt-1" />
+                                                    <span className="w-2 h-2 rounded-full bg-[var(--os-brand-green)] flex-shrink-0 mt-1" />
                                                 )}
                                             </div>
                                             <p className="text-[10px] text-[var(--os-text-muted)] leading-relaxed mt-0.5 truncate">{message}</p>
@@ -332,7 +332,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                             <Link
                                 href="/dashboard/alerts"
                                 onClick={() => setNotifOpen(false)}
-                                className="flex items-center justify-center py-2.5 text-[10px] font-bold text-[#10B981] hover:bg-[var(--os-surface-2)] transition-colors border-t border-[var(--os-border)]"
+                                className="flex items-center justify-center py-2.5 text-[10px] font-bold text-[var(--os-brand-green)] hover:bg-[var(--os-surface-2)] transition-colors border-t border-[var(--os-border)]"
                             >
                                 {t('view_all_alerts')}
                             </Link>

@@ -270,8 +270,8 @@
     --ais-dark-card: #FFFFFF;
     --ais-dark-surface: #E6EDF4;
     --ais-border: rgba(37, 99, 235, 0.12);
-    --ais-emerald: #059669;
-    --ais-emerald-dark: #047857;
+    --ais-emerald: #1E40AF;
+    --ais-emerald-dark: #17408B;
     --ais-yellow: #D97706;
     --ais-yellow-light: #F59E0B;
     --ais-text-muted: #4B5A6B;
@@ -321,8 +321,10 @@
     --os-border:       rgba(37, 99, 235, 0.12);
     --os-border-strong:rgba(37, 99, 235, 0.25);
 
-    --os-brand-green:  #05875E;   /* fond du bouton primaire, tenu à 4.5:1 sur blanc */
-    --os-brand-cyan:   #2563EB;   /* lien et accent, tenu à 4.5:1 sur blanc */
+    /* Marine et non vert : sur cet habillage le vert de marque se lisait comme
+       une pièce rapportée de l'institutionnel. Le blanc tient à 8.7:1 dessus. */
+    --os-brand-green:  #1E40AF;   /* fond du bouton primaire */
+    --os-brand-cyan:   #2563EB;   /* lien et accent, distinct du fond, 5.2:1 sur blanc */
 
     --os-text-primary: #1A232E;
     --os-text-secondary:#2D3E4F;
@@ -347,13 +349,6 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* V3 Institutional: green top accent bar on cards */
-/* V2 Navy: subtle cyan glow on active nav */
-[data-skin="navy"] .os-nav-active {
-    box-shadow: inset 2px 0 0 var(--os-brand-cyan);
-    color: var(--os-brand-cyan);
-    background-color: rgba(56, 189, 248, 0.08);
-}
-
 
 /* ─────────────────────────────────────────────────────────────────────────────
    SHARED THEME ALIASES
