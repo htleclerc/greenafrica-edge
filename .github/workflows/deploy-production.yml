@@ -123,6 +123,11 @@ jobs:
     # pret. Le 2026-08-19 le job a consomme les 6 h du plafond GitHub par defaut
     # avant d'etre tue, sans jamais promouvoir l'alias.
     timeout-minutes: 25
+    # contents: write — le pas « signature de promotion » ci-dessous pousse un
+    # commit vide sur main quand l'auteur du sommet n'est pas celui qu'exige
+    # Vercel. Sans ce droit, le pas echoue et le deploiement reste bloque.
+    permissions:
+      contents: write
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -135,6 +140,54 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # ── Signature de promotion ────────────────────────────────────────────
+      # Le projet Vercel `greengate` est sur un compte Hobby avec un depot
+      # prive. Regle Vercel : « For personal Hobby projects, the commit author
+      # must be the owner of the Hobby team. If the author is not the owner,
+      # the deployment is blocked. »
+      #
+      # Ca s'est produit deux fois. Le 2026-08-19 puis le 2026-08-24 : la PR
+      # #121 fusionnee par `htleclerc` a produit un commit de fusion signe
+      # htleclerc, Vercel a bloque, la CLI est restee sur « Building… » jusqu'au
+      # plafond de 25 min, et greengate.africa a servi un build perime.
+      #
+      # La convention (fusion locale signee) reste la bonne pratique, mais elle
+      # depend d'un geste humain. Ce pas la rend inutile : quelle que soit la
+      # facon dont la promotion est faite — `gh pr merge`, bouton GitHub,
+      # fusion locale non signee — le sommet de main porte l'auteur attendu
+      # avant que Vercel ne regarde.
+      #
+      # Un commit VIDE, jamais un amend : reecrire le sommet de main casserait
+      # tout depot qui l'a deja recupere. Idempotent par construction — le
+      # commit ajoute porte le bon auteur, donc une execution suivante ne fait
+      # rien. Et GITHUB_TOKEN ne redeclenche pas les workflows, pas de boucle.
+      - name: Signature de promotion (deblocage Vercel Hobby)
+        env:
+          RELEASE_AUTHOR_NAME: Green Gate Operations
+          RELEASE_AUTHOR_EMAIL: st.operations@greengate.africa
+        run: |
+          set -euo pipefail
+          CURRENT="$(git log -1 --format='%ae')"
+          echo "Auteur du sommet de main : $CURRENT"
+          if [ "$CURRENT" = "$RELEASE_AUTHOR_EMAIL" ]; then
+            echo "Signature deja conforme, rien a faire."
+            exit 0
+          fi
+          echo "::notice::Sommet de main signe « $CURRENT » au lieu de « $RELEASE_AUTHOR_EMAIL » — ajout d'un commit vide de promotion pour ne pas bloquer Vercel."
+          git config user.name  "$RELEASE_AUTHOR_NAME"
+          git config user.email "$RELEASE_AUTHOR_EMAIL"
+          git commit --allow-empty             --author="$RELEASE_AUTHOR_NAME <$RELEASE_AUTHOR_EMAIL>"             -m "release: signature de promotion"             -m "Le sommet de main etait signe $CURRENT. Vercel Hobby exige que
+          l'auteur du commit soit le proprietaire de l'equipe, sinon il bloque le
+          deploiement. Commit vide ajoute automatiquement par deploy-production."
+          if ! git push origin HEAD:main; then
+            echo "::error::Impossible de pousser la signature de promotion sur main (protection de branche ou droits manquants). Le deploiement Vercel sera bloque : refaire la fusion en local signee « $RELEASE_AUTHOR_EMAIL », cf docs/runbooks."
+            exit 1
+          fi
+          echo "### Signature de promotion ajoutee (auteur precedent : $CURRENT)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install Vercel CLI
         run: npm install -g vercel
