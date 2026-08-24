@@ -1,13 +1,17 @@
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { Constants, type Database } from '@/types/supabase.generated';
 
-// La vue v_invoice_admin n'est pas dans supabase.generated.ts ; on suit le patron
-// existant (cf. transactionService.ts) d'un client non typé pour le query builder.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Client = SupabaseClient<any>;
+type Client = SupabaseClient<Database>;
 
-export type InvoiceDocumentType = 'PROFORMA' | 'FINAL' | 'COMPLEMENT' | 'REFUND';
-export type TransportMode = 'MARITIME' | 'AIR';
+type InvoiceRow = Database['public']['Views']['v_invoice_admin']['Row'];
+
+// Ces trois listes se lisent sur la vue plutôt que d'être recopiées à la main :
+// une valeur ajoutée en base arrive ici sans rien toucher, et une valeur
+// inventée ne compile plus au lieu de ramener une page vide.
+export type InvoiceStatus = NonNullable<InvoiceRow['status']>;
+export type InvoiceDocumentType = Database['public']['Enums']['document_type'];
+export type TransportMode = Database['public']['Enums']['transport_mode'];
 
 export const DEFAULT_PAGE_SIZE = 25;
 export const MAX_PAGE_SIZE = 100;
@@ -17,13 +21,15 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export interface InvoiceAdminFilters {
     documentType?: InvoiceDocumentType;
     mode?: TransportMode;
-    status?: string;
+    status?: InvoiceStatus;
     jurisdictionId?: string;
     flagCountry?: string;
     dueOnly?: boolean;
     search?: string;
     dateFrom?: string;
     dateTo?: string;
+    sortKey?: string;
+    sortDir?: 'asc' | 'desc';
     page: number;
     pageSize: number;
 }
@@ -34,16 +40,24 @@ function first(v: string | string[] | undefined): string | undefined {
     return v ?? undefined;
 }
 
+/** Colonnes triables. Toute clé absente d'ici retombe sur l'ordre par défaut. */
+export const INVOICE_SORT_KEYS = [
+    'invoice_ref', 'debtor_name', 'created_at', 'tax_amount_usd',
+    'status', 'jurisdiction_name', 'document_type',
+] as const;
+
 const filtersSchema = z.object({
     documentType: z.enum(['PROFORMA', 'FINAL', 'COMPLEMENT', 'REFUND']).optional().catch(undefined),
     mode: z.enum(['MARITIME', 'AIR']).optional().catch(undefined),
-    status: z.string().trim().min(1).optional().catch(undefined),
+    status: z.enum(Constants.public.Enums.transaction_status).optional().catch(undefined),
     jurisdictionId: z.string().trim().min(1).optional().catch(undefined),
     flagCountry: z.string().trim().min(1).optional().catch(undefined),
     dueOnly: z.boolean().catch(false),
     search: z.string().trim().min(1).optional().catch(undefined),
     dateFrom: z.string().regex(DATE_RE).optional().catch(undefined),
     dateTo: z.string().regex(DATE_RE).optional().catch(undefined),
+    sortKey: z.enum(INVOICE_SORT_KEYS).optional().catch(undefined),
+    sortDir: z.enum(['asc', 'desc']).optional().catch(undefined),
     page: z.number().int().min(1).catch(1),
     pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).catch(DEFAULT_PAGE_SIZE),
 });
@@ -65,6 +79,8 @@ export function parseInvoiceFilters(
         search: first(searchParams.search),
         dateFrom: first(searchParams.dateFrom),
         dateTo: first(searchParams.dateTo),
+        sortKey: first(searchParams.sortKey),
+        sortDir: first(searchParams.sortDir),
         page: Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1,
         pageSize: Number.isFinite(rawSize) ? Math.min(MAX_PAGE_SIZE, Math.max(1, rawSize)) : DEFAULT_PAGE_SIZE,
     });
@@ -109,33 +125,29 @@ function escapeSearch(q: string): string {
     return q.replace(/[%,()]/g, ' ');
 }
 
-interface RawRow {
-    [key: string]: unknown;
-}
-
-function toRow(r: RawRow): InvoiceAdminRow {
+function toRow(r: InvoiceRow): InvoiceAdminRow {
     return {
         id: String(r.id),
-        invoice_ref: (r.invoice_ref as string | null) ?? null,
-        content_hash: (r.content_hash as string | null) ?? null,
-        verify_signature: (r.verify_signature as string | null) ?? null,
+        invoice_ref: r.invoice_ref,
+        content_hash: r.content_hash,
+        verify_signature: r.verify_signature,
         document_type: r.document_type as InvoiceDocumentType,
         mode: r.mode as TransportMode,
-        status: String(r.status),
+        status: r.status ?? '',
         tax_amount_usd: Number(r.tax_amount_usd),
         partial_paid_usd: Number(r.partial_paid_usd),
         outstanding_usd: Number(r.outstanding_usd),
         created_at: String(r.created_at),
-        due_date: (r.due_date as string | null) ?? null,
-        paid_at: (r.paid_at as string | null) ?? null,
+        due_date: r.due_date,
+        paid_at: r.paid_at,
         vessel_name: String(r.vessel_name ?? ''),
         vessel_imo: String(r.vessel_imo ?? ''),
-        shipowner_id: (r.shipowner_id as string | null) ?? null,
-        debtor_name: (r.debtor_name as string | null) ?? null,
-        flag_country: (r.flag_country as string | null) ?? null,
+        shipowner_id: r.shipowner_id,
+        debtor_name: r.debtor_name,
+        flag_country: r.flag_country,
         jurisdiction_id: String(r.jurisdiction_id),
-        jurisdiction_code: (r.jurisdiction_code as string | null) ?? null,
-        jurisdiction_name: (r.jurisdiction_name as string | null) ?? null,
+        jurisdiction_code: r.jurisdiction_code,
+        jurisdiction_name: r.jurisdiction_name,
         is_aviation: Boolean(r.is_aviation),
     };
 }
@@ -162,14 +174,21 @@ export async function listInvoicesAdmin(
     }
 
     const offset = (filters.page - 1) * filters.pageSize;
+    // Revalide au point d'usage : listInvoicesAdmin peut être appelée directement
+    // (tests, futurs appelants) sans passer par parseInvoiceFilters. La liste blanche
+    // doit donc tenir ici aussi, pas seulement en amont.
+    const safeSortKey = filtersSchema.shape.sortKey.parse(filters.sortKey);
+    const sortKey = safeSortKey ?? 'created_at';
+    const ascending = safeSortKey ? filters.sortDir !== 'desc' : false;
     const { data, count, error } = await q
-        .order('created_at', { ascending: false })
+        .order(sortKey, { ascending })
+        .order('id', { ascending: true }) // départage déterministe des égalités
         .range(offset, offset + filters.pageSize - 1);
 
     if (error) throw new Error(`listInvoicesAdmin: ${error.message}`);
 
     return {
-        rows: ((data ?? []) as RawRow[]).map(toRow),
+        rows: (data ?? []).map(toRow),
         total: count ?? 0,
         page: filters.page,
         pageSize: filters.pageSize,

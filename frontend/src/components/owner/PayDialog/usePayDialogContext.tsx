@@ -8,6 +8,17 @@ export type Step = 'rail' | 'params' | 'confirm';
 export type Rail = 'STRIPE' | 'PAYPAL' | 'WIRE_TRANSFER' | 'MOBILE_MONEY' | 'THIRD_PARTY' | 'WALLET';
 export type PayDialogMode = 'invoice' | 'topup';
 
+/** Coordonnées bancaires servies par /api/owner/payment-availability. */
+export interface WireAccount {
+    beneficiary: string;
+    bank: string;
+    bankAddress: string;
+    swiftCode: string;
+    iban: string;
+    /** Référence de dépôt propre au compte, à porter EN PLUS de la facture. */
+    depositReference: string | null;
+}
+
 export interface PayDialogState {
     step: Step;
     rail: Rail | null;
@@ -24,6 +35,19 @@ export interface PayDialogContextValue extends PayDialogState {
     amountUsd: number;
     currency: string;
     walletBalanceUsdMinor: number;
+    /**
+     * Part de la facture reglee depuis le portefeuille, en cents USD. Zero =
+     * paiement simple. Non nulle = paiement mixte : le rail choisi ne couvre
+     * plus que `amountUsd - walletApplyUsdMinor / 100`.
+     */
+    walletApplyUsdMinor: number;
+    setWalletApplyUsdMinor: (n: number) => void;
+    /**
+     * Compte à créditer, résolu côté serveur (mig 131) et transmis par
+     * l'étape de choix du rail. Nul tant qu'elle n'a pas répondu.
+     */
+    wire: WireAccount | null;
+    setWire: (w: WireAccount | null) => void;
     setStep: (step: Step) => void;
     setRail: (rail: Rail | null) => void;
     setRailDetails: (d: Record<string, unknown>) => void;
@@ -54,6 +78,8 @@ export function PayDialogProvider(
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [amountUsd, setAmountUsd] = React.useState<number>(props.amountUsd);
+    const [walletApplyUsdMinor, setWalletApplyUsdMinor] = React.useState(0);
+    const [wire, setWire] = React.useState<WireAccount | null>(null);
 
     // Keep amountUsd in sync if the parent updates the prop (e.g. invoice mode re-renders).
     React.useEffect(() => {
@@ -62,6 +88,7 @@ export function PayDialogProvider(
 
     const reset = React.useCallback(() => {
         setStep('rail');
+        setWalletApplyUsdMinor(0);
         setRail(null);
         setRailDetails({});
         setChosenProvider(null);
@@ -77,6 +104,10 @@ export function PayDialogProvider(
         amountUsd,
         currency: props.currency,
         walletBalanceUsdMinor: props.walletBalanceUsdMinor,
+        walletApplyUsdMinor,
+        setWalletApplyUsdMinor,
+        wire,
+        setWire,
         setStep, setRail, setRailDetails, setChosenProvider, setSubmitting, setError, setAmountUsd, reset,
     };
 

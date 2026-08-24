@@ -30,6 +30,7 @@ import { UserRole } from '@/types/secure';
  * │ origin-port-prop │ ✓            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ revenue          │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * │ payments         │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
+ * │ reglements       │ ✗            │ ✓            │ ✗             │ ✓            │ ✗        │
  * ├──────────────────┼──────────────┼──────────────┼───────────────┼──────────────┼──────────┤
  * │ settings         │ ✓            │ ✓            │ ✓             │ ✓            │ ✗        │
  * └──────────────────┴──────────────┴──────────────┴───────────────┴──────────────┴──────────┘
@@ -66,6 +67,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     'origin-port-proposals': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    'reglements':   [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'refunds':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'cash-desk':    [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN, UserRole.PORT_OFFICER],
     'wallets':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
@@ -107,6 +109,7 @@ export const MONEY_RAIL_KEYS = new Set<string>([
     'wallet-topups',
     'wallet-audit',
     'mark-paid',
+    'reglements',
 ]);
 
 /**

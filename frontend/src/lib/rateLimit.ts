@@ -32,7 +32,8 @@ type LimiterKey =
     | 'admin-read'
     | 'admin-export'
     | 'vessel-lookup'
-    | 'vessel-claim';
+    | 'vessel-claim'
+    | 'login-link';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -84,6 +85,12 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // armateur dans l'action — sinon faire varier l'IP suffirait à inonder la
     // boîte de l'armateur.
     'vessel-claim': { perMinute: 3, perHour: 10, perDay: 15 },
+
+    // Lien de connexion. Même profil de risque que vessel-claim : le
+    // formulaire est public et déclenche un envoi vers une adresse tierce.
+    // Doublement plafonné — par IP ici, et par armateur dans l'action — sinon
+    // faire varier l'IP suffirait à inonder la boîte d'un armateur.
+    'login-link': { perMinute: 3, perHour: 10, perDay: 15 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.

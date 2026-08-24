@@ -4,9 +4,46 @@
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import type { Principal } from '@/lib/auth/requirePrincipal';
 import { OsBadge } from '@/components/ui/OsBadge';
+import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
+import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { StatementDownload } from '@/components/owner/StatementDownload';
+
+/**
+ * Facture visant ce navire. Le rattachement se fait par `vessel_id`, jamais par
+ * `vessel_name` : l'armateur peut renommer un navire depuis sa flotte, alors
+ * que `transactions.vessel_name` est gele a l'emission (migration 089). Un
+ * rapprochement par nom se romprait donc exactement au moment ou le
+ * proprietaire exerce le droit qu'on vient de lui ouvrir.
+ */
+interface VesselInvoice {
+    id: string;
+    invoice_ref: string | null;
+    content_hash: string | null;
+    invoice_pdf_url: string | null;
+    document_type: string | null;
+    tax_amount_usd: number;
+    partial_paid_usd: number | null;
+    status: string;
+    created_at: string;
+}
+
+function usd(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    }).format(amount);
+}
+
+function statusVariant(status: string): 'active' | 'warning' | 'critical' | 'archived' | 'info' {
+    if (status === 'PAID') return 'active';
+    if (status === 'OVERDUE') return 'critical';
+    if (status === 'PENDING' || status === 'PARTIALLY_PAID') return 'warning';
+    if (status === 'CANCELLED') return 'archived';
+    return 'info';
+}
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
@@ -26,6 +63,11 @@ export async function OperatorVesselDetailPage({
             'id, name, mmsi, imo_number, call_sign, flag_code, category, gross_tonnage_dwt, engine_power_kw, design_speed_knots, compliance_status, estimated_emissions_tco2, tax_liability_usd, last_zone',
         )
         .eq('id', vesselId)
+        // Meme perimetre que la liste : le detail n'est accessible que pour les
+        // navires du dossier de l'armateur. La RLS seule laisserait passer un
+        // navire rattache par le lien agent hérité (`owner_id`, mig 073), qui
+        // ne figure dans aucune de ses listes.
+        .eq('shipowner_id', principal.shipowner.id)
         .maybeSingle();
 
     if (!vessel) notFound();
@@ -36,6 +78,31 @@ export async function OperatorVesselDetailPage({
         .eq('vessel_id', vesselId)
         .order('detected_at', { ascending: false })
         .limit(10);
+
+    // Factures vivantes du navire. Les annulees sont exclues : depuis la
+    // rebascule du livre (migration 128), une meme reference peut etre portee
+    // par deux lignes, celle annulee du seed et celle reellement due. Les
+    // afficher toutes montrerait chaque facture en double.
+    const { data: invoiceRows } = await principal.supabase
+        .from('transactions')
+        .select('id, invoice_ref, content_hash, invoice_pdf_url, document_type, tax_amount_usd, partial_paid_usd, status, created_at')
+        .eq('vessel_id', vesselId)
+        .neq('status', 'VOID')
+        .order('created_at', { ascending: false });
+
+    const invoices = (invoiceRows ?? []) as VesselInvoice[];
+    // Ce qui a ete encaisse se lit dans `payments`, pas sur la transaction :
+    // `partial_paid_usd` est gele a zero par la migration 089, si bien qu'une
+    // facture reglee en partie serait reclamee en entier.
+    const paidByTxn = await confirmedPaidUsdByTransaction(
+        principal.supabase,
+        invoices.map((i) => i.id),
+    );
+    const totalBilledUsd = invoices.reduce((sum, i) => sum + Number(i.tax_amount_usd ?? 0), 0);
+    const totalOutstandingUsd = invoices.reduce(
+        (sum, i) => sum + outstandingUsd(i as unknown as OutstandingColumns, paidByTxn.get(i.id) ?? 0),
+        0,
+    );
 
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
@@ -92,6 +159,92 @@ export async function OperatorVesselDetailPage({
                     </div>
                 </div>
             </section>
+
+            <section className="os-card p-5 mb-6">
+                <div className="flex flex-wrap items-baseline justify-between gap-3 mb-3">
+                    <h2 className="text-sm font-semibold text-[var(--os-text-primary)]">
+                        Invoices for this vessel
+                    </h2>
+                    {invoices.length > 0 && (
+                        <div className="flex flex-wrap gap-5 text-xs">
+                            <span className="text-[var(--os-text-muted)]">
+                                Billed{' '}
+                                <strong className="text-[var(--os-text-primary)] tabular-nums">
+                                    {usd(totalBilledUsd)}
+                                </strong>
+                            </span>
+                            <span className="text-[var(--os-text-muted)]">
+                                Outstanding{' '}
+                                <strong
+                                    className="tabular-nums"
+                                    style={{ color: totalOutstandingUsd > 0 ? '#EAB308' : 'var(--os-text-primary)' }}
+                                >
+                                    {usd(totalOutstandingUsd)}
+                                </strong>
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {invoices.length > 0 ? (
+                    <ul className="divide-y divide-[var(--os-border)]">
+                        {invoices.map((inv) => {
+                            const href = buildInvoiceDownloadUrl(inv);
+                            return (
+                                <li
+                                    key={inv.id}
+                                    className="py-2.5 flex flex-wrap items-center justify-between gap-3 text-sm"
+                                >
+                                    <div className="flex flex-wrap items-center gap-3 min-w-0">
+                                        <span className="font-mono text-xs text-[var(--os-text-primary)]">
+                                            {inv.invoice_ref ?? inv.id.slice(0, 8)}
+                                        </span>
+                                        <OsBadge variant="info" label={inv.document_type ?? '-'} />
+                                        <span className="text-xs text-[var(--os-text-muted)] tabular-nums">
+                                            {inv.created_at.slice(0, 10)}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <span className="text-xs tabular-nums text-[var(--os-text-secondary)]">
+                                            {usd(Number(inv.tax_amount_usd ?? 0))}
+                                            {paidByTxn.get(inv.id) ? (
+                                                <span className="text-[var(--os-text-muted)]">
+                                                    {' '}
+                                                    ({usd(paidByTxn.get(inv.id) ?? 0)} paid)
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                        <OsBadge variant={statusVariant(inv.status)} label={inv.status} />
+                                        {href ? (
+                                            <a
+                                                href={href}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:underline"
+                                            >
+                                                <Download className="w-3 h-3" />
+                                                PDF
+                                            </a>
+                                        ) : (
+                                            // Une ligne sans PDF stocke n'est pas une anomalie a masquer :
+                                            // l'armateur doit voir qu'il lui manque une piece.
+                                            <span className="text-xs text-[var(--os-text-muted)]">Not issued</span>
+                                        )}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-[var(--os-text-muted)]">
+                        No invoice attached to this vessel.
+                    </p>
+                )}
+            </section>
+
+            <div className="mb-6">
+                <StatementDownload vesselId={vesselId} />
+            </div>
 
             <section className="os-card p-5">
                 <h2 className="text-sm font-semibold text-[var(--os-text-primary)] mb-3">

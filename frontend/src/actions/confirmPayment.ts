@@ -2,9 +2,8 @@
 
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { requireRole } from '@/lib/auth/requireRole';
+import { requireSettlementRights } from '@/lib/auth/requireSettlementRights';
 import { scopedLogger } from '@/lib/logger';
-import { UserRole } from '@/types/secure';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 
@@ -22,7 +21,11 @@ interface ConfirmedPaymentRow {
 export async function confirmPayment(input: { paymentId: string }) {
     const parsed = schema.parse(input);
 
-    const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
+    // Rail monetaire : role SUPERADMIN/FINANCE_ADMIN, ou sous-permission
+    // profiles.can_settle_payments (mig 130) pour un MANAGER a qui la case a
+    // ete cochee — profiles.role est une colonne unique, on n'empile pas les
+    // roles.
+    const auth = await requireSettlementRights();
     if (auth.error) throw new Error('Not authorized');
 
     log.info('action_invoked', { paymentId: parsed.paymentId, userId: auth.user.id });

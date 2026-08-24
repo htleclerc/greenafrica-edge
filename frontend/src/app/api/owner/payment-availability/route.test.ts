@@ -12,6 +12,18 @@ vi.mock('@/services/paymentService', () => ({
 vi.mock('@/lib/feature-flags', () => ({
     readPortalFeatureFlags: vi.fn(),
 }));
+// Le RIB servi avec les rails vient de la base (mig 131) ; ces tests portent
+// sur l'eligibilite, pas sur les coordonnees.
+vi.mock('@/lib/auth/tenantContext', () => ({
+    getServerJurisdictionId: vi.fn(async () => 'jur-1'),
+}));
+vi.mock('@/services/issuerProfileService', async (orig) => {
+    const actual = await orig<typeof import('@/services/issuerProfileService')>();
+    return {
+        ...actual,
+        getIssuerProfile: vi.fn(async () => actual.DEFAULT_ISSUER_PROFILE),
+    };
+});
 
 import { GET } from './route';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
@@ -41,6 +53,7 @@ describe('GET /api/owner/payment-availability — Plan 7H-1 Task 5.2 STRIPE flag
             onlinePaymentStripeEnabled: false,  // flag OFF
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
+            showUnavailableRails: true,  // ces tests portent sur le calcul d'eligibilite, pas sur le filtrage
         });
 
         const res = await GET(makeReq() as never);
@@ -59,6 +72,7 @@ describe('GET /api/owner/payment-availability — Plan 7H-1 Task 5.2 STRIPE flag
             onlinePaymentStripeEnabled: true,
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
+            showUnavailableRails: true,  // ces tests portent sur le calcul d'eligibilite, pas sur le filtrage
         });
 
         const res = await GET(makeReq() as never);
@@ -77,6 +91,7 @@ describe('GET /api/owner/payment-availability — Plan 7H-1 Task 5.2 STRIPE flag
             onlinePaymentStripeEnabled: true,
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
+            showUnavailableRails: true,  // ces tests portent sur le calcul d'eligibilite, pas sur le filtrage
         });
 
         const res = await GET(makeReq() as never);
@@ -101,6 +116,7 @@ function flags(overrides: Record<string, boolean> = {}) {
         onlinePaypalEnabled: false,
         walletTopupEnabled: true,
         notificationSmsEnabled: false,
+            showUnavailableRails: true,  // ces tests portent sur le calcul d'eligibilite, pas sur le filtrage
         airSelfServiceEnabled: false,
         ...overrides,
     };
@@ -181,5 +197,74 @@ describe('GET /api/owner/payment-availability — rail PAYPAL', () => {
         expect(railsQueried).not.toContain('PAYPAL');
         expect(railsQueried).not.toContain('STRIPE');
         expect(railsQueried).toEqual(['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY']);
+    });
+});
+
+describe('filtrage des rails indisponibles', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    function flags(showUnavailableRails: boolean) {
+        return {
+            portalV1Enabled: true,
+            selfServiceEnabled: true,
+            onlinePaymentStripeEnabled: false,
+            onlinePaypalEnabled: false,
+            walletTopupEnabled: true,
+            notificationSmsEnabled: false,
+            airSelfServiceEnabled: false,
+            showUnavailableRails,
+        };
+    }
+
+    it('drapeau ETEINT : aucun rail sans prestataire actif ne descend au navigateur', async () => {
+        delete process.env.STRIPE_SECRET_KEY;
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(flags(false));
+        (selectProvidersForRail as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+        const body = await (await GET(makeReq() as never)).json();
+        const rails = body.rails as RailEligibility[];
+
+        // Le filtrage se fait cote serveur : masquer a l'affichage laisserait
+        // l'information dans la charge utile.
+        expect(rails.some((r) => r.reason === 'no_active_provider')).toBe(false);
+        expect(body.showUnavailable).toBe(false);
+    });
+
+    it('drapeau ETEINT : le portefeuille reste visible avec son motif', async () => {
+        delete process.env.STRIPE_SECRET_KEY;
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(flags(false));
+        (selectProvidersForRail as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+        const body = await (await GET(makeReq() as never)).json();
+        const wallet = (body.rails as RailEligibility[]).find((r) => r.rail === 'WALLET');
+
+        // « Solde insuffisant » est actionnable : le masquer laisserait croire
+        // que le moyen n'existe pas, et l'armateur ne l'alimenterait jamais.
+        expect(wallet).toBeDefined();
+        expect(wallet?.eligible).toBe(false);
+        expect(wallet?.reason).toBe('wallet_empty');
+    });
+
+    it('drapeau ALLUME : les rails inactifs redescendent, marquables « bientot »', async () => {
+        delete process.env.STRIPE_SECRET_KEY;
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(flags(true));
+        (selectProvidersForRail as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+        const body = await (await GET(makeReq() as never)).json();
+        const rails = body.rails as RailEligibility[];
+
+        expect(rails.filter((r) => r.reason === 'no_active_provider').length).toBeGreaterThan(0);
+        expect(body.showUnavailable).toBe(true);
+    });
+
+    it('un rail eligible passe quel que soit le drapeau', async () => {
+        process.env.STRIPE_SECRET_KEY = 'sk_test_xxx';
+        const withStripe = { ...flags(false), onlinePaymentStripeEnabled: true };
+        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValue(withStripe);
+        (selectProvidersForRail as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+        const body = await (await GET(makeReq() as never)).json();
+        const stripe = (body.rails as RailEligibility[]).find((r) => r.rail === 'STRIPE');
+        expect(stripe?.eligible).toBe(true);
     });
 });

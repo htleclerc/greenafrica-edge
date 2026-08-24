@@ -4,10 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import {
     Map, Ship, FileText, Leaf, AlertTriangle,
-    BarChart2, Settings, DollarSign, TrendingUp, UserCheck,
+    BarChart2, Settings, DollarSign, TrendingUp,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard,
+    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { JurisdictionSwitcher } from './JurisdictionSwitcher';
 import { ModeSwitcher } from './ModeSwitcher';
-import { OPERATOR_NAV, vesselsNavLabelKey, isAirOnly, type OperatorNavItem } from '@/lib/auth/operatorNav';
+import { operatorNavFor, vesselsNavLabelKey, isAirOnly, type OperatorNavItem } from '@/lib/auth/operatorNav';
 import { usePrincipalKind } from '@/hooks/usePrincipalKind';
 
 export const SIDEBAR_COLLAPSED = 56;
@@ -44,7 +44,11 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'green-ledger', icon: <Leaf className="w-5 h-5" />,          href: '/dashboard/projects',    labelKey: 'nav_green_ledger', section: 'ops' },
     { key: 'alerts',       icon: <AlertTriangle className="w-5 h-5" />, href: '/dashboard/alerts',      labelKey: 'nav_alerts',       section: 'ops' },
     { key: 'analytics',    icon: <BarChart2 className="w-5 h-5" />,     href: '/dashboard/reports',     labelKey: 'nav_analytics',    section: 'ops' },
-    { key: 'validations',  icon: <UserCheck className="w-5 h-5" />,     href: '/dashboard/validations', labelKey: 'nav_validations',  section: 'admin' },
+    // `/dashboard/validations` n'est plus annoncee : elle lit
+    // `registration_requests`, une file sans producteur depuis que l'inscription
+    // staff est passee sur invitation. Les agents a arbitrer vivent desormais
+    // dans /admin/validations, sur la file vivante. La route reste joignable par
+    // URL pour consulter l'historique.
     { key: 'registrations', icon: <Users className="w-5 h-5" />,         href: '/admin/registrations',   labelKey: 'nav_registrations', section: 'admin' },
     { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
     { key: 'origin-port-proposals', icon: <Anchor className="w-5 h-5" />, href: '/admin/origin-port-proposals', labelKey: 'nav_origin_port_proposals', section: 'admin' },
@@ -54,18 +58,23 @@ const NAV_ITEMS: NavItem[] = [
     { key: 'cash-desk',    icon: <Banknote className="w-5 h-5" />,      href: '/admin/cash-desk',       labelKey: 'nav_cash_desk',    section: 'admin' },
     { key: 'wallets',      icon: <Wallet className="w-5 h-5" />,        href: '/admin/wallets',         labelKey: 'nav_wallets',      section: 'admin' },
     { key: 'jurisdictions', icon: <Globe2 className="w-5 h-5" />,      href: '/admin/jurisdictions',   labelKey: 'nav_jurisdictions', section: 'admin' },
+    { key: 'reglements', icon: <Banknote className="w-5 h-5" />, href: '/admin/reglements', labelKey: 'nav_reglements', section: 'admin' },
     { key: 'admin-invoices', icon: <FileText className="w-5 h-5" />, href: '/admin/invoices', labelKey: 'nav_admin_invoices', section: 'admin' },
     { key: 'admin-collections', icon: <Scale className="w-5 h-5" />, href: '/admin/collections', labelKey: 'nav_admin_collections', section: 'admin' },
     { key: 'staff',         icon: <Users className="w-5 h-5" />,        href: '/admin/staff',           labelKey: 'nav_staff',         section: 'admin' },
     { key: 'armateurs',     icon: <Building2 className="w-5 h-5" />,    href: '/admin/armateurs',       labelKey: 'nav_armateurs',     section: 'admin' },
     { key: 'airlines',      icon: <Plane className="w-5 h-5" />,        href: '/admin/airlines',        labelKey: 'nav_airlines',      section: 'admin' },
     { key: 'vessel-identity', icon: <IdCard className="w-5 h-5" />,     href: '/admin/vessel-identity', labelKey: 'nav_vessel_identity', section: 'admin' },
+    // File d'arbitrage unifiee : identites navire, agents, ports d'origine.
+    // Les trois ecrans specialises restent accessibles, chaque carte y renvoie.
+    { key: 'admin-validations', icon: <ShieldCheck className="w-5 h-5" />, href: '/admin/validations', labelKey: 'nav_admin_validations', section: 'admin' },
 ];
 
 // Icon map for operator nav items. Keyed by OperatorNavItem.key.
 const OPERATOR_ICONS: Record<string, React.ReactNode> = {
     dashboard:     <LayoutDashboard className="w-5 h-5" />,
     vessels:       <Ship className="w-5 h-5" />,
+    'my-fleet':    <Anchor className="w-5 h-5" />,
     invoices:      <FileText className="w-5 h-5" />,
     wallet:        <Wallet className="w-5 h-5" />,
     simulator:     <Calculator className="w-5 h-5" />,
@@ -102,17 +111,21 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
 
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
     const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
-        .map((item) => item.key === 'validations' && pendingRegistrations > 0
+        // La pastille suit la file vivante (`shipowners PENDING_REVIEW`), donc
+        // l'écran qui la traite : /admin/registrations. Elle décorait
+        // « validations », dont la table n'a plus de producteur.
+        .map((item) => item.key === 'registrations' && pendingRegistrations > 0
             ? { ...item, badge: pendingRegistrations }
             : item
         );
 
     // ── Skeleton nav (while principal kind is resolving) ──────────────────────
-    // Render 8 placeholder rows to match the operator nav height and avoid the
-    // layout jumping between a staff nav (many items) and operator nav (8 items).
+    // Render 9 placeholder rows to match the operator nav height and avoid the
+    // layout jumping between a staff nav (many items) and operator nav (9 items,
+    // 8 for an air-only operator).
     const renderSkeletonNav = () => (
         <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5 mt-1">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array.from({ length: 9 }).map((_, i) => (
                 <div
                     key={i}
                     className="flex items-center gap-2.5 px-2.5 rounded-xl"
@@ -141,7 +154,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     const airOnly = isAirOnly(modes);
     const renderOperatorNav = () => (
         <nav className="flex-1 flex flex-col w-full px-1.5 overflow-y-auto gap-0.5">
-            {OPERATOR_NAV.map((item) => {
+            {operatorNavFor(modes).map((item) => {
                 const isVessels = item.key === 'vessels';
                 return (
                     <OperatorNavButton

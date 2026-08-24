@@ -1,4 +1,14 @@
 import { Resend } from 'resend';
+import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths';
+import {
+    TX_AGENT_INVITE_HTML,
+    TX_MONTHLY_STATEMENT_HTML,
+    TX_OVERDUE_REMINDER_HTML,
+    TX_PAYMENT_CONFIRMATION_HTML,
+    TX_PROFORMA_INVOICE_HTML,
+    TX_VESSEL_ACCESS_CODE_HTML,
+} from '@/emails/templates';
+import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
 
 /**
  * Centralized email service for Green Gate OS notifications.
@@ -30,12 +40,62 @@ function getResend(): Resend {
     return resendClient;
 }
 
+/**
+ * Adresse d'expédition.
+ *
+ * Le repli n'est PAS un confort : c'est le dernier rempart contre un envoi
+ * refusé en silence. `EMAIL_FROM` a porté `noreply@africgreen.africa` —
+ * l'ancien nom du projet — pendant que le compte Resend ne vérifiait que
+ * `greengate.africa` et `mail.greengate.africa`. Chaque envoi était rejeté
+ * pour domaine non vérifié : relances, pro-formas, liens de connexion,
+ * relevés. Sans bruit, puisque `sendEmail` capture l'erreur et rend
+ * `{ success: false }` que la plupart des appelants ne traitent pas comme
+ * bloquant.
+ *
+ * Le repli doit donc rester une adresse VÉRIFIÉE, et la valeur configurée est
+ * journalisée à la première divergence pour qu'un domaine étranger se voie.
+ */
+const VERIFIED_SENDER_DOMAINS = ['greengate.africa', 'mail.greengate.africa'];
+const FALLBACK_SENDER = 'noreply@greengate.africa';
+
+let senderWarned = false;
+
 function fromAddress(): string {
-    return process.env.EMAIL_FROM || 'noreply@greengate.africa';
+    const configured = process.env.EMAIL_FROM?.trim();
+    if (!configured) return FALLBACK_SENDER;
+
+    const domain = configured.split('@')[1]?.toLowerCase() ?? '';
+    if (!VERIFIED_SENDER_DOMAINS.includes(domain) && !senderWarned) {
+        senderWarned = true;
+        console.error(
+            `[Email] EMAIL_FROM=${configured} : domaine « ${domain} » absent des domaines vérifiés `
+            + `(${VERIFIED_SENDER_DOMAINS.join(', ')}). Tous les envois seront refusés.`,
+        );
+    }
+    return configured;
 }
 
 function replyTo(): string | undefined {
     return process.env.EMAIL_REPLY_TO || undefined;
+}
+
+/**
+ * Etat souverain porte en pied des e-mails transactionnels. Le Somaliland est
+ * l'emetteur historique : les envois qui ne resolvent pas la juridiction de
+ * leur transaction retombent dessus, comme le faisait `emailLayout`.
+ */
+const DEFAULT_SOVEREIGN = 'Republic of Somaliland';
+
+/**
+ * Montant en dollars, formate explicitement en en-US.
+ *
+ * `toLocaleString()` sans locale suit celle du PROCESSUS : le meme montant
+ * sort « 11,492 » sur un hote anglophone et « 11 492 » sur un hote francophone,
+ * avec une espace insecable etroite. Une facture ne doit pas dependre de la
+ * configuration ICU de la machine qui l'envoie.
+ */
+function usd(amountUsd: number): string {
+    return `$${amountUsd.toLocaleString('en-US')}`;
 }
 
 function appUrl(): string {
@@ -93,6 +153,36 @@ async function sendEmail(params: {
 
 // ── Shared layout ──────────────────────────────────────────────────────────
 
+// Bordure du séparateur. Une couleur pleine et non un rgba() : Outlook ignore
+// l'alpha et rendrait un trait noir. #1F2A26 est le rendu exact de
+// rgba(255,255,255,0.06) sur le fond de carte #111C18.
+const META_BORDER = '#1F2A26';
+
+/**
+ * Une ligne « étiquette → valeur » d'un bloc de métadonnées.
+ *
+ * En **table**, pas en flexbox : Gmail supprime `display:flex`, et les deux
+ * cellules retombaient alors collées l'une à l'autre (« VesselGG DEMO STAR »).
+ * Les styles sont **en ligne** pour la même raison : le `<style>` de l'en-tête
+ * n'est pas garanti hors du client web de Gmail.
+ *
+ * N'échappe rien : l'appelant passe déjà des valeurs échappées, et certaines
+ * lignes portent délibérément du balisage.
+ */
+function metaRow(
+    label: string,
+    value: string,
+    styles?: { label?: string; value?: string },
+): string {
+    const cell = `padding:10px 0;border-bottom:1px solid ${META_BORDER};font-size:13px;`;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;width:100%">
+<tr>
+<td align="left" style="${cell}color:#64748B;${styles?.label ?? ''}">${label}</td>
+<td align="right" style="${cell}color:#FFFFFF;font-weight:600;${styles?.value ?? ''}">${value}</td>
+</tr>
+</table>`;
+}
+
 function emailLayout(content: string, options?: { previewText?: string; sovereignLine?: string }): string {
     const preview = options?.previewText ?? '';
     // Pied de page souverain. Par défaut le Somaliland (émetteur historique) ;
@@ -120,9 +210,6 @@ function emailLayout(content: string, options?: { previewText?: string; sovereig
     h1 { color: #FFFFFF; font-size: 22px; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.3px; }
     h2 { color: #10B981; font-size: 13px; font-weight: 700; margin: 24px 0 10px; text-transform: uppercase; letter-spacing: 1.5px; }
     p { margin: 0 0 14px; color: #CBD5E1; }
-    .meta-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
-    .meta-label { color: #64748B; }
-    .meta-value { color: #FFFFFF; font-weight: 600; }
     .btn { display: inline-block; padding: 12px 24px; background: #10B981; color: #0A1110 !important; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.3px; margin: 16px 0; }
     .btn-outline { background: transparent; border: 1px solid #10B981; color: #10B981 !important; }
     .alert { padding: 12px 14px; border-radius: 8px; font-size: 13px; margin: 14px 0; }
@@ -191,47 +278,27 @@ export async function sendInvoiceEmail(p: InvoiceEmailParams): Promise<EmailResu
     const docName = isInvoice ? 'Tax Invoice' : 'Pro-forma Invoice';
     const subject = `[${p.badge}] ${docName} ${p.invoiceRef} — ${p.vesselName}`;
 
-    const badgeColors: Record<string, { bg: string; fg: string }> = {
-        'PAID':     { bg: '#10B981', fg: '#0A1110' },
-        'EXEMPT':   { bg: '#0EA5E9', fg: '#FFFFFF' },
-        'OVERDUE':  { bg: '#DC2626', fg: '#FFFFFF' },
-        'DISPUTED': { bg: '#F97316', fg: '#FFFFFF' },
-        'TO PAY':   { bg: '#EAB308', fg: '#0A1110' },
-    };
-    const badge = badgeColors[p.badge];
-
-    const content = `
-        <h1>${docName} ${escapeHtml(p.invoiceRef)}</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Please find attached the ${docName.toLowerCase()} for vessel <strong>${escapeHtml(p.vesselName)}</strong>, issued by the Maritime Carbon Tax Authority of the ${escapeHtml(p.jurisdictionName)}.</p>
-
-        <div style="display:inline-block;padding:6px 14px;background:${badge.bg};color:${badge.fg};font-weight:800;letter-spacing:1.5px;border-radius:4px;font-size:12px;margin:8px 0">${p.badge}</div>
-
-        <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Reference</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Due Date</span><span class="meta-value" style="color:${p.badge === 'OVERDUE' ? '#EF4444' : '#FFFFFF'}">${escapeHtml(p.dueDate)}</span></div>
-
-        ${isInvoice
-            ? '<div class="alert alert-success">This invoice has been settled. Document attached for your records.</div>'
-            : '<div class="alert alert-warn">Payment is required within 30 days of issuance. Late payment incurs 1.5% monthly interest.</div>'}
-
-        <p>You can verify the authenticity and current status of this document at any time by clicking below or scanning the QR code on the PDF.</p>
-
-        <a href="${escapeHtml(p.verifyUrl)}" class="btn">Verify Document Status →</a>
-
-        <p style="margin-top:24px;font-size:12px;color:#64748B">Reference this document number in any correspondence: <strong style="color:#FFFFFF">${escapeHtml(p.invoiceRef)}</strong></p>
-    `;
+    // Gabarit « 1c » issu du projet design : tables inline, 600 px, Outlook-safe.
+    // Les valeurs sont echappees par renderEmailTemplate — ne rien pre-formater
+    // en HTML ici.
+    const html = renderEmailTemplate(TX_PROFORMA_INVOICE_HTML, {
+        docName,
+        docNameLower: docName.toLowerCase(),
+        invoiceRef: p.invoiceRef,
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        jurisdictionName: p.jurisdictionName,
+        amount: usd(p.amountUsd),
+        dueDate: p.dueDate,
+        badge: p.badge,
+        verifyUrl: p.verifyUrl,
+    });
 
     return sendEmail({
         to: p.to,
         cc: p.cc,
         subject,
-        html: emailLayout(content, {
-            previewText: `${docName} ${p.invoiceRef} — $${p.amountUsd.toLocaleString()} ${p.badge}`,
-            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
-        }),
+        html,
         text: `${docName} ${p.invoiceRef}\n\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nStatus: ${p.badge}\nDue: ${p.dueDate}\n\nVerify at: ${p.verifyUrl}`,
         attachments: [
             {
@@ -254,41 +321,29 @@ export interface PaymentConfirmationParams {
     receiptUrl?: string;
     receiptRef?: string;          // RCT-YYYY-XXXX
     receiptPdfBuffer?: Uint8Array; // Attach the receipt PDF directly
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendPaymentConfirmationEmail(p: PaymentConfirmationParams): Promise<EmailResult> {
     const subject = `Payment Received — ${p.invoiceRef} ($${p.amountUsd.toLocaleString()})`;
-    const content = `
-        <h1>Payment Confirmed ✓</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>We have successfully received payment for vessel <strong>${escapeHtml(p.vesselName)}</strong>. Thank you for your prompt settlement.</p>
-
-        <div class="alert alert-success">Your account is now in good standing. Port clearance has been issued.</div>
-
-        <h2>Payment Details</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        ${p.receiptRef
-            ? `<div class="meta-row"><span class="meta-label">Receipt</span><span class="meta-value" style="font-family:monospace;color:#10B981">${escapeHtml(p.receiptRef)}</span></div>`
-            : ''}
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Settled On</span><span class="meta-value">${escapeHtml(p.paidAt)}</span></div>
-
-        ${p.receiptPdfBuffer
-            ? '<p style="margin-top:16px;font-size:13px;color:#10B981"><strong>Your official receipt is attached to this email as a PDF.</strong> Retain it for your records and tax filings.</p>'
-            : ''}
-
-        ${p.receiptUrl
-            ? `<a href="${escapeHtml(p.receiptUrl)}" class="btn">Download Receipt Online →</a>`
-            : ''}
-
-        <p style="margin-top:20px">A complete transaction record is available in your portal under <em>Invoices &amp; Payments</em>.</p>
-    `;
+    const html = renderEmailTemplate(TX_PAYMENT_CONFIRMATION_HTML, {
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        invoiceRef: p.invoiceRef,
+        // Le recu est optionnel : un encaissement confirme avant generation du
+        // PDF ne doit pas bloquer l'envoi.
+        receiptRef: p.receiptRef ?? '—',
+        amount: usd(p.amountUsd),
+        paidAt: p.paidAt,
+        portalUrl: `${appUrl()}${OWNER_INVOICES_PATH}`,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Payment of $${p.amountUsd.toLocaleString()} confirmed` }),
+        html,
         text: `Payment confirmed for ${p.invoiceRef}\nReceipt: ${p.receiptRef || 'see attachment'}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nPaid: ${p.paidAt}`,
         attachments: p.receiptPdfBuffer
             ? [{
@@ -318,9 +373,9 @@ export async function sendRegistrationApprovalEmail(p: RegistrationApprovalParam
         <p>Your application to access the Green Gate Sovereign Carbon Platform has been reviewed and <strong>approved</strong>.</p>
 
         <h2>Account Details</h2>
-        <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
-        <div class="meta-row"><span class="meta-label">Role</span><span class="meta-value">${escapeHtml(p.role.replace('_', ' '))}</span></div>
-        <div class="meta-row"><span class="meta-label">Site</span><span class="meta-value">${escapeHtml(p.operationalSite.replace('_', ' '))}</span></div>
+        ${metaRow(`Email`, escapeHtml(p.to))}
+        ${metaRow(`Role`, escapeHtml(p.role.replace('_', ' ')))}
+        ${metaRow(`Site`, escapeHtml(p.operationalSite.replace('_', ' ')))}
 
         ${p.temporaryPassword
             ? `<div class="alert alert-warn">A temporary password has been set: <strong style="font-family:monospace">${escapeHtml(p.temporaryPassword)}</strong>. You will be required to change it on first login.</div>`
@@ -357,9 +412,9 @@ export async function sendPartnershipConfirmationEmail(p: PartnershipConfirmatio
         <p>We have received your partnership request from <strong>${escapeHtml(p.organizationName)}</strong>. Our team will review it and respond within <strong>5 business days</strong>.</p>
 
         <h2>Request Summary</h2>
-        <div class="meta-row"><span class="meta-label">Reference</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.requestId)}</span></div>
-        <div class="meta-row"><span class="meta-label">Organization</span><span class="meta-value">${escapeHtml(p.organizationName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Type</span><span class="meta-value">${escapeHtml(p.partnershipType.replace('_', ' '))}</span></div>
+        ${metaRow(`Reference`, escapeHtml(p.requestId), { value: 'font-family:monospace' })}
+        ${metaRow(`Organization`, escapeHtml(p.organizationName))}
+        ${metaRow(`Type`, escapeHtml(p.partnershipType.replace('_', ' ')))}
 
         <div class="alert alert-success">Your request is in our queue. Please reference <strong>${escapeHtml(p.requestId)}</strong> in any follow-up correspondence.</div>
 
@@ -386,33 +441,26 @@ export interface OverdueAlertParams {
     amountUsd: number;
     daysOverdue: number;
     verifyUrl: string;
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<EmailResult> {
     const subject = `URGENT: Overdue Payment — ${p.vesselName} (${p.daysOverdue}d)`;
-    const content = `
-        <h1 style="color:#EF4444">⚠ Overdue Payment Notice</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-
-        <div class="alert alert-danger"><strong>Port Gate Locked.</strong> Vessel <strong>${escapeHtml(p.vesselName)}</strong> has an overdue carbon tax obligation that requires immediate attention.</div>
-
-        <h2>Outstanding Balance</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Days Overdue</span><span class="meta-value" style="color:#EF4444">${p.daysOverdue} days</span></div>
-
-        <p>To restore port clearance, please settle the outstanding balance immediately. Late payment incurs <strong>1.5% monthly interest</strong> as per the Maritime Carbon Tax Act (2024).</p>
-
-        <a href="${escapeHtml(p.verifyUrl)}" class="btn">Pay Now →</a>
-
-        <p style="margin-top:20px;font-size:12px;color:#94A3B8">If you believe this notice was issued in error, you may file a dispute through the portal within 10 business days of invoice issuance.</p>
-    `;
+    const html = renderEmailTemplate(TX_OVERDUE_REMINDER_HTML, {
+        recipientName: p.recipientName,
+        vesselName: p.vesselName,
+        invoiceRef: p.invoiceRef,
+        amount: usd(p.amountUsd),
+        daysOverdue: p.daysOverdue,
+        payUrl: p.verifyUrl,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `${p.daysOverdue} days overdue — $${p.amountUsd.toLocaleString()}` }),
+        html,
         text: `OVERDUE: ${p.invoiceRef}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nDays overdue: ${p.daysOverdue}\n\nPay at: ${p.verifyUrl}`,
     });
 }
@@ -437,35 +485,19 @@ export interface ArmateurInviteParams {
 
 export async function sendArmateurInviteEmail(p: ArmateurInviteParams): Promise<EmailResult> {
     const subject = `You're invited to Green Gate — Set up your shipping agent account`;
-    const orgLine = p.orgName
-        ? `<div class="meta-row"><span class="meta-label">Organization</span><span class="meta-value">${escapeHtml(p.orgName)}</span></div>`
-        : '';
-    const content = `
-        <h1>Welcome to Green Gate</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p><strong>${escapeHtml(p.inviterName)}</strong> has invited you to join the Green Gate Sovereign Carbon Platform as a <strong>Shipping Agent</strong>.</p>
-
-        <h2>Account Details</h2>
-        <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(p.to)}</span></div>
-        <div class="meta-row"><span class="meta-label">Role</span><span class="meta-value">Shipping Agent</span></div>
-        ${orgLine}
-
-        <p>Click the button below to activate your account and choose your password. The link is valid for <strong>${p.ttlHours} hours</strong>.</p>
-
-        <a href="${escapeHtml(p.inviteUrl)}" class="btn">Activate My Account →</a>
-
-        <div class="alert alert-warn" style="margin-top:24px">
-            For your security, this link can only be used once and expires in ${p.ttlHours} hours.
-            If it expires, ask ${escapeHtml(p.inviterName)} to issue a new invitation.
-        </div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If you did not expect this invitation, you can safely ignore this email — no account will be created without you setting a password.</p>
-    `;
+    const html = renderEmailTemplate(TX_AGENT_INVITE_HTML, {
+        recipientName: p.recipientName,
+        inviterName: p.inviterName,
+        email: p.to,
+        orgName: p.orgName ?? '—',
+        ttlHours: p.ttlHours,
+        inviteUrl: p.inviteUrl,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `${p.inviterName} invited you to Green Gate` }),
+        html,
         text: `You've been invited to Green Gate as a Shipping Agent by ${p.inviterName}.\n\nActivate your account: ${p.inviteUrl}\n\nThis link expires in ${p.ttlHours} hours.`,
     });
 }
@@ -594,7 +626,7 @@ export async function sendPaymentRejectedEmail(p: PaymentRejectedParams): Promis
         <h2>Next Steps</h2>
         <p>Please review the reason above and submit a new payment via your portal. If you believe this is an error, contact our support team.</p>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">Review Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Review Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -618,6 +650,8 @@ export interface ProformaReminderParams {
     ageDays: number;
     /** Palier de relance — pilote le ton. Absent = rappel courtois générique. */
     tier?: 'J3' | 'J7' | 'J15' | 'J30' | 'J45';
+    /** PDF de la pro-forma, joint quand il est disponible. Absent = envoi quand même. */
+    pdfBuffer?: Uint8Array;
 }
 
 /** Objet + bandeau d'alerte selon le palier. */
@@ -667,13 +701,13 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         <p>Pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been outstanding for <strong>${p.ageDays} days</strong>.</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Age</span><span class="meta-value">${p.ageDays} days</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString('en-US')}`, { value: 'color:#EAB308;font-size:16px' })}
+        ${metaRow(`Age`, `${p.ageDays} days`)}
 
         <div class="alert ${t.alertClass}">${t.alertText}</div>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">Pay Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Pay Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -682,8 +716,11 @@ export async function sendProformaReminderEmail(p: ProformaReminderParams): Prom
         to: p.to,
         cc: p.cc,
         subject: t.subject,
-        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString()}` }),
-        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString()}\n\nPay at: ${appUrl()}/owner/invoices`,
+        html: emailLayout(content, { previewText: `${p.invoiceRef} — $${p.amountUsd.toLocaleString('en-US')}` }),
+        text: `${t.subject}\nAmount: $${p.amountUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}${OWNER_INVOICES_PATH}`,
+        attachments: p.pdfBuffer
+            ? [{ filename: `${p.invoiceRef}.pdf`, content: Buffer.from(p.pdfBuffer) }]
+            : undefined,
     });
 }
 
@@ -724,7 +761,7 @@ function escalationTone(tier: 'BAILIFF' | 'JUDICIAL', invoiceRef: string): {
 export async function sendCollectionEscalationEmail(p: CollectionEscalationParams): Promise<EmailResult> {
     const t = escalationTone(p.tier, p.invoiceRef);
     const vesselRow = p.vesselName
-        ? `<div class="meta-row"><span class="meta-label">Vessel</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        ? metaRow(`Vessel`, escapeHtml(p.vesselName))
         : '';
     const content = `
         <h1>${t.heading}</h1>
@@ -732,9 +769,9 @@ export async function sendCollectionEscalationEmail(p: CollectionEscalationParam
         <p>Regarding outstanding pro-forma invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong>:</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
         ${vesselRow}
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EF4444;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#EF4444;font-size:16px' })}
 
         <div class="alert alert-danger">${t.alertText}</div>
 
@@ -772,7 +809,7 @@ export interface ProformaIssuedParams {
 export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<EmailResult> {
     const subject = `Pro-forma invoice ${p.invoiceRef} — $${p.amountUsd.toLocaleString()}`;
     const assetRow = p.vesselName
-        ? `<div class="meta-row"><span class="meta-label">Asset</span><span class="meta-value">${escapeHtml(p.vesselName)}</span></div>`
+        ? metaRow(`Asset`, escapeHtml(p.vesselName))
         : '';
     const content = `
         <h1>Pro-forma Invoice Issued</h1>
@@ -780,13 +817,13 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
         <p>A pro-forma carbon-tax invoice <strong style="font-family:monospace">${escapeHtml(p.invoiceRef)}</strong> has been issued for your account.</p>
 
         <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
         ${assetRow}
-        <div class="meta-row"><span class="meta-label">Amount Due</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
+        ${metaRow(`Amount Due`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#EAB308;font-size:16px' })}
 
         <div class="alert alert-warn">Please review and settle this pro-forma invoice from your portal. Late settlement may incur port-clearance delays and interest.</div>
 
-        <a href="${appUrl()}/owner/invoices" class="btn">View Invoice →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Invoice →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">Reference: ${escapeHtml(p.invoiceRef)}</p>
     `;
@@ -795,7 +832,7 @@ export async function sendProformaIssuedEmail(p: ProformaIssuedParams): Promise<
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `${p.invoiceRef} issued — $${p.amountUsd.toLocaleString()}` }),
-        text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        text: `Pro-forma invoice ${p.invoiceRef} issued\nAmount: $${p.amountUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
     });
 }
 
@@ -807,29 +844,80 @@ export interface StatementReadyParams {
     periodLabel: string;
     totalOutstandingUsd: number;
     pdfBuffer?: Uint8Array;
+    /** Nombre de pro-formas emis sur la periode, affiche au recapitulatif. */
+    invoiceCount?: number;
+    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
+    jurisdictionName?: string;
 }
 
 export async function sendStatementReadyEmail(p: StatementReadyParams): Promise<EmailResult> {
     const subject = `Account statement — ${p.periodLabel}`;
-    const content = `
-        <h1>Monthly Account Statement</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Your account statement for <strong>${escapeHtml(p.periodLabel)}</strong> is available.</p>
-
-        <h2>Summary</h2>
-        <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">${escapeHtml(p.periodLabel)}</span></div>
-        <div class="meta-row"><span class="meta-label">Total Outstanding</span><span class="meta-value" style="color:#EAB308;font-size:16px">$${p.totalOutstandingUsd.toLocaleString()}</span></div>
-
-        <div class="alert alert-warn">This is an informational statement, not an invoice. Open pro-formas remain payable from your portal.</div>
-
-        <a href="${appUrl()}/owner/invoices" class="btn">View Statements →</a>
-    `;
+    const html = renderEmailTemplate(TX_MONTHLY_STATEMENT_HTML, {
+        recipientName: p.recipientName,
+        periodLabel: p.periodLabel,
+        invoiceCount: p.invoiceCount ?? 0,
+        amount: usd(p.totalOutstandingUsd),
+        portalUrl: `${appUrl()}${OWNER_INVOICES_PATH}`,
+        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
+    });
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Statement ${p.periodLabel} — $${p.totalOutstandingUsd.toLocaleString()} due` }),
-        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/invoices`,
+        html,
+        text: `Account statement ${p.periodLabel}\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
         attachments: p.pdfBuffer ? [{ filename: `statement-${p.periodLabel.replace(/\s/g, '-')}.pdf`, content: Buffer.from(p.pdfBuffer) }] : undefined,
+    });
+}
+
+// ── Consolidated collection recap email (Task 12 — on-demand, not archived) ─
+// Distinct from sendStatementReadyEmail above: that one announces an
+// INFORMATIONAL monthly statement and points to the portal ("not an
+// invoice"). This one carries a recovery tone, lists every open pro-forma
+// with its age, and always attaches the PDF (never optional) — it is a
+// collection gesture sent on demand by staff, not a courtesy notice.
+// Mixing the two tones would blur what the recipient is being told.
+
+export interface CollectionRecapParams {
+    to: string;
+    cc?: string[];
+    recipientName: string;
+    lines: { invoiceRef: string; vesselName: string; issuedAt: string; ageDays: number; outstandingUsd: number }[];
+    totalOutstandingUsd: number;
+    jurisdictionName: string;
+    pdfBuffer: Uint8Array;
+}
+
+export async function sendCollectionRecapEmail(p: CollectionRecapParams): Promise<EmailResult> {
+    const subject = `Consolidated statement of account — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`;
+    const rows = p.lines.map((l) => `
+        ${metaRow(`${escapeHtml(l.invoiceRef)} · ${escapeHtml(l.vesselName)} · ${l.ageDays}d`, `$${l.outstandingUsd.toLocaleString('en-US')}`, { label: 'font-family:monospace' })}`).join('');
+    const content = `
+        <h1>Consolidated Recovery Statement</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>The following pro-forma invoices remain unpaid on your account with the ${escapeHtml(p.jurisdictionName)} Maritime Carbon Tax Authority.</p>
+
+        <h2>Outstanding Invoices (${p.lines.length})</h2>
+        ${rows}
+
+        <div class="alert alert-warn">Total outstanding: <strong>$${p.totalOutstandingUsd.toLocaleString('en-US')}</strong>. Please settle these invoices promptly to avoid further collection action.</div>
+
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">Pay Outstanding Invoices →</a>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">A consolidated statement is attached as a PDF for your records.</p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        cc: p.cc,
+        subject,
+        html: emailLayout(content, {
+            previewText: `${p.lines.length} invoice(s) — $${p.totalOutstandingUsd.toLocaleString('en-US')} outstanding`,
+            sovereignLine: `${p.jurisdictionName} · Maritime Carbon Tax Authority`,
+        }),
+        text: `Consolidated statement of account\n\n${p.lines.map((l) => `${l.invoiceRef} — ${l.vesselName} — ${l.ageDays}d — $${l.outstandingUsd.toLocaleString('en-US')}`).join('\n')}\n\nTotal outstanding: $${p.totalOutstandingUsd.toLocaleString('en-US')}\n\nPay at: ${appUrl()}${OWNER_INVOICES_PATH}`,
+        attachments: [
+            { filename: `consolidated-recap-${new Date().toISOString().slice(0, 10)}.pdf`, content: Buffer.from(p.pdfBuffer) },
+        ],
     });
 }
 
@@ -852,19 +940,19 @@ export async function sendWalletTopupEmail(p: WalletTopupParams): Promise<EmailR
         <div class="alert alert-success">Credit applied: <strong>+$${p.amountUsd.toLocaleString()}</strong></div>
 
         <h2>Wallet Summary</h2>
-        <div class="meta-row"><span class="meta-label">Top-up Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">+$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">New Balance</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.newBalanceUsd.toLocaleString()}</span></div>
+        ${metaRow(`Top-up Amount`, `+$${p.amountUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
+        ${metaRow(`New Balance`, `$${p.newBalanceUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
 
         <p>Your wallet balance can be applied automatically to future pro-forma invoices, or manually from the portal.</p>
 
-        <a href="${appUrl()}/owner/wallet" class="btn">View Wallet →</a>
+        <a href="${appUrl()}${OWNER_WALLET_PATH}" class="btn">View Wallet →</a>
     `;
 
     return sendEmail({
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Wallet credited: +$${p.amountUsd.toLocaleString()}` }),
-        text: `Wallet topped up: +$${p.amountUsd.toLocaleString()}\nNew balance: $${p.newBalanceUsd.toLocaleString()}\n\nView at: ${appUrl()}/owner/wallet`,
+        text: `Wallet topped up: +$${p.amountUsd.toLocaleString()}\nNew balance: $${p.newBalanceUsd.toLocaleString()}\n\nView at: ${appUrl()}${OWNER_WALLET_PATH}`,
     });
 }
 
@@ -915,6 +1003,148 @@ export async function sendKycRejectedEmail(p: KycRejectedParams): Promise<EmailR
 // visitor-facing surface, so a single English copy is sufficient (see spec
 // 2026-08-12 G4).
 
+export interface LoginLinkParams {
+    to: string;
+    recipientName?: string;
+    /** Lien miné par generateLink — à usage unique et de courte durée. */
+    link: string;
+    /**
+     * Code à six chiffres, issu du MÊME jeton que le lien : consommer l'un
+     * consomme l'autre. Les deux sont proposés ensemble parce qu'un client de
+     * messagerie qui réécrit ou neutralise les liens condamnerait l'accès.
+     */
+    code: string;
+    /** Navire ayant permis de retrouver le compte, quand l'accès vient d'un IMO. */
+    vesselName?: string | null;
+}
+
+/**
+ * Lien de connexion au portail.
+ *
+ * Le lien est miné côté serveur puis envoyé par Resend, comme le code d'accès
+ * navire : les modèles GoTrue ne sont pas configurés (tous les blocs
+ * [auth.email.template.*] sont commentés dans supabase/config.toml), et
+ * laisser Supabase l'envoyer produirait un courriel par défaut, hors charte,
+ * et non traduit.
+ *
+ * Le message ne dit jamais quel dossier il ouvre : il part parfois vers une
+ * adresse simplement reconnue, et nommer l'armateur renseignerait un tiers
+ * sur qui est débiteur.
+ */
+export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResult> {
+    // Rappelle le navire quand l'accès a été demandé par IMO ou MMSI : c'est
+    // souvent un manager qui reçoit, pour une flotte entière. Sans cette ligne
+    // il ne saurait pas de quel dossier il s'agit.
+    const vesselLine = p.vesselName
+        ? metaRow(`Vessel`, escapeHtml(p.vesselName))
+        : '';
+
+    const content = `
+        <h1>Sign in to Green Gate</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>Use the button below to open your Green Gate account, or enter the code on the sign-in page. No password is required.</p>
+        ${vesselLine}
+
+        <a href="${p.link}" class="btn">Sign In →</a>
+
+        <div style="text-align:center;margin:20px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you did not request this, you can safely ignore this email: no account changes will be made.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: `Your Green Gate sign-in code: ${p.code}`,
+        html: emailLayout(content, { previewText: `Sign-in code ${p.code} — single use, expires shortly` }),
+        text: `Sign in to Green Gate\n\n${p.vesselName ? `Vessel: ${p.vesselName}\n\n` : ''}Code: ${p.code}\n\nOr open this link (single use, expires shortly):\n${p.link}\n\nThe link and the code are the same credential — using either one consumes both. If you did not request this, ignore this email; no account changes will be made.`,
+    });
+}
+
+export interface MemberInvitedParams {
+    to: string;
+    recipientName?: string;
+    memberName: string;
+    memberEmail: string;
+    invitedBy: string;
+    /** Libellés des droits accordés ; vide = consultation seule. */
+    granted: string[];
+    updated: boolean;
+}
+
+/**
+ * Prévient le titulaire qu'un membre a ouvert (ou modifié) un accès au compte.
+ *
+ * Écrit à l'adresse officielle du dossier : c'est le seul canal qui atteint le
+ * titulaire sans qu'il ait à ouvrir le portail. Le message dit qui a agi — sans
+ * cela, il ne reste qu'un accès apparu de nulle part.
+ */
+export async function sendMemberInvitedEmail(p: MemberInvitedParams): Promise<EmailResult> {
+    const rights = p.granted.length > 0
+        ? p.granted.map((g) => escapeHtml(g)).join(', ')
+        : 'View only';
+    const verb = p.updated ? 'updated the access of' : 'granted access to';
+
+    const content = `
+        <h1>${p.updated ? 'Account access updated' : 'New access to your account'}</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>${escapeHtml(p.invitedBy)} ${verb} <strong>${escapeHtml(p.memberName)}</strong> (${escapeHtml(p.memberEmail)}) on your Green Gate account.</p>
+        ${metaRow(`Rights`, rights)}
+        <a href="${appUrl()}/owner/profile" class="btn">Review account members →</a>
+        <div class="alert alert-warn">If this access was not expected, remove it from the members section of your profile. Removing an access takes effect immediately.</div>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: p.updated
+            ? `Access updated for ${p.memberEmail}`
+            : `New access to your Green Gate account: ${p.memberEmail}`,
+        html: emailLayout(content, { previewText: `${p.memberEmail} — ${rights}` }),
+        text: `${p.invitedBy} ${verb} ${p.memberName} (${p.memberEmail}) on your Green Gate account.
+Rights: ${p.granted.length > 0 ? p.granted.join(', ') : 'View only'}
+
+Review members: ${appUrl()}/owner/profile
+
+If this access was not expected, remove it from your profile.`,
+    });
+}
+
+export interface MemberRevokedParams {
+    to: string;
+    recipientName?: string;
+    memberEmail: string;
+    revokedBy: string;
+}
+
+/**
+ * Prévient le titulaire qu'un accès au compte a été fermé.
+ *
+ * Le pendant de `sendMemberInvitedEmail` : `can_invite` porte les deux gestes,
+ * donc un membre peut fermer l'accès d'un autre. Ne signaler que l'ouverture
+ * laisserait passer le retrait, qui est le plus lourd de conséquences.
+ */
+export async function sendMemberRevokedEmail(p: MemberRevokedParams): Promise<EmailResult> {
+    const content = `
+        <h1>Account access removed</h1>
+        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
+        <p>${escapeHtml(p.revokedBy)} removed <strong>${escapeHtml(p.memberEmail)}</strong>&apos;s access to your Green Gate account. The removal took effect immediately.</p>
+        <a href="${appUrl()}/owner/profile" class="btn">Review account members →</a>
+        <div class="alert alert-warn">If this removal was not intended, you can invite the person again from the members section of your profile.</div>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: `Access removed for ${p.memberEmail}`,
+        html: emailLayout(content, { previewText: `${p.memberEmail} no longer has access` }),
+        text: `${p.revokedBy} removed ${p.memberEmail}'s access to your Green Gate account.
+
+Review members: ${appUrl()}/owner/profile`,
+    });
+}
+
 export interface VesselAccessCodeParams {
     to: string;
     recipientName?: string;
@@ -923,24 +1153,15 @@ export interface VesselAccessCodeParams {
 
 export async function sendVesselAccessCodeEmail(p: VesselAccessCodeParams): Promise<EmailResult> {
     const subject = `Your Green Gate access code: ${p.code}`;
-    const content = `
-        <h1>Your Access Code</h1>
-        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
-        <p>Use the code below to link your account and access your vessel's carbon tax records on Green Gate.</p>
-
-        <div style="text-align:center;margin:24px 0">
-            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
-        </div>
-
-        <div class="alert alert-warn">This code can only be used once and expires shortly. If you did not request it, you can safely ignore this email — no account changes will be made.</div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">Enter this code on the Green Gate portal to complete your account linking.</p>
-    `;
+    const html = renderEmailTemplate(TX_VESSEL_ACCESS_CODE_HTML, {
+        recipientName: p.recipientName ?? 'Shipowner',
+        code: p.code,
+    });
 
     return sendEmail({
         to: p.to,
         subject,
-        html: emailLayout(content, { previewText: `Your access code: ${p.code}` }),
+        html,
         text: `Your Green Gate access code: ${p.code}\n\nEnter this code on the portal to link your account. This code can only be used once and expires shortly.`,
     });
 }
@@ -1003,14 +1224,14 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
         <div class="alert alert-success">Refund amount: <strong>$${p.amountUsd.toLocaleString()}</strong></div>
 
         <h2>Refund Summary</h2>
-        <div class="meta-row"><span class="meta-label">Invoice</span><span class="meta-value" style="font-family:monospace">${escapeHtml(p.invoiceRef)}</span></div>
-        <div class="meta-row"><span class="meta-label">Amount</span><span class="meta-value" style="color:#10B981;font-size:16px">$${p.amountUsd.toLocaleString()}</span></div>
-        <div class="meta-row"><span class="meta-label">Method</span><span class="meta-value">${escapeHtml(railLabel)}</span></div>
-        <div class="meta-row"><span class="meta-label">Executed</span><span class="meta-value">${escapeHtml(p.executedAt)}</span></div>
+        ${metaRow(`Invoice`, escapeHtml(p.invoiceRef), { value: 'font-family:monospace' })}
+        ${metaRow(`Amount`, `$${p.amountUsd.toLocaleString()}`, { value: 'color:#10B981;font-size:16px' })}
+        ${metaRow(`Method`, escapeHtml(railLabel))}
+        ${metaRow(`Executed`, escapeHtml(p.executedAt))}
 
         ${railGuidance}
 
-        <a href="${appUrl()}/owner/invoices" class="btn">View Invoices →</a>
+        <a href="${appUrl()}${OWNER_INVOICES_PATH}" class="btn">View Invoices →</a>
 
         <p style="margin-top:24px;font-size:12px;color:#94A3B8">— Solid Technology</p>
     `;
@@ -1019,6 +1240,6 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
         to: p.to,
         subject,
         html: emailLayout(content, { previewText: `Refund of $${p.amountUsd.toLocaleString()} issued for ${p.invoiceRef}` }),
-        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}/owner/invoices`,
+        text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
     });
 }

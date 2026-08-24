@@ -75,7 +75,7 @@ export async function requireRole(allowed: UserRole[]): Promise<RequireRoleResul
     //    the source of truth.
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address')
+        .select('id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address, can_settle_payments')
         .eq('id', authUser.id)
         .single();
 
@@ -116,6 +116,7 @@ export async function requireRole(allowed: UserRole[]): Promise<RequireRoleResul
         lastLogin: authUser.last_sign_in_at ?? '',
         ipAddress: profile.ip_address ?? '',
         isActive: profile.is_active,
+        canSettlePayments: profile.can_settle_payments === true,
     };
 
     return { user, supabase, error: null };

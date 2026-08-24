@@ -8,6 +8,8 @@ import {
     sendKycRejectedEmail,
     sendRefundIssuedEmail,
     sendStatementReadyEmail,
+    sendMemberInvitedEmail,
+    sendMemberRevokedEmail,
     type EmailResult,
     type RefundIssuedParams,
 } from '@/services/emailService';
@@ -18,7 +20,8 @@ export type NotificationKind =
     | 'PAYMENT_RECEIVED' | 'PAYMENT_REJECTED'
     | 'FINAL_ISSUED' | 'COMPLEMENT_ISSUED' | 'REFUND_ISSUED'
     | 'WALLET_TOPPED_UP' | 'WALLET_APPLIED' | 'WALLET_LOW_BALANCE'
-    | 'DISPUTE_UPDATED' | 'OWNER_ESCALATION' | 'STATEMENT_READY';
+    | 'DISPUTE_UPDATED' | 'OWNER_ESCALATION' | 'STATEMENT_READY'
+    | 'MEMBER_INVITED' | 'MEMBER_REVOKED';
 
 /**
  * Set of kinds that ALSO dispatch an email (besides the in-app row).
@@ -37,6 +40,9 @@ export const EMAIL_KINDS: ReadonlySet<NotificationKind> = new Set<NotificationKi
     'FINAL_ISSUED', 'COMPLEMENT_ISSUED', 'REFUND_ISSUED',
     'WALLET_TOPPED_UP', 'WALLET_LOW_BALANCE',
     'DISPUTE_UPDATED', 'OWNER_ESCALATION', 'STATEMENT_READY',
+    // Un accès ouvert sur le compte doit atteindre le titulaire hors du
+    // portail : c'est précisément le cas où il ne s'y attend pas.
+    'MEMBER_INVITED', 'MEMBER_REVOKED',
 ]);
 
 export interface NotifyOwnerInput {
@@ -166,6 +172,27 @@ export async function notifyOwner(
                             amountUsd: Number(input.params.amount_usd ?? 0),
                             refundRail: input.params.refund_rail as RefundIssuedParams['refundRail'],
                             executedAt: String(input.params.executed_at ?? new Date().toLocaleString()),
+                        });
+                        break;
+                    case 'MEMBER_INVITED':
+                        result = await sendMemberInvitedEmail({
+                            to: ownerEmail,
+                            recipientName: ownerName,
+                            memberName: String(input.params.member_name ?? input.params.member_email ?? '—'),
+                            memberEmail: String(input.params.member_email ?? '—'),
+                            invitedBy: String(input.params.invited_by ?? '—'),
+                            granted: Array.isArray(input.params.granted)
+                                ? (input.params.granted as unknown[]).map(String)
+                                : [],
+                            updated: input.params.updated === true,
+                        });
+                        break;
+                    case 'MEMBER_REVOKED':
+                        result = await sendMemberRevokedEmail({
+                            to: ownerEmail,
+                            recipientName: ownerName,
+                            memberEmail: String(input.params.member_email ?? '—'),
+                            revokedBy: String(input.params.revoked_by ?? '—'),
                         });
                         break;
                     case 'STATEMENT_READY':

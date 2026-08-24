@@ -97,4 +97,26 @@ describe('listCollectionsAdmin', () => {
         expect(page).toMatchObject({ total: 1, page: 2, pageSize: 25 });
         expect(page.rows[0]).toMatchObject({ transaction_id: 'tx1', tax_amount_usd: 100, reminder_count: 2 });
     });
+
+    it('trie sur une clé autorisée', async () => {
+        const { db, calls } = makeDb([], 0);
+        await listCollectionsAdmin(db, {
+            page: 1, pageSize: 25, sortKey: 'outstanding_usd', sortDir: 'asc',
+        });
+        const orderCalls = calls.filter((c) => c.method === 'order');
+        expect(orderCalls[0]).toEqual({ method: 'order', args: ['outstanding_usd', { ascending: true }] });
+        // départage déterministe conservé
+        expect(orderCalls[1]).toEqual({ method: 'order', args: ['transaction_id', { ascending: true }] });
+    });
+
+    it('ignore une clé de tri hors liste blanche', async () => {
+        // Sans liste blanche, la chaîne partirait telle quelle dans .order() —
+        // c'est le seul endroit où une entrée utilisateur touche la requête.
+        const { db, calls } = makeDb([], 0);
+        await listCollectionsAdmin(db, {
+            page: 1, pageSize: 25, sortKey: 'tax_amount_usd; DROP TABLE', sortDir: 'asc',
+        });
+        const orderCalls = calls.filter((c) => c.method === 'order');
+        expect(orderCalls[0]).toEqual({ method: 'order', args: ['latest_sent_at', { ascending: false }] });
+    });
 });

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const sendMock = vi.fn();
 vi.mock('resend', () => ({ Resend: class { emails = { send: sendMock }; } }));
 
+import { sendProformaReminderEmail } from './emailService';
+
 const base = {
     to: 'billing@armateur.com',
     recipientName: 'Demo Armateur',
@@ -17,6 +19,12 @@ beforeEach(() => {
     sendMock.mockResolvedValue({ data: { id: 'e1' }, error: null });
     process.env.RESEND_API_KEY = 'test-key';
 });
+
+// Capture le payload transmis à Resend pour l'envoi déclenché par `run`.
+async function captureSend(run: () => Promise<unknown>) {
+    await run();
+    return sendMock.mock.calls[0][0];
+}
 
 describe('sendProformaReminderEmail — ton par palier', () => {
     it('reste un rappel courtois pour J3/J7', async () => {
@@ -44,5 +52,25 @@ describe('sendProformaReminderEmail — ton par palier', () => {
         const { sendProformaReminderEmail } = await import('./emailService');
         const res = await sendProformaReminderEmail(base);
         expect(res.success).toBe(true);
+    });
+});
+
+describe('sendProformaReminderEmail — pièce jointe optionnelle', () => {
+    it('joint le PDF quand il est fourni', async () => {
+        const sent = await captureSend(() => sendProformaReminderEmail({
+            to: 'a@x.com', recipientName: 'ACME', invoiceRef: 'INV-1',
+            amountUsd: 500, ageDays: 12, pdfBuffer: new Uint8Array([1, 2, 3]),
+        }));
+        expect(sent.attachments).toHaveLength(1);
+    });
+
+    it("n'envoie aucune pièce jointe quand le PDF est absent", async () => {
+        // Un rappel de courtoisie n'est pas une notice légale : l'absence de PDF
+        // ne doit pas bloquer l'envoi.
+        const sent = await captureSend(() => sendProformaReminderEmail({
+            to: 'a@x.com', recipientName: 'ACME', invoiceRef: 'INV-1',
+            amountUsd: 500, ageDays: 12,
+        }));
+        expect(sent.attachments).toBeUndefined();
     });
 });

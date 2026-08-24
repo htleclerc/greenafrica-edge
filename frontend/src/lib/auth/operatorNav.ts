@@ -38,6 +38,7 @@ export function isAirOnly(modes: OperatorMode[]): boolean {
 export const OPERATOR_NAV: OperatorNavItem[] = [
     { key: 'dashboard',     href: '/dashboard',               labelKey: 'nav.dashboard' },
     { key: 'vessels',       href: '/dashboard/vessels',       labelKey: 'nav.vessels' },
+    { key: 'my-fleet',      href: '/dashboard/my-fleet',      labelKey: 'nav.myFleet' },
     { key: 'invoices',      href: '/dashboard/invoices',      labelKey: 'nav.invoices' },
     { key: 'wallet',        href: '/dashboard/wallet',        labelKey: 'nav.wallet' },
     { key: 'simulator',     href: '/dashboard/simulator',     labelKey: 'nav.simulator' },
@@ -45,3 +46,17 @@ export const OPERATOR_NAV: OperatorNavItem[] = [
     { key: 'disputes',      href: '/dashboard/disputes',      labelKey: 'nav.disputes' },
     { key: 'notifications', href: '/dashboard/notifications', labelKey: 'nav.notifications' },
 ];
+
+/**
+ * Entrees de navigation reellement montrees a cet operateur.
+ *
+ * « Gerer la flotte » est retiree pour un operateur exclusivement aerien : le
+ * panneau libre-service ne lit que `vessels`, un exploitant d'aeronefs n'y
+ * trouverait qu'un ecran vide. Le filtre vit ici, avec la liste, plutot que
+ * dans la barre laterale : une regle d'affichage enfouie dans un composant
+ * finit par diverger de la liste qu'elle filtre.
+ */
+export function operatorNavFor(modes: OperatorMode[]): OperatorNavItem[] {
+    if (!isAirOnly(modes)) return OPERATOR_NAV;
+    return OPERATOR_NAV.filter((i) => i.key !== 'my-fleet');
+}

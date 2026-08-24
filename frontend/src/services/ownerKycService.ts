@@ -9,6 +9,10 @@ export interface OwnerKycProfile {
     aoc_number: string | null;
     country_code: string | null;
     address: string | null;
+    /** Adresse officielle : destinataire des factures, exclue des copies. */
+    official_email: string | null;
+    /** Copies de facturation (mig 122). Reçoivent les envois, sans aucun accès. */
+    billing_cc_emails: string[];
     ops_email: string | null;
     finance_email: string | null;
     phone_e164: string | null;
@@ -55,6 +59,10 @@ export async function getOwnerKycProfile(
         aoc_number: str('aoc_number'),
         country_code: str('country_code'),
         address: str('address'),
+        official_email: str('official_email'),
+        billing_cc_emails: Array.isArray(row.billing_cc_emails)
+            ? (row.billing_cc_emails as string[])
+            : [],
         ops_email: str('ops_email'),
         finance_email: str('finance_email'),
         phone_e164: str('phone_e164'),

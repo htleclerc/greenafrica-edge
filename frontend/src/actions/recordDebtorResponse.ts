@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const STAFF_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'];
 
@@ -76,6 +77,18 @@ export async function recordDebtorResponse(
             note: note ?? null,
         },
     });
+
+    // Une contestation ou une promesse suspend la rampe : l'équipe doit le
+    // savoir sans avoir à rouvrir l'écran. Pas de dedup — enregistrer une
+    // seconde réponse sur le même dossier est un fait nouveau.
+    if (jurisdictionId) {
+        await notifyStaffSafe(platform, {
+            jurisdictionId,
+            kind: 'DEBTOR_RESPONDED',
+            params: { response: responseType, tier: reminder.tier },
+            deepLink: '/admin/collections',
+        });
+    }
 
     revalidatePath('/admin/collections');
     return { ok: true, tier: reminder.tier };

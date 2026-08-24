@@ -30,6 +30,7 @@ const ALLOWED_KEYS = new Set<string>([
     // time via lib/feature-flags.ts. Writing here UPSERTs the row.
     'feature.shipowner_portal_v1_enabled',
     'feature.shipowner_self_service_enabled',
+    'feature.show_unavailable_rails',
     'feature.online_payment_stripe_enabled',
     'feature.wallet_topup_enabled',
     'feature.notification_sms_enabled',

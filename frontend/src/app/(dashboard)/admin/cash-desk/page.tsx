@@ -31,9 +31,7 @@ export default async function CashDeskRoute() {
 
     if (!allowed) redirect('/dashboard');
 
-    return (
-        <div className="px-6 py-6">
-            <CashDeskForm />
-        </div>
-    );
+    // L'écran est mobile d'abord et porte sa propre gouttière : le guichet se
+    // tient debout, pas devant un tableau de bord large.
+    return <CashDeskForm />;
 }

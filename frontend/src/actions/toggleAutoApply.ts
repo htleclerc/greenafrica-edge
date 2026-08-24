@@ -8,7 +8,7 @@ const schema = z.object({ enabled: z.boolean() });
 
 export async function toggleAutoApply(input: { enabled: boolean }): Promise<void> {
     const parsed = schema.parse(input);
-    const ctx = await requireOwner();
+    const ctx = await requireOwner('canPay');
 
     const admin = createTenantClient(ctx.jurisdictionId);
 

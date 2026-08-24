@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { getOwnerKycProfile } from '@/services/ownerKycService';
 import { listPaymentsForShipowner } from '@/services/paymentService';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { outstandingUsd } from '@/lib/outstanding';
 
 interface ExportVessel {
     imo_number: string;
@@ -17,7 +19,15 @@ interface ExportInvoice {
     created_at: string;
     tax_amount_usd: number;
     status: string;
+    /**
+     * Colonne telle qu'elle est stockee. Elle vaut zero sur toute facture en
+     * cours (gelee par la mig 089, jamais ecrite) : sans `outstanding_usd` a
+     * cote, l'export laissait croire qu'aucun reglement n'avait ete recu, la
+     * liste des paiements ci-dessous disant l'inverse.
+     */
     partial_paid_usd: number;
+    /** Reste du reel : montant taxe moins les paiements CONFIRMED. */
+    outstanding_usd: number;
 }
 
 interface ExportPayment {
@@ -93,6 +103,8 @@ export async function GET() {
         flag_code: (v.flag_code as string | null) ?? null,
     }));
 
+    const paidByTxn = await confirmedPaidUsdByTransaction(supabase, transactionIds);
+
     const invoices: ExportInvoice[] = transactionRows.map((t) => ({
         invoice_ref: (t.invoice_ref as string | null) ?? null,
         document_type: t.document_type as string,
@@ -101,6 +113,7 @@ export async function GET() {
         tax_amount_usd: Number(t.tax_amount_usd),
         status: t.status as string,
         partial_paid_usd: Number(t.partial_paid_usd ?? 0),
+        outstanding_usd: outstandingUsd(t as never, paidByTxn.get(t.id as string) ?? 0),
     }));
 
     const paymentsOut: ExportPayment[] = payments.map((p) => ({

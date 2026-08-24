@@ -100,7 +100,8 @@
     "impact": "Impact",
     "resources": "Ressources",
     "about": "À Propos",
-    "partnership": "Partenariat"
+    "partnership": "Partenariat",
+    "nav_admin_validations": "Validations"
   },
   "Landing": {
     "badge": "PROTOCOLE D'INTELLIGENCE CARBONE SOUVERAIN",
@@ -699,10 +700,13 @@
     "nav_vision": "Tableau de bord",
     "nav_staff": "Gestion du personnel",
     "nav_armateurs": "Armateurs",
+    "nav_reglements": "Règlements",
     "nav_admin_invoices": "Factures",
     "nav_admin_collections": "Recouvrement",
     "nav_airlines": "Compagnies",
-    "nav_vessel_identity": "Identité des navires"
+    "nav_vessel_identity": "Identité des navires",
+    "theme_switch_to_light": "Passer en thème clair",
+    "theme_switch_to_dark": "Passer en thème sombre"
   },
   "AdminStaff": {
     "page_title": "Gestion du personnel",
@@ -844,7 +848,23 @@
     "pending_step4_title": "Compte activé",
     "pending_step4_desc": "Une fois approuvé, vous recevrez un email avec les instructions d'accès.",
     "pending_info_title": "Pourquoi cela prend-il du temps ?",
-    "pending_info_desc": "Tous les comptes sont vérifiés manuellement par le personnel gouvernemental autorisé pour garantir la sécurité de la plateforme et la conformité aux réglementations de protection des données souveraines."
+    "pending_info_desc": "Tous les comptes sont vérifiés manuellement par le personnel gouvernemental autorisé pour garantir la sécurité de la plateforme et la conformité aux réglementations de protection des données souveraines.",
+    "magicLink": {
+      "tabPassword": "Mot de passe",
+      "tabLink": "Lien de connexion",
+      "submit": "Recevoir un lien de connexion",
+      "hint": "Saisissez votre adresse e-mail, ou l'IMO (7 chiffres) ou le MMSI (9 chiffres) de votre navire. Nous envoyons un lien à usage unique et un code à 6 chiffres.",
+      "sent": "Si cette adresse est enregistrée, un lien de connexion et un code viennent de lui être envoyés.",
+      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes.",
+      "queryLabel": "E-mail, IMO ou MMSI",
+      "sentToHint": "Lien de connexion et code envoyés à {hint}.",
+      "sentVessel": "Navire : {vessel}",
+      "codeLabel": "Code à 6 chiffres",
+      "codeSubmit": "Se connecter",
+      "codeHint": "Ou cliquez simplement le lien reçu par e-mail — l'un ou l'autre fonctionne.",
+      "badCode": "Code invalide ou expiré.",
+      "retry": "Utiliser une autre adresse ou un autre navire"
+    }
   },
   "DashboardPages": {
     "alerts_title": "Alertes & Exceptions",
@@ -1092,7 +1112,13 @@
     "simulator_air_aircraft_type": "Type d'avion",
     "simulator_air_lto_cycles": "Cycles LTO",
     "simulator_air_methodology_note": "Méthodologie ICAO LTO : émissions par cycle atterrissage-décollage (roulage, décollage, montée, approche sous 3000 ft).",
-    "simulator_air_emissions_label": "Émissions estimées"
+    "simulator_air_emissions_label": "Émissions estimées",
+    "settings_theme_mode": "Nuit ou jour",
+    "settings_theme_mode_desc": "Indépendant de l’habillage : choisissez la luminosité qui vous convient, quel que soit le thème visuel.",
+    "settings_theme_auto": "Automatique",
+    "settings_theme_dark": "Sombre",
+    "settings_theme_light": "Clair",
+    "settings_theme_auto_hint": "Suit l’habillage — actuellement : {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -1385,7 +1411,27 @@
     "tax_liability": "Taxe due",
     "view_details": "Voir détails",
     "contest_invoice": "Contester la facture",
-    "access_denied": "Accès réservé aux agents maritimes."
+    "access_denied": "Accès réservé aux agents maritimes.",
+    "kpiVessels": "Navires",
+    "kpiOutstanding": "Reste dû",
+    "emptyFleet": "Aucun navire n'est encore rattaché à votre compte.",
+    "noImo": "IMO non attribué",
+    "noInvoice": "Aucune facture",
+    "invoiceCount": "{count} facture(s)",
+    "rename": "Renommer",
+    "renameLabel": "Nom du navire",
+    "renameSubmit": "Enregistrer",
+    "cancel": "Annuler",
+    "detach": "Retirer",
+    "detachConfirmYes": "Confirmer le retrait",
+    "confirmDetach": "Retirer ce navire de votre flotte ?",
+    "detachBlocked": "Ce navire porte une facture et ne peut pas être retiré. S'il n'est pas le vôtre, contestez la facture.",
+    "dispute": "Contester",
+    "title": "Ma flotte",
+    "invoiceCountSettled": "{count} facture(s) · réglée(s)",
+    "detachBlockedSettled": "Ce navire porte une facture réglée et reste au dossier. Une taxation acquittée ne se détache pas.",
+    "invoiceCountPartial": "{count} facture(s) · partiellement réglée(s)",
+    "restricted": "Gérer les navires n’est pas inclus dans votre accès à ce compte. Le titulaire peut vous l’accorder."
   },
   "VesselsPage": {
     "status_compliant": "CONFORME",
@@ -2801,7 +2847,19 @@
       "cancel": "Annuler",
       "confirm": "Prendre en charge et générer le pro-forma",
       "claiming": "Prise en charge…"
-    }
+    },
+    "verdict": "{count, plural, =0 {Aucun navire attendu} =1 {1 navire attendu} other {# navires attendus}}",
+    "portLabel": "Port de Berbera",
+    "offline": "Hors ligne",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Accostage imminent} =1 {Accostage dans 1 min} other {Accostage dans # min}}",
+    "etaHours": "{count, plural, =1 {Dans 1 h} other {Dans # h}}",
+    "etaDays": "{count, plural, =1 {Demain} other {Dans # jours}}",
+    "etaPassed": "Accostage dépassé",
+    "etaUnknown": "ETA inconnue",
+    "ownerInDefault": "Armateur en défaut — {amount} impayés. Appareillage soumis à autorisation.",
+    "ownerClear": "Taxe à jour · rien à faire",
+    "reportToAuthority": "Signaler à l'autorité"
   },
   "AdminEscalations": {
     "title": "Escalades",
@@ -2983,6 +3041,7 @@
       "vessels": "Navires",
       "aircraft": "Aéronefs",
       "fleet": "Flotte",
+      "myFleet": "Gérer la flotte",
       "invoices": "Factures",
       "alerts": "Alertes",
       "signOut": "Se déconnecter",
@@ -3028,7 +3087,26 @@
         "paidYtd": "Payé YTD"
       },
       "quickActions": "Actions rapides",
-      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives."
+      "quickActionsBody": "Utilisez la navigation ci-dessus pour explorer vos <vessels>navires</vessels>, consulter vos <invoices>factures</invoices> ou vérifier les <alerts>alertes</alerts> actives.",
+      "verdict": "{count, plural, =0 {Rien à traiter aujourd'hui} =1 {1 chose à traiter aujourd'hui} other {# choses à traiter aujourd'hui}}",
+      "context": "{owner} · période fiscale en cours",
+      "seeAll": "Voir toutes les factures",
+      "payAll": "Payer tout · {amount}",
+      "emptyGood": "Rien à traiter. Toutes vos taxes sont à jour.",
+      "more": "{count, plural, =1 {1 autre échéance} other {# autres échéances}}",
+      "kpi": {
+        "outstanding": "Encours total",
+        "outstandingNote": "{count, plural, =0 {aucune facture ouverte} =1 {1 facture ouverte} other {# factures ouvertes}}",
+        "vessels": "Navires actifs",
+        "vesselsNote": "rattachés à votre compte",
+        "paidYtd": "Payé en {year}",
+        "paidYtdNote": "cumul depuis janvier",
+        "wallet": "Solde portefeuille",
+        "walletNote": "disponible immédiatement"
+      },
+      "fleetTitle": "Ma flotte",
+      "openFleet": "Ouvrir Ma flotte",
+      "fleetSummary": "{count, plural, =0 {Aucun navire rattaché pour l’instant.} =1 {1 navire rattaché à votre compte.} other {# navires rattachés à votre compte.}}"
     },
     "vessels": {
       "title": "Navires",
@@ -3151,7 +3229,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Effectuez le virement et saisissez la référence bancaire ci-dessous.",
+        "wire_transfer": "Virez le montant sur le compte ci-dessous, puis joignez votre preuve de virement.",
         "mobile_money": "Saisissez le numéro de téléphone utilisé pour le transfert {provider}.",
         "third_party": "Identifiez le tiers qui paie pour votre compte.",
         "wallet": "Appliquez votre solde wallet à cette facture.",
@@ -3177,7 +3255,9 @@
         "rail": "Méthode",
         "provider": "Prestataire",
         "details": "Détails",
-        "disclaimer": "L'envoi enregistre votre paiement comme INITIATED. Le service finance vérifie et confirme sous 24h."
+        "disclaimer": "L'envoi enregistre votre paiement comme INITIATED. Le service finance vérifie et confirme sous 24h.",
+        "split": "Ventilation",
+        "splitValue": "{wallet} au portefeuille · {remainder} par {rail}"
       },
       "errors": {
         "bankReferenceRequired": "La référence bancaire est requise.",
@@ -3185,7 +3265,9 @@
         "payerNameRequired": "Le nom du payeur est requis.",
         "noRail": "Veuillez d'abord choisir un moyen de paiement.",
         "amountRequired": "Le montant doit être supérieur à 0.",
-        "noTransactionForWallet": "Le rail WALLET nécessite une facture."
+        "noTransactionForWallet": "Le rail WALLET nécessite une facture.",
+        "proofRequired": "Joignez votre justificatif de paiement avant de soumettre.",
+        "proofUploadFailed": "Le justificatif n'a pas pu être envoyé."
       },
       "reason": {
         "wallet_empty": "Votre wallet ne dispose d’aucun solde.",
@@ -3206,8 +3288,35 @@
       },
       "proofStep": {
         "created": "Virement enregistré. En attente de votre preuve + vérification admin.",
-        "intro": "Joignez votre confirmation SWIFT MT103 maintenant (facultatif — possible aussi plus tard depuis la liste des factures).",
-        "done": "Terminé"
+        "intro": "Joignez votre confirmation SWIFT MT103. Sans elle, la facture reste ouverte.",
+        "done": "Terminé",
+        "required": "Justificatif de paiement (obligatoire)",
+        "requiredHint": "Joignez votre confirmation SWIFT MT103. Sans elle, le service financier ne peut rapprocher un versement déclaré.",
+        "uploadFailed": "Paiement enregistré, mais le justificatif n'a pas pu être envoyé. Joignez-le ci-dessous."
+      },
+      "comingSoon": "Bientôt disponible",
+      "comingSoonHint": "Ce moyen de paiement n'est pas encore ouvert.",
+      "splitWallet": {
+        "label": "Utiliser mon crédit de {wallet}",
+        "hint": "Votre solde ne couvre pas la totalité — appliquez-le et ne payez que la différence.",
+        "on": "Reste {remainder} à régler avec le moyen ci-dessous."
+      },
+      "chooseRailRemainder": "Choisissez un moyen pour les {amount} restants :",
+      "wire": {
+        "accountTitle": "Compte bénéficiaire",
+        "beneficiary": "Bénéficiaire",
+        "bank": "Banque",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Référence",
+        "amount": "Montant",
+        "step1": "Émettez le virement depuis votre banque en portant la référence ci-dessus.",
+        "step2": "Téléversez le SWIFT MT103 ou l’avis de votre banque à l’écran suivant.",
+        "step3": "Le service financier rapproche les fonds sur le compte puis confirme le paiement — rien n’est prélevé ici.",
+        "topupHint": "Une recharge n’a pas de référence de facture : indiquez aussi le nom de votre société dans le motif du virement.",
+        "bankReferenceOptional": "Facultatif — laissez vide si votre banque ne l’a pas encore émise.",
+        "download": "Télécharger l’ordre de virement (PDF)",
+        "depositReference": "Référence de dépôt"
       }
     },
     "proofUpload": {
@@ -3220,7 +3329,10 @@
         "tooLarge": "Fichier trop volumineux (max {max} Mo).",
         "uploadFailed": "Échec du téléversement. Réessayez.",
         "deleteFailed": "Suppression du fichier impossible."
-      }
+      },
+      "done": "Terminé",
+      "contextMissing": "Vous avez déclaré un paiement pour cette facture, mais aucun justificatif n'y est encore joint. Le service financier ne peut pas le rapprocher sans pièce.",
+      "contextProvided": "Un justificatif est déjà joint au paiement que vous avez déclaré. Vous pouvez en ajouter ou le remplacer."
     },
     "wallet": {
       "balanceCard": {
@@ -3228,10 +3340,13 @@
         "autoApply": "Imputation auto aux factures",
         "autoApplyOn": "Activé",
         "autoApplyOff": "Désactivé",
-        "topupCta": "Recharger le wallet"
+        "topupCta": "Recharger le wallet",
+        "lastTopup": "Dernier approvisionnement le {date} · {amount}",
+        "noTopupYet": "Aucun approvisionnement pour l’instant.",
+        "refundCta": "Demander un remboursement"
       },
       "predictionCard": {
-        "title": "30 prochains jours",
+        "title": "Provision recommandée",
         "estimate30d": "~{count} passages → ~${amount} USD",
         "confidence": "Confiance : {level}",
         "confidenceLevel": {
@@ -3240,7 +3355,13 @@
           "high": "élevée"
         },
         "notEnoughData": "Pas assez d'activité sur les 90 derniers jours pour prédire (< 5 alertes).",
-        "insufficientWarning": "Le besoin estimé dépasse le solde actuel — recharge recommandée : ${amount}"
+        "insufficientWarning": "Le besoin estimé dépasse le solde actuel — recharge recommandée : ${amount}",
+        "gapSentence": "Il manque {amount} pour couvrir les échéances des 30 prochains jours.",
+        "covered": "Votre solde couvre les {amount} d’échéances des 30 prochains jours.",
+        "due30d": "Échéances à 30 j",
+        "currentBalance": "Solde actuel",
+        "toProvision": "À provisionner",
+        "provisionCta": "Provisionner {amount}"
       },
       "ledger": {
         "title": "Mouvements",
@@ -3249,7 +3370,9 @@
           "date": "Date",
           "amount": "Montant",
           "kind": "Type",
-          "note": "Note"
+          "note": "Note",
+          "reference": "Référence",
+          "balance": "Solde"
         },
         "kind": {
           "TOPUP": "Recharge",
@@ -3258,8 +3381,23 @@
           "PROFORMA_APPLY": "Imputé à une facture",
           "ADMIN_ADJUSTMENT": "Ajustement admin",
           "FX_DIFFERENCE": "Écart de change"
+        },
+        "filterLabel": "Filtrer les mouvements",
+        "direction": {
+          "all": "Tous",
+          "in": "Entrées",
+          "out": "Sorties"
         }
-      }
+      },
+      "topupReturn": {
+        "success": "Recharge reçue — le solde de votre portefeuille a été mis à jour.",
+        "cancel": "Recharge annulée. Aucun montant n’a été prélevé.",
+        "pending": "Recharge en cours de vérification. Votre solde sera mis à jour sous peu.",
+        "failed": "La recharge n’a pas pu aboutir. Aucun montant n’a été prélevé — réessayez ou choisissez un autre moyen de paiement."
+      },
+      "title": "Portefeuille",
+      "subtitle": "Solde de {amount} · provision recommandée et mouvements",
+      "emptySubtitle": "Votre portefeuille est vide. Alimentez-le pour créditer vos prochaines factures."
     },
     "notifications": {
       "title": "Notifications",
@@ -3340,8 +3478,151 @@
         "OWNER_ESCALATION": {
           "title": "Avis d’escalade",
           "body": "Une action est requise sur {invoice_ref}."
+        },
+        "MEMBER_INVITED": {
+          "title": "Nouvel accès au compte",
+          "body": "{invited_by} a ouvert un accès à {member_email}. Droits : {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Accès au compte retiré",
+          "body": "{revoked_by} a retiré l’accès de {member_email}."
         }
       }
+    },
+    "queue": {
+      "title": "Taxe carbone — {vessel}",
+      "fleetWide": "flotte",
+      "due": "échéance {date}",
+      "pay": "Payer",
+      "overdueBy": "{count, plural, =1 {En retard · 1 j} other {En retard · # j}}",
+      "dueToday": "Échéance aujourd'hui",
+      "inDays": "{count, plural, =1 {Dans 1 j} other {Dans # j}}",
+      "onCall": "À l'escale"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {Aucun navire rattaché} =1 {1 navire} other {# navires}} · {action, plural, =0 {aucun n’exige d’action} =1 {1 exige une action} other {# exigent une action}}",
+      "subtitle": "Positions AIS et factures ouvertes, croisées navire par navire",
+      "tabsLabel": "Filtrer la flotte",
+      "tab": {
+        "all": "Tous",
+        "action": "Action requise",
+        "inPort": "En escale",
+        "compliant": "Conformes",
+        "exempt": "Exonérés"
+      },
+      "status": {
+        "overdue": "En retard",
+        "toPay": "À payer",
+        "proforma": "Proforma",
+        "compliant": "Conforme",
+        "exempt": "Exonéré"
+      },
+      "col": {
+        "vessel": "Navire",
+        "type": "Type",
+        "position": "Position",
+        "status": "Statut",
+        "paidYtd": "Payé cette année"
+      },
+      "detail": "Détail",
+      "empty": "Aucun navire dans cette sélection.",
+      "openVessel": "Ouvrir la fiche de {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Prochaine échéance",
+        "onCall": "à l’escale",
+        "emissions": "Émissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Dû",
+        "estimate": "Estimation",
+        "payBefore": "Payer avant le {date}",
+        "payNow": "Payer maintenant",
+        "seeProforma": "Voir la proforma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} à régler",
+      "context": "{count, plural, =0 {Aucune facture ouverte} =1 {1 facture ouverte} other {# factures ouvertes}}{overdue, plural, =0 {} =1 { · dont 1 en retard} other { · dont # en retard}}",
+      "payAll": "Payer tout · {amount}",
+      "paySelection": "{count, plural, =1 {Payer la facture · {amount}} other {Payer les # factures · {amount}}}",
+      "tabsLabel": "Filtrer les factures",
+      "tab": {
+        "open": "Ouvertes",
+        "paid": "Payées",
+        "disputed": "Contestées",
+        "draft": "Brouillons"
+      },
+      "col": {
+        "reference": "Référence",
+        "vessel": "Navire",
+        "due": "Échéance",
+        "amount": "Montant"
+      },
+      "select": "Sélectionner la facture {ref}",
+      "onCall": "à l’escale",
+      "empty": "Aucune facture dans cette famille.",
+      "status": {
+        "overdue": "En retard",
+        "dueSoon": "À payer",
+        "upcoming": "À venir",
+        "paid": "Payée"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Tarif souverain en vigueur",
+      "totalDue": "Total dû",
+      "remainingDue": "Reste dû",
+      "pay": "Payer {amount}",
+      "downloadPdf": "Télécharger PDF",
+      "issuePdf": "Émettre le PDF",
+      "issuing": "Émission…",
+      "issuePdfHint": "Aucun PDF n’a encore été émis pour cette facture — le générer maintenant depuis le montant enregistré.",
+      "dispute": "Contester",
+      "attachProof": "Joindre un justificatif",
+      "close": "Fermer",
+      "status": {
+        "overdue": "En retard",
+        "dueSoon": "À payer",
+        "upcoming": "À venir",
+        "paid": "Payée"
+      },
+      "methodLegend": "Moyen de paiement",
+      "method": {
+        "wire": {
+          "label": "Virement bancaire",
+          "hint": "Confirmation sous 24–48 h"
+        },
+        "wallet": {
+          "label": "Portefeuille AfricGreen",
+          "covers": "Solde {balance} — suffisant",
+          "short": "Solde {balance} — insuffisant"
+        },
+        "desk": {
+          "label": "Guichet du port",
+          "hint": "Espèces · reçu immédiat"
+        }
+      },
+      "receipt": "Reçu",
+      "completeProof": "Ajouter le justificatif manquant",
+      "reviewProof": "Revoir le justificatif",
+      "restricted": "Certaines actions ne sont pas incluses dans votre accès à ce compte. Le titulaire peut vous les accorder."
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {jour de retard} other {jours de retard}}",
+      "required": "Action requise",
+      "title": "Payer la taxe carbone de {vessel}",
+      "fleetWide": "votre flotte",
+      "meta": "Facture {ref} · échéance dépassée le {date}",
+      "terms": "USD · net 30",
+      "payNow": "Payer maintenant",
+      "dispute": "Contester"
+    },
+    "statement": {
+      "title": "Relevé consolidé",
+      "asOfLabel": "Solde arrêté au",
+      "download": "Télécharger le PDF",
+      "hintFleet": "Toutes les factures encore dues sur votre flotte, à la date choisie. Établi à la demande — il ne remplace pas votre relevé mensuel.",
+      "hintVessel": "Toutes les factures encore dues pour ce navire, à la date choisie."
     }
   },
   "AdminEquasis": {
@@ -3527,7 +3808,61 @@
       "proofC": "Voir le justificatif de facturation",
       "noProofB": "Aucun document KYC-B enregistré",
       "noProofC": "Aucun document de facturation enregistré"
-    }
+    },
+    "billingCc": {
+      "title": "Copies de facturation",
+      "subtitle": "Les adresses qui reçoivent une copie de vos factures, relances et relevés.",
+      "scopeNotice": "Ces adresses reçoivent les documents. Elles ne donnent aucun accès au portail : personne ne peut s’y connecter avec. Pour qu’un collègue agisse sur votre compte, il faudra l’inviter comme membre — cette fonction arrive.",
+      "addLabel": "Ajouter une adresse",
+      "add": "Ajouter",
+      "remove": "Retirer {email}",
+      "empty": "Aucune copie. Vous seul recevez les documents.",
+      "remaining": "{count, plural, =0 {Plafond atteint} =1 {1 adresse encore possible} other {# adresses encore possibles}}",
+      "saved": "Enregistré.",
+      "errors": {
+        "invalid": "Adresse e-mail invalide.",
+        "invalid_email": "Adresse e-mail invalide.",
+        "isPrimary": "C’est déjà votre adresse principale — elle reçoit tout par défaut.",
+        "duplicate": "Cette adresse est déjà dans la liste.",
+        "tooMany": "Maximum {max} adresses en copie.",
+        "too_many": "Maximum {max} adresses en copie."
+      }
+    },
+    "members": {
+      "title": "Membres du compte",
+      "subtitle": "Les personnes autorisées à agir sur votre compte, et ce que chacune peut faire.",
+      "readOnlyNotice": "Vous pouvez consulter les membres de ce compte. Inviter ou retirer quelqu’un demande le droit « inviter des membres ».",
+      "empty": "Aucun membre. Vous êtes seul à accéder à ce compte.",
+      "revoke": "Retirer l’accès de {email}",
+      "revokedTitle": "Accès retirés",
+      "revokedOn": "retiré le {date}",
+      "privilege": {
+        "canPay": "Payer",
+        "canDispute": "Contester",
+        "canManageVessels": "Gérer les navires",
+        "canInvite": "Inviter des membres",
+        "none": "Consultation seule"
+      },
+      "form": {
+        "fullName": "Nom du collègue",
+        "email": "Son adresse e-mail",
+        "privileges": "Ce qu’il pourra faire",
+        "notYours": "Vous ne détenez pas ce droit — vous ne pouvez pas l’accorder.",
+        "submit": "Inviter"
+      },
+      "errors": {
+        "forbidden": "Vous n’avez pas le droit d’inviter des membres.",
+        "self": "Vous ne pouvez pas vous inviter vous-même.",
+        "already_holder": "Cette personne est déjà titulaire de ce compte.",
+        "holds_other_account": "Cette personne est titulaire d’un autre compte — l’invitation resterait sans effet.",
+        "member_of_other_account": "Cette personne est déjà membre d’un autre compte.",
+        "not_found": "Membre introuvable.",
+        "not_an_operator": "Action réservée aux comptes armateur.",
+        "provisioning failed": "La création du compte a échoué. Réessayez.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire."
   },
   "AdminRegistrations": {
     "title": "Demandes d'inscription",
@@ -3719,6 +4054,25 @@
       "fileTooBig": "Le fichier dépasse la limite de 5 Mo.",
       "fileMime": "Type de fichier non supporté (PDF ou image uniquement).",
       "submitFailed": "Impossible d'enregistrer le paiement espèces."
+    },
+    "offlineBadge": "Hors ligne",
+    "offlineNote": "Hors ligne : le reçu est numéroté localement et synchronisé au retour du réseau.",
+    "methodLegend": "Moyen reçu",
+    "method": {
+      "cash": "Espèces",
+      "mobileMoney": "Mobile money",
+      "cheque": "Chèque",
+      "transfer": "Virement"
+    },
+    "due": {
+      "invoice": "Facture retenue",
+      "allOpen": "{count, plural, =1 {1 facture ouverte} other {# factures ouvertes}}",
+      "toCollect": "À encaisser"
+    },
+    "remainder": {
+      "exact": "Solde exact · aucun reliquat",
+      "change": "À rendre : {amount}",
+      "short": "Il manque {amount} — le solde restera partiel."
     }
   },
   "AdminWallets": {
@@ -3969,7 +4323,62 @@
     "escalate_confirm": "Escalader",
     "escalate_ramp_bailiff": "Une relance J45 (pré-huissier) doit d'abord être envoyée.",
     "escalate_ramp_judicial": "Une mise en demeure d'huissier doit d'abord être émise.",
-    "escalated_badge": "Escaladé"
+    "escalated_badge": "Escaladé",
+    "remind_now": "Relancer maintenant",
+    "remind_now_confirm": "Envoyer une relance manuelle à {debtor} pour {ref} ? Cet envoi est immédiat et irréversible.",
+    "manual_group": "Récapitulatif consolidé — {count} factures",
+    "col_count_manual": "manuel",
+    "col_count_manual_tooltip": "Relances manuelles hors procédure — dernière le {date}",
+    "verdict": "{count, plural, =0 {Aucun dossier à faire avancer} =1 {1 dossier à faire avancer} other {# dossiers à faire avancer}}",
+    "rule": "Règle en vigueur : relance à J+3, mise en demeure à J+15, escalade autorité à J+45",
+    "treatQueue": "Traiter la file",
+    "sortBy": "Trier par :",
+    "stage": {
+      "reminder": "Relance — J+3",
+      "formal": "Mise en demeure — J+15",
+      "authority": "Escalade autorité — J+45",
+      "settled": "Réglés cette semaine"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {Voir la relance} other {Voir les # relances}}",
+      "formal": "Préparer les courriers",
+      "authority": "Saisir l'autorité portuaire",
+      "settled": "Voir le détail"
+    },
+    "stageOthers": "{count, plural, =1 {+1 autre} other {+# autres}}",
+    "stageEmpty": "Rien à cette étape.",
+    "stageSettledAmount": "{amount} encaissés",
+    "funnelTruncated": "Cumuls et aperçus calculés sur les 1 000 dossiers les plus lourds. Les comptes affichés, eux, sont exacts.",
+    "priorityTitle": "Dossier prioritaire — {debtor}",
+    "priorityOpenFile": "Ouvrir la fiche complète",
+    "panelHistory": "Historique",
+    "panelExposure": "Exposition",
+    "panelNext": "Action suivante",
+    "consequenceBailiff": "Escalade huissier : la créance passe au recouvrement légal, avec mise en demeure signifiée et facture jointe.",
+    "consequenceJudicial": "Escalade judiciaire : la créance part au contentieux, dernière étape de la rampe.",
+    "consequenceRamp": "La rampe n'autorise pas encore l'escalade sur ce dossier : la relance J45 doit partir avant l'huissier.",
+    "grantPlan": "Accorder un échéancier",
+    "grantPlanConfirm": "Enregistrer un échéancier accordé à {debtor} pour {ref} ? La créance est marquée comme promesse de paiement, ce qui suspend la rampe de relance.",
+    "remindersWithManual": "{count} · +{manual} manuelles",
+    "tier": {
+      "J3": "Relance J+3",
+      "J7": "Relance J+7",
+      "J15": "Mise en demeure J+15",
+      "J30": "Mise en demeure J+30",
+      "J45": "Pré-huissier J+45",
+      "BAILIFF": "Huissier",
+      "JUDICIAL": "Judiciaire",
+      "MANUAL": "Relance manuelle"
+    },
+    "response": {
+      "SILENT": "Sans réponse",
+      "ACKNOWLEDGE": "Accusé de réception",
+      "DISPUTE": "Contestation",
+      "PAYMENT_PROMISE": "Promesse de paiement",
+      "PARTIAL_PAYMENT": "Paiement partiel",
+      "PAID": "Payé",
+      "REFUSED": "Refus"
+    }
   },
   "AdminVesselIdentity": {
     "title": "Identité des navires",
@@ -4055,6 +4464,12 @@
     "inviteDialogTitle": "Inviter l'armateur",
     "inviteDialogSubtitle": "Envoyer une invitation au portail à {name}.",
     "navLink": "Armateurs",
+    "remind": "Relancer",
+    "remindConfirmTitle": "Confirmer la relance",
+    "remindConfirmBody": "Envoyer une relance manuelle à {name} pour la facture {ref} ? Cet envoi est immédiat et irréversible.",
+    "sendRecap": "Envoyer le récapitulatif",
+    "sendRecapConfirmTitle": "Confirmer l'envoi du récapitulatif",
+    "sendRecapConfirmBody": "Envoyer à {name} le récapitulatif consolidé de ses {count} factures ouvertes ? Cet envoi est immédiat et irréversible.",
     "state": {
       "active": "Actif",
       "invited": "Invité",
@@ -4079,6 +4494,8 @@
       "invoiced": "Facturé",
       "paid": "Payé",
       "outstanding": "Dû",
+      "overdue": "En retard",
+      "lastReminder": "Dernière relance",
       "actions": "Actions",
       "email": "Email",
       "imo": "IMO",
@@ -4091,7 +4508,12 @@
       "due": "Dû",
       "status": "Statut",
       "rail": "Rail",
-      "reference": "Référence"
+      "reference": "Référence",
+      "dueDate": "Échéance",
+      "age": "Âge",
+      "priority": "Priorité",
+      "validity": "Période de validité",
+      "agent": "Agent"
     },
     "detail": {
       "identityTitle": "Identité",
@@ -4125,6 +4547,7 @@
       "noPayments": "Aucun paiement.",
       "remindersTitle": "Relances",
       "noReminders": "Aucune relance.",
+      "manualGroup": "Récapitulatif consolidé — {count} factures",
       "escalatedBailiff": "Escaladé — huissier",
       "actionsTitle": "Actions",
       "anonymizeTitle": "Anonymiser (RGPD)",
@@ -4133,7 +4556,116 @@
       "anonymizeConfirmLabel": "Tapez {keyword} pour confirmer",
       "anonymizeConfirmKeyword": "ANONYMISER",
       "anonymizeCta": "Anonymiser définitivement",
-      "anonymizedAt": "Anonymisé le {date}"
+      "anonymizedAt": "Anonymisé le {date}",
+      "totalsTitle": "Totaux de compte",
+      "invoiced": "Facturé",
+      "paid": "Payé",
+      "outstanding": "Dû",
+      "overdueCount": "Factures en retard",
+      "nextDueDate": "Prochaine échéance",
+      "contactsTitle": "Contacts",
+      "officialEmailHint": "Destinataire des factures et relances.",
+      "billingCc": "Copies facturation",
+      "billingCcHint": "Adresses en copie sur les factures et relances, en plus du destinataire officiel.",
+      "addCc": "Ajouter",
+      "removeCc": "Retirer {email}",
+      "infoOnlyHint": "Information seulement — non utilisés pour l'envoi.",
+      "representativesTitle": "Représentants",
+      "noRepresentatives": "Aucun représentant.",
+      "repPrimary": "Copie des nouvelles factures (rapprochement auto)",
+      "repAttach": "Rattacher",
+      "repRevoke": "Révoquer",
+      "repRevoked": "Révoqué",
+      "repManageAll": "Gérer tous les mappages",
+      "repInvite": "Ajouter par e-mail",
+      "repInviteEmail": "E-mail du représentant",
+      "repInviteName": "Nom du représentant",
+      "repInviteSubmit": "Créer et rattacher",
+      "repInviteHint": "Crée le compte et le rattache. Aucun e-mail n'est envoyé — l'accès passe par la relance suivante."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {Aucun armateur en défaut de paiement} =1 {1 armateur en défaut de paiement} other {# armateurs en défaut de paiement}}",
+      "context": "{outstanding} d'encours · {total} armateurs enregistrés",
+      "export": "Exporter la liste",
+      "campaign": "Lancer une campagne de relance",
+      "sortedBy": "Trier par : ancienneté de la dette",
+      "tabsLabel": "Filtrer les armateurs"
+    },
+    "daysAgo": "{count, plural, =1 {1 jour} other {# jours}}",
+    "daysShort": "{count} j",
+    "manualReminder": "Relance manuelle",
+    "noContact": "Aucun",
+    "rowLabel": "Ouvrir la fiche de {name}",
+    "close": "Fermer",
+    "campaignTitle": "Lancer une campagne de relance",
+    "campaignBody": "{count, plural, =1 {Envoyer le récapitulatif consolidé à 1 armateur, pour {amount} d'encours} other {Envoyer le récapitulatif consolidé à # armateurs, pour {amount} d'encours}} ? Les envois sont immédiats et irréversibles.",
+    "campaignConfirm": "{count, plural, =1 {Envoyer 1 relance} other {Envoyer # relances}}",
+    "campaignDone": "{sent, plural, =0 {Aucune relance envoyée} =1 {1 relance envoyée} other {# relances envoyées}}{failed, plural, =0 {} =1 {, 1 échec} other {, # échecs}}.",
+    "campaignAllFailed": "Aucune relance n'a pu partir. Vérifiez les adresses officielles avant de réessayer.",
+    "campaignEmpty": "Aucun dossier relançable dans la sélection courante.",
+    "kpi": {
+      "outstanding": "Encours total",
+      "outstandingNote": "{count, plural, =1 {1 facture ouverte} other {# factures ouvertes}}",
+      "aged": "En retard > 30 j",
+      "agedNote": "{count, plural, =1 {1 armateur} other {# armateurs}}",
+      "collected": "Encaissé",
+      "collectedNote": "cumul sur le portefeuille",
+      "avgAge": "Ancienneté moyenne",
+      "avgAgeNote": "sur les dossiers échus",
+      "recovery": "Taux de recouvrement",
+      "recoveryNote": "encaissé / facturé"
+    },
+    "tab": {
+      "defaulting": "En défaut",
+      "all": "Tous",
+      "escalated": "Escaladés",
+      "kyc": "KYC incomplet"
+    },
+    "status": {
+      "sanctioned": "Sanctionné",
+      "escalated": "Escaladé",
+      "default": "En défaut",
+      "late": "En retard",
+      "disputed": "Contesté",
+      "kyc": "KYC incomplet",
+      "clear": "À jour"
+    },
+    "action": {
+      "collections": "Mise en demeure",
+      "remind": "Relancer",
+      "arbitrate": "Arbitrer",
+      "checkKyc": "Vérifier KYC",
+      "file": "Fiche",
+      "noEmail": "Aucune adresse officielle — impossible de relancer."
+    },
+    "recapScope": "Portée",
+    "recapScopeAll": "Toute la flotte"
+  },
+  "AdminReglements": {
+    "title": "Règlements",
+    "subtitle": "Facturation, encaissements et impayés par juridiction.",
+    "flowTitle": "Flux de facturation et d'encaissement",
+    "utcNote": "Heures en UTC",
+    "today": "Aujourd'hui",
+    "week": "Cette semaine",
+    "month": "Ce mois-ci",
+    "invoiced": "Facturé",
+    "collected": "Encaissé",
+    "totalOutstanding": "Total dû",
+    "overdue": "En retard",
+    "overdueCount": "{count} factures en retard",
+    "toChase": "À relancer",
+    "empty": "Aucun armateur en retard.",
+    "sendRecap": "Récapitulatif",
+    "sendRecapConfirmTitle": "Confirmer l'envoi du récapitulatif",
+    "sendRecapConfirmBody": "Envoyer à {name} le récapitulatif consolidé de ses {count} factures ouvertes ? Cet envoi est immédiat et irréversible.",
+    "cancel": "Annuler",
+    "col": {
+      "owner": "Armateur",
+      "outstanding": "Dû",
+      "overdue": "En retard",
+      "tier": "Palier",
+      "lastReminder": "Dernière relance"
     }
   },
   "AdminAirlines": {
@@ -4317,5 +4849,76 @@
     "cta_payment": "Voir mes avis",
     "dismiss": "Masquer",
     "help": "Comment ça marche"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Rien en attente d'arbitrage} =1 {1 élément en attente d'arbitrage} other {# éléments en attente d'arbitrage}}",
+    "breakdown": "{vessels} identités navire · {agents} agents · {ports} ports d’origine",
+    "tabsLabel": "Filtrer par type d’élément",
+    "kind": {
+      "vessel-identity": "Identité navire",
+      "agent": "Agent",
+      "origin-port": "Port d’origine"
+    },
+    "approveConforming": "{count, plural, =0 {Aucun conforme} =1 {Approuver le conforme} other {Approuver les # conformes}}",
+    "noConforming": "Aucun élément conforme : chaque dossier restant porte au moins un écart.",
+    "submitted": "soumis par {by} · {date}",
+    "colField": "Champ",
+    "colDeclared": "Déclaré",
+    "colSource": "Source officielle",
+    "field": {
+      "email": "E-mail officiel",
+      "ownerName": "Raison sociale",
+      "country": "Pays",
+      "manager": "Gestionnaire",
+      "rawDestination": "Destination AIS",
+      "matchedPort": "Port rapproché",
+      "editDistance": "Distance d’édition"
+    },
+    "divergences": "{count, plural, =1 {1 écart à arbitrer} other {# écarts à arbitrer}}",
+    "conforming": "Aucun écart — ne fait que compléter des champs vides.",
+    "openSpecialised": "Ouvrir l’écran dédié",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "working": "En cours…",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "empty": "Rien à arbitrer dans cette famille.",
+    "errorOn": "{title} : {reason}",
+    "reasonRequired": "Un motif d’au moins 3 caractères est requis.",
+    "rejectTitle": "Rejeter cet élément",
+    "rejectBody": "Rejeter « {title} » ? Le motif est enregistré dans la piste d’audit.",
+    "rejectReasonLabel": "Motif du rejet",
+    "bulkTitle": "Approuver les éléments conformes",
+    "bulkBody": "{count, plural, =1 {Approuver 1 élément conforme} other {Approuver # éléments conformes}} ? Aucun d'eux ne porte d'écart : l'approbation ne fait que compléter des champs vides. Certaines approbations déclenchent un e-mail.",
+    "bulkDone": "{done, plural, =0 {Aucun élément approuvé} =1 {1 élément approuvé} other {# éléments approuvés}}{failed, plural, =0 {} =1 {, 1 échec} other {, # échecs}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "Nouvel élément à arbitrer",
+        "body": "{subject} attend une décision dans la file de validation."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "Nouvelle demande d’inscription",
+        "body": "{org} a déposé une demande d’accès."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "Dossier escaladé",
+        "body": "{debtor} — {ref} est passé au palier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Réponse d’un débiteur",
+        "body": "Réponse « {response} » enregistrée sur un dossier au palier {tier}. La rampe est suspendue."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Encaissement au guichet",
+        "body": "{amount} encaissés pour {debtor}, en attente de validation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Facture contestée",
+        "body": "{debtor} conteste la facture {ref}."
+      }
+    },
+    "empty": "Rien de neuf."
   }
 }

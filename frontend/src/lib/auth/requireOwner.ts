@@ -11,12 +11,26 @@
 //      to re-query.
 //   3. Asserts account_state='ACTIVE' — INVITED owners who haven't redeemed
 //      their magic link yet are bounced.
+//
+// MEMBRES (mig 135)
+// Résout aussi un MEMBRE invité d'un compte, avec la même préséance que
+// current_shipowner_id() et requirePrincipal : la propriété d'abord. Le
+// paramètre `privilege` exige une sous-permission ; `'holder'` réserve l'action
+// au titulaire.
+//
+// Le refus est un `redirect`, pas un `{ ok: false }` : ces actions n'ont pas de
+// chemin d'échec côté appelant — elles supposent depuis toujours qu'arriver ici
+// vaut autorisation. Rendre une valeur les laisserait continuer sans droit.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import type { ShipownerListRow } from '@/services/shipownerService';
+import {
+    OWNER_ALL_PRIVILEGES, privilegesFromMember,
+    type OwnerPrivileges, type PrivilegeKey,
+} from '@/lib/auth/ownerPrivileges';
 
 export interface OwnerSession {
     userId: string;
@@ -24,10 +38,28 @@ export interface OwnerSession {
     shipowner: ShipownerListRow;
     /** The operator's home jurisdiction (GreenGate v8, Model B). Pass to createTenantClient(). */
     jurisdictionId: string;
+    /** Sous-permissions de l'appelant sur ce compte. Le titulaire les a toutes. */
+    privileges: OwnerPrivileges;
+    /** Vrai quand l'appelant est un membre invité, pas le titulaire. */
+    isMember: boolean;
     supabase: SupabaseClient;
 }
 
-export async function requireOwner(): Promise<OwnerSession> {
+const OWNER_COLUMNS =
+    'id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, aoc_number, jurisdiction_id';
+
+/**
+ * Ce qu'une action exige de son appelant :
+ *   - une sous-permission (`'canPay'`, `'canDispute'`, `'canManageVessels'`,
+ *     `'canInvite'`) ;
+ *   - `'holder'` pour ce qui n'appartient qu'au titulaire — l'identité légale
+ *     de la société et ses coordonnees bancaires ne se delèguent pas par une
+ *     case à cocher ;
+ *   - rien, pour ce que tout membre peut faire.
+ */
+export type OwnerRequirement = PrivilegeKey | 'holder';
+
+export async function requireOwner(requirement?: OwnerRequirement): Promise<OwnerSession> {
     const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -35,13 +67,40 @@ export async function requireOwner(): Promise<OwnerSession> {
 
     // Look up the shipowners row attached to this profile. Single source of
     // truth — RLS ensures we can only see our own row.
-    const { data: shipowner, error } = await supabase
+    let { data: shipowner } = await supabase
         .from('shipowners')
-        .select('id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, aoc_number, jurisdiction_id')
+        .select(OWNER_COLUMNS)
         .eq('profile_id', user.id)
         .maybeSingle();
 
-    if (error || !shipowner) {
+    let privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES;
+    let isMember = false;
+
+    // Membre invité (mig 135) — teste APRES la propriété, comme partout ailleurs.
+    if (!shipowner) {
+        const { data: membership } = await supabase
+            .from('owner_members')
+            .select('shipowner_id, can_pay, can_dispute, can_manage_vessels, can_invite')
+            .eq('profile_id', user.id)
+            .eq('active', true)
+            .maybeSingle();
+
+        if (membership) {
+            const memberRow = membership as { shipowner_id: string };
+            const { data: memberOwner } = await supabase
+                .from('shipowners')
+                .select(OWNER_COLUMNS)
+                .eq('id', memberRow.shipowner_id)
+                .maybeSingle();
+            if (memberOwner) {
+                shipowner = memberOwner;
+                privileges = privilegesFromMember(membership);
+                isMember = true;
+            }
+        }
+    }
+
+    if (!shipowner) {
         // Either profile_id wasn't set (corrupt invite) or auth user has no
         // matching shipowner — log out and bounce.
         await supabase.auth.signOut();
@@ -55,11 +114,21 @@ export async function requireOwner(): Promise<OwnerSession> {
         redirect(`/login?error=state_${shipowner.account_state.toLowerCase()}`);
     }
 
+    // Le droit exigé est vérifié APRES l'état du compte : un compte suspendu se
+    // refuse pour tout le monde, avec le même message, avant toute question de
+    // permission.
+    if (requirement) {
+        const granted = requirement === 'holder' ? !isMember : privileges[requirement];
+        if (!granted) redirect('/owner/profile?error=forbidden');
+    }
+
     return {
         userId: user.id,
         email: user.email ?? shipowner.official_email ?? '',
         shipowner: shipowner as ShipownerListRow,
         jurisdictionId: (shipowner as unknown as { jurisdiction_id: string }).jurisdiction_id,
+        privileges,
+        isMember,
         supabase,
     };
 }

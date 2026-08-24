@@ -1,11 +1,17 @@
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { Constants, type Database } from '@/types/supabase.generated';
 import type { BadgeVariant } from '@/lib/badgeUtils';
 
-// La vue v_collection_admin n'est pas dans supabase.generated.ts ; client non typé
-// pour le query builder (même patron que invoiceAdminService).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Client = SupabaseClient<any>;
+type Client = SupabaseClient<Database>;
+
+// Les valeurs filtrables se lisent sur la vue elle-même plutôt que d'être
+// recopiées : un palier ajouté en base arrive ici sans rien toucher, et une
+// valeur inventée ne compile plus au lieu de renvoyer une page vide.
+type CollectionRow = Database['public']['Views']['v_collection_admin']['Row'];
+export type CollectionStatus = NonNullable<CollectionRow['status']>;
+export type CollectionTier = NonNullable<CollectionRow['latest_tier']>;
+export type CollectionResponse = NonNullable<CollectionRow['latest_response_type']>;
 
 export const DEFAULT_PAGE_SIZE = 25;
 export const MAX_PAGE_SIZE = 100;
@@ -28,14 +34,21 @@ export interface CollectionAdminRow {
     latest_sent_at: string | null;
     latest_response_type: string | null;
     latest_response_at: string | null;
+    // mig 126 : reminder_count exclut désormais les relances MANUAL (elles ne
+    // font pas partie de la rampe légale) — manual_count/last_manual_at sont
+    // leur compensation, pour ne pas perdre ce geste hors procédure à l'écran.
+    manual_count: number;
+    last_manual_at: string | null;
 }
 
 export interface CollectionAdminFilters {
     q?: string;
     jurisdictionId?: string;
-    status?: string;
-    latestTier?: string;
-    latestResponse?: string;
+    status?: CollectionStatus;
+    latestTier?: CollectionTier;
+    latestResponse?: CollectionResponse;
+    sortKey?: string;
+    sortDir?: 'asc' | 'desc';
     page: number;
     pageSize: number;
 }
@@ -51,12 +64,23 @@ function first(v: string | string[] | undefined): string | undefined {
     return Array.isArray(v) ? v[0] : (v ?? undefined);
 }
 
+/** Colonnes triables. Toute clé absente d'ici retombe sur l'ordre par défaut. */
+export const COLLECTION_SORT_KEYS = [
+    'debtor_name', 'invoice_ref', 'outstanding_usd', 'status',
+    'latest_tier', 'latest_sent_at', 'reminder_count',
+] as const;
+
+// `z.enum` sur la liste générée : une valeur hors enum retombe sur
+// `undefined` (pas de filtre) au lieu de partir en base et de ramener une
+// page vide sans explication.
 const filtersSchema = z.object({
     q: z.string().trim().min(1).optional().catch(undefined),
     jurisdictionId: z.string().trim().min(1).optional().catch(undefined),
-    status: z.string().trim().min(1).optional().catch(undefined),
-    latestTier: z.string().trim().min(1).optional().catch(undefined),
-    latestResponse: z.string().trim().min(1).optional().catch(undefined),
+    status: z.enum(Constants.public.Enums.transaction_status).optional().catch(undefined),
+    latestTier: z.enum(Constants.public.Enums.reminder_tier).optional().catch(undefined),
+    latestResponse: z.enum(Constants.public.Enums.debtor_response_type).optional().catch(undefined),
+    sortKey: z.enum(COLLECTION_SORT_KEYS).optional().catch(undefined),
+    sortDir: z.enum(['asc', 'desc']).optional().catch(undefined),
     page: z.number().int().min(1).catch(1),
     pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).catch(DEFAULT_PAGE_SIZE),
 });
@@ -72,6 +96,8 @@ export function parseCollectionFilters(
         status: first(sp.status),
         latestTier: first(sp.latestTier),
         latestResponse: first(sp.latestResponse),
+        sortKey: first(sp.sortKey),
+        sortDir: first(sp.sortDir),
         page: Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1,
         pageSize: Number.isFinite(rawSize) ? Math.min(MAX_PAGE_SIZE, Math.max(1, rawSize)) : DEFAULT_PAGE_SIZE,
     });
@@ -81,27 +107,28 @@ function escapeSearch(q: string): string {
     return q.replace(/[%,()]/g, ' ');
 }
 
-interface RawRow { [k: string]: unknown }
-
-function toRow(r: RawRow): CollectionAdminRow {
+function toRow(r: CollectionRow): CollectionAdminRow {
     return {
         transaction_id: String(r.transaction_id),
-        invoice_ref: (r.invoice_ref as string | null) ?? null,
-        status: String(r.status ?? ''),
+        invoice_ref: r.invoice_ref,
+        status: r.status ?? '',
         tax_amount_usd: Number(r.tax_amount_usd),
         outstanding_usd: Number(r.outstanding_usd),
         created_at: String(r.created_at),
-        shipowner_id: (r.shipowner_id as string | null) ?? null,
-        debtor_name: (r.debtor_name as string | null) ?? null,
-        flag_country: (r.flag_country as string | null) ?? null,
-        jurisdiction_id: (r.jurisdiction_id as string | null) ?? null,
-        jurisdiction_code: (r.jurisdiction_code as string | null) ?? null,
-        jurisdiction_name: (r.jurisdiction_name as string | null) ?? null,
+        shipowner_id: r.shipowner_id,
+        debtor_name: r.debtor_name,
+        flag_country: r.flag_country,
+        jurisdiction_id: r.jurisdiction_id,
+        jurisdiction_code: r.jurisdiction_code,
+        jurisdiction_name: r.jurisdiction_name,
         reminder_count: Number(r.reminder_count),
-        latest_tier: (r.latest_tier as string | null) ?? null,
-        latest_sent_at: (r.latest_sent_at as string | null) ?? null,
-        latest_response_type: (r.latest_response_type as string | null) ?? null,
-        latest_response_at: (r.latest_response_at as string | null) ?? null,
+        latest_tier: r.latest_tier,
+        latest_sent_at: r.latest_sent_at,
+        latest_response_type: r.latest_response_type,
+        latest_response_at: r.latest_response_at,
+        // PostgREST rend les BIGINT (count(*)) en chaînes — Number(...) obligatoire.
+        manual_count: Number(r.manual_count),
+        last_manual_at: r.last_manual_at,
     };
 }
 
@@ -119,13 +146,19 @@ export async function listCollectionsAdmin(
         q = q.or(`invoice_ref.ilike.%${s}%,debtor_name.ilike.%${s}%`);
     }
     const offset = (f.page - 1) * f.pageSize;
+    // Revalide au point d'usage : listCollectionsAdmin peut être appelée directement
+    // (tests, futurs appelants) sans passer par parseCollectionFilters. La liste blanche
+    // doit donc tenir ici aussi, pas seulement en amont.
+    const safeSortKey = filtersSchema.shape.sortKey.parse(f.sortKey);
+    const sortKey = safeSortKey ?? 'latest_sent_at';
+    const ascending = safeSortKey ? f.sortDir !== 'desc' : false;
     const { data, count, error } = await q
-        .order('latest_sent_at', { ascending: false })
+        .order(sortKey, { ascending })
         .order('transaction_id', { ascending: true })
         .range(offset, offset + f.pageSize - 1);
     if (error) throw new Error(`listCollectionsAdmin: ${error.message}`);
     return {
-        rows: ((data ?? []) as RawRow[]).map(toRow),
+        rows: (data ?? []).map(toRow),
         total: count ?? 0,
         page: f.page,
         pageSize: f.pageSize,

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { selectProvidersForRail } from '@/services/paymentService';
 import { paypalConfigured } from '@/services/paypalService';
 import { readPortalFeatureFlags, type PortalFeatureFlags } from '@/lib/feature-flags';
+import { getIssuerProfile, primaryAccount } from '@/services/issuerProfileService';
+import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 
 const OWNER_RAILS = ['STRIPE', 'PAYPAL', 'WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET'] as const;
 type Rail = typeof OWNER_RAILS[number];
@@ -108,5 +110,37 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    return NextResponse.json({ rails });
+    // Un rail structurellement indisponible — aucun prestataire actif — n'est
+    // pas descendu au navigateur quand le drapeau est eteint. Le filtrage se
+    // fait ICI et non cote client : masquer a l'affichage laisserait
+    // l'information dans la charge utile, et renseignerait sur l'outillage de
+    // la plateforme quiconque ouvre l'onglet reseau.
+    //
+    // Le portefeuille echappe a ce filtre quel que soit le drapeau : « solde
+    // insuffisant » est une information actionnable, pas une indisponibilite.
+    // Le masquer laisserait croire que le moyen n'existe pas.
+    const visible = flags.showUnavailableRails
+        ? rails
+        : rails.filter((r) => r.eligible || r.rail === 'WALLET');
+
+    // Coordonnées du compte à créditer, servies avec les rails : l'écran de
+    // virement les affichait depuis une constante compilée dans le bundle, donc
+    // insensible à la mig 131. Le dialogue interroge déjà cette route, autant
+    // qu'il y lise aussi le RIB plutôt que d'en ouvrir une seconde.
+    const jurisdictionId = await getServerJurisdictionId().catch(() => null);
+    const profile = await getIssuerProfile(supabase, jurisdictionId);
+    const account = primaryAccount(profile);
+
+    return NextResponse.json({
+        rails: visible,
+        showUnavailable: flags.showUnavailableRails,
+        wire: {
+            beneficiary: account.holder,
+            bank: account.bank,
+            bankAddress: account.bankAddress ?? '',
+            swiftCode: account.swift,
+            iban: account.iban ?? account.accountNumber ?? '',
+            depositReference: account.depositReference,
+        },
+    });
 }

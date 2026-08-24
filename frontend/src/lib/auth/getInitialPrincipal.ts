@@ -66,6 +66,58 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
         };
     }
 
+    // 1b. Membre invité d'un compte (mig 135). Même préséance que
+    // requirePrincipal et que current_shipowner_id() : la propriété d'abord.
+    // Si le shell résolvait autrement, l'écran afficherait un compte pendant que
+    // RLS en servirait un autre.
+    const { data: membership } = await supabase
+        .from('owner_members')
+        .select('shipowner_id')
+        .eq('profile_id', user.id)
+        .eq('active', true)
+        .maybeSingle();
+
+    if (membership) {
+        // RLS borne `shipowners` à current_shipowner_id() : cette lecture ne peut
+        // rendre que le compte dont la personne est membre.
+        const { data: memberOwner } = await supabase
+            .from('shipowners')
+            .select('id, name, official_email, country_code, applicable_modes')
+            .eq('id', (membership as { shipowner_id: string }).shipowner_id)
+            .eq('account_state', 'ACTIVE')
+            .maybeSingle();
+
+        if (memberOwner) {
+            const so = memberOwner as {
+                name: string;
+                official_email: string | null;
+                country_code: string | null;
+                applicable_modes: unknown;
+            };
+            const memberUser: SecureUser = {
+                id: user.id,
+                // Le nom affiché reste celui du COMPTE : c'est le dossier sur
+                // lequel la personne agit, et c'est ce qu'elle doit voir en
+                // permanence pour ne pas se tromper de compte.
+                email: user.email ?? '',
+                fullName: so.name ?? 'Operator',
+                role: UserRole.SHIPPING_AGENT,
+                operationalSite: OperationalSite.BERBERA_PORT,
+                countryCode: so.country_code ?? 'SO',
+                timezone: 'Africa/Mogadishu',
+                preferredLanguage: 'en',
+                lastLogin: user.last_sign_in_at ?? '',
+                ipAddress: '',
+                isActive: true,
+            };
+            return {
+                kind: 'operator',
+                user: memberUser,
+                modes: normaliseOperatorModes(so.applicable_modes),
+            };
+        }
+    }
+
     // 2. Staff: resolve from `profiles`.
     const { data: profile } = await supabase
         .from('profiles')

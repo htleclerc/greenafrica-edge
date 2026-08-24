@@ -32,6 +32,17 @@ export interface SecureUser {
     lastLogin: string;          // ISO datetime
     ipAddress: string;
     isActive: boolean;
+    /**
+     * Sous-permission « valider les encaissements » (mig 130). Additive : un
+     * SUPERADMIN ou un FINANCE_ADMIN ouvre le rail monetaire par son role,
+     * drapeau ou pas. Elle sert a ouvrir ce seul rail a un MANAGER sans lui
+     * donner un second role — profiles.role est une colonne unique.
+     *
+     * Optionnelle, et absente vaut faux. NE SERT JAMAIS A AUTORISER : les
+     * portes du rail monetaire relisent le profil en base via
+     * `requireSettlementRights`. Ce champ n'existe que pour l'affichage.
+     */
+    canSettlePayments?: boolean;
 }
 
 // ── Vessel (Secure/Enriched) ─────────────────────────────────────────────────

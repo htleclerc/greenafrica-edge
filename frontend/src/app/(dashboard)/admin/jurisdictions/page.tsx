@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { AdminJurisdictions } from '@/components/dashboard/admin/AdminJurisdictions';
+import { IssuerProfilePanel, type IssuerProfileRow } from '@/components/dashboard/admin/IssuerProfilePanel';
 import type { JurisdictionRow, JurisdictionModeConfigRow, TariffRow, SplitRuleRow, SettlementRow, JurisdictionBillingCcRow } from '@/components/dashboard/admin/AdminJurisdictions';
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default async function AdminJurisdictionsRoute() {
 
     const platform = createPlatformClient();
 
-    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes, settlementRes, billingCcRes] = await Promise.all([
+    const [jurisdictionsRes, modeConfigsRes, tariffsRes, splitRulesRes, settlementRes, billingCcRes, issuerProfilesRes] = await Promise.all([
         platform
             .from('jurisdictions')
             .select('id, code, name, default_currency, locales, status')
@@ -57,6 +58,9 @@ export default async function AdminJurisdictionsRoute() {
         platform
             .from('jurisdiction_billing_cc')
             .select('jurisdiction_id, cc_emails, bailiff_cc_emails'),
+        platform
+            .from('jurisdiction_issuer_profile')
+            .select('*'),
     ]);
 
     if (jurisdictionsRes.error) {
@@ -77,6 +81,9 @@ export default async function AdminJurisdictionsRoute() {
     if (billingCcRes.error) {
         throw new Error(`Failed to load recovery CC lists: ${billingCcRes.error.message}`);
     }
+    if (issuerProfilesRes.error) {
+        throw new Error(`Failed to load issuer profiles: ${issuerProfilesRes.error.message}`);
+    }
 
     const ccByJurisdiction: Record<string, { cc_emails: string[]; bailiff_cc_emails: string[] }> = {};
     for (const row of (billingCcRes.data ?? []) as JurisdictionBillingCcRow[]) {
@@ -96,6 +103,11 @@ export default async function AdminJurisdictionsRoute() {
                 settlement={(settlementRes.data ?? []) as SettlementRow[]}
                 viewerRole={profile.role}
                 ccByJurisdiction={ccByJurisdiction}
+            />
+            <IssuerProfilePanel
+                jurisdictions={(jurisdictionsRes.data ?? []).map((j) => ({ id: j.id, code: j.code, name: j.name }))}
+                profiles={(issuerProfilesRes.data ?? []) as unknown as IssuerProfileRow[]}
+                viewerRole={profile.role}
             />
         </div>
     );

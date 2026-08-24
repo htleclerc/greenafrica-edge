@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -113,6 +118,13 @@ export type Database = {
             foreignKeyName: "aircraft_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "aircraft_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -121,6 +133,20 @@ export type Database = {
             columns: ["operator_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aircraft_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aircraft_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
         ]
@@ -288,6 +314,13 @@ export type Database = {
             foreignKeyName: "arrival_alerts_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "arrival_alerts_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -337,6 +370,27 @@ export type Database = {
             foreignKeyName: "fk_arrival_alert_final_txn"
             columns: ["final_transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_final_txn"
+            columns: ["final_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_final_txn"
+            columns: ["final_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_final_txn"
+            columns: ["final_transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -365,6 +419,27 @@ export type Database = {
             foreignKeyName: "fk_arrival_alert_proforma_txn"
             columns: ["proforma_transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_proforma_txn"
+            columns: ["proforma_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_proforma_txn"
+            columns: ["proforma_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_arrival_alert_proforma_txn"
+            columns: ["proforma_transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -379,6 +454,7 @@ export type Database = {
           entity_type: string
           id: string
           ip_address: unknown
+          jurisdiction_id: string | null
           ref: string | null
           severity: Database["public"]["Enums"]["audit_severity"]
           user_full_name: string
@@ -392,6 +468,7 @@ export type Database = {
           entity_type: string
           id?: string
           ip_address?: unknown
+          jurisdiction_id?: string | null
           ref?: string | null
           severity?: Database["public"]["Enums"]["audit_severity"]
           user_full_name: string
@@ -405,12 +482,34 @@ export type Database = {
           entity_type?: string
           id?: string
           ip_address?: unknown
+          jurisdiction_id?: string | null
           ref?: string | null
           severity?: Database["public"]["Enums"]["audit_severity"]
           user_full_name?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "audit_logs_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "audit_logs_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
           {
             foreignKeyName: "audit_logs_user_id_fkey"
             columns: ["user_id"]
@@ -589,6 +688,27 @@ export type Database = {
             foreignKeyName: "collection_reminders_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "collection_reminders_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_reminders_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "collection_reminders_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -676,6 +796,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "transactions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_event_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "collections_event_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_event_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
           },
           {
             foreignKeyName: "collections_event_transaction_id_fkey"
@@ -834,6 +975,27 @@ export type Database = {
             foreignKeyName: "dispute_intervals_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "dispute_intervals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispute_intervals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "dispute_intervals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -940,6 +1102,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "transactions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "disputes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
           },
           {
             foreignKeyName: "disputes_transaction_id_fkey"
@@ -1072,6 +1255,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equasis_scrape_proposals_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equasis_scrape_proposals_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
         ]
@@ -1255,6 +1452,13 @@ export type Database = {
             foreignKeyName: "geofences_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "geofences_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -1302,76 +1506,149 @@ export type Database = {
         }
         Relationships: []
       }
-      inspections: {
+      jurisdiction_billing_cc: {
         Row: {
-          checklist: Json
-          compliance_verified: boolean | null
-          created_at: string
-          findings: string | null
-          id: string
-          inspection_type: Database["public"]["Enums"]["inspection_type"]
-          inspector_id: string
-          mmsi: string
-          offline_created: boolean | null
-          photo_urls: string[] | null
-          ref: string | null
-          status: Database["public"]["Enums"]["inspection_status"]
-          synced_at: string | null
-          vessel_id: string
+          bailiff_cc_emails: string[]
+          cc_emails: string[]
+          jurisdiction_id: string
+          updated_at: string
         }
         Insert: {
-          checklist?: Json
-          compliance_verified?: boolean | null
-          created_at?: string
-          findings?: string | null
-          id?: string
-          inspection_type?: Database["public"]["Enums"]["inspection_type"]
-          inspector_id: string
-          mmsi: string
-          offline_created?: boolean | null
-          photo_urls?: string[] | null
-          ref?: string | null
-          status?: Database["public"]["Enums"]["inspection_status"]
-          synced_at?: string | null
-          vessel_id: string
+          bailiff_cc_emails?: string[]
+          cc_emails?: string[]
+          jurisdiction_id: string
+          updated_at?: string
         }
         Update: {
-          checklist?: Json
-          compliance_verified?: boolean | null
-          created_at?: string
-          findings?: string | null
-          id?: string
-          inspection_type?: Database["public"]["Enums"]["inspection_type"]
-          inspector_id?: string
-          mmsi?: string
-          offline_created?: boolean | null
-          photo_urls?: string[] | null
-          ref?: string | null
-          status?: Database["public"]["Enums"]["inspection_status"]
-          synced_at?: string | null
-          vessel_id?: string
+          bailiff_cc_emails?: string[]
+          cc_emails?: string[]
+          jurisdiction_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "inspections_inspector_id_fkey"
-            columns: ["inspector_id"]
-            isOneToOne: false
-            referencedRelation: "profile_credit_usage"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "inspections_inspector_id_fkey"
-            columns: ["inspector_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            foreignKeyName: "jurisdiction_billing_cc_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "jurisdictions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inspections_vessel_id_fkey"
-            columns: ["vessel_id"]
-            isOneToOne: false
-            referencedRelation: "vessels"
+            foreignKeyName: "jurisdiction_billing_cc_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_billing_cc_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+        ]
+      }
+      jurisdiction_issuer_profile: {
+        Row: {
+          authority_line: string | null
+          bailiff_name: string | null
+          bank_accounts: Json
+          billing_email: string | null
+          created_at: string
+          decree_reference: string | null
+          director_email: string | null
+          director_name: string | null
+          director_phone: string | null
+          director_title: string | null
+          dispute_period_days: number | null
+          escalation_line: string | null
+          id: string
+          issuer_address: string | null
+          issuer_legal_name: string | null
+          issuer_name: string | null
+          jurisdiction_id: string | null
+          late_penalty_usd: number | null
+          legal_basis_url: string | null
+          operations_email: string | null
+          payment_terms_days: number | null
+          sovereign_line: string | null
+          supervising_ministry: string | null
+          updated_at: string
+        }
+        Insert: {
+          authority_line?: string | null
+          bailiff_name?: string | null
+          bank_accounts?: Json
+          billing_email?: string | null
+          created_at?: string
+          decree_reference?: string | null
+          director_email?: string | null
+          director_name?: string | null
+          director_phone?: string | null
+          director_title?: string | null
+          dispute_period_days?: number | null
+          escalation_line?: string | null
+          id?: string
+          issuer_address?: string | null
+          issuer_legal_name?: string | null
+          issuer_name?: string | null
+          jurisdiction_id?: string | null
+          late_penalty_usd?: number | null
+          legal_basis_url?: string | null
+          operations_email?: string | null
+          payment_terms_days?: number | null
+          sovereign_line?: string | null
+          supervising_ministry?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authority_line?: string | null
+          bailiff_name?: string | null
+          bank_accounts?: Json
+          billing_email?: string | null
+          created_at?: string
+          decree_reference?: string | null
+          director_email?: string | null
+          director_name?: string | null
+          director_phone?: string | null
+          director_title?: string | null
+          dispute_period_days?: number | null
+          escalation_line?: string | null
+          id?: string
+          issuer_address?: string | null
+          issuer_legal_name?: string | null
+          issuer_name?: string | null
+          jurisdiction_id?: string | null
+          late_penalty_usd?: number | null
+          legal_basis_url?: string | null
+          operations_email?: string | null
+          payment_terms_days?: number | null
+          sovereign_line?: string | null
+          supervising_ministry?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jurisdiction_issuer_profile_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "jurisdictions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_issuer_profile_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_issuer_profile_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: true
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
           },
         ]
       }
@@ -1407,6 +1684,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jurisdictions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_mode_config_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
           },
           {
             foreignKeyName: "jurisdiction_mode_config_jurisdiction_id_fkey"
@@ -1569,6 +1853,112 @@ export type Database = {
             referencedRelation: "shipowners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "owner_agent_mappings_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_agent_mappings_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_members: {
+        Row: {
+          active: boolean
+          can_dispute: boolean
+          can_invite: boolean
+          can_manage_vessels: boolean
+          can_pay: boolean
+          created_at: string
+          id: string
+          invited_by: string | null
+          profile_id: string
+          revoked_at: string | null
+          shipowner_id: string
+        }
+        Insert: {
+          active?: boolean
+          can_dispute?: boolean
+          can_invite?: boolean
+          can_manage_vessels?: boolean
+          can_pay?: boolean
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          profile_id: string
+          revoked_at?: string | null
+          shipowner_id: string
+        }
+        Update: {
+          active?: boolean
+          can_dispute?: boolean
+          can_invite?: boolean
+          can_manage_vessels?: boolean
+          can_pay?: boolean
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          profile_id?: string
+          revoked_at?: string | null
+          shipowner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profile_credit_usage"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "owner_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile_credit_usage"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "owner_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_members_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_members_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_members_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
         ]
       }
       owner_notifications: {
@@ -1623,6 +2013,13 @@ export type Database = {
             foreignKeyName: "owner_notifications_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -1631,6 +2028,99 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_statements: {
+        Row: {
+          generated_at: string
+          id: string
+          jurisdiction_id: string
+          open_count: number
+          payments_in_month_usd: number
+          pdf_path: string
+          period_month: string
+          shipowner_id: string
+          total_outstanding_usd: number
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          jurisdiction_id: string
+          open_count?: number
+          payments_in_month_usd?: number
+          pdf_path: string
+          period_month: string
+          shipowner_id: string
+          total_outstanding_usd: number
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          jurisdiction_id?: string
+          open_count?: number
+          payments_in_month_usd?: number
+          pdf_path?: string
+          period_month?: string
+          shipowner_id?: string
+          total_outstanding_usd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_statements_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_statements_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "owner_statements_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "owner_statements_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_statements_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_statements_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
         ]
@@ -1877,6 +2367,13 @@ export type Database = {
             foreignKeyName: "payments_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "payments_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -1885,6 +2382,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
           {
@@ -1912,6 +2423,27 @@ export type Database = {
             foreignKeyName: "payments_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -1920,6 +2452,7 @@ export type Database = {
       profiles: {
         Row: {
           can_record_cash: boolean
+          can_settle_payments: boolean
           country_code: string
           created_at: string
           credit_limit_usd: number
@@ -1939,6 +2472,7 @@ export type Database = {
         }
         Insert: {
           can_record_cash?: boolean
+          can_settle_payments?: boolean
           country_code?: string
           created_at?: string
           credit_limit_usd?: number
@@ -1958,6 +2492,7 @@ export type Database = {
         }
         Update: {
           can_record_cash?: boolean
+          can_settle_payments?: boolean
           country_code?: string
           created_at?: string
           credit_limit_usd?: number
@@ -2069,6 +2604,13 @@ export type Database = {
             foreignKeyName: "refunds_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "refunds_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -2094,6 +2636,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "refunds_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "refunds_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
@@ -2113,6 +2669,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "transactions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "refunds_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
           },
           {
             foreignKeyName: "refunds_transaction_id_fkey"
@@ -2271,6 +2848,13 @@ export type Database = {
             foreignKeyName: "revenue_split_rule_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "revenue_split_rule_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -2281,15 +2865,21 @@ export type Database = {
           account_state: Database["public"]["Enums"]["shipowner_account_state"]
           address: string | null
           aliases: string[]
+          anonymized_at: string | null
           aoc_number: string | null
           applicable_modes: Database["public"]["Enums"]["transport_mode"][]
           bank_name: string | null
           billing_address_line1: string | null
           billing_address_line2: string | null
+          billing_cc_emails: string[]
           billing_city: string | null
           billing_country_code: string | null
           billing_legal_name: string | null
           billing_postal_code: string | null
+          billing_proof_doc_type: string | null
+          billing_proof_doc_url: string | null
+          cgv_accepted_at: string | null
+          cgv_version: string | null
           country_code: string | null
           created_at: string
           email_verified_at: string | null
@@ -2305,6 +2895,7 @@ export type Database = {
           invited_at: string | null
           invited_by: string | null
           is_ofac_sdn: boolean
+          is_placeholder: boolean
           is_un_prohibited: boolean
           jurisdiction_id: string
           kyc_level_b_completed_at: string | null
@@ -2331,15 +2922,21 @@ export type Database = {
           account_state?: Database["public"]["Enums"]["shipowner_account_state"]
           address?: string | null
           aliases?: string[]
+          anonymized_at?: string | null
           aoc_number?: string | null
           applicable_modes?: Database["public"]["Enums"]["transport_mode"][]
           bank_name?: string | null
           billing_address_line1?: string | null
           billing_address_line2?: string | null
+          billing_cc_emails?: string[]
           billing_city?: string | null
           billing_country_code?: string | null
           billing_legal_name?: string | null
           billing_postal_code?: string | null
+          billing_proof_doc_type?: string | null
+          billing_proof_doc_url?: string | null
+          cgv_accepted_at?: string | null
+          cgv_version?: string | null
           country_code?: string | null
           created_at?: string
           email_verified_at?: string | null
@@ -2355,6 +2952,7 @@ export type Database = {
           invited_at?: string | null
           invited_by?: string | null
           is_ofac_sdn?: boolean
+          is_placeholder?: boolean
           is_un_prohibited?: boolean
           jurisdiction_id?: string
           kyc_level_b_completed_at?: string | null
@@ -2381,15 +2979,21 @@ export type Database = {
           account_state?: Database["public"]["Enums"]["shipowner_account_state"]
           address?: string | null
           aliases?: string[]
+          anonymized_at?: string | null
           aoc_number?: string | null
           applicable_modes?: Database["public"]["Enums"]["transport_mode"][]
           bank_name?: string | null
           billing_address_line1?: string | null
           billing_address_line2?: string | null
+          billing_cc_emails?: string[]
           billing_city?: string | null
           billing_country_code?: string | null
           billing_legal_name?: string | null
           billing_postal_code?: string | null
+          billing_proof_doc_type?: string | null
+          billing_proof_doc_url?: string | null
+          cgv_accepted_at?: string | null
+          cgv_version?: string | null
           country_code?: string | null
           created_at?: string
           email_verified_at?: string | null
@@ -2405,6 +3009,7 @@ export type Database = {
           invited_at?: string | null
           invited_by?: string | null
           is_ofac_sdn?: boolean
+          is_placeholder?: boolean
           is_un_prohibited?: boolean
           jurisdiction_id?: string
           kyc_level_b_completed_at?: string | null
@@ -2453,6 +3058,13 @@ export type Database = {
             foreignKeyName: "shipowners_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "shipowners_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -2469,6 +3081,114 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_notification_reads: {
+        Row: {
+          notification_id: string
+          profile_id: string
+          read_at: string
+        }
+        Insert: {
+          notification_id: string
+          profile_id: string
+          read_at?: string
+        }
+        Update: {
+          notification_id?: string
+          profile_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "staff_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "v_staff_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_notification_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile_credit_usage"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "staff_notification_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_notifications: {
+        Row: {
+          audience_roles: Database["public"]["Enums"]["user_role"][]
+          body_key: string
+          body_params: Json
+          created_at: string
+          dedup_key: string | null
+          deep_link: string | null
+          id: string
+          jurisdiction_id: string
+          kind: Database["public"]["Enums"]["staff_notification_kind"]
+          title_key: string
+        }
+        Insert: {
+          audience_roles: Database["public"]["Enums"]["user_role"][]
+          body_key: string
+          body_params?: Json
+          created_at?: string
+          dedup_key?: string | null
+          deep_link?: string | null
+          id?: string
+          jurisdiction_id: string
+          kind: Database["public"]["Enums"]["staff_notification_kind"]
+          title_key: string
+        }
+        Update: {
+          audience_roles?: Database["public"]["Enums"]["user_role"][]
+          body_key?: string
+          body_params?: Json
+          created_at?: string
+          dedup_key?: string | null
+          deep_link?: string | null
+          id?: string
+          jurisdiction_id?: string
+          kind?: Database["public"]["Enums"]["staff_notification_kind"]
+          title_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
           },
         ]
       }
@@ -2542,6 +3262,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jurisdictions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tariffs_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
           },
           {
             foreignKeyName: "tariffs_jurisdiction_id_fkey"
@@ -2639,7 +3366,6 @@ export type Database = {
           port_call: string | null
           proforma_sent_at: string | null
           rate_usd_per_tco2: number
-          receipt_pdf_url: string | null
           ref: string | null
           related_transaction_id: string | null
           settlement_effective_at: string | null
@@ -2683,7 +3409,6 @@ export type Database = {
           port_call?: string | null
           proforma_sent_at?: string | null
           rate_usd_per_tco2?: number
-          receipt_pdf_url?: string | null
           ref?: string | null
           related_transaction_id?: string | null
           settlement_effective_at?: string | null
@@ -2727,7 +3452,6 @@ export type Database = {
           port_call?: string | null
           proforma_sent_at?: string | null
           rate_usd_per_tco2?: number
-          receipt_pdf_url?: string | null
           ref?: string | null
           related_transaction_id?: string | null
           settlement_effective_at?: string | null
@@ -2817,6 +3541,13 @@ export type Database = {
             foreignKeyName: "transactions_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -2845,6 +3576,27 @@ export type Database = {
             foreignKeyName: "transactions_related_transaction_id_fkey"
             columns: ["related_transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transactions_related_transaction_id_fkey"
+            columns: ["related_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_related_transaction_id_fkey"
+            columns: ["related_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transactions_related_transaction_id_fkey"
+            columns: ["related_transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -2853,6 +3605,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
           {
@@ -2906,6 +3672,13 @@ export type Database = {
             foreignKeyName: "user_jurisdictions_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "user_jurisdictions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -2921,6 +3694,141 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vessel_identity_candidates: {
+        Row: {
+          batch_label: string
+          build_year: number | null
+          call_sign: string | null
+          category: Database["public"]["Enums"]["vessel_category"] | null
+          contact_blocked: boolean
+          contact_blocked_reason: string | null
+          deadweight: number | null
+          flag_code: string | null
+          gross_tonnage: number | null
+          id: string
+          imo_number: string
+          imported_at: string
+          imported_by: string | null
+          ism_manager_email: string | null
+          ism_manager_name: string | null
+          last_seen_at: string | null
+          manager_country: string | null
+          manager_email: string | null
+          manager_name: string | null
+          matched_at: string | null
+          matched_by: string | null
+          matched_vessel_id: string | null
+          mmsi: string | null
+          owner_country: string | null
+          owner_email: string | null
+          owner_name: string | null
+          source: string
+          status: string
+          type_raw: string | null
+          vessel_name: string
+        }
+        Insert: {
+          batch_label: string
+          build_year?: number | null
+          call_sign?: string | null
+          category?: Database["public"]["Enums"]["vessel_category"] | null
+          contact_blocked?: boolean
+          contact_blocked_reason?: string | null
+          deadweight?: number | null
+          flag_code?: string | null
+          gross_tonnage?: number | null
+          id?: string
+          imo_number: string
+          imported_at?: string
+          imported_by?: string | null
+          ism_manager_email?: string | null
+          ism_manager_name?: string | null
+          last_seen_at?: string | null
+          manager_country?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_vessel_id?: string | null
+          mmsi?: string | null
+          owner_country?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          source: string
+          status?: string
+          type_raw?: string | null
+          vessel_name: string
+        }
+        Update: {
+          batch_label?: string
+          build_year?: number | null
+          call_sign?: string | null
+          category?: Database["public"]["Enums"]["vessel_category"] | null
+          contact_blocked?: boolean
+          contact_blocked_reason?: string | null
+          deadweight?: number | null
+          flag_code?: string | null
+          gross_tonnage?: number | null
+          id?: string
+          imo_number?: string
+          imported_at?: string
+          imported_by?: string | null
+          ism_manager_email?: string | null
+          ism_manager_name?: string | null
+          last_seen_at?: string | null
+          manager_country?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_vessel_id?: string | null
+          mmsi?: string | null
+          owner_country?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          source?: string
+          status?: string
+          type_raw?: string | null
+          vessel_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vessel_identity_candidates_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "profile_credit_usage"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vessel_identity_candidates_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_identity_candidates_matched_by_fkey"
+            columns: ["matched_by"]
+            isOneToOne: false
+            referencedRelation: "profile_credit_usage"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vessel_identity_candidates_matched_by_fkey"
+            columns: ["matched_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_identity_candidates_matched_vessel_id_fkey"
+            columns: ["matched_vessel_id"]
+            isOneToOne: false
+            referencedRelation: "vessels"
             referencedColumns: ["id"]
           },
         ]
@@ -3098,6 +4006,27 @@ export type Database = {
             foreignKeyName: "fk_vessels_last_txn"
             columns: ["last_transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_vessels_last_txn"
+            columns: ["last_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_vessels_last_txn"
+            columns: ["last_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_vessels_last_txn"
+            columns: ["last_transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
@@ -3126,6 +4055,13 @@ export type Database = {
             foreignKeyName: "vessels_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "vessels_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -3135,6 +4071,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jurisdictions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessels_last_zone_jurisdiction_id_fkey"
+            columns: ["last_zone_jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
           },
           {
             foreignKeyName: "vessels_last_zone_jurisdiction_id_fkey"
@@ -3162,6 +4105,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessels_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessels_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
         ]
@@ -3239,6 +4196,13 @@ export type Database = {
             foreignKeyName: "wallet_ledger_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -3283,6 +4247,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "transactions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
           },
           {
             foreignKeyName: "wallet_ledger_transaction_id_fkey"
@@ -3347,6 +4332,13 @@ export type Database = {
             foreignKeyName: "wallets_jurisdiction_id_fkey"
             columns: ["jurisdiction_id"]
             isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "wallets_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
             referencedRelation: "v_revenue_split_settlement"
             referencedColumns: ["jurisdiction_id"]
           },
@@ -3355,6 +4347,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: true
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallets_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: true
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallets_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: true
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
         ]
@@ -3425,6 +4431,196 @@ export type Database = {
         }
         Relationships: []
       }
+      v_armateur_recouvrement: {
+        Row: {
+          account_state:
+            | Database["public"]["Enums"]["shipowner_account_state"]
+            | null
+          country_code: string | null
+          id: string | null
+          imo_company_no: string | null
+          is_ofac_sdn: boolean | null
+          is_un_prohibited: boolean | null
+          last_auto_tier: Database["public"]["Enums"]["reminder_tier"] | null
+          last_reminder_at: string | null
+          latest_response_type:
+            | Database["public"]["Enums"]["debtor_response_type"]
+            | null
+          name: string | null
+          next_due_date: string | null
+          official_email: string | null
+          open_count: number | null
+          overdue_count: number | null
+          proforma_count: number | null
+          sanctioned: boolean | null
+          total_invoiced_usd: number | null
+          total_outstanding_usd: number | null
+          total_paid_usd: number | null
+        }
+        Relationships: []
+      }
+      v_collection_admin: {
+        Row: {
+          created_at: string | null
+          debtor_name: string | null
+          flag_country: string | null
+          invoice_ref: string | null
+          jurisdiction_code: string | null
+          jurisdiction_id: string | null
+          jurisdiction_name: string | null
+          last_manual_at: string | null
+          latest_response_at: string | null
+          latest_response_type:
+            | Database["public"]["Enums"]["debtor_response_type"]
+            | null
+          latest_sent_at: string | null
+          latest_tier: Database["public"]["Enums"]["reminder_tier"] | null
+          manual_count: number | null
+          outstanding_usd: number | null
+          reminder_count: number | null
+          shipowner_id: string | null
+          status: Database["public"]["Enums"]["transaction_status"] | null
+          tax_amount_usd: number | null
+          transaction_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_compagnie_recouvrement: {
+        Row: {
+          account_state:
+            | Database["public"]["Enums"]["shipowner_account_state"]
+            | null
+          aoc_number: string | null
+          country_code: string | null
+          hub_code: string | null
+          iata_code: string | null
+          icao_code: string | null
+          id: string | null
+          is_ofac_sdn: boolean | null
+          is_un_prohibited: boolean | null
+          name: string | null
+          official_email: string | null
+          proforma_count: number | null
+          sanctioned: boolean | null
+          total_invoiced_usd: number | null
+          total_outstanding_usd: number | null
+          total_paid_usd: number | null
+        }
+        Relationships: []
+      }
+      v_invoice_admin: {
+        Row: {
+          content_hash: string | null
+          created_at: string | null
+          debtor_name: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          due_date: string | null
+          flag_country: string | null
+          id: string | null
+          invoice_ref: string | null
+          is_aviation: boolean | null
+          jurisdiction_code: string | null
+          jurisdiction_id: string | null
+          jurisdiction_name: string | null
+          mode: Database["public"]["Enums"]["transport_mode"] | null
+          outstanding_usd: number | null
+          paid_at: string | null
+          partial_paid_usd: number | null
+          shipowner_id: string | null
+          status: Database["public"]["Enums"]["transaction_status"] | null
+          tax_amount_usd: number | null
+          verify_signature: string | null
+          vessel_imo: string | null
+          vessel_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_payments_initiated_overdue: {
         Row: {
           age_hours: number | null
@@ -3442,6 +4638,20 @@ export type Database = {
             columns: ["shipowner_id"]
             isOneToOne: false
             referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
             referencedColumns: ["id"]
           },
           {
@@ -3469,10 +4679,88 @@ export type Database = {
             foreignKeyName: "payments_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
           },
         ]
+      }
+      v_reglements_dashboard: {
+        Row: {
+          collected_month_count: number | null
+          collected_month_usd: number | null
+          collected_today_count: number | null
+          collected_today_usd: number | null
+          collected_week_count: number | null
+          collected_week_usd: number | null
+          invoiced_month_count: number | null
+          invoiced_month_usd: number | null
+          invoiced_today_count: number | null
+          invoiced_today_usd: number | null
+          invoiced_week_count: number | null
+          invoiced_week_usd: number | null
+          jurisdiction_id: string | null
+          overdue_count: number | null
+          overdue_usd: number | null
+          total_outstanding_usd: number | null
+        }
+        Insert: {
+          collected_month_count?: never
+          collected_month_usd?: never
+          collected_today_count?: never
+          collected_today_usd?: never
+          collected_week_count?: never
+          collected_week_usd?: never
+          invoiced_month_count?: never
+          invoiced_month_usd?: never
+          invoiced_today_count?: never
+          invoiced_today_usd?: never
+          invoiced_week_count?: never
+          invoiced_week_usd?: never
+          jurisdiction_id?: string | null
+          overdue_count?: never
+          overdue_usd?: never
+          total_outstanding_usd?: never
+        }
+        Update: {
+          collected_month_count?: never
+          collected_month_usd?: never
+          collected_today_count?: never
+          collected_today_usd?: never
+          collected_week_count?: never
+          collected_week_usd?: never
+          invoiced_month_count?: never
+          invoiced_month_usd?: never
+          invoiced_today_count?: never
+          invoiced_today_usd?: never
+          invoiced_week_count?: never
+          invoiced_week_usd?: never
+          jurisdiction_id?: string | null
+          overdue_count?: never
+          overdue_usd?: never
+          total_outstanding_usd?: never
+        }
+        Relationships: []
       }
       v_revenue_split_settlement: {
         Row: {
@@ -3490,6 +4778,42 @@ export type Database = {
           unattributed_usd: number | null
         }
         Relationships: []
+      }
+      v_staff_notifications: {
+        Row: {
+          body_key: string | null
+          body_params: Json | null
+          created_at: string | null
+          deep_link: string | null
+          id: string | null
+          jurisdiction_id: string | null
+          kind: Database["public"]["Enums"]["staff_notification_kind"] | null
+          read_at: string | null
+          title_key: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "staff_notifications_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+        ]
       }
       v_stripe_webhook_failures: {
         Row: {
@@ -3512,6 +4836,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
@@ -3536,8 +4874,88 @@ export type Database = {
             foreignKeyName: "payments_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "v_collection_admin"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_invoice_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transaction_outstanding"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "v_transaction_payment_drift"
             referencedColumns: ["transaction_id"]
+          },
+        ]
+      }
+      v_transaction_outstanding: {
+        Row: {
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          due_date: string | null
+          is_claimable: boolean | null
+          jurisdiction_id: string | null
+          mode: Database["public"]["Enums"]["transport_mode"] | null
+          outstanding_usd: number | null
+          paid_usd: number | null
+          shipowner_id: string | null
+          status: Database["public"]["Enums"]["transaction_status"] | null
+          tax_amount_usd: number | null
+          transaction_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_reglements_dashboard"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "v_revenue_split_settlement"
+            referencedColumns: ["jurisdiction_id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "shipowners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3560,6 +4978,20 @@ export type Database = {
             referencedRelation: "shipowners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: false
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_wallet_balance_drift: {
@@ -3579,6 +5011,20 @@ export type Database = {
             referencedRelation: "shipowners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wallets_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: true
+            referencedRelation: "v_armateur_recouvrement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallets_shipowner_id_fkey"
+            columns: ["shipowner_id"]
+            isOneToOne: true
+            referencedRelation: "v_compagnie_recouvrement"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -3588,6 +5034,7 @@ export type Database = {
         Args: { p_payment_id: string; p_profile_id: string }
         Returns: boolean
       }
+      can_settle_payments: { Args: { p_profile_id?: string }; Returns: boolean }
       create_tariff_version: {
         Args: {
           p_actor: string
@@ -3629,9 +5076,20 @@ export type Database = {
       is_admin_or_officer: { Args: never; Returns: boolean }
       kyc_pgsodium_decrypt: { Args: { p_ct: string }; Returns: string }
       kyc_pgsodium_encrypt: { Args: { p_value: string }; Returns: string }
+      kyc_vault_delete: { Args: { p_id: string }; Returns: undefined }
       kyc_vault_retrieve: { Args: { p_id: string }; Returns: string }
       kyc_vault_store: { Args: { p_value: string }; Returns: string }
       match_pending_alerts: { Args: never; Returns: number }
+      minimize_ip: { Args: { ip: unknown }; Returns: unknown }
+      owner_privileges: {
+        Args: never
+        Returns: {
+          can_dispute: boolean
+          can_invite: boolean
+          can_manage_vessels: boolean
+          can_pay: boolean
+        }[]
+      }
       pg_extension_lookup_kyc: { Args: never; Returns: string[] }
       pgmq_ack_message: {
         Args: { msg_id: number; queue_name: string }
@@ -3646,8 +5104,24 @@ export type Database = {
         Args: { queue_name: string; visibility_sec: number }
         Returns: Json
       }
+      profile_visible_in_jurisdictions: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       recompute_transaction_status: {
         Args: { p_txn_id: string }
+        Returns: undefined
+      }
+      rgpd_purge_arrival_alerts: {
+        Args: { p_days?: number; p_dry_run?: boolean }
+        Returns: number
+      }
+      rgpd_purge_owner_notifications: {
+        Args: { p_days?: number; p_dry_run?: boolean }
+        Returns: number
+      }
+      sync_vessel_compliance: {
+        Args: { p_vessel_id: string }
         Returns: undefined
       }
       verify_invoice_lookup: {
@@ -3663,6 +5137,18 @@ export type Database = {
           tax_amount_usd: number
           transaction_type: string
           vessel_imo: string
+          vessel_name: string
+        }[]
+      }
+      vessel_payment_teaser: {
+        Args: { p_identifier: string }
+        Returns: {
+          claimable: boolean
+          earliest_due_date: string
+          has_overdue: boolean
+          imo_number: string
+          outstanding_count: number
+          port_call: string
           vessel_name: string
         }[]
       }
@@ -3691,6 +5177,10 @@ export type Database = {
         | "TRANSACTION_UPDATED"
         | "INVOICE_SENT"
         | "SANCTIONS_CONTACT_BLOCKED"
+        | "SHIPOWNER_ANONYMIZED"
+        | "SHIPOWNER_SELF_CLAIM"
+        | "SHIPOWNER_UPDATED"
+        | "SETTLEMENT_RIGHTS_UPDATED"
       audit_severity: "INFO" | "WARNING" | "CRITICAL"
       compliance_status:
         | "COMPLIANT"
@@ -3729,8 +5219,6 @@ export type Database = {
         | "SCIENTIFIC"
         | "UN_AGENCY"
         | "OTHER"
-      inspection_status: "IN_PROGRESS" | "COMPLETED" | "FLAGGED"
-      inspection_type: "ROUTINE" | "COMPLIANCE_CHECK" | "RANDOM" | "FOLLOW_UP"
       jurisdiction_zone: "EEZ" | "PORT_VICINITY" | "TRANSIT_LANE"
       ledger_entry_kind:
         | "TOPUP"
@@ -3757,6 +5245,7 @@ export type Database = {
         | "WALLET_LOW_BALANCE"
         | "DISPUTE_UPDATED"
         | "OWNER_ESCALATION"
+        | "STATEMENT_READY"
       payment_rail:
         | "STRIPE"
         | "WIRE_TRANSFER"
@@ -3768,6 +5257,7 @@ export type Database = {
         | "MOBILE_MONEY"
         | "BANK_GUARANTEE"
         | "WALLET"
+        | "PAYPAL"
       payment_status_v7:
         | "INITIATED"
         | "PROCESSING"
@@ -3795,7 +5285,15 @@ export type Database = {
         | "FINANCE_ADMIN"
         | "INSTITUTION"
       registration_status: "PENDING" | "APPROVED" | "REJECTED" | "MORE_INFO"
-      reminder_tier: "J15" | "J30" | "J45" | "BAILIFF" | "JUDICIAL"
+      reminder_tier:
+        | "J3"
+        | "J7"
+        | "J15"
+        | "J30"
+        | "J45"
+        | "BAILIFF"
+        | "JUDICIAL"
+        | "MANUAL"
       shipowner_account_state:
         | "GHOST"
         | "PENDING_REVIEW"
@@ -3804,6 +5302,13 @@ export type Database = {
         | "REJECTED"
         | "SUSPENDED"
       shipowner_payment_intent_status: "DECLARED" | "CONFIRMED" | "REJECTED"
+      staff_notification_kind:
+        | "VALIDATION_PENDING"
+        | "REGISTRATION_SUBMITTED"
+        | "COLLECTION_ESCALATED"
+        | "DEBTOR_RESPONDED"
+        | "CASH_PAYMENT_RECORDED"
+        | "DISPUTE_OPENED"
       tax_config_status: "ACTIVE" | "DRAFT" | "ARCHIVED"
       transaction_status:
         | "PAID"
@@ -3990,6 +5495,10 @@ export const Constants = {
         "TRANSACTION_UPDATED",
         "INVOICE_SENT",
         "SANCTIONS_CONTACT_BLOCKED",
+        "SHIPOWNER_ANONYMIZED",
+        "SHIPOWNER_SELF_CLAIM",
+        "SHIPOWNER_UPDATED",
+        "SETTLEMENT_RIGHTS_UPDATED",
       ],
       audit_severity: ["INFO", "WARNING", "CRITICAL"],
       compliance_status: [
@@ -4034,8 +5543,6 @@ export const Constants = {
         "UN_AGENCY",
         "OTHER",
       ],
-      inspection_status: ["IN_PROGRESS", "COMPLETED", "FLAGGED"],
-      inspection_type: ["ROUTINE", "COMPLIANCE_CHECK", "RANDOM", "FOLLOW_UP"],
       jurisdiction_zone: ["EEZ", "PORT_VICINITY", "TRANSIT_LANE"],
       ledger_entry_kind: [
         "TOPUP",
@@ -4063,6 +5570,7 @@ export const Constants = {
         "WALLET_LOW_BALANCE",
         "DISPUTE_UPDATED",
         "OWNER_ESCALATION",
+        "STATEMENT_READY",
       ],
       payment_rail: [
         "STRIPE",
@@ -4075,6 +5583,7 @@ export const Constants = {
         "MOBILE_MONEY",
         "BANK_GUARANTEE",
         "WALLET",
+        "PAYPAL",
       ],
       payment_status_v7: [
         "INITIATED",
@@ -4107,7 +5616,16 @@ export const Constants = {
         "INSTITUTION",
       ],
       registration_status: ["PENDING", "APPROVED", "REJECTED", "MORE_INFO"],
-      reminder_tier: ["J15", "J30", "J45", "BAILIFF", "JUDICIAL"],
+      reminder_tier: [
+        "J3",
+        "J7",
+        "J15",
+        "J30",
+        "J45",
+        "BAILIFF",
+        "JUDICIAL",
+        "MANUAL",
+      ],
       shipowner_account_state: [
         "GHOST",
         "PENDING_REVIEW",
@@ -4117,6 +5635,14 @@ export const Constants = {
         "SUSPENDED",
       ],
       shipowner_payment_intent_status: ["DECLARED", "CONFIRMED", "REJECTED"],
+      staff_notification_kind: [
+        "VALIDATION_PENDING",
+        "REGISTRATION_SUBMITTED",
+        "COLLECTION_ESCALATED",
+        "DEBTOR_RESPONDED",
+        "CASH_PAYMENT_RECORDED",
+        "DISPUTE_OPENED",
+      ],
       tax_config_status: ["ACTIVE", "DRAFT", "ARCHIVED"],
       transaction_status: [
         "PAID",
@@ -4156,4 +5682,3 @@ export const Constants = {
     },
   },
 } as const
-

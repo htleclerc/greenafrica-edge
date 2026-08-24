@@ -33,7 +33,8 @@
     "impact": "Athari",
     "resources": "Rasilimali",
     "about": "Kuhusu",
-    "partnership": "Ushirikiano"
+    "partnership": "Ushirikiano",
+    "nav_admin_validations": "Uthibitishaji"
   },
   "Landing": {
     "badge": "ITIFAKI YA AKILI YA KABONI YA ENZI KUU",
@@ -592,7 +593,23 @@
     "pending_info_title": "Kwa nini hii inachukua muda?",
     "pending_info_desc": "Akaunti zote zinathibitishwa kwa mkono na wafanyakazi wa serikali walioidhinishwa ili kuhakikisha usalama wa jukwaa.",
     "owner_portal_link": "Mmiliki wa meli? Ingia kwenye portal ya mmiliki",
-    "error_database": "Huduma haipatikani kwa sasa. Tafadhali jaribu tena baadaye."
+    "error_database": "Huduma haipatikani kwa sasa. Tafadhali jaribu tena baadaye.",
+    "magicLink": {
+      "tabPassword": "Nenosiri",
+      "tabLink": "Kiungo cha kuingia",
+      "submit": "Nitumie kiungo cha kuingia",
+      "hint": "Weka barua pepe yako, au IMO (tarakimu 7) au MMSI (tarakimu 9) ya meli yako. Tunatuma kiungo cha matumizi moja na msimbo wa tarakimu 6.",
+      "sent": "Ikiwa anwani hii imesajiliwa, kiungo cha kuingia na msimbo vimetumwa kwake.",
+      "rateLimited": "Majaribio mengi mno. Tafadhali jaribu tena baada ya dakika chache.",
+      "queryLabel": "Barua pepe, IMO au MMSI",
+      "sentToHint": "Kiungo na msimbo vimetumwa kwa {hint}.",
+      "sentVessel": "Meli: {vessel}",
+      "codeLabel": "Msimbo wa tarakimu 6",
+      "codeSubmit": "Ingia",
+      "codeHint": "Au bofya kiungo ulichopokea kwa barua pepe — chochote kinafanya kazi.",
+      "badCode": "Msimbo si sahihi au umeisha muda.",
+      "retry": "Tumia barua pepe au meli nyingine"
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Kituo cha Amri",
@@ -702,6 +719,7 @@
     "nav_vision": "Ubao wa Maono",
     "nav_staff": "Usimamizi wa Wafanyakazi",
     "nav_armateurs": "Wamiliki wa Meli",
+    "nav_reglements": "Ulipaji",
     "nav_airlines": "Kampuni za Ndege",
     "nav_origin_port_proposals": "Mapendekezo ya bandari ya asili",
     "nav_cash_desk": "Kasisi",
@@ -710,7 +728,9 @@
     "nav_refunds": "Marejesho",
     "nav_admin_invoices": "Ankara",
     "nav_admin_collections": "Urejeshaji Madeni",
-    "nav_vessel_identity": "Utambulisho wa Meli"
+    "nav_vessel_identity": "Utambulisho wa Meli",
+    "theme_switch_to_light": "Switch to light theme",
+    "theme_switch_to_dark": "Switch to dark theme"
   },
   "AdminStaff": {
     "page_title": "Usimamizi wa Wafanyakazi",
@@ -977,7 +997,13 @@
     "simulator_air_aircraft_type": "Aina ya ndege",
     "simulator_air_lto_cycles": "Mizunguko ya LTO",
     "simulator_air_methodology_note": "Mbinu ya ICAO LTO: utoaji wa hewa kwa kila mzunguko wa kutua na kupaa (kutembea, kupaa, kupanda, kukaribia chini ya futi 3000).",
-    "simulator_air_emissions_label": "Utoaji uliokadiriwa"
+    "simulator_air_emissions_label": "Utoaji uliokadiriwa",
+    "settings_theme_mode": "Night or day",
+    "settings_theme_mode_desc": "Independent of the visual theme: pick the brightness that suits you, whichever skin you use.",
+    "settings_theme_auto": "Automatic",
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light",
+    "settings_theme_auto_hint": "Follows the visual theme — currently: {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
@@ -1270,7 +1296,27 @@
     "tax_liability": "Tax Liability",
     "view_details": "View Details",
     "contest_invoice": "Contest Invoice",
-    "access_denied": "Access restricted."
+    "access_denied": "Access restricted.",
+    "kpiVessels": "Meli",
+    "kpiOutstanding": "Deni lililobaki",
+    "emptyFleet": "Hakuna meli iliyounganishwa na akaunti yako bado.",
+    "noImo": "IMO haijatolewa",
+    "noInvoice": "Hakuna ankara",
+    "invoiceCount": "Ankara {count}",
+    "rename": "Badilisha jina",
+    "renameLabel": "Jina la meli",
+    "renameSubmit": "Hifadhi",
+    "cancel": "Ghairi",
+    "detach": "Ondoa",
+    "detachConfirmYes": "Thibitisha kuondoa",
+    "confirmDetach": "Ondoa meli hii kwenye kundi lako?",
+    "detachBlocked": "Meli hii ina ankara na haiwezi kuondolewa. Kama si yako, pinga ankara.",
+    "dispute": "Pinga",
+    "title": "Meli zangu",
+    "invoiceCountSettled": "ankara {count} · zimelipwa",
+    "detachBlockedSettled": "Meli hii ina ankara iliyolipwa na inabaki kwenye jalada. Ushuru uliolipwa hauwezi kuondolewa.",
+    "invoiceCountPartial": "ankara {count} · zimelipwa kwa sehemu",
+    "restricted": "Managing vessels is not part of your access to this account. The account holder can grant it to you."
   },
   "VesselsPage": {
     "status_compliant": "INAZINGATIA",
@@ -2686,7 +2732,19 @@
       "cancel": "Cancel",
       "confirm": "Claim and generate pro-forma",
       "claiming": "Claiming…"
-    }
+    },
+    "verdict": "{count, plural, =0 {No vessel expected} =1 {1 vessel expected} other {# vessels expected}}",
+    "portLabel": "Port of Berbera",
+    "offline": "Offline",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Berthing imminent} =1 {Berthing in 1 min} other {Berthing in # min}}",
+    "etaHours": "{count, plural, =1 {In 1 h} other {In # h}}",
+    "etaDays": "{count, plural, =1 {Tomorrow} other {In # days}}",
+    "etaPassed": "Berthing overdue",
+    "etaUnknown": "ETA unknown",
+    "ownerInDefault": "Shipowner in default — {amount} unpaid. Departure subject to authorisation.",
+    "ownerClear": "Tax up to date · nothing to do",
+    "reportToAuthority": "Report to the authority"
   },
   "_TODO_AdminEscalations": "Proper Swahili translation pending — strings below are English fallback.",
   "AdminEscalations": {
@@ -2871,6 +2929,7 @@
       "vessels": "Meli",
       "aircraft": "Ndege",
       "fleet": "Meli na ndege",
+      "myFleet": "Simamia meli",
       "invoices": "Ankara",
       "alerts": "Tahadhari",
       "signOut": "Toka",
@@ -2913,7 +2972,26 @@
         "paidYtd": "Paid YTD"
       },
       "quickActions": "Quick actions",
-      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>."
+      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>.",
+      "verdict": "{count, plural, =0 {Nothing to handle today} =1 {1 thing to handle today} other {# things to handle today}}",
+      "context": "{owner} · current tax period",
+      "seeAll": "See all invoices",
+      "payAll": "Pay all · {amount}",
+      "emptyGood": "Nothing to handle. All your taxes are up to date.",
+      "more": "{count, plural, =1 {1 more due date} other {# more due dates}}",
+      "kpi": {
+        "outstanding": "Total outstanding",
+        "outstandingNote": "{count, plural, =0 {no open invoice} =1 {1 open invoice} other {# open invoices}}",
+        "vessels": "Active vessels",
+        "vesselsNote": "attached to your account",
+        "paidYtd": "Paid in {year}",
+        "paidYtdNote": "since January",
+        "wallet": "Wallet balance",
+        "walletNote": "available immediately"
+      },
+      "fleetTitle": "My fleet",
+      "openFleet": "Open My fleet",
+      "fleetSummary": "{count, plural, =0 {No vessel attached yet.} =1 {1 vessel attached to your account.} other {# vessels attached to your account.}}"
     },
     "vessels": {
       "title": "Vessels",
@@ -3039,7 +3117,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Toa marejeo ya uhamisho wa benki.",
+        "wire_transfer": "Tuma kiasi kwenye akaunti iliyo hapa chini, kisha ambatisha uthibitisho.",
         "mobile_money": "Toa maelezo ya muamala wa pesa ya simu.",
         "third_party": "Toa maelezo ya mlipaji wa tatu.",
         "wallet": "Salio la pochi yako litatumika.",
@@ -3065,7 +3143,9 @@
         "rail": "Njia",
         "provider": "Mtoa huduma",
         "details": "Maelezo",
-        "disclaimer": "Kwa kuwasilisha, unathibitisha kuwa maelezo ya malipo ni sahihi."
+        "disclaimer": "Kwa kuwasilisha, unathibitisha kuwa maelezo ya malipo ni sahihi.",
+        "split": "Mgawanyo",
+        "splitValue": "{wallet} kutoka pochi · {remainder} kwa {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Marejeo ya benki yanahitajika",
@@ -3073,7 +3153,9 @@
         "payerNameRequired": "Jina la mlipaji linahitajika",
         "noRail": "Tafadhali chagua njia ya malipo",
         "amountRequired": "Kiasi kinahitajika",
-        "noTransactionForWallet": "Hakuna muamala unaopatikana kwa malipo ya pochi"
+        "noTransactionForWallet": "Hakuna muamala unaopatikana kwa malipo ya pochi",
+        "proofRequired": "Ambatisha uthibitisho wa malipo kabla ya kuwasilisha.",
+        "proofUploadFailed": "Uthibitisho haukuweza kupakiwa."
       },
       "reason": {
         "wallet_empty": "Pochi ni tupu",
@@ -3094,21 +3176,51 @@
       },
       "proofStep": {
         "created": "Ombi la malipo limeundwa",
-        "intro": "Pakia uthibitisho wa malipo (hiari lakini inashauriwa).",
-        "done": "Imekamilika — malipo yako yanasubiri ukaguzi."
+        "intro": "Ambatisha uthibitisho wako wa SWIFT MT103. Bila huo, ankara inabaki wazi.",
+        "done": "Imekamilika — malipo yako yanasubiri ukaguzi.",
+        "required": "Uthibitisho wa malipo (unahitajika)",
+        "requiredHint": "Ambatisha uthibitisho wako wa SWIFT MT103. Bila huo, fedha haiwezi kuthibitisha malipo uliyotangaza.",
+        "uploadFailed": "Malipo yamesajiliwa, lakini uthibitisho haukuweza kupakiwa. Ambatisha hapa chini."
+      },
+      "comingSoon": "Inakuja hivi karibuni",
+      "comingSoonHint": "Njia hii ya malipo bado haijafunguliwa.",
+      "splitWallet": {
+        "label": "Tumia salio langu la {wallet}",
+        "hint": "Salio lako halitoshi kiasi chote — litumie na ulipe tofauti pekee.",
+        "on": "Imebaki {remainder} ya kulipa kwa njia iliyo hapa chini."
+      },
+      "chooseRailRemainder": "Chagua njia ya kulipa {amount} zilizobaki:",
+      "wire": {
+        "accountTitle": "Akaunti ya mpokeaji",
+        "beneficiary": "Mpokeaji",
+        "bank": "Benki",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Kumbukumbu",
+        "amount": "Kiasi",
+        "step1": "Tuma malipo kutoka benki yako ukitaja kumbukumbu iliyo hapo juu.",
+        "step2": "Pakia SWIFT MT103 au risiti ya benki yako kwenye skrini inayofuata.",
+        "step3": "Idara ya fedha italinganisha fedha zilizoingia kisha kuthibitisha malipo — hakuna kinachotozwa hapa.",
+        "topupHint": "Kuongeza salio hakuna kumbukumbu ya ankara: andika pia jina la kampuni yako kwenye maelezo ya malipo.",
+        "bankReferenceOptional": "Si lazima — acha wazi kama benki yako bado haijaitoa.",
+        "download": "Pakua agizo la malipo (PDF)",
+        "depositReference": "Kumbukumbu ya amana"
       }
     },
     "proofUpload": {
       "addButton": "Ongeza uthibitisho",
       "hint": "PDF, JPG, PNG — upeo MB 5",
       "dialogTitle": "Pakia uthibitisho wa malipo",
-      "intro": "Ambatisha risiti ya uhamisho wa benki, ujumbe wa SWIFT MT103, au uthibitisho wa pesa ya simu.",
+      "intro": "Pakia uthibitisho wako wa SWIFT MT103. Msimamizi atauhakiki kabla ankara haijawekwa kuwa imelipwa.",
       "removeAria": "Ondoa faili",
       "errors": {
         "tooLarge": "Faili kubwa mno (upeo MB 5)",
         "uploadFailed": "Upakiaji umeshindwa — jaribu tena",
         "deleteFailed": "Kufuta kumeshindwa — jaribu tena"
-      }
+      },
+      "done": "Imekamilika",
+      "contextMissing": "Ulitangaza malipo ya ankara hii, lakini bado hakuna uthibitisho ulioambatishwa. Fedha haiwezi kuthibitisha bila huo.",
+      "contextProvided": "Uthibitisho tayari umeambatishwa kwa malipo uliyotangaza. Unaweza kuongeza au kubadilisha faili."
     },
     "wallet": {
       "balanceCard": {
@@ -3116,10 +3228,13 @@
         "autoApply": "Tumia otomatiki kwa ankara",
         "autoApplyOn": "Imewashwa",
         "autoApplyOff": "Imezimwa",
-        "topupCta": "Jaza"
+        "topupCta": "Jaza",
+        "lastTopup": "Last top-up on {date} · {amount}",
+        "noTopupYet": "No top-up yet.",
+        "refundCta": "Request a refund"
       },
       "predictionCard": {
-        "title": "Utabiri wa Siku 30",
+        "title": "Akiba inayopendekezwa",
         "estimate30d": "Matumizi ya kukadiriwa",
         "confidence": "Imani",
         "confidenceLevel": {
@@ -3128,7 +3243,13 @@
           "high": "Juu"
         },
         "notEnoughData": "Data haitoshi kwa utabiri",
-        "insufficientWarning": "Salio lako linaweza kutokutosha kwa ankara zinazokuja"
+        "insufficientWarning": "Salio lako linaweza kutokutosha kwa ankara zinazokuja",
+        "gapSentence": "{amount} short to cover the next 30 days of due dates.",
+        "covered": "Your balance covers the {amount} due over the next 30 days.",
+        "due30d": "Due within 30 d",
+        "currentBalance": "Current balance",
+        "toProvision": "To provision",
+        "provisionCta": "Provision {amount}"
       },
       "ledger": {
         "title": "Historia ya Miamala",
@@ -3137,7 +3258,9 @@
           "date": "Tarehe",
           "amount": "Kiasi",
           "kind": "Aina",
-          "note": "Kumbuka"
+          "note": "Kumbuka",
+          "reference": "Reference",
+          "balance": "Balance"
         },
         "kind": {
           "TOPUP": "Kujaza",
@@ -3146,8 +3269,23 @@
           "PROFORMA_APPLY": "Malipo ya ankara",
           "ADMIN_ADJUSTMENT": "Marekebisho ya msimamizi",
           "FX_DIFFERENCE": "Tofauti ya sarafu"
+        },
+        "filterLabel": "Filter movements",
+        "direction": {
+          "all": "All",
+          "in": "Credits",
+          "out": "Debits"
         }
-      }
+      },
+      "topupReturn": {
+        "success": "Malipo ya kuongeza salio yamepokelewa — salio la pochi yako limesasishwa.",
+        "cancel": "Kuongeza salio kumeghairiwa. Hakuna kiasi kilichotozwa.",
+        "pending": "Kuongeza salio kunathibitishwa. Salio lako litasasishwa hivi karibuni.",
+        "failed": "Kuongeza salio hakukukamilika. Hakuna kiasi kilichotozwa — jaribu tena au chagua njia nyingine ya malipo."
+      },
+      "title": "Wallet",
+      "subtitle": "Balance of {amount} · recommended provision and movements",
+      "emptySubtitle": "Your wallet is empty. Top it up to credit your next invoices."
     },
     "notifications": {
       "title": "Arifa",
@@ -3228,8 +3366,151 @@
         "OWNER_ESCALATION": {
           "title": "Notisi ya Kupanda Ngazi",
           "body": "Akaunti yako imewekwa bendera kwa ukaguzi."
+        },
+        "MEMBER_INVITED": {
+          "title": "New account access",
+          "body": "{invited_by} granted access to {member_email}. Rights: {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Account access removed",
+          "body": "{revoked_by} removed {member_email}’s access."
         }
       }
+    },
+    "queue": {
+      "title": "Carbon tax — {vessel}",
+      "fleetWide": "fleet",
+      "due": "due {date}",
+      "pay": "Pay",
+      "overdueBy": "{count, plural, =1 {Overdue · 1 d} other {Overdue · # d}}",
+      "dueToday": "Due today",
+      "inDays": "{count, plural, =1 {In 1 d} other {In # d}}",
+      "onCall": "On port call"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {No vessel attached} =1 {1 vessel} other {# vessels}} · {action, plural, =0 {none needs action} =1 {1 needs action} other {# need action}}",
+      "subtitle": "AIS positions and open invoices, matched vessel by vessel",
+      "tabsLabel": "Filter the fleet",
+      "tab": {
+        "all": "All",
+        "action": "Action required",
+        "inPort": "In port",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "status": {
+        "overdue": "Overdue",
+        "toPay": "To pay",
+        "proforma": "Pro-forma",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "col": {
+        "vessel": "Vessel",
+        "type": "Type",
+        "position": "Position",
+        "status": "Status",
+        "paidYtd": "Paid this year"
+      },
+      "detail": "Details",
+      "empty": "No vessel in this selection.",
+      "openVessel": "Open the file for {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Next due date",
+        "onCall": "on port call",
+        "emissions": "Emissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Due",
+        "estimate": "Estimate",
+        "payBefore": "Pay before {date}",
+        "payNow": "Pay now",
+        "seeProforma": "View the pro-forma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} to settle",
+      "context": "{count, plural, =0 {No open invoice} =1 {1 open invoice} other {# open invoices}}{overdue, plural, =0 {} =1 { · 1 overdue} other { · # overdue}}",
+      "payAll": "Pay all · {amount}",
+      "paySelection": "{count, plural, =1 {Pay the invoice · {amount}} other {Pay the # invoices · {amount}}}",
+      "tabsLabel": "Filter invoices",
+      "tab": {
+        "open": "Open",
+        "paid": "Paid",
+        "disputed": "Disputed",
+        "draft": "Drafts"
+      },
+      "col": {
+        "reference": "Reference",
+        "vessel": "Vessel",
+        "due": "Due date",
+        "amount": "Amount"
+      },
+      "select": "Select invoice {ref}",
+      "onCall": "on port call",
+      "empty": "No invoice in this family.",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Sovereign rate in force",
+      "totalDue": "Total due",
+      "remainingDue": "Remaining due",
+      "pay": "Pay {amount}",
+      "downloadPdf": "Download PDF",
+      "issuePdf": "Issue the PDF",
+      "issuing": "Issuing…",
+      "issuePdfHint": "No PDF has been issued for this charge yet — generate it now from the recorded amount.",
+      "dispute": "Dispute",
+      "attachProof": "Attach proof of payment",
+      "close": "Close",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      },
+      "methodLegend": "Payment method",
+      "method": {
+        "wire": {
+          "label": "Bank transfer",
+          "hint": "Confirmed within 24–48 h"
+        },
+        "wallet": {
+          "label": "AfricGreen wallet",
+          "covers": "Balance {balance} — sufficient",
+          "short": "Balance {balance} — insufficient"
+        },
+        "desk": {
+          "label": "Port cash desk",
+          "hint": "Cash · immediate receipt"
+        }
+      },
+      "receipt": "Risiti",
+      "completeProof": "Ongeza uthibitisho unaokosekana",
+      "reviewProof": "Kagua uthibitisho",
+      "restricted": "Some actions are not part of your access to this account. The account holder can grant them to you."
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
+      "required": "Action required",
+      "title": "Pay the carbon tax for {vessel}",
+      "fleetWide": "your fleet",
+      "meta": "Invoice {ref} · due date passed on {date}",
+      "terms": "USD · net 30",
+      "payNow": "Pay now",
+      "dispute": "Dispute"
+    },
+    "statement": {
+      "title": "Taarifa ya jumla",
+      "asOfLabel": "Salio hadi tarehe",
+      "download": "Pakua PDF",
+      "hintFleet": "Ankara zote ambazo bado zinadaiwa katika meli zako, hadi tarehe uliyochagua. Imetolewa kwa ombi — haibadilishi taarifa yako ya kila mwezi.",
+      "hintVessel": "Ankara zote ambazo bado zinadaiwa kwa meli hii, hadi tarehe uliyochagua."
     }
   },
   "AdminEquasis": {
@@ -3667,7 +3948,61 @@
       "proofC": "Ona hati ya uthibitisho wa malipo",
       "noProofB": "Hakuna hati ya KYC-B iliyosajiliwa",
       "noProofC": "Hakuna hati ya malipo iliyosajiliwa"
-    }
+    },
+    "billingCc": {
+      "title": "Billing copies",
+      "subtitle": "Addresses that receive a copy of your invoices, reminders and statements.",
+      "scopeNotice": "These addresses receive documents. They grant no portal access: nobody can sign in with them. To let a colleague act on your account, you will need to invite them as a member — that is coming.",
+      "addLabel": "Add an address",
+      "add": "Add",
+      "remove": "Remove {email}",
+      "empty": "No copies. You alone receive the documents.",
+      "remaining": "{count, plural, =0 {Limit reached} =1 {1 address left} other {# addresses left}}",
+      "saved": "Saved.",
+      "errors": {
+        "invalid": "Invalid email address.",
+        "invalid_email": "Invalid email address.",
+        "isPrimary": "That is already your primary address — it receives everything by default.",
+        "duplicate": "That address is already in the list.",
+        "tooMany": "At most {max} copy addresses.",
+        "too_many": "At most {max} copy addresses."
+      }
+    },
+    "members": {
+      "title": "Account members",
+      "subtitle": "People allowed to act on your account, and what each of them can do.",
+      "readOnlyNotice": "You can view this account’s members. Inviting or removing someone requires the “invite members” right.",
+      "empty": "No members. You are the only one with access to this account.",
+      "revoke": "Remove {email}’s access",
+      "revokedTitle": "Access removed",
+      "revokedOn": "removed on {date}",
+      "privilege": {
+        "canPay": "Pay",
+        "canDispute": "Dispute",
+        "canManageVessels": "Manage vessels",
+        "canInvite": "Invite members",
+        "none": "View only"
+      },
+      "form": {
+        "fullName": "Colleague’s name",
+        "email": "Their email address",
+        "privileges": "What they will be able to do",
+        "notYours": "You do not hold this right — you cannot grant it.",
+        "submit": "Invite"
+      },
+      "errors": {
+        "forbidden": "You are not allowed to invite members.",
+        "self": "You cannot invite yourself.",
+        "already_holder": "That person already holds this account.",
+        "holds_other_account": "That person holds another account — the invitation would have no effect.",
+        "member_of_other_account": "That person is already a member of another account.",
+        "not_found": "Member not found.",
+        "not_an_operator": "Reserved for shipowner accounts.",
+        "provisioning failed": "Account creation failed. Please retry.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
   },
   "AdminRegistrations": {
     "title": "Usajili wa Wamiliki wa Meli",
@@ -3859,6 +4194,25 @@
       "fileTooBig": "Faili kubwa mno (upeo MB 10)",
       "fileMime": "Aina ya faili batili",
       "submitFailed": "Kurekodi kumeshindwa — jaribu tena"
+    },
+    "offlineBadge": "Offline",
+    "offlineNote": "Offline: the receipt is numbered locally and synced when the network returns.",
+    "methodLegend": "Tender received",
+    "method": {
+      "cash": "Cash",
+      "mobileMoney": "Mobile money",
+      "cheque": "Cheque",
+      "transfer": "Transfer"
+    },
+    "due": {
+      "invoice": "Selected invoice",
+      "allOpen": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "toCollect": "To collect"
+    },
+    "remainder": {
+      "exact": "Exact amount · no change due",
+      "change": "Change due: {amount}",
+      "short": "{amount} short — the balance will stay partial."
     }
   },
   "AdminWallets": {
@@ -3972,7 +4326,62 @@
     "escalate_confirm": "Peleka",
     "escalate_ramp_bailiff": "Kikumbusho cha J45 (kabla ya afisa mtekelezaji) lazima kitumwe kwanza.",
     "escalate_ramp_judicial": "Taarifa ya afisa mtekelezaji lazima itolewe kwanza.",
-    "escalated_badge": "Imepelekwa"
+    "escalated_badge": "Imepelekwa",
+    "remind_now": "Kumbusha sasa",
+    "remind_now_confirm": "Tuma kikumbusho cha mkono kwa {debtor} kuhusu {ref}? Hii inatumwa mara moja na haiwezi kutenduliwa.",
+    "manual_group": "Muhtasari wa pamoja — ankara {count}",
+    "col_count_manual": "mkono",
+    "col_count_manual_tooltip": "Vikumbusho vya mkono nje ya utaratibu — cha mwisho {date}",
+    "verdict": "{count, plural, =0 {No file to move forward} =1 {1 file to move forward} other {# files to move forward}}",
+    "rule": "Rule in force: reminder at D+3, formal notice at D+15, authority escalation at D+45",
+    "treatQueue": "Work the queue",
+    "sortBy": "Sort by:",
+    "stage": {
+      "reminder": "Reminder — D+3",
+      "formal": "Formal notice — D+15",
+      "authority": "Authority escalation — D+45",
+      "settled": "Settled this week"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {View the reminder} other {View the # reminders}}",
+      "formal": "Prepare the letters",
+      "authority": "Refer to the port authority",
+      "settled": "View details"
+    },
+    "stageOthers": "{count, plural, =1 {+1 other} other {+# others}}",
+    "stageEmpty": "Nothing at this stage.",
+    "stageSettledAmount": "{amount} collected",
+    "funnelTruncated": "Totals and previews computed over the 1,000 largest files. The counts shown are exact.",
+    "priorityTitle": "Priority file — {debtor}",
+    "priorityOpenFile": "Open the full file",
+    "panelHistory": "History",
+    "panelExposure": "Exposure",
+    "panelNext": "Next action",
+    "consequenceBailiff": "Bailiff escalation: the debt moves to legal recovery, with a served formal notice and the invoice attached.",
+    "consequenceJudicial": "Judicial escalation: the debt goes to litigation, the last step of the ramp.",
+    "consequenceRamp": "The ramp does not allow escalation on this file yet: the D+45 reminder must go out before the bailiff.",
+    "grantPlan": "Grant a payment plan",
+    "grantPlanConfirm": "Record a payment plan granted to {debtor} for {ref}? The debt is marked as a payment promise, which suspends the reminder ramp.",
+    "remindersWithManual": "{count} · +{manual} manual",
+    "tier": {
+      "J3": "Reminder D+3",
+      "J7": "Reminder D+7",
+      "J15": "Formal notice D+15",
+      "J30": "Formal notice D+30",
+      "J45": "Pre-bailiff D+45",
+      "BAILIFF": "Bailiff",
+      "JUDICIAL": "Judicial",
+      "MANUAL": "Manual reminder"
+    },
+    "response": {
+      "SILENT": "No response",
+      "ACKNOWLEDGE": "Acknowledged",
+      "DISPUTE": "Dispute",
+      "PAYMENT_PROMISE": "Payment promise",
+      "PARTIAL_PAYMENT": "Partial payment",
+      "PAID": "Paid",
+      "REFUSED": "Refused"
+    }
   },
   "AdminVesselIdentity": {
     "title": "Utambulisho wa Meli",
@@ -4058,6 +4467,12 @@
     "inviteDialogTitle": "Alika mmiliki wa meli",
     "inviteDialogSubtitle": "Tuma mwaliko wa lango kwa {name}.",
     "navLink": "Wamiliki wa Meli",
+    "remind": "Kumbusha",
+    "remindConfirmTitle": "Thibitisha kikumbusho",
+    "remindConfirmBody": "Tuma kikumbusho cha mkono kwa {name} kuhusu ankara {ref}? Hii inatumwa mara moja na haiwezi kutenduliwa.",
+    "sendRecap": "Tuma muhtasari",
+    "sendRecapConfirmTitle": "Thibitisha kutuma muhtasari",
+    "sendRecapConfirmBody": "Tuma kwa {name} muhtasari wa pamoja wa ankara zake {count} zilizo wazi? Hii inatumwa mara moja na haiwezi kutenduliwa.",
     "state": {
       "active": "Hai",
       "invited": "Amealikwa",
@@ -4082,6 +4497,8 @@
       "invoiced": "Ilitozwa",
       "paid": "Imelipwa",
       "outstanding": "Deni",
+      "overdue": "Imechelewa",
+      "lastReminder": "Kikumbusho cha mwisho",
       "actions": "Vitendo",
       "email": "Barua pepe",
       "imo": "IMO",
@@ -4094,7 +4511,12 @@
       "due": "Deni",
       "status": "Hali",
       "rail": "Njia",
-      "reference": "Rejeleo"
+      "reference": "Rejeleo",
+      "dueDate": "Tarehe ya malipo",
+      "age": "Umri",
+      "priority": "Kipaumbele",
+      "validity": "Kipindi cha uhalali",
+      "agent": "Wakala"
     },
     "detail": {
       "identityTitle": "Utambulisho",
@@ -4128,6 +4550,7 @@
       "noPayments": "Hakuna malipo.",
       "remindersTitle": "Vikumbusho",
       "noReminders": "Hakuna vikumbusho.",
+      "manualGroup": "Muhtasari wa pamoja — ankara {count}",
       "escalatedBailiff": "Imepandishwa — dalali wa mahakama",
       "actionsTitle": "Vitendo",
       "anonymizeTitle": "Ondoa utambulisho (GDPR)",
@@ -4136,7 +4559,116 @@
       "anonymizeConfirmLabel": "Andika {keyword} kuthibitisha",
       "anonymizeConfirmKeyword": "FUTA",
       "anonymizeCta": "Ondoa utambulisho kabisa",
-      "anonymizedAt": "Utambulisho umeondolewa {date}"
+      "anonymizedAt": "Utambulisho umeondolewa {date}",
+      "totalsTitle": "Jumla za akaunti",
+      "invoiced": "Ilitozwa",
+      "paid": "Imelipwa",
+      "outstanding": "Deni",
+      "overdueCount": "Ankara zilizochelewa",
+      "nextDueDate": "Tarehe ya mwisho ijayo",
+      "contactsTitle": "Anwani",
+      "officialEmailHint": "Mpokeaji wa ankara na vikumbusho.",
+      "billingCc": "Nakala za malipo",
+      "billingCcHint": "Anwani zinazopokea nakala za ankara na vikumbusho, pamoja na mpokeaji rasmi.",
+      "addCc": "Ongeza",
+      "removeCc": "Ondoa {email}",
+      "infoOnlyHint": "Taarifa tu — hazitumiki kutuma.",
+      "representativesTitle": "Wawakilishi",
+      "noRepresentatives": "Hakuna mwakilishi.",
+      "repPrimary": "Nakala kwenye ankara mpya (ulinganishaji wa kiotomatiki)",
+      "repAttach": "Unganisha",
+      "repRevoke": "Batilisha",
+      "repRevoked": "Imebatilishwa",
+      "repManageAll": "Simamia ramani zote",
+      "repInvite": "Ongeza kwa barua pepe",
+      "repInviteEmail": "Barua pepe ya mwakilishi",
+      "repInviteName": "Jina la mwakilishi",
+      "repInviteSubmit": "Unda na uunganishe",
+      "repInviteHint": "Huunda akaunti na kuiunganisha. Hakuna barua pepe inayotumwa — ufikiaji hupitia ukumbusho ujao."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
+      "context": "{outstanding} outstanding · {total} registered shipowners",
+      "export": "Export list",
+      "campaign": "Start a reminder campaign",
+      "sortedBy": "Sorted by: debt age",
+      "tabsLabel": "Filter shipowners"
+    },
+    "daysAgo": "{count, plural, =1 {1 day} other {# days}}",
+    "daysShort": "{count} d",
+    "manualReminder": "Manual reminder",
+    "noContact": "None",
+    "rowLabel": "Open the file for {name}",
+    "close": "Close",
+    "campaignTitle": "Start a reminder campaign",
+    "campaignBody": "{count, plural, =1 {Send the consolidated recap to 1 shipowner, covering {amount} outstanding} other {Send the consolidated recap to # shipowners, covering {amount} outstanding}}? Sending is immediate and irreversible.",
+    "campaignConfirm": "{count, plural, =1 {Send 1 reminder} other {Send # reminders}}",
+    "campaignDone": "{sent, plural, =0 {No reminder sent} =1 {1 reminder sent} other {# reminders sent}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}.",
+    "campaignAllFailed": "No reminder could be sent. Check the official email addresses before retrying.",
+    "campaignEmpty": "No remindable file in the current selection.",
+    "kpi": {
+      "outstanding": "Total outstanding",
+      "outstandingNote": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "aged": "Overdue > 30 d",
+      "agedNote": "{count, plural, =1 {1 shipowner} other {# shipowners}}",
+      "collected": "Collected",
+      "collectedNote": "portfolio to date",
+      "avgAge": "Average age",
+      "avgAgeNote": "across overdue files",
+      "recovery": "Recovery rate",
+      "recoveryNote": "collected / invoiced"
+    },
+    "tab": {
+      "defaulting": "In default",
+      "all": "All",
+      "escalated": "Escalated",
+      "kyc": "Incomplete KYC"
+    },
+    "status": {
+      "sanctioned": "Sanctioned",
+      "escalated": "Escalated",
+      "default": "In default",
+      "late": "Overdue",
+      "disputed": "Disputed",
+      "kyc": "Incomplete KYC",
+      "clear": "Up to date"
+    },
+    "action": {
+      "collections": "Formal notice",
+      "remind": "Remind",
+      "arbitrate": "Arbitrate",
+      "checkKyc": "Check KYC",
+      "file": "File",
+      "noEmail": "No official address — cannot send a reminder."
+    },
+    "recapScope": "Upeo",
+    "recapScopeAll": "Meli zote"
+  },
+  "AdminReglements": {
+    "title": "Ulipaji",
+    "subtitle": "Ankara, urejeshaji na kiasi ambacho hakijalipwa kwa kila mamlaka.",
+    "flowTitle": "Mtiririko wa ankara na urejeshaji",
+    "utcNote": "Saa kwa UTC",
+    "today": "Leo",
+    "week": "Wiki hii",
+    "month": "Mwezi huu",
+    "invoiced": "Ilitozwa",
+    "collected": "Imekusanywa",
+    "totalOutstanding": "Jumla ya deni",
+    "overdue": "Imechelewa",
+    "overdueCount": "Ankara {count} zimechelewa",
+    "toChase": "Zinazohitaji kufuatiliwa",
+    "empty": "Hakuna mmiliki wa meli aliyechelewa.",
+    "sendRecap": "Muhtasari",
+    "sendRecapConfirmTitle": "Thibitisha kutuma muhtasari",
+    "sendRecapConfirmBody": "Tuma kwa {name} muhtasari wa pamoja wa ankara zake {count} zilizo wazi? Hii inatumwa mara moja na haiwezi kutenduliwa.",
+    "cancel": "Ghairi",
+    "col": {
+      "owner": "Mmiliki wa meli",
+      "outstanding": "Deni",
+      "overdue": "Imechelewa",
+      "tier": "Ngazi",
+      "lastReminder": "Kikumbusho cha mwisho"
     }
   },
   "AdminAirlines": {
@@ -4323,5 +4855,76 @@
     "cta_payment": "Angalia arifa zangu",
     "dismiss": "Ficha",
     "help": "Jinsi inavyofanya kazi"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Nothing awaiting arbitration} =1 {1 item awaiting arbitration} other {# items awaiting arbitration}}",
+    "breakdown": "{vessels} vessel identities · {agents} agents · {ports} origin ports",
+    "tabsLabel": "Filter by item type",
+    "kind": {
+      "vessel-identity": "Vessel identity",
+      "agent": "Agent",
+      "origin-port": "Origin port"
+    },
+    "approveConforming": "{count, plural, =0 {None conforming} =1 {Approve the conforming one} other {Approve the # conforming}}",
+    "noConforming": "No conforming item: every remaining file carries at least one discrepancy.",
+    "submitted": "submitted by {by} · {date}",
+    "colField": "Field",
+    "colDeclared": "Declared",
+    "colSource": "Official source",
+    "field": {
+      "email": "Official email",
+      "ownerName": "Legal name",
+      "country": "Country",
+      "manager": "Manager",
+      "rawDestination": "AIS destination",
+      "matchedPort": "Matched port",
+      "editDistance": "Edit distance"
+    },
+    "divergences": "{count, plural, =1 {1 discrepancy to arbitrate} other {# discrepancies to arbitrate}}",
+    "conforming": "No discrepancy — only fills in empty fields.",
+    "openSpecialised": "Open the dedicated screen",
+    "approve": "Approve",
+    "reject": "Reject",
+    "working": "Working…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "empty": "Nothing to arbitrate in this family.",
+    "errorOn": "{title}: {reason}",
+    "reasonRequired": "A reason of at least 3 characters is required.",
+    "rejectTitle": "Reject this item",
+    "rejectBody": "Reject \"{title}\"? The reason is recorded in the audit trail.",
+    "rejectReasonLabel": "Rejection reason",
+    "bulkTitle": "Approve the conforming items",
+    "bulkBody": "{count, plural, =1 {Approve 1 conforming item} other {Approve # conforming items}}? None of them carries a discrepancy: approving only fills in empty fields. Some approvals send an email.",
+    "bulkDone": "{done, plural, =0 {No item approved} =1 {1 item approved} other {# items approved}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "New item to arbitrate",
+        "body": "{subject} is awaiting a decision in the validation queue."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "New registration request",
+        "body": "{org} has submitted an access request."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "File escalated",
+        "body": "{debtor} — {ref} moved to tier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Debtor response",
+        "body": "Response \"{response}\" recorded on a file at tier {tier}. The ramp is suspended."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Cash desk collection",
+        "body": "{amount} collected for {debtor}, awaiting confirmation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Invoice disputed",
+        "body": "{debtor} is disputing invoice {ref}."
+      }
+    },
+    "empty": "Nothing new."
   }
 }

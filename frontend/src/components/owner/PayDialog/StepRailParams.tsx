@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Download } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { OsInput } from '@/components/ui/OsInput';
@@ -11,6 +11,23 @@ export function StepRailParams() {
     const t = useTranslations('OwnerPortal.payDialog');
     const ctx = usePayDialog();
     const [local, setLocal] = React.useState<Record<string, string>>({});
+
+    // Reference a porter sur le virement : la facture quand il y en a une,
+    // sinon un marqueur de recharge — le service financier n'a que le libelle
+    // du releve pour rapprocher les fonds.
+    const wireReferenceLabel = ctx.invoiceRef ?? 'TOPUP';
+
+    // Résolu par l'étape précédente depuis la base (mig 131). Absent tant que
+    // la route n'a pas répondu — le bloc RIB attend plutôt que d'afficher un
+    // compte compilé dans le bundle, qui pourrait ne plus être le bon.
+    const wire = ctx.wire;
+
+    // Ordre de virement a remettre a sa banque. Une facture est identifiee par
+    // son id : le montant est alors relu en base cote serveur. Une recharge n'a
+    // pas de ligne en base, le montant saisi voyage donc en clair.
+    const wireDownloadHref = ctx.transactionId
+        ? `/api/owner/wire-instructions?transactionId=${encodeURIComponent(ctx.transactionId)}`
+        : `/api/owner/wire-instructions?amountUsd=${encodeURIComponent(ctx.amountUsd.toFixed(2))}`;
 
     function set(k: string, v: string) {
         setLocal((s) => ({ ...s, [k]: v }));
@@ -24,11 +41,15 @@ export function StepRailParams() {
         }
         // Validate per rail
         if (ctx.rail === 'WIRE_TRANSFER') {
-            if (!local.bankReference) { ctx.setError(t('errors.bankReferenceRequired')); return; }
+            // La reference bancaire n'est plus exigee : au moment ou l'armateur
+            // declare le virement, il ne l'a generalement pas encore. C'est la
+            // preuve televersee a l'ecran suivant, puis la validation du service
+            // financier, qui font foi — pas un numero saisi a la main.
             ctx.setRailDetails({
-                bank_reference: local.bankReference,
+                bank_reference: local.bankReference || null,
                 bank_name: local.bankName ?? null,
                 notes: local.notes ?? null,
+                wire_reference_quoted: wireReferenceLabel,
             });
         } else if (ctx.rail === 'MOBILE_MONEY') {
             if (!local.phoneNumber) { ctx.setError(t('errors.phoneRequired')); return; }
@@ -80,11 +101,55 @@ export function StepRailParams() {
 
             {ctx.rail === 'WIRE_TRANSFER' && (
                 <>
-                    <Field label={t('field.bankReference')} required>
+                    <div className="rounded-xl border border-[var(--os-border)] bg-[var(--os-surface-2)] p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
+                            {t('wire.accountTitle')}
+                        </p>
+                        {!wire ? (
+                            <p className="text-xs text-[var(--os-text-muted)]">{t('loadingRails')}</p>
+                        ) : (
+                        <dl className="flex flex-col gap-1.5">
+                            <WireLine label={t('wire.beneficiary')} value={wire.beneficiary} />
+                            <WireLine label={t('wire.bank')} value={wire.bank} />
+                            <WireLine label={t('wire.iban')} value={wire.iban} mono copyable />
+                            <WireLine label={t('wire.swift')} value={wire.swiftCode} mono copyable />
+                            <WireLine label={t('wire.reference')} value={wireReferenceLabel} mono copyable highlight />
+                            {wire.depositReference && (
+                                <WireLine label={t('wire.depositReference')} value={wire.depositReference} mono copyable highlight />
+                            )}
+                            <WireLine
+                                label={t('wire.amount')}
+                                value={ctx.amountUsd.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                            />
+                        </dl>
+                        )}
+                        <p className="text-[10px] text-[var(--os-text-muted)] mt-2 leading-relaxed">
+                            {wire?.bankAddress ?? ''}
+                        </p>
+                        <a
+                            href={wireDownloadHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-3 text-xs text-emerald-400 hover:underline"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            {t('wire.download')}
+                        </a>
+                    </div>
+
+                    <ol className="flex flex-col gap-1 text-[11px] text-[var(--os-text-secondary)] leading-relaxed list-decimal list-inside">
+                        <li>{t('wire.step1')}</li>
+                        <li>{t('wire.step2')}</li>
+                        <li>{t('wire.step3')}</li>
+                    </ol>
+
+                    {ctx.mode === 'topup' && (
+                        <p className="text-[11px] text-[#EAB308] leading-relaxed">{t('wire.topupHint')}</p>
+                    )}
+
+                    <Field label={t('field.bankReference')}>
                         <OsInput value={local.bankReference ?? ''} onChange={(e) => set('bankReference', e.target.value)} placeholder="SWIFT-MT103-…" />
-                    </Field>
-                    <Field label={t('field.bankName')}>
-                        <OsInput value={local.bankName ?? ''} onChange={(e) => set('bankName', e.target.value)} />
+                        <span className="text-[10px] text-[var(--os-text-muted)]">{t('wire.bankReferenceOptional')}</span>
                     </Field>
                     <Field label={t('field.notes')}>
                         <OsInput value={local.notes ?? ''} onChange={(e) => set('notes', e.target.value)} />
@@ -136,6 +201,63 @@ export function StepRailParams() {
                     {t('next')}
                 </OsButton>
             </div>
+        </div>
+    );
+}
+
+/**
+ * Une ligne des coordonnees bancaires. Les valeurs a recopier dans l'ordre de
+ * virement (IBAN, BIC, reference) sont copiables : les retaper a la main est
+ * la premiere source de virement non rapproche.
+ */
+function WireLine({
+    label,
+    value,
+    mono,
+    copyable,
+    highlight,
+}: {
+    label: string;
+    value: string;
+    mono?: boolean;
+    copyable?: boolean;
+    highlight?: boolean;
+}) {
+    const [copied, setCopied] = React.useState(false);
+
+    async function copy() {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            // Presse-papiers refuse (contexte non securise, permission) : la
+            // valeur reste lisible et selectionnable a l'ecran.
+        }
+    }
+
+    return (
+        <div className="flex items-baseline gap-2">
+            <dt className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)] w-24 flex-shrink-0">
+                {label}
+            </dt>
+            <dd
+                className={`flex-1 min-w-0 break-all text-xs ${mono ? 'font-mono' : ''} ${
+                    highlight ? 'text-[#10B981] font-semibold' : 'text-[var(--os-text-primary)]'
+                }`}
+            >
+                {value}
+            </dd>
+            {copyable && (
+                <button
+                    type="button"
+                    onClick={copy}
+                    className="flex-shrink-0 text-[var(--os-text-muted)] hover:text-[var(--os-text-primary)] transition-colors"
+                    aria-label={`Copy ${label}`}
+                >
+                    {copied ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+            )}
         </div>
     );
 }

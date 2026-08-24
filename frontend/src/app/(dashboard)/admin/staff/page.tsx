@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { StaffInvite } from '@/components/dashboard/admin/StaffInvite';
+import { StaffSettlementRights, type StaffRow } from '@/components/dashboard/admin/StaffSettlementRights';
 
 export const metadata: Metadata = {
     title: 'Staff Management | Green Gate',
@@ -41,9 +42,23 @@ export default async function AdminStaffRoute() {
         throw new Error(`Failed to load jurisdictions: ${jErr.message}`);
     }
 
+    // Comptes staff : les armateurs (SHIPPING_AGENT) n'ont rien a faire dans le
+    // back-office, la sous-permission ne leur est pas proposable.
+    const { data: staff, error: sErr } = await platform
+        .from('profiles')
+        .select('id, full_name, email, role, is_active, can_settle_payments')
+        .neq('role', 'SHIPPING_AGENT')
+        .order('role')
+        .order('full_name');
+
+    if (sErr) {
+        throw new Error(`Failed to load staff: ${sErr.message}`);
+    }
+
     return (
         <div className="px-6 py-4">
             <StaffInvite jurisdictions={jurisdictions ?? []} />
+            <StaffSettlementRights staff={(staff ?? []) as StaffRow[]} />
         </div>
     );
 }

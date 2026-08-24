@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
+import { THEME_PREFERENCE_KEY } from '@/lib/theme';
 
 export function ThemeToggleButton() {
     const { theme, setTheme } = useTheme();
@@ -14,9 +15,20 @@ export function ThemeToggleButton() {
 
     const isDark = theme === 'dark';
 
+    /**
+     * Le site public n'est pas sous SkinProvider : on passe par next-themes,
+     * mais on inscrit aussi la préférence explicite. Sans elle, le dashboard
+     * traiterait ce choix comme « auto » et le redériverait du skin à la
+     * prochaine visite.
+     */
+    function choose(next: 'dark' | 'light') {
+        setTheme(next);
+        try { localStorage.setItem(THEME_PREFERENCE_KEY, next); } catch { /* stockage indisponible */ }
+    }
+
     return (
         <button
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            onClick={() => choose(isDark ? 'light' : 'dark')}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             title={isDark ? 'Day mode' : 'Night mode'}
             className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group"

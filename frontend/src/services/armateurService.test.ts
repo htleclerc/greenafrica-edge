@@ -44,10 +44,202 @@ describe.skipIf(!ENV_OK)('armateurService.listArmateursCockpit', () => {
     });
 });
 
+describe('listArmateursCockpit — colonnes de relance (mig 121, mock)', () => {
+    function makeDb(rows: Record<string, unknown>[]) {
+        const calls: { method: string; args: unknown[] }[] = [];
+        const builder: Record<string, unknown> = {};
+        builder.select = (...args: unknown[]) => { calls.push({ method: 'select', args }); return builder; };
+        builder.order = (...args: unknown[]) => {
+            calls.push({ method: 'order', args });
+            return Promise.resolve({ data: rows, error: null });
+        };
+        const db = { from: (t: string) => { calls.push({ method: 'from', args: [t] }); return builder; } };
+        return { db: db as never, calls };
+    }
+
+    it('normalise les nouvelles colonnes de relance (mig 121)', async () => {
+        const { db } = makeDb([{
+            id: 'own-1', name: 'ACME', account_state: 'ACTIVE',
+            is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
+            proforma_count: '3', total_invoiced_usd: '900', total_paid_usd: '100',
+            total_outstanding_usd: '800',
+            overdue_count: '2', next_due_date: '2026-09-01T00:00:00Z',
+            last_auto_tier: 'J15', last_reminder_at: '2026-08-18T09:00:00Z',
+            latest_response_type: 'PAYMENT_PROMISE', open_count: '4',
+        }]);
+        const rows = await listArmateursCockpit(db);
+        // PostgREST renvoie les BIGINT en string — la normalisation est le contrat.
+        expect(rows[0].overdue_count).toBe(2);
+        expect(rows[0].next_due_date).toBe('2026-09-01T00:00:00Z');
+        expect(rows[0].last_auto_tier).toBe('J15');
+        expect(rows[0].latest_response_type).toBe('PAYMENT_PROMISE');
+        // mig 127 : open_count (PENDING/OVERDUE/PARTIALLY_PAID, sans condition de
+        // date) est distinct et toujours >= overdue_count sur de vraies données.
+        expect(rows[0].open_count).toBe(4);
+    });
+
+    it('retombe sur des valeurs neutres quand aucune relance n_a eu lieu', async () => {
+        const { db } = makeDb([{
+            id: 'own-2', name: 'BETA', account_state: 'GHOST',
+            is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
+            proforma_count: '0', total_invoiced_usd: '0', total_paid_usd: '0',
+            total_outstanding_usd: '0', overdue_count: '0',
+            next_due_date: null, last_auto_tier: null, last_reminder_at: null,
+            latest_response_type: null,
+        }]);
+        const rows = await listArmateursCockpit(db);
+        expect(rows[0].overdue_count).toBe(0);
+        expect(rows[0].open_count).toBe(0);
+        expect(rows[0].next_due_date).toBeNull();
+        expect(rows[0].last_auto_tier).toBeNull();
+    });
+});
+
 describe('maskIban', () => {
     it('masque tout sauf les 4 derniers', () => {
         expect(maskIban(null)).toBeNull();
         expect(maskIban('CY17002001280000001200527600')).toBe('•••• 7600');
+    });
+});
+
+// Faux multi-tables partagé par les describe getArmateurDetail ci-dessous,
+// distinct de makeDb plus haut : makeDb ne sert que listArmateursCockpit (une
+// seule table), alors que getArmateurDetail en interroge sept. Chaque table
+// reçoit son propre jeu de données ; le builder retourné est à la fois
+// chaînable (select/eq/is/in/order/maybeSingle renvoient l'objet lui-même) et
+// "thenable" (il expose .then), donc un `await` — direct ou via Promise.all —
+// se résout quel que soit le nombre de maillons de chaîne appelés avant.
+function dbWith(opts: {
+    shipowner: Record<string, unknown>;
+    vessels?: Record<string, unknown>[];
+    transactions?: Record<string, unknown>[];
+    payments?: Record<string, unknown>[];
+    reminders?: Record<string, unknown>[];
+    recouvrement?: Record<string, unknown> | null;
+    mappings?: Record<string, unknown>[];
+}) {
+    function chain(data: unknown) {
+        const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: () => builder,
+            is: () => builder,
+            in: () => builder,
+            order: () => builder,
+            maybeSingle: () => builder,
+            then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
+                Promise.resolve({ data, error: null }).then(resolve),
+        };
+        return builder;
+    }
+    const tables: Record<string, unknown> = {
+        shipowners: opts.shipowner,
+        vessels: opts.vessels ?? [],
+        transactions: opts.transactions ?? [],
+        payments: opts.payments ?? [],
+        collection_reminders: opts.reminders ?? [],
+        v_armateur_recouvrement: opts.recouvrement ?? null,
+        owner_agent_mappings: opts.mappings ?? [],
+    };
+    const db = {
+        from: (table: string) => {
+            if (!(table in tables)) throw new Error(`dbWith: table non gérée "${table}"`);
+            return chain(tables[table]);
+        },
+    };
+    return db as never;
+}
+
+describe('getArmateurDetail — échéance, statut de recouvrement et totaux (mock)', () => {
+    it('remonte échéance, statut de recouvrement et totaux de compte', async () => {
+        // due_date et collections_status existent depuis la mig 022 mais
+        // n'étaient jamais lus — c'est la régression que ce test verrouille.
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE', billing_cc_emails: ['f@x.com'] },
+            transactions: [{
+                id: 'tx1', invoice_ref: 'INV-1', created_at: '2026-07-01T00:00:00Z',
+                tax_amount_usd: '500', partial_paid_usd: '100', status: 'OVERDUE',
+                due_date: '2026-07-31T00:00:00Z', collections_status: 'OVERDUE',
+            }],
+            recouvrement: {
+                total_invoiced_usd: '500', total_paid_usd: '100', total_outstanding_usd: '400',
+                overdue_count: '1', next_due_date: '2026-07-31T00:00:00Z',
+            },
+        }), 'own-1', true);
+        expect(detail?.proformas[0].due_date).toBe('2026-07-31T00:00:00Z');
+        expect(detail?.proformas[0].collections_status).toBe('OVERDUE');
+        expect(detail?.totals).toMatchObject({ outstandingUsd: 400, overdueCount: 1 });
+        expect(detail?.billing_cc_emails).toEqual(['f@x.com']);
+    });
+
+    it('retombe sur des totaux neutres quand la vue ne renvoie aucune ligne', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-2', name: 'BETA', account_state: 'GHOST' },
+            recouvrement: null,
+        }), 'own-2', false);
+        expect(detail?.totals).toEqual({
+            invoicedUsd: 0, paidUsd: 0, outstandingUsd: 0, overdueCount: 0, nextDueDate: null,
+        });
+        expect(detail?.billing_cc_emails).toEqual([]);
+    });
+});
+
+describe('getArmateurDetail — représentants (mock)', () => {
+    it('remonte les représentants actifs par priorité croissante', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm2', agent_profile_id: 'p2', priority: 200, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: { full_name: 'Second', email: 'b@x.com' } },
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: { full_name: 'Premier', email: 'a@x.com' } },
+            ],
+        }), 'own-1', true);
+        // La priorité la plus basse est le contact principal : c'est lui qui part
+        // en copie des factures via la cascade d'envoi.
+        expect(detail?.representatives.map((r) => r.full_name)).toEqual(['Premier', 'Second']);
+        expect(detail?.representatives[0].email).toBe('a@x.com');
+    });
+
+    it('normalise profiles en tableau (cardinalité PostgREST) sans planter', () => {
+        // Le patron `Array.isArray(...)` d'escalateCollection.ts:84 doit tenir
+        // même quand PostgREST choisit de renvoyer la relation jointe comme
+        // tableau à un seul élément plutôt que comme objet — un typage naïf
+        // (objet seul) compile mais casse à l'exécution sur cette forme.
+        return getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: true,
+                  valid_from: '2026-01-01', valid_until: null,
+                  profiles: [{ full_name: 'Premier', email: 'a@x.com' }] },
+            ],
+        }), 'own-1', true).then((detail) => {
+            expect(detail?.representatives[0].full_name).toBe('Premier');
+            expect(detail?.representatives[0].email).toBe('a@x.com');
+        });
+    });
+
+    it('inclut les représentants révoqués (historique) avec active: false', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+            mappings: [
+                { id: 'm1', agent_profile_id: 'p1', priority: 100, active: false,
+                  valid_from: '2026-01-01', valid_until: '2026-06-01',
+                  profiles: { full_name: 'Ancien', email: 'old@x.com' } },
+            ],
+        }), 'own-1', true);
+        expect(detail?.representatives).toEqual([{
+            id: 'm1', profile_id: 'p1', full_name: 'Ancien', email: 'old@x.com',
+            priority: 100, active: false, valid_from: '2026-01-01', valid_until: '2026-06-01',
+        }]);
+    });
+
+    it('retombe sur un tableau vide quand l_armateur n_a aucun représentant', async () => {
+        const detail = await getArmateurDetail(dbWith({
+            shipowner: { id: 'own-1', name: 'ACME', account_state: 'ACTIVE' },
+        }), 'own-1', true);
+        expect(detail?.representatives).toEqual([]);
     });
 });
 

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { SkinSwitcher } from '@/components/layout/SkinSwitcher';
+import { ThemePreferencePicker } from '@/components/dashboard/settings/ThemePreferencePicker';
 import { UserRole, OperationalSite } from '@/types/secure';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -461,6 +462,10 @@ function PreferencesTab() {
                         ))}
                     </div>
                 </div>
+            </Section>
+
+            <Section title={t('settings_theme_mode')} description={t('settings_theme_mode_desc')}>
+                <ThemePreferencePicker />
             </Section>
 
             <Section title={t('settings_visual_theme')} description={t('settings_visual_theme_desc')}>

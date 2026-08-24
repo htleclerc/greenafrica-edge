@@ -193,6 +193,7 @@ vi.mock('@/lib/supabase/tenant', () => ({
 
 vi.mock('@/services/stripeService', () => ({
     verifyWebhookSignature: vi.fn(),
+    retrievePaymentIntent: vi.fn(),
 }));
 
 vi.mock('@/services/receiptService', () => ({
@@ -292,6 +293,77 @@ describe('POST /api/webhooks/stripe', () => {
         const recompute = rpcCalls.find((c) => c.fn === 'recompute_transaction_status');
         expect(recompute).toBeDefined();
         expect(recompute!.args).toEqual({ p_txn_id: 't-1' });
+    });
+
+    it('on checkout.session.completed (paid): binds the PaymentIntent then CONFIRMS', async () => {
+        // Ligne indexee sur la session : le PI n'existait pas a la creation.
+        paymentRow = { ...(paymentRow as Record<string, unknown>), external_reference: 'cs_test_1' };
+
+        const { verifyWebhookSignature, retrievePaymentIntent } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_cs_1',
+            type: 'checkout.session.completed',
+            data: {
+                object: {
+                    id: 'cs_test_1',
+                    payment_intent: 'pi_789',
+                    payment_status: 'paid',
+                    status: 'complete',
+                },
+            },
+        });
+        (retrievePaymentIntent as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            id: 'pi_789',
+            latest_charge: 'ch_789',
+            payment_method_types: ['card'],
+        });
+
+        const { POST } = await import('./route');
+        const res = await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+        expect(res.status).toBe(200);
+
+        const bind = updateCalls.find(
+            (c) => c.table === 'payments' && c.payload.external_reference === 'pi_789',
+        );
+        expect(bind).toBeDefined();
+        expect(bind?.payload.rail_details).toMatchObject({ stripe_payment_intent_id: 'pi_789' });
+
+        const upd = updateCalls.find((c) => c.table === 'payments' && c.payload.status === 'CONFIRMED');
+        expect(upd).toBeDefined();
+        expect(upd?.payload.rail_details).toMatchObject({
+            stripe_charge_id: 'ch_789',
+            payment_method_type: 'card',
+            fx_rate_source: 'STRIPE_SETTLE',
+        });
+    });
+
+    it('on checkout.session.completed (unpaid): binds the PaymentIntent but does not confirm', async () => {
+        paymentRow = { ...(paymentRow as Record<string, unknown>), external_reference: 'cs_test_2' };
+
+        const { verifyWebhookSignature } = await import('@/services/stripeService');
+        (verifyWebhookSignature as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            id: 'evt_cs_2',
+            type: 'checkout.session.completed',
+            data: {
+                object: {
+                    id: 'cs_test_2',
+                    payment_intent: 'pi_unpaid',
+                    payment_status: 'unpaid',
+                    status: 'complete',
+                },
+            },
+        });
+
+        const { POST } = await import('./route');
+        const res = await POST(buildReq('{}', { 'stripe-signature': 'good' }));
+        expect(res.status).toBe(200);
+
+        expect(
+            updateCalls.find((c) => c.payload.external_reference === 'pi_unpaid'),
+        ).toBeDefined();
+        expect(
+            updateCalls.find((c) => c.table === 'payments' && c.payload.status === 'CONFIRMED'),
+        ).toBeUndefined();
     });
 
     it('is idempotent: returns 200 without re-UPDATE when row is already CONFIRMED', async () => {

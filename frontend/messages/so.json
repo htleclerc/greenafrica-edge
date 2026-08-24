@@ -100,7 +100,8 @@
     "impact": "Saamiga",
     "resources": "Khayraadka",
     "about": "Ku saabsan",
-    "partnership": "Iskaashi"
+    "partnership": "Iskaashi",
+    "nav_admin_validations": "Xaqiijinta"
   },
   "Landing": {
     "badge": "BOROTOKOOLKA CASIMADA KAARBOONKA",
@@ -707,7 +708,23 @@
     "pending_step4_title": "Akoontiga Waa La Firfircoonsiiyay",
     "pending_step4_desc": "Markii la oggolaado, waxaad heli doontaa email oo leh tilmaamaha gelitaanka.",
     "pending_info_title": "Maxay u qaadanaysaa waqti?",
-    "pending_info_desc": "Dhammaan akoontiyada si gacanta ah ayay u xaqiijiyaan shaqaalaha fasaxan ee dowladda si loo hubiyo ammaanka barnaamijka iyo hoggaaminaanta xeerarka ilaalinta xogta xukuumadda."
+    "pending_info_desc": "Dhammaan akoontiyada si gacanta ah ayay u xaqiijiyaan shaqaalaha fasaxan ee dowladda si loo hubiyo ammaanka barnaamijka iyo hoggaaminaanta xeerarka ilaalinta xogta xukuumadda.",
+    "magicLink": {
+      "tabPassword": "Furaha sirta ah",
+      "tabLink": "Xiriirka gelitaanka",
+      "submit": "Ii soo dir xiriirka gelitaanka",
+      "hint": "Geli iimaylkaaga, ama IMO (7 lambar) ama MMSI (9 lambar) ee markabkaaga. Waxaan dirnaa xiriir hal mar la isticmaalo iyo koodh 6 lambar ah.",
+      "sent": "Haddii cinwaankan la diiwaan geliyay, xiriir gelitaan iyo koodh ayaa loo diray.",
+      "rateLimited": "Isku dayo aad u badan. Fadlan dhowr daqiiqo ka dib isku day.",
+      "queryLabel": "Iimayl, IMO ama MMSI",
+      "sentToHint": "Xiriirka iyo koodhka waxaa loo diray {hint}.",
+      "sentVessel": "Markabka: {vessel}",
+      "codeLabel": "Koodh 6 lambar ah",
+      "codeSubmit": "Gal",
+      "codeHint": "Ama gujiso xiriirka iimaylka — mid kastaa wuu shaqeeyaa.",
+      "badCode": "Koodhku waa khalad ama wuu dhacay.",
+      "retry": "Isticmaal iimayl ama markab kale"
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "Xarunta Amarka",
@@ -822,10 +839,13 @@
     "nav_vision": "Saxiix Muraayadda",
     "nav_staff": "Maamulidda Shaqaalaha",
     "nav_armateurs": "Milkiilayaasha Markabka",
+    "nav_reglements": "Bixinnada",
     "nav_admin_invoices": "Biilasha",
     "nav_admin_collections": "Soo-ururinta",
     "nav_airlines": "Shirkadaha Diyaaradaha",
-    "nav_vessel_identity": "Aqoonsiga Markabyada"
+    "nav_vessel_identity": "Aqoonsiga Markabyada",
+    "theme_switch_to_light": "Switch to light theme",
+    "theme_switch_to_dark": "Switch to dark theme"
   },
   "AdminStaff": {
     "page_title": "Maaraynta Shaqaalaha",
@@ -1092,7 +1112,13 @@
     "simulator_air_aircraft_type": "Nooca diyaaradda",
     "simulator_air_lto_cycles": "Wareegyada LTO",
     "simulator_air_methodology_note": "Habka LTO ee ICAO: qiiqa wareeg kasta oo Soo-degid & Kac (taxi, kicid, fuulid, iyo soo-dhowaansho ka hooseeya 3000 ft).",
-    "simulator_air_emissions_label": "Qiiqa la qiyaasay"
+    "simulator_air_emissions_label": "Qiiqa la qiyaasay",
+    "settings_theme_mode": "Night or day",
+    "settings_theme_mode_desc": "Independent of the visual theme: pick the brightness that suits you, whichever skin you use.",
+    "settings_theme_auto": "Automatic",
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light",
+    "settings_theme_auto_hint": "Follows the visual theme — currently: {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "Maraakiibta Firfircoon ee EEZ",
@@ -1301,7 +1327,27 @@
     "tax_liability": "Mas'uuliyadda Cashuurta",
     "view_details": "Arag Faahfaahin",
     "contest_invoice": "Muran Xisaab-raacda",
-    "access_denied": "Helitaanku wuxuu u xidanyahay wakiillada doon-doon."
+    "access_denied": "Helitaanku wuxuu u xidanyahay wakiillada doon-doon.",
+    "kpiVessels": "Maraakiibta",
+    "kpiOutstanding": "Deynta harsan",
+    "emptyFleet": "Weli marmarkab lagama xidhin akoonkaaga.",
+    "noImo": "IMO lama qoondayn",
+    "noInvoice": "Qaansheeg ma jirto",
+    "invoiceCount": "{count} qaansheeg",
+    "rename": "Magac beddel",
+    "renameLabel": "Magaca markabka",
+    "renameSubmit": "Kaydi",
+    "cancel": "Jooji",
+    "detach": "Ka saar",
+    "detachConfirmYes": "Xaqiiji ka saarista",
+    "confirmDetach": "Markabkan ka saar raxankaaga?",
+    "detachBlocked": "Markabkan qaansheeg ayuu leeyahay, lagamana saari karo. Haddii uusan kaaga ahayn, ka hor imow qaansheegta.",
+    "dispute": "Ka hor imow",
+    "title": "Raxankayga",
+    "invoiceCountSettled": "{count} qaansheeg · la bixiyay",
+    "detachBlockedSettled": "Markabkan wuxuu wataa qaansheeg la bixiyay wuxuuna ku hadhayaa faylka. Canshuur la bixiyay lama gooyn karo.",
+    "invoiceCountPartial": "{count} qaansheeg · qayb ahaan la bixiyay",
+    "restricted": "Managing vessels is not part of your access to this account. The account holder can grant it to you."
   },
   "VesselsPage": {
     "status_compliant": "WAAFAQSAN",
@@ -2801,7 +2847,19 @@
       "cancel": "Ka noqo",
       "confirm": "Sheeg oo samee pro-forma",
       "claiming": "Sheegasho socoto…"
-    }
+    },
+    "verdict": "{count, plural, =0 {No vessel expected} =1 {1 vessel expected} other {# vessels expected}}",
+    "portLabel": "Port of Berbera",
+    "offline": "Offline",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Berthing imminent} =1 {Berthing in 1 min} other {Berthing in # min}}",
+    "etaHours": "{count, plural, =1 {In 1 h} other {In # h}}",
+    "etaDays": "{count, plural, =1 {Tomorrow} other {In # days}}",
+    "etaPassed": "Berthing overdue",
+    "etaUnknown": "ETA unknown",
+    "ownerInDefault": "Shipowner in default — {amount} unpaid. Departure subject to authorisation.",
+    "ownerClear": "Tax up to date · nothing to do",
+    "reportToAuthority": "Report to the authority"
   },
   "AdminEscalations": {
     "title": "Kordhinta",
@@ -2983,6 +3041,7 @@
       "vessels": "Maraakiibta",
       "aircraft": "Diyaaradaha",
       "fleet": "Ciidanka",
+      "myFleet": "Maaree maraakiibta",
       "invoices": "Biillada",
       "alerts": "Ogeysiisyada",
       "signOut": "Ka bixi",
@@ -3028,7 +3087,26 @@
         "paidYtd": "La bixiyay sanadkan"
       },
       "quickActions": "Ficilada degdegga ah",
-      "quickActionsBody": "Isticmaal meesha dhibicda hoose si aad u baadho <vessels>maraakiibta</vessels>, u dib-u-eegto <invoices>biillada</invoices>, ama u hubiso <alerts>ogeysiisyada</alerts> firfircoon."
+      "quickActionsBody": "Isticmaal meesha dhibicda hoose si aad u baadho <vessels>maraakiibta</vessels>, u dib-u-eegto <invoices>biillada</invoices>, ama u hubiso <alerts>ogeysiisyada</alerts> firfircoon.",
+      "verdict": "{count, plural, =0 {Nothing to handle today} =1 {1 thing to handle today} other {# things to handle today}}",
+      "context": "{owner} · current tax period",
+      "seeAll": "See all invoices",
+      "payAll": "Pay all · {amount}",
+      "emptyGood": "Nothing to handle. All your taxes are up to date.",
+      "more": "{count, plural, =1 {1 more due date} other {# more due dates}}",
+      "kpi": {
+        "outstanding": "Total outstanding",
+        "outstandingNote": "{count, plural, =0 {no open invoice} =1 {1 open invoice} other {# open invoices}}",
+        "vessels": "Active vessels",
+        "vesselsNote": "attached to your account",
+        "paidYtd": "Paid in {year}",
+        "paidYtdNote": "since January",
+        "wallet": "Wallet balance",
+        "walletNote": "available immediately"
+      },
+      "fleetTitle": "My fleet",
+      "openFleet": "Open My fleet",
+      "fleetSummary": "{count, plural, =0 {No vessel attached yet.} =1 {1 vessel attached to your account.} other {# vessels attached to your account.}}"
     },
     "vessels": {
       "title": "Maraakiibta",
@@ -3151,7 +3229,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "Dir wareejinta oo gali tixraaca bangiga hoosta.",
+        "wire_transfer": "U wareeji qaddarka akoonka hoose, kadibna ku lifaaq caddaynta wareejinta.",
         "mobile_money": "Gali lambarka taleefoonka ee loo isticmaalay wareejinta {provider}.",
         "third_party": "Aqoonso dhinaca saddexaad ee kaaga bixinaya.",
         "wallet": "Ku dabaq balankaaga boorsada biilkan.",
@@ -3177,7 +3255,9 @@
         "rail": "Habka",
         "provider": "Bixiyaha",
         "details": "Faahfaahinta",
-        "disclaimer": "Gudbitaanku wuxuu diiwaan galiyaa lacag bixintaada sida BILAABATAY. Xisaabaadku wuu dib-u-eegi doonaa oo 24 saac gudahood xaqiijiyaa."
+        "disclaimer": "Gudbitaanku wuxuu diiwaan galiyaa lacag bixintaada sida BILAABATAY. Xisaabaadku wuu dib-u-eegi doonaa oo 24 saac gudahood xaqiijiyaa.",
+        "split": "Qaybinta",
+        "splitValue": "{wallet} boorsada · {remainder} {rail}"
       },
       "errors": {
         "bankReferenceRequired": "Tixraaca bangiga waa waajib.",
@@ -3185,7 +3265,9 @@
         "payerNameRequired": "Magaca bixiyaha waa waajib.",
         "noRail": "Fadlan dooro hab lacag bixin marka hore.",
         "amountRequired": "Qaddarka waa inuu ka weyn yahay 0.",
-        "noTransactionForWallet": "Jidka WALLET wuxuu u baahan yahay biil."
+        "noTransactionForWallet": "Jidka WALLET wuxuu u baahan yahay biil.",
+        "proofRequired": "Ku lifaaq caddaynta lacag-bixinta ka hor inta aadan gudbin.",
+        "proofUploadFailed": "Caddaynta lama soo gelin karin."
       },
       "reason": {
         "wallet_empty": "Boorsadaadu waxba baalan ma leh.",
@@ -3206,21 +3288,51 @@
       },
       "proofStep": {
         "created": "Lacag bixinta wareejinta waa la diiwaan galiyay. Waxaa la sugayaa caddayntaada + xaqiijinta maamulaha.",
-        "intro": "Ku lifaaq xaqiijintaada SWIFT MT103 hadda (ikhtiyaari — waxaad sidoo kale ka samayn kartaa liiska biillada dambe).",
-        "done": "Dhammee"
+        "intro": "Ku lifaaq xaqiijinta SWIFT MT103. La’aanteed qaansheegtu way furan tahay.",
+        "done": "Dhammee",
+        "required": "Caddaynta lacag-bixinta (waa qasab)",
+        "requiredHint": "Ku lifaaq xaqiijinta SWIFT MT103. La’aanteed maaliyaddu ma xaqiijin karto lacag-bixin la sheegay.",
+        "uploadFailed": "Lacag-bixinta waa la diiwaan geliyay, laakiin caddaynta lama soo gelin karin. Hoos ku lifaaq."
+      },
+      "comingSoon": "Dhawaan",
+      "comingSoonHint": "Habkan lacag bixinta weli lama furin.",
+      "splitWallet": {
+        "label": "Isticmaal hadhaagayga {wallet}",
+        "hint": "Hadhaagaagu ma daboolayo qaddarka oo dhan — isticmaal oo bixi faraqa kaliya.",
+        "on": "Waxaa hadhay {remainder} oo lagu bixinayo habka hoose."
+      },
+      "chooseRailRemainder": "Dooro hab lagu bixiyo {amount} ee hadhay:",
+      "wire": {
+        "accountTitle": "Akoonka la bixinayo",
+        "beneficiary": "Qofka la bixinayo",
+        "bank": "Bangiga",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "reference": "Tixraaca",
+        "amount": "Qaddarka",
+        "step1": "Ka dir wareejinta bangigaaga adigoo ku qoraya tixraaca kore.",
+        "step2": "Soo geli SWIFT MT103 ama rasiidka bangigaaga shaashadda xigta.",
+        "step3": "Qaybta maaliyadda ayaa xaqiijinaysa lacagta gashay kadibna ansixinaysa lacag bixinta — halkan waxba lagama jarayo.",
+        "topupHint": "Buuxinta lacagta ma laha tixraac faktuur: ku dar magaca shirkaddaada sababta wareejinta.",
+        "bankReferenceOptional": "Ikhtiyaari — ka tag madhan haddii bangigaagu weli soo saarin.",
+        "download": "Soo deji amarka wareejinta (PDF)",
+        "depositReference": "Tixraaca dhigaalka"
       }
     },
     "proofUpload": {
       "addButton": "Ku dar caddaynta lacag bixinta",
       "hint": "PDF ama sawir, ilaa {max} MB. Waxaad ku dari kartaa dhowr faylal.",
       "dialogTitle": "Caddaynta lacag bixinta — {ref}",
-      "intro": "Soo geli xaqiijintaada SWIFT MT103. Maamule ayaa xaqiijin doona kahor inta biilka aan loo dhawaaqin inuu la bixiyay.",
+      "intro": "Soo geli xaqiijinta SWIFT MT103. Maamule ayaa hubin doona ka hor inta qaansheegta lagu calaamadin la bixiyay.",
       "removeAria": "Ka saar {name}",
       "errors": {
         "tooLarge": "Faylku aad buu u weyn yahay (ugu badan {max} MB).",
         "uploadFailed": "Soo gelintii wey ku guuldareysatay. Fadlan isku day mar kale.",
         "deleteFailed": "Faylka laga saari waayay."
-      }
+      },
+      "done": "Waa dhammaatay",
+      "contextMissing": "Waxaad u sheegtay lacag-bixin qaansheegtan, laakiin weli caddayn lama lifaaqin. Maaliyaddu ma xaqiijin karto la’aanteed.",
+      "contextProvided": "Caddayn horey ayaa loogu lifaaqay lacag-bixinta aad sheegtay. Waad ku dari kartaa ama beddeli kartaa faylasha."
     },
     "wallet": {
       "balanceCard": {
@@ -3228,10 +3340,13 @@
         "autoApply": "Tooska ugu dabaq biillada",
         "autoApplyOn": "Shidan",
         "autoApplyOff": "Damis",
-        "topupCta": "Buuxi boorsada"
+        "topupCta": "Buuxi boorsada",
+        "lastTopup": "Last top-up on {date} · {amount}",
+        "noTopupYet": "No top-up yet.",
+        "refundCta": "Request a refund"
       },
       "predictionCard": {
-        "title": "30 maalmood ee soo socda",
+        "title": "Kaydka lagula talinayo",
         "estimate30d": "~{count} safar markab → ~${amount} USD",
         "confidence": "Kalsoonida: {level}",
         "confidenceLevel": {
@@ -3240,7 +3355,13 @@
           "high": "sare"
         },
         "notEnoughData": "Hawlgal ku filan kuma jiro 90 maalmoodkii la soo dhaafay si loo saadaaliyo (< 5 ogeysiisyo).",
-        "insufficientWarning": "Baahida la qiyaasay waxay ka weyn tahay balankaaga hadda — buuxinta la talinayo: ${amount}"
+        "insufficientWarning": "Baahida la qiyaasay waxay ka weyn tahay balankaaga hadda — buuxinta la talinayo: ${amount}",
+        "gapSentence": "{amount} short to cover the next 30 days of due dates.",
+        "covered": "Your balance covers the {amount} due over the next 30 days.",
+        "due30d": "Due within 30 d",
+        "currentBalance": "Current balance",
+        "toProvision": "To provision",
+        "provisionCta": "Provision {amount}"
       },
       "ledger": {
         "title": "Dhaqdhaqaaqyada",
@@ -3249,7 +3370,9 @@
           "date": "Taariikhda",
           "amount": "Qaddarka",
           "kind": "Nooca",
-          "note": "Xusuus-qorid"
+          "note": "Xusuus-qorid",
+          "reference": "Reference",
+          "balance": "Balance"
         },
         "kind": {
           "TOPUP": "Buuxin",
@@ -3258,8 +3381,23 @@
           "PROFORMA_APPLY": "Loo dabaqay biilka",
           "ADMIN_ADJUSTMENT": "Hagaajinta maamulaha",
           "FX_DIFFERENCE": "Farqiga xawaalaadda"
+        },
+        "filterLabel": "Filter movements",
+        "direction": {
+          "all": "All",
+          "in": "Credits",
+          "out": "Debits"
         }
-      }
+      },
+      "topupReturn": {
+        "success": "Buuxinta lacagta waa la helay — hadhaaga boorsadaada waa la cusboonaysiiyay.",
+        "cancel": "Buuxinta lacagta waa la joojiyay. Wax lacag ah lagama jarin.",
+        "pending": "Buuxinta lacagta waa la xaqiijinayaa. Hadhaagaaga wuxuu cusboonaan doonaa dhawaan.",
+        "failed": "Buuxinta lacagta lama dhammaystiri karin. Wax lacag ah lagama jarin — isku day mar kale ama dooro hab kale oo lacag bixin ah."
+      },
+      "title": "Wallet",
+      "subtitle": "Balance of {amount} · recommended provision and movements",
+      "emptySubtitle": "Your wallet is empty. Top it up to credit your next invoices."
     },
     "notifications": {
       "title": "Warrankaha",
@@ -3340,8 +3478,151 @@
         "OWNER_ESCALATION": {
           "title": "Ogeysiiska kor-u-qaadista",
           "body": "Ficil ayaa loo baahan yahay {invoice_ref}."
+        },
+        "MEMBER_INVITED": {
+          "title": "New account access",
+          "body": "{invited_by} granted access to {member_email}. Rights: {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Account access removed",
+          "body": "{revoked_by} removed {member_email}’s access."
         }
       }
+    },
+    "queue": {
+      "title": "Carbon tax — {vessel}",
+      "fleetWide": "fleet",
+      "due": "due {date}",
+      "pay": "Pay",
+      "overdueBy": "{count, plural, =1 {Overdue · 1 d} other {Overdue · # d}}",
+      "dueToday": "Due today",
+      "inDays": "{count, plural, =1 {In 1 d} other {In # d}}",
+      "onCall": "On port call"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {No vessel attached} =1 {1 vessel} other {# vessels}} · {action, plural, =0 {none needs action} =1 {1 needs action} other {# need action}}",
+      "subtitle": "AIS positions and open invoices, matched vessel by vessel",
+      "tabsLabel": "Filter the fleet",
+      "tab": {
+        "all": "All",
+        "action": "Action required",
+        "inPort": "In port",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "status": {
+        "overdue": "Overdue",
+        "toPay": "To pay",
+        "proforma": "Pro-forma",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "col": {
+        "vessel": "Vessel",
+        "type": "Type",
+        "position": "Position",
+        "status": "Status",
+        "paidYtd": "Paid this year"
+      },
+      "detail": "Details",
+      "empty": "No vessel in this selection.",
+      "openVessel": "Open the file for {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Next due date",
+        "onCall": "on port call",
+        "emissions": "Emissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Due",
+        "estimate": "Estimate",
+        "payBefore": "Pay before {date}",
+        "payNow": "Pay now",
+        "seeProforma": "View the pro-forma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} to settle",
+      "context": "{count, plural, =0 {No open invoice} =1 {1 open invoice} other {# open invoices}}{overdue, plural, =0 {} =1 { · 1 overdue} other { · # overdue}}",
+      "payAll": "Pay all · {amount}",
+      "paySelection": "{count, plural, =1 {Pay the invoice · {amount}} other {Pay the # invoices · {amount}}}",
+      "tabsLabel": "Filter invoices",
+      "tab": {
+        "open": "Open",
+        "paid": "Paid",
+        "disputed": "Disputed",
+        "draft": "Drafts"
+      },
+      "col": {
+        "reference": "Reference",
+        "vessel": "Vessel",
+        "due": "Due date",
+        "amount": "Amount"
+      },
+      "select": "Select invoice {ref}",
+      "onCall": "on port call",
+      "empty": "No invoice in this family.",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Sovereign rate in force",
+      "totalDue": "Total due",
+      "remainingDue": "Remaining due",
+      "pay": "Pay {amount}",
+      "downloadPdf": "Download PDF",
+      "issuePdf": "Issue the PDF",
+      "issuing": "Issuing…",
+      "issuePdfHint": "No PDF has been issued for this charge yet — generate it now from the recorded amount.",
+      "dispute": "Dispute",
+      "attachProof": "Attach proof of payment",
+      "close": "Close",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      },
+      "methodLegend": "Payment method",
+      "method": {
+        "wire": {
+          "label": "Bank transfer",
+          "hint": "Confirmed within 24–48 h"
+        },
+        "wallet": {
+          "label": "AfricGreen wallet",
+          "covers": "Balance {balance} — sufficient",
+          "short": "Balance {balance} — insufficient"
+        },
+        "desk": {
+          "label": "Port cash desk",
+          "hint": "Cash · immediate receipt"
+        }
+      },
+      "receipt": "Rasiidh",
+      "completeProof": "Ku dar caddaynta maqan",
+      "reviewProof": "Dib u eeg caddaynta",
+      "restricted": "Some actions are not part of your access to this account. The account holder can grant them to you."
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
+      "required": "Action required",
+      "title": "Pay the carbon tax for {vessel}",
+      "fleetWide": "your fleet",
+      "meta": "Invoice {ref} · due date passed on {date}",
+      "terms": "USD · net 30",
+      "payNow": "Pay now",
+      "dispute": "Dispute"
+    },
+    "statement": {
+      "title": "Warbixin isku-dubaridan",
+      "asOfLabel": "Hadhaaga ilaa taariikhda",
+      "download": "Soo dejiso PDF",
+      "hintFleet": "Dhammaan qaansheegyada wali lagugu leeyahay maraakiibtaada, ilaa taariikhda aad dooratay. Waa la sameeyay markaad codsato — kama beddesho warbixintaada bishii.",
+      "hintVessel": "Dhammaan qaansheegyada wali lagugu leeyahay markabkan, ilaa taariikhda aad dooratay."
     }
   },
   "AdminEquasis": {
@@ -3527,7 +3808,61 @@
       "proofC": "Fiiri dukumeentiga caddaynta lacag-bixinta",
       "noProofB": "Ma jiro dukumeenti KYC-B ah oo diiwaan gashan",
       "noProofC": "Ma jiro dukumeenti lacag-bixin ah oo diiwaan gashan"
-    }
+    },
+    "billingCc": {
+      "title": "Billing copies",
+      "subtitle": "Addresses that receive a copy of your invoices, reminders and statements.",
+      "scopeNotice": "These addresses receive documents. They grant no portal access: nobody can sign in with them. To let a colleague act on your account, you will need to invite them as a member — that is coming.",
+      "addLabel": "Add an address",
+      "add": "Add",
+      "remove": "Remove {email}",
+      "empty": "No copies. You alone receive the documents.",
+      "remaining": "{count, plural, =0 {Limit reached} =1 {1 address left} other {# addresses left}}",
+      "saved": "Saved.",
+      "errors": {
+        "invalid": "Invalid email address.",
+        "invalid_email": "Invalid email address.",
+        "isPrimary": "That is already your primary address — it receives everything by default.",
+        "duplicate": "That address is already in the list.",
+        "tooMany": "At most {max} copy addresses.",
+        "too_many": "At most {max} copy addresses."
+      }
+    },
+    "members": {
+      "title": "Account members",
+      "subtitle": "People allowed to act on your account, and what each of them can do.",
+      "readOnlyNotice": "You can view this account’s members. Inviting or removing someone requires the “invite members” right.",
+      "empty": "No members. You are the only one with access to this account.",
+      "revoke": "Remove {email}’s access",
+      "revokedTitle": "Access removed",
+      "revokedOn": "removed on {date}",
+      "privilege": {
+        "canPay": "Pay",
+        "canDispute": "Dispute",
+        "canManageVessels": "Manage vessels",
+        "canInvite": "Invite members",
+        "none": "View only"
+      },
+      "form": {
+        "fullName": "Colleague’s name",
+        "email": "Their email address",
+        "privileges": "What they will be able to do",
+        "notYours": "You do not hold this right — you cannot grant it.",
+        "submit": "Invite"
+      },
+      "errors": {
+        "forbidden": "You are not allowed to invite members.",
+        "self": "You cannot invite yourself.",
+        "already_holder": "That person already holds this account.",
+        "holds_other_account": "That person holds another account — the invitation would have no effect.",
+        "member_of_other_account": "That person is already a member of another account.",
+        "not_found": "Member not found.",
+        "not_an_operator": "Reserved for shipowner accounts.",
+        "provisioning failed": "Account creation failed. Please retry.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
   },
   "AdminRegistrations": {
     "title": "Diiwaan-gelinta sugitaanka",
@@ -3719,6 +4054,25 @@
       "fileTooBig": "Faylku wuxuu dhaafayaa xaddiga 5MB.",
       "fileMime": "Nooca faylka lama taageero (isticmaal PDF ama sawir).",
       "submitFailed": "Ma suurtoobin in lacag-caddaanka la diiwaansamiyo."
+    },
+    "offlineBadge": "Offline",
+    "offlineNote": "Offline: the receipt is numbered locally and synced when the network returns.",
+    "methodLegend": "Tender received",
+    "method": {
+      "cash": "Cash",
+      "mobileMoney": "Mobile money",
+      "cheque": "Cheque",
+      "transfer": "Transfer"
+    },
+    "due": {
+      "invoice": "Selected invoice",
+      "allOpen": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "toCollect": "To collect"
+    },
+    "remainder": {
+      "exact": "Exact amount · no change due",
+      "change": "Change due: {amount}",
+      "short": "{amount} short — the balance will stay partial."
     }
   },
   "AdminWallets": {
@@ -3969,7 +4323,62 @@
     "escalate_confirm": "Gudbi",
     "escalate_ramp_bailiff": "Xasuusin J45 (kahor xeer-ilaaliyaha) ayaa marka hore la diri karaa.",
     "escalate_ramp_judicial": "Ogeysiis xeer-ilaaliye ayaa marka hore bixi kara.",
-    "escalated_badge": "La gudbiyay"
+    "escalated_badge": "La gudbiyay",
+    "remind_now": "Xasuusi hadda",
+    "remind_now_confirm": "Xasuusin gacanta lagu diray u dir {debtor} ee {ref}? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
+    "manual_group": "Soo-koobid isku-dhafan — {count} biilood",
+    "col_count_manual": "gacanta",
+    "col_count_manual_tooltip": "Xasuusino gacanta lagu diray oo ka baxsan hab-maamuuska — tii ugu dambeysay {date}",
+    "verdict": "{count, plural, =0 {No file to move forward} =1 {1 file to move forward} other {# files to move forward}}",
+    "rule": "Rule in force: reminder at D+3, formal notice at D+15, authority escalation at D+45",
+    "treatQueue": "Work the queue",
+    "sortBy": "Sort by:",
+    "stage": {
+      "reminder": "Reminder — D+3",
+      "formal": "Formal notice — D+15",
+      "authority": "Authority escalation — D+45",
+      "settled": "Settled this week"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {View the reminder} other {View the # reminders}}",
+      "formal": "Prepare the letters",
+      "authority": "Refer to the port authority",
+      "settled": "View details"
+    },
+    "stageOthers": "{count, plural, =1 {+1 other} other {+# others}}",
+    "stageEmpty": "Nothing at this stage.",
+    "stageSettledAmount": "{amount} collected",
+    "funnelTruncated": "Totals and previews computed over the 1,000 largest files. The counts shown are exact.",
+    "priorityTitle": "Priority file — {debtor}",
+    "priorityOpenFile": "Open the full file",
+    "panelHistory": "History",
+    "panelExposure": "Exposure",
+    "panelNext": "Next action",
+    "consequenceBailiff": "Bailiff escalation: the debt moves to legal recovery, with a served formal notice and the invoice attached.",
+    "consequenceJudicial": "Judicial escalation: the debt goes to litigation, the last step of the ramp.",
+    "consequenceRamp": "The ramp does not allow escalation on this file yet: the D+45 reminder must go out before the bailiff.",
+    "grantPlan": "Grant a payment plan",
+    "grantPlanConfirm": "Record a payment plan granted to {debtor} for {ref}? The debt is marked as a payment promise, which suspends the reminder ramp.",
+    "remindersWithManual": "{count} · +{manual} manual",
+    "tier": {
+      "J3": "Reminder D+3",
+      "J7": "Reminder D+7",
+      "J15": "Formal notice D+15",
+      "J30": "Formal notice D+30",
+      "J45": "Pre-bailiff D+45",
+      "BAILIFF": "Bailiff",
+      "JUDICIAL": "Judicial",
+      "MANUAL": "Manual reminder"
+    },
+    "response": {
+      "SILENT": "No response",
+      "ACKNOWLEDGE": "Acknowledged",
+      "DISPUTE": "Dispute",
+      "PAYMENT_PROMISE": "Payment promise",
+      "PARTIAL_PAYMENT": "Partial payment",
+      "PAID": "Paid",
+      "REFUSED": "Refused"
+    }
   },
   "AdminVesselIdentity": {
     "title": "Aqoonsiga Markabyada",
@@ -4055,6 +4464,12 @@
     "inviteDialogTitle": "Casuun milkiilaha markabka",
     "inviteDialogSubtitle": "U dir casuunta boortaalka {name}.",
     "navLink": "Milkiilayaasha Markabka",
+    "remind": "Xasuusi",
+    "remindConfirmTitle": "Xaqiiji xasuusinta",
+    "remindConfirmBody": "Xasuusin gacanta lagu diray u dir {name} ee biilka {ref}? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
+    "sendRecap": "Dir soo-koobid",
+    "sendRecapConfirmTitle": "Xaqiiji dirista soo-koobidda",
+    "sendRecapConfirmBody": "Ma dirto {name} soo-koobid isku-dhafan oo ka kooban {count} biilood oo furan? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
     "state": {
       "active": "Firfircoon",
       "invited": "La casuumay",
@@ -4079,6 +4494,8 @@
       "invoiced": "La qaansheegay",
       "paid": "La bixiyay",
       "outstanding": "La sugayo",
+      "overdue": "Dhaafay",
+      "lastReminder": "Xasuusinta ugu dambeysay",
       "actions": "Ficillo",
       "email": "Email",
       "imo": "IMO",
@@ -4091,7 +4508,12 @@
       "due": "La sugayo",
       "status": "Xaalad",
       "rail": "Qaybta bixinta",
-      "reference": "Tixraac"
+      "reference": "Tixraac",
+      "dueDate": "Taariikhda dhicitaanka",
+      "age": "Da'da",
+      "priority": "Mudnaanta",
+      "validity": "Muddada ansaxnimada",
+      "agent": "Wakiil"
     },
     "detail": {
       "identityTitle": "Aqoonsiga",
@@ -4125,6 +4547,7 @@
       "noPayments": "Lacag-bixin lama helin.",
       "remindersTitle": "Xasuusinno",
       "noReminders": "Xasuusin lama helin.",
+      "manualGroup": "Soo-koobid isku-dhafan — {count} biilood",
       "escalatedBailiff": "Loo gudbiyay — masuulka garsoorka",
       "actionsTitle": "Ficillo",
       "anonymizeTitle": "Qarsoodi ka dhig (GDPR)",
@@ -4133,7 +4556,116 @@
       "anonymizeConfirmLabel": "Qor {keyword} si aad u xaqiijiso",
       "anonymizeConfirmKeyword": "TIRTIR",
       "anonymizeCta": "Si joogto ah u qarsoodi",
-      "anonymizedAt": "Waa la qarsoodiyay {date}"
+      "anonymizedAt": "Waa la qarsoodiyay {date}",
+      "totalsTitle": "Wadarta akoonka",
+      "invoiced": "La qaansheegay",
+      "paid": "La bixiyay",
+      "outstanding": "La sugayo",
+      "overdueCount": "Qaansheegyo dhaafay",
+      "nextDueDate": "Taariikhda dhicitaanka xigta",
+      "contactsTitle": "Xiriirrada",
+      "officialEmailHint": "Qofka rasmiga ah ee helaya qaansheegyada iyo xasuusinnada.",
+      "billingCc": "Nuqulka lacag-bixinta",
+      "billingCcHint": "Cinwaannada nuqulka laga helo qaansheegyada iyo xasuusinnada, marka lagu daro qofka rasmiga ah ee helaya.",
+      "addCc": "Ku dar",
+      "removeCc": "Ka saar {email}",
+      "infoOnlyHint": "Macluumaad kaliya — looma isticmaalo dirista.",
+      "representativesTitle": "Wakiillada",
+      "noRepresentatives": "Wakiil lama helin.",
+      "repPrimary": "Nuqul ka mid ah qaansheegyada cusub (isku-xirka otomaatiga)",
+      "repAttach": "Ku lifaaq",
+      "repRevoke": "Baabi'i",
+      "repRevoked": "La baabi'iyay",
+      "repManageAll": "Maamul dhammaan xiriirrada",
+      "repInvite": "Ku dar iimayl",
+      "repInviteEmail": "Iimaylka wakiilka",
+      "repInviteName": "Magaca wakiilka",
+      "repInviteSubmit": "Abuur oo ku xidh",
+      "repInviteHint": "Wuxuu abuuraa akoonka oo ku xidhaa. Iimayl lama dirayo — gelitaanku wuxuu maraa xasuusinta xigta."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
+      "context": "{outstanding} outstanding · {total} registered shipowners",
+      "export": "Export list",
+      "campaign": "Start a reminder campaign",
+      "sortedBy": "Sorted by: debt age",
+      "tabsLabel": "Filter shipowners"
+    },
+    "daysAgo": "{count, plural, =1 {1 day} other {# days}}",
+    "daysShort": "{count} d",
+    "manualReminder": "Manual reminder",
+    "noContact": "None",
+    "rowLabel": "Open the file for {name}",
+    "close": "Close",
+    "campaignTitle": "Start a reminder campaign",
+    "campaignBody": "{count, plural, =1 {Send the consolidated recap to 1 shipowner, covering {amount} outstanding} other {Send the consolidated recap to # shipowners, covering {amount} outstanding}}? Sending is immediate and irreversible.",
+    "campaignConfirm": "{count, plural, =1 {Send 1 reminder} other {Send # reminders}}",
+    "campaignDone": "{sent, plural, =0 {No reminder sent} =1 {1 reminder sent} other {# reminders sent}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}.",
+    "campaignAllFailed": "No reminder could be sent. Check the official email addresses before retrying.",
+    "campaignEmpty": "No remindable file in the current selection.",
+    "kpi": {
+      "outstanding": "Total outstanding",
+      "outstandingNote": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "aged": "Overdue > 30 d",
+      "agedNote": "{count, plural, =1 {1 shipowner} other {# shipowners}}",
+      "collected": "Collected",
+      "collectedNote": "portfolio to date",
+      "avgAge": "Average age",
+      "avgAgeNote": "across overdue files",
+      "recovery": "Recovery rate",
+      "recoveryNote": "collected / invoiced"
+    },
+    "tab": {
+      "defaulting": "In default",
+      "all": "All",
+      "escalated": "Escalated",
+      "kyc": "Incomplete KYC"
+    },
+    "status": {
+      "sanctioned": "Sanctioned",
+      "escalated": "Escalated",
+      "default": "In default",
+      "late": "Overdue",
+      "disputed": "Disputed",
+      "kyc": "Incomplete KYC",
+      "clear": "Up to date"
+    },
+    "action": {
+      "collections": "Formal notice",
+      "remind": "Remind",
+      "arbitrate": "Arbitrate",
+      "checkKyc": "Check KYC",
+      "file": "File",
+      "noEmail": "No official address — cannot send a reminder."
+    },
+    "recapScope": "Baaxadda",
+    "recapScopeAll": "Maraakiibta oo dhan"
+  },
+  "AdminReglements": {
+    "title": "Bixinnada",
+    "subtitle": "Qaansheegga, ururinta lacagta iyo lacagaha aan la bixin ee juridiction kasta.",
+    "flowTitle": "Socodka qaansheegga iyo ururinta lacagta",
+    "utcNote": "Saacadaha waa UTC",
+    "today": "Maanta",
+    "week": "Toddobaadkan",
+    "month": "Bishan",
+    "invoiced": "La qaansheegay",
+    "collected": "La ururiyay",
+    "totalOutstanding": "Wadarta la sugayo",
+    "overdue": "Dhaafay",
+    "overdueCount": "{count} qaansheeg oo dhaafay",
+    "toChase": "Loo baahan yahay xasuusin",
+    "empty": "Milkiile markab oo dhaafay lama helin.",
+    "sendRecap": "Soo-koobid",
+    "sendRecapConfirmTitle": "Xaqiiji dirista soo-koobidda",
+    "sendRecapConfirmBody": "Ma dirto {name} soo-koobid isku-dhafan oo ka kooban {count} biilood oo furan? Tan waxa lagu diraa isla markiiba lamana soo celin karo.",
+    "cancel": "Jooji",
+    "col": {
+      "owner": "Milkiile",
+      "outstanding": "La sugayo",
+      "overdue": "Dhaafay",
+      "tier": "Heerka",
+      "lastReminder": "Xasuusinta ugu dambeysay"
     }
   },
   "AdminAirlines": {
@@ -4320,5 +4852,76 @@
     "cta_payment": "Eeg ogeysiisyadayda",
     "dismiss": "Qari",
     "help": "Sida ay u shaqeyso"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Nothing awaiting arbitration} =1 {1 item awaiting arbitration} other {# items awaiting arbitration}}",
+    "breakdown": "{vessels} vessel identities · {agents} agents · {ports} origin ports",
+    "tabsLabel": "Filter by item type",
+    "kind": {
+      "vessel-identity": "Vessel identity",
+      "agent": "Agent",
+      "origin-port": "Origin port"
+    },
+    "approveConforming": "{count, plural, =0 {None conforming} =1 {Approve the conforming one} other {Approve the # conforming}}",
+    "noConforming": "No conforming item: every remaining file carries at least one discrepancy.",
+    "submitted": "submitted by {by} · {date}",
+    "colField": "Field",
+    "colDeclared": "Declared",
+    "colSource": "Official source",
+    "field": {
+      "email": "Official email",
+      "ownerName": "Legal name",
+      "country": "Country",
+      "manager": "Manager",
+      "rawDestination": "AIS destination",
+      "matchedPort": "Matched port",
+      "editDistance": "Edit distance"
+    },
+    "divergences": "{count, plural, =1 {1 discrepancy to arbitrate} other {# discrepancies to arbitrate}}",
+    "conforming": "No discrepancy — only fills in empty fields.",
+    "openSpecialised": "Open the dedicated screen",
+    "approve": "Approve",
+    "reject": "Reject",
+    "working": "Working…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "empty": "Nothing to arbitrate in this family.",
+    "errorOn": "{title}: {reason}",
+    "reasonRequired": "A reason of at least 3 characters is required.",
+    "rejectTitle": "Reject this item",
+    "rejectBody": "Reject \"{title}\"? The reason is recorded in the audit trail.",
+    "rejectReasonLabel": "Rejection reason",
+    "bulkTitle": "Approve the conforming items",
+    "bulkBody": "{count, plural, =1 {Approve 1 conforming item} other {Approve # conforming items}}? None of them carries a discrepancy: approving only fills in empty fields. Some approvals send an email.",
+    "bulkDone": "{done, plural, =0 {No item approved} =1 {1 item approved} other {# items approved}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "New item to arbitrate",
+        "body": "{subject} is awaiting a decision in the validation queue."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "New registration request",
+        "body": "{org} has submitted an access request."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "File escalated",
+        "body": "{debtor} — {ref} moved to tier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Debtor response",
+        "body": "Response \"{response}\" recorded on a file at tier {tier}. The ramp is suspended."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Cash desk collection",
+        "body": "{amount} collected for {debtor}, awaiting confirmation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Invoice disputed",
+        "body": "{debtor} is disputing invoice {ref}."
+      }
+    },
+    "empty": "Nothing new."
   }
 }

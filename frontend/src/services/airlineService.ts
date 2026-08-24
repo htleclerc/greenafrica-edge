@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { decryptIban } from './kycService';
 import { maskIban } from './armateurService';
+import { outstandingUsd } from '@/lib/outstanding';
 
 export interface AirlineCockpitRow {
     id: string;
@@ -61,7 +62,10 @@ export interface AirlineProformaRow {
     invoice_ref: string | null;
     created_at: string;
     tax_amount_usd: number;
+    /** Gelee par la mig 089 et jamais ecrite — ne pas s'en servir pour un solde. */
     partial_paid_usd: number;
+    /** Reste du reel : montant taxe moins les paiements CONFIRMED. */
+    outstanding_usd: number;
     status: string;
     content_hash: string | null;
     verify_signature: string | null;
@@ -146,12 +150,21 @@ export async function getAirlineDetail(
     const txIds = (txRes.data ?? []).map((t) => t.id as string);
     const [payRes, remRes] = await Promise.all([
         txIds.length
-          ? db.from('payments').select('id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
+          ? db.from('payments').select('id, transaction_id, amount_usd_minor, created_at, rail, external_reference, status').in('transaction_id', txIds)
           : Promise.resolve({ data: [] as unknown[] }),
         txIds.length
           ? db.from('collection_reminders').select('id, tier, sent_at, debtor_response_type, escalated_bailiff').in('transaction_id', txIds).order('sent_at', { ascending: true })
           : Promise.resolve({ data: [] as unknown[] }),
     ]);
+
+    // Encaissements CONFIRMED par facture — la seule source du reste du.
+    const paidByTxn = new Map<string, number>();
+    for (const p of ((payRes.data ?? []) as Record<string, unknown>[])) {
+        if (String(p.status) !== 'CONFIRMED') continue;
+        const key = String(p.transaction_id ?? '');
+        if (!key) continue;
+        paidByTxn.set(key, (paidByTxn.get(key) ?? 0) + Number(p.amount_usd_minor ?? 0) / 100);
+    }
 
     const row = s as Record<string, unknown>;
     const str = (k: string) => (row[k] as string | null) ?? null;
@@ -208,7 +221,11 @@ export async function getAirlineDetail(
         proformas: (txRes.data ?? []).map((t) => ({
             id: t.id as string, invoice_ref: (t.invoice_ref as string | null) ?? null,
             created_at: t.created_at as string, tax_amount_usd: Number(t.tax_amount_usd),
-            partial_paid_usd: Number(t.partial_paid_usd ?? 0), status: t.status as string,
+            partial_paid_usd: Number(t.partial_paid_usd ?? 0),
+            outstanding_usd: outstandingUsd(
+                t as never, paidByTxn.get(t.id as string) ?? 0,
+            ),
+            status: t.status as string,
             content_hash: (t.content_hash as string | null) ?? null,
             verify_signature: (t.verify_signature as string | null) ?? null,
         })),

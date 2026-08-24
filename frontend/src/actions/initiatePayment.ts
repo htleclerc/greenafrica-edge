@@ -6,6 +6,7 @@ import { lockRate } from '@/services/fxRateService';
 import { createCheckoutSession } from '@/services/stripeService';
 import { createOrder as createPaypalOrder, paypalConfigured } from '@/services/paypalService';
 import { requireOwner } from '@/lib/auth/requireOwner';
+import { applyWalletCredit } from '@/services/walletApplyService';
 import { createTenantClient } from '@/lib/supabase/tenant';
 
 const OWNER_RAILS = ['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET', 'STRIPE', 'PAYPAL'] as const;
@@ -20,6 +21,12 @@ const schema = z.object({
     currency: z.string().length(3),
     rail: z.enum(ALL_RAILS),
     railDetails: z.record(z.string(), z.unknown()),
+    /**
+     * Part reglee depuis le portefeuille, en cents USD. `amount` ne porte
+     * alors QUE le reste a payer sur le rail — les deux montants sont
+     * disjoints, jamais le total.
+     */
+    walletApplyUsdMinor: z.number().int().positive().optional(),
 });
 
 interface InitiatePaymentInput {
@@ -28,6 +35,8 @@ interface InitiatePaymentInput {
     currency: string;
     rail: typeof ALL_RAILS[number];
     railDetails: Record<string, unknown>;
+    /** Part reglee depuis le portefeuille (cents USD), hors `amount`. */
+    walletApplyUsdMinor?: number;
 }
 
 const SELECTED_COLUMNS = 'id, status, transaction_id, amount_usd_minor';
@@ -49,6 +58,15 @@ export interface InitiatePaymentResult {
 
 function appBaseUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
+}
+
+/**
+ * Page sur laquelle retombe l'armateur au retour d'un checkout externe.
+ * Une recharge de portefeuille n'a pas de facture en face : la renvoyer sur
+ * la liste des factures donnait l'impression que le top-up s'etait perdu.
+ */
+function landingPath(transactionId: string | null): string {
+    return transactionId ? '/dashboard/invoices' : '/dashboard/wallet';
 }
 
 /** Champs communs à toutes les lignes `payments` créées par l'armateur. */
@@ -84,8 +102,10 @@ async function initiateStripe(
     rowCommon: RowCommon,
     shipownerId: string,
     railDetails: Record<string, unknown>,
+    beforeInsert: () => Promise<void>,
 ) {
     const baseUrl = appBaseUrl();
+    const landing = landingPath(rowCommon.transaction_id);
     const session = await createCheckoutSession({
         // Option A: payment row id is not yet known. The webhook looks up by
         // external_reference = stripe_payment_intent_id, not by metadata.payment_id.
@@ -93,15 +113,23 @@ async function initiateStripe(
         invoiceId: rowCommon.transaction_id ?? '',
         shipownerId,
         amountUsdMinor: rowCommon.amount_usd_minor,
-        successUrl: `${baseUrl}/owner/invoices?stripe=success`,
-        cancelUrl: `${baseUrl}/owner/invoices?stripe=cancel`,
+        successUrl: `${baseUrl}${landing}?stripe=success`,
+        cancelUrl: `${baseUrl}${landing}?stripe=cancel`,
     });
 
+    // Le portefeuille se débite APRÈS l'appel sortant : si Stripe refuse la
+    // session, rien n'a bougé côté solde.
+    await beforeInsert();
+
+    // Le PaymentIntent n'existe pas encore à l'ouverture de la session (API
+    // 2026-04-22) : on indexe la ligne sur l'id de session, et le webhook
+    // `checkout.session.completed` réécrit `external_reference` avec le
+    // PaymentIntent dès qu'il est connu.
     const data = await insertPaymentRow(admin, {
         ...rowCommon,
         rail: 'STRIPE',
         status: 'PROCESSING',
-        external_reference: session.stripePaymentIntentId,
+        external_reference: session.stripePaymentIntentId ?? session.stripeSessionId,
         rail_details: {
             ...railDetails,
             stripe_session_id: session.stripeSessionId,
@@ -120,6 +148,7 @@ async function initiatePaypal(
     admin: SupabaseClient,
     rowCommon: RowCommon,
     railDetails: Record<string, unknown>,
+    beforeInsert: () => Promise<void>,
 ) {
     // Fail-fast avant tout INSERT : mieux vaut une erreur visible dans le
     // dialogue qu'une ligne payments orpheline sans ordre PayPal en face.
@@ -151,8 +180,11 @@ async function initiatePaypal(
         transactionId: rowCommon.transaction_id,
         invoiceRef,
         returnUrl: `${baseUrl}/api/payments/paypal/return`,
-        cancelUrl: `${baseUrl}/dashboard/invoices?paypal=cancel`,
+        cancelUrl: `${baseUrl}${landingPath(rowCommon.transaction_id)}?paypal=cancel`,
     });
+
+    // Même ordre que STRIPE : l'ordre PayPal existe, on peut débiter.
+    await beforeInsert();
 
     const data = await insertPaymentRow(admin, {
         ...rowCommon,
@@ -169,7 +201,7 @@ async function initiatePaypal(
 export async function initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentResult> {
     const parsed = schema.parse(input);
 
-    const ctx = await requireOwner();
+    const ctx = await requireOwner('canPay');
     if (!OWNER_RAILS.includes(parsed.rail as typeof OWNER_RAILS[number])) {
         throw new Error(`owner cannot initiate rail=${parsed.rail}`);
     }
@@ -198,14 +230,62 @@ export async function initiatePayment(input: InitiatePaymentInput): Promise<Init
         rail_details: parsed.railDetails,
     };
 
+    // ── Part portefeuille d'un paiement mixte ────────────────────────────
+    //
+    // Le portefeuille couvre une partie de la facture, le rail choisi couvre
+    // le reste. Le débit est joué APRÈS l'appel au prestataire et AVANT
+    // l'INSERT de la ligne du rail : un refus de Stripe ou PayPal laisse alors
+    // le solde intact, et l'armateur peut recommencer.
+    //
+    // Le sens inverse — débiter d'abord — laisserait le crédit consommé face à
+    // un checkout qui n'a jamais existé.
+    const walletApplyMinor = parsed.walletApplyUsdMinor ?? 0;
+    if (walletApplyMinor > 0) {
+        if (!parsed.transactionId) {
+            // Une recharge n'a pas de facture à créditer : le portefeuille ne
+            // peut pas s'alimenter lui-même.
+            throw new Error('Wallet credit cannot fund a top-up');
+        }
+        if (parsed.rail === 'WALLET') {
+            throw new Error('Use the WALLET rail alone to pay from the wallet');
+        }
+        // La facture doit être celle de l'armateur : `applyWalletCredit` ne
+        // revérifie que le portefeuille, pas la propriété de la transaction.
+        const { data: tx, error: txErr } = await admin
+            .from('transactions')
+            .select('id, shipowner_id')
+            .eq('id', parsed.transactionId)
+            .single();
+        if (txErr) throw txErr;
+        if (tx.shipowner_id !== ctx.shipowner.id) throw new Error('Not your transaction');
+    }
+
+    const applyWalletPart = async () => {
+        if (walletApplyMinor <= 0) return;
+        await applyWalletCredit(admin, {
+            transactionId: parsed.transactionId as string,
+            shipownerId: ctx.shipowner.id,
+            actorUserId: ctx.userId,
+            amountMinor: walletApplyMinor,
+        });
+    };
+
+    // La ligne du rail garde la trace de la part portefeuille : sans elle, un
+    // relevé montre deux paiements sans lien pour la même facture.
+    const railDetails = walletApplyMinor > 0
+        ? { ...parsed.railDetails, wallet_applied_usd_minor: walletApplyMinor }
+        : parsed.railDetails;
+    rowCommon.rail_details = railDetails;
+
     if (parsed.rail === 'STRIPE') {
-        return initiateStripe(admin, rowCommon, ctx.shipowner.id, parsed.railDetails);
+        return initiateStripe(admin, rowCommon, ctx.shipowner.id, railDetails, applyWalletPart);
     }
     if (parsed.rail === 'PAYPAL') {
-        return initiatePaypal(admin, rowCommon, parsed.railDetails);
+        return initiatePaypal(admin, rowCommon, railDetails, applyWalletPart);
     }
 
     // Rails manuels : la ligne naît INITIATED, un staff la confirme.
+    await applyWalletPart();
     return insertPaymentRow(admin, {
         ...rowCommon,
         rail: parsed.rail,

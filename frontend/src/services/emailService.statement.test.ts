@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { OWNER_INVOICES_PATH } from '@/lib/routes/ownerPaths';
 
 const sendMock = vi.fn();
 vi.mock('resend', () => ({ Resend: class { emails = { send: sendMock }; } }));
@@ -24,7 +25,10 @@ describe('sendStatementReadyEmail', () => {
         const call = sendMock.mock.calls[0][0];
         expect(String(call.subject)).toMatch(/statement|July 2026/i);
         expect(String(call.html)).toContain('July 2026');
-        expect(String(call.html)).toContain('/owner/invoices');
+        // Route réelle du portail. L'assertion portait auparavant sur
+        // /owner/invoices, supprimée lors de la convergence des portails :
+        // le test verrouillait donc le lien mort au lieu de le détecter.
+        expect(String(call.html)).toContain(OWNER_INVOICES_PATH);
     });
 
     it('joint le PDF quand fourni', async () => {

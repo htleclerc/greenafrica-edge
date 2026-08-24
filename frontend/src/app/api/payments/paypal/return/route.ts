@@ -24,8 +24,9 @@ import { scopedLogger } from '@/lib/logger';
  *     appartenant à un autre armateur redirige vers `failed` sans jamais révéler
  *     que la ligne existe, et sans capturer.
  *
- * Toutes les issues sont des redirections vers /dashboard/invoices — la page que
- * l'armateur attend. Aucune réponse JSON : c'est une navigation, pas une API.
+ * Toutes les issues sont des redirections vers la page que l'armateur attend —
+ * /dashboard/invoices, ou /dashboard/wallet pour une recharge de portefeuille.
+ * Aucune réponse JSON : c'est une navigation, pas une API.
  *   ?paypal=success  paiement confirmé (par nous ou par un filet)
  *   ?paypal=pending  approuvé mais capture ou confirmation incomplète
  *   ?paypal=failed   token invalide, ligne étrangère, ou montant rejeté
@@ -35,17 +36,23 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const INVOICES_PATH = '/dashboard/invoices';
+const WALLET_PATH = '/dashboard/wallet';
 
 const log = scopedLogger('paypal-return');
 
-function redirectTo(req: NextRequest, outcome: 'success' | 'pending' | 'failed') {
-    return NextResponse.redirect(new URL(`${INVOICES_PATH}?paypal=${outcome}`, req.url));
+function redirectTo(
+    req: NextRequest,
+    outcome: 'success' | 'pending' | 'failed',
+    landing: string = INVOICES_PATH,
+) {
+    return NextResponse.redirect(new URL(`${landing}?paypal=${outcome}`, req.url));
 }
 
 interface OwnedPaymentRow {
     id: string;
     shipowner_id: string;
     status: string;
+    transaction_id: string | null;
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -65,7 +72,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     // pour le compte d'un autre armateur.
     const { data } = await admin
         .from('payments')
-        .select('id, shipowner_id, status')
+        .select('id, shipowner_id, status, transaction_id')
         .eq('external_reference', orderId)
         .eq('rail', 'PAYPAL')
         .maybeSingle();
@@ -84,13 +91,17 @@ export async function GET(req: NextRequest): Promise<Response> {
         return redirectTo(req, 'failed');
     }
 
+    // Une recharge de portefeuille n'a pas de facture : elle retombe sur le
+    // portefeuille, pas sur la liste des factures.
+    const landing = payment.transaction_id ? INVOICES_PATH : WALLET_PATH;
+
     // Un filet a pu confirmer avant le retour (webhook très rapide). Rien à
     // faire : afficher le succès.
     if (payment.status === 'CONFIRMED') {
-        return redirectTo(req, 'success');
+        return redirectTo(req, 'success', landing);
     }
     if (payment.status === 'REJECTED' || payment.status === 'CANCELLED') {
-        return redirectTo(req, 'failed');
+        return redirectTo(req, 'failed', landing);
     }
 
     // ── Capture ──────────────────────────────────────────────────────────────
@@ -104,7 +115,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         const message = e instanceof Error ? e.message : String(e);
         if (!message.includes('ORDER_ALREADY_CAPTURED')) {
             log.error('paypal_return_capture_failed', { orderId, error: message });
-            return redirectTo(req, 'pending');
+            return redirectTo(req, 'pending', landing);
         }
         try {
             capture = await getOrder(orderId);
@@ -113,7 +124,7 @@ export async function GET(req: NextRequest): Promise<Response> {
                 orderId,
                 error: readErr instanceof Error ? readErr.message : String(readErr),
             });
-            return redirectTo(req, 'pending');
+            return redirectTo(req, 'pending', landing);
         }
     }
 
@@ -128,11 +139,11 @@ export async function GET(req: NextRequest): Promise<Response> {
     switch (outcome) {
         case 'CONFIRMED':
         case 'IDEMPOTENT_SKIP':
-            return redirectTo(req, 'success');
+            return redirectTo(req, 'success', landing);
         case 'REJECTED_AMOUNT_MISMATCH':
         case 'NOT_FOUND':
-            return redirectTo(req, 'failed');
+            return redirectTo(req, 'failed', landing);
         default:
-            return redirectTo(req, 'pending');
+            return redirectTo(req, 'pending', landing);
     }
 }

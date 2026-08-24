@@ -33,7 +33,8 @@
     "impact": "الأثر",
     "resources": "الموارد",
     "about": "حول",
-    "partnership": "شراكة"
+    "partnership": "شراكة",
+    "nav_admin_validations": "عمليات التحقق"
   },
   "Landing": {
     "badge": "بروتوكول استخبارات الكربون السيادي",
@@ -592,7 +593,23 @@
     "pending_step4_desc": "بمجرد الموافقة، ستتلقى بريداً إلكترونياً يتضمن تعليمات الوصول.",
     "pending_info_title": "لماذا يستغرق هذا وقتاً؟",
     "pending_info_desc": "يتم التحقق من جميع الحسابات يدوياً بواسطة موظفين حكوميين مصرح لهم لضمان أمان المنصة والامتثال للوائح حماية البيانات السيادية.",
-    "owner_portal_link": "مالك سفينة؟ سجّل الدخول إلى بوابة المالك"
+    "owner_portal_link": "مالك سفينة؟ سجّل الدخول إلى بوابة المالك",
+    "magicLink": {
+      "tabPassword": "كلمة المرور",
+      "tabLink": "رابط الدخول",
+      "submit": "أرسل لي رابط الدخول",
+      "hint": "أدخل بريدك الإلكتروني، أو رقم IMO (٧ أرقام) أو MMSI (٩ أرقام) لسفينتك. نرسل رابطًا يُستخدم مرة واحدة ورمزًا من ٦ أرقام.",
+      "sent": "إذا كان هذا العنوان مسجلاً، فقد أُرسل إليه رابط دخول ورمز.",
+      "rateLimited": "محاولات كثيرة جدًا. يرجى المحاولة مرة أخرى بعد بضع دقائق.",
+      "queryLabel": "البريد الإلكتروني أو IMO أو MMSI",
+      "sentToHint": "أُرسل الرابط والرمز إلى {hint}.",
+      "sentVessel": "السفينة: {vessel}",
+      "codeLabel": "رمز من ٦ أرقام",
+      "codeSubmit": "تسجيل الدخول",
+      "codeHint": "أو انقر الرابط الوارد في البريد — كلاهما يعمل.",
+      "badCode": "رمز غير صالح أو منتهي الصلاحية.",
+      "retry": "استخدام بريد أو سفينة أخرى"
+    }
   },
   "Dashboard": {
     "breadcrumb_command_center": "مركز القيادة",
@@ -702,6 +719,7 @@
     "nav_vision": "لوحة الرؤية",
     "nav_staff": "إدارة الموظفين",
     "nav_armateurs": "الملاك الملاحيون",
+    "nav_reglements": "التسويات",
     "nav_airlines": "شركات الطيران",
     "nav_origin_port_proposals": "مقترحات ميناء المنشأ",
     "nav_cash_desk": "الصندوق",
@@ -710,7 +728,9 @@
     "nav_refunds": "المبالغ المستردة",
     "nav_admin_invoices": "الفواتير",
     "nav_admin_collections": "التحصيل",
-    "nav_vessel_identity": "هوية السفن"
+    "nav_vessel_identity": "هوية السفن",
+    "theme_switch_to_light": "Switch to light theme",
+    "theme_switch_to_dark": "Switch to dark theme"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -977,7 +997,13 @@
     "simulator_air_aircraft_type": "نوع الطائرة",
     "simulator_air_lto_cycles": "دورات الإقلاع والهبوط",
     "simulator_air_methodology_note": "منهجية ICAO LTO: الانبعاثات لكل دورة إقلاع وهبوط (السير، الإقلاع، الصعود، الاقتراب تحت 3000 قدم).",
-    "simulator_air_emissions_label": "الانبعاثات المقدرة"
+    "simulator_air_emissions_label": "الانبعاثات المقدرة",
+    "settings_theme_mode": "Night or day",
+    "settings_theme_mode_desc": "Independent of the visual theme: pick the brightness that suits you, whichever skin you use.",
+    "settings_theme_auto": "Automatic",
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light",
+    "settings_theme_auto_hint": "Follows the visual theme — currently: {theme}."
   },
   "Overview": {
     "kpi_active_vessels": "السفن النشطة في المنطقة الاقتصادية",
@@ -1270,7 +1296,27 @@
     "tax_liability": "Tax Liability",
     "view_details": "View Details",
     "contest_invoice": "Contest Invoice",
-    "access_denied": "Access restricted."
+    "access_denied": "Access restricted.",
+    "kpiVessels": "السفن",
+    "kpiOutstanding": "المبلغ المستحق",
+    "emptyFleet": "لا توجد سفينة مرتبطة بحسابك بعد.",
+    "noImo": "لم يُخصَّص رقم IMO",
+    "noInvoice": "لا توجد فاتورة",
+    "invoiceCount": "{count} فاتورة",
+    "rename": "إعادة التسمية",
+    "renameLabel": "اسم السفينة",
+    "renameSubmit": "حفظ",
+    "cancel": "إلغاء",
+    "detach": "إزالة",
+    "detachConfirmYes": "تأكيد الإزالة",
+    "confirmDetach": "هل تريد إزالة هذه السفينة من أسطولك؟",
+    "detachBlocked": "هذه السفينة عليها فاتورة ولا يمكن إزالتها. إن لم تكن لك، فاعترض على الفاتورة.",
+    "dispute": "اعتراض",
+    "title": "أسطولي",
+    "invoiceCountSettled": "{count} فاتورة · مسددة",
+    "detachBlockedSettled": "تحمل هذه السفينة فاتورة مسددة وتبقى في الملف. لا يمكن فصل ضريبة مدفوعة.",
+    "invoiceCountPartial": "{count} فاتورة · مسددة جزئيًا",
+    "restricted": "Managing vessels is not part of your access to this account. The account holder can grant it to you."
   },
   "VesselsPage": {
     "status_compliant": "ممتثل",
@@ -2686,7 +2732,19 @@
       "cancel": "إلغاء",
       "confirm": "استلام وإصدار الفاتورة المبدئية",
       "claiming": "جارٍ الاستلام…"
-    }
+    },
+    "verdict": "{count, plural, =0 {No vessel expected} =1 {1 vessel expected} other {# vessels expected}}",
+    "portLabel": "Port of Berbera",
+    "offline": "Offline",
+    "distance": "{nm} NM",
+    "etaMinutes": "{count, plural, =0 {Berthing imminent} =1 {Berthing in 1 min} other {Berthing in # min}}",
+    "etaHours": "{count, plural, =1 {In 1 h} other {In # h}}",
+    "etaDays": "{count, plural, =1 {Tomorrow} other {In # days}}",
+    "etaPassed": "Berthing overdue",
+    "etaUnknown": "ETA unknown",
+    "ownerInDefault": "Shipowner in default — {amount} unpaid. Departure subject to authorisation.",
+    "ownerClear": "Tax up to date · nothing to do",
+    "reportToAuthority": "Report to the authority"
   },
   "_TODO_AdminEscalations": "Proper Arabic translation pending — strings below are English fallback.",
   "AdminEscalations": {
@@ -2871,6 +2929,7 @@
       "vessels": "Vessels",
       "aircraft": "الطائرات",
       "fleet": "الأسطول",
+      "myFleet": "إدارة الأسطول",
       "invoices": "Invoices",
       "alerts": "Alerts",
       "signOut": "Sign out",
@@ -2913,7 +2972,26 @@
         "paidYtd": "Paid YTD"
       },
       "quickActions": "Quick actions",
-      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>."
+      "quickActionsBody": "Use the navigation above to explore your <vessels>vessels</vessels>, review <invoices>invoices</invoices>, or check active <alerts>alerts</alerts>.",
+      "verdict": "{count, plural, =0 {Nothing to handle today} =1 {1 thing to handle today} other {# things to handle today}}",
+      "context": "{owner} · current tax period",
+      "seeAll": "See all invoices",
+      "payAll": "Pay all · {amount}",
+      "emptyGood": "Nothing to handle. All your taxes are up to date.",
+      "more": "{count, plural, =1 {1 more due date} other {# more due dates}}",
+      "kpi": {
+        "outstanding": "Total outstanding",
+        "outstandingNote": "{count, plural, =0 {no open invoice} =1 {1 open invoice} other {# open invoices}}",
+        "vessels": "Active vessels",
+        "vesselsNote": "attached to your account",
+        "paidYtd": "Paid in {year}",
+        "paidYtdNote": "since January",
+        "wallet": "Wallet balance",
+        "walletNote": "available immediately"
+      },
+      "fleetTitle": "My fleet",
+      "openFleet": "Open My fleet",
+      "fleetSummary": "{count, plural, =0 {No vessel attached yet.} =1 {1 vessel attached to your account.} other {# vessels attached to your account.}}"
     },
     "vessels": {
       "title": "Vessels",
@@ -3039,7 +3117,7 @@
         }
       },
       "paramsHint": {
-        "wire_transfer": "أدخل مرجع التحويل المصرفي.",
+        "wire_transfer": "حوّل المبلغ إلى الحساب أدناه، ثم أرفق إثبات الحوالة.",
         "mobile_money": "أدخل تفاصيل معاملة نقود الجوال.",
         "third_party": "أدخل تفاصيل الطرف الثالث الدافع.",
         "wallet": "سيُستخدم رصيد محفظتك.",
@@ -3065,7 +3143,9 @@
         "rail": "الطريقة",
         "provider": "المزود",
         "details": "التفاصيل",
-        "disclaimer": "بالإرسال، تؤكد أن تفاصيل الدفع صحيحة."
+        "disclaimer": "بالإرسال، تؤكد أن تفاصيل الدفع صحيحة.",
+        "split": "التوزيع",
+        "splitValue": "{wallet} من المحفظة · {remainder} عبر {rail}"
       },
       "errors": {
         "bankReferenceRequired": "المرجع المصرفي مطلوب",
@@ -3073,7 +3153,9 @@
         "payerNameRequired": "اسم الدافع مطلوب",
         "noRail": "يرجى اختيار طريقة دفع",
         "amountRequired": "المبلغ مطلوب",
-        "noTransactionForWallet": "لا توجد معاملة متاحة للدفع بالمحفظة"
+        "noTransactionForWallet": "لا توجد معاملة متاحة للدفع بالمحفظة",
+        "proofRequired": "أرفق إثبات الدفع قبل الإرسال.",
+        "proofUploadFailed": "تعذر رفع الإثبات."
       },
       "reason": {
         "wallet_empty": "المحفظة فارغة",
@@ -3094,21 +3176,51 @@
       },
       "proofStep": {
         "created": "تم إنشاء طلب الدفع",
-        "intro": "ارفع إثبات الدفع (اختياري لكن يُنصح به).",
-        "done": "تم — دفعتك قيد المراجعة."
+        "intro": "أرفق تأكيد SWIFT MT103. بدونه تبقى الفاتورة مفتوحة.",
+        "done": "تم — دفعتك قيد المراجعة.",
+        "required": "إثبات الدفع (إلزامي)",
+        "requiredHint": "أرفق تأكيد SWIFT MT103. بدونه لا تستطيع الإدارة المالية مطابقة دفعة مُعلنة.",
+        "uploadFailed": "تم تسجيل الدفعة، لكن تعذر رفع الإثبات. أرفقه أدناه."
+      },
+      "comingSoon": "قريباً",
+      "comingSoonHint": "وسيلة الدفع هذه ليست متاحة بعد.",
+      "splitWallet": {
+        "label": "استخدام رصيد محفظتي البالغ {wallet}",
+        "hint": "رصيدك لا يغطي المبلغ كاملاً — استخدمه وادفع الفرق فقط.",
+        "on": "يتبقى {remainder} للدفع بالوسيلة أدناه."
+      },
+      "chooseRailRemainder": "اختر وسيلة لدفع المبلغ المتبقي {amount}:",
+      "wire": {
+        "accountTitle": "حساب المستفيد",
+        "beneficiary": "المستفيد",
+        "bank": "البنك",
+        "iban": "رقم الآيبان",
+        "swift": "سويفت/BIC",
+        "reference": "المرجع",
+        "amount": "المبلغ",
+        "step1": "نفّذ الحوالة من بنكك مع ذكر المرجع أعلاه.",
+        "step2": "حمّل رسالة سويفت MT103 أو إشعار بنكك في الشاشة التالية.",
+        "step3": "تقوم الإدارة المالية بمطابقة المبلغ الوارد ثم تؤكد الدفع — لا يُخصم أي مبلغ هنا.",
+        "topupHint": "شحن الرصيد ليس له مرجع فاتورة: اذكر أيضاً اسم شركتك في بيان الحوالة.",
+        "bankReferenceOptional": "اختياري — اتركه فارغاً إن لم يصدره بنكك بعد.",
+        "download": "تنزيل أمر التحويل (PDF)",
+        "depositReference": "مرجع الإيداع"
       }
     },
     "proofUpload": {
       "addButton": "إضافة إثبات",
       "hint": "PDF, JPG, PNG — حد أقصى 5 ميغابايت",
       "dialogTitle": "رفع إثبات الدفع",
-      "intro": "أرفق إيصال التحويل المصرفي أو رسالة SWIFT MT103 أو تأكيد نقود الجوال.",
+      "intro": "ارفع تأكيد SWIFT MT103. سيتحقق منه المسؤول قبل تعليم الفاتورة كمدفوعة.",
       "removeAria": "إزالة الملف",
       "errors": {
         "tooLarge": "الملف كبير جدًا (حد أقصى 5 ميغابايت)",
         "uploadFailed": "فشل الرفع — يرجى المحاولة مرة أخرى",
         "deleteFailed": "فشل الحذف — يرجى المحاولة مرة أخرى"
-      }
+      },
+      "done": "تم",
+      "contextMissing": "لقد أعلنت عن دفعة لهذه الفاتورة، لكن لم يُرفق أي إثبات بعد. لا تستطيع الإدارة المالية مطابقتها بدونه.",
+      "contextProvided": "يوجد إثبات مرفق بالفعل بالدفعة التي أعلنتها. يمكنك إضافة ملفات أو استبدالها."
     },
     "wallet": {
       "balanceCard": {
@@ -3116,10 +3228,13 @@
         "autoApply": "التطبيق التلقائي على الفواتير",
         "autoApplyOn": "مفعّل",
         "autoApplyOff": "معطّل",
-        "topupCta": "شحن"
+        "topupCta": "شحن",
+        "lastTopup": "Last top-up on {date} · {amount}",
+        "noTopupYet": "No top-up yet.",
+        "refundCta": "Request a refund"
       },
       "predictionCard": {
-        "title": "توقعات 30 يومًا",
+        "title": "المخصص الموصى به",
         "estimate30d": "الإنفاق المقدّر",
         "confidence": "الثقة",
         "confidenceLevel": {
@@ -3128,7 +3243,13 @@
           "high": "مرتفع"
         },
         "notEnoughData": "بيانات غير كافية للتوقع",
-        "insufficientWarning": "قد لا يكفي رصيدك لتغطية الفواتير القادمة"
+        "insufficientWarning": "قد لا يكفي رصيدك لتغطية الفواتير القادمة",
+        "gapSentence": "{amount} short to cover the next 30 days of due dates.",
+        "covered": "Your balance covers the {amount} due over the next 30 days.",
+        "due30d": "Due within 30 d",
+        "currentBalance": "Current balance",
+        "toProvision": "To provision",
+        "provisionCta": "Provision {amount}"
       },
       "ledger": {
         "title": "سجل المعاملات",
@@ -3137,7 +3258,9 @@
           "date": "التاريخ",
           "amount": "المبلغ",
           "kind": "النوع",
-          "note": "ملاحظة"
+          "note": "ملاحظة",
+          "reference": "Reference",
+          "balance": "Balance"
         },
         "kind": {
           "TOPUP": "شحن",
@@ -3146,8 +3269,23 @@
           "PROFORMA_APPLY": "دفع فاتورة",
           "ADMIN_ADJUSTMENT": "تعديل إداري",
           "FX_DIFFERENCE": "فرق العملة"
+        },
+        "filterLabel": "Filter movements",
+        "direction": {
+          "all": "All",
+          "in": "Credits",
+          "out": "Debits"
         }
-      }
+      },
+      "topupReturn": {
+        "success": "تم استلام عملية الشحن — تم تحديث رصيد محفظتك.",
+        "cancel": "تم إلغاء عملية الشحن. لم يتم خصم أي مبلغ.",
+        "pending": "يجري التحقق من عملية الشحن. سيتم تحديث رصيدك قريبًا.",
+        "failed": "تعذّر إتمام عملية الشحن. لم يتم خصم أي مبلغ — أعد المحاولة أو اختر وسيلة دفع أخرى."
+      },
+      "title": "Wallet",
+      "subtitle": "Balance of {amount} · recommended provision and movements",
+      "emptySubtitle": "Your wallet is empty. Top it up to credit your next invoices."
     },
     "notifications": {
       "title": "الإشعارات",
@@ -3228,8 +3366,151 @@
         "OWNER_ESCALATION": {
           "title": "إشعار تصعيد",
           "body": "تمت الإشارة إلى حسابك للمراجعة."
+        },
+        "MEMBER_INVITED": {
+          "title": "New account access",
+          "body": "{invited_by} granted access to {member_email}. Rights: {granted}."
+        },
+        "MEMBER_REVOKED": {
+          "title": "Account access removed",
+          "body": "{revoked_by} removed {member_email}’s access."
         }
       }
+    },
+    "queue": {
+      "title": "Carbon tax — {vessel}",
+      "fleetWide": "fleet",
+      "due": "due {date}",
+      "pay": "Pay",
+      "overdueBy": "{count, plural, =1 {Overdue · 1 d} other {Overdue · # d}}",
+      "dueToday": "Due today",
+      "inDays": "{count, plural, =1 {In 1 d} other {In # d}}",
+      "onCall": "On port call"
+    },
+    "fleet": {
+      "verdict": "{total, plural, =0 {No vessel attached} =1 {1 vessel} other {# vessels}} · {action, plural, =0 {none needs action} =1 {1 needs action} other {# need action}}",
+      "subtitle": "AIS positions and open invoices, matched vessel by vessel",
+      "tabsLabel": "Filter the fleet",
+      "tab": {
+        "all": "All",
+        "action": "Action required",
+        "inPort": "In port",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "status": {
+        "overdue": "Overdue",
+        "toPay": "To pay",
+        "proforma": "Pro-forma",
+        "compliant": "Compliant",
+        "exempt": "Exempt"
+      },
+      "col": {
+        "vessel": "Vessel",
+        "type": "Type",
+        "position": "Position",
+        "status": "Status",
+        "paidYtd": "Paid this year"
+      },
+      "detail": "Details",
+      "empty": "No vessel in this selection.",
+      "openVessel": "Open the file for {name}",
+      "card": {
+        "position": "Position",
+        "nextDue": "Next due date",
+        "onCall": "on port call",
+        "emissions": "Emissions",
+        "tco2": "{value} t CO₂e",
+        "due": "Due",
+        "estimate": "Estimate",
+        "payBefore": "Pay before {date}",
+        "payNow": "Pay now",
+        "seeProforma": "View the pro-forma"
+      }
+    },
+    "invoicesList": {
+      "verdict": "{amount} to settle",
+      "context": "{count, plural, =0 {No open invoice} =1 {1 open invoice} other {# open invoices}}{overdue, plural, =0 {} =1 { · 1 overdue} other { · # overdue}}",
+      "payAll": "Pay all · {amount}",
+      "paySelection": "{count, plural, =1 {Pay the invoice · {amount}} other {Pay the # invoices · {amount}}}",
+      "tabsLabel": "Filter invoices",
+      "tab": {
+        "open": "Open",
+        "paid": "Paid",
+        "disputed": "Disputed",
+        "draft": "Drafts"
+      },
+      "col": {
+        "reference": "Reference",
+        "vessel": "Vessel",
+        "due": "Due date",
+        "amount": "Amount"
+      },
+      "select": "Select invoice {ref}",
+      "onCall": "on port call",
+      "empty": "No invoice in this family.",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      }
+    },
+    "invoiceDetail": {
+      "decreeReference": "Sovereign rate in force",
+      "totalDue": "Total due",
+      "remainingDue": "Remaining due",
+      "pay": "Pay {amount}",
+      "downloadPdf": "Download PDF",
+      "issuePdf": "Issue the PDF",
+      "issuing": "Issuing…",
+      "issuePdfHint": "No PDF has been issued for this charge yet — generate it now from the recorded amount.",
+      "dispute": "Dispute",
+      "attachProof": "Attach proof of payment",
+      "close": "Close",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "To pay",
+        "upcoming": "Upcoming",
+        "paid": "Paid"
+      },
+      "methodLegend": "Payment method",
+      "method": {
+        "wire": {
+          "label": "Bank transfer",
+          "hint": "Confirmed within 24–48 h"
+        },
+        "wallet": {
+          "label": "AfricGreen wallet",
+          "covers": "Balance {balance} — sufficient",
+          "short": "Balance {balance} — insufficient"
+        },
+        "desk": {
+          "label": "Port cash desk",
+          "hint": "Cash · immediate receipt"
+        }
+      },
+      "receipt": "إيصال",
+      "completeProof": "أضف الإثبات الناقص",
+      "reviewProof": "مراجعة إثبات الدفع",
+      "restricted": "Some actions are not part of your access to this account. The account holder can grant them to you."
+    },
+    "actionBand": {
+      "daysLate": "{count, plural, =1 {day overdue} other {days overdue}}",
+      "required": "Action required",
+      "title": "Pay the carbon tax for {vessel}",
+      "fleetWide": "your fleet",
+      "meta": "Invoice {ref} · due date passed on {date}",
+      "terms": "USD · net 30",
+      "payNow": "Pay now",
+      "dispute": "Dispute"
+    },
+    "statement": {
+      "title": "كشف حساب مجمّع",
+      "asOfLabel": "الرصيد حتى تاريخ",
+      "download": "تنزيل PDF",
+      "hintFleet": "جميع الفواتير المستحقة على أسطولك حتى التاريخ المحدد. يُصدر عند الطلب — ولا يحل محل كشفك الشهري.",
+      "hintVessel": "جميع الفواتير المستحقة على هذه السفينة حتى التاريخ المحدد."
     }
   },
   "AdminEquasis": {
@@ -3667,7 +3948,61 @@
       "proofC": "عرض مستند إثبات الفوترة",
       "noProofB": "لا يوجد مستند KYC-B مسجل",
       "noProofC": "لا يوجد مستند فوترة مسجل"
-    }
+    },
+    "billingCc": {
+      "title": "Billing copies",
+      "subtitle": "Addresses that receive a copy of your invoices, reminders and statements.",
+      "scopeNotice": "These addresses receive documents. They grant no portal access: nobody can sign in with them. To let a colleague act on your account, you will need to invite them as a member — that is coming.",
+      "addLabel": "Add an address",
+      "add": "Add",
+      "remove": "Remove {email}",
+      "empty": "No copies. You alone receive the documents.",
+      "remaining": "{count, plural, =0 {Limit reached} =1 {1 address left} other {# addresses left}}",
+      "saved": "Saved.",
+      "errors": {
+        "invalid": "Invalid email address.",
+        "invalid_email": "Invalid email address.",
+        "isPrimary": "That is already your primary address — it receives everything by default.",
+        "duplicate": "That address is already in the list.",
+        "tooMany": "At most {max} copy addresses.",
+        "too_many": "At most {max} copy addresses."
+      }
+    },
+    "members": {
+      "title": "Account members",
+      "subtitle": "People allowed to act on your account, and what each of them can do.",
+      "readOnlyNotice": "You can view this account’s members. Inviting or removing someone requires the “invite members” right.",
+      "empty": "No members. You are the only one with access to this account.",
+      "revoke": "Remove {email}’s access",
+      "revokedTitle": "Access removed",
+      "revokedOn": "removed on {date}",
+      "privilege": {
+        "canPay": "Pay",
+        "canDispute": "Dispute",
+        "canManageVessels": "Manage vessels",
+        "canInvite": "Invite members",
+        "none": "View only"
+      },
+      "form": {
+        "fullName": "Colleague’s name",
+        "email": "Their email address",
+        "privileges": "What they will be able to do",
+        "notYours": "You do not hold this right — you cannot grant it.",
+        "submit": "Invite"
+      },
+      "errors": {
+        "forbidden": "You are not allowed to invite members.",
+        "self": "You cannot invite yourself.",
+        "already_holder": "That person already holds this account.",
+        "holds_other_account": "That person holds another account — the invitation would have no effect.",
+        "member_of_other_account": "That person is already a member of another account.",
+        "not_found": "Member not found.",
+        "not_an_operator": "Reserved for shipowner accounts.",
+        "provisioning failed": "Account creation failed. Please retry.",
+        "fallback": "{fallbackReason}"
+      }
+    },
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
   },
   "AdminRegistrations": {
     "title": "تسجيلات ملاك السفن",
@@ -3859,6 +4194,25 @@
       "fileTooBig": "الملف كبير جدًا (حد أقصى 10 ميغابايت)",
       "fileMime": "نوع الملف غير صحيح",
       "submitFailed": "فشل التسجيل — يرجى المحاولة مرة أخرى"
+    },
+    "offlineBadge": "Offline",
+    "offlineNote": "Offline: the receipt is numbered locally and synced when the network returns.",
+    "methodLegend": "Tender received",
+    "method": {
+      "cash": "Cash",
+      "mobileMoney": "Mobile money",
+      "cheque": "Cheque",
+      "transfer": "Transfer"
+    },
+    "due": {
+      "invoice": "Selected invoice",
+      "allOpen": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "toCollect": "To collect"
+    },
+    "remainder": {
+      "exact": "Exact amount · no change due",
+      "change": "Change due: {amount}",
+      "short": "{amount} short — the balance will stay partial."
     }
   },
   "AdminWallets": {
@@ -3972,7 +4326,62 @@
     "escalate_confirm": "تصعيد",
     "escalate_ramp_bailiff": "يجب إرسال تذكير J45 (ما قبل المحضر القضائي) أولاً.",
     "escalate_ramp_judicial": "يجب إصدار إشعار المحضر القضائي أولاً.",
-    "escalated_badge": "تم التصعيد"
+    "escalated_badge": "تم التصعيد",
+    "remind_now": "تذكير الآن",
+    "remind_now_confirm": "هل تريد إرسال تذكير يدوي إلى {debtor} بخصوص {ref}؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
+    "manual_group": "ملخص موحّد — {count} فاتورة",
+    "col_count_manual": "يدوي",
+    "col_count_manual_tooltip": "تذكيرات يدوية خارج المسار الرسمي — آخرها في {date}",
+    "verdict": "{count, plural, =0 {No file to move forward} =1 {1 file to move forward} other {# files to move forward}}",
+    "rule": "Rule in force: reminder at D+3, formal notice at D+15, authority escalation at D+45",
+    "treatQueue": "Work the queue",
+    "sortBy": "Sort by:",
+    "stage": {
+      "reminder": "Reminder — D+3",
+      "formal": "Formal notice — D+15",
+      "authority": "Authority escalation — D+45",
+      "settled": "Settled this week"
+    },
+    "stageAction": {
+      "reminder": "{count, plural, =1 {View the reminder} other {View the # reminders}}",
+      "formal": "Prepare the letters",
+      "authority": "Refer to the port authority",
+      "settled": "View details"
+    },
+    "stageOthers": "{count, plural, =1 {+1 other} other {+# others}}",
+    "stageEmpty": "Nothing at this stage.",
+    "stageSettledAmount": "{amount} collected",
+    "funnelTruncated": "Totals and previews computed over the 1,000 largest files. The counts shown are exact.",
+    "priorityTitle": "Priority file — {debtor}",
+    "priorityOpenFile": "Open the full file",
+    "panelHistory": "History",
+    "panelExposure": "Exposure",
+    "panelNext": "Next action",
+    "consequenceBailiff": "Bailiff escalation: the debt moves to legal recovery, with a served formal notice and the invoice attached.",
+    "consequenceJudicial": "Judicial escalation: the debt goes to litigation, the last step of the ramp.",
+    "consequenceRamp": "The ramp does not allow escalation on this file yet: the D+45 reminder must go out before the bailiff.",
+    "grantPlan": "Grant a payment plan",
+    "grantPlanConfirm": "Record a payment plan granted to {debtor} for {ref}? The debt is marked as a payment promise, which suspends the reminder ramp.",
+    "remindersWithManual": "{count} · +{manual} manual",
+    "tier": {
+      "J3": "Reminder D+3",
+      "J7": "Reminder D+7",
+      "J15": "Formal notice D+15",
+      "J30": "Formal notice D+30",
+      "J45": "Pre-bailiff D+45",
+      "BAILIFF": "Bailiff",
+      "JUDICIAL": "Judicial",
+      "MANUAL": "Manual reminder"
+    },
+    "response": {
+      "SILENT": "No response",
+      "ACKNOWLEDGE": "Acknowledged",
+      "DISPUTE": "Dispute",
+      "PAYMENT_PROMISE": "Payment promise",
+      "PARTIAL_PAYMENT": "Partial payment",
+      "PAID": "Paid",
+      "REFUSED": "Refused"
+    }
   },
   "AdminVesselIdentity": {
     "title": "هوية السفن",
@@ -4058,6 +4467,12 @@
     "inviteDialogTitle": "دعوة مالك السفينة",
     "inviteDialogSubtitle": "إرسال دعوة للبوابة إلى {name}.",
     "navLink": "الملاك الملاحيون",
+    "remind": "تذكير",
+    "remindConfirmTitle": "تأكيد التذكير",
+    "remindConfirmBody": "هل تريد إرسال تذكير يدوي إلى {name} بخصوص الفاتورة {ref}؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
+    "sendRecap": "إرسال الملخص",
+    "sendRecapConfirmTitle": "تأكيد إرسال الملخص",
+    "sendRecapConfirmBody": "هل تريد إرسال ملخص موحّد إلى {name} يغطي {count} فاتورة مفتوحة؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
     "state": {
       "active": "نشط",
       "invited": "تمت دعوته",
@@ -4082,6 +4497,8 @@
       "invoiced": "المفوتر",
       "paid": "المدفوع",
       "outstanding": "المستحق",
+      "overdue": "متأخر",
+      "lastReminder": "آخر تذكير",
       "actions": "إجراءات",
       "email": "البريد الإلكتروني",
       "imo": "IMO",
@@ -4094,7 +4511,12 @@
       "due": "المستحق",
       "status": "الحالة",
       "rail": "القناة",
-      "reference": "المرجع"
+      "reference": "المرجع",
+      "dueDate": "تاريخ الاستحقاق",
+      "age": "العمر",
+      "priority": "الأولوية",
+      "validity": "فترة الصلاحية",
+      "agent": "الوكيل"
     },
     "detail": {
       "identityTitle": "الهوية",
@@ -4128,6 +4550,7 @@
       "noPayments": "لا توجد مدفوعات.",
       "remindersTitle": "التذكيرات",
       "noReminders": "لا توجد تذكيرات.",
+      "manualGroup": "ملخص موحّد — {count} فاتورة",
       "escalatedBailiff": "تم التصعيد — مُحضر قضائي",
       "actionsTitle": "إجراءات",
       "anonymizeTitle": "إخفاء الهوية (RGPD)",
@@ -4136,7 +4559,116 @@
       "anonymizeConfirmLabel": "اكتب {keyword} للتأكيد",
       "anonymizeConfirmKeyword": "حذف",
       "anonymizeCta": "إخفاء الهوية نهائيًا",
-      "anonymizedAt": "تم إخفاء الهوية في {date}"
+      "anonymizedAt": "تم إخفاء الهوية في {date}",
+      "totalsTitle": "إجماليات الحساب",
+      "invoiced": "المفوتر",
+      "paid": "المدفوع",
+      "outstanding": "المستحق",
+      "overdueCount": "الفواتير المتأخرة",
+      "nextDueDate": "تاريخ الاستحقاق التالي",
+      "contactsTitle": "جهات الاتصال",
+      "officialEmailHint": "مستلم الفواتير والتذكيرات.",
+      "billingCc": "نسخة الفوترة",
+      "billingCcHint": "عناوين تُنسخ على الفواتير والتذكيرات، بالإضافة إلى المستلم الرسمي.",
+      "addCc": "إضافة",
+      "removeCc": "إزالة {email}",
+      "infoOnlyHint": "للمعلومية فقط — لا تُستخدم للإرسال.",
+      "representativesTitle": "الممثلون",
+      "noRepresentatives": "لا يوجد ممثلون.",
+      "repPrimary": "نسخة على الفواتير الجديدة (مطابقة تلقائية)",
+      "repAttach": "إلحاق",
+      "repRevoke": "إلغاء",
+      "repRevoked": "ملغى",
+      "repManageAll": "إدارة جميع الروابط",
+      "repInvite": "إضافة بالبريد الإلكتروني",
+      "repInviteEmail": "البريد الإلكتروني للممثل",
+      "repInviteName": "اسم الممثل",
+      "repInviteSubmit": "إنشاء وربط",
+      "repInviteHint": "يُنشئ الحساب ويربطه. لا يُرسل أي بريد إلكتروني — يتم الوصول عبر التذكير التالي."
+    },
+    "cockpit": {
+      "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
+      "context": "{outstanding} outstanding · {total} registered shipowners",
+      "export": "Export list",
+      "campaign": "Start a reminder campaign",
+      "sortedBy": "Sorted by: debt age",
+      "tabsLabel": "Filter shipowners"
+    },
+    "daysAgo": "{count, plural, =1 {1 day} other {# days}}",
+    "daysShort": "{count} d",
+    "manualReminder": "Manual reminder",
+    "noContact": "None",
+    "rowLabel": "Open the file for {name}",
+    "close": "Close",
+    "campaignTitle": "Start a reminder campaign",
+    "campaignBody": "{count, plural, =1 {Send the consolidated recap to 1 shipowner, covering {amount} outstanding} other {Send the consolidated recap to # shipowners, covering {amount} outstanding}}? Sending is immediate and irreversible.",
+    "campaignConfirm": "{count, plural, =1 {Send 1 reminder} other {Send # reminders}}",
+    "campaignDone": "{sent, plural, =0 {No reminder sent} =1 {1 reminder sent} other {# reminders sent}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}.",
+    "campaignAllFailed": "No reminder could be sent. Check the official email addresses before retrying.",
+    "campaignEmpty": "No remindable file in the current selection.",
+    "kpi": {
+      "outstanding": "Total outstanding",
+      "outstandingNote": "{count, plural, =1 {1 open invoice} other {# open invoices}}",
+      "aged": "Overdue > 30 d",
+      "agedNote": "{count, plural, =1 {1 shipowner} other {# shipowners}}",
+      "collected": "Collected",
+      "collectedNote": "portfolio to date",
+      "avgAge": "Average age",
+      "avgAgeNote": "across overdue files",
+      "recovery": "Recovery rate",
+      "recoveryNote": "collected / invoiced"
+    },
+    "tab": {
+      "defaulting": "In default",
+      "all": "All",
+      "escalated": "Escalated",
+      "kyc": "Incomplete KYC"
+    },
+    "status": {
+      "sanctioned": "Sanctioned",
+      "escalated": "Escalated",
+      "default": "In default",
+      "late": "Overdue",
+      "disputed": "Disputed",
+      "kyc": "Incomplete KYC",
+      "clear": "Up to date"
+    },
+    "action": {
+      "collections": "Formal notice",
+      "remind": "Remind",
+      "arbitrate": "Arbitrate",
+      "checkKyc": "Check KYC",
+      "file": "File",
+      "noEmail": "No official address — cannot send a reminder."
+    },
+    "recapScope": "النطاق",
+    "recapScopeAll": "الأسطول بالكامل"
+  },
+  "AdminReglements": {
+    "title": "التسويات",
+    "subtitle": "الفوترة والتحصيل والمبالغ غير المسددة حسب الولاية القضائية.",
+    "flowTitle": "تدفق الفوترة والتحصيل",
+    "utcNote": "التوقيت بالتوقيت العالمي المنسق (UTC)",
+    "today": "اليوم",
+    "week": "هذا الأسبوع",
+    "month": "هذا الشهر",
+    "invoiced": "المفوتر",
+    "collected": "المحصّل",
+    "totalOutstanding": "إجمالي المستحق",
+    "overdue": "متأخر",
+    "overdueCount": "{count} فاتورة متأخرة",
+    "toChase": "بحاجة إلى متابعة",
+    "empty": "لا يوجد ملاك سفن متأخرون.",
+    "sendRecap": "ملخص",
+    "sendRecapConfirmTitle": "تأكيد إرسال الملخص",
+    "sendRecapConfirmBody": "هل تريد إرسال ملخص موحّد إلى {name} يغطي {count} فاتورة مفتوحة؟ يُرسَل هذا فورًا ولا يمكن التراجع عنه.",
+    "cancel": "إلغاء",
+    "col": {
+      "owner": "مالك السفينة",
+      "outstanding": "المستحق",
+      "overdue": "متأخر",
+      "tier": "المستوى",
+      "lastReminder": "آخر تذكير"
     }
   },
   "AdminAirlines": {
@@ -4323,5 +4855,76 @@
     "cta_payment": "عرض إشعاراتي",
     "dismiss": "إخفاء",
     "help": "كيف يعمل"
+  },
+  "AdminValidations": {
+    "verdict": "{count, plural, =0 {Nothing awaiting arbitration} =1 {1 item awaiting arbitration} other {# items awaiting arbitration}}",
+    "breakdown": "{vessels} vessel identities · {agents} agents · {ports} origin ports",
+    "tabsLabel": "Filter by item type",
+    "kind": {
+      "vessel-identity": "Vessel identity",
+      "agent": "Agent",
+      "origin-port": "Origin port"
+    },
+    "approveConforming": "{count, plural, =0 {None conforming} =1 {Approve the conforming one} other {Approve the # conforming}}",
+    "noConforming": "No conforming item: every remaining file carries at least one discrepancy.",
+    "submitted": "submitted by {by} · {date}",
+    "colField": "Field",
+    "colDeclared": "Declared",
+    "colSource": "Official source",
+    "field": {
+      "email": "Official email",
+      "ownerName": "Legal name",
+      "country": "Country",
+      "manager": "Manager",
+      "rawDestination": "AIS destination",
+      "matchedPort": "Matched port",
+      "editDistance": "Edit distance"
+    },
+    "divergences": "{count, plural, =1 {1 discrepancy to arbitrate} other {# discrepancies to arbitrate}}",
+    "conforming": "No discrepancy — only fills in empty fields.",
+    "openSpecialised": "Open the dedicated screen",
+    "approve": "Approve",
+    "reject": "Reject",
+    "working": "Working…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "empty": "Nothing to arbitrate in this family.",
+    "errorOn": "{title}: {reason}",
+    "reasonRequired": "A reason of at least 3 characters is required.",
+    "rejectTitle": "Reject this item",
+    "rejectBody": "Reject \"{title}\"? The reason is recorded in the audit trail.",
+    "rejectReasonLabel": "Rejection reason",
+    "bulkTitle": "Approve the conforming items",
+    "bulkBody": "{count, plural, =1 {Approve 1 conforming item} other {Approve # conforming items}}? None of them carries a discrepancy: approving only fills in empty fields. Some approvals send an email.",
+    "bulkDone": "{done, plural, =0 {No item approved} =1 {1 item approved} other {# items approved}}{failed, plural, =0 {} =1 {, 1 failure} other {, # failures}}."
+  },
+  "StaffNotifications": {
+    "kind": {
+      "VALIDATION_PENDING": {
+        "title": "New item to arbitrate",
+        "body": "{subject} is awaiting a decision in the validation queue."
+      },
+      "REGISTRATION_SUBMITTED": {
+        "title": "New registration request",
+        "body": "{org} has submitted an access request."
+      },
+      "COLLECTION_ESCALATED": {
+        "title": "File escalated",
+        "body": "{debtor} — {ref} moved to tier {tier}."
+      },
+      "DEBTOR_RESPONDED": {
+        "title": "Debtor response",
+        "body": "Response \"{response}\" recorded on a file at tier {tier}. The ramp is suspended."
+      },
+      "CASH_PAYMENT_RECORDED": {
+        "title": "Cash desk collection",
+        "body": "{amount} collected for {debtor}, awaiting confirmation."
+      },
+      "DISPUTE_OPENED": {
+        "title": "Invoice disputed",
+        "body": "{debtor} is disputing invoice {ref}."
+      }
+    },
+    "empty": "Nothing new."
   }
 }

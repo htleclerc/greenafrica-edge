@@ -9,7 +9,7 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import * as Dialog from '@radix-ui/react-dialog';
 import { inviteShipowner } from '@/actions/inviteShipowner';
-import { updateArmateurEmail } from '@/actions/updateArmateurEmail';
+import { updateArmateurContacts } from '@/actions/updateArmateurContacts';
 import { filterAirlines, type AirlineFilterState } from './airlineFilters';
 import type { AirlineCockpitRow } from '@/services/airlineService';
 
@@ -92,7 +92,10 @@ export function AirlinesCockpit({ rows, canInvite }: Props) {
         if (!emailTarget) return;
         setEmailError(null);
         startEmailTransition(async () => {
-            const result = await updateArmateurEmail({ shipownerId: emailTarget.id, email: emailValue });
+            const result = await updateArmateurContacts({
+                shipownerId: emailTarget.id,
+                officialEmail: emailValue,
+            });
             if (!result.ok) {
                 setEmailError(result.reason);
                 return;

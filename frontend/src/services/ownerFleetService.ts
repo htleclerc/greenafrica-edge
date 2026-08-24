@@ -1,0 +1,110 @@
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+
+export interface FleetVessel {
+    id: string;
+    name: string;
+    imoNumber: string | null;
+    mmsi: string | null;
+    flagCode: string;
+    complianceStatus: string;
+    /** Factures VIVANTES visant ce navire — les annulées ne comptent pas. */
+    invoiceCount: number;
+    outstandingUsd: number;
+    /**
+     * Une facture encore due a dépassé son échéance. C'est cela qui justifie
+     * l'alarme rouge — pas la simple existence d'une somme à payer, qui peut
+     * n'être due que dans trois semaines.
+     */
+    overdue: boolean;
+    /** Un versement a déjà été encaissé, sans solder la totalité. */
+    partiallyPaid: boolean;
+    /** Faux dès qu'une facture vivante vise le navire : le geste devient « contester ». */
+    canRemove: boolean;
+}
+
+/**
+ * Flotte de l'armateur de la session, avec ce qu'il faut pour décider des
+ * gestes offerts à l'écran.
+ *
+ * Les transactions sont filtrées sur `status <> 'VOID'`. Depuis la rebascule
+ * du livre (mig 128), une référence peut être portée par deux lignes : celle
+ * annulée du seed et celle réellement due. Compter l'annulée bloquerait à vie
+ * le retrait d'un navire qui ne doit plus rien.
+ *
+ * `invoiceCount` compte les factures vivantes — payées comprises, car une
+ * facture payée ancre elle aussi le navire au dossier. `outstandingUsd` ne
+ * somme que ce qui reste dû, en retranchant les paiements CONFIRMED lus dans
+ * `payments` — jamais `partial_paid_usd`, que la migration 089 gèle à zéro sur
+ * toute facture en cours (cf. services/confirmedPayments).
+ */
+export async function listOwnerFleet(
+    supabase: SupabaseClient,
+    shipownerId: string,
+): Promise<FleetVessel[]> {
+    const { data: vessels, error: vErr } = await supabase
+        .from('vessels')
+        .select('id, name, imo_number, mmsi, flag_code, compliance_status')
+        .eq('shipowner_id', shipownerId)
+        .order('name');
+    if (vErr) throw new Error(`flotte : ${vErr.message}`);
+
+    const rows = (vessels ?? []) as Record<string, unknown>[];
+    if (rows.length === 0) return [];
+
+    const { data: txns, error: tErr } = await supabase
+        .from('transactions')
+        .select('id, vessel_id, tax_amount_usd, partial_paid_usd, status, due_date')
+        .in('vessel_id', rows.map((v) => String(v.id)))
+        .neq('status', 'VOID');
+    if (tErr) throw new Error(`factures de la flotte : ${tErr.message}`);
+
+    const txnRows = (txns ?? []) as Record<string, unknown>[];
+    const paidByTxn = await confirmedPaidUsdByTransaction(
+        supabase,
+        txnRows.map((t) => String(t.id)),
+    );
+
+    const now = Date.now();
+    const byVessel = new Map<string, {
+        count: number; usd: number; overdue: boolean; partiallyPaid: boolean;
+    }>();
+    for (const t of txnRows) {
+        const key = String(t.vessel_id);
+        const acc = byVessel.get(key) ?? { count: 0, usd: 0, overdue: false, partiallyPaid: false };
+        acc.count += 1;
+
+        const paid = paidByTxn.get(String(t.id)) ?? 0;
+        const due = outstandingUsd(t as unknown as OutstandingColumns, paid);
+        acc.usd += due;
+
+        // Les deux drapeaux ne portent QUE sur ce qui reste à payer : une
+        // facture soldée hier n'a pas à teindre le navire en rouge parce que
+        // son échéance est passée.
+        if (due > 0) {
+            const deadline = t.due_date ? new Date(String(t.due_date)).getTime() : null;
+            if (deadline !== null && deadline < now) acc.overdue = true;
+            if (paid > 0 || Number(t.partial_paid_usd ?? 0) > 0) acc.partiallyPaid = true;
+        }
+        byVessel.set(key, acc);
+    }
+
+    return rows.map((v) => {
+        const acc = byVessel.get(String(v.id))
+            ?? { count: 0, usd: 0, overdue: false, partiallyPaid: false };
+        return {
+            id: String(v.id),
+            name: String(v.name),
+            imoNumber: v.imo_number ? String(v.imo_number) : null,
+            mmsi: v.mmsi ? String(v.mmsi) : null,
+            flagCode: String(v.flag_code ?? 'ZZ').trim(),
+            complianceStatus: String(v.compliance_status),
+            invoiceCount: acc.count,
+            outstandingUsd: acc.usd,
+            overdue: acc.overdue,
+            partiallyPaid: acc.partiallyPaid,
+            canRemove: acc.count === 0,
+        };
+    });
+}

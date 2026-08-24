@@ -118,6 +118,16 @@ vi.mock('@/lib/auth/requireRole', () => ({
     })),
 }));
 
+// Porte du rail monetaire (mig 130) : role SUPERADMIN/FINANCE_ADMIN, ou
+// sous-permission can_settle_payments.
+vi.mock('@/lib/auth/requireSettlementRights', () => ({
+    requireSettlementRights: vi.fn(async () => ({
+        user: { id: 'admin-1', fullName: 'Admin', role: 'SUPERADMIN' },
+        supabase: mockSupabase,
+        error: null,
+    })),
+}));
+
 vi.mock('@/services/receiptService', () => ({
     generatePaymentReceipt: vi.fn().mockResolvedValue({
         receiptRef: 'RCT-2026-TEST',

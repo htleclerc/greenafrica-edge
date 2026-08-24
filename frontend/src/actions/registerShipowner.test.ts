@@ -23,6 +23,23 @@ vi.mock('@/lib/feature-flags', () => ({
     isFeatureEnabled: vi.fn(),
 }));
 
+/**
+ * `insert` qui accepte les deux formes du client réel : `await insert(...)`
+ * seul, et `insert(...).select(...).maybeSingle()` quand l'appelant a besoin de
+ * la ligne créée (mig 133 : la juridiction, pour router la notification staff).
+ */
+function insertReturning(row: unknown, onInsert?: () => void) {
+    const result = { data: row, error: null };
+    const chain = {
+        select: () => ({
+            maybeSingle: async () => result,
+            single: async () => result,
+        }),
+        then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
+    };
+    return () => { onInsert?.(); return chain; };
+}
+
 function chainableSelect(value: unknown) {
     return {
         select: () => ({
@@ -70,7 +87,7 @@ describe('registerShipowner decision tree', () => {
                     })
                 }),
                 upsert: async () => ({ error: null }),
-                insert: async () => ({ error: null }),
+                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }),
             };
             if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
                 return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
@@ -101,7 +118,7 @@ describe('registerShipowner decision tree', () => {
                     return { eq: () => ({ eq: () => ({ select: async () => ({ data: [{ id: 'so1' }], error: null }) }) }) };
                 },
                 upsert: async () => ({ error: null }),
-                insert: async () => ({ error: null }),
+                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }),
             };
             if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
                 return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
@@ -129,7 +146,7 @@ describe('registerShipowner decision tree', () => {
             if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
             if (table === 'shipowners') return {
                 ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '9999999' }),
-                insert: async () => { pendingInserted = true; return { error: null }; },
+                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { pendingInserted = true; }),
             };
             return chainableSelect(null);
         });
@@ -166,7 +183,7 @@ describe('registerShipowner decision tree', () => {
         let inserted = false;
         mockSupabase.from.mockImplementation((table: string) => {
             if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: null });
-            if (table === 'shipowners') return { insert: async () => { inserted = true; return { error: null }; } };
+            if (table === 'shipowners') return { insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { inserted = true; }) };
             return chainableSelect(null);
         });
         const { registerShipowner } = await import('./registerShipowner');
@@ -179,7 +196,7 @@ describe('registerShipowner decision tree', () => {
         let inserted = false;
         mockSupabase.from.mockImplementation((table: string) => {
             if (table === 'vessels') return chainableSelect(null);
-            if (table === 'shipowners') return { insert: async () => { inserted = true; return { error: null }; } };
+            if (table === 'shipowners') return { insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { inserted = true; }) };
             return chainableSelect(null);
         });
         const { registerShipowner } = await import('./registerShipowner');

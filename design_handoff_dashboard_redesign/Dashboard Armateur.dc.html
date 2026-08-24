@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#0e1512; font-family:'IBM Plex Sans',system-ui,sans-serif; }
+  a { color:inherit; text-decoration:none; }
+  a:hover { color:#10B981; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:40px; padding:56px 48px 96px; background:#0e1512;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:900px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#5f7d70;">Turn 1 — Espace armateur · Vue d'ensemble</div>
+    <h1 style="margin:0; font-size:30px; font-weight:600; color:#eef4f0; letter-spacing:-0.02em;">Deux directions pour l'écran principal</h1>
+    <p style="margin:0; font-size:15px; line-height:1.6; color:#93a89e; text-wrap:pretty;">Les deux répondent aux mêmes trois problèmes : une action suivante évidente en haut de page, une navigation regroupée en trois intentions, et une version mobile pensée séparément. <a href="#1a">1a</a> garde le thème emerald sombre et le raffine. <a href="#1b">1b</a> passe en fond clair, plus dense, orienté back-office financier.</p>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:56px; align-items:flex-start;">
+
+    <!-- ============ OPTION 1A ============ -->
+    <div id="1a" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#0A1110; background:#10B981; padding:3px 8px; border-radius:5px;">1a</span>
+        <span style="font-size:17px; font-weight:600; color:#eef4f0;">Cockpit emerald affiné</span>
+        <span style="font-size:13px; color:#7d968a;">Thème actuel, hiérarchie reconstruite autour d'une bande d'action</span>
+      </div>
+
+      <div style="display:flex; gap:24px; align-items:flex-start;">
+        <!-- desktop -->
+        <div style="width:1200px; flex-shrink:0; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.10); background:#0A1110; display:flex; box-shadow:0 30px 80px rgba(0,0,0,0.45);">
+          <!-- sidebar -->
+          <nav style="width:214px; flex-shrink:0; background:#111C18; border-right:1px solid rgba(255,255,255,0.06); padding:16px 12px; display:flex; flex-direction:column; gap:22px; min-height:860px;">
+            <div style="padding:4px 8px 0;"><img src="brand/logo/png/logo-on-dark-alpha.png" alt="AfricGreen" style="height:24px; width:auto; display:block;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#5c7267; padding:0 8px 4px;">Piloter</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; background:rgba(16,185,129,0.12); color:#34D399; font-size:13.5px; font-weight:600; border-left:2px solid #10B981;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#10B981; display:block;"></span>Vue d'ensemble</div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="display:flex; align-items:center; gap:10px;"><span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Ma flotte</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9BB0;">6</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Navires entrants</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#5c7267; padding:0 8px 4px;">Payer</div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="display:flex; align-items:center; gap:10px;"><span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Factures</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:#0A1110; background:#EF4444; padding:1px 6px; border-radius:20px;">2</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Portefeuille</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#5c7267; padding:0 8px 4px;">Justifier</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Rapports</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Contestations</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#B8C5D4; font-size:13.5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#3d5148; display:block;"></span>Simulateur</div>
+            </div>
+
+            <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px; padding:12px 10px; border-radius:11px; background:#13231D; border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:12px; color:#8A9BB0; line-height:1.45;">Besoin d'aide sur un paiement&nbsp;?</div>
+              <div style="font-size:12.5px; font-weight:600; color:#34D399;">Contacter l'agent →</div>
+            </div>
+          </nav>
+
+          <!-- main -->
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+            <!-- topbar -->
+            <div style="height:56px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06); background:#0d1714; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <span style="font-size:14.5px; font-weight:600; color:#F1F5F9;">Tableau de bord</span>
+                <span style="display:flex; align-items:center; gap:7px; white-space:nowrap; font-size:12px; color:#B8C5D4; background:#13231D; border:1px solid rgba(255,255,255,0.08); padding:4px 10px; border-radius:20px;">
+                  <span style="width:5px; height:5px; border-radius:50%; background:#10B981; display:block;"></span>Somaliland · Port de Berbera</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:12.5px; color:#8A9BB0; background:#13231D; border:1px solid rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px; width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Rechercher un navire, une facture…</span>
+                <span style="position:relative; width:32px; height:32px; border-radius:8px; background:#13231D; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#EF4444; display:block;"></span></span>
+                <span style="display:flex; align-items:center; gap:9px;">
+                  <span style="width:30px; height:30px; border-radius:50%; background:#1A2E25; border:1px solid rgba(255,255,255,0.10); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#34D399;">SM</span>
+                  <span style="display:flex; flex-direction:column;">
+                    <span style="font-size:12.5px; font-weight:600; color:#F1F5F9;">Said Mohamed</span>
+                    <span style="font-size:10.5px; color:#8A9BB0;">Armateur · Horn Shipping</span></span></span>
+              </div>
+            </div>
+
+            <div style="padding:24px; display:flex; flex-direction:column; gap:20px;">
+
+              <!-- action band -->
+              <div style="border-radius:14px; background:linear-gradient(180deg,rgba(239,68,68,0.10),rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.28); padding:20px 22px; display:flex; align-items:center; justify-content:space-between; gap:24px;">
+                <div style="display:flex; align-items:center; gap:20px; min-width:0;">
+                  <div style="display:flex; flex-direction:column; gap:2px; padding-right:20px; border-right:1px solid rgba(255,255,255,0.10);">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:44px; font-weight:600; line-height:1; color:#EF4444;">4</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#f0a3a3;">jours de retard</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
+                    <span style="font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.14em; text-transform:uppercase; color:#f0a3a3;">Action requise</span>
+                    <span style="font-size:19px; font-weight:600; color:#F1F5F9;">Payer la taxe carbone de MV BERBERA PRIDE</span>
+                    <span style="font-size:13px; color:#B8C5D4;">Facture GG-2026-0418 · IMO 9348576 · échéance dépassée le 18 août</span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:#F1F5F9;">$48 200</span>
+                    <span style="font-size:11.5px; color:#8A9BB0;">USD · net 30</span>
+                  </div>
+                  <div style="display:flex; gap:10px;">
+                    <span style="display:flex; align-items:center; height:44px; padding:0 20px; border-radius:11px; background:#10B981; color:#06120d; font-size:14px; font-weight:600;">Payer maintenant</span>
+                    <span style="display:flex; align-items:center; height:44px; padding:0 16px; border-radius:11px; border:1px solid rgba(255,255,255,0.14); color:#B8C5D4; font-size:14px;">Contester</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- kpis -->
+              <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+                <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Encours total</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:#F1F5F9;">$126 400</span>
+                  <span style="font-size:12px; color:#8A9BB0;">3 factures ouvertes</span>
+                </div>
+                <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Navires actifs</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:#F1F5F9;">6</span>
+                  <span style="font-size:12px; color:#8A9BB0;">2 en escale à Berbera</span>
+                </div>
+                <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Payé en 2026</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:#F1F5F9;">$412 900</span>
+                  <span style="font-size:12px; color:#34D399;">+18% vs 2025</span>
+                </div>
+                <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Solde portefeuille</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:600; color:#F1F5F9;">$9 750</span>
+                  <span style="font-size:12px; color:#34D399;">Alimenter le compte →</span>
+                </div>
+              </div>
+
+              <!-- fleet + activity -->
+              <div style="display:grid; grid-template-columns:1fr 320px; gap:16px; align-items:start;">
+                <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; overflow:hidden;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 18px 12px;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:14px; font-weight:600; color:#F1F5F9;">Échéances par navire</span>
+                      <span style="font-size:12px; color:#8A9BB0;">Prochaines 30 jours</span>
+                    </div>
+                    <span style="font-size:12.5px; color:#34D399; font-weight:500;">Toute la flotte →</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1.5fr 0.9fr 1fr 0.8fr 110px; gap:12px; padding:8px 18px; background:#0d1714; border-top:1px solid rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.06); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#8A9BB0;">
+                    <span>Navire</span><span>Statut</span><span>Échéance</span><span style="text-align:right;">Montant</span><span></span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1.5fr 0.9fr 1fr 0.8fr 110px; gap:12px; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center;">
+                    <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13.5px; font-weight:600; color:#F1F5F9;">MV BERBERA PRIDE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9BB0;">IMO 9348576</span></span>
+                    <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#EF4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); padding:3px 9px; border-radius:20px;">En retard</span>
+                    <span style="font-size:13px; color:#EF4444;">18 août · −4 j</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:#F1F5F9; text-align:right;">$48 200</span>
+                    <span style="justify-self:end; font-size:12.5px; font-weight:600; color:#06120d; background:#10B981; padding:7px 14px; border-radius:9px;">Payer</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1.5fr 0.9fr 1fr 0.8fr 110px; gap:12px; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center;">
+                    <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13.5px; font-weight:600; color:#F1F5F9;">MT GULF STAR</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9BB0;">IMO 9412887</span></span>
+                    <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#EAB308; background:rgba(234,179,8,0.12); border:1px solid rgba(234,179,8,0.25); padding:3px 9px; border-radius:20px;">À payer</span>
+                    <span style="font-size:13px; color:#B8C5D4;">31 août · 9 j</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:#F1F5F9; text-align:right;">$52 100</span>
+                    <span style="justify-self:end; font-size:12.5px; font-weight:600; color:#34D399; border:1px solid rgba(16,185,129,0.35); padding:6px 14px; border-radius:9px;">Payer</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1.5fr 0.9fr 1fr 0.8fr 110px; gap:12px; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center;">
+                    <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13.5px; font-weight:600; color:#F1F5F9;">MSC ADEN</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9BB0;">IMO 9703291</span></span>
+                    <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#3B82F6; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); padding:3px 9px; border-radius:20px;">Proforma</span>
+                    <span style="font-size:13px; color:#B8C5D4;">En attente d'escale</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:#F1F5F9; text-align:right;">$26 100</span>
+                    <span style="justify-self:end; font-size:12.5px; color:#8A9BB0;">Détail</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1.5fr 0.9fr 1fr 0.8fr 110px; gap:12px; padding:14px 18px; align-items:center;">
+                    <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13.5px; font-weight:600; color:#F1F5F9;">HORIZON VENTURE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9BB0;">IMO 9556104</span></span>
+                    <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#10B981; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); padding:3px 9px; border-radius:20px;">Conforme</span>
+                    <span style="font-size:13px; color:#8A9BB0;">Payé le 2 août</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:#8A9BB0; text-align:right;">$31 400</span>
+                    <span style="justify-self:end; font-size:12.5px; color:#8A9BB0;">Reçu</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                  <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:14px;">
+                    <span style="font-size:14px; font-weight:600; color:#F1F5F9;">Activité récente</span>
+                    <div style="display:flex; flex-direction:column; gap:13px;">
+                      <div style="display:flex; gap:11px;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#10B981; margin-top:5px; flex-shrink:0; display:block;"></span>
+                        <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13px; color:#F1F5F9;">Paiement confirmé — $31 400</span><span style="font-size:11.5px; color:#8A9BB0;">HORIZON VENTURE · 2 août, 14:20</span></span>
+                      </div>
+                      <div style="display:flex; gap:11px;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#3B82F6; margin-top:5px; flex-shrink:0; display:block;"></span>
+                        <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13px; color:#F1F5F9;">Proforma émise — GG-2026-0431</span><span style="font-size:11.5px; color:#8A9BB0;">MSC ADEN · 1 août, 09:05</span></span>
+                      </div>
+                      <div style="display:flex; gap:11px;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#EAB308; margin-top:5px; flex-shrink:0; display:block;"></span>
+                        <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:13px; color:#F1F5F9;">Relance envoyée par l'autorité</span><span style="font-size:11.5px; color:#8A9BB0;">MV BERBERA PRIDE · 20 août</span></span>
+                      </div>
+                    </div>
+                    <span style="font-size:12.5px; color:#34D399; font-weight:500;">Tout l'historique →</span>
+                  </div>
+
+                  <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:13px; padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+                    <span style="font-size:14px; font-weight:600; color:#F1F5F9;">Estimer avant l'escale</span>
+                    <span style="font-size:12.5px; color:#8A9BB0; line-height:1.5;">Simulez la taxe carbone d'un voyage avant l'arrivée pour provisionner le montant.</span>
+                    <span style="display:inline-flex; align-items:center; justify-content:center; height:38px; border-radius:10px; border:1px solid rgba(16,185,129,0.35); color:#34D399; font-size:13px; font-weight:600;">Ouvrir le simulateur</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- mobile 1a -->
+        <div style="width:390px; flex-shrink:0; border-radius:26px; border:1px solid rgba(255,255,255,0.10); background:#0A1110; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.45); display:flex; flex-direction:column; min-height:844px;">
+          <div style="padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex;"><img src="brand/logo/png/logo-on-dark-alpha.png" alt="AfricGreen" style="height:24px; width:auto; display:block;"></div>
+            <span style="width:32px; height:32px; border-radius:50%; background:#1A2E25; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#34D399;">SM</span>
+          </div>
+          <div style="padding:18px; display:flex; flex-direction:column; gap:14px; flex:1;">
+            <span style="font-size:20px; font-weight:600; color:#F1F5F9;">Bonjour Said</span>
+            <div style="border-radius:14px; background:rgba(239,68,68,0.09); border:1px solid rgba(239,68,68,0.28); padding:18px; display:flex; flex-direction:column; gap:12px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#f0a3a3;">Action requise · 4 j de retard</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:600; color:#F1F5F9; line-height:1;">$48 200</span>
+              <span style="font-size:13.5px; color:#B8C5D4;">MV BERBERA PRIDE · GG-2026-0418</span>
+              <span style="display:flex; align-items:center; justify-content:center; height:50px; border-radius:12px; background:#10B981; color:#06120d; font-size:15px; font-weight:600;">Payer maintenant</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:7px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Encours</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#F1F5F9;">$126 400</span>
+              </div>
+              <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:7px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Navires</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#F1F5F9;">6</span>
+              </div>
+            </div>
+            <span style="font-size:13px; font-weight:600; color:#F1F5F9; margin-top:4px;">Prochaines échéances</span>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <span style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                  <span style="font-size:14px; font-weight:600; color:#F1F5F9;">MT GULF STAR</span>
+                  <span style="font-size:12px; color:#EAB308;">Échéance dans 9 jours</span></span>
+                <span style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:#F1F5F9;">$52 100</span>
+                  <span style="font-size:12.5px; font-weight:600; color:#34D399;">Payer</span></span>
+              </div>
+              <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <span style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                  <span style="font-size:14px; font-weight:600; color:#F1F5F9;">MSC ADEN</span>
+                  <span style="font-size:12px; color:#8A9BB0;">Proforma · en attente d'escale</span></span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:#F1F5F9;">$26 100</span>
+              </div>
+            </div>
+            <div style="background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <span style="display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#8A9BB0;">Solde portefeuille</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#F1F5F9;">$9 750</span></span>
+              <span style="display:flex; align-items:center; height:44px; padding:0 18px; border-radius:11px; border:1px solid rgba(16,185,129,0.35); color:#34D399; font-size:13.5px; font-weight:600;">Alimenter</span>
+            </div>
+            <div style="margin-top:auto; background:#111C18; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:14px; font-weight:600; color:#F1F5F9;">Estimer avant l'escale</span>
+              <span style="font-size:12.5px; color:#8A9BB0; line-height:1.5;">Simulez la taxe d'un voyage pour provisionner le montant.</span>
+              <span style="display:flex; align-items:center; justify-content:center; height:46px; border-radius:11px; border:1px solid rgba(16,185,129,0.35); color:#34D399; font-size:14px; font-weight:600;">Ouvrir le simulateur</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(255,255,255,0.08); background:#0d1714; padding:10px 8px 22px;">
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#34D399;"><span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:block;"></span>Accueil</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#8A9BB0;"><span style="width:8px; height:8px; border-radius:50%; background:#3d5148; display:block;"></span>Flotte</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#8A9BB0;"><span style="width:8px; height:8px; border-radius:50%; background:#3d5148; display:block;"></span>Factures</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#8A9BB0;"><span style="width:8px; height:8px; border-radius:50%; background:#3d5148; display:block;"></span>Plus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ OPTION 1B ============ -->
+    <div id="1b" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:baseline; gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:#ffffff; background:#059669; padding:3px 8px; border-radius:5px;">1b</span>
+        <span style="font-size:17px; font-weight:600; color:#eef4f0;">Back-office clair</span>
+        <span style="font-size:13px; color:#7d968a;">Fond clair, file de travail en tête, tableau dense et filtrable</span>
+      </div>
+
+      <div style="display:flex; gap:24px; align-items:flex-start;">
+        <div style="width:1200px; flex-shrink:0; border-radius:14px; overflow:hidden; border:1px solid rgba(5,150,105,0.20); background:#F0FAF4; display:flex; box-shadow:0 30px 80px rgba(0,0,0,0.35);">
+          <nav style="width:214px; flex-shrink:0; background:#FFFFFF; border-right:1px solid rgba(5,150,105,0.12); padding:16px 12px; display:flex; flex-direction:column; gap:22px; min-height:860px;">
+            <div style="padding:4px 8px 0;"><img src="brand/logo/png/logo-on-light-alpha.png" alt="AfricGreen" style="height:24px; width:auto; display:block;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#8aa79a; padding:0 8px 4px;">Piloter</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; background:rgba(5,150,105,0.10); color:#04674a; font-size:13.5px; font-weight:600;"><span style="width:6px; height:6px; border-radius:50%; background:#059669; display:block;"></span>Vue d'ensemble</div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="display:flex; align-items:center; gap:10px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Ma flotte</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">6</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Navires entrants</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#8aa79a; padding:0 8px 4px;">Payer</div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="display:flex; align-items:center; gap:10px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Factures</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:#ffffff; background:#DC2626; padding:1px 6px; border-radius:20px;">2</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Portefeuille</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#8aa79a; padding:0 8px 4px;">Justifier</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Rapports</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Contestations</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:#2D4F3E; font-size:13.5px;"><span style="width:6px; height:6px; border-radius:50%; background:#cbdfd5; display:block;"></span>Simulateur</div>
+            </div>
+            <div style="margin-top:auto; padding:12px; border-radius:11px; background:#F0FAF4; border:1px solid rgba(5,150,105,0.14); display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:12px; color:#4A6B5A; line-height:1.45;">Agent référent</span>
+              <span style="font-size:13px; font-weight:600; color:#1A2E25;">Berbera Port Services</span>
+              <span style="font-size:12.5px; font-weight:600; color:#059669;">Écrire →</span>
+            </div>
+          </nav>
+
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+            <div style="height:56px; flex-shrink:0; border-bottom:1px solid rgba(5,150,105,0.12); background:#FFFFFF; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <span style="font-size:14.5px; font-weight:600; color:#1A2E25;">Tableau de bord</span>
+                <span style="display:flex; align-items:center; gap:7px; white-space:nowrap; font-size:12px; color:#2D4F3E; background:#F0FAF4; border:1px solid rgba(5,150,105,0.16); padding:4px 10px; border-radius:20px;"><span style="width:5px; height:5px; border-radius:50%; background:#059669; display:block;"></span>Somaliland · Port de Berbera</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:12.5px; color:#6B8F7D; background:#F5FBF8; border:1px solid rgba(5,150,105,0.14); padding:6px 12px; border-radius:8px; width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Rechercher un navire, une facture…</span>
+                <span style="width:32px; height:32px; border-radius:8px; background:#F5FBF8; border:1px solid rgba(5,150,105,0.14); display:flex; align-items:center; justify-content:center;"><span style="width:7px; height:7px; border-radius:50%; background:#DC2626; display:block;"></span></span>
+                <span style="display:flex; align-items:center; gap:9px;">
+                  <span style="width:30px; height:30px; border-radius:50%; background:#E6F4ED; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#04674a;">SM</span>
+                  <span style="display:flex; flex-direction:column;"><span style="font-size:12.5px; font-weight:600; color:#1A2E25;">Said Mohamed</span><span style="font-size:10.5px; color:#6B8F7D;">Armateur · Horn Shipping</span></span></span>
+              </div>
+            </div>
+
+            <div style="padding:24px; display:flex; flex-direction:column; gap:18px;">
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <span style="font-size:22px; font-weight:600; color:#1A2E25; letter-spacing:-0.01em;">3 choses à traiter aujourd'hui</span>
+                  <span style="font-size:13.5px; color:#4A6B5A;">Mis à jour il y a 2 minutes · période fiscale août 2026</span>
+                </div>
+                <div style="display:flex; gap:10px;">
+                  <span style="display:flex; align-items:center; height:38px; padding:0 14px; border-radius:9px; border:1px solid rgba(5,150,105,0.22); background:#FFFFFF; font-size:13px; color:#2D4F3E;">Exporter</span>
+                  <span style="display:flex; align-items:center; height:38px; padding:0 16px; border-radius:9px; background:#059669; color:#FFFFFF; font-size:13px; font-weight:600;">Payer tout · $100 300</span>
+                </div>
+              </div>
+
+              <!-- work queue -->
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="background:#FFFFFF; border:1px solid rgba(220,38,38,0.30); border-left:3px solid #DC2626; border-radius:11px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+                  <div style="display:flex; align-items:center; gap:16px; min-width:0;">
+                    <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#DC2626; background:rgba(220,38,38,0.08); padding:4px 10px; border-radius:6px;">En retard · 4 j</span>
+                    <span style="display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:15px; font-weight:600; color:#1A2E25;">Taxe carbone — MV BERBERA PRIDE</span>
+                      <span style="font-size:12.5px; color:#4A6B5A;">GG-2026-0418 · IMO 9348576 · échéance 18 août</span></span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:18px; flex-shrink:0;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:#1A2E25;">$48 200</span>
+                    <span style="display:flex; align-items:center; height:40px; padding:0 18px; border-radius:9px; background:#059669; color:#FFFFFF; font-size:13.5px; font-weight:600;">Payer</span>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF; border:1px solid rgba(202,138,4,0.30); border-left:3px solid #CA8A04; border-radius:11px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+                  <div style="display:flex; align-items:center; gap:16px; min-width:0;">
+                    <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#CA8A04; background:rgba(202,138,4,0.10); padding:4px 10px; border-radius:6px;">Dans 9 j</span>
+                    <span style="display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:15px; font-weight:600; color:#1A2E25;">Taxe carbone — MT GULF STAR</span>
+                      <span style="font-size:12.5px; color:#4A6B5A;">GG-2026-0426 · IMO 9412887 · échéance 31 août</span></span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:18px; flex-shrink:0;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:#1A2E25;">$52 100</span>
+                    <span style="display:flex; align-items:center; height:40px; padding:0 18px; border-radius:9px; border:1px solid rgba(5,150,105,0.35); color:#04674a; font-size:13.5px; font-weight:600;">Payer</span>
+                  </div>
+                </div>
+                <div style="background:#FFFFFF; border:1px solid rgba(37,99,235,0.25); border-left:3px solid #2563EB; border-radius:11px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+                  <div style="display:flex; align-items:center; gap:16px; min-width:0;">
+                    <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#2563EB; background:rgba(37,99,235,0.08); padding:4px 10px; border-radius:6px;">À vérifier</span>
+                    <span style="display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:15px; font-weight:600; color:#1A2E25;">Identité navire à confirmer — MSC ADEN</span>
+                      <span style="font-size:12.5px; color:#4A6B5A;">Tonnage déclaré différent de la source Equasis</span></span>
+                  </div>
+                  <span style="display:flex; align-items:center; height:40px; padding:0 18px; border-radius:9px; border:1px solid rgba(5,150,105,0.22); color:#2D4F3E; font-size:13.5px; font-weight:600; flex-shrink:0;">Vérifier</span>
+                </div>
+              </div>
+
+              <!-- kpi strip -->
+              <div style="background:#FFFFFF; border:1px solid rgba(5,150,105,0.14); border-radius:11px; display:grid; grid-template-columns:repeat(4,1fr);">
+                <div style="padding:16px 20px; border-right:1px solid rgba(5,150,105,0.12); display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Encours total</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; color:#1A2E25;">$126 400</span>
+                  <span style="font-size:12px; color:#4A6B5A;">3 factures ouvertes</span>
+                </div>
+                <div style="padding:16px 20px; border-right:1px solid rgba(5,150,105,0.12); display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Navires actifs</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; color:#1A2E25;">6</span>
+                  <span style="font-size:12px; color:#4A6B5A;">2 en escale à Berbera</span>
+                </div>
+                <div style="padding:16px 20px; border-right:1px solid rgba(5,150,105,0.12); display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Payé en 2026</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; color:#1A2E25;">$412 900</span>
+                  <span style="font-size:12px; color:#059669;">+18% vs 2025</span>
+                </div>
+                <div style="padding:16px 20px; display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Solde portefeuille</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; color:#1A2E25;">$9 750</span>
+                  <span style="font-size:12px; color:#059669;">Alimenter le compte →</span>
+                </div>
+              </div>
+
+              <!-- fleet table -->
+              <div style="background:#FFFFFF; border:1px solid rgba(5,150,105,0.14); border-radius:11px; overflow:hidden;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid rgba(5,150,105,0.12);">
+                  <div style="display:flex; gap:6px;">
+                    <span style="font-size:12.5px; font-weight:600; color:#FFFFFF; background:#1A2E25; padding:6px 12px; border-radius:7px; white-space:nowrap; flex-shrink:0;">Toutes · 6</span>
+                    <span style="font-size:12.5px; color:#2D4F3E; padding:6px 12px; border-radius:7px; white-space:nowrap; flex-shrink:0; background:#F5FBF8;">À payer · 2</span>
+                    <span style="font-size:12.5px; color:#2D4F3E; padding:6px 12px; border-radius:7px; white-space:nowrap; flex-shrink:0; background:#F5FBF8;">En escale · 2</span>
+                    <span style="font-size:12.5px; color:#2D4F3E; padding:6px 12px; border-radius:7px; white-space:nowrap; flex-shrink:0; background:#F5FBF8;">Conformes · 3</span>
+                  </div>
+                  <span style="font-size:12.5px; color:#059669; font-weight:600;">Ouvrir Ma flotte →</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:9px 18px; background:#F5FBF8; border-bottom:1px solid rgba(5,150,105,0.12); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#6B8F7D;">
+                  <span>Navire</span><span>Position</span><span>Statut</span><span>Échéance</span><span style="text-align:right;">Montant</span><span></span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(5,150,105,0.10); align-items:center;">
+                  <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13.5px; font-weight:600; color:#1A2E25;">MV BERBERA PRIDE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">IMO 9348576</span></span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">Quai 3 · Berbera</span>
+                  <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; color:#DC2626; background:rgba(220,38,38,0.08); padding:3px 9px; border-radius:20px;">En retard</span>
+                  <span style="font-size:12.5px; color:#DC2626;">−4 jours</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#1A2E25; text-align:right;">$48 200</span>
+                  <span style="justify-self:end; font-size:12.5px; font-weight:600; color:#FFFFFF; background:#059669; padding:6px 14px; border-radius:8px;">Payer</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(5,150,105,0.10); align-items:center;">
+                  <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13.5px; font-weight:600; color:#1A2E25;">MT GULF STAR</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">IMO 9412887</span></span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">Golfe d'Aden</span>
+                  <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; color:#CA8A04; background:rgba(202,138,4,0.10); padding:3px 9px; border-radius:20px;">À payer</span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">31 août</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#1A2E25; text-align:right;">$52 100</span>
+                  <span style="justify-self:end; font-size:12.5px; font-weight:600; color:#04674a; border:1px solid rgba(5,150,105,0.35); padding:5px 14px; border-radius:8px;">Payer</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(5,150,105,0.10); align-items:center;">
+                  <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13.5px; font-weight:600; color:#1A2E25;">MSC ADEN</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">IMO 9703291</span></span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">Approche · 14 h</span>
+                  <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; color:#2563EB; background:rgba(37,99,235,0.08); padding:3px 9px; border-radius:20px;">Proforma</span>
+                  <span style="font-size:12.5px; color:#4A6B5A;">à l'escale</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#1A2E25; text-align:right;">$26 100</span>
+                  <span style="justify-self:end; font-size:12.5px; color:#4A6B5A;">Détail</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(5,150,105,0.10); align-items:center;">
+                  <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13.5px; font-weight:600; color:#1A2E25;">HORIZON VENTURE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">IMO 9556104</span></span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">Djibouti</span>
+                  <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; color:#059669; background:rgba(5,150,105,0.10); padding:3px 9px; border-radius:20px;">Conforme</span>
+                  <span style="font-size:12.5px; color:#4A6B5A;">payé 2 août</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#4A6B5A; text-align:right;">$31 400</span>
+                  <span style="justify-self:end; font-size:12.5px; color:#4A6B5A;">Reçu</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 0.8fr 100px; gap:12px; padding:12px 18px; align-items:center;">
+                  <span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:13.5px; font-weight:600; color:#1A2E25;">EVERGREEN COSMOS</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B8F7D;">IMO 9811223</span></span>
+                  <span style="font-size:12.5px; color:#2D4F3E;">Mer Rouge</span>
+                  <span style="justify-self:start; font-size:11px; font-weight:600; text-transform:uppercase; color:#059669; background:rgba(5,150,105,0.10); padding:3px 9px; border-radius:20px;">Conforme</span>
+                  <span style="font-size:12.5px; color:#4A6B5A;">payé 12 juil.</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#4A6B5A; text-align:right;">$44 800</span>
+                  <span style="justify-self:end; font-size:12.5px; color:#4A6B5A;">Reçu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- mobile 1b -->
+        <div style="width:390px; flex-shrink:0; border-radius:26px; border:1px solid rgba(5,150,105,0.20); background:#F0FAF4; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.35); display:flex; flex-direction:column; min-height:844px;">
+          <div style="padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between; background:#FFFFFF; border-bottom:1px solid rgba(5,150,105,0.12);">
+            <div style="display:flex;"><img src="brand/logo/png/logo-on-light-alpha.png" alt="AfricGreen" style="height:24px; width:auto; display:block;"></div>
+            <span style="width:32px; height:32px; border-radius:50%; background:#E6F4ED; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#04674a;">SM</span>
+          </div>
+          <div style="padding:18px; display:flex; flex-direction:column; gap:14px; flex:1;">
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:19px; font-weight:600; color:#1A2E25;">3 choses à traiter</span>
+              <span style="font-size:12.5px; color:#4A6B5A;">Horn Shipping · août 2026</span>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid rgba(220,38,38,0.30); border-left:3px solid #DC2626; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#DC2626;">En retard · 4 jours</span>
+              <span style="font-size:15px; font-weight:600; color:#1A2E25;">MV BERBERA PRIDE</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:#1A2E25;">$48 200</span>
+              <span style="display:flex; align-items:center; justify-content:center; height:48px; border-radius:11px; background:#059669; color:#FFFFFF; font-size:15px; font-weight:600;">Payer</span>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid rgba(202,138,4,0.30); border-left:3px solid #CA8A04; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#CA8A04;">Dans 9 jours</span>
+              <span style="font-size:15px; font-weight:600; color:#1A2E25;">MT GULF STAR</span>
+              <span style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#1A2E25;">$52 100</span>
+                <span style="display:flex; align-items:center; height:44px; padding:0 20px; border-radius:11px; border:1px solid rgba(5,150,105,0.35); color:#04674a; font-size:14px; font-weight:600;">Payer</span></span>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid rgba(37,99,235,0.25); border-left:3px solid #2563EB; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#2563EB;">À vérifier</span>
+              <span style="font-size:14.5px; font-weight:600; color:#1A2E25;">Identité navire — MSC ADEN</span>
+              <span style="font-size:12.5px; color:#4A6B5A;">Tonnage déclaré différent d'Equasis</span>
+            </div>
+            <div style="background:#FFFFFF; border:1px solid rgba(5,150,105,0.14); border-radius:12px; display:grid; grid-template-columns:1fr 1fr;">
+              <div style="padding:14px; border-right:1px solid rgba(5,150,105,0.12); display:flex; flex-direction:column; gap:6px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Encours</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:#1A2E25;">$126 400</span>
+              </div>
+              <div style="padding:14px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6B8F7D;">Navires</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:#1A2E25;">6</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid rgba(5,150,105,0.14); background:#FFFFFF; padding:10px 8px 22px;">
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#059669;"><span style="width:8px; height:8px; border-radius:50%; background:#059669; display:block;"></span>Accueil</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#6B8F7D;"><span style="width:8px; height:8px; border-radius:50%; background:#cbdfd5; display:block;"></span>Flotte</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#6B8F7D;"><span style="width:8px; height:8px; border-radius:50%; background:#cbdfd5; display:block;"></span>Factures</span>
+            <span style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:#6B8F7D;"><span style="width:8px; height:8px; border-radius:50%; background:#cbdfd5; display:block;"></span>Plus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>

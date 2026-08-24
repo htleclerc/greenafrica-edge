@@ -31,6 +31,8 @@ const BOOLEAN_KEYS = new Set([
     'feature.online_payment_stripe_enabled',
     'feature.wallet_topup_enabled',
     'feature.notification_sms_enabled',
+    // Montre les rails sans prestataire actif, marques « bientot disponible ».
+    'feature.show_unavailable_rails',
 ]);
 
 const STRING_KEYS = new Set([
@@ -67,6 +69,7 @@ const KEY_ORDER: string[] = [
     'feature.online_payment_stripe_enabled',
     'feature.wallet_topup_enabled',
     'feature.notification_sms_enabled',
+    'feature.show_unavailable_rails',
     'queue.worker_url',
     'queue.worker_secret',
 ];

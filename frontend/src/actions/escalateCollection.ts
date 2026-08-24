@@ -9,6 +9,7 @@ import {
     fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc, fetchJurisdictionName,
 } from '@/lib/jurisdictionName';
 import { sendCollectionEscalationEmail } from '@/services/emailService';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const STAFF_ROLES = ['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'];
 
@@ -40,7 +41,7 @@ export async function escalateCollection(
         .select(`
             id, jurisdiction_id, invoice_ref, tax_amount_usd, shipowner_id, agent_profile_id, invoice_pdf_url,
             vessel:vessels (name, imo_number),
-            shipowner:shipowners (name, official_email),
+            shipowner:shipowners (name, official_email, billing_cc_emails),
             agent:profiles!transactions_agent_profile_id_fkey (email)
         `)
         .eq('id', transactionId)
@@ -51,7 +52,7 @@ export async function escalateCollection(
         jurisdiction_id: string | null; invoice_ref: string | null; tax_amount_usd: number;
         shipowner_id: string | null; invoice_pdf_url: string | null;
         vessel: { name: string } | { name: string }[] | null;
-        shipowner: { name: string; official_email: string | null } | { name: string; official_email: string | null }[] | null;
+        shipowner: { name: string; official_email: string | null; billing_cc_emails: string[] | null } | { name: string; official_email: string | null; billing_cc_emails: string[] | null }[] | null;
         agent: { email: string | null } | { email: string | null }[] | null;
     };
     const jurisdictionId = t.jurisdiction_id;
@@ -92,6 +93,7 @@ export async function escalateCollection(
         shipownerBillingEmail: owner?.official_email ?? null,
         agentEmail: agent?.email ?? null,
         vesselOwnerEmail: null,
+        ownerCcEmails: owner?.billing_cc_emails ?? [],
         jurisdictionCcEmails: [...billingCc, ...bailiffCc],
         platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
     });
@@ -127,6 +129,19 @@ export async function escalateCollection(
         // l'enregistrer — ne pas la maquiller en doublon.
         if (insErr.code === '23505') return { ok: false, reason: `already escalated to ${tier}` };
         return { ok: false, reason: `notice sent but ledger write failed: ${insErr.message}` };
+    }
+
+    // La notification suit l'écriture du registre, jamais avant : on ne
+    // signale que ce qui est effectivement tracé. La clé de dédup porte le
+    // palier — réescalader au même palier ne renotifie pas.
+    if (jurisdictionId) {
+        await notifyStaffSafe(platform, {
+            jurisdictionId,
+            kind: 'COLLECTION_ESCALATED',
+            params: { debtor: owner?.name ?? invoiceRef, ref: invoiceRef, tier },
+            deepLink: '/admin/collections',
+            dedupKey: `${transactionId}:${tier}`,
+        });
     }
 
     revalidatePath('/admin/collections');

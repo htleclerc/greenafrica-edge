@@ -50,6 +50,19 @@ vi.mock('@/lib/supabase/server', () => ({
                         }),
                     };
                 }
+                if (table === 'owner_members') {
+                    // Aucune appartenance par défaut : l'appelant est le
+                    // titulaire, qui détient toutes les sous-permissions.
+                    return {
+                        select: () => ({
+                            eq: () => ({
+                                eq: () => ({
+                                    maybeSingle: () => Promise.resolve({ data: mockMember, error: null }),
+                                }),
+                            }),
+                        }),
+                    };
+                }
                 if (table === 'disputes') {
                     return { insert: insertSpy };
                 }
@@ -58,6 +71,8 @@ vi.mock('@/lib/supabase/server', () => ({
         }),
 }));
 
+let mockMember: { can_dispute: boolean } | null = null;
+
 const { createOwnerDispute } = await import('./createOwnerDispute');
 
 beforeEach(() => {
@@ -65,6 +80,7 @@ beforeEach(() => {
     mockProfile = { role: 'SHIPOWNER' };
     mockUser = { id: 'owner-uuid' };
     mockTxn = { id: 'txn-uuid', vessel_id: 'vessel-uuid', tax_amount_usd: 12000 };
+    mockMember = null;
 });
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -136,4 +152,27 @@ describe('createOwnerDispute', () => {
         const payload = insertSpy.mock.calls[0]![0] as { evidence_urls: string[] };
         expect(payload.evidence_urls).toEqual(['https://example.com/proof.pdf']);
     });
+});
+
+// Contester est une sous-permission (mig 135) : un membre qui ne l'a pas
+// consulte la facture sans pouvoir la contester.
+it('refuse un membre sans can_dispute, sans rien insérer', async () => {
+    mockMember = { can_dispute: false };
+    const r = await createOwnerDispute({
+        transactionId: '11111111-1111-4111-8111-111111111111',
+        reason: 'EMISSION_CALCULATION',
+        description: 'Le tonnage retenu ne correspond pas au certificat.',
+    });
+    expect(r).toEqual({ ok: false, reason: 'forbidden' });
+    expect(insertSpy).not.toHaveBeenCalled();
+});
+
+it('laisse passer un membre porteur de can_dispute', async () => {
+    mockMember = { can_dispute: true };
+    const r = await createOwnerDispute({
+        transactionId: '11111111-1111-4111-8111-111111111111',
+        reason: 'EMISSION_CALCULATION',
+        description: 'Le tonnage retenu ne correspond pas au certificat.',
+    });
+    expect(r.ok).toBe(true);
 });

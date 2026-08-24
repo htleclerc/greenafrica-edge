@@ -22,6 +22,8 @@ import {
     type InvoiceBadge,
 } from './invoiceService';
 import { sendInvoiceEmail } from './emailService';
+import { getIssuerProfile } from '@/services/issuerProfileService';
+import { buildCalculationSteps } from '@/services/invoiceCalculationSteps';
 import { fetchJurisdictionMeta, fetchJurisdictionBillingCc } from '../lib/jurisdictionName';
 
 /**
@@ -133,6 +135,8 @@ export interface InvoiceRecipientsInput {
     agentEmail: string | null;
     /** Propriétaire du navire (vessels.owner_id → profiles.email). */
     vesselOwnerEmail: string | null;
+    /** Copies propres à l'armateur (shipowners.billing_cc_emails). */
+    ownerCcEmails: string[];
     /** Copies propres à l'État émetteur (jurisdictions.billing_cc_emails). */
     jurisdictionCcEmails: string[];
     /** Copie plateforme unique (PLATFORM_BILLING_CC). */
@@ -149,8 +153,8 @@ const cleanEmail = (value: string | null | undefined): string | null => {
  *
  * Destinataire principal en cascade : contact de facturation de l'armateur →
  * agent maritime → propriétaire du navire. L'agent passe en copie s'il n'est
- * pas déjà le destinataire principal, puis viennent les copies de l'État
- * émetteur et celle de la plateforme.
+ * pas déjà le destinataire principal, puis viennent les copies propres à
+ * l'armateur, celles de l'État émetteur et celle de la plateforme.
  *
  * Renvoie `null` quand aucun destinataire principal n'est joignable : une
  * créance existe indépendamment de la joignabilité de son débiteur, et il
@@ -172,6 +176,7 @@ export function resolveInvoiceRecipients(
     const cc: string[] = [];
     const candidates = [
         cleanEmail(input.agentEmail),
+        ...input.ownerCcEmails.map(cleanEmail),
         ...input.jurisdictionCcEmails.map(cleanEmail),
         cleanEmail(input.platformCcEmail),
     ];
@@ -282,7 +287,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     // ── 1. Reload the authoritative transaction ─────────────────────────
     const { data: tx, error: txErr } = await admin
         .from('transactions')
-        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id, shipowner_id, agent_profile_id')
+        .select('id, vessel_id, vessel_name, vessel_imo, transaction_type, emissions_tco2, tax_amount_usd, status, port_call, created_at, paid_at, invoice_ref, content_hash, verify_signature, invoice_pdf_url, proforma_sent_at, jurisdiction_id, shipowner_id, agent_profile_id, breakdown_json')
         .eq('id', transactionId)
         .single();
     if (txErr || !tx) {
@@ -390,6 +395,57 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         };
     }
 
+    // Profil emetteur : coordonnees, compte de collecte, delais et rampe de
+    // recouvrement imprimes en pied de page 1 et sur toute la page 2. Defaut
+    // plateforme surcharge par la juridiction (mig 131).
+    const issuer = await getIssuerProfile(admin, jurisdictionId);
+
+    // Contacts du debiteur. L'armateur est en base ; le gestionnaire ISM et le
+    // P&I Club ne le sont pas encore — la page 2 les marque « — » plutot que
+    // d'inventer, un pro-forma etant opposable.
+    let debtorAddress: string | null = null;
+    let debtorContact: string | null = null;
+    if (tx.shipowner_id) {
+        const { data: owner } = await admin
+            .from('shipowners')
+            .select('address, official_email, phone_e164')
+            .eq('id', tx.shipowner_id)
+            .maybeSingle();
+        const o = owner as { address?: string | null; official_email?: string | null; phone_e164?: string | null } | null;
+        debtorAddress = o?.address ?? null;
+        debtorContact = [o?.official_email, o?.phone_e164].filter(Boolean).join(' · ') || null;
+    }
+
+    // Gestionnaire ISM, quand une identite a ete appariee au navire (mig 115).
+    // `contact_blocked` porte la garde sanctions OFAC/UN : un candidat bloque
+    // ne voit pas ses contacts imprimes sur un document que nous diffusons.
+    // Une table absente ou en erreur ne doit pas empecher l'emission — le
+    // document imprime « — », ce que fait deja le gabarit.
+    let ismName: string | null = null;
+    let ismContact: string | null = null;
+    if (tx.vessel_id) {
+        const { data: identity } = await admin
+            .from('vessel_identity_candidates')
+            .select('ism_manager_name, ism_manager_email, manager_name, manager_email, manager_country, contact_blocked')
+            .eq('matched_vessel_id', tx.vessel_id)
+            .eq('status', 'MATCHED')
+            .order('matched_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        const id = identity as {
+            ism_manager_name?: string | null; ism_manager_email?: string | null;
+            manager_name?: string | null; manager_email?: string | null;
+            manager_country?: string | null; contact_blocked?: boolean | null;
+        } | null;
+        if (id && id.contact_blocked !== true) {
+            const name = id.ism_manager_name ?? id.manager_name ?? null;
+            ismName = name && id.manager_country && !id.ism_manager_name
+                ? `${name} (${id.manager_country})`
+                : name;
+            ismContact = id.ism_manager_email ?? id.manager_email ?? null;
+        }
+    }
+
     const invoiceData: InvoiceData = {
         invoiceRef,
         vesselName: tx.vessel_name,
@@ -410,6 +466,29 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         badge,
         verifyUrl,
         lineItems,
+        issuer,
+        voyage: {
+            // `port_call` est le seul element d'escale que la transaction
+            // porte ; ETD, ATA et ATD ne sont pas releves aujourd'hui.
+            arrivalPort: (tx.port_call as string | null) ?? null,
+        },
+        debtor: {
+            ownerName,
+            ownerAddress: debtorAddress,
+            ownerContact: debtorContact,
+            ismName,
+            ismContact,
+        },
+        // Chaine reellement appliquee par le moteur, quand la transaction la
+        // porte. Les lignes inserees directement en base n'ont pas de
+        // breakdown_json : le detail se limite alors a ce qui est opposable.
+        calculationSteps: buildCalculationSteps({
+            breakdown: (tx as { breakdown_json?: unknown }).breakdown_json ?? null,
+            emissionsTco2,
+            ratePerTco2: effectiveRate,
+            totalUsd,
+            decreeReference: issuer.decreeReference,
+        }),
     };
 
     let pdfBuffer: Uint8Array;
@@ -509,7 +588,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
     const { data: shipowner } = txRecord.shipowner_id
         ? await admin
             .from('shipowners')
-            .select('official_email')
+            .select('official_email, billing_cc_emails')
             .eq('id', txRecord.shipowner_id)
             .maybeSingle()
         : { data: null };
@@ -526,6 +605,7 @@ export async function issueInvoiceDocument(input: IssueInvoiceInput): Promise<Is
         shipownerBillingEmail: (shipowner?.official_email as string | null) ?? null,
         agentEmail: (agentProfile?.email as string | null) ?? null,
         vesselOwnerEmail,
+        ownerCcEmails: (shipowner?.billing_cc_emails as string[] | null) ?? [],
         jurisdictionCcEmails: await fetchJurisdictionBillingCc(admin, txRecord.jurisdiction_id),
         platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
     });

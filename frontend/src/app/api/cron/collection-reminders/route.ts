@@ -5,6 +5,8 @@ import { resolveInvoiceRecipients } from '@/services/invoiceIssuanceService';
 import { fetchJurisdictionBillingCc, fetchJurisdictionBailiffCc } from '@/lib/jurisdictionName';
 import { notifyOwner } from '@/services/notificationService';
 import { sendProformaReminderEmail } from '@/services/emailService';
+import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
+import { outstandingUsd } from '@/lib/outstanding';
 import {
     dueTier, reminderTemplate, type ReminderTier, type DebtorResponseType,
 } from '@/services/collectionReminderService';
@@ -41,6 +43,7 @@ interface ProformaRow {
     id: string;
     invoice_ref: string | null;
     tax_amount_usd: number;
+    partial_paid_usd: number | null;
     vessel_name: string;
     status: string;
     created_at: string;
@@ -66,9 +69,9 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
     const { data: proformasRaw, error: selErr } = await admin
         .from('transactions')
-        .select('id, invoice_ref, tax_amount_usd, vessel_name, status, created_at, shipowner_id, agent_profile_id, jurisdiction_id')
+        .select('id, invoice_ref, tax_amount_usd, partial_paid_usd, vessel_name, status, created_at, shipowner_id, agent_profile_id, jurisdiction_id')
         .eq('document_type', 'PROFORMA')
-        .in('status', ['PENDING', 'OVERDUE'])
+        .in('status', ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'])
         .not('shipowner_id', 'is', null)
         .limit(ROW_LIMIT);
 
@@ -78,6 +81,21 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     }
 
     const proformas = (proformasRaw ?? []) as ProformaRow[];
+
+    // Ce qui reste du, lu dans les paiements CONFIRMED. Relancer sur
+    // `tax_amount_usd` reclamait le montant plein d'une facture deja reglee en
+    // partie — et `partial_paid_usd`, gelee par la mig 089, n'aurait rien
+    // corrige. Une lettre de recouvrement qui annonce un montant faux se
+    // retourne contre celui qui l'envoie.
+    let paidByTxn = new Map<string, number>();
+    try {
+        paidByTxn = await confirmedPaidUsdByTransaction(admin, proformas.map((p) => p.id));
+    } catch (e) {
+        // Sans cette lecture, tout montant annonce serait suspect : on ne
+        // relance pas plutot que de relancer a tort.
+        log.error('paid_amounts_unavailable', { error: e instanceof Error ? e.message : String(e) });
+        return NextResponse.json({ error: 'paid_amounts_unavailable' }, { status: 500 });
+    }
 
     for (const p of proformas) {
         counts.scanned += 1;
@@ -106,9 +124,17 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
             });
             if (!tier) { counts.skipped += 1; continue; }
 
+            // Creance eteinte par les paiements alors que le statut n'a pas
+            // suivi (recompute rate, encaissement hors rail) : ne pas relancer.
+            if (outstandingUsd(p as never, paidByTxn.get(p.id) ?? 0) <= 0.005) {
+                log.info('reminder_skipped_settled', { txnId: p.id, tier });
+                counts.skipped += 1;
+                continue;
+            }
+
             // Destinataires : cascade armateur + copies juridiction/plateforme + huissier dès J45.
             const { data: owner } = p.shipowner_id
-                ? await admin.from('shipowners').select('official_email, name').eq('id', p.shipowner_id).maybeSingle()
+                ? await admin.from('shipowners').select('official_email, name, billing_cc_emails').eq('id', p.shipowner_id).maybeSingle()
                 : { data: null };
             const { data: agent } = p.agent_profile_id
                 ? await admin.from('profiles').select('email').eq('id', p.agent_profile_id).maybeSingle()
@@ -123,6 +149,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 shipownerBillingEmail: (owner?.official_email as string | null) ?? null,
                 agentEmail: (agent?.email as string | null) ?? null,
                 vesselOwnerEmail: null,
+                ownerCcEmails: (owner?.billing_cc_emails as string[] | null) ?? [],
                 jurisdictionCcEmails: [...jurisdictionCc, ...bailiffCc],
                 platformCcEmail: process.env.PLATFORM_BILLING_CC ?? null,
             });
@@ -134,10 +161,11 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
 
             const { templateId } = reminderTemplate(tier);
             const ageDays = ageInDays(p.created_at, now);
+            const remainingUsd = outstandingUsd(p as never, paidByTxn.get(p.id) ?? 0);
             const bodyParams = {
                 transaction_id: p.id,
                 invoice_ref: p.invoice_ref,
-                amount_usd: p.tax_amount_usd,
+                amount_usd: remainingUsd,
                 vessel_name: p.vessel_name,
                 tier,
                 age_days: ageDays,
@@ -153,7 +181,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 cc: recipients.cc,
                 recipientName,
                 invoiceRef: p.invoice_ref ?? '—',
-                amountUsd: p.tax_amount_usd,
+                amountUsd: remainingUsd,
                 ageDays,
                 tier,
             });
@@ -184,8 +212,28 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
                 }
             }
 
-            // 4) Puis le registre durable. L'unicité (transaction_id, tier) est le
-            //    garde-fou dur contre un doublon en cas de passes concurrentes.
+            // 4) Puis le registre durable — SEULEMENT si l'envoi a réussi.
+            //
+            //    L'inscrire malgré un échec scellait un mensonge : `dueTier`
+            //    s'arrête dès que le palier figure dans `sentTiers`, et
+            //    l'unicité (transaction_id, tier) interdit toute reprise. Le
+            //    palier était donc brûlé, la rampe avançait, et un débiteur
+            //    pouvait atteindre « dernier avis avant huissier » sans avoir
+            //    jamais reçu une seule lettre — avec un registre affirmant le
+            //    contraire. Sur une créance portée au contentieux, c'est la
+            //    preuve elle-même qui devient fausse.
+            //
+            //    Laisser la ligne absente rend le palier à nouveau dû au
+            //    prochain passage : la relance repart tant qu'elle n'est pas
+            //    réellement partie.
+            if (!emailResult.success) {
+                counts.failed += 1;
+                log.error('reminder_not_recorded_send_failed', {
+                    txnId: p.id, tier, error: emailResult.error,
+                });
+                continue;
+            }
+
             const { error: insErr } = await admin.from('collection_reminders').insert({
                 transaction_id: p.id,
                 tier,

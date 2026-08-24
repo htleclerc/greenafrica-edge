@@ -226,10 +226,42 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# ── Templates d'e-mail GoTrue ────────────────────────────────────────────────
+# Direction 1c : HTML en tables inline, 600 px, testes Outlook. Sources dans
+# ./supabase/templates/, catalogue de reference dans le projet Claude Design
+# « Templates de mail Supabase ».
+#
+# Le logo est servi par le bucket public `assets` de CE projet Supabase. Le
+# livrable pointait vers un projet tiers : une dependance qu'on ne controle pas
+# n'a rien a faire dans un e-mail de production.
+#
+# {{ .Token }} n'est renseigne que si le flux OTP est actif — otp_length /
+# otp_expiry sont deja poses dans [auth.email] ci-dessus. La reauthentification
+# n'a pas d'URL : GoTrue n'envoie que le code.
+
+[auth.email.template.confirmation]
+subject = "Confirm your email address"
+content_path = "./supabase/templates/auth-confirm-signup.html"
+
+[auth.email.template.invite]
+subject = "You have been invited to GreenGate"
+content_path = "./supabase/templates/auth-invite-user.html"
+
+[auth.email.template.magic_link]
+subject = "Your GreenGate sign-in link"
+content_path = "./supabase/templates/auth-magic-link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your GreenGate password"
+content_path = "./supabase/templates/auth-reset-password.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email address"
+content_path = "./supabase/templates/auth-change-email.html"
+
+[auth.email.template.reauthentication]
+subject = "Confirm this action"
+content_path = "./supabase/templates/auth-reauthentication.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

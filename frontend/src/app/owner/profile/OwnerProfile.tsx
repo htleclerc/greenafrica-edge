@@ -8,6 +8,10 @@ import { OsCard, OsCardHeader } from '@/components/ui/OsCard';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import { OsButton } from '@/components/ui/OsButton';
 import { KycStatus } from '@/components/owner/KycStatus';
+import { BillingCcSection } from './BillingCcSection';
+import { MembersSection } from './MembersSection';
+import type { OwnerMemberView } from '@/services/ownerMembersService';
+import type { OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import { updateOwnerKycProfile } from '@/actions/updateOwnerKycProfile';
 import { kycBEditableSchema, ALLOWED_LANGS } from '@/lib/kyc/kycSchema';
 import type { OwnerKycProfile } from '@/services/ownerKycService';
@@ -101,7 +105,14 @@ function buildBillingDiff(initial: BillingFormState, current: BillingFormState):
     return diff;
 }
 
-export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
+export function OwnerProfile({
+    profile, members, privileges, isMember,
+}: {
+    profile: OwnerKycProfile;
+    members: OwnerMemberView[];
+    privileges: OwnerPrivileges;
+    isMember: boolean;
+}) {
     const t = useTranslations('OwnerProfile');
     const router = useRouter();
 
@@ -202,6 +213,12 @@ export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
 
     return (
         <div className="flex flex-col gap-6">
+            {isMember && (
+                <p className="rounded-lg border border-[var(--os-blue)]/25 bg-[var(--os-blue)]/8 px-3 py-2 text-xs leading-relaxed text-[var(--os-text-secondary)]">
+                    {t('memberNotice')}
+                </p>
+            )}
+
             <OsCard>
                 <OsCardHeader title={t('identity.title')} subtitle={t('identity.subtitle')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -386,6 +403,19 @@ export function OwnerProfile({ profile }: { profile: OwnerKycProfile }) {
                     )}
                 </div>
             </OsCard>
+
+            {!isMember && (
+                <BillingCcSection
+                    officialEmail={profile.official_email}
+                    initialEmails={profile.billing_cc_emails}
+                />
+            )}
+
+            <MembersSection
+                members={members}
+                granterPrivileges={privileges}
+                canInvite={privileges.canInvite}
+            />
         </div>
     );
 }

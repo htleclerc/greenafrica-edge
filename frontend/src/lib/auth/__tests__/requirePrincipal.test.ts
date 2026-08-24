@@ -8,25 +8,32 @@ const mockAuthGetUser = vi.fn();
 const mockSignOut = vi.fn();
 const mockShipownerMaybeSingle = vi.fn();
 const mockProfileSingle = vi.fn();
+// Appartenance à un compte tiers (mig 135). Par défaut : aucune — la plupart
+// des cas testés sont un titulaire ou un membre du personnel.
+// Sans implémentation ici : une valeur par défaut inline figerait le type de
+// retour à { data: null }, et les cas qui rendent une vraie ligne ne
+// typecheckeraient plus. Le défaut est posé dans beforeEach.
+const mockMembershipMaybeSingle = vi.fn();
 
 // Track which table is being queried so we can route to the right mock.
+// `eq` est chaînable : le vrai client accepte .eq().eq(), et la lecture des
+// appartenances filtre à la fois sur le profil et sur `active`.
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
     auth: {
       getUser: mockAuthGetUser,
       signOut: mockSignOut,
     },
-    from: vi.fn((table: string) => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => {
-          if (table === 'shipowners') {
-            return { maybeSingle: mockShipownerMaybeSingle };
-          }
-          // profiles
-          return { single: mockProfileSingle };
-        }),
-      })),
-    })),
+    from: vi.fn((table: string) => {
+      const terminal =
+        table === 'shipowners' ? { maybeSingle: mockShipownerMaybeSingle }
+        : table === 'owner_members' ? { maybeSingle: mockMembershipMaybeSingle }
+        : { single: mockProfileSingle };
+      const chain: Record<string, unknown> = { ...terminal };
+      chain.eq = vi.fn(() => chain);
+      chain.select = vi.fn(() => chain);
+      return chain;
+    }),
   })),
 }));
 
@@ -85,6 +92,8 @@ beforeEach(() => {
   mockAuthGetUser.mockReset();
   mockSignOut.mockReset();
   mockShipownerMaybeSingle.mockReset();
+  mockMembershipMaybeSingle.mockReset();
+  mockMembershipMaybeSingle.mockResolvedValue({ data: null, error: null });
   mockProfileSingle.mockReset();
   mockSignOut.mockResolvedValue({});
 });
@@ -150,4 +159,83 @@ describe('requirePrincipal', () => {
 
     await expect(requirePrincipal()).rejects.toThrow('REDIRECT:/login?error=no_profile');
   });
+
+  // ── Membre invite d'un compte tiers (mig 135) ────────────────────────────
+
+  it('resout un membre invite comme operateur, avec ses seuls privileges', async () => {
+    mockAuthGetUser.mockResolvedValue({ data: { user: authUser }, error: null });
+    // Aucun compte possede : la premiere lecture ne rend rien...
+    mockShipownerMaybeSingle
+      .mockResolvedValueOnce({ data: null, error: null })
+      // ...puis la lecture du compte dont il est membre.
+      .mockResolvedValueOnce({ data: activeShipowner, error: null });
+    mockMembershipMaybeSingle.mockResolvedValue({
+      data: {
+        shipowner_id: 'so-001',
+        can_pay: true, can_dispute: false,
+        can_manage_vessels: false, can_invite: false,
+      },
+      error: null,
+    });
+
+    const principal = await requirePrincipal();
+
+    expect(principal.kind).toBe('operator');
+    if (principal.kind !== 'operator') throw new Error('unreachable');
+    expect(principal.isMember).toBe(true);
+    expect(principal.shipowner.id).toBe('so-001');
+    expect(principal.privileges).toEqual({
+      canPay: true, canDispute: false, canManageVessels: false, canInvite: false,
+    });
+  });
+
+  // La preseance est la meme que celle de current_shipowner_id() cote base :
+  // accepter une invitation ne doit jamais deplacer un titulaire sur le compte
+  // d'autrui. Si les deux resolutions divergeaient, l'ecran montrerait un
+  // compte pendant que RLS en servirait un autre.
+  it('fait primer la propriete sur l’appartenance', async () => {
+    mockAuthGetUser.mockResolvedValue({ data: { user: authUser }, error: null });
+    mockShipownerMaybeSingle.mockResolvedValue({ data: activeShipowner, error: null });
+    mockMembershipMaybeSingle.mockResolvedValue({
+      data: { shipowner_id: 'so-AUTRE', can_pay: true, can_dispute: true, can_manage_vessels: true, can_invite: true },
+      error: null,
+    });
+
+    const principal = await requirePrincipal();
+
+    if (principal.kind !== 'operator') throw new Error('unreachable');
+    expect(principal.shipowner.id).toBe('so-001');
+    expect(principal.isMember).toBe(false);
+    // Le titulaire detient tout, sans ligne owner_members.
+    expect(principal.privileges.canInvite).toBe(true);
+    expect(mockMembershipMaybeSingle).not.toHaveBeenCalled();
+  });
+
+  it('donne tous les privileges au titulaire', async () => {
+    mockAuthGetUser.mockResolvedValue({ data: { user: authUser }, error: null });
+    mockShipownerMaybeSingle.mockResolvedValue({ data: activeShipowner, error: null });
+
+    const principal = await requirePrincipal();
+
+    if (principal.kind !== 'operator') throw new Error('unreachable');
+    expect(principal.privileges).toEqual({
+      canPay: true, canDispute: true, canManageVessels: true, canInvite: true,
+    });
+  });
+
+  // Une table absente (migration pas encore appliquee) rend une erreur, pas une
+  // exception : le membre retombe simplement sur la resolution staff.
+  it('retombe sur le staff si la table des appartenances est absente', async () => {
+    mockAuthGetUser.mockResolvedValue({ data: { user: authUser }, error: null });
+    mockShipownerMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockMembershipMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'relation "owner_members" does not exist' },
+    });
+    mockProfileSingle.mockResolvedValue({ data: activeProfile, error: null });
+
+    const principal = await requirePrincipal();
+    expect(principal.kind).toBe('staff');
+  });
 });
+

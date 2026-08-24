@@ -5,6 +5,7 @@ import { lockRate } from '@/services/fxRateService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { z } from 'zod';
+import { notifyStaffSafe } from '@/services/staffNotificationService';
 
 const ADMIN_ONLY_RAILS = [
     'CASH',
@@ -96,9 +97,30 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
     const { data, error } = await supabase
         .from('payments')
         .insert(row)
-        .select('id, status, transaction_id, amount_usd_minor')
+        // jurisdiction_id est posé par la base ; on le relit pour router la
+        // notification sans requête supplémentaire.
+        .select('id, status, transaction_id, amount_usd_minor, jurisdiction_id')
         .single();
 
     if (error) throw error;
+
+    // Seul l'encaissement au guichet notifie, et seulement tant qu'il attend une
+    // confirmation : c'est exactement la règle des 4 yeux (mig 057) qui réclame
+    // un second agent. Les autres rails se confirment sans relais humain.
+    if (parsed.rail === 'CASH' && data.status === 'INITIATED' && data.jurisdiction_id) {
+        const { data: owner } = await supabase
+            .from('shipowners').select('name').eq('id', parsed.shipownerId).maybeSingle();
+        await notifyStaffSafe(supabase, {
+            jurisdictionId: data.jurisdiction_id as string,
+            kind: 'CASH_PAYMENT_RECORDED',
+            params: {
+                amount: `$${(amountUsdMinor / 100).toLocaleString('fr-FR', { maximumFractionDigits: 0 })}`,
+                debtor: (owner as { name?: string } | null)?.name ?? '\u2014',
+            },
+            deepLink: '/admin/payments',
+            dedupKey: data.id as string,
+        });
+    }
+
     return data;
 }

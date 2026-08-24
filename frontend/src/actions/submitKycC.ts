@@ -11,7 +11,7 @@ import { createTenantClient } from '@/lib/supabase/tenant';
 import { kycCSchema, CGV_VERSION, type KycCInput } from '@/lib/kyc/kycSchema';
 
 export async function submitKycC(input: KycCInput) {
-    const session = await requireOwner();
+    const session = await requireOwner('holder');
     const data = kycCSchema.parse(input);
 
     // Encrypt IBAN before persisting — coordonnées bancaires optionnelles : si

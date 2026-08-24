@@ -63,8 +63,15 @@ export interface CreateCheckoutSessionInput {
 export interface CheckoutSessionResult {
     /** Hosted Stripe Checkout URL to redirect the buyer to. */
     checkoutUrl: string;
-    /** Stripe PaymentIntent id created alongside the session. */
-    stripePaymentIntentId: string;
+    /**
+     * Stripe PaymentIntent id, quand Stripe l'a déjà créé. Depuis l'API
+     * 2026-04-22, le PaymentIntent d'une Checkout Session n'existe qu'au
+     * moment où l'acheteur valide son moyen de paiement : à la création la
+     * session renvoie `payment_intent: null`. Les appelants doivent donc
+     * retomber sur `stripeSessionId` comme référence externe et laisser le
+     * webhook `checkout.session.completed` écrire le PaymentIntent.
+     */
+    stripePaymentIntentId: string | null;
     /** Stripe Checkout Session id. */
     stripeSessionId: string;
 }
@@ -75,7 +82,7 @@ export interface CheckoutSessionResult {
  * and Session ids for callers to persist on the local `payments` row.
  *
  * @throws if STRIPE_SECRET_KEY is missing, if Stripe rejects the request,
- * or if the response is missing the expected `url` / `payment_intent` fields.
+ * or if the response is missing the expected `url` field.
  */
 export async function createCheckoutSession(
     input: CreateCheckoutSessionInput,
@@ -83,6 +90,13 @@ export async function createCheckoutSession(
     const stripe = stripeClient();
     const session = await stripe.checkout.sessions.create({
         mode: 'payment',
+        // Managed Payments (Stripe merchant of record) est activé par défaut
+        // sur le compte : il refuse `payment_method_types`, exige un
+        // `tax_code` produit et encaisse à sa place. Incompatible avec ce
+        // rail — la taxe carbone est encaissée par la juridiction, et nos
+        // remboursements / réconciliations sont indexés sur le PaymentIntent.
+        // On le désactive explicitement session par session.
+        managed_payments: { enabled: false },
         payment_method_types: ['card'],
         line_items: [
             {
@@ -108,13 +122,11 @@ export async function createCheckoutSession(
     }
 
     const paymentIntent = session.payment_intent;
-    let stripePaymentIntentId: string;
+    let stripePaymentIntentId: string | null = null;
     if (typeof paymentIntent === 'string') {
         stripePaymentIntentId = paymentIntent;
     } else if (paymentIntent && typeof paymentIntent === 'object' && 'id' in paymentIntent) {
         stripePaymentIntentId = paymentIntent.id;
-    } else {
-        throw new Error('Stripe Checkout Session created without a PaymentIntent');
     }
 
     return {
@@ -133,6 +145,19 @@ export async function retrievePaymentIntent(
 ): Promise<Stripe.PaymentIntent> {
     const stripe = stripeClient();
     return stripe.paymentIntents.retrieve(paymentIntentId);
+}
+
+/**
+ * Retrieves a Checkout Session by id. Nécessaire depuis que le PaymentIntent
+ * n'est plus créé à l'ouverture de la session : la réconciliation part de la
+ * référence `cs_…` stockée sur `payments.external_reference` et lit ici le
+ * `payment_intent` / `status` faisant foi.
+ */
+export async function retrieveCheckoutSession(
+    sessionId: string,
+): Promise<Stripe.Checkout.Session> {
+    const stripe = stripeClient();
+    return stripe.checkout.sessions.retrieve(sessionId);
 }
 
 /**
