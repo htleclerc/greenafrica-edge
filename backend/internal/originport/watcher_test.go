@@ -189,3 +189,67 @@ func TestWatcher_EmptyIMO_Drop(t *testing.T) {
 		t.Errorf("expected empty id (drop), got %q", id)
 	}
 }
+
+// En mode observation, une correspondance exacte d'allow-list ne doit creer
+// AUCUNE alerte d'arrivee : elle est seulement enregistree, avec fuzzy_score
+// a 0 pour la distinguer d'une proposition floue. C'est ce qui permet de
+// mesurer le volume reel avant de decider d'une depense — et ce qui protege
+// d'une emission accidentelle sur une taxe souveraine.
+func TestWatcher_ObserveOnly_RecordsInsteadOfAlerting(t *testing.T) {
+	db, cleanup := openTestDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	set := func(key, val string) {
+		if _, err := db.ExecContext(ctx,
+			`INSERT INTO public.app_config (key, value) VALUES ($1, $2::jsonb)
+			 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, key, val); err != nil {
+			t.Fatalf("app_config %s: %v", key, err)
+		}
+	}
+	set("feature.ais_global_enabled", "true")
+	set("feature.ais_global_observe_only", "true")
+	defer set("feature.ais_global_enabled", "false")
+
+	var alertsBefore int
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM public.arrival_alerts`).Scan(&alertsBefore); err != nil {
+		t.Fatalf("count alerts: %v", err)
+	}
+
+	w := NewWatcher(db, appconfig.New(db), NewCache())
+	const mmsi = "999000111"
+	defer db.ExecContext(ctx,
+		`DELETE FROM public.destination_match_proposals WHERE mmsi=$1`, mmsi)
+
+	alertID, err := w.OnStaticData(ctx, StaticReport{
+		MMSI: mmsi, IMO: "9999991", VesselName: "OBSERVATION TEST",
+		Destination: "BERBERA", RecordedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("OnStaticData: %v", err)
+	}
+	if alertID != "" {
+		t.Fatalf("alertID = %q, want empty — le mode observation ne doit rien declencher", alertID)
+	}
+
+	var alertsAfter int
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM public.arrival_alerts`).Scan(&alertsAfter); err != nil {
+		t.Fatalf("count alerts: %v", err)
+	}
+	if alertsAfter != alertsBefore {
+		t.Fatalf("arrival_alerts est passe de %d a %d — le mode observation a facture", alertsBefore, alertsAfter)
+	}
+
+	var port string
+	var score int
+	if err := db.QueryRowContext(ctx,
+		`SELECT matched_port_guess, fuzzy_score FROM public.destination_match_proposals
+		  WHERE mmsi=$1`, mmsi).Scan(&port, &score); err != nil {
+		t.Fatalf("la correspondance n'a pas ete enregistree: %v", err)
+	}
+	if port != "BERBERA" || score != 0 {
+		t.Fatalf("proposition = (%q, %d), want (\"BERBERA\", 0)", port, score)
+	}
+}
