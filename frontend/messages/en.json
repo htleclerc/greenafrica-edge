@@ -3860,7 +3860,16 @@
         "fallback": "{fallbackReason}"
       }
     },
-    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only.",
+    "tabs": {
+      "label": "Account sections",
+      "identity": "Identity",
+      "billing": "Billing & bank",
+      "members": "Members",
+      "documents": "Documents"
+    },
+    "title": "My account",
+    "subtitle": "Company identity, billing, authorised members and documents."
   },
   "AdminRegistrations": {
     "title": "Pending registrations",

@@ -3860,7 +3860,16 @@
         "fallback": "{fallbackReason}"
       }
     },
-    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire."
+    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire.",
+    "tabs": {
+      "label": "Volets du compte",
+      "identity": "Identité",
+      "billing": "Facturation & banque",
+      "members": "Membres",
+      "documents": "Documents"
+    },
+    "title": "Mon compte",
+    "subtitle": "Identité de l’entreprise, facturation, membres autorisés et documents."
   },
   "AdminRegistrations": {
     "title": "Demandes d'inscription",
