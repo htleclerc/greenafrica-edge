@@ -34,6 +34,14 @@ func TestHealth(t *testing.T) {
 			"degraded", "dernier message il y a 30m",
 		},
 		{
+			// Le motif doit dire POURQUOI, sinon il faut aller lire les logs
+			// de l'hebergeur — ce que ce champ existe pour eviter.
+			"le dernier echec est repris dans le motif",
+			Stats{Running: true, StartedAt: now.AddDate(0, 0, -37), Errors: 49250,
+				LastError: "websocket: close 1006 (abnormal closure)"},
+			"degraded", "dernier echec : websocket: close 1006",
+		},
+		{
 			"flux vivant",
 			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
 				MessagesTotal: 10, LastMessageAt: now.Add(-10 * time.Second)},

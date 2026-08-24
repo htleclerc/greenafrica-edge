@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/htleclerc/africgreen/backend/internal/backoff"
 	"github.com/htleclerc/africgreen/backend/internal/config"
 	"github.com/htleclerc/africgreen/backend/internal/corridor"
 	"github.com/htleclerc/africgreen/backend/internal/eez"
@@ -85,8 +86,8 @@ type Ingester struct {
 	mu         sync.Mutex
 	running    bool
 	stopCh     chan struct{}
-	done       chan struct{}       // closed when the run() goroutine returns; lets Wait() bound shutdown
-	ctx        context.Context    // hook ctx, cancelled by Stop() so in-flight corridor/eez calls unwind
+	done       chan struct{}   // closed when the run() goroutine returns; lets Wait() bound shutdown
+	ctx        context.Context // hook ctx, cancelled by Stop() so in-flight corridor/eez calls unwind
 	cancel     context.CancelFunc
 	stats      Stats
 }
@@ -104,6 +105,7 @@ type Stats struct {
 	// cannot go red is worse than none.
 	Health       string `json:"health"`                  // ok | degraded | stopped
 	HealthReason string `json:"health_reason,omitempty"` // filled when not ok
+	LastError    string `json:"last_error,omitempty"`    // dernier echec de connexion
 }
 
 // staleAfter is how long the ingester may go without a single message before
@@ -111,6 +113,28 @@ type Stats struct {
 // covered area, so a silent minute is already suspicious; 5 min avoids
 // flapping on a reconnect.
 const staleAfter = 5 * time.Minute
+
+// aisReconnect remplace l'ancien delai fixe de 5 s. La machine de production
+// ouvrait ~14 400 connexions par jour vers aisstream, chacune fermee par le
+// serveur une seconde apres l'abonnement (close 1006) : le tier gratuit limite
+// les connexions simultanees, et staging + prod partagent la meme cle.
+var aisReconnect = backoff.Policy{Min: 5 * time.Second, Max: 5 * time.Minute}
+
+// healthyConn est la duree au-dela de laquelle une connexion est consideree
+// comme ayant reellement fonctionne : le backoff repart alors de zero. Sans ce
+// seuil, une connexion qui meurt au bout d'une seconde remettrait le compteur
+// a plat et on retomberait sur une boucle serree.
+const healthyConn = time.Minute
+
+// noteConnError enregistre un echec de connexion (compteur + dernier message)
+// pour que /api/v1/ais/status puisse le montrer, au lieu d'obliger a lire les
+// logs Fly.
+func (ing *Ingester) noteConnError(err error) {
+	ing.mu.Lock()
+	ing.stats.Errors++
+	ing.stats.LastError = err.Error()
+	ing.mu.Unlock()
+}
 
 // NewIngesterWithDeps constructs an Ingester with db + hooks wired in.
 // Positions written to Supabase will trigger corridor.Evaluate + eez.OnPosition
@@ -212,16 +236,25 @@ func health(st Stats, now time.Time) (string, string) {
 		if st.StartedAt.IsZero() || now.Sub(st.StartedAt) < staleAfter {
 			return "ok", "" // just started, nothing received yet — not a verdict
 		}
-		return "degraded", fmt.Sprintf(
+		return "degraded", withLastError(fmt.Sprintf(
 			"aucun message depuis le demarrage il y a %s (%d erreurs de connexion)",
-			now.Sub(st.StartedAt).Truncate(time.Minute), st.Errors)
+			now.Sub(st.StartedAt).Truncate(time.Minute), st.Errors), st)
 	}
 	if d := now.Sub(st.LastMessageAt); d > staleAfter {
-		return "degraded", fmt.Sprintf(
+		return "degraded", withLastError(fmt.Sprintf(
 			"dernier message il y a %s (%d erreurs de connexion)",
-			d.Truncate(time.Minute), st.Errors)
+			d.Truncate(time.Minute), st.Errors), st)
 	}
 	return "ok", ""
+}
+
+// withLastError accroche le dernier echec au motif : sans lui, il faut aller
+// lire les logs de l'hebergeur pour savoir POURQUOI rien n'arrive.
+func withLastError(reason string, st Stats) string {
+	if st.LastError == "" {
+		return reason
+	}
+	return reason + " — dernier echec : " + st.LastError
 }
 
 // run spawns two parallel goroutines:
@@ -281,20 +314,24 @@ func connectGlobalStatic(conn *websocket.Conn, cfg *config.Config) error {
 // runOne is the reconnect loop for a single subscription.
 // It retries on error with a 5-second backoff, honouring stopCh for clean shutdown.
 func (ing *Ingester) runOne(sub subscribeFn) {
+	var wait time.Duration
 	for {
 		select {
 		case <-ing.stopCh:
 			return
 		default:
+			started := time.Now()
 			if err := ing.connectAndRead(sub); err != nil {
-				log.Printf("[AIS] Connection error: %v. Reconnecting in 5s...", err)
-				ing.mu.Lock()
-				ing.stats.Errors++
-				ing.mu.Unlock()
+				ing.noteConnError(err)
+				if time.Since(started) >= healthyConn {
+					wait = 0 // la connexion avait tenu : on repart du delai minimal
+				}
+				wait = aisReconnect.Next(wait)
+				log.Printf("[AIS] Connection error: %v. Reconnecting in %s...", err, wait)
 				select {
 				case <-ing.stopCh:
 					return
-				case <-time.After(5 * time.Second):
+				case <-time.After(wait):
 				}
 			}
 		}
@@ -351,17 +388,26 @@ func (ing *Ingester) runGlobalConditional() {
 // runOneCtx is like runOne but uses a cancellable ctx for the global connection,
 // so runGlobalConditional can stop it independently of the full ingester shutdown.
 func (ing *Ingester) runOneCtx(ctx context.Context, sub subscribeFn) {
+	var wait time.Duration
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
+			started := time.Now()
 			if err := ing.connectAndRead(sub); err != nil {
-				log.Printf("[AIS] Connection error (global): %v. Reconnecting in 5s...", err)
+				// L'echec de la connexion globale n'etait compte nulle part :
+				// elle pouvait echouer en boucle sans que /status en sache rien.
+				ing.noteConnError(err)
+				if time.Since(started) >= healthyConn {
+					wait = 0
+				}
+				wait = aisReconnect.Next(wait)
+				log.Printf("[AIS] Connection error (global): %v. Reconnecting in %s...", err, wait)
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(5 * time.Second):
+				case <-time.After(wait):
 				}
 			}
 		}
@@ -468,7 +514,9 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 	if err != nil || lookupResp.StatusCode != 200 {
 		return
 	}
-	var vessels []struct{ ID string `json:"id"` }
+	var vessels []struct {
+		ID string `json:"id"`
+	}
 	json.NewDecoder(lookupResp.Body).Decode(&vessels)
 	lookupResp.Body.Close()
 	if len(vessels) == 0 {
