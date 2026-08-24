@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { UserRole } from '@/types/secure';
 import {
-    parseSkin, parseThemePreference, resolveTheme, themeForSkin,
-    THEME_KEY, THEME_PREFERENCE_KEY,
+    parseThemePreference, resolveTheme, migrateRetiredSkin,
+    SKIN_KEY, THEME_KEY, THEME_PREFERENCE_KEY,
     type SkinId, type ThemeMode, type ThemePreference,
 } from '@/lib/theme';
 
@@ -32,12 +32,15 @@ export function useSkin(): SkinContextValue {
     return React.useContext(SkinContext);
 }
 
-const STORAGE_KEY = 'africgreen_skin';
-
-/** Returns the default skin for a given role */
-export function defaultSkinForRole(role: UserRole): SkinId {
-    if (role === UserRole.SUPERADMIN) return 'institutional';
-    return 'emerald';
+/**
+ * Thème par défaut d'un rôle, quand la personne n'a rien choisi.
+ *
+ * Le SUPERADMIN ouvrait sur l'habillage « Institutional », qui n'était qu'une
+ * façon détournée de dire « en clair ». L'habillage a disparu, l'intention
+ * reste : ses écrans s'ouvrent en clair.
+ */
+export function defaultThemeForRole(role: UserRole): ThemeMode {
+    return role === UserRole.SUPERADMIN ? 'light' : 'dark';
 }
 
 /**
@@ -54,18 +57,23 @@ export function defaultSkinForRole(role: UserRole): SkinId {
  * `theme`, celle que lit `next-themes` — les deux ne peuvent donc pas diverger.
  */
 export function SkinProvider({ children, defaultRole }: { children: React.ReactNode; defaultRole?: UserRole }) {
-    const fallbackSkin = defaultRole ? defaultSkinForRole(defaultRole) : 'emerald';
+    // Mémorisé : recalculé à chaque rendu, il ferait changer d'identité les
+    // rappels qui en dépendent, et leur mémorisation n'aurait plus d'objet.
+    const fallbackTheme = React.useMemo<ThemeMode>(
+        () => (defaultRole ? defaultThemeForRole(defaultRole) : 'dark'),
+        [defaultRole],
+    );
 
     const [skin, setSkinState] = React.useState<SkinId>(() => {
-        if (typeof window === 'undefined') return fallbackSkin;
-        return parseSkin(localStorage.getItem(STORAGE_KEY), fallbackSkin);
+        if (typeof window === 'undefined') return 'emerald';
+        return migrateRetiredSkin(localStorage.getItem(SKIN_KEY), localStorage.getItem(THEME_PREFERENCE_KEY)).skin;
     });
     const [themePreference, setThemePreferenceState] = React.useState<ThemePreference>(() => {
         if (typeof window === 'undefined') return 'auto';
         return parseThemePreference(localStorage.getItem(THEME_PREFERENCE_KEY));
     });
 
-    const theme = resolveTheme(themePreference, skin);
+    const theme = resolveTheme(themePreference, fallbackTheme);
 
     /** Applique les deux attributs et tient `theme` à jour pour next-themes. */
     const apply = React.useCallback((nextSkin: SkinId, nextTheme: ThemeMode) => {
@@ -77,35 +85,38 @@ export function SkinProvider({ children, defaultRole }: { children: React.ReactN
 
     const setSkin = React.useCallback((newSkin: SkinId) => {
         setSkinState(newSkin);
-        localStorage.setItem(STORAGE_KEY, newSkin);
-        // Le skin ne redéfinit le thème que si l'utilisateur ne l'a pas choisi.
-        setThemePreferenceState((preference) => {
-            apply(newSkin, resolveTheme(preference, newSkin));
-            return preference;
-        });
-    }, [apply]);
+        localStorage.setItem(SKIN_KEY, newSkin);
+        // Changer d'habillage ne touche plus au thème : les deux axes sont
+        // indépendants, et c'est précisément ce que la fusion a clarifié.
+        apply(newSkin, resolveTheme(themePreference, fallbackTheme));
+    }, [apply, themePreference, fallbackTheme]);
 
     const setThemePreference = React.useCallback((preference: ThemePreference) => {
         setThemePreferenceState(preference);
         if (preference === 'auto') localStorage.removeItem(THEME_PREFERENCE_KEY);
         else localStorage.setItem(THEME_PREFERENCE_KEY, preference);
-        setSkinState((currentSkin) => {
-            apply(currentSkin, resolveTheme(preference, currentSkin));
-            return currentSkin;
-        });
-    }, [apply]);
+        apply(skin, resolveTheme(preference, fallbackTheme));
+    }, [apply, skin, fallbackTheme]);
 
     // Au montage : réconcilier le DOM avec ce que porte le stockage. Le script
     // anti-FOUC a déjà posé la bonne valeur dans le cas courant ; cet effet
     // couvre le cas où `defaultRole` change la donne (première visite d'un
     // SUPERADMIN, qui n'a pas encore de skin enregistré).
     React.useEffect(() => {
-        const resolvedSkin = parseSkin(localStorage.getItem(STORAGE_KEY), fallbackSkin);
-        const preference = parseThemePreference(localStorage.getItem(THEME_PREFERENCE_KEY));
-        setSkinState(resolvedSkin);
-        setThemePreferenceState(preference);
-        apply(resolvedSkin, resolveTheme(preference, resolvedSkin));
-    }, [fallbackSkin, apply]);
+        const migrated = migrateRetiredSkin(
+            localStorage.getItem(SKIN_KEY),
+            localStorage.getItem(THEME_PREFERENCE_KEY),
+        );
+        // Le stockage est réécrit une fois : sans cela la migration se rejouerait
+        // à chaque visite et écraserait un choix de thème fait entre-temps.
+        if (migrated.changed) {
+            localStorage.setItem(SKIN_KEY, migrated.skin);
+            localStorage.setItem(THEME_PREFERENCE_KEY, migrated.preference);
+        }
+        setSkinState(migrated.skin);
+        setThemePreferenceState(migrated.preference);
+        apply(migrated.skin, resolveTheme(migrated.preference, fallbackTheme));
+    }, [fallbackTheme, apply]);
 
     const value = React.useMemo(
         () => ({ skin, setSkin, theme, themePreference, setThemePreference }),
@@ -115,4 +126,3 @@ export function SkinProvider({ children, defaultRole }: { children: React.ReactN
     return <SkinContext.Provider value={value}>{children}</SkinContext.Provider>;
 }
 
-export { themeForSkin };

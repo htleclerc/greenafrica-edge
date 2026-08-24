@@ -1,7 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { ThemeProvider } from '@/components/theme-provider';
-import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono, Space_Grotesk, Sora } from 'next/font/google';
+import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 
 const plex = IBM_Plex_Sans({
@@ -32,13 +32,6 @@ const spaceGrotesk = Space_Grotesk({
     subsets: ['latin', 'latin-ext'],
     weight: ['400', '500', '600', '700'],
     variable: '--font-space',
-    display: 'swap',
-});
-
-const sora = Sora({
-    subsets: ['latin', 'latin-ext'],
-    weight: ['400', '500', '600', '700'],
-    variable: '--font-sora',
     display: 'swap',
 });
 
@@ -76,7 +69,7 @@ export default async function RootLayout({
                 {/* Blocking script to set theme before paint — avoids flash */}
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var d=document.documentElement;var s=localStorage.getItem('africgreen_skin');s=s&&['emerald','navy','institutional'].indexOf(s)!==-1?s:'emerald';d.setAttribute('data-skin',s);var p=localStorage.getItem('africgreen_theme_pref');var t=(p==='dark'||p==='light')?p:(s==='institutional'?'light':'dark');d.setAttribute('data-theme',t);localStorage.setItem('theme',t)}catch(e){}})()`,
+                        __html: `(function(){try{var d=document.documentElement,S='africgreen_skin',P='africgreen_theme_pref';var s=localStorage.getItem(S),p=localStorage.getItem(P);if(s==='institutional'){s='emerald';localStorage.setItem(S,s);if(p!=='dark'&&p!=='light'){p='light';localStorage.setItem(P,p)}}s=(s==='emerald'||s==='navy')?s:'emerald';d.setAttribute('data-skin',s);var t=(p==='dark'||p==='light')?p:'dark';d.setAttribute('data-theme',t);localStorage.setItem('theme',t)}catch(e){}})()`,
                     }}
                 />
                 {/* reCAPTCHA for shipowner registration */}
@@ -88,7 +81,7 @@ export default async function RootLayout({
                     />
                 )}
             </head>
-            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${plexMono.variable} ${spaceGrotesk.variable} ${sora.variable}`} suppressHydrationWarning>
+            <body className={`antialiased font-sans ${plex.variable} ${plexArabic.variable} ${plexMono.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider
                         attribute="data-theme"

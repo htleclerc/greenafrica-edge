@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Moon, Sun, Wand2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSkin } from '@/lib/SkinContext';
-import { themeForSkin, type ThemePreference } from '@/lib/theme';
+import { type ThemePreference } from '@/lib/theme';
 
 const OPTIONS: { value: ThemePreference; Icon: typeof Sun }[] = [
     { value: 'auto', Icon: Wand2 },
@@ -21,7 +21,7 @@ const OPTIONS: { value: ThemePreference; Icon: typeof Sun }[] = [
  */
 export function ThemePreferencePicker() {
     const t = useTranslations('DashboardPages');
-    const { skin, themePreference, setThemePreference } = useSkin();
+    const { theme, themePreference, setThemePreference } = useSkin();
     const [mounted, setMounted] = React.useState(false);
 
     React.useEffect(() => setMounted(true), []);
@@ -57,7 +57,7 @@ export function ThemePreferencePicker() {
             </div>
             {mounted && themePreference === 'auto' && (
                 <p className="text-xs text-[var(--os-text-muted)]">
-                    {t('settings_theme_auto_hint', { theme: t(`settings_theme_${themeForSkin(skin)}`) })}
+                    {t('settings_theme_auto_hint', { theme: t(`settings_theme_${theme}`) })}
                 </p>
             )}
         </div>

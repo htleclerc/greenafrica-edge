@@ -15,7 +15,6 @@ interface SkinDef {
 const SKINS: SkinDef[] = [
     { id: 'emerald',       accent: '#10B981', bg: '#0A1110', labelKey: 'skin_emerald' },
     { id: 'navy',          accent: '#38BDF8', bg: '#0B1426', labelKey: 'skin_navy' },
-    { id: 'institutional', accent: '#059669', bg: '#F0FAF4', labelKey: 'skin_institutional' },
 ];
 
 interface SkinSwitcherProps {
