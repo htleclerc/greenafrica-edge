@@ -64,6 +64,34 @@ depuis cette date, et rien ne le signale côté produit.
 **Correctif.** Régler les factures en souffrance sur le compte Fly
 `leclerc-drwintech-com`, puis relancer le dernier run de production.
 
+### Mise à jour du 2026-08-24 — le blocage touche aussi la staging
+
+Le même 403 Depot fait maintenant échouer `flyctl deploy -a africgreen` :
+
+```
+ensure depot builder failed, please try again (status 403):
+Your account has overdue invoices.
+```
+
+Ce n'est **pas** un problème de Dockerfile, contrairement à ce qu'affiche le
+tableau de bord Fly (« Your repo Dockerfile build failed », bouton « I've fixed
+this on GitHub, retry »). Le build n'a jamais démarré : le 403 tombe pendant
+`Waiting for depot builder...`, avant toute lecture du Dockerfile. Modifier le
+Dockerfile ou relancer le job ne changera rien tant que la facture n'est pas
+réglée.
+
+**Portée réelle.** Les deux environnements sont gelés côté backend Go. Les
+machines tournent (`africgreen.fly.dev` et `greengate-prod.fly.dev` répondent
+200) mais servent des images anciennes : staging tourne sur
+`deployment-01KXV5T8W8D7E60VWYRC3HRJNN`, dernière mise à jour le **2026-07-18**.
+Aucun correctif du backend Go ne peut être livré d'ici là.
+
+**Ce qui reste possible sans build.** Les opérations Machines de `flyctl` ne
+passent pas par Depot : `fly scale count`, `fly machine stop/restart`,
+`fly secrets set` fonctionnent. Un déploiement d'urgence reste faisable en
+contournant Depot avec `fly deploy --local-only` (exige un démon Docker local
+en marche).
+
 ---
 
 ## Durcissements posés le 2026-08-22
