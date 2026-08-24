@@ -31,7 +31,7 @@ export function OsInput({ label, error, icon, hint, className = '', ...props }: 
                         border ${error ? 'border-[#EF4444]/50' : 'border-[var(--os-border)]'}
                         text-sm text-[var(--os-text-primary)]
                         placeholder:text-[var(--os-text-muted)]
-                        focus:outline-none focus:border-[#00D97E]/60 focus:ring-1 focus:ring-[#00D97E]/20
+                        focus:outline-none focus:border-[var(--os-brand-green)]/60 focus:ring-1 focus:ring-[var(--os-brand-green)]/20
                         transition-colors
                         ${icon ? 'pl-10 pr-4' : 'px-4'}
                         ${className}
@@ -66,7 +66,7 @@ export function OsSelect({ label, error, placeholder, options, className = '', .
                     bg-[var(--os-surface-2)]
                     border ${error ? 'border-[#EF4444]/50' : 'border-[var(--os-border)]'}
                     text-sm text-[var(--os-text-primary)]
-                    focus:outline-none focus:border-[#00D97E]/60 focus:ring-1 focus:ring-[#00D97E]/20
+                    focus:outline-none focus:border-[var(--os-brand-green)]/60 focus:ring-1 focus:ring-[var(--os-brand-green)]/20
                     transition-colors appearance-none cursor-pointer
                     ${className}
                 `}
