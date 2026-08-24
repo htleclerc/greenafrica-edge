@@ -115,6 +115,14 @@ type Stats struct {
 	PositionsWritten int64  `json:"positions_written"`
 	WriteErrors      int64  `json:"write_errors"`
 	LastWriteError   string `json:"last_write_error,omitempty"`
+
+	// Une trame recue mais inexploitable rearme le delai d'inactivite sans
+	// rien compter : la connexion parait vivante et les compteurs restent a
+	// zero. C'est l'etat exact de la staging le 2026-08-24 — neuf minutes
+	// sans timeout, zero message, zero erreur. Sans ce compteur, cet etat est
+	// indiscernable d'un silence total.
+	FramesDiscarded int64  `json:"frames_discarded"`
+	LastFrame       string `json:"last_discarded_frame,omitempty"`
 }
 
 // staleAfter is how long the ingester may go without a single message before
@@ -159,6 +167,25 @@ func (ing *Ingester) postJSON(path string, payload []byte) error {
 		return fmt.Errorf("%s: HTTP %d", path, resp.StatusCode)
 	}
 	return nil
+}
+
+// noteDiscardedFrame garde la trace d'une trame recue et inexploitable. Les
+// trois premieres sont journalisees en clair — c'est ce que le serveur nous
+// dit, et jusqu'ici on le jetait sans le lire. Les suivantes sont comptees.
+// Les donnees AIS sont publiques : aucune information sensible ici.
+func (ing *Ingester) noteDiscardedFrame(raw []byte) {
+	body := string(raw)
+	if len(body) > 220 {
+		body = body[:220] + "…"
+	}
+	ing.mu.Lock()
+	ing.stats.FramesDiscarded++
+	ing.stats.LastFrame = body
+	n := ing.stats.FramesDiscarded
+	ing.mu.Unlock()
+	if n <= 3 || n%500 == 0 {
+		log.Printf("[AIS] trame inexploitable (%d au total): %s", n, body)
+	}
 }
 
 // noteWriteError compte l'echec et le journalise sans inonder : le premier,
@@ -284,6 +311,11 @@ func health(st Stats, now time.Time) (string, string) {
 	if st.LastMessageAt.IsZero() {
 		if st.StartedAt.IsZero() || now.Sub(st.StartedAt) < staleAfter {
 			return "ok", "" // just started, nothing received yet — not a verdict
+		}
+		if st.FramesDiscarded > 0 {
+			return "degraded", fmt.Sprintf(
+				"%d trames recues mais aucune exploitable depuis le demarrage il y a %s — derniere trame : %s",
+				st.FramesDiscarded, now.Sub(st.StartedAt).Truncate(time.Minute), st.LastFrame)
 		}
 		return "degraded", withLastError(fmt.Sprintf(
 			"aucun message depuis le demarrage il y a %s (%d erreurs de connexion)",
@@ -585,10 +617,15 @@ func (ing *Ingester) connectAndRead(sub subscribeFn) error {
 
 		var msg AISMessage
 		if err := json.Unmarshal(rawMsg, &msg); err != nil {
+			ing.noteDiscardedFrame(rawMsg)
 			continue
 		}
 
 		if msg.MetaData.MMSIStr == "" {
+			// Ce n'est pas forcement du bruit : aisstream repond aussi par des
+			// trames de service (confirmation, erreur) qui passent ici sans
+			// MMSI. Les taire revient a ignorer ce que le serveur nous dit.
+			ing.noteDiscardedFrame(rawMsg)
 			continue
 		}
 

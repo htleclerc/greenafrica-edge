@@ -42,6 +42,17 @@ func TestHealth(t *testing.T) {
 			"degraded", "dernier echec : websocket: close 1006",
 		},
 		{
+			// L'état exact de la staging à 19:24 : connexion vivante, délai
+			// d'inactivité jamais atteint, et pourtant zéro message compté.
+			// Des trames arrivent, aucune n'est exploitable — et sans ce
+			// compteur, c'est indiscernable d'un silence total.
+			"reçoit des trames inexploitables",
+			Stats{Running: true, StartedAt: now.Add(-9 * time.Minute),
+				MessagesTotal: 0, FramesDiscarded: 41,
+				LastFrame: `{"error":"…"}`},
+			"degraded", "aucune exploitable",
+		},
+		{
 			// Le cas du 24/08 : deux heures de flux continu, pas une ligne
 			// ecrite, parce que l'app Fly n'avait pas les secrets Supabase.
 			// Rien ne le signalait.
