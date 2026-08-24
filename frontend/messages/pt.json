@@ -3454,7 +3454,8 @@
       "simulator": "Simulador Fiscal",
       "tco": "Painel TCO",
       "disputes": "Disputas",
-      "notifications": "Notificações"
+      "notifications": "Notificações",
+      "account": "My account"
     },
     "login": {
       "title": "Sign in with your email",

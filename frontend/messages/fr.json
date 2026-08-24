@@ -3050,7 +3050,8 @@
       "simulator": "Simulateur de taxe",
       "tco": "Tableau TCO",
       "disputes": "Litiges",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "account": "Mon compte"
     },
     "disputes": {
       "empty": "Vous n'avez ouvert aucun litige pour le moment."

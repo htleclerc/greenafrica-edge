@@ -45,6 +45,11 @@ export const OPERATOR_NAV: OperatorNavItem[] = [
     { key: 'tco',           href: '/dashboard/tco',           labelKey: 'nav.tco' },
     { key: 'disputes',      href: '/dashboard/disputes',      labelKey: 'nav.disputes' },
     { key: 'notifications', href: '/dashboard/notifications', labelKey: 'nav.notifications' },
+    // Le compte : identite KYC, copies de facturation, et les membres
+    // autorises a agir dessus. La page existait depuis la mig 135 mais
+    // aucun lien n'y menait : elle etait restée sous /owner/*, seule des dix
+    // surfaces du portail a ne pas avoir ete relocalisee.
+    { key: 'account',       href: '/dashboard/account',       labelKey: 'nav.account' },
 ];
 
 /**

@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck,
+    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck, UserCog,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -81,6 +81,7 @@ const OPERATOR_ICONS: Record<string, React.ReactNode> = {
     tco:           <DollarSign className="w-5 h-5" />,
     disputes:      <Scale className="w-5 h-5" />,
     notifications: <Bell className="w-5 h-5" />,
+    account:       <UserCog className="w-5 h-5" />,
 };
 
 interface DashboardSidebarProps {

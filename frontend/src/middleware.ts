@@ -38,6 +38,7 @@ const OWNER_REDIRECTS: Array<[string, string]> = [
     ['/owner/notifications',  '/dashboard/notifications'],
     ['/owner/simulator',      '/dashboard/simulator'],
     ['/owner/tco',            '/dashboard/tco'],
+    ['/owner/profile',        '/dashboard/account'],
 ];
 
 // Plan 7H-1 Task 5.4 — master switch for the owner portal.

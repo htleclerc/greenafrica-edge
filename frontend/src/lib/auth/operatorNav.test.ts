@@ -3,7 +3,7 @@ import { OPERATOR_NAV, operatorNavFor, vesselsNavLabelKey, isAirOnly, type Opera
 
 describe('OPERATOR_NAV', () => {
     it('has exactly 9 items', () => {
-        expect(OPERATOR_NAV).toHaveLength(9);
+        expect(OPERATOR_NAV).toHaveLength(10);
     });
 
     it('every item has key, href, and labelKey', () => {
@@ -35,6 +35,7 @@ describe('OPERATOR_NAV', () => {
             'tco',
             'disputes',
             'notifications',
+            'account',
         ]);
     });
 });

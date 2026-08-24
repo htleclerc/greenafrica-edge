@@ -2938,7 +2938,8 @@
       "simulator": "Tax Simulator",
       "tco": "TCO Dashboard",
       "disputes": "Disputes",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "account": "My account"
     },
     "login": {
       "title": "Sign in with your email",

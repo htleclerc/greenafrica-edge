@@ -3050,7 +3050,8 @@
       "simulator": "Tax Simulator",
       "tco": "TCO Dashboard",
       "disputes": "Disputes",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "account": "My account"
     },
     "disputes": {
       "empty": "You haven't opened any disputes yet."
