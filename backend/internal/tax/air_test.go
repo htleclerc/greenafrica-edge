@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"os"
 	"testing"
 
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
 	"github.com/htleclerc/africgreen/backend/internal/tariff"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 // somalilandJurisdictionID aliases the package constant for test readability.
@@ -18,14 +17,7 @@ func ptrInt(i int) *int { return &i }
 
 func openAirTestDB(t *testing.T) (*sql.DB, *tariff.Store) {
 	t.Helper()
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("db: %v", err)
-	}
+	db := testdb.Open(t)
 	return db, tariff.NewStore(db)
 }
 

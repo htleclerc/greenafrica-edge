@@ -2,25 +2,17 @@ package modeconfig
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 const soJID = "00000000-0000-4000-8000-00000000534f"
 
 func openDB(t *testing.T) (*Store, func()) {
 	t.Helper()
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
+	db := testdb.Open(t)
 	s := NewStore(db)
 	return s, func() { db.Close() }
 }

@@ -5,25 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 // openTestDB opens the test database. Uses SUPABASE_DB_URL if set, otherwise
 // falls back to the local Supabase CLI default (port 54322).
 func openTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
+	db := testdb.Open(t)
 	t.Cleanup(func() { db.Close() })
 	return db
 }

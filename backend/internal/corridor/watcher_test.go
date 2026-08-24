@@ -2,24 +2,19 @@ package corridor
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/appconfig"
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 const soJID = "00000000-0000-4000-8000-00000000534f"
 
 func TestEvaluate_WithinCorridor_CreatesAlert(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, _ := supadb.Open(url)
+	db := testdb.Open(t)
 	defer db.Close()
 
 	// Fixture: insert a vessel close to Berbera (10.43, 45.02) — within 500 NM
@@ -71,11 +66,7 @@ func TestEvaluate_WithinCorridor_CreatesAlert(t *testing.T) {
 }
 
 func TestEvaluate_Duplicate_NoSecondAlert(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, _ := supadb.Open(url)
+	db := testdb.Open(t)
 	defer db.Close()
 
 	var vesselID string
@@ -112,11 +103,7 @@ func TestEvaluate_Duplicate_NoSecondAlert(t *testing.T) {
 // TestEvaluate_ModeDisabled_NoAlert: Somaliland MARITIME disabled → Evaluate
 // inside corridor creates no alert. Restore → alert created (regression check).
 func TestEvaluate_ModeDisabled_NoAlert(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, _ := supadb.Open(url)
+	db := testdb.Open(t)
 	defer db.Close()
 
 	ctx := context.Background()

@@ -3,22 +3,14 @@ package tax
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
 	"github.com/htleclerc/africgreen/backend/internal/tariff"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 func TestCalculate_UsesCascadeAndRate(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("db: %v", err)
-	}
+	db := testdb.Open(t)
 	defer db.Close()
 
 	tariffs := tariff.NewStore(db)
@@ -62,20 +54,13 @@ func TestCalculate_UsesCascadeAndRate(t *testing.T) {
 }
 
 func TestCalculate_UnknownJurisdiction_FailsClosed(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("db: %v", err)
-	}
+	db := testdb.Open(t)
 	defer db.Close()
 
 	tariffs := tariff.NewStore(db)
 	calc := NewCalculator(db, tariffs)
 
-	_, err = calc.Calculate(context.Background(), Input{
+	_, err := calc.Calculate(context.Background(), Input{
 		IMO:            "none",
 		Category:       "CARGO",
 		GrossTonnage:   30000,
