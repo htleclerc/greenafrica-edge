@@ -47,13 +47,29 @@ func MatchDestination(raw string, allow AllowList) MatchResult {
 		return MatchResult{Kind: MatchNone}
 	}
 
-	// Step 2: allow-list substring check
+	// Step 2: allow-list check, par MOTS ENTIERS et non par sous-chaine.
+	//
+	// `strings.Contains` etait un piege de facturation. Les variantes courtes
+	// de l'allow-list de production — « SBE », « BBR » — apparaissent dans des
+	// noms de ports sans aucun rapport. Mesure du 2026-08-24 sur dix minutes du
+	// flux ShipStaticData mondial (9 191 messages, 4 088 destinations
+	// distinctes), quatre faux positifs reels :
+	//
+	//   TONSBERG              → contient SBE
+	//   T. SPITSBERGEN        → SPIT-SBE-RGEN
+	//   BAD GODESBERG FAEHRE  → GODE-SBE-RG
+	//   BBREMERHAVEN          → contient BBR
+	//
+	// MatchAllow declenche l'insertion d'un arrival_alerts, donc une pro-forma
+	// de taxe carbone. Un navire en route pour la Norvege se serait vu facturer
+	// une escale a Berbera — environ 576 fois par jour au rythme mesure.
+	inputTokens := strings.Fields(norm)
 	for port, variants := range allow {
 		for _, v := range variants {
 			if v == "" {
 				continue
 			}
-			if strings.Contains(norm, v) {
+			if containsTokens(inputTokens, strings.Fields(v)) {
 				return MatchResult{Kind: MatchAllow, Port: port, Normalized: norm}
 			}
 		}
@@ -78,6 +94,28 @@ func MatchDestination(raw string, allow AllowList) MatchResult {
 		return best
 	}
 	return MatchResult{Kind: MatchNone, Normalized: norm}
+}
+
+// containsTokens indique si la suite want apparait telle quelle, mots entiers
+// et dans l'ordre, dans got. Une variante multi-mots comme « SOMA BBR » doit
+// donc matcher « SOMA BBR DEPARTURE » mais pas « BBR SOMA ».
+func containsTokens(got, want []string) bool {
+	if len(want) == 0 || len(want) > len(got) {
+		return false
+	}
+	for i := 0; i+len(want) <= len(got); i++ {
+		match := true
+		for j, w := range want {
+			if got[i+j] != w {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
 }
 
 // Normalize uppercases, trims, replaces non-alphanumeric with space, then
