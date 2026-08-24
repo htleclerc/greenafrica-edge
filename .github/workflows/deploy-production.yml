@@ -166,11 +166,29 @@ jobs:
       # commit ajoute porte le bon auteur, donc une execution suivante ne fait
       # rien. Et GITHUB_TOKEN ne redeclenche pas les workflows, pas de boucle.
       - name: Signature de promotion (deblocage Vercel Hobby)
+        # L'identite attendue est un PARAMETRE, pas une constante : le jour ou
+        # le projet Vercel change de compte, c'est une variable a changer, pas
+        # du code a rouvrir. GitHub resout `vars` par ordre de precedence
+        # environnement > depot, donc la valeur de l'environnement
+        # « production » gagne si elle existe, sinon celle du depot sert de
+        # defaut. Le litteral en dernier recours evite qu'une variable oubliee
+        # ne desactive silencieusement le garde-fou ; le pas dit toujours d'ou
+        # vient la valeur qu'il utilise.
         env:
-          RELEASE_AUTHOR_NAME: Green Gate Operations
-          RELEASE_AUTHOR_EMAIL: st.operations@greengate.africa
+          RELEASE_AUTHOR_NAME: ${{ vars.RELEASE_AUTHOR_NAME }}
+          RELEASE_AUTHOR_EMAIL: ${{ vars.RELEASE_AUTHOR_EMAIL }}
         run: |
           set -euo pipefail
+          SOURCE="variable GitHub (environnement ou depot)"
+          if [ -z "${RELEASE_AUTHOR_EMAIL:-}" ]; then
+            RELEASE_AUTHOR_EMAIL="st.operations@greengate.africa"
+            SOURCE="defaut integre au workflow"
+            echo "::warning::Ni l'environnement « production » ni le depot ne definissent la variable RELEASE_AUTHOR_EMAIL — repli sur le defaut integre. A definir avec: gh variable set RELEASE_AUTHOR_EMAIL --env production"
+          fi
+          if [ -z "${RELEASE_AUTHOR_NAME:-}" ]; then
+            RELEASE_AUTHOR_NAME="Green Gate Operations"
+          fi
+          echo "Identite de promotion attendue : $RELEASE_AUTHOR_NAME <$RELEASE_AUTHOR_EMAIL> (source : $SOURCE)"
           CURRENT="$(git log -1 --format='%ae')"
           echo "Auteur du sommet de main : $CURRENT"
           if [ "$CURRENT" = "$RELEASE_AUTHOR_EMAIL" ]; then
