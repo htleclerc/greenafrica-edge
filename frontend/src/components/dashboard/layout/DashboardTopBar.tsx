@@ -265,7 +265,7 @@ export function DashboardTopBar({ user, kpis, breadcrumb, showKpis = true, notif
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={markAllRead}
-                                        className="text-[10px] font-semibold text-[var(--os-brand-green)] hover:text-[var(--os-brand-cyan)] transition-colors"
+                                        className="text-[10px] font-semibold text-[var(--os-brand-green)] transition-opacity hover:opacity-70"
                                     >
                                         {t('mark_all_read')}
                                     </button>

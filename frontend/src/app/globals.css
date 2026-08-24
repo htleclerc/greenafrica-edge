@@ -322,9 +322,15 @@
     --os-border-strong:rgba(37, 99, 235, 0.25);
 
     /* Marine et non vert : sur cet habillage le vert de marque se lisait comme
-       une pièce rapportée de l'institutionnel. Le blanc tient à 8.7:1 dessus. */
+       une pièce rapportée de l'institutionnel. Le blanc tient à 8.7:1 dessus.
+
+       Surface et accent portent ICI la même valeur, contrairement aux autres
+       habillages. Les distinguer donnait deux bleus voisins sur un même écran
+       — bouton primaire marine, onglet de filtre plus clair — sans que l'écart
+       porte de sens. Ailleurs l'écart se lit (vert vif contre vert profond,
+       ciel contre vert) et reste. */
     --os-brand-green:  #1E40AF;   /* fond du bouton primaire */
-    --os-brand-cyan:   #2563EB;   /* lien et accent, distinct du fond, 5.2:1 sur blanc */
+    --os-brand-cyan:   #1E40AF;   /* lien et accent, 8.7:1 sur blanc */
 
     --os-text-primary: #1A232E;
     --os-text-secondary:#2D3E4F;
