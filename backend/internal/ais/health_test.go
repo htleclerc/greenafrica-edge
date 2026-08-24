@@ -30,7 +30,7 @@ func TestHealth(t *testing.T) {
 		{
 			"a reçu, puis s'est tu",
 			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
-				MessagesTotal: 10, LastMessageAt: now.Add(-30 * time.Minute)},
+				MessagesTotal: 10, PositionsWritten: 10, LastMessageAt: now.Add(-30 * time.Minute)},
 			"degraded", "dernier message il y a 30m",
 		},
 		{
@@ -42,9 +42,20 @@ func TestHealth(t *testing.T) {
 			"degraded", "dernier echec : websocket: close 1006",
 		},
 		{
+			// Le cas du 24/08 : deux heures de flux continu, pas une ligne
+			// ecrite, parce que l'app Fly n'avait pas les secrets Supabase.
+			// Rien ne le signalait.
+			"reçoit sans rien écrire",
+			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
+				MessagesTotal: 4000, PositionsWritten: 0, WriteErrors: 4000,
+				LastWriteError: "SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY absent — aucune ecriture possible",
+				LastMessageAt:  now.Add(-2 * time.Second)},
+			"degraded", "aucune position ecrite",
+		},
+		{
 			"flux vivant",
 			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
-				MessagesTotal: 10, LastMessageAt: now.Add(-10 * time.Second)},
+				MessagesTotal: 10, PositionsWritten: 10, LastMessageAt: now.Add(-10 * time.Second)},
 			"ok", "",
 		},
 	}
