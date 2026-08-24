@@ -16,6 +16,15 @@ END $$;
 
 -- 2. disputes_insert_own policy was tightened (mig 007 had a single-clause
 --    policy; mig 039 added the transaction-ownership EXISTS check)
+--
+-- La mig 135 (owner_members) a deplace la recherche du proprietaire dans
+-- public.current_shipowner_id() : le mot « shipowners » ne figure plus dans le
+-- texte de la policy, il est desormais dans le corps de la fonction. La regle
+-- de portee est identique (shipowners.profile_id = auth.uid(), plus les
+-- membres actifs) et la mig 135 y ajoute la sous-permission can_dispute — la
+-- policy est donc plus stricte, pas plus permissive. On teste l'intention,
+-- pas la formulation : la portee cote armateur doit passer par l'une des deux
+-- formes, jamais etre absente.
 DO $$
 DECLARE clause TEXT;
 BEGIN
@@ -23,8 +32,9 @@ BEGIN
    WHERE tablename='disputes' AND policyname='disputes_insert_own';
   ASSERT clause LIKE '%transactions%',
     'disputes_insert_own should reference transactions for ownership check';
-  ASSERT clause LIKE '%shipowners%',
-    'disputes_insert_own should reference shipowners for owner-side ownership';
+  ASSERT clause LIKE '%shipowners%' OR clause LIKE '%current_shipowner_id%',
+    'disputes_insert_own should scope owner-side inserts, either via a direct '
+    'shipowners lookup (mig 039) or via current_shipowner_id() (mig 135)';
 END $$;
 
 -- 3. shipowners audit columns added
