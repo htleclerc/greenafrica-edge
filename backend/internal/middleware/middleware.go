@@ -29,7 +29,18 @@ func Logger(next http.Handler) http.Handler {
 
 // Auth validates the API_SECRET in the Authorization header.
 // Skips /health endpoint.
+// Auth gates every route except /health and /. A NON-OBVIOUS behaviour is
+// preserved for local development: an empty secret disables authentication
+// entirely. That silence has already cost us — l'app Fly `africgreen` n'avait
+// pas de secret API_SECRET, et l'API de staging a servi /api/v1/ais/start et
+// /api/v1/ais/stop en clair sur Internet sans que rien ne le signale. Le
+// comportement reste le même, mais il se voit maintenant au démarrage.
 func Auth(secret string) Middleware {
+	if secret == "" {
+		log.Println("[auth] ATTENTION: API_SECRET est vide — l'authentification " +
+			"est DÉSACTIVÉE, toutes les routes sont ouvertes. Acceptable en local, " +
+			"jamais sur un environnement joignable depuis Internet.")
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/health" || r.URL.Path == "/" || secret == "" {
