@@ -21,6 +21,18 @@ func openTestDB(t *testing.T) (*sql.DB, func()) {
 	if err != nil {
 		t.Skipf("supadb.Open: %v (skipping; bring up local Supabase)", err)
 	}
+
+	// sql.Open ne compose pas : il valide l'URL et rend un pool paresseux. Sans
+	// ce ping, la garde ci-dessus ne se declenchait jamais quand la base etait
+	// absente -- l'echec surgissait vingt lignes plus bas, en Fatalf, dans
+	// chaque test, au lieu du saut prevu.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		t.Skipf("base de test injoignable: %v (skipping; bring up local Supabase)", err)
+	}
+
 	return db, func() { db.Close() }
 }
 
