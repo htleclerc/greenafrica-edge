@@ -80,9 +80,9 @@ export function ShippingAgentView() {
                         onClick={() => setPeriod(p)}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                         style={{
-                            backgroundColor: period === p ? 'rgba(16,185,129,0.15)' : 'transparent',
-                            color: period === p ? '#10B981' : 'var(--os-text-muted)',
-                            border: `1px solid ${period === p ? 'rgba(16,185,129,0.3)' : 'var(--os-border)'}`,
+                            backgroundColor: period === p ? 'color-mix(in srgb, var(--os-brand-green) 15%, transparent)' : 'transparent',
+                            color: period === p ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
+                            border: `1px solid ${period === p ? 'color-mix(in srgb, var(--os-brand-green) 30%, transparent)' : 'var(--os-border)'}`,
                         }}
                     >
                         {t(`period_${p}`)}
@@ -100,7 +100,7 @@ export function ShippingAgentView() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
                             <XAxis type="number" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`} />
                             <YAxis type="category" dataKey="vesselName" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} width={120} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                             <Bar dataKey="taxAmount" name="Tax (USD)" fill="#00D97E" fillOpacity={0.85} radius={[0, 4, 4, 0]} barSize={18} />
                         </BarChart>
                     </ResponsiveContainer>
@@ -260,7 +260,7 @@ function FinanceAdminView() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                             <XAxis dataKey="category" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                             <Bar dataKey="revenue" name="Revenue" radius={[4, 4, 0, 0]}>
                                 {data.revenueByCategory.map((_, i) => (
                                     <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} fillOpacity={0.85} />
@@ -280,7 +280,7 @@ function FinanceAdminView() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
                             <XAxis type="number" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`} />
                             <YAxis type="category" dataKey="vesselName" tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} width={120} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                             <Bar dataKey="revenue" name="Revenue" fill="#38BDF8" fillOpacity={0.85} radius={[0, 4, 4, 0]} barSize={18} />
                         </BarChart>
                     </ResponsiveContainer>

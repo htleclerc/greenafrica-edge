@@ -2,20 +2,15 @@ package reconcile
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 func TestRunOnce_DetectsEEZExit(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, _ := supadb.Open(url)
+	db := testdb.Open(t)
 	defer db.Close()
 
 	// Fixture vessel with latest position in INTERNATIONAL waters + alert ARRIVED
@@ -63,11 +58,7 @@ func TestRunOnce_DetectsEEZExit(t *testing.T) {
 }
 
 func TestStart_RunsTicksUntilContextCancel(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, _ := supadb.Open(url)
+	db := testdb.Open(t)
 	defer db.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())

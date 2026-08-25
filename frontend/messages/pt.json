@@ -1212,7 +1212,6 @@
     "skin_switch": "Tema Visual",
     "skin_emerald": "Esmeralda Escuro",
     "skin_navy": "Comando Naval",
-    "skin_institutional": "Institucional",
     "skin_active": "Ativo",
     "demo_mode": "MODO DEMO",
     "demo_data_fictive": "Os dados apresentados são fictícios",
@@ -1346,8 +1345,6 @@
     "settings_preferences": "Preferências",
     "settings_sessions": "Sessões Ativas",
     "settings_profile_photo": "Foto do Perfil",
-    "settings_change_photo": "Alterar foto",
-    "settings_photo_hint": "JPG, PNG — máx 2 MB",
     "settings_identity": "Identidade",
     "settings_identity_desc": "Informações vinculadas à sua conta governamental.",
     "settings_full_name": "Nome Completo",
@@ -1382,19 +1379,8 @@
     "settings_danger_zone_desc": "Ações irreversíveis relacionadas à sua conta.",
     "settings_disconnect_sessions": "Desconectar todas as sessões ativas",
     "settings_request_deletion": "Solicitar exclusão da conta",
-    "settings_notif_operational": "Alertas Operacionais",
-    "settings_notif_operational_desc": "Notificações relacionadas a embarcações e conformidade.",
     "settings_notif_vessel_alert": "Alerta de não conformidade de embarcação",
     "settings_notif_payment_due": "Pagamento de imposto em atraso",
-    "settings_notif_new_declaration": "Nova declaração DCS recebida",
-    "settings_notif_system_admin": "Sistema e Administração",
-    "settings_notif_system_update": "Atualizações do sistema",
-    "settings_notif_audit_activity": "Atividade nos registros de auditoria",
-    "settings_notif_reports": "Relatórios e Resumos",
-    "settings_notif_weekly_report": "Relatório semanal automático",
-    "settings_notif_email_digest": "Resumo diário por email",
-    "settings_notif_channels": "Canais Alternativos",
-    "settings_notif_sms_critical": "SMS apenas para alertas críticos",
     "settings_lang_region": "Idioma e Região",
     "settings_interface_language": "Idioma da Interface",
     "settings_date_format": "Formato de Data",
@@ -1529,7 +1515,12 @@
     "settings_sessions_empty": "No open session.",
     "settings_session_elevated": "Second factor",
     "settings_session_unknown_device": "Unidentified device",
-    "settings_deletion_unavailable": "Account deletion still goes through support."
+    "settings_deletion_unavailable": "Account deletion still goes through support.",
+    "settings_photo_initials": "Initials are derived from your name. Uploading a photo is not offered yet.",
+    "settings_notif_email": "Email notifications",
+    "settings_notif_email_desc": "What you want to receive. Covers informational messages only.",
+    "settings_notif_monthly_statement": "Monthly account statement",
+    "settings_notif_always_sent": "Payment confirmations, refusals, KYC decisions and changes to who can access your account are always sent — they cannot be turned off."
   },
   "Overview": {
     "kpi_active_vessels": "Embarcações ativas na ZEE",
@@ -3463,7 +3454,8 @@
       "simulator": "Simulador Fiscal",
       "tco": "Painel TCO",
       "disputes": "Disputas",
-      "notifications": "Notificações"
+      "notifications": "Notificações",
+      "account": "My account"
     },
     "login": {
       "title": "Sign in with your email",
@@ -4043,10 +4035,6 @@
           "label": "AfricGreen wallet",
           "covers": "Balance {balance} — sufficient",
           "short": "Balance {balance} — insufficient"
-        },
-        "desk": {
-          "label": "Port cash desk",
-          "hint": "Cash · immediate receipt"
         }
       },
       "receipt": "Recibo",

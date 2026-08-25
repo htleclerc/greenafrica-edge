@@ -2,12 +2,11 @@ package geofence
 
 import (
 	"context"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 const (
@@ -17,14 +16,7 @@ const (
 
 func openDB(t *testing.T) *Store {
 	t.Helper()
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
+	db := testdb.Open(t)
 	t.Cleanup(func() { db.Close() })
 	return NewStore(db)
 }
@@ -170,14 +162,7 @@ func TestPorts_ExactlyThree(t *testing.T) {
 // ── Cache test — second call within TTL does not re-query ─────────────────────
 
 func TestCache_SecondCallHitsCache(t *testing.T) {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	db, err := supadb.Open(url)
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
+	db := testdb.Open(t)
 	defer db.Close()
 
 	s := NewStore(db)
@@ -189,7 +174,7 @@ func TestCache_SecondCallHitsCache(t *testing.T) {
 	// the cache is invalidated, the point must return no match (ok=false).
 	const testRef = "test-cache-intl-waters"
 	const testLat, testLng = 5.0, 47.0
-	_, err = db.ExecContext(ctx, `
+	_, err := db.ExecContext(ctx, `
 		INSERT INTO public.geofences (ref, jurisdiction_id, mode, kind, name, geometry, active)
 		VALUES ($1, '00000000-0000-4000-8000-00000000534f',
 		        'MARITIME', 'PORT_VICINITY', 'Cache test geofence (international waters)',

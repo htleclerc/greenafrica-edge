@@ -21,6 +21,18 @@ func openTestDB(t *testing.T) (*sql.DB, func()) {
 	if err != nil {
 		t.Skipf("supadb.Open: %v (skipping; bring up local Supabase)", err)
 	}
+
+	// sql.Open ne compose pas : il valide l'URL et rend un pool paresseux. Sans
+	// ce ping, la garde ci-dessus ne se declenchait jamais quand la base etait
+	// absente -- l'echec surgissait vingt lignes plus bas, en Fatalf, dans
+	// chaque test, au lieu du saut prevu.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		t.Skipf("base de test injoignable: %v (skipping; bring up local Supabase)", err)
+	}
+
 	return db, func() { db.Close() }
 }
 
@@ -38,6 +50,19 @@ func TestWatcher_AllowMatch_CreatesUnclaimedAlert(t *testing.T) {
 	defer db.ExecContext(context.Background(),
 		`UPDATE public.app_config SET value='false'::jsonb
 		  WHERE key='feature.ais_global_enabled'`)
+
+	// Ce test porte sur le chemin qui ALERTE. Depuis la mig 139, le mode
+	// observation est actif par defaut et une correspondance d'allow-list
+	// n'ecrit qu'une proposition — il faut donc le couper explicitement ici.
+	// Le chemin par defaut est couvert par TestWatcher_ObserveOnly_*.
+	if _, err := db.ExecContext(context.Background(),
+		`INSERT INTO public.app_config (key, value) VALUES ('feature.ais_global_observe_only', 'false'::jsonb)
+		 ON CONFLICT (key) DO UPDATE SET value = 'false'::jsonb`); err != nil {
+		t.Fatalf("observe_only setup: %v", err)
+	}
+	defer db.ExecContext(context.Background(),
+		`UPDATE public.app_config SET value='true'::jsonb
+		  WHERE key='feature.ais_global_observe_only'`)
 
 	// Fixture vessel
 	var vesselID string

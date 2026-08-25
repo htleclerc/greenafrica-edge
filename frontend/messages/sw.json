@@ -696,7 +696,6 @@
     "skin_switch": "Mandhari ya Kuona",
     "skin_emerald": "Zumaridi Giza",
     "skin_navy": "Amri ya Navy",
-    "skin_institutional": "Kitaasisi",
     "skin_active": "Inatumika",
     "demo_mode": "HALI YA MAONYESHO",
     "demo_data_fictive": "Data inayoonyeshwa ni ya kubuni",
@@ -830,8 +829,6 @@
     "settings_preferences": "Mapendeleo",
     "settings_sessions": "Vipindi Vinavyofanya Kazi",
     "settings_profile_photo": "Picha ya Wasifu",
-    "settings_change_photo": "Badilisha picha",
-    "settings_photo_hint": "JPG, PNG — upeo wa 2 MB",
     "settings_identity": "Utambulisho",
     "settings_identity_desc": "Taarifa zinazohusiana na akaunti yako ya serikali.",
     "settings_full_name": "Jina Kamili",
@@ -866,19 +863,8 @@
     "settings_danger_zone_desc": "Vitendo visivyoweza kutenduliwa vinavyohusiana na akaunti yako.",
     "settings_disconnect_sessions": "Kata vipindi vyote vinavyofanya kazi",
     "settings_request_deletion": "Omba kufuta akaunti",
-    "settings_notif_operational": "Tahadhari za Uendeshaji",
-    "settings_notif_operational_desc": "Arifa zinazohusiana na meli na kufuata sheria.",
     "settings_notif_vessel_alert": "Tahadhari ya kutofuata sheria kwa meli",
     "settings_notif_payment_due": "Malipo ya kodi yaliyochelewa",
-    "settings_notif_new_declaration": "Tamko jipya la DCS limepokelewa",
-    "settings_notif_system_admin": "Mfumo na Utawala",
-    "settings_notif_system_update": "Masasisho ya mfumo",
-    "settings_notif_audit_activity": "Shughuli katika kumbukumbu za ukaguzi",
-    "settings_notif_reports": "Ripoti na Muhtasari",
-    "settings_notif_weekly_report": "Ripoti ya kila wiki ya kiotomatiki",
-    "settings_notif_email_digest": "Muhtasari wa barua pepe wa kila siku",
-    "settings_notif_channels": "Njia Mbadala",
-    "settings_notif_sms_critical": "SMS kwa tahadhari muhimu pekee",
     "settings_lang_region": "Lugha na Eneo",
     "settings_interface_language": "Lugha ya Kiolesura",
     "settings_date_format": "Muundo wa Tarehe",
@@ -1013,7 +999,12 @@
     "settings_sessions_empty": "No open session.",
     "settings_session_elevated": "Second factor",
     "settings_session_unknown_device": "Unidentified device",
-    "settings_deletion_unavailable": "Account deletion still goes through support."
+    "settings_deletion_unavailable": "Account deletion still goes through support.",
+    "settings_photo_initials": "Initials are derived from your name. Uploading a photo is not offered yet.",
+    "settings_notif_email": "Email notifications",
+    "settings_notif_email_desc": "What you want to receive. Covers informational messages only.",
+    "settings_notif_monthly_statement": "Monthly account statement",
+    "settings_notif_always_sent": "Payment confirmations, refusals, KYC decisions and changes to who can access your account are always sent — they cannot be turned off."
   },
   "Overview": {
     "kpi_active_vessels": "Meli zinazofanya kazi katika ZEE",
@@ -2947,7 +2938,8 @@
       "simulator": "Kikokotoo cha Kodi",
       "tco": "Dashibodi ya TCO",
       "disputes": "Migogoro",
-      "notifications": "Arifa"
+      "notifications": "Arifa",
+      "account": "My account"
     },
     "login": {
       "title": "Sign in with your email",
@@ -3494,10 +3486,6 @@
           "label": "AfricGreen wallet",
           "covers": "Balance {balance} — sufficient",
           "short": "Balance {balance} — insufficient"
-        },
-        "desk": {
-          "label": "Port cash desk",
-          "hint": "Cash · immediate receipt"
         }
       },
       "receipt": "Risiti",

@@ -106,6 +106,23 @@ type Stats struct {
 	Health       string `json:"health"`                  // ok | degraded | stopped
 	HealthReason string `json:"health_reason,omitempty"` // filled when not ok
 	LastError    string `json:"last_error,omitempty"`    // dernier echec de connexion
+
+	// Recevoir n'est pas ecrire. Le 2026-08-24 la staging a tenu deux heures
+	// de flux continu en n'ecrivant pas une seule position : l'app Fly n'avait
+	// ni SUPABASE_URL ni SUPABASE_SERVICE_ROLE_KEY, et les quatre appels REST
+	// du handler jetaient leur resultat sans un mot. Un ingesteur qui recoit
+	// et n'ecrit pas doit se declarer degrade.
+	PositionsWritten int64  `json:"positions_written"`
+	WriteErrors      int64  `json:"write_errors"`
+	LastWriteError   string `json:"last_write_error,omitempty"`
+
+	// Une trame recue mais inexploitable rearme le delai d'inactivite sans
+	// rien compter : la connexion parait vivante et les compteurs restent a
+	// zero. C'est l'etat exact de la staging le 2026-08-24 — neuf minutes
+	// sans timeout, zero message, zero erreur. Sans ce compteur, cet etat est
+	// indiscernable d'un silence total.
+	FramesDiscarded int64  `json:"frames_discarded"`
+	LastFrame       string `json:"last_discarded_frame,omitempty"`
 }
 
 // staleAfter is how long the ingester may go without a single message before
@@ -125,6 +142,65 @@ var aisReconnect = backoff.Policy{Min: 5 * time.Second, Max: 5 * time.Minute}
 // seuil, une connexion qui meurt au bout d'une seconde remettrait le compteur
 // a plat et on retomberait sur une boucle serree.
 const healthyConn = time.Minute
+
+// postJSON envoie une ecriture PostgREST et rend une erreur exploitable. Le
+// code precedent appelait http.DefaultClient.Do sans regarder ni l'erreur ni
+// le statut : une URL vide, une cle absente ou un 401 passaient pour un succes.
+func (ing *Ingester) postJSON(path string, payload []byte) error {
+	if ing.cfg.SupabaseURL == "" || ing.cfg.SupabaseKey == "" {
+		return fmt.Errorf("SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY absent — aucune ecriture possible")
+	}
+	req, err := http.NewRequest("POST", ing.cfg.SupabaseURL+path, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", ing.cfg.SupabaseKey)
+	req.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "resolution=merge-duplicates")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("%s: HTTP %d", path, resp.StatusCode)
+	}
+	return nil
+}
+
+// noteDiscardedFrame garde la trace d'une trame recue et inexploitable. Les
+// trois premieres sont journalisees en clair — c'est ce que le serveur nous
+// dit, et jusqu'ici on le jetait sans le lire. Les suivantes sont comptees.
+// Les donnees AIS sont publiques : aucune information sensible ici.
+func (ing *Ingester) noteDiscardedFrame(raw []byte) {
+	body := string(raw)
+	if len(body) > 220 {
+		body = body[:220] + "…"
+	}
+	ing.mu.Lock()
+	ing.stats.FramesDiscarded++
+	ing.stats.LastFrame = body
+	n := ing.stats.FramesDiscarded
+	ing.mu.Unlock()
+	if n <= 3 || n%500 == 0 {
+		log.Printf("[AIS] trame inexploitable (%d au total): %s", n, body)
+	}
+}
+
+// noteWriteError compte l'echec et le journalise sans inonder : le premier,
+// puis un sur cent. Un flux AIS dense produirait des milliers de lignes par
+// minute si on les logguait toutes, et on ne verrait plus rien.
+func (ing *Ingester) noteWriteError(err error) {
+	ing.mu.Lock()
+	ing.stats.WriteErrors++
+	ing.stats.LastWriteError = err.Error()
+	n := ing.stats.WriteErrors
+	ing.mu.Unlock()
+	if n == 1 || n%100 == 0 {
+		log.Printf("[AIS] ECRITURE EN ECHEC (%d au total): %v", n, err)
+	}
+}
 
 // noteConnError enregistre un echec de connexion (compteur + dernier message)
 // pour que /api/v1/ais/status puisse le montrer, au lieu d'obliger a lire les
@@ -236,9 +312,19 @@ func health(st Stats, now time.Time) (string, string) {
 		if st.StartedAt.IsZero() || now.Sub(st.StartedAt) < staleAfter {
 			return "ok", "" // just started, nothing received yet — not a verdict
 		}
+		if st.FramesDiscarded > 0 {
+			return "degraded", fmt.Sprintf(
+				"%d trames recues mais aucune exploitable depuis le demarrage il y a %s — derniere trame : %s",
+				st.FramesDiscarded, now.Sub(st.StartedAt).Truncate(time.Minute), st.LastFrame)
+		}
 		return "degraded", withLastError(fmt.Sprintf(
 			"aucun message depuis le demarrage il y a %s (%d erreurs de connexion)",
 			now.Sub(st.StartedAt).Truncate(time.Minute), st.Errors), st)
+	}
+	if st.MessagesTotal > 0 && st.PositionsWritten == 0 {
+		return "degraded", withLastError(fmt.Sprintf(
+			"%d messages recus, aucune position ecrite (%d echecs d'ecriture)",
+			st.MessagesTotal, st.WriteErrors), st)
 	}
 	if d := now.Sub(st.LastMessageAt); d > staleAfter {
 		return "degraded", withLastError(fmt.Sprintf(
@@ -251,10 +337,14 @@ func health(st Stats, now time.Time) (string, string) {
 // withLastError accroche le dernier echec au motif : sans lui, il faut aller
 // lire les logs de l'hebergeur pour savoir POURQUOI rien n'arrive.
 func withLastError(reason string, st Stats) string {
-	if st.LastError == "" {
+	detail := st.LastWriteError
+	if detail == "" {
+		detail = st.LastError
+	}
+	if detail == "" {
 		return reason
 	}
-	return reason + " — dernier echec : " + st.LastError
+	return reason + " — dernier echec : " + detail
 }
 
 // run spawns two parallel goroutines:
@@ -527,10 +617,15 @@ func (ing *Ingester) connectAndRead(sub subscribeFn) error {
 
 		var msg AISMessage
 		if err := json.Unmarshal(rawMsg, &msg); err != nil {
+			ing.noteDiscardedFrame(rawMsg)
 			continue
 		}
 
 		if msg.MetaData.MMSIStr == "" {
+			// Ce n'est pas forcement du bruit : aisstream repond aussi par des
+			// trames de service (confirmation, erreur) qui passent ici sans
+			// MMSI. Les taire revient a ignorer ce que le serveur nous dit.
+			ing.noteDiscardedFrame(rawMsg)
 			continue
 		}
 
@@ -567,12 +662,10 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 		"category":          "CARGO",
 		"compliance_status": "APPROACHING",
 	})
-	req, _ := http.NewRequest("POST", ing.cfg.SupabaseURL+"/rest/v1/vessels", bytes.NewReader(vesselPayload))
-	req.Header.Set("apikey", ing.cfg.SupabaseKey)
-	req.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Prefer", "resolution=merge-duplicates")
-	http.DefaultClient.Do(req)
+	if err := ing.postJSON("/rest/v1/vessels", vesselPayload); err != nil {
+		ing.noteWriteError(fmt.Errorf("upsert navire %s: %w", msg.MetaData.MMSIStr, err))
+		return
+	}
 
 	// Fetch vessel ID for position insert
 	lookupURL := fmt.Sprintf("%s/rest/v1/vessels?mmsi=eq.%s&select=id&limit=1", ing.cfg.SupabaseURL, msg.MetaData.MMSIStr)
@@ -580,7 +673,13 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 	lookupReq.Header.Set("apikey", ing.cfg.SupabaseKey)
 	lookupReq.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
 	lookupResp, err := http.DefaultClient.Do(lookupReq)
-	if err != nil || lookupResp.StatusCode != 200 {
+	if err != nil {
+		ing.noteWriteError(fmt.Errorf("recherche navire %s: %w", msg.MetaData.MMSIStr, err))
+		return
+	}
+	if lookupResp.StatusCode != 200 {
+		lookupResp.Body.Close()
+		ing.noteWriteError(fmt.Errorf("recherche navire %s: HTTP %d", msg.MetaData.MMSIStr, lookupResp.StatusCode))
 		return
 	}
 	var vessels []struct {
@@ -589,6 +688,9 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 	json.NewDecoder(lookupResp.Body).Decode(&vessels)
 	lookupResp.Body.Close()
 	if len(vessels) == 0 {
+		// L'upsert vient de reussir : ne rien trouver signale une incoherence
+		// (RLS, doublon de MMSI), pas un cas normal.
+		ing.noteWriteError(fmt.Errorf("navire %s introuvable juste apres son upsert", msg.MetaData.MMSIStr))
 		return
 	}
 
@@ -607,11 +709,13 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 		"speed_knots": sog,
 		"recorded_at": msg.MetaData.TimeUTC,
 	})
-	posReq, _ := http.NewRequest("POST", ing.cfg.SupabaseURL+"/rest/v1/vessel_positions", bytes.NewReader(posPayload))
-	posReq.Header.Set("apikey", ing.cfg.SupabaseKey)
-	posReq.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
-	posReq.Header.Set("Content-Type", "application/json")
-	http.DefaultClient.Do(posReq)
+	if err := ing.postJSON("/rest/v1/vessel_positions", posPayload); err != nil {
+		ing.noteWriteError(fmt.Errorf("insertion position %s: %w", msg.MetaData.MMSIStr, err))
+		return
+	}
+	ing.mu.Lock()
+	ing.stats.PositionsWritten++
+	ing.mu.Unlock()
 
 	// Fire corridor + EEZ hooks under the ingester's ctx so Stop() cancels
 	// in-flight calls. Errors are logged but do not break ingestion — the

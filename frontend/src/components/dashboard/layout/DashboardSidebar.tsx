@@ -7,7 +7,7 @@ import {
     BarChart2, Settings, DollarSign, TrendingUp,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
     Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
-    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck,
+    LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck, UserCog,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { filterNavItems } from '@/lib/rbac';
@@ -81,6 +81,7 @@ const OPERATOR_ICONS: Record<string, React.ReactNode> = {
     tco:           <DollarSign className="w-5 h-5" />,
     disputes:      <Scale className="w-5 h-5" />,
     notifications: <Bell className="w-5 h-5" />,
+    account:       <UserCog className="w-5 h-5" />,
 };
 
 interface DashboardSidebarProps {
@@ -361,7 +362,7 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
                     transition: 'left 220ms cubic-bezier(0.4,0,0.2,1), background-color 150ms',
                     cursor: 'pointer',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--os-surface-2)'; (e.currentTarget as HTMLElement).style.color = '#10B981'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--os-surface-2)'; (e.currentTarget as HTMLElement).style.color = 'var(--os-brand-green)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--os-surface-3)'; (e.currentTarget as HTMLElement).style.color = 'var(--os-text-muted)'; }}
             >
                 {expanded
@@ -392,9 +393,9 @@ function NavButton({ item, isActive, expanded, t, onNavigate }: NavButtonProps) 
             title={expanded ? undefined : label}
             className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group"
             style={{
-                color: isActive ? '#10B981' : 'var(--os-text-muted)',
-                backgroundColor: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
-                boxShadow: isActive ? 'inset 2px 0 0 #10B981' : 'none',
+                color: isActive ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
+                backgroundColor: isActive ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)' : 'transparent',
+                boxShadow: isActive ? 'inset 2px 0 0 var(--os-brand-green)' : 'none',
                 minHeight: 40,
             }}
         >
@@ -476,9 +477,9 @@ function OperatorNavButton({ item, icon, isActive, expanded, t, onNavigate }: Op
             title={expanded ? undefined : label}
             className="relative flex items-center gap-2.5 px-2.5 rounded-xl transition-all flex-shrink-0 group"
             style={{
-                color: isActive ? '#10B981' : 'var(--os-text-muted)',
-                backgroundColor: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
-                boxShadow: isActive ? 'inset 2px 0 0 #10B981' : 'none',
+                color: isActive ? 'var(--os-brand-green)' : 'var(--os-text-muted)',
+                backgroundColor: isActive ? 'color-mix(in srgb, var(--os-brand-green) 12%, transparent)' : 'transparent',
+                boxShadow: isActive ? 'inset 2px 0 0 var(--os-brand-green)' : 'none',
                 minHeight: 40,
             }}
         >

@@ -1,28 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import {
-    themeForSkin, resolveTheme, parseThemePreference, parseThemeMode, parseSkin,
+    migrateRetiredSkin, resolveTheme, parseThemePreference, parseThemeMode, parseSkin,
 } from './theme';
 
-describe('themeForSkin', () => {
-    it('rend clair le skin institutional, sombre les autres', () => {
-        expect(themeForSkin('institutional')).toBe('light');
-        expect(themeForSkin('emerald')).toBe('dark');
-        expect(themeForSkin('navy')).toBe('dark');
-    });
-});
-
 describe('resolveTheme', () => {
-    it('suit le skin tant que l’utilisateur n’a rien choisi', () => {
-        expect(resolveTheme('auto', 'institutional')).toBe('light');
-        expect(resolveTheme('auto', 'emerald')).toBe('dark');
+    it('retombe sur le défaut fourni tant que rien n’a été choisi', () => {
+        expect(resolveTheme('auto', 'light')).toBe('light');
+        expect(resolveTheme('auto', 'dark')).toBe('dark');
+        expect(resolveTheme('auto')).toBe('dark');
     });
 
-    // C'est tout l'objet du réglage : 1a et 1b sont deux thèmes offerts, pas la
-    // conséquence d'un choix de skin.
-    it('rend le choix explicite indépendant du skin', () => {
-        expect(resolveTheme('dark', 'institutional')).toBe('dark');
-        expect(resolveTheme('light', 'emerald')).toBe('light');
-        expect(resolveTheme('light', 'navy')).toBe('light');
+    it('rend le choix explicite indépendant du défaut', () => {
+        expect(resolveTheme('dark', 'light')).toBe('dark');
+        expect(resolveTheme('light', 'dark')).toBe('light');
     });
 });
 
@@ -49,13 +39,45 @@ describe('parseThemeMode', () => {
 });
 
 describe('parseSkin', () => {
-    it('accepte les trois skins connus', () => {
+    it('accepte les habillages connus', () => {
+        expect(parseSkin('emerald')).toBe('emerald');
         expect(parseSkin('navy')).toBe('navy');
-        expect(parseSkin('institutional')).toBe('institutional');
     });
     it('retombe sur le défaut sur une valeur inconnue', () => {
         expect(parseSkin('vaporwave')).toBe('emerald');
         expect(parseSkin(null)).toBe('emerald');
-        expect(parseSkin(null, 'institutional')).toBe('institutional');
+        expect(parseSkin(null, 'navy')).toBe('navy');
+    });
+    it('ne reconnaît plus l’habillage retiré', () => {
+        expect(parseSkin('institutional')).toBe('emerald');
+    });
+});
+
+/**
+ * « Institutional » posait le thème clair. Le remplacer par emerald sans emporter
+ * le clair ferait basculer en sombre exactement les gens qui l'avaient choisi
+ * pour sa clarté — c'est le seul point où ce retrait pouvait se voir.
+ */
+describe('migrateRetiredSkin', () => {
+    it('emporte le clair avec l’habillage retiré', () => {
+        expect(migrateRetiredSkin('institutional', null))
+            .toEqual({ skin: 'emerald', preference: 'light', changed: true });
+    });
+
+    it('respecte un choix de thème déjà fait, même contraire', () => {
+        expect(migrateRetiredSkin('institutional', 'dark'))
+            .toEqual({ skin: 'emerald', preference: 'dark', changed: true });
+    });
+
+    it('ne touche pas un habillage encore valide', () => {
+        expect(migrateRetiredSkin('navy', 'light'))
+            .toEqual({ skin: 'navy', preference: 'light', changed: false });
+        expect(migrateRetiredSkin(null, null))
+            .toEqual({ skin: 'emerald', preference: 'auto', changed: false });
+    });
+
+    it('ne se dit « migré » qu’une fois — sinon elle se rejouerait à chaque visite', () => {
+        const once = migrateRetiredSkin('institutional', null);
+        expect(migrateRetiredSkin(once.skin, once.preference).changed).toBe(false);
     });
 });

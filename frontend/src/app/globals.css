@@ -4,10 +4,10 @@
    GREEN-GATE THEME SYSTEM
    ─────────────────────────────────────────────────────────────────────────────
    Two independent axes:
-     1. Skin  (data-skin):  emerald | navy | institutional
+     1. Skin  (data-skin):  emerald | navy
      2. Mode  (data-theme): dark | light
 
-   Every skin has both a dark and light variant = 6 combinations.
+   Every skin has both a dark and light variant = 4 combinations.
    :root holds shared structural vars only.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -97,7 +97,7 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   LE CLAIR : UNE SEULE RECETTE, TROIS TEINTES
+   LE CLAIR : UNE SEULE RECETTE, DEUX TEINTES
 
    Les trois habillages partagent la même échelle — mêmes clartés, mêmes
    saturations, mêmes paliers d'alpha — et ne diffèrent que par la teinte de
@@ -270,8 +270,8 @@
     --ais-dark-card: #FFFFFF;
     --ais-dark-surface: #E6EDF4;
     --ais-border: rgba(37, 99, 235, 0.12);
-    --ais-emerald: #059669;
-    --ais-emerald-dark: #047857;
+    --ais-emerald: #1E40AF;
+    --ais-emerald-dark: #17408B;
     --ais-yellow: #D97706;
     --ais-yellow-light: #F59E0B;
     --ais-text-muted: #4B5A6B;
@@ -321,8 +321,16 @@
     --os-border:       rgba(37, 99, 235, 0.12);
     --os-border-strong:rgba(37, 99, 235, 0.25);
 
-    --os-brand-green:  #05875E;   /* fond du bouton primaire, tenu à 4.5:1 sur blanc */
-    --os-brand-cyan:   #2563EB;   /* lien et accent, tenu à 4.5:1 sur blanc */
+    /* Marine et non vert : sur cet habillage le vert de marque se lisait comme
+       une pièce rapportée de l'institutionnel. Le blanc tient à 8.7:1 dessus.
+
+       Surface et accent portent ICI la même valeur, contrairement aux autres
+       habillages. Les distinguer donnait deux bleus voisins sur un même écran
+       — bouton primaire marine, onglet de filtre plus clair — sans que l'écart
+       porte de sens. Ailleurs l'écart se lit (vert vif contre vert profond,
+       ciel contre vert) et reste. */
+    --os-brand-green:  #1E40AF;   /* fond du bouton primaire */
+    --os-brand-cyan:   #1E40AF;   /* lien et accent, 8.7:1 sur blanc */
 
     --os-text-primary: #1A232E;
     --os-text-secondary:#2D3E4F;
@@ -341,165 +349,12 @@
    Default state is light (as designed). Dark mode available too.
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* ── Institutional Dark ── */
-[data-skin="institutional"] {
-    --ais-font: var(--font-sora), 'Segoe UI', sans-serif;
-    --background: #0C1A14;
-    --foreground: #E8EDE6;
-
-    --ais-dark: #0C1A14;
-    --ais-dark-card: #14261E;
-    --ais-dark-surface: #1A3028;
-    --ais-border: rgba(5, 150, 105, 0.12);
-    --ais-emerald: #059669;
-    --ais-emerald-dark: #047857;
-    --ais-yellow: #D97706;
-    --ais-yellow-light: #F59E0B;
-    --ais-text-muted: #6B8F7D;
-    --ais-text-secondary: #9AB5A8;
-
-    --ais-nav-bg:                rgba(12, 26, 20, 0.95);
-    --ais-nav-border:            rgba(5, 150, 105, 0.10);
-    --ais-nav-text:              #E8EDE6;
-    --ais-nav-text-muted:        #6B8F7D;
-    --ais-nav-item-active-bg:    rgba(5, 150, 105, 0.08);
-    --ais-nav-item-active-border:rgba(5, 150, 105, 0.2);
-    --ais-footer-bg:             #081210;
-    --ais-footer-text:           #6B8F7D;
-    --ais-footer-text-bright:    #E8EDE6;
-    --ais-footer-border:         rgba(5, 150, 105, 0.08);
-    --ais-social-bg:             rgba(5, 150, 105, 0.06);
-
-    --ais-page-bg:               #0C1A14;
-    --ais-page-bg-alt:           #081210;
-    --ais-page-card:             #14261E;
-    --ais-page-surface:          #1A3028;
-    --ais-page-text:             #E8EDE6;
-    --ais-page-text-secondary:   #9AB5A8;
-    --ais-page-text-muted:       #6B8F7D;
-    --ais-page-text-dim:         #4A6B5C;
-    --ais-page-border:           rgba(5, 150, 105, 0.10);
-    --ais-page-glow:             rgba(5, 150, 105, 0.12);
-
-    --os-bg:           #0C1A14;
-    --os-surface:      #14261E;
-    --os-surface-2:    #1A3028;
-    --os-surface-3:    #22402F;
-    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
-    --os-surface-sunken: #0A150F;
-    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
-    --os-border-row:   rgba(255, 255, 255, 0.05);
-    --os-on-primary:   #06120D;
-    --os-dot-idle:     #3D5148;
-    --os-label-section:#5C7267;
-    --os-border:       rgba(5, 150, 105, 0.12);
-    --os-border-strong:rgba(5, 150, 105, 0.25);
-
-    --os-brand-green:  #059669;
-    --os-brand-cyan:   #10B981;
-
-    --os-text-primary: #E8EDE6;
-    --os-text-secondary:#9AB5A8;
-    --os-text-muted:   #4A6B5C;
-
-    --os-badge-compliant-bg:   rgba(5, 150, 105, 0.15);
-    --os-badge-payment-bg:     rgba(220, 38, 38, 0.12);
-    --os-badge-processing-bg:  rgba(234, 88, 12, 0.10);
-    --os-badge-pending-bg:     rgba(202, 138, 4, 0.10);
-    --os-badge-info-bg:        rgba(37, 99, 235, 0.10);
-}
-
-/* ── Institutional Light (design de reference V3) ── */
-[data-skin="institutional"][data-theme="light"] {
-    --background: #F0FAF4;
-    --foreground: #1A2E25;
-
-    --ais-dark: #F0FAF4;
-    --ais-dark-card: #FFFFFF;
-    --ais-dark-surface: #E6F4ED;
-    --ais-border: rgba(5, 150, 105, 0.12);
-    --ais-emerald: #059669;
-    --ais-emerald-dark: #047857;
-    --ais-yellow: #D97706;
-    --ais-yellow-light: #F59E0B;
-    --ais-text-muted: #4B6B5C;
-    --ais-text-secondary: #1A3D2B;
-
-    --ais-nav-bg:                rgba(255, 255, 255, 0.96);
-    --ais-nav-border:            rgba(5, 150, 105, 0.12);
-    --ais-nav-text:              #1A2E25;
-    --ais-nav-text-muted:        #4B6B5C;
-    --ais-nav-item-active-bg:    rgba(5, 150, 105, 0.06);
-    --ais-nav-item-active-border:rgba(5, 150, 105, 0.2);
-    --ais-footer-bg:             #E6F4ED;
-    --ais-footer-text:           #4B6B5C;
-    --ais-footer-text-bright:    #1A2E25;
-    --ais-footer-border:         rgba(5, 150, 105, 0.10);
-    --ais-social-bg:             rgba(5, 150, 105, 0.06);
-
-    --ais-page-bg:               #F0FAF4;
-    --ais-page-bg-alt:           #E6F4ED;
-    --ais-page-card:             #FFFFFF;
-    --ais-page-surface:          #F5FBF8;
-    --ais-page-text:             #1A2E25;
-    --ais-page-text-secondary:   #2D4F3E;
-    --ais-page-text-muted:       #4B6B5C;
-    --ais-page-text-dim:         #6B8F7D;
-    --ais-page-border:           rgba(5, 150, 105, 0.10);
-    --ais-page-glow:             rgba(5, 150, 105, 0.08);
-
-    --os-bg:           #F0FAF4;
-    --os-surface:      #FFFFFF;
-    --os-surface-2:    #F5FBF8;
-    --os-surface-3:    #E6F4ED;
-    /* Surface enfoncée : topbar, en-tête de tableau, pied de carte chiffrant un impact. */
-    --os-surface-sunken: #F5FBF8;
-    /* Filet de ligne de tableau — plus discret que --os-border, qui délimite les cartes. */
-    --os-border-row:   rgba(5, 150, 105, 0.10);
-    --os-on-primary:   #FFFFFF;
-    --os-dot-idle:     #CBDFD5;
-    --os-label-section:#8AA79A;
-    /* Couleurs sémantiques rabaissées d'un cran : #EAB308 / #10B981 ne passent pas AA
-       sur une surface claire. Mêmes rôles, mêmes usages, contraste tenu. */
-    --os-yellow:  #996803;   /* was #CA8A04 (2.9:1 sur blanc, FAIL) → 4.5:1 ✓ */
-    --os-red:     #DC2626;
-    --os-orange:  #C54A0A;   /* was #EA580C (3.6:1, FAIL) → 4.5:1 ✓ */
-    --os-green:   #04825B;   /* was #059669 (3.8:1, FAIL) → 4.5:1 ✓ */
-    --os-blue:    #2563EB;
-    --os-border:       rgba(5, 150, 105, 0.12);
-    --os-border-strong:rgba(5, 150, 105, 0.25);
-
-    --os-brand-green:  #05875E;   /* fond du bouton primaire, tenu à 4.5:1 sur blanc */
-    --os-brand-cyan:   #0B825B;   /* lien et accent, tenu à 4.5:1 sur blanc */
-
-    --os-text-primary: #1A2E25;
-    --os-text-secondary:#2D4F3E;
-    --os-text-muted:   #5A7869;
-
-    --os-badge-compliant-bg:   rgba(5, 150, 105, 0.10);
-    --os-badge-payment-bg:     rgba(220, 38, 38, 0.08);
-    --os-badge-processing-bg:  rgba(234, 88, 12, 0.08);
-    --os-badge-pending-bg:     rgba(202, 138, 4, 0.08);
-    --os-badge-info-bg:        rgba(37, 99, 235, 0.08);
-}
-
 
 /* ─────────────────────────────────────────────────────────────────────────────
    SKIN-SPECIFIC EXTRA STYLES
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* V3 Institutional: green top accent bar on cards */
-[data-skin="institutional"] .os-card {
-    border-top: 2px solid var(--os-brand-green);
-}
-
-/* V2 Navy: subtle cyan glow on active nav */
-[data-skin="navy"] .os-nav-active {
-    box-shadow: inset 2px 0 0 var(--os-brand-cyan);
-    color: var(--os-brand-cyan);
-    background-color: rgba(56, 189, 248, 0.08);
-}
-
 
 /* ─────────────────────────────────────────────────────────────────────────────
    SHARED THEME ALIASES

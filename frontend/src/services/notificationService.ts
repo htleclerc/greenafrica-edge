@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { allowsEmail } from '@/lib/notificationPrefs';
 import {
     sendPaymentConfirmationEmail,
     sendPaymentRejectedEmail,
@@ -97,9 +98,20 @@ export async function notifyOwner(
             // Fetch owner email + preferred language
             const { data: owner } = await client
                 .from('shipowners')
-                .select('official_email, preferred_language, name')
+                .select('official_email, preferred_language, name, profiles(notification_prefs)')
                 .eq('id', input.shipownerId)
                 .single();
+
+            // Les préférences (mig 140) ne gouvernent QUE l'information : alertes
+            // navire, relances, relevé. Un mouvement d'argent, un refus, un fait
+            // de sécurité partent toujours — se taire dessus parce qu'une case a
+            // été décochée serait une faute, pas une préférence.
+            const linked = (owner as { profiles?: { notification_prefs?: unknown }
+                | { notification_prefs?: unknown }[] | null } | null)?.profiles;
+            const profile = Array.isArray(linked) ? linked[0] : linked;
+            if (!allowsEmail(input.kind, profile?.notification_prefs)) {
+                return { id: inserted.id };
+            }
             if (owner && (owner as { official_email: string | null }).official_email) {
                 const ownerEmail = (owner as { official_email: string }).official_email;
                 const ownerName = (owner as { name: string | null }).name ?? 'Shipowner';

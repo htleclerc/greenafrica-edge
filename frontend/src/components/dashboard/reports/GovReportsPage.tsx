@@ -103,7 +103,7 @@ export function GovReportsPage() {
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                                 <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
                                 <YAxis tick={{ fill: '#475569', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
-                                <Tooltip content={<CustomTooltip />} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--os-text-muted)', fillOpacity: 0.08 }} />
                                 <Bar dataKey="revenue" name="Revenue" fill="#00D97E" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>

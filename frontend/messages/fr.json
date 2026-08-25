@@ -655,7 +655,6 @@
     "skin_switch": "Thème visuel",
     "skin_emerald": "Émeraude Sombre",
     "skin_navy": "Navy Commandement",
-    "skin_institutional": "Institutionnel",
     "skin_active": "Actif",
     "demo_mode": "MODE DÉMO",
     "demo_data_fictive": "Les données sont fictives",
@@ -945,8 +944,6 @@
     "settings_preferences": "Préférences",
     "settings_sessions": "Sessions actives",
     "settings_profile_photo": "Photo de profil",
-    "settings_change_photo": "Changer la photo",
-    "settings_photo_hint": "JPG, PNG — max 2 Mo",
     "settings_identity": "Identité",
     "settings_identity_desc": "Informations liées à votre compte gouvernemental.",
     "settings_full_name": "Nom complet",
@@ -981,19 +978,8 @@
     "settings_danger_zone_desc": "Actions irréversibles liées à votre compte.",
     "settings_disconnect_sessions": "Déconnecter toutes les sessions actives",
     "settings_request_deletion": "Demander la suppression du compte",
-    "settings_notif_operational": "Alertes opérationnelles",
-    "settings_notif_operational_desc": "Notifications liées aux navires et à la conformité.",
     "settings_notif_vessel_alert": "Alerte non-conformité navire",
     "settings_notif_payment_due": "Paiement de taxe en retard",
-    "settings_notif_new_declaration": "Nouvelle déclaration DCS reçue",
-    "settings_notif_system_admin": "Système & Administration",
-    "settings_notif_system_update": "Mises à jour système",
-    "settings_notif_audit_activity": "Activité dans les logs d'audit",
-    "settings_notif_reports": "Rapports & Récapitulatifs",
-    "settings_notif_weekly_report": "Rapport hebdomadaire automatique",
-    "settings_notif_email_digest": "Digest email quotidien",
-    "settings_notif_channels": "Canaux alternatifs",
-    "settings_notif_sms_critical": "SMS pour alertes critiques uniquement",
     "settings_lang_region": "Langue & Région",
     "settings_interface_language": "Langue d'interface",
     "settings_date_format": "Format de date",
@@ -1128,7 +1114,12 @@
     "settings_sessions_empty": "Aucune session ouverte.",
     "settings_session_elevated": "Second facteur",
     "settings_session_unknown_device": "Appareil non identifié",
-    "settings_deletion_unavailable": "La suppression de compte passe encore par le support."
+    "settings_deletion_unavailable": "La suppression de compte passe encore par le support.",
+    "settings_photo_initials": "Les initiales sont dérivées de votre nom. L’envoi d’une photo n’est pas encore proposé.",
+    "settings_notif_email": "Notifications par e-mail",
+    "settings_notif_email_desc": "Ce que vous souhaitez recevoir. Ne concerne que l’information.",
+    "settings_notif_monthly_statement": "Relevé de compte mensuel",
+    "settings_notif_always_sent": "Les confirmations de paiement, les refus, les décisions KYC et les changements d’accès à votre compte partent toujours — ils ne se désactivent pas."
   },
   "Overview": {
     "kpi_active_vessels": "Navires actifs dans la ZEE",
@@ -3059,7 +3050,8 @@
       "simulator": "Simulateur de taxe",
       "tco": "Tableau TCO",
       "disputes": "Litiges",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "account": "Mon compte"
     },
     "disputes": {
       "empty": "Vous n'avez ouvert aucun litige pour le moment."
@@ -3606,10 +3598,6 @@
           "label": "Portefeuille AfricGreen",
           "covers": "Solde {balance} — suffisant",
           "short": "Solde {balance} — insuffisant"
-        },
-        "desk": {
-          "label": "Guichet du port",
-          "hint": "Espèces · reçu immédiat"
         }
       },
       "receipt": "Reçu",

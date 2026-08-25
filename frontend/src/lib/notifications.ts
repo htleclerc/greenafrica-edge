@@ -74,11 +74,20 @@ export function ownerRowToNotification(row: OwnerNotificationRow): AppNotificati
     };
 }
 
+/** Ce qu'on met à la place d'une valeur absente, plutôt que de retirer la clé. */
+const MISSING = '—';
+
 function sanitizeParams(params: Record<string, unknown>): Record<string, string | number> {
     const out: Record<string, string | number> = {};
     for (const [key, value] of Object.entries(params ?? {})) {
         if (typeof value === 'string' || typeof value === 'number') out[key] = value;
-        else if (value != null) out[key] = String(value);
+        // Une valeur nulle devient un tiret au lieu de disparaître. Retirer la
+        // clé faisait échouer le formatage entier : next-intl refuse une phrase
+        // dont un paramètre manque, et la barre affichait la clé brute en
+        // journalisant une FORMATTING_ERROR à chaque rendu. C'est arrivé en
+        // vrai sur des relances émises pour des transactions sans référence de
+        // pro-forma, où `invoice_ref` était null en base.
+        else out[key] = value == null ? MISSING : String(value);
     }
     return out;
 }

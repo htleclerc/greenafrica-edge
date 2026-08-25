@@ -31,9 +31,15 @@ function expectsDocument(row: InvoiceRow): boolean {
         || row.document_type === 'COMPLEMENT';
 }
 
-/** Moyens proposés à l'armateur, dans l'ordre où ils règlent vite. */
-type Method = 'wire' | 'wallet' | 'desk';
-const METHODS: Method[] = ['wire', 'wallet', 'desk'];
+/**
+ * Moyens proposés à l'armateur, dans l'ordre où ils règlent vite.
+ *
+ * Le guichet du port a été retiré : l'encaissement en espèces existe côté
+ * personnel (écran caisse), mais le proposer ici invitait à se déplacer sans
+ * que le portail sache si un guichet est ouvert, ni où.
+ */
+type Method = 'wire' | 'wallet';
+const METHODS: Method[] = ['wire', 'wallet'];
 
 interface Props {
     invoice: InvoiceRow;

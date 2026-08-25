@@ -2,13 +2,12 @@ package eez
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
 	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
-	"github.com/htleclerc/africgreen/backend/internal/supadb"
+	"github.com/htleclerc/africgreen/backend/internal/testdb"
 )
 
 const (
@@ -16,17 +15,8 @@ const (
 	djJID = "00000000-0000-4000-8000-00000000444a"
 )
 
-func getTestDBURL() string {
-	url := os.Getenv("SUPABASE_DB_URL")
-	if url == "" {
-		url = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-	}
-	return url
-}
-
 func TestOnPosition_EntryMovesAlertToArrived(t *testing.T) {
-	db, _ := supadb.Open(getTestDBURL())
-	defer db.Close()
+	db := testdb.Open(t)
 
 	ctx := context.Background()
 
@@ -82,8 +72,7 @@ func TestOnPosition_EntryMovesAlertToArrived(t *testing.T) {
 //   Step 2 (next tick, after DJ alert is RECONCILED): the unique index no longer
 //     blocks; SO ARRIVED alert is created and last_zone advances to SO/EEZ.
 func TestOnPosition_CrossJurisdictionHop_BlockedThenRetry(t *testing.T) {
-	db, _ := supadb.Open(getTestDBURL())
-	defer db.Close()
+	db := testdb.Open(t)
 
 	ctx := context.Background()
 
@@ -193,8 +182,7 @@ func TestOnPosition_CrossJurisdictionHop_BlockedThenRetry(t *testing.T) {
 // a vessel entering the EEZ with no prior alert does NOT get a retroactive ARRIVED
 // alert, but last_zone IS updated (intentional silence, not a retry).
 func TestOnPosition_ModeDisabled_NoRetroactiveAlert(t *testing.T) {
-	db, _ := supadb.Open(getTestDBURL())
-	defer db.Close()
+	db := testdb.Open(t)
 
 	ctx := context.Background()
 
