@@ -21,6 +21,8 @@ export interface InitialPrincipal {
     kind: PrincipalKind;
     user: SecureUser;
     modes: OperatorMode[];
+    /** profiles.collections_focus (mig 142) — staff seulement, absent = pas de focus. */
+    collectionsFocus?: boolean;
 }
 
 async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
@@ -122,7 +124,7 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
     const { data: profile } = await supabase
         .from('profiles')
         .select(
-            'id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address',
+            'id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address, collections_focus',
         )
         .eq('id', user.id)
         .single();
@@ -144,7 +146,14 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
         isActive: (profile.is_active as boolean) ?? true,
     };
 
-    return { kind: 'staff', user: staffUser, modes: [] };
+    return {
+        kind: 'staff',
+        user: staffUser,
+        modes: [],
+        // Le provider amorcé par le serveur ne fait AUCUN aller-retour client :
+        // sans ce passage, le drapeau ne serait jamais posé pour une vraie session.
+        collectionsFocus: (profile.collections_focus as boolean | null) === true,
+    };
 }
 
 export const getInitialPrincipal = cache(_getInitialPrincipalImpl);

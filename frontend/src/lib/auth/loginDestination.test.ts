@@ -27,4 +27,27 @@ describe('loginDestination', () => {
     it('falls back to the staff dashboard when role is unknown', () => {
         expect(loginDestination({ isOperator: false, role: null })).toBe('/dashboard');
     });
+
+    it('routes a collections-focused profile straight to the settlements board', () => {
+        // Sans ce raccourci, un gestionnaire du recouvrement atterrit sur la
+        // carte des navires et doit aller chercher son écran dans 21 entrées.
+        expect(loginDestination({
+            isOperator: false, role: UserRole.FINANCE_ADMIN, collectionsFocus: true,
+        })).toBe('/admin/reglements');
+    });
+
+    it('lets operator status win over the collections focus', () => {
+        // Un armateur ne doit jamais atterrir dans le shell staff, quel que
+        // soit un drapeau posé par erreur sur son profil.
+        expect(loginDestination({
+            isOperator: true, role: UserRole.FINANCE_ADMIN, collectionsFocus: true,
+        })).toBe('/dashboard');
+    });
+
+    it('leaves every role untouched when the flag is absent or false', () => {
+        expect(loginDestination({ isOperator: false, role: UserRole.FINANCE_ADMIN, collectionsFocus: false }))
+            .toBe('/dashboard');
+        expect(loginDestination({ isOperator: false, role: UserRole.SUPERADMIN, collectionsFocus: true }))
+            .toBe('/post-login');
+    });
 });

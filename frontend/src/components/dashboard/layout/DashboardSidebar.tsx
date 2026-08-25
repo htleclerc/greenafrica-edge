@@ -107,11 +107,14 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegistrations = 0, mobileOpen = false, onMobileClose }: DashboardSidebarProps) {
     const t = useTranslations('Dashboard');
     const tOwner = useTranslations('OwnerPortal');
-    const { role } = useRole();
+    const { role, collectionsFocus } = useRole();
     const { kind, modes } = usePrincipalKind();
 
-    const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role);
-    const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role)
+    // `collectionsFocus` (mig 128) ne fait que retrancher : filterNavItems
+    // l'intersecte avec ce que le rôle autorise déjà.
+    const focus = collectionsFocus === true;
+    const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role, focus);
+    const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role, focus)
         // La pastille suit la file vivante (`shipowners PENDING_REVIEW`), donc
         // l'écran qui la traite : /admin/registrations. Elle décorait
         // « validations », dont la table n'a plus de producteur.

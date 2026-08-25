@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canAccess, canEdit, filterNavItems, MONEY_RAIL_KEYS } from '../rbac';
+import { canAccess, canEdit, filterNavItems, COLLECTIONS_FOCUS_NAV, MONEY_RAIL_KEYS } from '../rbac';
 import { UserRole } from '@/types/secure';
 
 const ALL_ROLES = [
@@ -278,5 +278,49 @@ describe('filterNavItems', () => {
     expect(keys).not.toContain('tax-settings');
     expect(keys).not.toContain('my-fleet');
     expect(keys).not.toContain('green-ledger');
+  });
+});
+
+describe('filterNavItems — poste de recouvrement (mig 142)', () => {
+  const financeNav = [
+    { key: 'map', label: 'Carte' },
+    { key: 'reglements', label: 'Règlements' },
+    { key: 'armateurs', label: 'Armateurs' },
+    { key: 'admin-collections', label: 'Recouvrement' },
+    { key: 'admin-invoices', label: 'Factures' },
+    { key: 'settings', label: 'Réglages' },
+    { key: 'wallets', label: 'Wallets' },
+    { key: 'refunds', label: 'Remboursements' },
+    { key: 'cash-desk', label: 'Caisse' },
+    { key: 'tax-settings', label: 'Barèmes' },
+  ];
+
+  it('resserre le menu du FINANCE_ADMIN sur les seules entrées du recouvrement', () => {
+    const keys = filterNavItems(financeNav, UserRole.FINANCE_ADMIN, true).map((i) => i.key);
+    expect(keys.sort()).toEqual(
+      ['admin-collections', 'admin-invoices', 'armateurs', 'reglements', 'settings'],
+    );
+  });
+
+  it('laisse le menu intact quand le drapeau est absent ou faux', () => {
+    const sansDrapeau = filterNavItems(financeNav, UserRole.FINANCE_ADMIN).map((i) => i.key);
+    const drapeauFaux = filterNavItems(financeNav, UserRole.FINANCE_ADMIN, false).map((i) => i.key);
+    expect(sansDrapeau).toEqual(drapeauFaux);
+    expect(sansDrapeau).toContain('wallets');
+    expect(sansDrapeau).toContain('cash-desk');
+  });
+
+  it("ne peut jamais ACCORDER une entrée que le rôle n'a pas", () => {
+    // Le drapeau intersecte, il n'ajoute pas. Un PORT_OFFICER focalisé ne
+    // gagne pas l'accès aux règlements, réservé au rail financier — sinon le
+    // confort de navigation deviendrait une élévation de privilège.
+    const keys = filterNavItems(financeNav, UserRole.PORT_OFFICER, true).map((i) => i.key);
+    expect(keys).not.toContain('reglements');
+  });
+
+  it('ne retient que des clés réellement accessibles au rôle', () => {
+    for (const key of COLLECTIONS_FOCUS_NAV) {
+      expect(canAccess(key, UserRole.FINANCE_ADMIN)).toBe(true);
+    }
   });
 });
