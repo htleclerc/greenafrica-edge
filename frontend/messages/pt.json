@@ -1254,7 +1254,8 @@
     "nav_admin_collections": "Cobranças",
     "nav_vessel_identity": "Identidade dos navios",
     "theme_switch_to_light": "Switch to light theme",
-    "theme_switch_to_dark": "Switch to dark theme"
+    "theme_switch_to_dark": "Switch to dark theme",
+    "nav_navires": "Navios"
   },
   "AdminStaff": {
     "page_title": "Gestão de Pessoal",
@@ -4624,7 +4625,8 @@
       "repInviteEmail": "E-mail do representante",
       "repInviteName": "Nome do representante",
       "repInviteSubmit": "Criar e associar",
-      "repInviteHint": "Cria a conta e associa-a. Não é enviado nenhum e-mail — o acesso passa pelo próximo aviso."
+      "repInviteHint": "Cria a conta e associa-a. Não é enviado nenhum e-mail — o acesso passa pelo próximo aviso.",
+      "ownerViewLink": "Ver o que o armador vê"
     },
     "cockpit": {
       "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
@@ -4974,5 +4976,82 @@
     "submit": "Verify",
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
+  },
+  "AdminNavires": {
+    "title": "Navios",
+    "subtitle": "Dívida em aberto por navio. Uma cobrança sem navio associado não aparece aqui.",
+    "noOwner": "Sem armador",
+    "empty": "Nenhum navio",
+    "overdueSuffix": "{count} em atraso",
+    "coverageComplete": "Cobre a totalidade em aberto: {total}.",
+    "coverageGap": "Cobre {covered} de {total} — {gap} em cobranças sem navio associado.",
+    "col": {
+      "vessel": "Navio",
+      "owner": "Armador",
+      "state": "Estado",
+      "outstanding": "Em aberto",
+      "invoiced": "Faturado",
+      "open": "Abertas",
+      "nextDue": "Próximo vencimento"
+    },
+    "state": {
+      "OVERDUE": "Em atraso",
+      "OPEN": "Aberto",
+      "SETTLED": "Liquidado",
+      "NEVER_INVOICED": "Nunca faturado"
+    },
+    "filters": {
+      "search": "Pesquisar",
+      "searchPlaceholder": "Nome, IMO, armador",
+      "state": "Estado",
+      "owner": "Armador",
+      "all": "Todos",
+      "ownerWith": "Associado",
+      "ownerWithout": "Sem armador"
+    }
+  },
+  "AdminOwnerView": {
+    "readOnly": "Somente leitura",
+    "backToFile": "← Voltar à ficha",
+    "intro": "O que o devedor vê no seu portal. Nenhuma ação é possível neste ecrã — isto não é iniciar sessão em nome dele.",
+    "blockersTitle": "O que o impede de pagar",
+    "blockersHint": "Deduzido da ficha. Uma cobrança enviada apesar disto fica registada sem que ninguém a receba.",
+    "blocker": {
+      "SANCTIONED": {
+        "label": "Sanções",
+        "detail": "Regime OFAC ou ONU: o contacto é proibido."
+      },
+      "NO_EMAIL": {
+        "label": "Sem endereço",
+        "detail": "Sem endereço de faturação — a cobrança não chega a ninguém."
+      },
+      "NO_ACCOUNT": {
+        "label": "Sem conta",
+        "detail": "Conta nunca criada — não tem acesso ao portal."
+      },
+      "INVITE_PENDING": {
+        "label": "Convite pendente",
+        "detail": "Convidado mas nunca entrou — o convite pode precisar de reenvio."
+      }
+    },
+    "owedTitle": "O que deve",
+    "owedTotal": "Em aberto",
+    "owedCount": "Faturas abertas",
+    "paidTotal": "Já pago",
+    "nothingOwed": "Sem faturas abertas.",
+    "late": "Em atraso",
+    "none": "—",
+    "col": {
+      "invoice": "Fatura",
+      "issued": "Emitida",
+      "due": "Vencimento",
+      "amount": "Montante",
+      "outstanding": "Em aberto"
+    },
+    "accountTitle": "A conta dele",
+    "accountState": "Estado da conta",
+    "billingEmail": "Endereço de faturação",
+    "kycB": "KYC nível B",
+    "kycC": "KYC nível C"
   }
 }

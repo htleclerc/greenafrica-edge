@@ -81,6 +81,9 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     // Shipowners cockpit (collections) — same audience as jurisdictions
     'armateurs':    [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
+    // Vessel-level collections view (mig 143) — same audience as armateurs
+    'navires':      [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+
     // Airlines cockpit (collections) — same audience as armateurs
     'airlines':     [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
@@ -173,6 +176,7 @@ export function canEdit(navKey: string, role: UserRole): boolean {
 export const COLLECTIONS_FOCUS_NAV: readonly string[] = [
     'reglements',
     'armateurs',
+    'navires',
     'admin-collections',
     'admin-invoices',
     'settings',

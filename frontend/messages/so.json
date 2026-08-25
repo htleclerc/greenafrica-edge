@@ -844,7 +844,8 @@
     "nav_airlines": "Shirkadaha Diyaaradaha",
     "nav_vessel_identity": "Aqoonsiga Markabyada",
     "theme_switch_to_light": "Switch to light theme",
-    "theme_switch_to_dark": "Switch to dark theme"
+    "theme_switch_to_dark": "Switch to dark theme",
+    "nav_navires": "Maraakiibta"
   },
   "AdminStaff": {
     "page_title": "Maaraynta Shaqaalaha",
@@ -4588,7 +4589,8 @@
       "repInviteEmail": "Iimaylka wakiilka",
       "repInviteName": "Magaca wakiilka",
       "repInviteSubmit": "Abuur oo ku xidh",
-      "repInviteHint": "Wuxuu abuuraa akoonka oo ku xidhaa. Iimayl lama dirayo — gelitaanku wuxuu maraa xasuusinta xigta."
+      "repInviteHint": "Wuxuu abuuraa akoonka oo ku xidhaa. Iimayl lama dirayo — gelitaanku wuxuu maraa xasuusinta xigta.",
+      "ownerViewLink": "Arag waxa milkiiluhu arko"
     },
     "cockpit": {
       "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
@@ -4938,5 +4940,82 @@
     "submit": "Verify",
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
+  },
+  "AdminNavires": {
+    "title": "Maraakiibta",
+    "subtitle": "Deynta hadhay markab kasta. Dacwad aan markab ku xidhnayn halkan kama muuqato.",
+    "noOwner": "Milkiile la'aan",
+    "empty": "Markab ma jiro",
+    "overdueSuffix": "{count} dib u dhac",
+    "coverageComplete": "Waxay dabooshaa deynta oo dhan: {total}.",
+    "coverageGap": "Waxay dabooshaa {covered} oo ka mid ah {total} — {gap} waxay saaran yihiin dacwado aan markab lahayn.",
+    "col": {
+      "vessel": "Markabka",
+      "owner": "Milkiilaha",
+      "state": "Xaaladda",
+      "outstanding": "Deyn hadhay",
+      "invoiced": "La qoray",
+      "open": "Furan",
+      "nextDue": "Xilliga xiga"
+    },
+    "state": {
+      "OVERDUE": "Dib u dhac",
+      "OPEN": "Furan",
+      "SETTLED": "La bixiyay",
+      "NEVER_INVOICED": "Weligiis lama qorin"
+    },
+    "filters": {
+      "search": "Raadi",
+      "searchPlaceholder": "Magaca, IMO, milkiilaha",
+      "state": "Xaaladda",
+      "owner": "Milkiilaha",
+      "all": "Dhammaan",
+      "ownerWith": "Ku xidhan",
+      "ownerWithout": "Milkiile la'aan"
+    }
+  },
+  "AdminOwnerView": {
+    "readOnly": "Akhris keliya",
+    "backToFile": "← Ku noqo faylka",
+    "intro": "Waxa uu deyn-lahu ku arko bogiisa. Wax tallaabo ah lagama qaadi karo shaashaddan.",
+    "blockersTitle": "Waxa ka hor istaaga bixinta",
+    "blockersHint": "Laga soo qaatay faylkiisa.",
+    "blocker": {
+      "SANCTIONED": {
+        "label": "Cunaqabatayn",
+        "detail": "Nidaamka OFAC ama UN: xiriirka waa mamnuuc."
+      },
+      "NO_EMAIL": {
+        "label": "Cinwaan la'aan",
+        "detail": "Ma jiro cinwaan biil — xasuusintu cidna ma gaadhayso."
+      },
+      "NO_ACCOUNT": {
+        "label": "Akoon la'aan",
+        "detail": "Akoon weligiis lama abuurin — bogga ma geli karo."
+      },
+      "INVITE_PENDING": {
+        "label": "Casuumaad sugaysa",
+        "detail": "Waa la casuumay laakiin weligiis ma gelin."
+      }
+    },
+    "owedTitle": "Waxa uu leeyahay",
+    "owedTotal": "Deyn hadhay",
+    "owedCount": "Biilal furan",
+    "paidTotal": "Horay loo bixiyay",
+    "nothingOwed": "Biilal furan ma jiraan.",
+    "late": "Dib u dhac",
+    "none": "—",
+    "col": {
+      "invoice": "Biilka",
+      "issued": "La soo saaray",
+      "due": "Xilliga",
+      "amount": "Qadarka",
+      "outstanding": "Deyn hadhay"
+    },
+    "accountTitle": "Akoonkiisa",
+    "accountState": "Xaaladda akoonka",
+    "billingEmail": "Cinwaanka biilka",
+    "kycB": "KYC heerka B",
+    "kycC": "KYC heerka C"
   }
 }
