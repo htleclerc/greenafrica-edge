@@ -5019,6 +5019,7 @@
     "accountState": "حالة الحساب",
     "billingEmail": "عنوان الفوترة",
     "kycB": "KYC المستوى B",
-    "kycC": "KYC المستوى C"
+    "kycC": "KYC المستوى C",
+    "breadcrumb": "عرض المالك"
   }
 }

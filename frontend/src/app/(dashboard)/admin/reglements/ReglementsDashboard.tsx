@@ -154,7 +154,7 @@ export function ReglementsDashboard({ summary, owners }: Props) {
                     onSortChange={onSortChange}
                     keyExtractor={(o) => o.id}
                     emptyMessage={t('empty')}
-                    onRowClick={(o) => router.push('/admin/armateurs/' + o.id)}
+                    onRowClick={(o) => router.push('/admin/armateurs/' + o.public_ref)}
                 />
             </OsCard>
 

@@ -11,7 +11,8 @@ const daysAgo = (d: number) => new Date(NOW.getTime() - d * 86_400_000).toISOStr
 const base: ArmateurCockpitRow = {
     id: 'x', name: 'HORN SHIPPING', country_code: 'SO', account_state: 'ACTIVE',
     is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
-    official_email: 'ops@horn.example', imo_company_no: '1234567', proforma_count: 3,
+    official_email: 'ops@horn.example', public_ref: 'arm_000000000001',
+  imo_company_no: '1234567', proforma_count: 3,
     total_invoiced_usd: 100_000, total_paid_usd: 40_000, total_outstanding_usd: 60_000,
     overdue_count: 2, next_due_date: daysAgo(10), last_auto_tier: 'J7',
     last_reminder_at: daysAgo(2), latest_response_type: null, open_count: 3,

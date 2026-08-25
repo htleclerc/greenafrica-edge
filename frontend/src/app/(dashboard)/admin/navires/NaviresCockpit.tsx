@@ -194,7 +194,7 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
                 onSortChange={onSortChange}
                 keyExtractor={(r) => r.id}
                 emptyMessage={t('empty')}
-                onRowClick={(r) => r.shipowner_id && router.push('/admin/armateurs/' + r.shipowner_id)}
+                onRowClick={(r) => r.shipowner_public_ref && router.push('/admin/armateurs/' + r.shipowner_public_ref)}
             />
 
             {/*

@@ -5013,6 +5013,7 @@
     "accountState": "Account state",
     "billingEmail": "Billing address",
     "kycB": "KYC level B",
-    "kycC": "KYC level C"
+    "kycC": "KYC level C",
+    "breadcrumb": "Shipowner view"
   }
 }

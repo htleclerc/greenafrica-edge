@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { listNaviresRecouvrement } from '@/services/navireService';
 import { getReglementsSummary } from '@/services/reglementsService';
 import { NaviresCockpit } from './NaviresCockpit';
+import { OsBreadcrumb } from '@/components/ui/OsBreadcrumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +26,16 @@ export default async function NaviresPage() {
     ]);
 
     const t = await getTranslations('AdminNavires');
+    const tNav = await getTranslations('Dashboard');
     return (
         <div className="px-6 py-4">
+            <OsBreadcrumb
+                className="mb-3"
+                items={[
+                    { label: tNav('nav_reglements'), href: '/admin/reglements' },
+                    { label: tNav('nav_navires') },
+                ]}
+            />
             <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
             <p className="text-[var(--os-text-muted)] mb-6 text-sm">{t('subtitle')}</p>
             <NaviresCockpit rows={rows} dashboardOutstandingUsd={summary.totalOutstandingUsd} />

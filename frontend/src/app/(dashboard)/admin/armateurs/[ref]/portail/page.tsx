@@ -4,8 +4,10 @@ import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import { getArmateurDetail } from '@/services/armateurService';
 import { ownerAccessBlockers } from '@/lib/ownerAccessBlockers';
+import { resolveShipownerByRef } from '@/services/shipownerRefService';
 import { OsCard, OsCardHeader } from '@/components/ui/OsCard';
 import { OsBadge } from '@/components/ui/OsBadge';
+import { OsBreadcrumb } from '@/components/ui/OsBreadcrumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,19 +31,23 @@ const usd = (n: number) =>
  * client staff, elle rendrait les chiffres de toute la plateforme sous le nom
  * d'un seul débiteur.
  */
-export default async function PortailArmateurPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function PortailArmateurPage({ params }: { params: Promise<{ ref: string }> }) {
+    const { ref } = await params;
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) redirect('/login');
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', auth.user.id).single();
     if (!profile || !ALLOWED_ROLES.includes(profile.role)) redirect('/dashboard');
 
+    const id = await resolveShipownerByRef(supabase, ref);
+    if (!id) notFound();
+
     const canViewBilling = ['SUPERADMIN', 'FINANCE_ADMIN'].includes(profile.role);
     const detail = await getArmateurDetail(supabase, id, canViewBilling);
     if (!detail) notFound();
 
     const t = await getTranslations('AdminOwnerView');
+    const tNav = await getTranslations('Dashboard');
     const open = detail.proformas.filter((p) => OPEN_STATUSES.includes(p.status));
     const blockers = ownerAccessBlockers({
         officialEmail: detail.official_email,
@@ -53,10 +59,17 @@ export default async function PortailArmateurPage({ params }: { params: Promise<
 
     return (
         <div className="px-6 py-4 flex flex-col gap-4">
+            <OsBreadcrumb
+                items={[
+                    { label: tNav('nav_armateurs'), href: '/admin/armateurs' },
+                    { label: detail.name, href: `/admin/armateurs/${ref}` },
+                    { label: t('breadcrumb') },
+                ]}
+            />
             <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-semibold text-[var(--os-text-primary)]">{detail.name}</h1>
                 <OsBadge variant="info" label={t('readOnly')} />
-                <Link href={`/admin/armateurs/${id}`} className="text-xs text-[#00D97E] hover:underline">
+                <Link href={`/admin/armateurs/${ref}`} className="text-xs text-[#00D97E] hover:underline">
                     {t('backToFile')}
                 </Link>
             </div>

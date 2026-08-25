@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
+import { getShipownerRefs } from '@/services/shipownerRefService';
 import {
     parseInvoiceFilters,
     listInvoicesAdmin,
@@ -33,12 +34,18 @@ export default async function AdminInvoicesPage({
         listInvoiceFilterOptions(supabase),
     ]);
 
+    const refs = await getShipownerRefs(
+        supabase,
+        pageData.rows.map((r) => r.shipowner_id).filter((v): v is string => !!v),
+    );
+
     const t = await getTranslations('AdminInvoices');
     return (
         <div className="px-6 py-4">
             <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
             <p className="text-[var(--os-text-muted)] mb-6 text-sm">{t('subtitle')}</p>
             <InvoicesAdminList
+                refs={refs}
                 rows={pageData.rows}
                 total={pageData.total}
                 page={pageData.page}

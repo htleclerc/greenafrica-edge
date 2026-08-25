@@ -5052,6 +5052,7 @@
     "accountState": "Estado da conta",
     "billingEmail": "Endereço de faturação",
     "kycB": "KYC nível B",
-    "kycC": "KYC nível C"
+    "kycC": "KYC nível C",
+    "breadcrumb": "Vista do armador"
   }
 }

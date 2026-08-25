@@ -15,6 +15,8 @@ import type { AirlineCockpitRow } from '@/services/airlineService';
 
 interface Props {
     rows: AirlineCockpitRow[];
+    /** id interne -> reference opaque exposee dans l'URL (mig 144). */
+    refs: Record<string, string>;
     canInvite: boolean;
 }
 
@@ -28,7 +30,7 @@ const DEFAULT_FILTERS: AirlineFilterState = {
     dueOnly: false,
 };
 
-export function AirlinesCockpit({ rows, canInvite }: Props) {
+export function AirlinesCockpit({ rows, refs, canInvite }: Props) {
     const t = useTranslations('AdminAirlines');
     const router = useRouter();
 
@@ -266,7 +268,7 @@ export function AirlinesCockpit({ rows, canInvite }: Props) {
                 rows={visible}
                 keyExtractor={(r) => r.id}
                 emptyMessage={t('empty')}
-                onRowClick={(r) => router.push('/admin/airlines/' + r.id)}
+                onRowClick={(r) => { const ref = refs[r.id]; if (ref) router.push('/admin/airlines/' + ref); }}
             />
 
             <Dialog.Root open={inviteTarget !== null} onOpenChange={(o) => !o && closeInvite()}>

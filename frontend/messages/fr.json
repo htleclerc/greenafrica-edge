@@ -5013,6 +5013,7 @@
     "accountState": "État du compte",
     "billingEmail": "Adresse de facturation",
     "kycB": "KYC niveau B",
-    "kycC": "KYC niveau C"
+    "kycC": "KYC niveau C",
+    "breadcrumb": "Vue armateur"
   }
 }

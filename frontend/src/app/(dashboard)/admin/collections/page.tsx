@@ -8,6 +8,7 @@ import { CollectionsAdminList } from './CollectionsAdminList';
 import { CollectionsFunnel } from './CollectionsFunnel';
 import { CollectionsHeader } from './CollectionsHeader';
 import { PriorityDossier } from './PriorityDossier';
+import { getShipownerRefs } from '@/services/shipownerRefService';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,11 +38,17 @@ export default async function AdminCollectionsPage({
         ? await loadPriorityDossier(supabase, funnel.priorityTransactionId)
         : null;
 
+    // Le lien vers la fiche passe par la reference opaque (mig 144) :
+    // l'identifiant interne ne doit pas reapparaitre dans l'URL.
+    const priorityRef = priority?.shipownerId
+        ? (await getShipownerRefs(supabase, [priority.shipownerId]))[priority.shipownerId] ?? null
+        : null;
+
     return (
         <div className="flex flex-col gap-[18px] p-4 sm:p-6">
             <CollectionsHeader funnel={funnel} />
             <CollectionsFunnel funnel={funnel} />
-            {priority && <PriorityDossier dossier={priority} />}
+            {priority && <PriorityDossier dossier={priority} shipownerRef={priorityRef} />}
             <CollectionsAdminList
                 rows={page.rows}
                 total={page.total}
