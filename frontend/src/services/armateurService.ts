@@ -12,6 +12,8 @@ export interface ArmateurCockpitRow {
     sanctioned: boolean;
     official_email: string | null;
     imo_company_no: string | null;
+    /** Reference opaque exposee dans l'URL a la place de l'UUID (mig 144). */
+    public_ref: string;
     proforma_count: number;
     total_invoiced_usd: number;
     total_paid_usd: number;
@@ -44,6 +46,7 @@ export async function listArmateursCockpit(db: SupabaseClient): Promise<Armateur
         sanctioned: r.sanctioned as boolean,
         official_email: (r.official_email as string | null) ?? null,
         imo_company_no: (r.imo_company_no as string | null) ?? null,
+        public_ref: String(r.public_ref ?? ''),
         proforma_count: Number(r.proforma_count),
         total_invoiced_usd: Number(r.total_invoiced_usd),
         total_paid_usd: Number(r.total_paid_usd),
@@ -123,6 +126,8 @@ export interface ArmateurRepresentativeRow {
 
 export interface ArmateurDetail {
     id: string;
+    /** Reference opaque exposee dans l'URL (mig 144). */
+    public_ref: string;
     name: string;
     aliases: string[];
     country_code: string | null;
@@ -244,6 +249,7 @@ export async function getArmateurDetail(
 
     return {
         id: row.id as string,
+        public_ref: String(row.public_ref ?? ''),
         name: row.name as string,
         aliases: (row.aliases as string[] | null) ?? [],
         country_code: str('country_code'),

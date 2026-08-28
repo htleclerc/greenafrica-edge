@@ -705,7 +705,8 @@
     "nav_airlines": "Compagnies",
     "nav_vessel_identity": "Identité des navires",
     "theme_switch_to_light": "Passer en thème clair",
-    "theme_switch_to_dark": "Passer en thème sombre"
+    "theme_switch_to_dark": "Passer en thème sombre",
+    "nav_navires": "Navires"
   },
   "AdminStaff": {
     "page_title": "Gestion du personnel",
@@ -3860,7 +3861,16 @@
         "fallback": "{fallbackReason}"
       }
     },
-    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire."
+    "memberNotice": "Vous êtes membre de ce compte. L’identité de la société, ses coordonnées bancaires et les copies de facturation restent modifiables par le seul titulaire.",
+    "tabs": {
+      "label": "Volets du compte",
+      "identity": "Identité",
+      "billing": "Facturation & banque",
+      "members": "Membres",
+      "documents": "Documents"
+    },
+    "title": "Mon compte",
+    "subtitle": "Identité de l’entreprise, facturation, membres autorisés et documents."
   },
   "AdminRegistrations": {
     "title": "Demandes d'inscription",
@@ -4579,7 +4589,8 @@
       "repInviteEmail": "E-mail du représentant",
       "repInviteName": "Nom du représentant",
       "repInviteSubmit": "Créer et rattacher",
-      "repInviteHint": "Crée le compte et le rattache. Aucun e-mail n'est envoyé — l'accès passe par la relance suivante."
+      "repInviteHint": "Crée le compte et le rattache. Aucun e-mail n'est envoyé — l'accès passe par la relance suivante.",
+      "ownerViewLink": "Voir ce que voit l'armateur"
     },
     "cockpit": {
       "verdict": "{count, plural, =0 {Aucun armateur en défaut de paiement} =1 {1 armateur en défaut de paiement} other {# armateurs en défaut de paiement}}",
@@ -4926,5 +4937,83 @@
     "submit": "Vérifier",
     "invalid": "Code refusé. Vérifiez l’heure de votre téléphone, puis réessayez.",
     "lost": "Téléphone perdu ? Se déconnecter"
+  },
+  "AdminNavires": {
+    "title": "Navires",
+    "subtitle": "Encours de recouvrement par navire. Une créance sans navire rattaché n'y figure pas.",
+    "noOwner": "Sans armateur",
+    "empty": "Aucun navire",
+    "overdueSuffix": "dont {count} en retard",
+    "coverageComplete": "Couvre l'intégralité de l'encours : {total}.",
+    "coverageGap": "Couvre {covered} sur {total} d'encours — {gap} portés par des créances sans navire rattaché.",
+    "col": {
+      "vessel": "Navire",
+      "owner": "Armateur",
+      "state": "État",
+      "outstanding": "Reste dû",
+      "invoiced": "Facturé",
+      "open": "Ouvertes",
+      "nextDue": "Prochaine échéance"
+    },
+    "state": {
+      "OVERDUE": "En retard",
+      "OPEN": "Ouvert",
+      "SETTLED": "Soldé",
+      "NEVER_INVOICED": "Jamais facturé"
+    },
+    "filters": {
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom, IMO, armateur",
+      "state": "État",
+      "owner": "Armateur",
+      "all": "Tous",
+      "ownerWith": "Rattaché",
+      "ownerWithout": "Sans armateur"
+    }
+  },
+  "AdminOwnerView": {
+    "readOnly": "Lecture seule",
+    "backToFile": "← Revenir à la fiche",
+    "intro": "Ce que le débiteur a sous les yeux dans son portail. Aucune action n'est possible depuis cet écran : il ne s'agit pas d'une connexion à sa place.",
+    "blockersTitle": "Ce qui l'empêche de payer",
+    "blockersHint": "Déduit de sa fiche. Une relance envoyée malgré un de ces points est enregistrée sans que personne ne la reçoive.",
+    "blocker": {
+      "SANCTIONED": {
+        "label": "Sanctions",
+        "detail": "Régime OFAC ou UN : la prise de contact est interdite."
+      },
+      "NO_EMAIL": {
+        "label": "Sans adresse",
+        "detail": "Aucune adresse de facturation : la relance ne part vers personne."
+      },
+      "NO_ACCOUNT": {
+        "label": "Sans compte",
+        "detail": "Compte jamais créé — il n'a aucun accès au portail. Une invitation reste à envoyer."
+      },
+      "INVITE_PENDING": {
+        "label": "Invitation en attente",
+        "detail": "Invité mais jamais connecté : l'invitation est peut-être à renvoyer."
+      }
+    },
+    "owedTitle": "Ce qu'il doit",
+    "owedTotal": "Reste dû",
+    "owedCount": "Factures ouvertes",
+    "paidTotal": "Déjà payé",
+    "nothingOwed": "Aucune facture ouverte.",
+    "late": "En retard",
+    "none": "—",
+    "col": {
+      "invoice": "Facture",
+      "issued": "Émise le",
+      "due": "Échéance",
+      "amount": "Montant",
+      "outstanding": "Reste dû"
+    },
+    "accountTitle": "Son compte",
+    "accountState": "État du compte",
+    "billingEmail": "Adresse de facturation",
+    "kycB": "KYC niveau B",
+    "kycC": "KYC niveau C",
+    "breadcrumb": "Vue armateur"
   }
 }

@@ -7,11 +7,16 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
 type ButtonSize    = 'sm' | 'md' | 'lg';
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
-    primary:   'bg-[#00D97E] hover:bg-[#00C070] text-[#060D1A] font-semibold shadow-[0_0_16px_rgba(0,217,126,0.25)] hover:shadow-[0_0_24px_rgba(0,217,126,0.35)]',
+    // #00D97E etait le vert de Navy SOMBRE, pose en dur : le bouton primaire
+    // restait vert sur un ecran bleu clair, et vert-Navy sur Emerald. Les
+    // jetons portent la bonne valeur dans chaque combinaison, et
+    // --os-on-primary le contraste qui va avec (sombre sur vert vif, blanc
+    // sur marine).
+    primary:   'bg-[var(--os-brand-green)] text-[var(--os-on-primary)] font-semibold transition-opacity hover:opacity-90',
     secondary: 'bg-[var(--os-surface-2)] hover:bg-[var(--os-surface-3)] text-[var(--os-text-primary)] border border-[var(--os-border-strong)]',
     ghost:     'bg-transparent hover:bg-[var(--os-surface-2)] text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)]',
     danger:    'bg-[#EF4444]/10 hover:bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/25',
-    outline:   'bg-transparent hover:bg-[var(--os-surface-2)] text-[#00D97E] border border-[#00D97E]/40 hover:border-[#00D97E]/70',
+    outline:   'bg-transparent hover:bg-[var(--os-surface-2)] text-[var(--os-brand-cyan)] border border-[var(--os-brand-green)]/40 hover:border-[var(--os-brand-green)]/70',
 };
 
 const SIZE_STYLES: Record<ButtonSize, string> = {

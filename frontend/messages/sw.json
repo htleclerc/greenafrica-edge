@@ -729,7 +729,8 @@
     "nav_admin_collections": "Urejeshaji Madeni",
     "nav_vessel_identity": "Utambulisho wa Meli",
     "theme_switch_to_light": "Switch to light theme",
-    "theme_switch_to_dark": "Switch to dark theme"
+    "theme_switch_to_dark": "Switch to dark theme",
+    "nav_navires": "Meli"
   },
   "AdminStaff": {
     "page_title": "Usimamizi wa Wafanyakazi",
@@ -4000,7 +4001,16 @@
         "fallback": "{fallbackReason}"
       }
     },
-    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only.",
+    "tabs": {
+      "label": "Account sections",
+      "identity": "Identity",
+      "billing": "Billing & bank",
+      "members": "Members",
+      "documents": "Documents"
+    },
+    "title": "My account",
+    "subtitle": "Company identity, billing, authorised members and documents."
   },
   "AdminRegistrations": {
     "title": "Usajili wa Wamiliki wa Meli",
@@ -4582,7 +4592,8 @@
       "repInviteEmail": "Barua pepe ya mwakilishi",
       "repInviteName": "Jina la mwakilishi",
       "repInviteSubmit": "Unda na uunganishe",
-      "repInviteHint": "Huunda akaunti na kuiunganisha. Hakuna barua pepe inayotumwa — ufikiaji hupitia ukumbusho ujao."
+      "repInviteHint": "Huunda akaunti na kuiunganisha. Hakuna barua pepe inayotumwa — ufikiaji hupitia ukumbusho ujao.",
+      "ownerViewLink": "Ona anachokiona mmiliki"
     },
     "cockpit": {
       "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
@@ -4932,5 +4943,83 @@
     "submit": "Verify",
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
+  },
+  "AdminNavires": {
+    "title": "Meli",
+    "subtitle": "Deni lililobaki kwa kila meli. Dai lisilo na meli halionekani hapa.",
+    "noOwner": "Hakuna mmiliki",
+    "empty": "Hakuna meli",
+    "overdueSuffix": "{count} zimechelewa",
+    "coverageComplete": "Inashughulikia deni lote: {total}.",
+    "coverageGap": "Inashughulikia {covered} kati ya {total} — {gap} yapo kwenye madai yasiyo na meli.",
+    "col": {
+      "vessel": "Meli",
+      "owner": "Mmiliki wa meli",
+      "state": "Hali",
+      "outstanding": "Deni lililobaki",
+      "invoiced": "Iliyotozwa",
+      "open": "Wazi",
+      "nextDue": "Tarehe ijayo"
+    },
+    "state": {
+      "OVERDUE": "Imechelewa",
+      "OPEN": "Wazi",
+      "SETTLED": "Imelipwa",
+      "NEVER_INVOICED": "Haijawahi kutozwa"
+    },
+    "filters": {
+      "search": "Tafuta",
+      "searchPlaceholder": "Jina, IMO, mmiliki",
+      "state": "Hali",
+      "owner": "Mmiliki",
+      "all": "Zote",
+      "ownerWith": "Imeunganishwa",
+      "ownerWithout": "Hakuna mmiliki"
+    }
+  },
+  "AdminOwnerView": {
+    "readOnly": "Kusoma tu",
+    "backToFile": "← Rudi kwenye faili",
+    "intro": "Kile mdaiwa anachokiona kwenye tovuti yake. Hakuna hatua inayowezekana hapa.",
+    "blockersTitle": "Kinachomzuia kulipa",
+    "blockersHint": "Kimetokana na faili lake.",
+    "blocker": {
+      "SANCTIONED": {
+        "label": "Vikwazo",
+        "detail": "Utaratibu wa OFAC au UN: mawasiliano yamepigwa marufuku."
+      },
+      "NO_EMAIL": {
+        "label": "Hakuna anwani",
+        "detail": "Hakuna anwani ya bili — ukumbusho hauendi kwa mtu yeyote."
+      },
+      "NO_ACCOUNT": {
+        "label": "Hakuna akaunti",
+        "detail": "Akaunti haijawahi kuundwa — hana ufikiaji wa tovuti."
+      },
+      "INVITE_PENDING": {
+        "label": "Mwaliko unasubiri",
+        "detail": "Alialikwa lakini hajawahi kuingia."
+      }
+    },
+    "owedTitle": "Anachodaiwa",
+    "owedTotal": "Deni lililobaki",
+    "owedCount": "Bili wazi",
+    "paidTotal": "Alicholipa",
+    "nothingOwed": "Hakuna bili wazi.",
+    "late": "Imechelewa",
+    "none": "—",
+    "col": {
+      "invoice": "Bili",
+      "issued": "Ilitolewa",
+      "due": "Tarehe ya mwisho",
+      "amount": "Kiasi",
+      "outstanding": "Deni lililobaki"
+    },
+    "accountTitle": "Akaunti yake",
+    "accountState": "Hali ya akaunti",
+    "billingEmail": "Anwani ya bili",
+    "kycB": "KYC ngazi B",
+    "kycC": "KYC ngazi C",
+    "breadcrumb": "Mwonekano wa mmiliki"
   }
 }

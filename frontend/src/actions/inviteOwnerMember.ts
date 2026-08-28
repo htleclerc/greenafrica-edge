@@ -9,6 +9,7 @@ import { assertContactAllowed, SanctionedContactError } from '@/domain/sanctions
 import { writeAuditLog } from '@/services/auditService';
 import { clampToGranter, PRIVILEGE_COLUMN, PRIVILEGE_KEYS, type OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import { notifyOwner } from '@/services/notificationService';
+import { sendMemberAccessEmail } from '@/services/emailService';
 
 const schema = z.object({
     email: z.string().trim().email(),
@@ -161,6 +162,41 @@ export async function inviteOwnerMember(raw: unknown): Promise<InviteOwnerMember
             granted_by_member: principal.isMember,
         },
     });
+
+    // La personne invitée doit apprendre qu'elle a un accès, et pouvoir entrer.
+    //
+    // `provisionOwnerAccount` crée le compte DÉLIBÉRÉMENT en silence — c'est son
+    // contrat, écrit pour le rattrapage de la campagne du 19 août, où le lien
+    // arrivait par la relance suivante. Réutilisée telle quelle pour un geste
+    // qui s'appelle « inviter », elle laissait le membre avec un accès dont il
+    // ignorait l'existence. L'envoi manquait, il est ici.
+    //
+    // Un échec d'envoi n'annule pas l'invitation : la ligne est créée, le droit
+    // existe, et le titulaire peut ré-inviter. Mais il est journalisé.
+    try {
+        const { data: link } = await admin.auth.admin.generateLink({
+            type: 'magiclink',
+            email,
+            options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/dashboard` },
+        });
+        const action = link?.properties?.action_link;
+        const code = link?.properties?.email_otp;
+        if (action && code) {
+            await sendMemberAccessEmail({
+                to: email,
+                recipientName: parsed.data.fullName,
+                accountName: owner.name ?? 'Green Gate',
+                invitedBy: principal.email ?? '—',
+                granted: PRIVILEGE_KEYS.filter((key) => granted[key]),
+                link: action,
+                code,
+            });
+        } else {
+            console.error('[inviteOwnerMember] lien non généré pour', email);
+        }
+    } catch (e) {
+        console.error("[inviteOwnerMember] envoi au membre invité", e);
+    }
 
     // Quand c'est un MEMBRE qui ouvre un accès, le titulaire doit l'apprendre.
     // Le journal d'audit garde la trace, mais personne ne le lit au quotidien :

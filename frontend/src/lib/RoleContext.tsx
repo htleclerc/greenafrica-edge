@@ -13,6 +13,8 @@ export interface InitialRolePrincipal {
     kind: PrincipalKind;
     user: SecureUser;
     modes: OperatorMode[];
+    /** profiles.collections_focus (mig 142) — staff seulement, absent = pas de focus. */
+    collectionsFocus?: boolean;
 }
 
 interface RoleContextValue {
@@ -24,6 +26,15 @@ interface RoleContextValue {
     kind: PrincipalKind;
     /** Modes an operator may act in; empty for staff. */
     modes: OperatorMode[];
+    /**
+     * profiles.collections_focus (mig 142) — resserre le menu sur le poste de
+     * recouvrement. Confort de navigation, jamais un droit.
+     *
+     * Optionnel : absent vaut « pas de focus ». Seule la branche staff le
+     * renseigne — un opérateur ou une session de démo n'a pas de poste de
+     * recouvrement à resserrer.
+     */
+    collectionsFocus?: boolean;
 }
 
 const RoleContext = React.createContext<RoleContextValue>({
@@ -97,7 +108,17 @@ async function resolveRealSession(
             ipAddress: profile.ip_address ?? '',
             isActive: profile.is_active ?? true,
         };
-        return { role: user.role, user, isDemo: false, ready: true, kind: 'staff', modes: [] };
+        return {
+            role: user.role,
+            user,
+            isDemo: false,
+            ready: true,
+            kind: 'staff',
+            modes: [],
+            // `select('*')` ci-dessus ramène déjà la colonne ; défaut prudent
+            // si la migration 142 n'est pas encore passée sur l'environnement.
+            collectionsFocus: profile.collections_focus === true,
+        };
     }
 
     const { data: shipowner } = await supabase
@@ -212,6 +233,7 @@ export function RoleProvider({
                   ready: true,
                   kind: initial.kind,
                   modes: initial.modes,
+                  collectionsFocus: initial.collectionsFocus === true,
               }
             : {
                   role: UserRole.PORT_OFFICER,

@@ -491,6 +491,14 @@ export function ArmateurDetail({ detail, canInvite, canAnonymize, agents }: Prop
                 {stateBadge(detail.account_state)}
                 {detail.is_ofac_sdn && <OsBadge variant="critical" label="OFAC" />}
                 {detail.is_un_prohibited && <OsBadge variant="critical" label="UN" />}
+                {/* Vue lecture seule de ce que le débiteur a sous les yeux —
+                    pas une connexion à sa place. */}
+                <Link
+                    href={`/admin/armateurs/${detail.public_ref}/portail`}
+                    className="ml-auto text-xs text-[#00D97E] hover:underline"
+                >
+                    {t('detail.ownerViewLink')}
+                </Link>
             </div>
 
             {sanctioned && (

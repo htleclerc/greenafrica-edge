@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
+import { getShipownerRefs } from '@/services/shipownerRefService';
 import { listAirlinesCockpit } from '@/services/airlineService';
 import { AirlinesCockpit } from './AirlinesCockpit';
 
@@ -14,12 +15,16 @@ export default async function AirlinesPage() {
     if (!profile || !['PORT_OFFICER', 'FINANCE_ADMIN', 'SUPERADMIN'].includes(profile.role)) redirect('/dashboard');
 
     const rows = await listAirlinesCockpit(supabase);
+    // v_compagnie_recouvrement ne porte pas public_ref : plutot que de
+    // reecrire une vue du rail financier pour un confort d'URL, la page
+    // resout les references en une requete.
+    const refs = await getShipownerRefs(supabase, rows.map((r) => r.id));
     const t = await getTranslations('AdminAirlines');
     return (
         <div className="px-6 py-4">
             <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
             <p className="text-[var(--os-text-muted)] mb-6 text-sm">{t('subtitle')}</p>
-            <AirlinesCockpit rows={rows} canInvite={profile.role === 'SUPERADMIN'} />
+            <AirlinesCockpit rows={rows} refs={refs} canInvite={profile.role === 'SUPERADMIN'} />
         </div>
     );
 }

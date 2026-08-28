@@ -5,7 +5,8 @@ import type { ArmateurCockpitRow } from '@/services/armateurService';
 const base: ArmateurCockpitRow = {
     id: 'x', name: 'ANJIL BULKERS SA', country_code: 'PA', account_state: 'GHOST',
     is_ofac_sdn: false, is_un_prohibited: false, sanctioned: false,
-    official_email: null, imo_company_no: '9999999', proforma_count: 1,
+    official_email: null, public_ref: 'arm_000000000001',
+  imo_company_no: '9999999', proforma_count: 1,
     total_invoiced_usd: 100, total_paid_usd: 0, total_outstanding_usd: 100,
     overdue_count: 0, next_due_date: null, last_auto_tier: null,
     last_reminder_at: null, latest_response_type: null, open_count: 0,

@@ -5,6 +5,12 @@ export interface LoginPrincipal {
     isOperator: boolean;
     /** profiles.role for staff; null/unknown is treated as ordinary staff. */
     role: UserRole | null;
+    /**
+     * profiles.collections_focus (mig 142) — le profil travaille au
+     * recouvrement. Confort de navigation, pas un droit : il ne fait que
+     * choisir l'atterrissage et resserrer le menu.
+     */
+    collectionsFocus?: boolean;
 }
 
 /**
@@ -15,9 +21,12 @@ export interface LoginPrincipal {
  * Phase 2: operators now land on /dashboard (same shell as staff, operator-aware
  * nav). The legacy /owner/dashboard redirects to /dashboard via middleware.
  */
-export function loginDestination({ isOperator, role }: LoginPrincipal): string {
+export function loginDestination({ isOperator, role, collectionsFocus }: LoginPrincipal): string {
     if (isOperator) return '/dashboard';
     if (role === UserRole.SUPERADMIN) return '/post-login';
     if (role === UserRole.MANAGER) return '/dashboard/vision';
+    // Après l'impersonation du SUPERADMIN et avant le repli générique : un profil
+    // de recouvrement ouvre sa session sur son tableau de bord, pas sur la carte.
+    if (collectionsFocus) return '/admin/reglements';
     return '/dashboard';
 }

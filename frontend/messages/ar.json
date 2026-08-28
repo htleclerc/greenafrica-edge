@@ -729,7 +729,8 @@
     "nav_admin_collections": "التحصيل",
     "nav_vessel_identity": "هوية السفن",
     "theme_switch_to_light": "Switch to light theme",
-    "theme_switch_to_dark": "Switch to dark theme"
+    "theme_switch_to_dark": "Switch to dark theme",
+    "nav_navires": "السفن"
   },
   "AdminStaff": {
     "page_title": "إدارة الموظفين",
@@ -4000,7 +4001,16 @@
         "fallback": "{fallbackReason}"
       }
     },
-    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only."
+    "memberNotice": "You are a member of this account. The company identity, its banking details and the billing copies remain editable by the account holder only.",
+    "tabs": {
+      "label": "Account sections",
+      "identity": "Identity",
+      "billing": "Billing & bank",
+      "members": "Members",
+      "documents": "Documents"
+    },
+    "title": "My account",
+    "subtitle": "Company identity, billing, authorised members and documents."
   },
   "AdminRegistrations": {
     "title": "تسجيلات ملاك السفن",
@@ -4582,7 +4592,8 @@
       "repInviteEmail": "البريد الإلكتروني للممثل",
       "repInviteName": "اسم الممثل",
       "repInviteSubmit": "إنشاء وربط",
-      "repInviteHint": "يُنشئ الحساب ويربطه. لا يُرسل أي بريد إلكتروني — يتم الوصول عبر التذكير التالي."
+      "repInviteHint": "يُنشئ الحساب ويربطه. لا يُرسل أي بريد إلكتروني — يتم الوصول عبر التذكير التالي.",
+      "ownerViewLink": "اعرض ما يراه المالك"
     },
     "cockpit": {
       "verdict": "{count, plural, =0 {No shipowner in payment default} =1 {1 shipowner in payment default} other {# shipowners in payment default}}",
@@ -4932,5 +4943,83 @@
     "submit": "Verify",
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
+  },
+  "AdminNavires": {
+    "title": "السفن",
+    "subtitle": "المبالغ المستحقة لكل سفينة. المطالبة غير المرتبطة بسفينة لا تظهر هنا.",
+    "noOwner": "بدون مالك",
+    "empty": "لا توجد سفن",
+    "overdueSuffix": "{count} متأخرة",
+    "coverageComplete": "يغطي كامل المبلغ المستحق: {total}.",
+    "coverageGap": "يغطي {covered} من {total} — {gap} على مطالبات بدون سفينة مرتبطة.",
+    "col": {
+      "vessel": "السفينة",
+      "owner": "مالك السفينة",
+      "state": "الحالة",
+      "outstanding": "المستحق",
+      "invoiced": "المفوتر",
+      "open": "مفتوحة",
+      "nextDue": "الاستحقاق التالي"
+    },
+    "state": {
+      "OVERDUE": "متأخرة",
+      "OPEN": "مفتوحة",
+      "SETTLED": "مسددة",
+      "NEVER_INVOICED": "لم تفوتر"
+    },
+    "filters": {
+      "search": "بحث",
+      "searchPlaceholder": "الاسم، IMO، المالك",
+      "state": "الحالة",
+      "owner": "المالك",
+      "all": "الكل",
+      "ownerWith": "مرتبطة",
+      "ownerWithout": "بدون مالك"
+    }
+  },
+  "AdminOwnerView": {
+    "readOnly": "قراءة فقط",
+    "backToFile": "← العودة إلى الملف",
+    "intro": "ما يراه المدين في بوابته. لا يمكن اتخاذ أي إجراء من هذه الشاشة.",
+    "blockersTitle": "ما يمنعه من الدفع",
+    "blockersHint": "مستنتج من ملفه.",
+    "blocker": {
+      "SANCTIONED": {
+        "label": "عقوبات",
+        "detail": "نظام OFAC أو الأمم المتحدة: الاتصال محظور."
+      },
+      "NO_EMAIL": {
+        "label": "بدون عنوان",
+        "detail": "لا يوجد عنوان فوترة — التذكير لا يصل إلى أحد."
+      },
+      "NO_ACCOUNT": {
+        "label": "بدون حساب",
+        "detail": "لم يُنشأ الحساب قط — لا وصول له إلى البوابة."
+      },
+      "INVITE_PENDING": {
+        "label": "دعوة معلقة",
+        "detail": "تمت دعوته لكنه لم يسجل الدخول قط."
+      }
+    },
+    "owedTitle": "ما هو مستحق عليه",
+    "owedTotal": "المستحق",
+    "owedCount": "فواتير مفتوحة",
+    "paidTotal": "المدفوع",
+    "nothingOwed": "لا توجد فواتير مفتوحة.",
+    "late": "متأخرة",
+    "none": "—",
+    "col": {
+      "invoice": "الفاتورة",
+      "issued": "تاريخ الإصدار",
+      "due": "الاستحقاق",
+      "amount": "المبلغ",
+      "outstanding": "المستحق"
+    },
+    "accountTitle": "حسابه",
+    "accountState": "حالة الحساب",
+    "billingEmail": "عنوان الفوترة",
+    "kycB": "KYC المستوى B",
+    "kycC": "KYC المستوى C",
+    "breadcrumb": "عرض المالك"
   }
 }

@@ -17,6 +17,7 @@ import { MAX_CC_EMAILS, normalizeCcEmails } from '@/lib/armateurContacts';
 const { JID } = vi.hoisted(() => ({ JID: '00000000-0000-4000-8000-00000000534f' }));
 const OTHER_JID = '00000000-0000-4000-8000-00000000444a';
 const SHIPOWNER_ID = 'a1b2c3d4-e5f6-4789-9abc-def012345678';
+const PUBLIC_REF = 'arm_0123456789ab';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
 }));
 
-let ownerRow: { id: string; jurisdiction_id: string } | null;
+let ownerRow: { id: string; jurisdiction_id: string; public_ref: string } | null;
 const contactsUpdateSpy = vi.fn((_patch: Record<string, unknown>) => ({ error: null as { message: string } | null }));
 const auditInsertSpy = vi.fn((_payload: Record<string, unknown>) => ({ error: null as { message: string } | null }));
 
@@ -49,6 +50,9 @@ function buildAdminMock() {
                                 ownerRow
                                     ? { data: ownerRow, error: null }
                                     : { data: null, error: { message: 'not found' } },
+                            // L'action relit la reference opaque pour revalider la
+                            // fiche : la route est indexee par elle, pas par l'UUID.
+                            maybeSingle: async () => ({ data: ownerRow, error: null }),
                         }),
                     }),
                     update: (patch: Record<string, unknown>) => ({
@@ -88,7 +92,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     getUserMock.mockResolvedValue({ data: { user: { id: 'staff-1' } } });
     profileSingleMock.mockResolvedValue({ data: { role: 'PORT_OFFICER', full_name: 'Officer A' }, error: null });
-    ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: JID };
+    ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: JID, public_ref: PUBLIC_REF };
     contactsUpdateSpy.mockImplementation(() => ({ error: null }));
 });
 
@@ -155,7 +159,7 @@ describe('updateArmateurContacts — gardes', () => {
     });
 
     it('isolation de juridiction — refuse un PORT_OFFICER hors de sa juridiction', async () => {
-        ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: OTHER_JID };
+        ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: OTHER_JID, public_ref: PUBLIC_REF };
         const r = await updateArmateurContacts(baseInput);
         expect(r).toEqual({ ok: false, reason: 'forbidden: shipowner belongs to another jurisdiction' });
         expect(contactsUpdateSpy).not.toHaveBeenCalled();
@@ -168,7 +172,7 @@ describe('updateArmateurContacts — gardes', () => {
 
     it('SUPERADMIN contourne la vérification de juridiction', async () => {
         profileSingleMock.mockResolvedValue({ data: { role: 'SUPERADMIN', full_name: 'Root' }, error: null });
-        ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: OTHER_JID };
+        ownerRow = { id: SHIPOWNER_ID, jurisdiction_id: OTHER_JID, public_ref: PUBLIC_REF };
         const r = await updateArmateurContacts(baseInput);
         expect(r).toEqual({ ok: true });
     });
@@ -179,6 +183,21 @@ describe('updateArmateurContacts — gardes', () => {
 // en/fr/so/pt/ar/sw (migration 124) : Zod doit refuser exactement ce que
 // Postgres refuserait, et jamais accepter null (contrairement aux cinq autres
 // coordonnées, qui elles peuvent être explicitement effacées).
+describe('updateArmateurContacts — revalidation', () => {
+    it('revalide la fiche par sa reference opaque, jamais par son identifiant', async () => {
+        // La route /admin/armateurs/[ref] est indexee par la reference opaque
+        // (mig 144) : revalider le chemin construit avec l'UUID ne purgerait
+        // rien, et la fiche resterait perimee apres une correction de contact.
+        const { revalidatePath } = await import('next/cache');
+        const { updateArmateurContacts } = await import('../actions/updateArmateurContacts');
+
+        await updateArmateurContacts({ shipownerId: SHIPOWNER_ID, officialEmail: 'a@b.example' });
+
+        expect(revalidatePath).toHaveBeenCalledWith(`/admin/armateurs/${PUBLIC_REF}`);
+        expect(revalidatePath).not.toHaveBeenCalledWith(`/admin/armateurs/${SHIPOWNER_ID}`);
+    });
+});
+
 describe('updateArmateurContacts — preferredLanguage', () => {
     it('rejette une langue hors des six locales livrées', async () => {
         const r = await updateArmateurContacts({ ...baseInput, preferredLanguage: 'de' });

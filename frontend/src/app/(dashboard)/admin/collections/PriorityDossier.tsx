@@ -35,7 +35,9 @@ function tierAccent(tier: string): OsAccent {
  * Le troisième panneau énonce la conséquence concrète avant de proposer le
  * bouton — « blocage de l'appareillage » se décide autrement que « escalader ».
  */
-export function PriorityDossier({ dossier }: { dossier: Dossier }) {
+export function PriorityDossier(
+    { dossier, shipownerRef }: { dossier: Dossier; shipownerRef: string | null },
+) {
     const t = useTranslations('AdminCollections');
     const router = useRouter();
 
@@ -87,9 +89,9 @@ export function PriorityDossier({ dossier }: { dossier: Dossier }) {
                 <h2 className="text-sm font-semibold text-[var(--os-text-primary)]">
                     {t('priorityTitle', { debtor: dossier.debtorName })}
                 </h2>
-                {dossier.shipownerId && (
+                {shipownerRef && (
                     <Link
-                        href={`/admin/armateurs/${dossier.shipownerId}`}
+                        href={`/admin/armateurs/${shipownerRef}`}
                         className="text-[12.5px] font-semibold text-[var(--os-brand-cyan)] transition-opacity duration-150 hover:opacity-80"
                     >
                         {t('priorityOpenFile')} →

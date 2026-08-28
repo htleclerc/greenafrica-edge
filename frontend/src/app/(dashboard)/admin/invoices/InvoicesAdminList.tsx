@@ -21,6 +21,8 @@ interface Props {
     pageSize: number;
     filters: InvoiceAdminFilters;
     options: InvoiceFilterOptions;
+    /** id interne -> reference opaque exposee dans l'URL (mig 144). */
+    refs: Record<string, string>;
 }
 
 const DOC_TYPES = ['PROFORMA', 'FINAL', 'COMPLEMENT', 'REFUND'] as const;
@@ -50,7 +52,7 @@ function usd(n: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
-export function InvoicesAdminList({ rows, total, page, pageSize, filters, options }: Props) {
+export function InvoicesAdminList({ rows, total, page, pageSize, filters, options, refs }: Props) {
     const t = useTranslations('AdminInvoices');
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -176,7 +178,7 @@ export function InvoicesAdminList({ rows, total, page, pageSize, filters, option
                 columns={columns}
                 rows={rows}
                 keyExtractor={(r) => r.id}
-                onRowClick={(r) => { if (r.shipowner_id) router.push(`/admin/armateurs/${r.shipowner_id}`); }}
+                onRowClick={(r) => { const ref = r.shipowner_id ? refs[r.shipowner_id] : undefined; if (ref) router.push(`/admin/armateurs/${ref}`); }}
                 emptyMessage={t('empty')}
                 sort={sort}
                 onSortChange={onSortChange}

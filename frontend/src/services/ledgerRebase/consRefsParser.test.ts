@@ -11,16 +11,16 @@ import {
  *
  * La source faisant foi est le CLASSEUR de suivi. `cons_refs_mapping.csv` du
  * paquet de pro-formas est un export à perte : il omet trois adresses
- * principales — dont faros@farosshipping.example sur PRO-CONS-2026-021, sans quoi
- * Leaders for Trading (19 843,20 USD) resterait sans compte — et n'a aucune
+ * principales — dont celle de PRO-CONS-2026-021, sans quoi Leaders for
+ * Trading (19 843,20 USD) resterait sans compte — et n'a aucune
  * colonne équivalente aux « Emails secondaires ». Il sert désormais de
  * contrôle de concordance : deux fichiers produits séparément qui s'accordent
  * sur 74 dossiers, 86 navires et 1 316 124,00 USD.
  */
 const CSV = `cons_ref,fleet_manager,n_vessels,total_usd,contact_email,contact_phone,contact_address,contact_country,owner_name,owner_email,owner_phone,owner_address,owner_country,pi_club,vessels
-PRO-CONS-2026-002,"CORAL TECHNICAL SERVICES",5,93190.40,"coral@nets.example","+99 1 1041","Amman, Jordan.","JO","IMAN SHIPPING CO LTD","","","Amman, Jordan.","JO","","ALIMAN | ABU YASSER II | ALBARAKA 1 | BARAKAT | AL MABROUKA 10"
-PRO-CONS-2026-003,"DEVON SHIP MANAGEMENT LTD",2,53012.80,"","+99 1 1020","Mersin, Turkey.","TR","CAPE CRUISE MARINE LTD","","","Monrovia, Liberia.","LR","ASO P&I","CEFIRO | PORTLAND S"
-PRO-CONS-2026-055,"SUCCESS SHIPPING FZE",1,7018.80,"marine@succshipping.example","+99 1 1054","Sharjah, UAE.","AE","OCEAN DEEP LTD","operations@neelshipping.example","","Sharjah, UAE.","AE","West of England","SNARTH"
+PRO-CONS-2026-002,"CORAL TECHNICAL SERVICES",5,93190.40,"coral@nets.example","+99 1 1050","Amman, Jordan.","JO","IMAN SHIPPING CO LTD","","","Amman, Jordan.","JO","","ALIMAN | ABU YASSER II | ALBARAKA 1 | BARAKAT | AL MABROUKA 10"
+PRO-CONS-2026-003,"DEVON SHIP MANAGEMENT LTD",2,53012.80,"","+99 1 1051","Mersin, Turkey.","TR","CAPE CRUISE MARINE LTD","","","Monrovia, Liberia.","LR","ASO P&I","CEFIRO | PORTLAND S"
+PRO-CONS-2026-055,"SUCCESS SHIPPING FZE",1,7018.80,"marine@succshipping.example","+99 1 1052","Sharjah, UAE.","AE","OCEAN DEEP LTD","operations@neelshipping.example","","Sharjah, UAE.","AE","West of England","SNARTH"
 `;
 
 describe('parseConsRefs', () => {

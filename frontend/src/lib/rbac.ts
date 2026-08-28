@@ -81,6 +81,9 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
     // Shipowners cockpit (collections) — same audience as jurisdictions
     'armateurs':    [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
+    // Vessel-level collections view (mig 143) — same audience as armateurs
+    'navires':      [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+
     // Airlines cockpit (collections) — same audience as armateurs
     'airlines':     [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
 
@@ -159,8 +162,40 @@ export function canEdit(navKey: string, role: UserRole): boolean {
 /**
  * Filter a list of nav items based on the user's role.
  */
-export function filterNavItems<T extends { key: string }>(items: T[], role: UserRole): T[] {
-    return items.filter((item) => canAccess(item.key, role));
+/**
+ * Menu du poste de recouvrement (mig 142, `profiles.collections_focus`).
+ *
+ * Un FINANCE_ADMIN voit 21 entrées ; celui qui poursuit les impayés n'en
+ * utilise que cinq. Cet ensemble les nomme.
+ *
+ * C'est un FILTRE, jamais une autorisation : `filterNavItems` l'INTERSECTE avec
+ * ce que le rôle permet déjà. Un rôle qui n'a pas droit à une de ces clés ne
+ * l'obtient pas en portant le drapeau — sinon un confort de navigation
+ * deviendrait une élévation de privilège.
+ */
+export const COLLECTIONS_FOCUS_NAV: readonly string[] = [
+    'reglements',
+    'armateurs',
+    'navires',
+    'admin-collections',
+    'admin-invoices',
+    'settings',
+];
+
+/**
+ * @param collectionsFocus `profiles.collections_focus` — resserre le menu sur
+ *   {@link COLLECTIONS_FOCUS_NAV}. Ne retranche que ce que le rôle accordait
+ *   déjà ; les gardes de page, elles, ne regardent que le rôle.
+ */
+export function filterNavItems<T extends { key: string }>(
+    items: T[],
+    role: UserRole,
+    collectionsFocus = false,
+): T[] {
+    return items.filter((item) =>
+        canAccess(item.key, role)
+        && (!collectionsFocus || COLLECTIONS_FOCUS_NAV.includes(item.key)),
+    );
 }
 
 /**

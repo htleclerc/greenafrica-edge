@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { OsCard, OsCardHeader } from '@/components/ui/OsCard';
 import { OsInput, OsSelect } from '@/components/ui/OsInput';
 import { OsButton } from '@/components/ui/OsButton';
+import { OsFilterTabs } from '@/components/ui/OsFilterTabs';
 import { KycStatus } from '@/components/owner/KycStatus';
 import { BillingCcSection } from './BillingCcSection';
 import { MembersSection } from './MembersSection';
@@ -105,6 +106,16 @@ function buildBillingDiff(initial: BillingFormState, current: BillingFormState):
     return diff;
 }
 
+/**
+ * Les quatre volets du compte.
+ *
+ * En onglets et non empilés : les deux formulaires d'identité et de facturation
+ * font chacun une page entière, et les membres se trouvaient derrière eux, au
+ * bout d'un long défilement. Ils sont maintenant à un clic.
+ */
+const TABS = ['identity', 'billing', 'members', 'documents'] as const;
+type TabKey = (typeof TABS)[number];
+
 export function OwnerProfile({
     profile, members, privileges, isMember,
 }: {
@@ -115,6 +126,7 @@ export function OwnerProfile({
 }) {
     const t = useTranslations('OwnerProfile');
     const router = useRouter();
+    const [tab, setTab] = useState<TabKey>('identity');
 
     const [identityBaseline, setIdentityBaseline] = useState<IdentityFormState>(() => toIdentityForm(profile));
     const [identityForm, setIdentityForm] = useState<IdentityFormState>(() => toIdentityForm(profile));
@@ -212,210 +224,234 @@ export function OwnerProfile({
     const bPendingReverif = !profile.bDone && !!profile.imo_company_no;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-6">
             {isMember && (
                 <p className="rounded-lg border border-[var(--os-blue)]/25 bg-[var(--os-blue)]/8 px-3 py-2 text-xs leading-relaxed text-[var(--os-text-secondary)]">
                     {t('memberNotice')}
                 </p>
             )}
 
-            <OsCard>
-                <OsCardHeader title={t('identity.title')} subtitle={t('identity.subtitle')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <OsInput
-                        label={t('identity.imoCompanyNo')}
-                        value={identityForm.imo_company_no}
-                        onChange={(e) => updateIdentity('imo_company_no', e.target.value)}
-                        error={identityErrors.imo_company_no}
-                        hint={identityErrors.imo_company_no ? undefined : t('identity.reverifWarning')}
-                    />
-                    <OsInput
-                        label={t('identity.aocNumber')}
-                        value={identityForm.aoc_number}
-                        onChange={(e) => updateIdentity('aoc_number', e.target.value)}
-                        error={identityErrors.aoc_number}
-                        hint={identityErrors.aoc_number ? undefined : t('identity.reverifWarning')}
-                    />
-                    <OsInput
-                        label={t('identity.address')}
-                        value={identityForm.address}
-                        onChange={(e) => updateIdentity('address', e.target.value)}
-                        error={identityErrors.address}
-                        className="sm:col-span-2"
-                    />
-                    <OsInput
-                        label={t('identity.phone')}
-                        value={identityForm.phone_e164}
-                        onChange={(e) => updateIdentity('phone_e164', e.target.value)}
-                        error={identityErrors.phone_e164}
-                    />
-                    <OsSelect
-                        label={t('identity.preferredLanguage')}
-                        value={identityForm.preferred_language}
-                        onChange={(e) => updateIdentity('preferred_language', e.target.value)}
-                        options={LANG_OPTIONS}
-                        placeholder="—"
-                        error={identityErrors.preferred_language}
-                    />
-                    <OsInput
-                        label={t('identity.opsEmail')}
-                        value={identityForm.ops_email}
-                        onChange={(e) => updateIdentity('ops_email', e.target.value)}
-                        error={identityErrors.ops_email}
-                    />
-                    <OsInput
-                        label={t('identity.financeEmail')}
-                        value={identityForm.finance_email}
-                        onChange={(e) => updateIdentity('finance_email', e.target.value)}
-                        error={identityErrors.finance_email}
-                    />
+            <header className="flex flex-col gap-3">
+                <div>
+                    <h1 className="text-xl font-bold text-[var(--os-text-primary)]">{t('title')}</h1>
+                    <p className="mt-0.5 text-sm text-[var(--os-text-muted)]">{t('subtitle')}</p>
                 </div>
-                {identitySubmitError && <p className="text-xs text-[#EF4444] mt-3">{identitySubmitError}</p>}
-                <div className="mt-4">
-                    <OsButton onClick={submitIdentity} loading={identityBusy}>
-                        {t('save')}
-                    </OsButton>
-                </div>
-            </OsCard>
-
-            <OsCard>
-                <OsCardHeader title={t('billing.title')} subtitle={t('billing.subtitle')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <OsInput
-                        label={t('billing.legalName')}
-                        value={billingForm.billing_legal_name}
-                        onChange={(e) => updateBilling('billing_legal_name', e.target.value)}
-                        error={billingErrors.billing_legal_name}
-                        className="sm:col-span-2"
-                    />
-                    <OsInput
-                        label={t('billing.addressLine1')}
-                        value={billingForm.billing_address_line1}
-                        onChange={(e) => updateBilling('billing_address_line1', e.target.value)}
-                        error={billingErrors.billing_address_line1}
-                        className="sm:col-span-2"
-                    />
-                    <OsInput
-                        label={t('billing.addressLine2')}
-                        value={billingForm.billing_address_line2}
-                        onChange={(e) => updateBilling('billing_address_line2', e.target.value)}
-                        error={billingErrors.billing_address_line2}
-                        className="sm:col-span-2"
-                    />
-                    <OsInput
-                        label={t('billing.city')}
-                        value={billingForm.billing_city}
-                        onChange={(e) => updateBilling('billing_city', e.target.value)}
-                        error={billingErrors.billing_city}
-                    />
-                    <OsInput
-                        label={t('billing.postalCode')}
-                        value={billingForm.billing_postal_code}
-                        onChange={(e) => updateBilling('billing_postal_code', e.target.value)}
-                        error={billingErrors.billing_postal_code}
-                    />
-                    <OsInput
-                        label={t('billing.countryCode')}
-                        value={billingForm.billing_country_code}
-                        onChange={(e) => updateBilling('billing_country_code', e.target.value.toUpperCase())}
-                        error={billingErrors.billing_country_code}
-                        maxLength={2}
-                    />
-                    <OsInput
-                        label={t('billing.vatNumber')}
-                        value={billingForm.vat_number}
-                        onChange={(e) => updateBilling('vat_number', e.target.value)}
-                        error={billingErrors.vat_number}
-                    />
-
-                    <OsInput
-                        label={t('billing.currentIban')}
-                        value={profile.iban_masked ?? t('billing.noIban')}
-                        disabled
-                    />
-                    <OsInput
-                        label={t('billing.newIban')}
-                        value={newIban}
-                        onChange={(e) => setNewIban(e.target.value.toUpperCase())}
-                        error={billingErrors.iban}
-                        hint={t('billing.newIbanHint')}
-                    />
-                    <OsInput
-                        label={t('billing.swiftBic')}
-                        value={billingForm.swift_bic}
-                        onChange={(e) => updateBilling('swift_bic', e.target.value.toUpperCase())}
-                        error={billingErrors.swift_bic}
-                    />
-                    <OsInput
-                        label={t('billing.bankName')}
-                        value={billingForm.bank_name}
-                        onChange={(e) => updateBilling('bank_name', e.target.value)}
-                        error={billingErrors.bank_name}
-                    />
-                </div>
-                {billingSubmitError && <p className="text-xs text-[#EF4444] mt-3">{billingSubmitError}</p>}
-                <div className="mt-4">
-                    <OsButton onClick={submitBilling} loading={billingBusy}>
-                        {t('save')}
-                    </OsButton>
-                </div>
-            </OsCard>
-
-            <OsCard>
-                <OsCardHeader title={t('status.title')} />
+                {/* Le statut KYC reste visible sous tous les onglets : c'est la
+                    reponse a « ou j'en suis », qu'on cherche avant de choisir
+                    quoi remplir. */}
                 <KycStatus bDone={profile.bDone} cDone={profile.cDone} bPendingReverif={bPendingReverif} />
-            </OsCard>
+            </header>
 
-            <OsCard>
-                <OsCardHeader title={t('documents.title')} />
-                <div className="flex flex-col gap-2 text-sm">
-                    <a
-                        href="/api/owner/export"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:no-underline text-[var(--os-highlight)]"
-                    >
-                        {t('exportData')}
-                    </a>
-                    {profile.proof_doc_url ? (
-                        <a
-                            href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.proof_doc_url)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline hover:no-underline text-[var(--os-highlight)]"
-                        >
-                            {t('documents.proofB')}
-                        </a>
-                    ) : (
-                        <span className="text-[var(--os-text-muted)]">{t('documents.noProofB')}</span>
-                    )}
-                    {profile.billing_proof_doc_url ? (
-                        <a
-                            href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.billing_proof_doc_url)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline hover:no-underline text-[var(--os-highlight)]"
-                        >
-                            {t('documents.proofC')}
-                        </a>
-                    ) : (
-                        <span className="text-[var(--os-text-muted)]">{t('documents.noProofC')}</span>
-                    )}
-                </div>
-            </OsCard>
+            <OsFilterTabs
+                label={t('tabs.label')}
+                value={tab}
+                onChange={(v) => setTab(v as TabKey)}
+                tabs={TABS.map((k) => ({ value: k, label: t(`tabs.${k}`) }))}
+            />
 
-            {!isMember && (
-                <BillingCcSection
-                    officialEmail={profile.official_email}
-                    initialEmails={profile.billing_cc_emails}
+            {tab === 'identity' && (
+                <OsCard>
+                    <OsCardHeader title={t('identity.title')} subtitle={t('identity.subtitle')} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <OsInput
+                            label={t('identity.imoCompanyNo')}
+                            value={identityForm.imo_company_no}
+                            onChange={(e) => updateIdentity('imo_company_no', e.target.value)}
+                            error={identityErrors.imo_company_no}
+                            hint={identityErrors.imo_company_no ? undefined : t('identity.reverifWarning')}
+                        />
+                        <OsInput
+                            label={t('identity.aocNumber')}
+                            value={identityForm.aoc_number}
+                            onChange={(e) => updateIdentity('aoc_number', e.target.value)}
+                            error={identityErrors.aoc_number}
+                            hint={identityErrors.aoc_number ? undefined : t('identity.reverifWarning')}
+                        />
+                        <OsInput
+                            label={t('identity.address')}
+                            value={identityForm.address}
+                            onChange={(e) => updateIdentity('address', e.target.value)}
+                            error={identityErrors.address}
+                            className="sm:col-span-2"
+                        />
+                        <OsInput
+                            label={t('identity.phone')}
+                            value={identityForm.phone_e164}
+                            onChange={(e) => updateIdentity('phone_e164', e.target.value)}
+                            error={identityErrors.phone_e164}
+                        />
+                        <OsSelect
+                            label={t('identity.preferredLanguage')}
+                            value={identityForm.preferred_language}
+                            onChange={(e) => updateIdentity('preferred_language', e.target.value)}
+                            options={LANG_OPTIONS}
+                            placeholder="—"
+                            error={identityErrors.preferred_language}
+                        />
+                        <OsInput
+                            label={t('identity.opsEmail')}
+                            value={identityForm.ops_email}
+                            onChange={(e) => updateIdentity('ops_email', e.target.value)}
+                            error={identityErrors.ops_email}
+                        />
+                        <OsInput
+                            label={t('identity.financeEmail')}
+                            value={identityForm.finance_email}
+                            onChange={(e) => updateIdentity('finance_email', e.target.value)}
+                            error={identityErrors.finance_email}
+                        />
+                    </div>
+                    {identitySubmitError && <p className="text-xs text-[#EF4444] mt-3">{identitySubmitError}</p>}
+                    <div className="mt-4">
+                        <OsButton onClick={submitIdentity} loading={identityBusy}>
+                            {t('save')}
+                        </OsButton>
+                    </div>
+                </OsCard>
+            )}
+
+            {tab === 'billing' && (
+                <>
+                    <OsCard>
+                        <OsCardHeader title={t('billing.title')} subtitle={t('billing.subtitle')} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <OsInput
+                                label={t('billing.legalName')}
+                                value={billingForm.billing_legal_name}
+                                onChange={(e) => updateBilling('billing_legal_name', e.target.value)}
+                                error={billingErrors.billing_legal_name}
+                                className="sm:col-span-2"
+                            />
+                            <OsInput
+                                label={t('billing.addressLine1')}
+                                value={billingForm.billing_address_line1}
+                                onChange={(e) => updateBilling('billing_address_line1', e.target.value)}
+                                error={billingErrors.billing_address_line1}
+                                className="sm:col-span-2"
+                            />
+                            <OsInput
+                                label={t('billing.addressLine2')}
+                                value={billingForm.billing_address_line2}
+                                onChange={(e) => updateBilling('billing_address_line2', e.target.value)}
+                                error={billingErrors.billing_address_line2}
+                                className="sm:col-span-2"
+                            />
+                            <OsInput
+                                label={t('billing.city')}
+                                value={billingForm.billing_city}
+                                onChange={(e) => updateBilling('billing_city', e.target.value)}
+                                error={billingErrors.billing_city}
+                            />
+                            <OsInput
+                                label={t('billing.postalCode')}
+                                value={billingForm.billing_postal_code}
+                                onChange={(e) => updateBilling('billing_postal_code', e.target.value)}
+                                error={billingErrors.billing_postal_code}
+                            />
+                            <OsInput
+                                label={t('billing.countryCode')}
+                                value={billingForm.billing_country_code}
+                                onChange={(e) => updateBilling('billing_country_code', e.target.value.toUpperCase())}
+                                error={billingErrors.billing_country_code}
+                                maxLength={2}
+                            />
+                            <OsInput
+                                label={t('billing.vatNumber')}
+                                value={billingForm.vat_number}
+                                onChange={(e) => updateBilling('vat_number', e.target.value)}
+                                error={billingErrors.vat_number}
+                            />
+
+                            <OsInput
+                                label={t('billing.currentIban')}
+                                value={profile.iban_masked ?? t('billing.noIban')}
+                                disabled
+                            />
+                            <OsInput
+                                label={t('billing.newIban')}
+                                value={newIban}
+                                onChange={(e) => setNewIban(e.target.value.toUpperCase())}
+                                error={billingErrors.iban}
+                                hint={t('billing.newIbanHint')}
+                            />
+                            <OsInput
+                                label={t('billing.swiftBic')}
+                                value={billingForm.swift_bic}
+                                onChange={(e) => updateBilling('swift_bic', e.target.value.toUpperCase())}
+                                error={billingErrors.swift_bic}
+                            />
+                            <OsInput
+                                label={t('billing.bankName')}
+                                value={billingForm.bank_name}
+                                onChange={(e) => updateBilling('bank_name', e.target.value)}
+                                error={billingErrors.bank_name}
+                            />
+                        </div>
+                        {billingSubmitError && <p className="text-xs text-[#EF4444] mt-3">{billingSubmitError}</p>}
+                        <div className="mt-4">
+                            <OsButton onClick={submitBilling} loading={billingBusy}>
+                                {t('save')}
+                            </OsButton>
+                        </div>
+                    </OsCard>
+
+                    {!isMember && (
+                        <BillingCcSection
+                            officialEmail={profile.official_email}
+                            initialEmails={profile.billing_cc_emails}
+                        />
+                    )}
+
+                </>
+            )}
+
+            {tab === 'members' && (
+                <MembersSection
+                    members={members}
+                    granterPrivileges={privileges}
+                    canInvite={privileges.canInvite}
                 />
             )}
 
-            <MembersSection
-                members={members}
-                granterPrivileges={privileges}
-                canInvite={privileges.canInvite}
-            />
+            {tab === 'documents' && (
+                <OsCard>
+                    <OsCardHeader title={t('documents.title')} />
+                    <div className="flex flex-col gap-2 text-sm">
+                        <a
+                            href="/api/owner/export"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:no-underline text-[var(--os-highlight)]"
+                        >
+                            {t('exportData')}
+                        </a>
+                        {profile.proof_doc_url ? (
+                            <a
+                                href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.proof_doc_url)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:no-underline text-[var(--os-highlight)]"
+                            >
+                                {t('documents.proofB')}
+                            </a>
+                        ) : (
+                            <span className="text-[var(--os-text-muted)]">{t('documents.noProofB')}</span>
+                        )}
+                        {profile.billing_proof_doc_url ? (
+                            <a
+                                href={`/api/owner/kyc-doc?path=${encodeURIComponent(profile.billing_proof_doc_url)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:no-underline text-[var(--os-highlight)]"
+                            >
+                                {t('documents.proofC')}
+                            </a>
+                        ) : (
+                            <span className="text-[var(--os-text-muted)]">{t('documents.noProofC')}</span>
+                        )}
+                    </div>
+                </OsCard>
+            )}
         </div>
     );
 }

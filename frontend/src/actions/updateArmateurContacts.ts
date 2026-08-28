@@ -248,6 +248,11 @@ export async function updateArmateurContacts(raw: unknown): Promise<UpdateArmate
     }
 
     revalidatePath('/admin/armateurs');
-    revalidatePath(`/admin/armateurs/${input.shipownerId}`);
+    // La route est indexee par la reference opaque, pas par l'identifiant :
+    // revalider le chemin construit avec l'UUID ne purgerait rien.
+    const { data: refRow } = await platform
+        .from('shipowners').select('public_ref').eq('id', input.shipownerId).maybeSingle();
+    const publicRef = (refRow as { public_ref?: string } | null)?.public_ref;
+    if (publicRef) revalidatePath(`/admin/armateurs/${publicRef}`);
     return { ok: true };
 }

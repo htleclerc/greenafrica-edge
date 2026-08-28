@@ -156,7 +156,7 @@ function LoginPageInner() {
         // Staff role (profiles row may be absent for pure operators).
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role, is_active')
+            .select('role, is_active, collections_focus')
             .eq('id', data.user.id)
             .maybeSingle();
 
@@ -174,7 +174,8 @@ function LoginPageInner() {
         }
 
         const role = (profile?.role as UserRole) ?? null;
-        window.location.href = loginDestination({ isOperator, role });
+        const collectionsFocus = (profile as { collections_focus?: boolean } | null)?.collections_focus === true;
+        window.location.href = loginDestination({ isOperator, role, collectionsFocus });
     }
 
     return (

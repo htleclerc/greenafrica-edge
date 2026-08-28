@@ -304,7 +304,7 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
                             </button>
                         )}
                         <Link
-                            href={`/admin/armateurs/${row.id}`}
+                            href={`/admin/armateurs/${row.public_ref}`}
                             className="shrink-0 px-1 py-1.5 text-[12.5px] text-[var(--os-text-muted)] transition-colors duration-150 hover:text-[var(--os-text-primary)]"
                         >
                             {t('action.file')}
@@ -404,7 +404,7 @@ export function ArmateursCockpit({ rows, canInvite }: Props) {
                     rows={visible}
                     keyExtractor={(d) => d.row.id}
                     rowAccent={(d) => (d.level === 'clear' ? null : LEVEL_ACCENT[d.level])}
-                    onRowClick={(d) => router.push(`/admin/armateurs/${d.row.id}`)}
+                    onRowClick={(d) => router.push(`/admin/armateurs/${d.row.public_ref}`)}
                     rowLabel={(d) => t('rowLabel', { name: d.row.name })}
                     emptyMessage={t('empty')}
                     className="!rounded-none !border-0"
