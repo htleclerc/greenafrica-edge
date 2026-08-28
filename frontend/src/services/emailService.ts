@@ -1157,6 +1157,57 @@ Review members: ${appUrl()}/owner/profile`,
     });
 }
 
+export interface MemberAccessParams {
+    to: string;
+    recipientName: string;
+    accountName: string;
+    invitedBy: string;
+    /** Libellés des droits accordés ; vide = consultation seule. */
+    granted: string[];
+    link: string;
+    code: string;
+}
+
+/**
+ * Annonce à la personne invitée qu'un accès lui a été ouvert.
+ *
+ * Distinct de `sendMemberInvitedEmail`, qui prévient le TITULAIRE. Celui-ci part
+ * à l'invité et porte de quoi entrer : `provisionOwnerAccount` crée le compte
+ * délibérément en silence — sans ce message, la personne aurait un accès dont
+ * elle ignore l'existence.
+ */
+export async function sendMemberAccessEmail(p: MemberAccessParams): Promise<EmailResult> {
+    const rights = p.granted.length > 0 ? p.granted.map((g) => escapeHtml(g)).join(', ') : 'View only';
+
+    const content = `
+        <h1>You have access to ${escapeHtml(p.accountName)}</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>${escapeHtml(p.invitedBy)} gave you access to the Green Gate account of <strong>${escapeHtml(p.accountName)}</strong>. Use the button below to sign in, or enter the code on the sign-in page. No password is required.</p>
+        ${metaRow('Rights', rights)}
+
+        <a href="${p.link}" class="btn">Sign In →</a>
+
+        <div style="text-align:center;margin:20px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you were not expecting this, you can ignore this email; you can also ask ${escapeHtml(p.invitedBy)} to remove the access.</div>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: `Access to ${p.accountName} on Green Gate`,
+        html: emailLayout(content, { previewText: `${p.accountName} — sign-in code ${p.code}` }),
+        text: `${p.invitedBy} gave you access to the Green Gate account of ${p.accountName}.
+Rights: ${p.granted.length > 0 ? p.granted.join(', ') : 'View only'}
+
+Code: ${p.code}
+
+Or open this link (single use, expires shortly):
+${p.link}`,
+    });
+}
+
 export interface VesselAccessCodeParams {
     to: string;
     recipientName?: string;

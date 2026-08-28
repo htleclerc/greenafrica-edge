@@ -3,18 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { listOwnerMembers } from './ownerMembersService';
 
 function client(result: { data?: unknown[]; error?: { message: string } }) {
-    const select = vi.fn(() => chain);
-    const chain: Record<string, unknown> = {
-        select,
-        eq: () => chain,
-        order: () => chain,
-        then: (resolve: (v: unknown) => void) =>
-            resolve({ data: result.data ?? null, error: result.error ?? null }),
-    };
-    return {
-        db: { from: () => chain } as unknown as SupabaseClient,
-        select,
-    };
+    const rpc = vi.fn(async () => ({ data: result.data ?? null, error: result.error ?? null }));
+    return { db: { rpc } as unknown as SupabaseClient, rpc };
 }
 
 const row = (over: Record<string, unknown> = {}) => ({
@@ -27,28 +17,28 @@ const row = (over: Record<string, unknown> = {}) => ({
     active: true,
     created_at: '2026-08-24T10:00:00Z',
     revoked_at: null,
-    profiles: { email: 'compta@horn.example', full_name: 'Amina Haji' },
+    email: 'compta@horn.example',
+    full_name: 'Amina Haji',
     ...over,
 });
 
 describe('listOwnerMembers', () => {
     /**
-     * REGRESSION (2026-08-24) — `owner_members` référence `profiles` deux fois :
-     * le membre (`profile_id`) et celui qui l'a invité (`invited_by`). Un embed
-     * qui ne nomme pas la contrainte est refusé par PostgREST (PGRST201), la
-     * lecture échoue, et l'écran annonçait « aucun membre » alors qu'il y en a.
+     * REGRESSION (2026-08-24) — lire la table en joignant `profiles` échouait
+     * deux fois de suite : d'abord un embed ambigu (deux clés étrangères vers
+     * `profiles`), puis RLS, qui n'accorde à un armateur que SON propre profil.
+     * L'écran a annoncé « aucun membre », puis deux tirets à la place des
+     * identités. La fonction bornée de la mig 141 règle les deux.
      */
-    it('nomme la contrainte, sans quoi l’embed est ambigu', async () => {
-        const { db, select } = client({ data: [row()] });
-        await listOwnerMembers(db, 'so-1');
-        const projection = select.mock.calls[0][0] as unknown as string;
-        expect(projection).toContain('profiles!owner_members_profile_id_fkey');
-        expect(projection).not.toContain('profiles!inner');
+    it('passe par la fonction bornée, jamais par la table', async () => {
+        const { db, rpc } = client({ data: [row()] });
+        await listOwnerMembers(db);
+        expect(rpc).toHaveBeenCalledWith('owner_members_with_identity');
     });
 
     it('rend la vue attendue par l’écran', async () => {
         const { db } = client({ data: [row()] });
-        const [member] = await listOwnerMembers(db, 'so-1');
+        const [member] = await listOwnerMembers(db);
         expect(member).toMatchObject({
             id: 'm1',
             email: 'compta@horn.example',
@@ -61,15 +51,8 @@ describe('listOwnerMembers', () => {
         });
     });
 
-    it('accepte un profil rendu en tableau — PostgREST varie selon la cardinalité', async () => {
-        const { db } = client({ data: [row({ profiles: [{ email: 'a@b.c', full_name: null }] })] });
-        const [member] = await listOwnerMembers(db, 'so-1');
-        expect(member.email).toBe('a@b.c');
-        expect(member.fullName).toBeNull();
-    });
-
     it('rend une liste vide sur erreur, sans faire tomber la page', async () => {
         const { db } = client({ error: { message: 'PGRST201' } });
-        await expect(listOwnerMembers(db, 'so-1')).resolves.toEqual([]);
+        await expect(listOwnerMembers(db)).resolves.toEqual([]);
     });
 });

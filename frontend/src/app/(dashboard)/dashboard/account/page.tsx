@@ -21,7 +21,7 @@ export default async function AccountPage() {
     const supabase = await createClient();
     const [profile, members] = await Promise.all([
         getOwnerKycProfile(supabase, session.shipowner.id),
-        listOwnerMembers(supabase, session.shipowner.id),
+        listOwnerMembers(supabase),
     ]);
     if (!profile) redirect('/login');
     return (
