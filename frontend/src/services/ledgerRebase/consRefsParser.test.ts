@@ -189,16 +189,16 @@ describe('parseVesselDetail', () => {
     });
 });
 
-// Le classeur porte les coordonnees reelles des 74 debiteurs : il ne suit pas
-// le depot. Ce qu'il verifie ici ne se simule pas — c'est une propriete du
-// portefeuille lui-meme, pas du lecteur — donc le bloc se met en sommeil la ou
-// le classeur est absent plutot que d'etre remplace par un jeu fabrique.
+// Le classeur porte les coordonnees reelles des 74 debiteurs : il ne suit plus
+// le depot. Ce que ces deux blocs verrouillent est une propriete du
+// portefeuille, pas du lecteur — cela ne se simule pas. Ils se mettent donc en
+// sommeil la ou le classeur est absent.
 const CLASSEUR = join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json');
 const AVEC_CLASSEUR = existsSync(CLASSEUR);
 
 // `describe.skipIf` marque les tests comme sautes mais EXECUTE quand meme le
 // corps du bloc pour les collecter : une lecture posee la s'effectue malgre le
-// saut. La derivation doit donc etre conditionnelle elle aussi.
+// saut. La lecture doit donc etre conditionnelle elle aussi.
 function lireDossiers(): ReturnType<typeof parseSuiviArmateurs> {
     if (!AVEC_CLASSEUR) return [];
     return parseSuiviArmateurs(JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][]);
@@ -265,9 +265,9 @@ describe.skipIf(!AVEC_CLASSEUR)('un profil ne peut posseder qu’un seul armateu
         }
         const partagees = [...parAdresse.entries()].filter(([, refs]) => refs.length > 1);
 
-        // L'adresse en cause n'est pas nommée ici : elle vient du classeur, et
-        // ce fichier n'a pas à en garder une copie. Ce qui compte est qu'il y
-        // en ait EXACTEMENT une, et sur ces deux dossiers-là.
+        // L'adresse n'est pas nommee ici : elle vient du classeur, et ce fichier
+        // n'a pas a en garder une copie. Ce qui compte est qu'il y en ait
+        // EXACTEMENT une, et sur ces deux dossiers-la.
         expect(partagees).toHaveLength(1);
         expect(partagees[0][1]).toEqual(['PRO-CONS-2026-008', 'PRO-CONS-2026-021']);
         // 36 dossiers joignables, 35 comptes distincts : un seul rattachement.
