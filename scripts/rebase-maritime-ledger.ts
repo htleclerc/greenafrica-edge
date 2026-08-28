@@ -22,7 +22,7 @@
 // « Détail Navires » de la campagne reste lue, pour le seul pont slug ↔
 // référence consolidée (voir prodSeeds.ts).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseVesselDetail } from '../frontend/src/services/ledgerRebase/consRefsParser';
@@ -77,6 +77,15 @@ function issuedAt(day: string): string { return `${day}T09:00:00+03:00`; }
 function dueAt(day: string): string { return `${day}T23:59:59.999+03:00`; }
 
 function loadBundle(): ProdSeedBundle {
+    // Les deux sources portent des coordonnées réelles et ne suivent pas le
+    // dépôt : elles se copient à la main sur la machine qui joue l'import.
+    // Le dire ici évite un ENOENT nu, illisible pour qui découvre la manœuvre.
+    for (const [dir, quoi] of [[SEED_DIR, 'le dossier de production du 27/08'], [CAMPAIGN_DIR, 'le référentiel de la campagne du 19/08']] as const) {
+        if (!existsSync(dir)) {
+            throw new Error(`${quoi} est absent (${dir}) — il ne suit pas le dépôt, voir docs/runbooks/bascule-livre-maritime-27aout.md`);
+        }
+    }
+
     const seed = (f: string) => JSON.parse(readFileSync(join(SEED_DIR, f), 'utf8'));
     const campaign = parseVesselDetail(
         JSON.parse(readFileSync(join(CAMPAIGN_DIR, 'detail-navires.json'), 'utf8')) as unknown[][],

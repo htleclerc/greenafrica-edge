@@ -46,6 +46,10 @@ docs/*
 !docs/designs/
 !docs/reviews/
 !docs/onboarding
+# Le classeur de la campagne du 19/08 porte les coordonnees reelles des 74
+# debiteurs (adresses, telephones, adresses postales). Il reste sur les postes
+# qui rejouent l'import, jamais dans le depot.
+docs/onboarding/campagne-19aout/
 
 # Fichiers temporaires Word/Excel
 ~$*
