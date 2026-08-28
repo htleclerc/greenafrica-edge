@@ -11,16 +11,16 @@ import {
  *
  * La source faisant foi est le CLASSEUR de suivi. `cons_refs_mapping.csv` du
  * paquet de pro-formas est un export à perte : il omet trois adresses
- * principales — dont faros@farosshipping.example sur PRO-CONS-2026-021, sans quoi
- * Leaders for Trading (19 843,20 USD) resterait sans compte — et n'a aucune
+ * principales — dont celle de PRO-CONS-2026-021, sans quoi Leaders for
+ * Trading (19 843,20 USD) resterait sans compte — et n'a aucune
  * colonne équivalente aux « Emails secondaires ». Il sert désormais de
  * contrôle de concordance : deux fichiers produits séparément qui s'accordent
  * sur 74 dossiers, 86 navires et 1 316 124,00 USD.
  */
 const CSV = `cons_ref,fleet_manager,n_vessels,total_usd,contact_email,contact_phone,contact_address,contact_country,owner_name,owner_email,owner_phone,owner_address,owner_country,pi_club,vessels
-PRO-CONS-2026-002,"CORAL TECHNICAL SERVICES",5,93190.40,"coral@nets.example","+99 1 1041","Amman, Jordan.","JO","IMAN SHIPPING CO LTD","","","Amman, Jordan.","JO","","ALIMAN | ABU YASSER II | ALBARAKA 1 | BARAKAT | AL MABROUKA 10"
-PRO-CONS-2026-003,"DEVON SHIP MANAGEMENT LTD",2,53012.80,"","+99 1 1020","Mersin, Turkey.","TR","CAPE CRUISE MARINE LTD","","","Monrovia, Liberia.","LR","ASO P&I","CEFIRO | PORTLAND S"
-PRO-CONS-2026-055,"SUCCESS SHIPPING FZE",1,7018.80,"marine@succshipping.example","+99 1 1054","Sharjah, UAE.","AE","OCEAN DEEP LTD","operations@neelshipping.example","","Sharjah, UAE.","AE","West of England","SNARTH"
+PRO-CONS-2026-002,"CORAL TECHNICAL SERVICES",5,93190.40,"contact@coral.example","+99 1 000 0001","Amman, Jordan.","JO","IMAN SHIPPING CO LTD","","","Amman, Jordan.","JO","","ALIMAN | ABU YASSER II | ALBARAKA 1 | BARAKAT | AL MABROUKA 10"
+PRO-CONS-2026-003,"DEVON SHIP MANAGEMENT LTD",2,53012.80,"","+99 1 000 0002","Mersin, Turkey.","TR","CAPE CRUISE MARINE LTD","","","Monrovia, Liberia.","LR","ASO P&I","CEFIRO | PORTLAND S"
+PRO-CONS-2026-055,"SUCCESS SHIPPING FZE",1,7018.80,"contact@success.example","+99 1 000 0003","Sharjah, UAE.","AE","OCEAN DEEP LTD","owner@oceandeep.example","","Sharjah, UAE.","AE","West of England","SNARTH"
 `;
 
 describe('parseConsRefs', () => {
@@ -33,7 +33,7 @@ describe('parseConsRefs', () => {
         ]);
         expect(coral.nVessels).toBe(5);
         expect(coral.totalUsd).toBeCloseTo(93190.40, 2);
-        expect(coral.contactEmail).toBe('coral@nets.example');
+        expect(coral.contactEmail).toBe('contact@coral.example');
     });
 
     it('respecte les virgules internes aux champs entre guillemets', () => {
@@ -50,8 +50,8 @@ describe('parseConsRefs', () => {
 
     it('remonte l’adresse du propriétaire comme contact secondaire', () => {
         const success = parseConsRefs(CSV)[2];
-        expect(success.contactEmail).toBe('marine@succshipping.example');
-        expect(success.secondaryEmails).toEqual(['operations@neelshipping.example']);
+        expect(success.contactEmail).toBe('contact@success.example');
+        expect(success.secondaryEmails).toEqual(['owner@oceandeep.example']);
     });
 
     it('refuse un dossier dont le nombre de navires contredit la liste', () => {
@@ -75,11 +75,11 @@ describe('parseSuiviArmateurs', () => {
         'Adresse owner', 'Pays owner', 'P&I Club'];
 
     const LEADERS = ['PRO-CONS-2026-021', 'LEADERS FOR TRADING & MARITIME', 1, 'LEADER',
-        19843.20, 'faros@farosshipping.example', '', '', 'C/O: Faros Shipping Co Sarl', 'ZZ',
+        19843.20, 'contact@faros.example', '', '', 'C/O: Faros Shipping Co Sarl', 'ZZ',
         'LEADERS FOR TRADING & MARITIME', '', '', '', 'LB', ''];
 
     const SUCCESS = ['PRO-CONS-2026-055', 'SUCCESS SHIPPING FZE', 1, 'SNARTH',
-        7018.80, 'marine@succshipping.example', 'operations@neelshipping.example', '',
+        7018.80, 'contact@success.example', 'owner@oceandeep.example', '',
         'Sharjah', 'AE', 'OCEAN DEEP LTD', '', '', '', 'AE', 'West of England'];
 
     it('lit le contact que le CSV omet', () => {
@@ -87,13 +87,13 @@ describe('parseSuiviArmateurs', () => {
         // 19 843,20 USD hors de portée du portail.
         const [d] = parseSuiviArmateurs([HDR, LEADERS]);
         expect(d.consRef).toBe('PRO-CONS-2026-021');
-        expect(d.contactEmail).toBe('faros@farosshipping.example');
+        expect(d.contactEmail).toBe('contact@faros.example');
         expect(d.totalUsd).toBeCloseTo(19843.20, 2);
     });
 
     it('lit la colonne « Emails secondaires », absente du CSV', () => {
         const [d] = parseSuiviArmateurs([HDR, SUCCESS]);
-        expect(d.secondaryEmails).toEqual(['operations@neelshipping.example']);
+        expect(d.secondaryEmails).toEqual(['owner@oceandeep.example']);
     });
 
     it('ignore la ligne TOTAL', () => {
@@ -135,7 +135,7 @@ describe('reconcileWithCsv', () => {
 
     it('liste les contacts présents au classeur et absents du CSV sans les traiter en erreur', () => {
         const r = reconcileWithCsv(
-            [mk('PRO-CONS-2026-021', 10, ['LEADER'], 'faros@farosshipping.example')],
+            [mk('PRO-CONS-2026-021', 10, ['LEADER'], 'contact@faros.example')],
             [mk('PRO-CONS-2026-021', 10, ['LEADER'], null)],
         );
         expect(r.ok).toBe(true);
@@ -262,9 +262,11 @@ describe('un profil ne peut posseder qu’un seul armateur', () => {
         }
         const partagees = [...parAdresse.entries()].filter(([, refs]) => refs.length > 1);
 
-        expect(partagees).toEqual([
-            ['faros@farosshipping.example', ['PRO-CONS-2026-008', 'PRO-CONS-2026-021']],
-        ]);
+        // L'adresse en cause n'est pas nommée ici : elle vient du classeur, et
+        // ce fichier n'a pas à en garder une copie. Ce qui compte est qu'il y
+        // en ait EXACTEMENT une, et sur ces deux dossiers-là.
+        expect(partagees).toHaveLength(1);
+        expect(partagees[0][1]).toEqual(['PRO-CONS-2026-008', 'PRO-CONS-2026-021']);
         // 36 dossiers joignables, 35 comptes distincts : un seul rattachement.
         expect(parAdresse.size).toBe(35);
         expect(cibles.length).toBe(36);
