@@ -189,18 +189,27 @@ describe('parseVesselDetail', () => {
     });
 });
 
-describe('partition du referentiel — qui recoit un compte', () => {
+// Le classeur porte les coordonnees reelles des 74 debiteurs : il ne suit pas
+// le depot. Ce qu'il verifie ici ne se simule pas — c'est une propriete du
+// portefeuille lui-meme, pas du lecteur — donc le bloc se met en sommeil la ou
+// le classeur est absent plutot que d'etre remplace par un jeu fabrique.
+const CLASSEUR = join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json');
+const AVEC_CLASSEUR = existsSync(CLASSEUR);
+
+// `describe.skipIf` marque les tests comme sautes mais EXECUTE quand meme le
+// corps du bloc pour les collecter : une lecture posee la s'effectue malgre le
+// saut. La derivation doit donc etre conditionnelle elle aussi.
+function lireDossiers(): ReturnType<typeof parseSuiviArmateurs> {
+    if (!AVEC_CLASSEUR) return [];
+    return parseSuiviArmateurs(JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][]);
+}
+
+describe.skipIf(!AVEC_CLASSEUR)('partition du referentiel — qui recoit un compte', () => {
     // Cette regle decide qui obtient un acces au portail sur un portefeuille
     // de 1 316 124,00 USD. Elle est verrouillee sur le referentiel committe,
     // pour qu'un changement de fichier ou de regle soit visible plutot que
     // silencieux.
-    const rows = JSON.parse(
-        readFileSync(
-            join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json'),
-            'utf8',
-        ),
-    ) as unknown[][];
-    const dossiers = parseSuiviArmateurs(rows);
+    const dossiers = lireDossiers();
     const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
 
     const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
@@ -237,21 +246,6 @@ describe('partition du referentiel — qui recoit un compte', () => {
         expect(sanctionnes.filter((d) => d.contactEmail).length).toBeGreaterThan(0);
     });
 });
-
-// Le classeur porte les coordonnees reelles des 74 debiteurs : il ne suit pas
-// le depot. Ce qu'il verifie ici ne se simule pas — c'est une propriete du
-// portefeuille lui-meme, pas du lecteur — donc le bloc se met en sommeil la ou
-// le classeur est absent plutot que d'etre remplace par un jeu fabrique.
-const CLASSEUR = join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json');
-const AVEC_CLASSEUR = existsSync(CLASSEUR);
-
-// `describe.skipIf` marque les tests comme sautes mais EXECUTE quand meme le
-// corps du bloc pour les collecter : une lecture posee la s'effectue malgre le
-// saut. La derivation doit donc etre conditionnelle elle aussi.
-function lireDossiers(): ReturnType<typeof parseSuiviArmateurs> {
-    if (!AVEC_CLASSEUR) return [];
-    return parseSuiviArmateurs(JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][]);
-}
 
 describe.skipIf(!AVEC_CLASSEUR)('un profil ne peut posseder qu’un seul armateur', () => {
     const dossiers = lireDossiers();
