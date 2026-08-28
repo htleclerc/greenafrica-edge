@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
@@ -189,18 +189,27 @@ describe('parseVesselDetail', () => {
     });
 });
 
-describe('partition du referentiel — qui recoit un compte', () => {
+// Le classeur porte les coordonnees reelles des 74 debiteurs : il ne suit plus
+// le depot. Ce que ces deux blocs verrouillent est une propriete du
+// portefeuille, pas du lecteur — cela ne se simule pas. Ils se mettent donc en
+// sommeil la ou le classeur est absent.
+const CLASSEUR = join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json');
+const AVEC_CLASSEUR = existsSync(CLASSEUR);
+
+// `describe.skipIf` marque les tests comme sautes mais EXECUTE quand meme le
+// corps du bloc pour les collecter : une lecture posee la s'effectue malgre le
+// saut. La lecture doit donc etre conditionnelle elle aussi.
+function lireDossiers(): ReturnType<typeof parseSuiviArmateurs> {
+    if (!AVEC_CLASSEUR) return [];
+    return parseSuiviArmateurs(JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][]);
+}
+
+describe.skipIf(!AVEC_CLASSEUR)('partition du referentiel — qui recoit un compte', () => {
     // Cette regle decide qui obtient un acces au portail sur un portefeuille
     // de 1 316 124,00 USD. Elle est verrouillee sur le referentiel committe,
     // pour qu'un changement de fichier ou de regle soit visible plutot que
     // silencieux.
-    const rows = JSON.parse(
-        readFileSync(
-            join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json'),
-            'utf8',
-        ),
-    ) as unknown[][];
-    const dossiers = parseSuiviArmateurs(rows);
+    const dossiers = lireDossiers();
     const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
 
     const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
@@ -238,14 +247,8 @@ describe('partition du referentiel — qui recoit un compte', () => {
     });
 });
 
-describe('un profil ne peut posseder qu’un seul armateur', () => {
-    const rows = JSON.parse(
-        readFileSync(
-            join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json'),
-            'utf8',
-        ),
-    ) as unknown[][];
-    const dossiers = parseSuiviArmateurs(rows);
+describe.skipIf(!AVEC_CLASSEUR)('un profil ne peut posseder qu’un seul armateur', () => {
+    const dossiers = lireDossiers();
     const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
     const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
 
@@ -262,9 +265,11 @@ describe('un profil ne peut posseder qu’un seul armateur', () => {
         }
         const partagees = [...parAdresse.entries()].filter(([, refs]) => refs.length > 1);
 
-        expect(partagees).toEqual([
-            ['faros@farosshipping.example', ['PRO-CONS-2026-008', 'PRO-CONS-2026-021']],
-        ]);
+        // L'adresse n'est pas nommee ici : elle vient du classeur, et ce fichier
+        // n'a pas a en garder une copie. Ce qui compte est qu'il y en ait
+        // EXACTEMENT une, et sur ces deux dossiers-la.
+        expect(partagees).toHaveLength(1);
+        expect(partagees[0][1]).toEqual(['PRO-CONS-2026-008', 'PRO-CONS-2026-021']);
         // 36 dossiers joignables, 35 comptes distincts : un seul rattachement.
         expect(parAdresse.size).toBe(35);
         expect(cibles.length).toBe(36);
