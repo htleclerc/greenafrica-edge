@@ -243,10 +243,18 @@ describe('partition du referentiel — qui recoit un compte', () => {
 // portefeuille lui-meme, pas du lecteur — donc le bloc se met en sommeil la ou
 // le classeur est absent plutot que d'etre remplace par un jeu fabrique.
 const CLASSEUR = join(process.cwd(), '..', 'docs', 'onboarding', 'campagne-19aout', 'suivi-armateurs.json');
+const AVEC_CLASSEUR = existsSync(CLASSEUR);
 
-describe.skipIf(!existsSync(CLASSEUR))('un profil ne peut posseder qu’un seul armateur', () => {
-    const rows = JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][];
-    const dossiers = parseSuiviArmateurs(rows);
+// `describe.skipIf` marque les tests comme sautes mais EXECUTE quand meme le
+// corps du bloc pour les collecter : une lecture posee la s'effectue malgre le
+// saut. La derivation doit donc etre conditionnelle elle aussi.
+function lireDossiers(): ReturnType<typeof parseSuiviArmateurs> {
+    if (!AVEC_CLASSEUR) return [];
+    return parseSuiviArmateurs(JSON.parse(readFileSync(CLASSEUR, 'utf8')) as unknown[][]);
+}
+
+describe.skipIf(!AVEC_CLASSEUR)('un profil ne peut posseder qu’un seul armateur', () => {
+    const dossiers = lireDossiers();
     const sanctionne = (ref: string) => (SANCTIONED_CONS_REFS as readonly string[]).includes(ref);
     const cibles = dossiers.filter((d) => d.contactEmail && !sanctionne(d.consRef));
 
