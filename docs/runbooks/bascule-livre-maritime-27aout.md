@@ -50,6 +50,30 @@ conflit interrompt l'import.
   (celle-ci, c'est `SUPABASE_DB_URL`).
 - `SUPABASE_SERVICE_ROLE_KEY`.
 
+> ### N'appliquez pas une migration hors ordre
+>
+> Le 28/08, la **146** a été appliquée à la production **seule**, alors que son
+> fichier ne vivait que sur `develop` et que les 138 à 145 n'étaient pas encore
+> passées. Ce raccourci a bloqué la chaîne de déploiement **deux fois de suite** :
+>
+> 1. `Remote migration versions not found in local migrations directory` — la
+>    base connaît une version absente de la branche qui la déploie. Corrigé en
+>    portant le fichier sur `main`.
+> 2. `Found local migration files to be inserted before the last migration on
+>    remote database` — le CLI refuse d'insérer des versions **sous** la dernière
+>    appliquée. Corrigé par un `supabase db push --include-all` unique, qui a
+>    rebouché le trou 138→145.
+>
+> Si un raccourci est malgré tout nécessaire : porter le fichier sur la branche
+> qui déploie l'environnement **dans le même mouvement**, et reboucher le trou
+> avant le déploiement suivant.
+>
+> Vérifier aussi que l'environnement ne porte pas déjà les vues en avance sur son
+> journal : sur staging, `v_navire_recouvrement` existait au format de la mig 145
+> alors que le journal était à 142, et la 143 échouait sur
+> `cannot drop columns from view`. Remède : `DROP VIEW` (sans `CASCADE`, après
+> avoir vérifié qu'aucun objet n'en dépend), les migrations la reconstruisent.
+
 ## Séquence
 
 ```bash
