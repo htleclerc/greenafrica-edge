@@ -29,10 +29,14 @@ function admin(tables: {
     cc?: Record<string, unknown>[];
 }) {
     const calls: string[] = [];
-    const make = (rows: Record<string, unknown>[]) => {
+    const selects: string[] = [];
+    const make = (table: string, rows: Record<string, unknown>[]) => {
         let filtered = [...rows];
         const chain: Record<string, unknown> = {};
-        chain.select = () => chain;
+        chain.select = (columns?: string) => {
+            selects.push(`${table}|${columns ?? ''}`);
+            return chain;
+        };
         // PostgREST filtre une table jointe par chemin pointe
         // (`profiles.email`) : le simulacre doit le refleter, sinon il
         // validerait une requete qui ne marche pas en vrai.
@@ -73,14 +77,48 @@ function admin(tables: {
         client: {
             from: (t: string) => {
                 calls.push(t);
-                if (t === 'owner_agent_mappings') return make(tables.mappings ?? []);
-                if (t === 'owner_members') return make(tables.members ?? []);
-                return make(t === 'shipowners' && tables.cc ? tables.cc : (tables.shipowners ?? []));
+                if (t === 'owner_agent_mappings') return make(t, tables.mappings ?? []);
+                if (t === 'owner_members') return make(t, tables.members ?? []);
+                return make(t, t === 'shipowners' && tables.cc ? tables.cc : (tables.shipowners ?? []));
             },
         } as never,
         calls,
+        selects,
     };
 }
+
+/**
+ * `owner_members` et `owner_agent_mappings` portent CHACUNE deux clés
+ * étrangères vers `profiles`. Un embed `profiles!inner(...)` y est ambigu :
+ * PostgREST refuse la requête entière (PGRST201) et rend `data: null`. Le code
+ * ne lisait pas l'erreur et passait à la source suivante — aucun membre ni
+ * représentant ne pouvait recevoir de lien, en silence.
+ *
+ * Les simulacres ne peuvent pas reproduire PGRST201 : ils ne parlent pas
+ * PostgREST. C'est donc la CHAÎNE `select` qu'on contraint, seule trace
+ * vérifiable hors base de la désambiguïsation.
+ */
+describe('embeds vers profiles — la clé étrangère doit être nommée', () => {
+    const AMBIGU = /profiles!inner/;
+
+    it('nomme la clé sur owner_members', async () => {
+        const a = admin({ members: [] });
+        await resolveLoginTarget(a.client, 'inconnu@example.com');
+        const q = a.selects.find((s) => s.startsWith('owner_members|'));
+        expect(q).toBeDefined();
+        expect(q).not.toMatch(AMBIGU);
+        expect(q).toContain('profiles!owner_members_profile_id_fkey!inner(email)');
+    });
+
+    it('nomme la clé sur owner_agent_mappings', async () => {
+        const a = admin({ mappings: [] });
+        await resolveLoginTarget(a.client, 'inconnu@example.com');
+        const q = a.selects.find((s) => s.startsWith('owner_agent_mappings|'));
+        expect(q).toBeDefined();
+        expect(q).not.toMatch(AMBIGU);
+        expect(q).toContain('profiles!owner_agent_mappings_agent_profile_id_fkey!inner(email)');
+    });
+});
 
 describe('resolveLoginTarget', () => {
     it('reconnaît l’adresse officielle de l’armateur', async () => {

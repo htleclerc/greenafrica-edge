@@ -1,5 +1,5 @@
 import { applyEmailRedirect, redirectTarget } from '@/lib/emailRedirect';
-import { Resend } from 'resend';
+import { deliver, selectedTransport } from '@/services/email/transport';
 import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths';
 import {
     TX_AGENT_INVITE_HTML,
@@ -14,32 +14,25 @@ import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
 /**
  * Centralized email service for Green Gate OS notifications.
  *
- * All emails go through Resend (https://resend.com). Templates are inline
- * HTML strings with the same emerald/dark institutional brand as the rest
- * of the platform.
+ * L'acheminement est choisi par `@/services/email/transport` : Resend, ou
+ * n'importe quel serveur SMTP (Gmail, domaine propre). Ce fichier ne connaît
+ * plus le fournisseur — il compose les messages, la couche transport les
+ * remet. Les gabarits restent des chaînes HTML en ligne, à la charte
+ * institutionnelle émeraude/sombre du reste de la plateforme.
  *
- * Required env:
- *   - RESEND_API_KEY    (server-side only, from resend.com dashboard)
- *   - EMAIL_FROM        (verified sender address, e.g. "noreply@greengate.africa")
+ * Env requis — l'un OU l'autre :
+ *   - RESEND_API_KEY    (envoi par l'API Resend)
+ *   - EMAIL_SMTP_HOST   (envoi SMTP ; voir transport.ts pour USER/PASSWORD/PORT)
  *
- * Optional env:
- *   - EMAIL_REPLY_TO    (e.g. "support@greengate.africa")
- *   - NEXT_PUBLIC_APP_URL (used to build links inside emails — defaults to localhost:3300)
+ * Env requis dans les deux cas :
+ *   - EMAIL_FROM        (adresse d'expédition autorisée, ex. "noreply@greengate.africa")
+ *
+ * Optionnel :
+ *   - EMAIL_TRANSPORT   ("resend" | "smtp" — tranche si les deux sont posés)
+ *   - EMAIL_REPLY_TO    (ex. "st.operations@greengate.africa")
+ *   - EMAIL_REDIRECT_TO (hors production : tout part vers cette adresse)
+ *   - NEXT_PUBLIC_APP_URL (liens dans les e-mails — défaut localhost:3300)
  */
-
-// ── Singleton client ────────────────────────────────────────────────────────
-
-let resendClient: Resend | null = null;
-
-function getResend(): Resend {
-    if (resendClient) return resendClient;
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-        throw new Error('RESEND_API_KEY is not configured');
-    }
-    resendClient = new Resend(apiKey);
-    return resendClient;
-}
 
 /**
  * Adresse d'expédition.
@@ -65,8 +58,11 @@ function fromAddress(): string {
     const configured = process.env.EMAIL_FROM?.trim();
     if (!configured) return FALLBACK_SENDER;
 
+    // Le contrôle ne vaut que pour Resend : c'est lui qui refuse un domaine
+    // non vérifié. Un serveur SMTP a ses propres règles d'expéditeur autorisé,
+    // et l'avertissement enverrait alors chercher au mauvais endroit.
     const domain = configured.split('@')[1]?.toLowerCase() ?? '';
-    if (!VERIFIED_SENDER_DOMAINS.includes(domain) && !senderWarned) {
+    if (selectedTransport() === 'resend' && !VERIFIED_SENDER_DOMAINS.includes(domain) && !senderWarned) {
         senderWarned = true;
         console.error(
             `[Email] EMAIL_FROM=${configured} : domaine « ${domain} » absent des domaines vérifiés `
@@ -120,10 +116,9 @@ async function sendEmail(params: {
     attachments?: Array<{ filename: string; content: Buffer | Uint8Array | string }>;
 }): Promise<EmailResult> {
     try {
-        const resend = getResend();
         // Hors production, tout part vers EMAIL_REDIRECT_TO. La redirection est
-        // appliquée ici, au seul endroit qui parle à Resend, pour qu'aucun des
-        // douze expéditeurs de ce fichier ne puisse l'oublier.
+        // appliquée ici, au seul endroit qui parle à l'acheminement, pour
+        // qu'aucun des douze expéditeurs de ce fichier ne puisse l'oublier.
         const { message: sortant, redirected, originalRecipients } =
             applyEmailRedirect(params);
         if (redirected) {
@@ -132,14 +127,12 @@ async function sendEmail(params: {
                 `${originalRecipients.join(', ') || '(aucun)'} — sujet : ${params.subject}`,
             );
         }
-        const result = await resend.emails.send({
+        const result = await deliver({
             from: fromAddress(),
             to: Array.isArray(sortant.to) ? sortant.to : [sortant.to],
-            // Resend rejette un tableau vide : on omet le champ plutôt que de
-            // l'envoyer vide.
             ...(sortant.cc?.length ? { cc: sortant.cc } : {}),
             subject: sortant.subject,
-            html: sortant.html,
+            html: sortant.html ?? '',
             text: sortant.text,
             replyTo: replyTo(),
             attachments: params.attachments?.map((a) => ({
@@ -149,11 +142,14 @@ async function sendEmail(params: {
         });
 
         if (result.error) {
-            console.error('[Email] Resend error:', result.error);
-            return { success: false, error: result.error.message };
+            // Le nom de l'acheminement est journalisé : sans lui, une panne
+            // SMTP se lit comme une panne Resend et l'on cherche du mauvais
+            // côté, ce qui a déjà coûté plusieurs jours.
+            console.error(`[Email] échec d'envoi (${selectedTransport() ?? 'aucun acheminement'}) :`, result.error);
+            return { success: false, error: result.error };
         }
 
-        return { success: true, id: result.data?.id };
+        return { success: true, id: result.id };
     } catch (err) {
         console.error('[Email] Send failed:', err);
         return {
