@@ -38,7 +38,7 @@ export async function revokeOwnerMember(raw: unknown): Promise<RevokeOwnerMember
 
     const { data: member } = await admin
         .from('owner_members')
-        .select('id, profile_id, shipowner_id, active, profiles!inner(email)')
+        .select('id, profile_id, shipowner_id, active, profiles!owner_members_profile_id_fkey!inner(email)')
         .eq('id', parsed.data.memberId)
         .eq('shipowner_id', principal.shipowner.id)
         .maybeSingle();

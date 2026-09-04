@@ -73,24 +73,36 @@ export async function resolveLoginTarget(
 
     // Membre du compte (mig 135). Passe AVANT le rattachement : un membre a des
     // droits explicites, un représentant n'a qu'un lien de correspondance.
-    const { data: member } = await admin
+    //
+    // La CLÉ ÉTRANGÈRE EST NOMMÉE, et ce n'est pas décoratif : `owner_members`
+    // en porte DEUX vers `profiles` — `profile_id` et `invited_by`. Un embed
+    // `profiles!inner(...)` est alors ambigu, PostgREST refuse la requête
+    // entière (PGRST201) et rend `data: null`. Aucun membre ne pouvait recevoir
+    // de lien de connexion, sans le moindre message : l'erreur n'était pas lue
+    // et le code passait à la source suivante. Même piège sur
+    // `owner_agent_mappings` juste en dessous (`agent_profile_id`/`created_by`).
+    const { data: member, error: memberErr } = await admin
         .from('owner_members')
-        .select(`shipowner_id, active, profiles!inner(email), shipowners!inner(${OWNER_COLUMNS})`)
+        .select(`shipowner_id, active, profiles!owner_members_profile_id_fkey!inner(email), shipowners!inner(${OWNER_COLUMNS})`)
         .eq('profiles.email', email)
         .eq('active', true)
         .maybeSingle();
+    // Une erreur ici n'est pas « pas de correspondance » : c'est une requête qui
+    // n'a pas tourné. La journaliser est ce qui manquait pour voir le PGRST201.
+    if (memberErr) console.error('[loginAllowlist] requête membre en échec :', memberErr.message);
     if (member) {
         const row = member as Record<string, unknown>;
         const so = (row.shipowners ?? row) as Record<string, unknown>;
         return toTarget(so, 'MEMBER', email);
     }
 
-    const { data: rep } = await admin
+    const { data: rep, error: repErr } = await admin
         .from('owner_agent_mappings')
-        .select(`shipowner_id, active, profiles!inner(email), shipowners!inner(${OWNER_COLUMNS})`)
+        .select(`shipowner_id, active, profiles!owner_agent_mappings_agent_profile_id_fkey!inner(email), shipowners!inner(${OWNER_COLUMNS})`)
         .eq('profiles.email', email)
         .eq('active', true)
         .maybeSingle();
+    if (repErr) console.error('[loginAllowlist] requête représentant en échec :', repErr.message);
     if (rep) {
         const row = rep as Record<string, unknown>;
         const so = (row.shipowners ?? row) as Record<string, unknown>;
