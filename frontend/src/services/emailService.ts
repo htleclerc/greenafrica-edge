@@ -38,19 +38,38 @@ import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
  * Adresse d'expédition.
  *
  * Le repli n'est PAS un confort : c'est le dernier rempart contre un envoi
- * refusé en silence. `EMAIL_FROM` a porté `noreply@africgreen.africa` —
- * l'ancien nom du projet — pendant que le compte Resend ne vérifiait que
- * `greengate.africa` et `mail.greengate.africa`. Chaque envoi était rejeté
- * pour domaine non vérifié : relances, pro-formas, liens de connexion,
+ * refusé en silence. `EMAIL_FROM` a porté `noreply@africgreen.africa` puis
+ * `…@mail.africgreen.africa` — l'ancien nom du projet — pendant que le compte
+ * Resend ne vérifiait que les domaines `greengate.africa`. Chaque envoi était
+ * rejeté pour domaine non vérifié : relances, pro-formas, liens de connexion,
  * relevés. Sans bruit, puisque `sendEmail` capture l'erreur et rend
  * `{ success: false }` que la plupart des appelants ne traitent pas comme
  * bloquant.
  *
- * Le repli doit donc rester une adresse VÉRIFIÉE, et la valeur configurée est
- * journalisée à la première divergence pour qu'un domaine étranger se voie.
+ * AVERTIR NE SUFFISAIT PAS. La panne est revenue le 2026-09-04 par la porte de
+ * l'environnement, et un avertissement que personne ne lit n'a sauvé aucun
+ * e-mail. Un `EMAIL_FROM` dont le domaine n'est pas vérifié est donc REMPLACÉ
+ * par le repli : mieux vaut un expéditeur légitime mais inattendu qu'aucun
+ * e-mail du tout. Le remplacement est journalisé en erreur, une fois.
+ *
+ * La liste est surchargeable par `EMAIL_VERIFIED_SENDER_DOMAINS` (séparés par
+ * des virgules) : le jour où un domaine est vérifié chez Resend, on l'ajoute
+ * par l'environnement, sans quoi ce garde-fou refuserait un expéditeur devenu
+ * légitime.
  */
-const VERIFIED_SENDER_DOMAINS = ['greengate.africa', 'mail.greengate.africa'];
+const DEFAULT_VERIFIED_SENDER_DOMAINS = [
+    'greengate.africa',
+    'mail.greengate.africa',
+    'noreply.greengate.africa',
+];
 const FALLBACK_SENDER = 'noreply@greengate.africa';
+
+function verifiedSenderDomains(): string[] {
+    const raw = process.env.EMAIL_VERIFIED_SENDER_DOMAINS?.trim();
+    if (!raw) return DEFAULT_VERIFIED_SENDER_DOMAINS;
+    const list = raw.split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+    return list.length > 0 ? list : DEFAULT_VERIFIED_SENDER_DOMAINS;
+}
 
 let senderWarned = false;
 
@@ -58,18 +77,24 @@ function fromAddress(): string {
     const configured = process.env.EMAIL_FROM?.trim();
     if (!configured) return FALLBACK_SENDER;
 
-    // Le contrôle ne vaut que pour Resend : c'est lui qui refuse un domaine
-    // non vérifié. Un serveur SMTP a ses propres règles d'expéditeur autorisé,
-    // et l'avertissement enverrait alors chercher au mauvais endroit.
+    // Le contrôle ne vaut que pour Resend : c'est lui qui refuse un domaine non
+    // vérifié. Un serveur SMTP a ses propres règles d'expéditeur autorisé, et
+    // substituer une adresse enverrait chercher au mauvais endroit.
+    if (selectedTransport() !== 'resend') return configured;
+
+    const domains = verifiedSenderDomains();
     const domain = configured.split('@')[1]?.toLowerCase() ?? '';
-    if (selectedTransport() === 'resend' && !VERIFIED_SENDER_DOMAINS.includes(domain) && !senderWarned) {
+    if (domains.includes(domain)) return configured;
+
+    if (!senderWarned) {
         senderWarned = true;
         console.error(
             `[Email] EMAIL_FROM=${configured} : domaine « ${domain} » absent des domaines vérifiés `
-            + `(${VERIFIED_SENDER_DOMAINS.join(', ')}). Tous les envois seront refusés.`,
+            + `(${domains.join(', ')}). Envoi replié sur ${FALLBACK_SENDER} — corriger EMAIL_FROM, `
+            + `ou déclarer le domaine dans EMAIL_VERIFIED_SENDER_DOMAINS s'il est vérifié chez Resend.`,
         );
     }
-    return configured;
+    return FALLBACK_SENDER;
 }
 
 function replyTo(): string | undefined {
