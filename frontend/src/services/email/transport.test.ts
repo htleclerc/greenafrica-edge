@@ -4,7 +4,11 @@ const resendSend = vi.fn();
 vi.mock('resend', () => ({ Resend: class { emails = { send: resendSend }; } }));
 
 const sendMail = vi.fn();
-const createTransport = vi.fn(() => ({ sendMail }));
+// La signature est portee par le generique : sans elle, `vi.fn(() => ...)` donne
+// un tuple d'arguments vide et `mock.calls[0][0]` ne compile pas sous `strict`.
+const createTransport = vi.fn<(config: Record<string, unknown>) => { sendMail: typeof sendMail }>(
+    () => ({ sendMail }),
+);
 vi.mock('nodemailer', () => ({ default: { createTransport }, createTransport }));
 
 const ENV_KEYS = [
