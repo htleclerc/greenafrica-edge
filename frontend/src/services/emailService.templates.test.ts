@@ -70,24 +70,6 @@ describe('expediteurs branches sur les gabarits du projet design', () => {
         expect(html).toContain('Republic of Somaliland');
     });
 
-    it('sendOverdueAlertEmail rend la relance', async () => {
-        const { sendOverdueAlertEmail } = await import('./emailService');
-        await sendOverdueAlertEmail({
-            to: 'billing@armateur.test',
-            recipientName: 'Demo Armateur',
-            vesselName: 'GG DEMO STAR',
-            invoiceRef: 'PRO-2026-65e28ceb',
-            amountUsd: 16500,
-            daysOverdue: 45,
-            verifyUrl: 'https://greengate.africa/dashboard/invoices',
-        });
-
-        const html = sentHtml();
-        expect(html).not.toMatch(/\{\{/);
-        expect(html).toContain('Port gate locked');
-        expect(html).toContain('45');
-    });
-
     it('sendArmateurInviteEmail rend l invitation sans organisation', async () => {
         const { sendArmateurInviteEmail } = await import('./emailService');
         await sendArmateurInviteEmail({

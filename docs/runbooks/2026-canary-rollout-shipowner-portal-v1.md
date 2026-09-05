@@ -63,11 +63,10 @@ vercel env ls production
 
 ### 1.3 Cron schedules visible in Vercel dashboard
 
-Actual schedules per `frontend/vercel.json` (3 crons, all daily — Vercel Hobby rejects sub-daily expressions):
+Actual schedules per `frontend/vercel.json` (all daily — Vercel Hobby rejects sub-daily expressions). `/api/cron/overdue-alerts` (pre-Plan 7) was removed on 2026-09-06: it emailed unsigned `/verify` links under a fabricated reference; reminders live in `/api/cron/collection-reminders`.
 
 | Route | Schedule | Owner plan |
 |---|---|---|
-| `/api/cron/overdue-alerts` | `0 9 * * *` (daily 09:00 UTC) | Pre-Plan 7 |
 | `/api/cron/notification-email-loop` | `0 9 * * *` (daily 09:00 UTC) | 7H-1 |
 | `/api/cron/payments-reconcile-all` | `0 9 * * *` (daily 09:00 UTC) | Chains 7D + 7H-1 + PayPal reconcilers |
 

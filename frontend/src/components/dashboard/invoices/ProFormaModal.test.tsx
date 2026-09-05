@@ -37,9 +37,10 @@ vi.mock('@/services/profileService', () => ({
     getProfileById: () => Promise.resolve(null),
 }));
 
+const buildVerifyUrlMock = vi.fn((_ref: string, _opts?: unknown) => 'https://example.com/verify/test');
 vi.mock('@/services/invoiceService', () => ({
     statusToMode: (_status: string) => ({ mode: 'proforma', badge: 'TO PAY' }),
-    buildVerifyUrl: (_ref: string) => 'https://example.com/verify/test',
+    buildVerifyUrl: (ref: string, opts?: unknown) => buildVerifyUrlMock(ref, opts as never),
     generateQrCodeDataUrl: () => Promise.resolve('data:image/png;base64,fake'),
 }));
 
@@ -252,5 +253,53 @@ describe('ProFormaModal — cas limites', () => {
         render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
         // La bannière démo utilise la clé i18n retournée telle quelle
         expect(screen.getByText('demo_generate_disabled')).toBeDefined();
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QR et sceau — seulement sur un document émis. /verify n'accepte qu'un lien
+// signé : un QR sans signature scannait vers « Unknown Document », sous un
+// sceau officiel et une référence fabriquée à l'écran.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ProFormaModal — QR et sceau', () => {
+    beforeEach(() => {
+        mockTaxConfigs.length = 0;
+        mockRole = UserRole.PORT_OFFICER;
+        mockIsDemo = false;
+        buildVerifyUrlMock.mockClear();
+    });
+
+    it("sans document émis : aperçu déclaré, pas de QR, pas de sceau, pas de référence inventée", () => {
+        render(<ProFormaModal tx={baseTx} onClose={vi.fn()} />);
+        expect(screen.getAllByText(/PREVIEW — NOT AN OFFICIAL DOCUMENT/).length).toBeGreaterThan(0);
+        expect(screen.queryByAltText('Verification QR code')).toBeNull();
+        expect(screen.queryByText(/OFFICIAL/i, { selector: 'div[style*="rotate"]' })).toBeNull();
+        expect(screen.getAllByText(/DRAFT — reference assigned on issue/).length).toBeGreaterThan(0);
+        expect(screen.queryByText(/PRO-2026-/)).toBeNull();
+        expect(buildVerifyUrlMock).not.toHaveBeenCalled();
+    });
+
+    it('document émis : QR signé avec le jeton porté par la transaction', async () => {
+        const issued: Transaction = {
+            ...baseTx,
+            invoiceRef: 'PRO-2026-064013',
+            contentHash: 'abc123',
+            verifySignature: 'sig456',
+        };
+        render(<ProFormaModal tx={issued} onClose={vi.fn()} />);
+        expect(buildVerifyUrlMock).toHaveBeenCalledWith(
+            'PRO-2026-064013',
+            expect.objectContaining({ contentHash: 'abc123', signature: 'sig456' }),
+        );
+        expect(await screen.findByAltText('Verification QR code')).toBeTruthy();
+        expect(screen.getAllByText(/OFFICIAL DOCUMENT/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText('PRO-2026-064013').length).toBeGreaterThan(0);
+    });
+
+    it("référence émise mais jeton absent : reste un aperçu, jamais un QR muet", () => {
+        render(<ProFormaModal tx={{ ...baseTx, invoiceRef: 'PRO-2026-064013', contentHash: null, verifySignature: null }} onClose={vi.fn()} />);
+        expect(screen.queryByAltText('Verification QR code')).toBeNull();
+        expect(buildVerifyUrlMock).not.toHaveBeenCalled();
     });
 });
