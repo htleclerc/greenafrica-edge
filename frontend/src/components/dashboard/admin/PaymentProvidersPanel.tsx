@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
     CheckCircle2, AlertTriangle, RefreshCw, Lock, Eye,
     CreditCard, Building2, Globe, Smartphone, Banknote, Shield, Briefcase,
@@ -18,6 +19,13 @@ interface ProviderConfig {
     supportedCurrencies: string[];
     testMode: boolean;
     routesRail?: string[];
+    envKey: string;
+}
+
+/** Flags `app_config` qui gouvernent les rails de checkout du portail armateur. */
+interface CheckoutFlags {
+    stripe: boolean;
+    paypal: boolean;
 }
 
 interface ProviderMetaUI {
@@ -41,6 +49,7 @@ export function PaymentProvidersPanel() {
     const isReadOnly = !canEdit('tax-settings', role);
 
     const [providers, setProviders] = React.useState<ProviderConfig[]>([]);
+    const [checkoutFlags, setCheckoutFlags] = React.useState<CheckoutFlags | null>(null);
     const [loading, setLoading]     = React.useState(true);
     const [error, setError]         = React.useState<string | null>(null);
     const [busyProvider, setBusyProvider] = React.useState<ProviderKey | null>(null);
@@ -53,7 +62,10 @@ export function PaymentProvidersPanel() {
                 const res = await fetch('/api/admin/payment-config');
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                if (!cancelled) setProviders(data.providers ?? []);
+                if (!cancelled) {
+                    setProviders(data.providers ?? []);
+                    setCheckoutFlags(data.checkoutFlags ?? null);
+                }
             } catch (err) {
                 if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load');
             } finally {
@@ -193,11 +205,33 @@ export function PaymentProvidersPanel() {
                                         <>
                                             <Lock className="w-3.5 h-3.5 text-[#94A3B8]" />
                                             <span className="text-[var(--os-text-muted)]">
-                                                {p.provider === 'wire_transfer' ? 'No API key required' : 'Add API key to .env to enable'}
+                                                {p.provider === 'wire_transfer'
+                                                    ? 'No API key required'
+                                                    : `${p.envKey || 'API key'} is not set in this deployment's environment`}
                                             </span>
                                         </>
                                     )}
                                 </div>
+
+                                {/* Le rail carte du portail armateur ne lit pas ce
+                                    panneau : il exige la clé ET le flag applicatif.
+                                    Sans cette ligne, l'admin activait Stripe ici et
+                                    aucun armateur ne voyait la carte. */}
+                                {p.provider === 'stripe' && checkoutFlags && (
+                                    <div className="mb-4 flex items-center gap-2 text-[11px]">
+                                        {checkoutFlags.stripe ? (
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                                        ) : (
+                                            <AlertTriangle className="w-3.5 h-3.5 text-[#EAB308]" />
+                                        )}
+                                        <span className={checkoutFlags.stripe ? 'text-[#10B981] font-semibold' : 'text-[var(--os-text-muted)]'}>
+                                            Owner portal card payments: {checkoutFlags.stripe ? 'ON' : 'OFF'}
+                                        </span>
+                                        <Link href="/admin/tax-settings" className="text-[#38BDF8] hover:underline">
+                                            {checkoutFlags.stripe ? 'flag' : 'enable the flag'}
+                                        </Link>
+                                    </div>
+                                )}
 
                                 <button
                                     onClick={() => toggleProvider(p.provider, !isActive)}

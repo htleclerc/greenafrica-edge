@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
     getAllProviderConfigs,
+    isProviderConfigured,
     setActiveProvider,
     setProviderActive,
 } from '@/services/paymentService';
+import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import type { PaymentProvider } from '@/services/paymentService';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/requireRole';
@@ -15,14 +17,29 @@ const PROVIDER_ENUM = ['stripe', 'paystack', 'flutterwave', 'wave', 'payoneer', 
 /**
  * GET /api/admin/payment-config
  * Returns all payment provider configurations for the settings page.
+ *
+ * `checkoutFlags` porte les feature flags qui gouvernent RÉELLEMENT les rails
+ * de paiement en ligne du portail armateur (Stripe, PayPal) : le rail exige la
+ * clé en environnement ET le flag, et ignore `payment_config`. Sans cette
+ * information, l'admin activait Stripe ici et ne comprenait pas pourquoi
+ * aucun armateur ne voyait la carte.
  */
 export async function GET() {
     const auth = await requireRole(ADMIN_ROLES);
     if (auth.error) return auth.error;
 
     try {
-        const configs = await getAllProviderConfigs(auth.supabase);
-        return NextResponse.json({ providers: configs });
+        const [configs, flags] = await Promise.all([
+            getAllProviderConfigs(auth.supabase),
+            readPortalFeatureFlags(),
+        ]);
+        return NextResponse.json({
+            providers: configs,
+            checkoutFlags: {
+                stripe: flags.onlinePaymentStripeEnabled,
+                paypal: flags.onlinePaypalEnabled,
+            },
+        });
     } catch {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
@@ -50,6 +67,14 @@ export async function PUT(request: NextRequest) {
 
     const toggle = toggleBody.safeParse(body);
     if (toggle.success) {
+        // Activer un fournisseur dont la clé n'est pas chargée produirait des
+        // paiements qui échouent tous : on refuse, avec la variable attendue.
+        if (toggle.data.isActive && !isProviderConfigured(toggle.data.provider as PaymentProvider)) {
+            return NextResponse.json(
+                { error: `${toggle.data.provider}: secret key is not configured in this deployment` },
+                { status: 409 },
+            );
+        }
         const ok = await setProviderActive(
             auth.supabase,
             toggle.data.provider as PaymentProvider,

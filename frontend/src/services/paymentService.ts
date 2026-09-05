@@ -80,11 +80,15 @@ export interface WireTransferInstructions {
 export interface PaymentProviderConfig {
   provider: PaymentProvider;
   displayName: string;
+  /** Vrai quand la clé secrète du fournisseur est chargée dans CE déploiement. */
   enabled: boolean;
   isDefault: boolean;
   supportedCurrencies: Currency[];
+  /** Déduit de la clé chargée (`sk_test_…`, `FLWSECK_TEST-…`), pas d'une colonne. */
   testMode: boolean;
   routesRail?: string[];
+  /** Nom de la variable d'environnement attendue ; vide pour le virement. */
+  envKey: string;
 }
 
 // Resolu A L'APPEL et non au chargement du module : une constante figee ici
@@ -393,7 +397,32 @@ export async function getActiveProvider(client: SupabaseClient): Promise<Payment
 }
 
 /**
+ * Une clé de bac à sable se reconnaît à sa forme : Stripe et Paystack
+ * préfixent `sk_test_`, Flutterwave `FLWSECK_TEST-`. L'application ne peut
+ * pas le savoir autrement — elle ne fait aucun appel « qui suis-je » aux
+ * fournisseurs — et une colonne saisie à la main finit toujours par mentir.
+ */
+export function looksLikeTestKey(secret: string): boolean {
+  return /test/i.test(secret);
+}
+
+/** Vrai quand la clé secrète du fournisseur est présente dans l'environnement. */
+export function isProviderConfigured(provider: PaymentProvider): boolean {
+  const meta = PROVIDERS[provider];
+  if (!meta.envKey) return true;
+  return Boolean(process.env[meta.envKey]);
+}
+
+/**
  * Get all provider configurations for the admin settings page.
+ *
+ * « Configuré » et « mode test » sont lus dans l'ENVIRONNEMENT du déploiement,
+ * pas dans `payment_config` : les colonnes `is_enabled` et `test_mode` y ont
+ * été seedées (mig 011, Stripe désactivé et en test) et aucun écran ne les a
+ * jamais réécrites. En prod, l'admin voyait donc « Add API key to .env » et
+ * « TEST MODE » avec des clés live bien chargées, et un bouton verrouillé qu'il
+ * ne pouvait débloquer que par SQL. Seul `is_active` (le choix de l'admin)
+ * reste porté par la table.
  */
 export async function getAllProviderConfigs(client: SupabaseClient): Promise<PaymentProviderConfig[]> {
   const { data: dbConfigs } = await client
@@ -404,16 +433,18 @@ export async function getAllProviderConfigs(client: SupabaseClient): Promise<Pay
   // Merge DB config with static provider registry
   return Object.entries(PROVIDERS).map(([key, meta]) => {
     const dbRow = dbConfigs?.find((c: { provider: string }) => c.provider === key);
-    const hasEnvKey = key === 'wire_transfer' || !!process.env[meta.envKey];
+    const secret = meta.envKey ? process.env[meta.envKey] : undefined;
+    const hasEnvKey = key === 'wire_transfer' || Boolean(secret);
 
     return {
       provider: key as PaymentProvider,
       displayName: meta.displayName,
-      enabled: dbRow?.is_enabled ?? (key === 'wire_transfer'),
+      enabled: hasEnvKey,
       isDefault: dbRow?.is_active ?? (key === 'wire_transfer'),
       supportedCurrencies: meta.currencies,
-      testMode: dbRow?.test_mode ?? false,
+      testMode: secret ? looksLikeTestKey(secret) : false,
       routesRail: (dbRow?.routes_rail as string[] | undefined) ?? [],
+      envKey: meta.envKey,
     };
   });
 }
