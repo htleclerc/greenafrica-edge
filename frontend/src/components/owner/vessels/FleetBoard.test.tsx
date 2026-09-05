@@ -10,6 +10,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 function vessel(overrides: Partial<FleetVessel> = {}): FleetVessel {
     return {
         id: 'v-star',
+        ref: 'ves_00000000star',
         name: 'GG DEMO STAR',
         imoNumber: '9839272',
         category: 'CONTAINER',
@@ -56,7 +57,7 @@ describe('FleetBoard — accès au détail', () => {
         renderBoard(fleetOf([vessel()]));
         const links = screen.getAllByRole('link', { name: /GG DEMO STAR|Details/i });
         const hrefs = links.map((l) => l.getAttribute('href'));
-        expect(hrefs).toContain('/dashboard/vessels/v-star');
+        expect(hrefs).toContain('/dashboard/vessels/ves_00000000star');
     });
 
     it('garde l action de paiement à côté du détail, pas à sa place', () => {
@@ -71,7 +72,7 @@ describe('FleetBoard — accès au détail', () => {
     it('rend le nom du navire cliquable sur la carte', () => {
         renderBoard(fleetOf([vessel()]));
         expect(screen.getByRole('link', { name: 'GG DEMO STAR' }))
-            .toHaveAttribute('href', '/dashboard/vessels/v-star');
+            .toHaveAttribute('href', '/dashboard/vessels/ves_00000000star');
     });
 
     it('n ajoute pas de bouton Détail sur une carte qui y mène déjà', () => {
@@ -87,15 +88,15 @@ describe('FleetBoard — accès au détail', () => {
         renderBoard(fleetOf([vessel({ id: 'v-star', status: 'overdue' })]));
         const card = screen.getByRole('article');
         expect(within(card).getByText('Details'))
-            .toHaveAttribute('href', '/dashboard/vessels/v-star');
+            .toHaveAttribute('href', '/dashboard/vessels/ves_00000000star');
     });
 
     it('conserve le lien détail des navires conformes', () => {
         const { container } = renderBoard(
-            fleetOf([vessel({ id: 'v-pioneer', name: 'GG DEMO PIONEER', status: 'compliant', needsAction: false })]),
+            fleetOf([vessel({ id: 'v-pioneer', ref: 'ves_0000pioneer', name: 'GG DEMO PIONEER', status: 'compliant', needsAction: false })]),
         );
         expect(within(container).getByRole('link', { name: /Details/i }))
-            .toHaveAttribute('href', '/dashboard/vessels/v-pioneer');
+            .toHaveAttribute('href', '/dashboard/vessels/ves_0000pioneer');
     });
 });
 
@@ -107,7 +108,7 @@ describe('FleetBoard — inventaire complet', () => {
         renderBoard(fleetOf([
             vessel({ id: 'v-star', name: 'GG DEMO STAR', needsAction: true }),
             vessel({
-                id: 'v-pioneer', name: 'GG DEMO PIONEER',
+                id: 'v-pioneer', ref: 'ves_0000pioneer', name: 'GG DEMO PIONEER',
                 status: 'compliant', needsAction: false, outstandingUsd: 0,
             }),
         ]));
@@ -115,8 +116,8 @@ describe('FleetBoard — inventaire complet', () => {
         const detailLinks = screen
             .getAllByRole('link')
             .map((l) => l.getAttribute('href'));
-        expect(detailLinks).toContain('/dashboard/vessels/v-star');
-        expect(detailLinks).toContain('/dashboard/vessels/v-pioneer');
+        expect(detailLinks).toContain('/dashboard/vessels/ves_00000000star');
+        expect(detailLinks).toContain('/dashboard/vessels/ves_0000pioneer');
 
         // Le navire a traiter parait DEUX fois : une carte d'appel a l'action,
         // et sa ligne d'inventaire. La redondance est voulue.

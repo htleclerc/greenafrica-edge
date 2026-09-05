@@ -8,7 +8,7 @@ type RawVessel = Parameters<typeof buildFleet>[0][number];
 type RawTxn = Parameters<typeof buildFleet>[1][number];
 
 const vessel: RawVessel = {
-    id: 'v1', name: 'MV BERBERA PRIDE', imo_number: '9348576',
+    id: 'v1', public_ref: 'ves_0000000000a1', name: 'MV BERBERA PRIDE', imo_number: '9348576',
     category: 'BULK_CARRIER', last_zone: 'Quai 3 · Berbera', compliance_status: 'COMPLIANT',
 };
 

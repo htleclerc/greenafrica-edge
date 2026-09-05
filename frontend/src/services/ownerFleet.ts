@@ -14,6 +14,8 @@ export type FleetStatus = 'overdue' | 'toPay' | 'proforma' | 'compliant' | 'exem
 
 export interface FleetVessel {
     id: string;
+    /** Référence opaque (mig 147) : la seule chose qui entre dans une URL. */
+    ref: string;
     name: string;
     imoNumber: string | null;
     category: string | null;
@@ -62,6 +64,7 @@ export function matchesFleetTab(v: FleetVessel, tab: FleetTab): boolean {
 
 interface RawVessel {
     id: string;
+    public_ref: string;
     name: string;
     imo_number: string | null;
     category: string | null;
@@ -135,6 +138,7 @@ export function buildFleet(
         const status = fleetStatus(v, txns, outstandingUsd, days);
         return {
             id: v.id,
+            ref: v.public_ref,
             name: v.name,
             imoNumber: v.imo_number,
             category: v.category,
@@ -231,7 +235,7 @@ export async function getOwnerFleet(
 
     const [vesselsRes, openRes, paidRes] = await Promise.all([
         db.from('vessels')
-            .select('id, name, imo_number, category, last_zone, compliance_status')
+            .select('id, public_ref, name, imo_number, category, last_zone, compliance_status')
             .eq('shipowner_id', shipownerId)
             .order('name'),
         db.from('transactions').select(TXN_COLUMNS).in('status', OPEN_STATUSES).limit(500),

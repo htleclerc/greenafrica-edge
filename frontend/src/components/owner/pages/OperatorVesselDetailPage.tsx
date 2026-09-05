@@ -1,6 +1,10 @@
 // Reusable server component for the operator vessel detail view.
-// Used by both /owner/vessels/[id] and /dashboard/vessels/[id] (when principal
-// is an operator). Always fetches via principal.supabase (RLS-scoped).
+// Used by /dashboard/vessels/[ref] (when principal is an operator). Always
+// fetches via principal.supabase (RLS-scoped).
+//
+// L'URL porte la référence opaque du navire (mig 147), jamais son UUID : un
+// identifiant interne finit dans l'historique, les Referer et les captures
+// d'écran. Une référence mal formée — l'ancien UUID compris — vaut notFound().
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -11,6 +15,7 @@ import { buildInvoiceDownloadUrl } from '@/services/invoiceDownloadLink';
 import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 import { StatementDownload } from '@/components/owner/StatementDownload';
+import { isVesselRef } from '@/services/vesselRefService';
 
 /**
  * Facture visant ce navire. Le rattachement se fait par `vessel_id`, jamais par
@@ -47,22 +52,25 @@ function statusVariant(status: string): 'active' | 'warning' | 'critical' | 'arc
 
 interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
-    vesselId: string;
+    /** Référence publique `ves_…` (mig 147). */
+    vesselRef: string;
     /** Back-link destination. Defaults to /dashboard/vessels. */
     backHref?: string;
 }
 
 export async function OperatorVesselDetailPage({
     principal,
-    vesselId,
+    vesselRef,
     backHref = '/dashboard/vessels',
 }: Props) {
+    if (!isVesselRef(vesselRef)) notFound();
+
     const { data: vessel } = await principal.supabase
         .from('vessels')
         .select(
-            'id, name, mmsi, imo_number, call_sign, flag_code, category, gross_tonnage_dwt, engine_power_kw, design_speed_knots, compliance_status, estimated_emissions_tco2, tax_liability_usd, last_zone',
+            'id, public_ref, name, mmsi, imo_number, call_sign, flag_code, category, gross_tonnage_dwt, engine_power_kw, design_speed_knots, compliance_status, estimated_emissions_tco2, tax_liability_usd, last_zone',
         )
-        .eq('id', vesselId)
+        .eq('public_ref', vesselRef)
         // Meme perimetre que la liste : le detail n'est accessible que pour les
         // navires du dossier de l'armateur. La RLS seule laisserait passer un
         // navire rattache par le lien agent hérité (`owner_id`, mig 073), qui
@@ -71,6 +79,7 @@ export async function OperatorVesselDetailPage({
         .maybeSingle();
 
     if (!vessel) notFound();
+    const vesselId = String(vessel.id);
 
     const { data: alerts } = await principal.supabase
         .from('arrival_alerts')
@@ -128,34 +137,38 @@ export async function OperatorVesselDetailPage({
                     Specifications
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                    <Field label="Flag" value={vessel.flag_code} />
-                    <Field label="Category" value={vessel.category} />
+                    <Field label="Flag" value={vessel.flag_code ?? '—'} />
+                    <Field label="Category" value={vessel.category ?? '—'} />
                     <Field label="Last zone" value={vessel.last_zone ?? '—'} />
+                    {/* Puissance et vitesse sont nullables depuis la mig 093
+                        (navires importés sans fiche technique) : un navire
+                        incomplet s'affiche avec des tirets, il ne plante pas
+                        la page. */}
                     <Field
                         label="Gross tonnage (DWT)"
-                        value={vessel.gross_tonnage_dwt.toLocaleString()}
+                        value={vessel.gross_tonnage_dwt != null ? Number(vessel.gross_tonnage_dwt).toLocaleString() : '—'}
                     />
                     <Field
                         label="Engine power"
-                        value={`${vessel.engine_power_kw.toLocaleString()} kW`}
+                        value={vessel.engine_power_kw != null ? `${Number(vessel.engine_power_kw).toLocaleString()} kW` : '—'}
                     />
                     <Field
                         label="Design speed"
-                        value={`${vessel.design_speed_knots} kn`}
+                        value={vessel.design_speed_knots != null ? `${vessel.design_speed_knots} kn` : '—'}
                     />
                     <Field
                         label="Estimated CO₂"
-                        value={`${Number(vessel.estimated_emissions_tco2).toLocaleString()} t`}
+                        value={`${Number(vessel.estimated_emissions_tco2 ?? 0).toLocaleString()} t`}
                     />
                     <Field
                         label="Tax liability"
-                        value={`$${Number(vessel.tax_liability_usd).toLocaleString()}`}
+                        value={`$${Number(vessel.tax_liability_usd ?? 0).toLocaleString()}`}
                     />
                     <div>
                         <span className="block text-[10px] uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
                             Compliance
                         </span>
-                        <OsBadge variant="info" label={vessel.compliance_status} />
+                        <OsBadge variant="info" label={vessel.compliance_status ?? '—'} />
                     </div>
                 </div>
             </section>
@@ -243,7 +256,7 @@ export async function OperatorVesselDetailPage({
             </section>
 
             <div className="mb-6">
-                <StatementDownload vesselId={vesselId} />
+                <StatementDownload vesselRef={String(vessel.public_ref)} />
             </div>
 
             <section className="os-card p-5">
