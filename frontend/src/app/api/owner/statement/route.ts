@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { resolveOwnerAccount } from '@/lib/auth/resolveOwnerAccount';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { fetchJurisdictionName } from '@/lib/jurisdictionName';
+import { resolveVesselByRef } from '@/services/vesselRefService';
 import { composeOwnerStatement, currentMonthBounds } from '@/services/statementService';
 import { generateStatementPdf } from '@/services/invoiceService';
 import { scopedLogger } from '@/lib/logger';
@@ -9,8 +11,9 @@ import { scopedLogger } from '@/lib/logger';
 /**
  * GET /api/owner/statement — relevé consolidé À LA DEMANDE.
  *
- * `?asOf=YYYY-MM-DD` arrête le solde à une date ; `?vesselId=<uuid>` le
- * restreint à un navire. Sans paramètre : toute la flotte, à l'instant présent.
+ * `?asOf=YYYY-MM-DD` arrête le solde à une date ; `?vessel=<ves_…>` le
+ * restreint à un navire (référence opaque, mig 147 — jamais l'UUID). Sans
+ * paramètre : toute la flotte, à l'instant présent.
  *
  * NE PERSISTE RIEN. Le relevé mensuel officiel vit dans `owner_statements`
  * sous une contrainte UNIQUE (armateur, mois) et son PDF sous
@@ -22,6 +25,11 @@ import { scopedLogger } from '@/lib/logger';
  * `transactions` et `payments` au dossier de l'appelant (migs 033 et 058). Un
  * `vesselId` étranger ne produit donc aucune ligne plutôt qu'une fuite, et il
  * n'y a pas de client privilégié à scoper à la main.
+ *
+ * L'appelant peut être le titulaire OU un membre invité (mig 135) : le relevé
+ * est une lecture, ouverte à tout membre, comme le téléchargement des PDF. La
+ * résolution est celle de `requireOwner` — chercher le titulaire seul rendait
+ * un 404 à tout membre, alors que la page qui porte le bouton l'accueille.
  */
 
 export const runtime = 'nodejs';
@@ -34,12 +42,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return new NextResponse('Not found', { status: 404 });
 
-    const { data: owner } = await supabase
-        .from('shipowners')
-        .select('id, name, jurisdiction_id')
-        .eq('profile_id', auth.user.id)
-        .maybeSingle();
-    if (!owner) return new NextResponse('Not found', { status: 404 });
+    const account = await resolveOwnerAccount(supabase, auth.user.id);
+    // Un compte suspendu se refuse ici comme sur la page : même réponse qu'une
+    // ressource inexistante, l'API ne confirme pas l'existence d'un dossier.
+    if (!account || account.shipowner.account_state !== 'ACTIVE') {
+        return new NextResponse('Not found', { status: 404 });
+    }
+    const owner = account.shipowner;
 
     const url = new URL(req.url);
     const now = new Date();
@@ -57,7 +66,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         asOf = parsed.getTime() > now.getTime() ? now : parsed;
     }
 
-    const vesselId = url.searchParams.get('vesselId') ?? undefined;
+    // Un navire inconnu, mal formé ou hors du compte répond comme une
+    // ressource inexistante : pas de relevé « vide » qui laisserait croire que
+    // ce navire ne doit rien.
+    const vesselRef = url.searchParams.get('vessel');
+    let vesselId: string | undefined;
+    if (vesselRef) {
+        const resolved = await resolveVesselByRef(supabase, vesselRef, String(owner.id));
+        if (!resolved) return new NextResponse('Not found', { status: 404 });
+        vesselId = resolved;
+    }
 
     const { periodStart, periodEnd, label } = currentMonthBounds(asOf);
     const result = await composeOwnerStatement(supabase, {

@@ -27,10 +27,8 @@ import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import type { ShipownerListRow } from '@/services/shipownerService';
-import {
-    OWNER_ALL_PRIVILEGES, privilegesFromMember,
-    type OwnerPrivileges, type PrivilegeKey,
-} from '@/lib/auth/ownerPrivileges';
+import type { OwnerPrivileges, PrivilegeKey } from '@/lib/auth/ownerPrivileges';
+import { resolveOwnerAccount } from '@/lib/auth/resolveOwnerAccount';
 
 export interface OwnerSession {
     userId: string;
@@ -44,9 +42,6 @@ export interface OwnerSession {
     isMember: boolean;
     supabase: SupabaseClient;
 }
-
-const OWNER_COLUMNS =
-    'id, name, country_code, address, official_email, official_email_source, account_state, profile_id, imo_company_no, invited_at, kyc_level_c_completed_at, aoc_number, jurisdiction_id';
 
 /**
  * Ce qu'une action exige de son appelant :
@@ -65,47 +60,15 @@ export async function requireOwner(requirement?: OwnerRequirement): Promise<Owne
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) redirect('/login');
 
-    // Look up the shipowners row attached to this profile. Single source of
-    // truth — RLS ensures we can only see our own row.
-    let { data: shipowner } = await supabase
-        .from('shipowners')
-        .select(OWNER_COLUMNS)
-        .eq('profile_id', user.id)
-        .maybeSingle();
-
-    let privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES;
-    let isMember = false;
-
-    // Membre invité (mig 135) — teste APRES la propriété, comme partout ailleurs.
-    if (!shipowner) {
-        const { data: membership } = await supabase
-            .from('owner_members')
-            .select('shipowner_id, can_pay, can_dispute, can_manage_vessels, can_invite')
-            .eq('profile_id', user.id)
-            .eq('active', true)
-            .maybeSingle();
-
-        if (membership) {
-            const memberRow = membership as { shipowner_id: string };
-            const { data: memberOwner } = await supabase
-                .from('shipowners')
-                .select(OWNER_COLUMNS)
-                .eq('id', memberRow.shipowner_id)
-                .maybeSingle();
-            if (memberOwner) {
-                shipowner = memberOwner;
-                privileges = privilegesFromMember(membership);
-                isMember = true;
-            }
-        }
-    }
-
-    if (!shipowner) {
+    // Titulaire OU membre invité, avec la préséance de la base (mig 135).
+    const account = await resolveOwnerAccount(supabase, user.id);
+    if (!account) {
         // Either profile_id wasn't set (corrupt invite) or auth user has no
         // matching shipowner — log out and bounce.
         await supabase.auth.signOut();
         redirect('/login?error=no_owner_record');
     }
+    const { shipowner, privileges, isMember } = account;
 
     if (shipowner.account_state !== 'ACTIVE') {
         // Invitation issued but never redeemed, or admin revoked access.
@@ -125,8 +88,8 @@ export async function requireOwner(requirement?: OwnerRequirement): Promise<Owne
     return {
         userId: user.id,
         email: user.email ?? shipowner.official_email ?? '',
-        shipowner: shipowner as ShipownerListRow,
-        jurisdictionId: (shipowner as unknown as { jurisdiction_id: string }).jurisdiction_id,
+        shipowner: shipowner as unknown as ShipownerListRow,
+        jurisdictionId: shipowner.jurisdiction_id,
         privileges,
         isMember,
         supabase,
