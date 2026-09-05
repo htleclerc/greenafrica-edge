@@ -3676,41 +3676,21 @@
   },
   "OwnerRegister": {
     "title": "تسجيل المشغّل البحري",
-    "subtitle": "أخبرنا عن شركتك. سنراجع طلبك ونتواصل معك خلال 48 ساعة.",
+    "subtitle": "زوّدنا ببيانات سفينتك وشركتك. سنراجع طلبك ونتواصل معك خلال 48 ساعة.",
     "email": "البريد الإلكتروني للتواصل",
-    "company_name": "اسم الشركة",
-    "imo_company": "رقم IMO للشركة (7 أرقام)",
-    "country": "الدولة (ISO-2)",
-    "address": "العنوان المسجّل",
-    "vessel_imo": "رقم IMO لأحد سفنك",
-    "phone_optional": "الهاتف (اختياري، E.164)",
+    "company_name": "اسم مالك السفينة",
+    "vessel_imo": "رقم IMO للسفينة",
     "submit": "إرسال الطلب",
     "submitting": "جارٍ الإرسال...",
     "thanks_title": "شكراً لك",
-    "doc_types": {
-      "TRADE_REGISTER": "السجل التجاري",
-      "CERT_INCORPORATION": "شهادة التأسيس",
-      "MOA": "عقد التأسيس",
-      "OTHER": "أخرى"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "يُرجى رفع وثيقة إثبات",
       "upload_failed": "فشل رفع الملف. يُرجى المحاولة مجدداً."
     },
-    "proof_document": "وثيقة الإثبات",
-    "doc_type": "نوع الوثيقة",
-    "preferred_language": "اللغة المفضّلة",
     "closed_title": "التسجيل مغلق",
     "closed_body": "تسجيل المشغّلين متاح حالياً عبر الدعوة فقط. يُرجى التواصل مع الإدارة.",
-    "back_to_login": "العودة إلى تسجيل الدخول"
+    "back_to_login": "العودة إلى تسجيل الدخول",
+    "mmsi_optional": "رقم MMSI للسفينة (اختياري)"
   },
   "AirRegister": {
     "title": "تسجيل المشغّل الجوي",
@@ -3740,7 +3720,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "نوع المشغّل"
   },
   "AdminRefunds": {
     "pageTitle": "المبالغ المستردة",
@@ -3987,6 +3968,7 @@
         "email": "Their email address",
         "privileges": "What they will be able to do",
         "notYours": "You do not hold this right — you cannot grant it.",
+        "payDefault": "الدفع مُمنوح لكل عضو افتراضيًا: ألغِ التحديد لسحبه.",
         "submit": "Invite"
       },
       "errors": {

@@ -34,6 +34,9 @@ describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
         await supabase.from('vessels').delete().like('imo_number', '999%');
         // Finally delete the shipowners
         await supabase.from('shipowners').delete().like('imo_company_no', '999%');
+        // Les demandes creees par le formulaire simplifie n'ont plus d'IMO
+        // societe : on les retrouve par l'adresse de test.
+        await supabase.from('shipowners').delete().like('official_email', '%-e2e@test.com');
     };
 
     beforeEach(async () => {
@@ -44,7 +47,7 @@ describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
         await cleanupTestData();
     });
 
-    it('Auto-claim happy path: vessel + GHOST + matching imo_company → ACTIVE', async () => {
+    it('Dossier fantome rattache a l’IMO : mise en service immediate', async () => {
         const { data: ghost, error: ghostErr } = await supabase.from('shipowners').insert({
             name: 'Pre-existing Ghost',
             imo_company_no: '9991111',
@@ -73,13 +76,7 @@ describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
         const r = await registerShipowner({
             email: 'autoclaim-e2e@test.com',
             name: 'Updated Ghost Co',
-            imo_company_no: '9991111',
-            country_code: 'SO',
-            address: '123 St',
-            proof_imo_vessel_imo: '9990001',
-            proof_doc_storage_path: 'pending/x.pdf',
-            proof_doc_type: 'TRADE_REGISTER',
-            preferred_language: 'en',
+            vessel_imo: '9990001',
             recaptcha_token: 'tok',
         }, '127.0.0.1');
 
@@ -87,15 +84,18 @@ describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
         expect(r.autoClaimedId).toBe(ghost.id);
 
         const { data: now } = await supabase.from('shipowners')
-            .select('account_state, name')
+            .select('account_state, name, official_email')
             .eq('id', ghost.id).single();
         expect(now?.account_state).toBe('ACTIVE');
         expect(now?.name).toBe('Updated Ghost Co');
+        // Sans cette adresse sur la ligne, le cron de relance ne sait pas a qui
+        // ecrire et l'armateur mis en service ne recoit aucune pro-forma.
+        expect(now?.official_email).toBe('autoclaim-e2e@test.com');
 
-        // Cleanup auth user (best effort)
         const { data: { users } } = await supabase.auth.admin.listUsers();
-        const authUser = users.find((u: any) => u.email === 'autoclaim-e2e@test.com');
+        const authUser = users.find((u) => u.email === 'autoclaim-e2e@test.com');
         if (authUser) await supabase.auth.admin.deleteUser(authUser.id);
+
     });
 
     it('PENDING_REVIEW path: vessel exists, no GHOST → INSERT pending', async () => {
@@ -118,21 +118,14 @@ describe.skipIf(!ENV_OK)('Onboarding E2E', () => {
         const r = await registerShipowner({
             email: 'orphan-e2e@test.com',
             name: 'New Co',
-            imo_company_no: '9992222',
-            country_code: 'SO',
-            address: '123 St',
-            proof_imo_vessel_imo: '9990002',
-            proof_doc_storage_path: 'pending/y.pdf',
-            proof_doc_type: 'OTHER',
-            preferred_language: 'en',
+            vessel_imo: '9990002',
             recaptcha_token: 'tok',
         }, '127.0.0.1');
 
         expect(r.ok).toBe(true);
-        expect(r.autoClaimedId).toBeUndefined();
 
         const { data } = await supabase.from('shipowners')
-            .select('account_state').eq('imo_company_no', '9992222').single();
+            .select('account_state').eq('official_email', 'orphan-e2e@test.com').single();
         expect(data?.account_state).toBe('PENDING_REVIEW');
     });
 

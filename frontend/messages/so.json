@@ -3681,41 +3681,21 @@
   },
   "OwnerRegister": {
     "title": "Diiwaangelinta Mulkiiyaha Markabta",
-    "subtitle": "Noogu sheeg shirkadaada. Waxaan dib u eegi doonaa oo 48 saacood gudahood email kugu soo diri doonaa.",
+    "subtitle": "Noo sheeg markabkaaga iyo shirkaddaada. Waan eegi doonaa oo 48 saacood gudahood email kuu soo diri doonaa.",
     "email": "Emailka xiriirka",
-    "company_name": "Magaca shirkadda",
-    "imo_company": "Lambarka Shirkadda IMO (7 lambar)",
-    "country": "Wadanka (ISO-2)",
-    "address": "Ciwaanka diiwaan-gashan",
-    "vessel_imo": "IMO-ga Markabta (mid ka mid ah ciidamadaada)",
-    "phone_optional": "Taleefanka (ikhtiyaari, E.164)",
+    "company_name": "Magaca milkiilaha markabka",
+    "vessel_imo": "IMO-ga markabka",
     "submit": "Gudbi diiwaangelinta",
     "submitting": "Gudbinaya...",
     "thanks_title": "Mahadsanid",
-    "doc_types": {
-      "TRADE_REGISTER": "Diiwaanka ganacsiga",
-      "CERT_INCORPORATION": "Shahaadada aasaasitaanka",
-      "MOA": "Xuddunta ururinta",
-      "OTHER": "Kale"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "Fadlan soo geli dokumiinti xaqiijin ah",
       "upload_failed": "Soo gelinta faylka way fashilantay. Isku day mar kale."
     },
-    "proof_document": "Dokumiintiga xaqiijinta",
-    "doc_type": "Nooca dokumiintiga",
-    "preferred_language": "Luqadda la doorbiday",
     "closed_title": "Diiwaangelinta waa la xidhay",
     "closed_body": "Diiwaangelinta hawl-wadeeneyaasha hadda waxay tahay casiiro kaliya. Fadlan la xiriir maamulka.",
-    "back_to_login": "Ku noqo gelitaanka"
+    "back_to_login": "Ku noqo gelitaanka",
+    "mmsi_optional": "MMSI-ga markabka (ikhtiyaari)"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -3847,6 +3827,7 @@
         "email": "Their email address",
         "privileges": "What they will be able to do",
         "notYours": "You do not hold this right — you cannot grant it.",
+        "payDefault": "Bixinta waxaa si toos ah loo siiyaa xubin kasta: ka saar calaamadda si aad u diido.",
         "submit": "Invite"
       },
       "errors": {
@@ -4155,7 +4136,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "Nooca hawlwadeenka"
   },
   "JurisdictionSwitcher": {
     "label": "Xukuumadda",

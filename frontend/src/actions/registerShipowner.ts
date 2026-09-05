@@ -7,20 +7,47 @@ import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { notifyStaffSafe } from '@/services/staffNotificationService';
 
-const ALLOWED_LANGS = ['en', 'fr', 'ar', 'pt', 'sw', 'so'] as const;
-const ALLOWED_DOC_TYPES = ['TRADE_REGISTER', 'CERT_INCORPORATION', 'MOA', 'OTHER'] as const;
+/**
+ * Demande d'accès armateur — quatre champs.
+ *
+ * Le formulaire réclamait huit renseignements, dont un extrait d'immatriculation
+ * à téléverser. Il demande désormais le strict nécessaire pour qu'un agent
+ * puisse identifier le dossier : qui écrit, pour quelle société, et sur quel
+ * navire. Le MMSI est facultatif — il ne sert qu'à retrouver le navire quand
+ * l'IMO ne tombe pas juste.
+ *
+ * ATTRIBUTION AUTOMATIQUE — CE QU'ELLE SUPPOSE DÉSORMAIS
+ *
+ * Un dossier FANTÔME rattaché au navire est mis en service immédiatement.
+ * L'ancien formulaire exigeait en plus que le numéro IMO de la SOCIÉTÉ
+ * corresponde ; ce champ a disparu, et l'IMO du navire le remplace seul.
+ *
+ * C'est une décision produit, prise en connaissance du risque : l'IMO d'un
+ * navire est PUBLIC — il figure dans tous les registres. Quiconque le connaît
+ * peut donc faire mettre en service le dossier fantôme correspondant et
+ * recevoir l'invitation à l'adresse qu'il a saisie.
+ *
+ * Ce qui borne ce risque, et qu'il ne faut pas détricoter :
+ *   — un dossier DÉJÀ en service (ACTIVE, INVITED, SUSPENDED, REJECTED) n'est
+ *     jamais touché, et l'écran n'en dit rien ;
+ *   — seuls les dossiers fantômes, c'est-à-dire jamais activés, sont
+ *     concernés ;
+ *   — la mise en service est tracée dans `audit_logs`.
+ *
+ * Le durcissement possible sans rien retirer au parcours : envoyer
+ * l'invitation à `shipowners.official_email` quand le dossier en porte une,
+ * plutôt qu'à l'adresse saisie. L'armateur légitime entre, l'usurpateur
+ * n'obtient rien. Non implémenté — à trancher.
+ */
 
 const registerShipownerSchema = z.object({
     email: z.string().email().max(254),
+    /** Raison sociale de l'armateur, telle que le demandeur la déclare. */
     name: z.string().min(2).max(200),
-    imo_company_no: z.string().regex(/^\d{7}$/, '7 digits required'),
-    country_code: z.string().length(2),
-    address: z.string().min(5).max(500),
-    proof_imo_vessel_imo: z.string().regex(/^\d{7}$/, '7 digits required'),
-    proof_doc_storage_path: z.string().min(1),
-    proof_doc_type: z.enum(ALLOWED_DOC_TYPES),
-    phone_e164: z.string().regex(/^\+\d{8,15}$/).optional(),
-    preferred_language: z.enum(ALLOWED_LANGS),
+    /** IMO du navire — 7 chiffres. C'est le rattachement au dossier. */
+    vessel_imo: z.string().regex(/^\d{7}$/, '7 digits required'),
+    /** MMSI — 9 chiffres. Facultatif, sert de second chemin de recherche. */
+    mmsi: z.string().regex(/^\d{9}$/, '9 digits required').optional(),
     recaptcha_token: z.string().min(1),
 });
 
@@ -28,9 +55,13 @@ type RegisterShipownerInput = z.infer<typeof registerShipownerSchema>;
 
 interface RegisterShipownerResult {
     ok: boolean;
-    /** Generic message for ALL non-auto-claim paths (anti-enumeration). */
+    /**
+     * Message INVARIABLE sur tous les chemins, y compris la mise en service et
+     * le refus silencieux : l'écran ne doit jamais révéler si un navire est
+     * connu, ni si son dossier est déjà pourvu.
+     */
     message: string;
-    /** Only set on successful AUTO-CLAIM. */
+    /** Renseigné uniquement sur une ATTRIBUTION AUTOMATIQUE réussie. */
     autoClaimedId?: string;
 }
 
@@ -56,8 +87,8 @@ export async function registerShipowner(
     input: RegisterShipownerInput,
     clientIp: string,
 ): Promise<RegisterShipownerResult> {
-    // Plan 7H-1 Task 5.1 — defense-in-depth flag check.
-    // Even if the UI redirect is bypassed (direct POST), refuse to write.
+    // Défense en profondeur : même si la redirection de l'interface est
+    // contournée par un POST direct, on refuse d'écrire.
     const flags = await readPortalFeatureFlags();
     if (!flags.selfServiceEnabled) {
         return { ok: false, message: 'Self-service signup is not currently enabled.' };
@@ -73,46 +104,75 @@ export async function registerShipowner(
     const captchaOk = await verifyRecaptcha(data.recaptcha_token);
     if (!captchaOk) return { ok: false, message: GENERIC_MESSAGE };
 
-    // Anonymous signup — no tenant context yet. Sanctioned unscoped client; new operator
-    // rows inherit jurisdiction via the column DEFAULT (Somaliland) while signup is
-    // single-country. Multi-country signup (subdomain -> jurisdiction) is a follow-up
-    // tied to dropping that DEFAULT.
+    // Client sans contexte de tenant : la demande est anonyme. La juridiction
+    // vient du DEFAULT de colonne tant que l'inscription est mono-pays.
     const supabase = createPlatformClient();
 
-    const { data: vessel } = await supabase
-        .from('vessels')
-        .select('id, shipowner_id')
-        .eq('imo_number', data.proof_imo_vessel_imo)
-        .maybeSingle();
+    const vessel = await findVessel(supabase, data);
 
-    // Branch A: vessel found + shipowner attached
     if (vessel?.shipowner_id) {
-        const { data: shipowner } = await supabase
+        const { data: owner } = await supabase
             .from('shipowners')
-            .select('id, account_state, imo_company_no')
+            .select('id, account_state')
             .eq('id', vessel.shipowner_id)
-            .single();
+            .maybeSingle();
+        const state = (owner as { account_state?: string } | null)?.account_state;
 
-        if (shipowner?.account_state === 'GHOST'
-            && shipowner.imo_company_no === data.imo_company_no) {
-            return await autoClaim(supabase, shipowner.id, data);
-        }
-        if (shipowner?.account_state === 'GHOST') {
-            // GHOST mismatch — insert PENDING_REVIEW for admin to investigate
-            await insertPendingReview(supabase, data);
-            return { ok: true, message: GENERIC_MESSAGE };
-        }
-        // Non-GHOST (ACTIVE/INVITED/SUSPENDED/REJECTED) → no insert (anti-takeover)
-        // No audit_log here (anonymous user, NOT NULL constraint on user_id).
-        return { ok: true, message: GENERIC_MESSAGE };
+        // Dossier fantôme rattaché au navire : mise en service immédiate.
+        if (state === 'GHOST') return await autoClaim(supabase, vessel.shipowner_id, data);
+
+        // Dossier déjà pourvu : on ne crée rien et on ne le dit pas. C'est la
+        // garde anti-usurpation, et elle ne se négocie pas.
+        if (state) return { ok: true, message: GENERIC_MESSAGE };
     }
 
-    // Branch B: vessel found but no shipowner
-    // Branch C: vessel not found
-    await insertPendingReview(supabase, data);
+    await insertPendingReview(supabase, data, vessel);
     return { ok: true, message: GENERIC_MESSAGE };
 }
 
+interface MatchedVessel {
+    id: string;
+    name: string | null;
+    shipowner_id: string | null;
+    /** Par quel identifiant le navire a été retrouvé — porté au dossier de revue. */
+    matchedOn: 'IMO' | 'MMSI';
+}
+
+/**
+ * L'IMO d'abord, le MMSI en second recours. Un armateur qui se trompe d'un
+ * chiffre sur l'IMO, ou dont le navire est enregistré sous un IMO que nous
+ * n'avons pas, reste rattachable par son MMSI plutôt que de tomber dans un
+ * dossier orphelin que personne ne saura instruire.
+ */
+async function findVessel(
+    supabase: SupabaseClient,
+    data: RegisterShipownerInput,
+): Promise<MatchedVessel | null> {
+    const { data: byImo } = await supabase
+        .from('vessels')
+        .select('id, name, shipowner_id')
+        .eq('imo_number', data.vessel_imo)
+        .maybeSingle();
+    if (byImo) return { ...(byImo as Omit<MatchedVessel, 'matchedOn'>), matchedOn: 'IMO' };
+
+    if (!data.mmsi) return null;
+
+    const { data: byMmsi } = await supabase
+        .from('vessels')
+        .select('id, name, shipowner_id')
+        .eq('mmsi', data.mmsi)
+        .maybeSingle();
+    return byMmsi ? { ...(byMmsi as Omit<MatchedVessel, 'matchedOn'>), matchedOn: 'MMSI' } : null;
+}
+
+/**
+ * Met le dossier fantôme en service et invite le demandeur.
+ *
+ * Le passage GHOST → ACTIVE est conditionné dans le `UPDATE` lui-même
+ * (`.eq('account_state', 'GHOST')`) : deux demandes simultanées sur le même
+ * navire ne peuvent pas inviter deux personnes. Celle qui perd la course
+ * repart avec le message générique, sans rien apprendre.
+ */
 async function autoClaim(
     supabase: SupabaseClient,
     shipownerId: string,
@@ -122,47 +182,41 @@ async function autoClaim(
         .from('shipowners')
         .update({
             name: data.name,
-            address: data.address,
-            country_code: data.country_code,
-            phone_e164: data.phone_e164 ?? null,
-            preferred_language: data.preferred_language,
-            // Persist the operator's email on the shipowners row: the proforma
-            // reminder cron (mig 065) + notification-email-loop resolve the
-            // recipient via shipowners.official_email — without this, an
-            // auto-claimed operator never receives any proforma email.
+            // L'adresse doit atterrir sur la ligne shipowners : le cron de
+            // relance et la boucle de notification résolvent le destinataire
+            // par `official_email`. Sans elle, l'armateur mis en service ne
+            // reçoit jamais une seule pro-forma.
             official_email: data.email,
             official_email_source: 'AGENT_CLAIM',
-            proof_imo_vessel_imo: data.proof_imo_vessel_imo,
-            proof_doc_url: data.proof_doc_storage_path,
-            proof_doc_type: data.proof_doc_type,
-            imo_company_no_verified_at: new Date().toISOString(),
-            kyc_level_b_completed_at: new Date().toISOString(),
+            proof_imo_vessel_imo: data.vessel_imo,
+            // Ni `kyc_level_b_completed_at` ni `imo_company_no_verified_at` :
+            // le formulaire ne demande plus ni pièce ni IMO société. Les dater
+            // affirmerait des vérifications qui n'ont pas eu lieu.
             account_state: 'ACTIVE',
         })
         .eq('id', shipownerId)
-        .eq('account_state', 'GHOST')                       // race-safe: only flip if still GHOST
+        .eq('account_state', 'GHOST')
         .select('id, jurisdiction_id');
     if (upErr) return { ok: false, message: GENERIC_MESSAGE };
 
-    // Lost the race — another concurrent caller already claimed.
-    if (!claimed || claimed.length === 0) {
-        return { ok: true, message: GENERIC_MESSAGE };
-    }
+    // Course perdue : un autre appel a déjà pris le dossier.
+    if (!claimed || claimed.length === 0) return { ok: true, message: GENERIC_MESSAGE };
 
     const inviteResp = await supabase.auth.admin.inviteUserByEmail(
         data.email,
         { redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/owner/auth/callback` },
     );
     if (inviteResp.error) {
-        console.error('[registerShipowner] inviteUserByEmail failed:', inviteResp.error.message, inviteResp.error);
+        console.error('[registerShipowner] inviteUserByEmail failed:', inviteResp.error.message);
+        // Sans invitation, le dossier serait ACTIVE et injoignable : on le
+        // rend à son état fantôme plutôt que de le laisser en rade.
         await supabase.from('shipowners')
             .update({ account_state: 'GHOST' })
             .eq('id', shipownerId)
-            .eq('account_state', 'ACTIVE');                 // ADD guard: only rollback if still ACTIVE
+            .eq('account_state', 'ACTIVE');
         return { ok: false, message: 'Email delivery failed. Try again later.' };
     }
 
-    // Use the user object from the invite response directly
     const newUser = inviteResp.data?.user;
     if (newUser) {
         await supabase.from('profiles').upsert({
@@ -177,9 +231,6 @@ async function autoClaim(
             .eq('id', shipownerId);
         await supabase.from('wallets').insert({ shipowner_id: shipownerId });
 
-        // Audit log: now we have a user_id, write the audit row using the
-        // project's existing pattern (action enum constrained to 10 values).
-        // event detail goes in details_json.event.
         await supabase.from('audit_logs').insert({
             user_id: newUser.id,
             user_full_name: data.name,
@@ -190,7 +241,10 @@ async function autoClaim(
             jurisdiction_id: (claimed[0] as { jurisdiction_id: string | null }).jurisdiction_id,
             details_json: {
                 event: 'SHIPOWNER_AUTO_CLAIM',
-                imo_company_no: data.imo_company_no,
+                // L'IMO qui a ouvert le dossier : c'est le seul élément que le
+                // demandeur ait eu à produire, la trace doit le dire.
+                vessel_imo: data.vessel_imo,
+                mmsi: data.mmsi ?? null,
             },
         });
     }
@@ -201,27 +255,34 @@ async function autoClaim(
 async function insertPendingReview(
     supabase: SupabaseClient,
     data: RegisterShipownerInput,
+    vessel: MatchedVessel | null,
 ): Promise<void> {
+    // Ce que l'agent doit savoir tient en une ligne : ce que le demandeur a
+    // saisi, et ce que la base en a fait. Sans cela il rouvre l'enquête à la
+    // main sur chaque dossier.
+    const notes = [
+        `Demande self-service — navire déclaré IMO ${data.vessel_imo}`,
+        data.mmsi ? `MMSI ${data.mmsi}` : null,
+        vessel
+            ? `rattaché à ${vessel.name ?? 'navire sans nom'} (trouvé par ${vessel.matchedOn})`
+            : 'aucun navire correspondant en base',
+    ].filter(Boolean).join(' · ');
+
     const { data: created } = await supabase.from('shipowners').insert({
         name: data.name,
-        imo_company_no: data.imo_company_no,
-        country_code: data.country_code,
-        address: data.address,
         official_email: data.email,
         official_email_source: 'AGENT_CLAIM',
-        phone_e164: data.phone_e164 ?? null,
-        preferred_language: data.preferred_language,
-        proof_imo_vessel_imo: data.proof_imo_vessel_imo,
-        proof_doc_url: data.proof_doc_storage_path,
-        proof_doc_type: data.proof_doc_type,
-        kyc_level_b_completed_at: new Date().toISOString(),
+        proof_imo_vessel_imo: data.vessel_imo,
+        notes,
+        // `kyc_level_b_completed_at` n'est PAS posé : le niveau B suppose une
+        // adresse, un pays et une pièce justificative, que le formulaire ne
+        // demande plus. Le dater ici affirmerait une vérification qui n'a pas
+        // eu lieu, et l'écran de conformité s'en trouverait faussé.
         account_state: 'PENDING_REVIEW',
     }).select('id, jurisdiction_id').maybeSingle();
-    // No audit_log — anonymous user violates NOT NULL on user_id.
-    // The shipowners row's created_at + account_state IS the audit trail.
+    // Pas d'audit_log : l'utilisateur est anonyme et `user_id` est NOT NULL.
+    // La ligne shipowners, avec son created_at et son état, EST la trace.
 
-    // La juridiction vient du DEFAULT de colonne tant que le signup est
-    // mono-pays ; on la relit plutôt que de la supposer.
     const row = created as { id: string; jurisdiction_id: string | null } | null;
     if (row?.jurisdiction_id) {
         await notifyStaffSafe(supabase, {

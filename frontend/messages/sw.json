@@ -3676,41 +3676,21 @@
   },
   "OwnerRegister": {
     "title": "Usajili wa opereta wa baharini",
-    "subtitle": "Tuambie kuhusu kampuni yako. Tutakagua na kukuandikia ndani ya masaa 48.",
+    "subtitle": "Tupe chombo chako na kampuni yako. Tutakagua na kukuandikia ndani ya masaa 48.",
     "email": "Barua pepe ya mawasiliano",
-    "company_name": "Jina la kampuni",
-    "imo_company": "Nambari ya IMO ya Kampuni (tarakimu 7)",
-    "country": "Nchi (ISO-2)",
-    "address": "Anwani iliyosajiliwa",
-    "vessel_imo": "IMO ya chombo chako kimoja",
-    "phone_optional": "Simu (si lazima, E.164)",
+    "company_name": "Jina la mwenye chombo",
+    "vessel_imo": "IMO ya chombo",
     "submit": "Wasilisha ombi",
     "submitting": "Inatuma...",
     "thanks_title": "Asante",
-    "doc_types": {
-      "TRADE_REGISTER": "Daftari la biashara",
-      "CERT_INCORPORATION": "Cheti cha usajili",
-      "MOA": "Hati ya chama",
-      "OTHER": "Nyingine"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "Tafadhali pakia hati ya uthibitisho",
       "upload_failed": "Upakiaji wa faili umeshindwa. Jaribu tena."
     },
-    "proof_document": "Hati ya uthibitisho",
-    "doc_type": "Aina ya hati",
-    "preferred_language": "Lugha unayopendelea",
     "closed_title": "Usajili umefungwa",
     "closed_body": "Usajili wa waendeshaji kwa sasa ni kwa mwaliko tu. Wasiliana na utawala.",
-    "back_to_login": "Rudi kwenye kuingia"
+    "back_to_login": "Rudi kwenye kuingia",
+    "mmsi_optional": "MMSI ya chombo (si lazima)"
   },
   "AirRegister": {
     "title": "Usajili wa opereta wa anga",
@@ -3740,7 +3720,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "Aina ya mwendeshaji"
   },
   "AdminRefunds": {
     "pageTitle": "Marejesho",
@@ -3987,6 +3968,7 @@
         "email": "Their email address",
         "privileges": "What they will be able to do",
         "notYours": "You do not hold this right — you cannot grant it.",
+        "payDefault": "Kulipa hutolewa kwa kila mwanachama kwa chaguo-msingi: ondoa tiki ili kuzuia.",
         "submit": "Invite"
       },
       "errors": {

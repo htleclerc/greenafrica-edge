@@ -22,13 +22,16 @@ vi.mock('@/lib/feature-flags', () => ({
     _readPortalFeatureFlagsImpl: vi.fn(),
     isFeatureEnabled: vi.fn(),
 }));
+vi.mock('@/services/staffNotificationService', () => ({
+    notifyStaffSafe: vi.fn(async () => undefined),
+}));
 
 /**
  * `insert` qui accepte les deux formes du client réel : `await insert(...)`
  * seul, et `insert(...).select(...).maybeSingle()` quand l'appelant a besoin de
  * la ligne créée (mig 133 : la juridiction, pour router la notification staff).
  */
-function insertReturning(row: unknown, onInsert?: () => void) {
+function insertReturning(row: unknown, onInsert?: (payload: unknown) => void) {
     const result = { data: row, error: null };
     const chain = {
         select: () => ({
@@ -37,16 +40,26 @@ function insertReturning(row: unknown, onInsert?: () => void) {
         }),
         then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
     };
-    return () => { onInsert?.(); return chain; };
+    return (payload: unknown) => { onInsert?.(payload); return chain; };
 }
 
-function chainableSelect(value: unknown) {
+/** Table `vessels` qui répond selon la colonne interrogée — IMO ou MMSI. */
+function vesselsBy(rows: { imo_number?: unknown; mmsi?: unknown }, seen?: string[]) {
     return {
         select: () => ({
-            eq: (col: string, val: unknown) => ({
-                maybeSingle: async () => ({ data: value }),
-                single: async () => ({ data: value }),
-            }),
+            eq: (col: string, val: unknown) => {
+                seen?.push(`${col}=${String(val)}`);
+                const value = col === 'imo_number' ? rows.imo_number : rows.mmsi;
+                return { maybeSingle: async () => ({ data: value ?? null }) };
+            },
+        }),
+    };
+}
+
+function ownerRow(value: unknown) {
+    return {
+        select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data: value }) }),
         }),
     };
 }
@@ -54,17 +67,13 @@ function chainableSelect(value: unknown) {
 const validInput = {
     email: 'a@example.com',
     name: 'Test Co',
-    imo_company_no: '1234567',
-    country_code: 'SO',
-    address: '1 Quay Rd',
-    proof_imo_vessel_imo: '7654321',
-    proof_doc_storage_path: 'docs/x.pdf',
-    proof_doc_type: 'TRADE_REGISTER' as const,
-    preferred_language: 'en' as const,
+    vessel_imo: '7654321',
     recaptcha_token: 'tok',
 };
 
-describe('registerShipowner decision tree', () => {
+const CREATED = { id: 'new1', jurisdiction_id: 'j1' };
+
+describe('registerShipowner — demande simplifiée', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         process.env.RECAPTCHA_SECRET_KEY = '';
@@ -74,161 +83,178 @@ describe('registerShipowner decision tree', () => {
         vi.stubEnv('NODE_ENV', 'test');
     });
 
-    it('AUTO-CLAIM when vessel→GHOST→imo_company match', async () => {
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
-            if (table === 'shipowners') return {
-                ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '1234567' }),
-                update: () => ({
-                    eq: () => ({
-                        eq: () => ({
-                            select: async () => ({ data: [{ id: 'so1' }], error: null })
-                        })
-                    })
-                }),
-                upsert: async () => ({ error: null }),
-                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }),
-            };
-            if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
-                return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
-            }
-            return chainableSelect(null);
-        });
+    it('met en service le dossier fantome rattache au navire, et invite le demandeur', async () => {
+        // Decision produit : l'IMO du navire suffit. Il est public, donc cette
+        // porte est ouverte a qui le connait — c'est assume, et borne par le
+        // fait que seuls les dossiers JAMAIS actives sont concernes.
+        const updates: unknown[] = [];
         mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({
-            data: { user: { id: 'uid', email: 'a@example.com' } },
-            error: null
+            data: { user: { id: 'u1' } }, error: null,
+        });
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: { id: 'v1', name: 'MAYAR', shipowner_id: 'so1' } });
+            if (t === 'shipowners') {
+                return {
+                    ...ownerRow({ id: 'so1', account_state: 'GHOST' }),
+                    update: (patch: unknown) => {
+                        updates.push(patch);
+                        return {
+                            eq: () => ({
+                                eq: () => ({ select: async () => ({ data: [{ id: 'so1', jurisdiction_id: 'j1' }], error: null }) }),
+                                select: async () => ({ data: [{ id: 'so1', jurisdiction_id: 'j1' }], error: null }),
+                            }),
+                        };
+                    },
+                };
+            }
+            if (t === 'profiles') return { upsert: async () => ({ error: null }) };
+            if (t === 'wallets') return { insert: async () => ({ error: null }) };
+            if (t === 'audit_logs') return { insert: async () => ({ error: null }) };
+            return {};
         });
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        const r = await registerShipowner(validInput, '1.2.3.4');
 
         expect(r.ok).toBe(true);
         expect(r.autoClaimedId).toBe('so1');
-        expect(mockSupabase.auth.admin.inviteUserByEmail).toHaveBeenCalled();
+        expect(mockSupabase.auth.admin.inviteUserByEmail).toHaveBeenCalledWith(
+            'a@example.com', expect.anything(),
+        );
+
+        const mise = updates[0] as Record<string, unknown>;
+        expect(mise.account_state).toBe('ACTIVE');
+        // L'adresse doit atterrir sur la ligne : le cron de relance resout le
+        // destinataire par la, sinon l'armateur ne recoit jamais de pro-forma.
+        expect(mise.official_email).toBe('a@example.com');
+        // Aucune verification n'a eu lieu : ne rien dater.
+        expect(mise).not.toHaveProperty('kyc_level_b_completed_at');
+        expect(mise).not.toHaveProperty('imo_company_no_verified_at');
     });
 
-    it('AUTO-CLAIM persists official_email + AGENT_CLAIM source (so proforma reminders can reach the operator)', async () => {
-        const capturedUpdates: Record<string, unknown>[] = [];
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
-            if (table === 'shipowners') return {
-                ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '1234567' }),
-                update: (payload: Record<string, unknown>) => {
-                    capturedUpdates.push(payload);
-                    return { eq: () => ({ eq: () => ({ select: async () => ({ data: [{ id: 'so1' }], error: null }) }) }) };
-                },
-                upsert: async () => ({ error: null }),
-                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }),
-            };
-            if (table === 'profiles' || table === 'wallets' || table === 'audit_logs') {
-                return { insert: async () => ({ error: null }), upsert: async () => ({ error: null }) };
+    it("n'écrit rien quand le navire appartient déjà à un compte en service", async () => {
+        // Garde anti-usurpation : l'IMO d'un navire est public, il ne doit
+        // jamais suffire à s'inviter sur un dossier vivant.
+        const inserted: unknown[] = [];
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: { id: 'v1', name: 'MAYAR', shipowner_id: 'so1' } });
+            if (t === 'shipowners') {
+                return {
+                    ...ownerRow({ id: 'so1', account_state: 'ACTIVE' }),
+                    insert: insertReturning(CREATED, (p) => inserted.push(p)),
+                };
             }
-            return chainableSelect(null);
-        });
-        mockSupabase.auth.admin.inviteUserByEmail.mockResolvedValue({
-            data: { user: { id: 'uid', email: validInput.email } }, error: null,
+            return {};
         });
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
-        expect(r.ok).toBe(true);
+        const r = await registerShipowner(validInput, '1.2.3.4');
 
-        const claimUpdate = capturedUpdates.find((u) => u.account_state === 'ACTIVE');
-        expect(claimUpdate).toMatchObject({
-            official_email: validInput.email,
-            official_email_source: 'AGENT_CLAIM',
-        });
+        expect(r.ok).toBe(true);
+        expect(inserted).toHaveLength(0);
+        // Message strictement identique au cas nominal : l'écran ne dit pas
+        // qu'un dossier existe.
+        expect(r.message).toMatch(/48h/);
     });
 
-    it('PENDING_REVIEW when vessel→GHOST imo_company mismatch (generic msg)', async () => {
-        let pendingInserted = false;
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
-            if (table === 'shipowners') return {
-                ...chainableSelect({ id: 'so1', account_state: 'GHOST', imo_company_no: '9999999' }),
-                insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { pendingInserted = true; }),
-            };
-            return chainableSelect(null);
+    it('retrouve le navire par son MMSI quand l’IMO ne tombe pas juste', async () => {
+        const seen: string[] = [];
+        const inserted: unknown[] = [];
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: null, mmsi: { id: 'v9', name: 'BRAVE', shipowner_id: null } }, seen);
+            if (t === 'shipowners') return { insert: insertReturning(CREATED, (p) => inserted.push(p)) };
+            return {};
         });
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        await registerShipowner({ ...validInput, mmsi: '636012345' }, '1.2.3.4');
 
-        expect(r.ok).toBe(true);
-        expect(r.autoClaimedId).toBeUndefined();
-        expect(pendingInserted).toBe(true);
-        expect(mockSupabase.auth.admin.inviteUserByEmail).not.toHaveBeenCalled();
+        expect(seen).toEqual(['imo_number=7654321', 'mmsi=636012345']);
+        expect((inserted[0] as { notes: string }).notes).toContain('BRAVE');
+        expect((inserted[0] as { notes: string }).notes).toContain('MMSI');
     });
 
-    it('HARD REJECT (no insert) when vessel→ACTIVE owner', async () => {
-        const inserts: string[] = [];
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: 'so1' });
-            if (table === 'shipowners') return {
-                ...chainableSelect({ id: 'so1', account_state: 'ACTIVE', imo_company_no: '1234567' }),
-                insert: async () => { inserts.push('shipowners'); return { error: null }; },
-            };
-            return chainableSelect(null);
+    it("n'interroge pas le MMSI lorsqu'il n'est pas fourni", async () => {
+        const seen: string[] = [];
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: null }, seen);
+            if (t === 'shipowners') return { insert: insertReturning(CREATED) };
+            return {};
         });
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        await registerShipowner(validInput, '1.2.3.4');
 
-        expect(r.ok).toBe(true);
-        expect(r.autoClaimedId).toBeUndefined();
-        expect(inserts).not.toContain('shipowners');
+        expect(seen).toEqual(['imo_number=7654321']);
     });
 
-    it('PENDING_REVIEW when vessel exists but no shipowner', async () => {
-        let inserted = false;
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect({ id: 'v1', shipowner_id: null });
-            if (table === 'shipowners') return { insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { inserted = true; }) };
-            return chainableSelect(null);
+    it('accepte une demande dont aucun navire ne correspond, et le dit à l’agent', async () => {
+        const inserted: unknown[] = [];
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: null });
+            if (t === 'shipowners') return { insert: insertReturning(CREATED, (p) => inserted.push(p)) };
+            return {};
         });
+
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        const r = await registerShipowner(validInput, '1.2.3.4');
+
         expect(r.ok).toBe(true);
-        expect(inserted).toBe(true);
+        expect((inserted[0] as { notes: string }).notes).toContain('aucun navire correspondant');
     });
 
-    it('PENDING_REVIEW when vessel not found', async () => {
-        let inserted = false;
-        mockSupabase.from.mockImplementation((table: string) => {
-            if (table === 'vessels') return chainableSelect(null);
-            if (table === 'shipowners') return { insert: insertReturning({ id: 'so-new', jurisdiction_id: 'jur-so' }, () => { inserted = true; }) };
-            return chainableSelect(null);
+    it('ne date pas le KYC niveau B — le formulaire ne le prouve plus', async () => {
+        // Adresse, pays et pièce justificative ont disparu du formulaire.
+        // Dater le niveau B affirmerait une vérification qui n'a pas eu lieu.
+        const inserted: Record<string, unknown>[] = [];
+        mockSupabase.from.mockImplementation((t: string) => {
+            if (t === 'vessels') return vesselsBy({ imo_number: null });
+            if (t === 'shipowners') return { insert: insertReturning(CREATED, (p) => inserted.push(p as Record<string, unknown>)) };
+            return {};
         });
+
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
-        expect(r.ok).toBe(true);
-        expect(inserted).toBe(true);
+        await registerShipowner(validInput, '1.2.3.4');
+
+        expect(inserted[0]).not.toHaveProperty('kyc_level_b_completed_at');
+        expect(inserted[0].official_email).toBe('a@example.com');
+        expect(inserted[0].proof_imo_vessel_imo).toBe('7654321');
     });
 
-    it('rejects when self-service flag is OFF (Plan 7H-1 Task 5.1)', async () => {
+    it('refuse un IMO qui n’a pas 7 chiffres et un MMSI qui n’en a pas 9', async () => {
+        mockSupabase.from.mockImplementation(() => ({}));
+        const { registerShipowner } = await import('./registerShipowner');
+
+        expect((await registerShipowner({ ...validInput, vessel_imo: '123' }, '1.2.3.4')).ok).toBe(false);
+        expect((await registerShipowner({ ...validInput, mmsi: '12345' }, '1.2.3.4')).ok).toBe(false);
+        expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
+
+    it('refuse quand le libre-service est désactivé', async () => {
         const { readPortalFeatureFlags } = await import('@/lib/feature-flags');
-        (readPortalFeatureFlags as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        vi.mocked(readPortalFeatureFlags).mockResolvedValueOnce({
             portalV1Enabled: true,
             selfServiceEnabled: false,
             onlinePaymentStripeEnabled: true,
             walletTopupEnabled: true,
             notificationSmsEnabled: false,
-        });
+        } as Awaited<ReturnType<typeof readPortalFeatureFlags>>);
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        const r = await registerShipowner(validInput, '1.2.3.4');
+
         expect(r.ok).toBe(false);
-        expect(r.message).toMatch(/not currently enabled/i);
-        // No DB writes should have happened.
         expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
-    it('rejects when rate limit hit', async () => {
+    it('refuse quand le plafond de tentatives est atteint', async () => {
         const { enforceRateLimit } = await import('@/lib/rateLimit');
-        (enforceRateLimit as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ allowed: false });
+        vi.mocked(enforceRateLimit).mockResolvedValueOnce({ allowed: false });
 
         const { registerShipowner } = await import('./registerShipowner');
-        const r = await registerShipowner(validInput, '127.0.0.1');
+        const r = await registerShipowner(validInput, '1.2.3.4');
+
         expect(r.ok).toBe(false);
+        expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 });

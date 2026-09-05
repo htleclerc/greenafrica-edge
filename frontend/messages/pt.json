@@ -244,6 +244,7 @@
         "email": "Their email address",
         "privileges": "What they will be able to do",
         "notYours": "You do not hold this right — you cannot grant it.",
+        "payDefault": "Pagar é concedido por defeito a todos os membros: desmarque para o retirar.",
         "submit": "Invite"
       },
       "errors": {
@@ -4234,41 +4235,21 @@
   },
   "OwnerRegister": {
     "title": "Registo de operador marítimo",
-    "subtitle": "Diga-nos sobre a sua empresa. Avaliaremos e responderemos por e-mail em 48h.",
+    "subtitle": "Indique o seu navio e a sua empresa. Avaliamos e respondemos por e-mail em 48h.",
     "email": "Email de contacto",
-    "company_name": "Nome da empresa",
-    "imo_company": "Número IMO da empresa (7 dígitos)",
-    "country": "País (ISO-2)",
-    "address": "Morada registada",
-    "vessel_imo": "IMO de um dos seus navios",
-    "phone_optional": "Telefone (opcional, E.164)",
+    "company_name": "Nome do armador",
+    "vessel_imo": "IMO do navio",
     "submit": "Enviar candidatura",
     "submitting": "A enviar...",
     "thanks_title": "Obrigado",
-    "doc_types": {
-      "TRADE_REGISTER": "Registo comercial",
-      "CERT_INCORPORATION": "Certidão de constituição",
-      "MOA": "Estatutos",
-      "OTHER": "Outro"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "Por favor, carregue um documento comprovatório",
       "upload_failed": "Falha no carregamento do ficheiro. Tente novamente."
     },
-    "proof_document": "Documento comprovatório",
-    "doc_type": "Tipo de documento",
-    "preferred_language": "Língua preferida",
     "closed_title": "Registo encerrado",
     "closed_body": "Os registos de operadores estão actualmente por convite. Contacte a administração.",
-    "back_to_login": "Voltar ao início de sessão"
+    "back_to_login": "Voltar ao início de sessão",
+    "mmsi_optional": "MMSI do navio (opcional)"
   },
   "AirRegister": {
     "title": "Registo de operador aéreo",
@@ -4298,7 +4279,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "Tipo de operador"
   },
   "AdminInvoices": {
     "title": "Faturas",
