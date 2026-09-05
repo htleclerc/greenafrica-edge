@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { WIRE_BENEFICIARY } from '@/lib/payments/wireBeneficiary';
+import { appBaseUrl } from '@/lib/appUrl';
 
 /**
  * Multi-Provider Payment Service — Admin-Configurable
@@ -86,10 +87,11 @@ export interface PaymentProviderConfig {
   routesRail?: string[];
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
-
-const successUrl = (ref: string) => `${APP_URL}/dashboard/invoices?payment=success&ref=${ref}`;
-const cancelUrl = (ref: string) => `${APP_URL}/dashboard/invoices?payment=cancelled&ref=${ref}`;
+// Resolu A L'APPEL et non au chargement du module : une constante figee ici
+// capturerait l'environnement du premier import, et l'avertissement de
+// `appBaseUrl` sortirait detache de l'action qui l'a declenche.
+const successUrl = (ref: string) => `${appBaseUrl()}/dashboard/invoices?payment=success&ref=${ref}`;
+const cancelUrl = (ref: string) => `${appBaseUrl()}/dashboard/invoices?payment=cancelled&ref=${ref}`;
 
 // ── Provider Registry ───────────────────────────────────────────────────────
 
@@ -235,7 +237,7 @@ async function createFlutterwavePayment(payment: PaymentRequest): Promise<Paymen
       customizations: {
         title: 'Green Gate OS — Carbon Tax Payment',
         description: `Carbon Tax Invoice ${payment.invoiceRef} — ${payment.metadata.vesselName}`,
-        logo: `${APP_URL}/logo.png`,
+        logo: `${appBaseUrl()}/logo.png`,
       },
       meta: {
         transaction_id: payment.transactionId,

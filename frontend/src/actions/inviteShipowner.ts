@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { assertContactAllowed, SanctionedContactError } from '@/domain/sanctions/contactGuard';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const schema = z.object({
     shipownerId: z.string().uuid(),
@@ -113,7 +114,7 @@ export async function inviteShipowner(raw: unknown): Promise<InviteShipownerResu
     const admin = createTenantClient(jurisdictionId);
 
     // 2. Issue invite (or look up existing user)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
+    const appUrl = appBaseUrl();
     let userId: string;
     let alreadyExisted = false;
 

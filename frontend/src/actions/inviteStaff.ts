@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { appBaseUrl } from '@/lib/appUrl';
 
 // Staff roles that can be created via admin invitation.
 // SUPERADMIN and SHIPPING_AGENT are excluded: SUPERADMIN is provisioned out-of-band,
@@ -53,7 +54,7 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
     const { email, fullName, role, jurisdictionIds } = parsed.data;
     const normEmail = email.trim().toLowerCase();
     const admin = createPlatformClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
+    const appUrl = appBaseUrl();
 
     // ── 2. Issue invite (or resolve existing user) ────────────────────────────
     let userId: string;

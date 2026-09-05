@@ -8,6 +8,7 @@ import { createOrder as createPaypalOrder, paypalConfigured } from '@/services/p
 import { requireOwner } from '@/lib/auth/requireOwner';
 import { applyWalletCredit } from '@/services/walletApplyService';
 import { createTenantClient } from '@/lib/supabase/tenant';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const OWNER_RAILS = ['WIRE_TRANSFER', 'MOBILE_MONEY', 'THIRD_PARTY', 'WALLET', 'STRIPE', 'PAYPAL'] as const;
 const ALL_RAILS = [
@@ -56,9 +57,6 @@ export interface InitiatePaymentResult {
     checkoutUrl?: string;
 }
 
-function appBaseUrl(): string {
-    return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
-}
 
 /**
  * Page sur laquelle retombe l'armateur au retour d'un checkout externe.

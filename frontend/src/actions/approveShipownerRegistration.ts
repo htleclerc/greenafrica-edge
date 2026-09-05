@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createPlatformClient, createTenantClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const schema = z.object({ shipownerId: z.string().uuid() });
 
@@ -68,7 +69,7 @@ export async function approveShipownerRegistration(input: unknown) {
     if (updateErr) return { ok: false, message: `update failed: ${updateErr.message}` };
 
     // 6. Invite user via auth
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
+    const appUrl = appBaseUrl();
     const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(
         row.official_email,
         { redirectTo: `${appUrl}/owner/auth/callback` },

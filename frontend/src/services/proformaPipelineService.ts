@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { issueInvoiceDocument } from './invoiceIssuanceService';
 import { notifyOwner } from './notificationService';
+import { appBaseUrl } from '@/lib/appUrl';
 
 /** Rôles habilités à émettre un document fiscal, du plus autoritaire au moins. */
 const ISSUING_ROLES = ['SUPERADMIN', 'FINANCE_ADMIN', 'PORT_OFFICER'];
@@ -264,7 +265,7 @@ export async function runProformaPipeline(input: RunInput): Promise<RunResult> {
     transactionId: txn.id,
     jurisdictionId: alert.jurisdiction_id,
     actor: issuer,
-    origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300',
+    origin: appBaseUrl(),
     sendEmail: !input.dryRunEmail,
     skipStorage: input.dryRunStorage,
     lineItems: [
@@ -438,7 +439,7 @@ async function runAirProforma(input: RunInput, alert: AlertForAir): Promise<RunR
     transactionId: txn.id,
     jurisdictionId: alert.jurisdiction_id,
     actor: issuer,
-    origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300',
+    origin: appBaseUrl(),
     sendEmail: false,
     skipStorage: input.dryRunStorage,
     lineItems: [

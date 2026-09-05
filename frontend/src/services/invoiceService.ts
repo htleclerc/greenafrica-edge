@@ -13,6 +13,7 @@ import {
   type IssuerProfile,
 } from '@/services/issuerProfileService';
 import QRCode from 'qrcode';
+import { appBaseUrl, configuredAppUrl } from '@/lib/appUrl';
 
 /**
  * Invoice mode determines title, badge, filename prefix, and document tone.
@@ -206,12 +207,15 @@ export function buildVerifyUrl(
 ): string {
   const resolved =
     options?.origin
-    || process.env.NEXT_PUBLIC_APP_URL
+    // La variable prime sur l'origine du navigateur : une facture generee
+    // depuis un deploiement de previsualisation porterait sinon cette origine
+    // dans son QR code, imprimee et impossible a rattraper.
+    || configuredAppUrl()
     || (typeof window !== 'undefined' ? window.location.origin : '')
     // Dernier recours : une URL ABSOLUE. Un QR code ne se scanne pas en
     // relatif — sans origine, « /verify/REF » sortait imprimé tel quel et le
     // telephone n'avait rien a ouvrir.
-    || 'http://localhost:3300';
+    || appBaseUrl();
   const base = resolved.replace(/\/+$/, '');
   const path = `${base}/verify/${encodeURIComponent(invoiceRef)}`;
   if (options?.contentHash && options?.signature) {

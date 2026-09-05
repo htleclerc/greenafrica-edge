@@ -1,5 +1,6 @@
 import { sendRegistrationApprovalEmail } from '@/services/emailService';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { appBaseUrl } from '@/lib/appUrl';
 
 export type ApprovalResult =
     | { ok: true; userId: string; emailSent: boolean }
@@ -78,7 +79,7 @@ export async function approveRegistrationRequest(
 
     let emailSent = false;
     if (fullProfile?.email) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
+        const appUrl = appBaseUrl();
         const result = await sendRegistrationApprovalEmail({
             to: fullProfile.email,
             recipientName: fullProfile.full_name || 'User',
