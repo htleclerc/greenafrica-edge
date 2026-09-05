@@ -10,6 +10,7 @@ import {
     TX_VESSEL_ACCESS_CODE_HTML,
 } from '@/emails/templates';
 import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
+import { appBaseUrl } from '@/lib/appUrl';
 
 /**
  * Centralized email service for Green Gate OS notifications.
@@ -31,7 +32,7 @@ import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
  *   - EMAIL_TRANSPORT   ("resend" | "smtp" — tranche si les deux sont posés)
  *   - EMAIL_REPLY_TO    (ex. "st.operations@greengate.africa")
  *   - EMAIL_REDIRECT_TO (hors production : tout part vers cette adresse)
- *   - NEXT_PUBLIC_APP_URL (liens dans les e-mails — défaut localhost:3300)
+ *   - NEXT_PUBLIC_APP_URL (liens dans les e-mails — cf. `@/lib/appUrl`)
  */
 
 /**
@@ -121,7 +122,7 @@ function usd(amountUsd: number): string {
 }
 
 function appUrl(): string {
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3300';
+    return appBaseUrl();
 }
 
 // ── Result type ────────────────────────────────────────────────────────────

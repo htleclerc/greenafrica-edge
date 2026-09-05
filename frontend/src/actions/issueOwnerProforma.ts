@@ -5,6 +5,7 @@ import { requireOwner } from '@/lib/auth/requireOwner';
 import { createTenantClient } from '@/lib/supabase/tenant';
 import { issueInvoiceDocument } from '@/services/invoiceIssuanceService';
 import { scopedLogger } from '@/lib/logger';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const log = scopedLogger('issueOwnerProforma');
 
@@ -65,7 +66,7 @@ export async function issueOwnerProforma(input: {
         transactionId,
         jurisdictionId: ctx.jurisdictionId,
         actor: { id: ctx.userId, fullName: ctx.shipowner.name ?? 'Shipowner' },
-        origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300',
+        origin: appBaseUrl(),
         sendEmail: false,
     });
 

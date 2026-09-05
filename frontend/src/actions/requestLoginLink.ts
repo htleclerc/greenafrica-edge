@@ -11,6 +11,7 @@ import { maskEmailHint } from '@/lib/vessels/maskEmail';
 import { isContactBlocked } from '@/domain/sanctions/contactGuard';
 import { sendLoginLinkEmail } from '@/services/emailService';
 import { scopedLogger } from '@/lib/logger';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const log = scopedLogger('requestLoginLink');
 
@@ -146,7 +147,7 @@ async function mintAndSend(
     recipientName: string,
     vesselName: string | null,
 ): Promise<boolean> {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3300';
+    const appUrl = appBaseUrl();
     const { data, error } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email,
