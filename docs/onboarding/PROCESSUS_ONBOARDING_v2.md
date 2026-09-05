@@ -138,7 +138,7 @@ Vérifier qu'aucun contact commercial ne peut être engagé avec un débiteur so
 ## ④ Étape 4 — INVITATION
 
 ### Objectif
-Émettre la première **pro-forma** et l'envoyer avec le **kit d'onboarding**, déclenchant le compte à rebours J+45 pour le paiement.
+Émettre la première **pro-forma** et l'envoyer avec le **kit d'onboarding**, déclenchant le compte à rebours J+30 pour le paiement.
 
 ### Contenu de l'envoi
 1. **Pro-forma PDF** (format Green Gate OS — logos + drapeau + sceau)
