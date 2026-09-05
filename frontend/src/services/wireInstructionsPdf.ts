@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { type WireBeneficiary } from '@/lib/payments/wireBeneficiary';
 import { getIssuerProfile, toWireBeneficiary } from '@/services/issuerProfileService';
+import { BRAND_HEADER_BODY_Y, drawBrandHeader } from '@/services/pdfBrandHeader';
 
 /**
  * Coordonnées bancaires applicables à une juridiction.
@@ -40,11 +41,10 @@ const INK = { dark: [15, 23, 42], body: [51, 65, 85], muted: [100, 116, 139], ru
  * produit des virements anonymes que le service financier ne sait pas
  * rapprocher — c'est la première cause de fonds reçus non affectés.
  */
-export function generateWireInstructionsPdf(data: WireInstructionsData): Uint8Array {
+export async function generateWireInstructionsPdf(data: WireInstructionsData): Promise<Uint8Array> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
-    let y = margin;
 
     const text = (
         value: string,
@@ -66,18 +66,16 @@ export function generateWireInstructionsPdf(data: WireInstructionsData): Uint8Ar
     };
 
     // ── En-tête ──────────────────────────────────────────────────────────────
-    text('GREEN GATE', margin, y, { size: 16, bold: true, color: INK.dark });
-    text('BANK TRANSFER INSTRUCTIONS', pageWidth - margin, y, {
-        size: 10, bold: true, color: INK.muted, align: 'right',
+    // Le même que sur la facture réglée : l'ordre de virement part chez la
+    // banque de l'armateur, il doit se rattacher au document qu'il paie.
+    await drawBrandHeader(doc, {
+        tag: 'INFORMATIONAL DOCUMENT',
+        tagTone: 'muted',
+        tagWidth: 46,
+        title: 'BANK TRANSFER INSTRUCTIONS',
+        subtitle: `Maritime carbon tax settlement · ${data.issuedAt.toISOString().slice(0, 10)}`,
     });
-    y += 5;
-    text('Maritime carbon tax settlement', margin, y, { size: 8, color: INK.muted });
-    text(data.issuedAt.toISOString().slice(0, 10), pageWidth - margin, y, {
-        size: 8, color: INK.muted, align: 'right',
-    });
-    y += 5;
-    rule(y);
-    y += 9;
+    let y = BRAND_HEADER_BODY_Y;
 
     // ── Ce qu'il faut payer ──────────────────────────────────────────────────
     text('AMOUNT TO TRANSFER', margin, y, { size: 8, bold: true, color: INK.muted });
