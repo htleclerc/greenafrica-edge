@@ -14,6 +14,7 @@ import {
 } from '@/services/issuerProfileService';
 import QRCode from 'qrcode';
 import { appBaseUrl, configuredAppUrl } from '@/lib/appUrl';
+import { BRAND_HEADER_BODY_Y, BRAND_HEADER_LOGO_Y, drawBrandHeader, drawSomalilandFlag } from '@/services/pdfBrandHeader';
 
 /**
  * Invoice mode determines title, badge, filename prefix, and document tone.
@@ -295,98 +296,6 @@ function docTypeName(mode: InvoiceMode | undefined, simulation?: boolean): strin
 }
 
 /**
- * Cached base64 data URL of the official Somaliland flag PNG
- * (includes the Shahada calligraphy in the top green band).
- *
- * Loaded lazily from public/brand/somaliland-flag.png on first use.
- * Server-side only — client-side imports fall back to vector primitives.
- */
-let CACHED_SOMALILAND_FLAG_PNG: string | null = null;
-
-async function loadSomalilandFlagPng(): Promise<string | null> {
-  if (CACHED_SOMALILAND_FLAG_PNG !== null) return CACHED_SOMALILAND_FLAG_PNG;
-  if (typeof window !== 'undefined') return null;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { readFileSync } = require('fs');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { join } = require('path');
-    const svgPath = join(process.cwd(), 'public', 'brand', 'somaliland-flag.svg');
-    const svgBuffer = readFileSync(svgPath);
-    // Use sharp (already installed by Next.js) to rasterize the SVG (which includes
-    // the Shahada calligraphy in the top green band) to a PNG jsPDF can embed.
-    // Rasterize at ~300dpi for a 16mm wide flag (188px is plenty).
-    // Keep file small: quantize colors + max compression. The flag has few
-    // colors so this is near-lossless and keeps the PDF under ~60KB overhead.
-    const sharp = (await import('sharp')).default;
-    const pngBuffer = await sharp(svgBuffer, { density: 400 })
-      .resize(240, 120, { fit: 'fill' })
-      .png({ palette: true, compressionLevel: 9 })
-      .toBuffer();
-    CACHED_SOMALILAND_FLAG_PNG = `data:image/png;base64,${pngBuffer.toString('base64')}`;
-    return CACHED_SOMALILAND_FLAG_PNG;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Draw the Somaliland flag.
- *
- * Preferred path (server-side): use the official PNG asset which includes the
- * Shahada calligraphy ("لا إله إلا الله محمد رسول الله") in the top green band
- * plus the 5-point black star on the white band.
- *
- * Fallback path (client-side or PNG unavailable): draw 3 horizontal stripes +
- * star using jsPDF primitives. Colors match the official flag:
- * green #006d21, white #ffffff, red #df0000.
- */
-async function drawSomalilandFlag(doc: jsPDF, x: number, y: number, w: number, h: number): Promise<void> {
-  const pngDataUrl = await loadSomalilandFlagPng();
-  if (pngDataUrl) {
-    try {
-      doc.addImage(pngDataUrl, 'PNG', x, y, w, h);
-      doc.setDrawColor(148, 163, 184);
-      doc.setLineWidth(0.15);
-      doc.rect(x, y, w, h, 'S');
-      return;
-    } catch (err) {
-      // fall through to vector fallback
-      void err;
-    }
-  }
-
-  // ── Vector fallback ──
-  const band = h / 3;
-  doc.setFillColor(0, 109, 33);
-  doc.rect(x, y, w, band, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.rect(x, y + band, w, band, 'F');
-  doc.setFillColor(223, 0, 0);
-  doc.rect(x, y + 2 * band, w, band, 'F');
-  doc.setDrawColor(148, 163, 184);
-  doc.setLineWidth(0.15);
-  doc.rect(x, y, w, h, 'S');
-  const cx = x + w / 2;
-  const cy = y + band + band / 2;
-  const R = Math.min(band * 0.45, w * 0.09);
-  const r = R * 0.4;
-  const pts: [number, number][] = [];
-  for (let i = 0; i < 10; i++) {
-    const radius = i % 2 === 0 ? R : r;
-    const theta = -Math.PI / 2 + (i * Math.PI) / 5;
-    pts.push([cx + radius * Math.cos(theta), cy + radius * Math.sin(theta)]);
-  }
-  const offsets: [number, number][] = [];
-  for (let i = 1; i < pts.length; i++) {
-    offsets.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
-  }
-  offsets.push([pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]]);
-  doc.setFillColor(0, 0, 0);
-  doc.lines(offsets, pts[0][0], pts[0][1], [1, 1], 'F', true);
-}
-
-/**
  * Format a USD amount for display — forces en-US thousands separators
  * (comma) with NO decimals. Used consistently in PDFs and HTML preview
  * to avoid locale-dependent separators and duplicated ".00" suffixes.
@@ -421,9 +330,9 @@ function badgeColor(badge: InvoiceBadge | undefined): { bg: [number, number, num
 /**
  * Pied de page commun aux deux pages : conditions, compte a crediter, horodatage.
  *
- * Les montants et delais viennent du profil emetteur — le texte disait
- * « 30 days » alors que les documents officiels d'aout 2026 portent 45 jours,
- * et l'IBAN y etait ecrit en dur.
+ * Les montants et delais viennent du profil emetteur (30 jours depuis la
+ * mig 149, aligne sur le NET-30 de `due_date`) ; avant, le texte et l'IBAN
+ * etaient ecrits en dur et divergeaient des documents distribues.
  */
 function drawInvoiceFooter(doc: jsPDF, issuer: IssuerProfile, invoiceRef: string): void {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -491,95 +400,20 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
     doc.restoreGraphicsState();
   }
 
-  // ── Top accent gradient bar (emerald → gold) ──
-  doc.setFillColor(4, 120, 87); // #047857
-  doc.rect(0, 0, pageWidth / 2, 4, 'F');
-  doc.setFillColor(16, 185, 129); // #10B981
-  doc.rect(pageWidth / 2, 0, pageWidth / 4, 4, 'F');
-  doc.setFillColor(234, 179, 8); // #EAB308
-  doc.rect((pageWidth * 3) / 4, 0, pageWidth / 4, 4, 'F');
-
-  // ── Logo (vector) — emerald rounded square with shield ──
-  const logoX = margin;
-  const logoY = 12;
-  const logoSize = 16;
-  doc.setFillColor(4, 120, 87);
-  doc.roundedRect(logoX, logoY, logoSize, logoSize, 3, 3, 'F');
-  // Shield path approximation
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.4);
-  doc.line(logoX + 8, logoY + 4, logoX + 4, logoY + 6);
-  doc.line(logoX + 8, logoY + 4, logoX + 12, logoY + 6);
-  doc.line(logoX + 4, logoY + 6, logoX + 4, logoY + 10);
-  doc.line(logoX + 12, logoY + 6, logoX + 12, logoY + 10);
-  doc.line(logoX + 4, logoY + 10, logoX + 8, logoY + 13);
-  doc.line(logoX + 12, logoY + 10, logoX + 8, logoY + 13);
-  // Tree mark inside shield
-  doc.setLineWidth(0.6);
-  doc.line(logoX + 8, logoY + 6, logoX + 8, logoY + 11);
-  doc.line(logoX + 6, logoY + 9, logoX + 8, logoY + 7);
-  doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
-
-  // ── Somaliland flag below the logo (port country) ──
-  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
-
-  // ── Brand text ──
-  const brandX = logoX + logoSize + 4;
-  doc.setTextColor(13, 31, 24); // #0D1F18
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('GREEN GATE', brandX, logoY + 6);
-  doc.setFontSize(7);
-  doc.setTextColor(5, 150, 105);
-  doc.text('SOVEREIGN CARBON PLATFORM', brandX, logoY + 10);
-  // Solide Technology — concessionaire collecting the payment
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(4, 120, 87);
-  doc.text('SOLIDE TECHNOLOGY — Concessionaire', brandX, logoY + 14.5);
-  // Sovereign authority block
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105); // slate-600
-  doc.text('Republic of Somaliland', brandX, logoY + 19);
-  doc.text('Ministry of Environment & Climate Change', brandX, logoY + 22.5);
-  doc.text('Maritime Carbon Tax Authority', brandX, logoY + 26);
-
-  // ── Right header: OFFICIAL DOCUMENT badge + title ──
-  const rightX = pageWidth - margin;
   // Une simulation n'est pas un document officiel : bandeau et libellés distincts
   // pour qu'elle ne puisse pas être présentée comme un pro-forma opposable.
   const headerTag = data.simulation ? 'NOT AN OFFICIAL DOCUMENT' : 'OFFICIAL DOCUMENT';
-  const tagW = data.simulation ? 52 : 38;
-  if (data.simulation) {
-    doc.setFillColor(100, 116, 139);
-  } else {
-    doc.setFillColor(13, 31, 24);
-  }
-  doc.rect(rightX - tagW, logoY, tagW, 5, 'F');
-  if (data.simulation) {
-    doc.setTextColor(255, 255, 255);
-  } else {
-    doc.setTextColor(16, 185, 129);
-  }
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.text(headerTag, rightX - tagW / 2, logoY + 3.5, { align: 'center' });
-
-  doc.setTextColor(13, 31, 24);
-  doc.setFontSize(13);
-  doc.text(docTypeName(data.mode, data.simulation), rightX, logoY + 12, { align: 'right' });
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-  doc.text(
-    data.simulation
+  await drawBrandHeader(doc, {
+    tag: headerTag,
+    tagTone: data.simulation ? 'muted' : 'official',
+    tagWidth: data.simulation ? 52 : 38,
+    title: docTypeName(data.mode, data.simulation),
+    subtitle: data.simulation
       ? 'Non-binding pre-estimate — simulator output'
       : 'Maritime Environmental Levy Notice',
-    rightX,
-    logoY + 17,
-    { align: 'right' },
-  );
+  });
+  const logoY = BRAND_HEADER_LOGO_Y;
+  const rightX = pageWidth - margin;
 
   // ── Status badge (TO PAY / PAID / OVERDUE / DISPUTED / EXEMPT) ──
   if (data.badge) {
@@ -597,13 +431,8 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
     doc.text(badgeText, badgeX + badgeW / 2, badgeY + 4.2, { align: 'center' });
   }
 
-  // ── Header divider ──
-  doc.setDrawColor(13, 31, 24);
-  doc.setLineWidth(0.6);
-  doc.line(margin, 44, pageWidth - margin, 44);
-
   // ── Reference block ──
-  let y = 52;
+  let y = BRAND_HEADER_BODY_Y;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(100, 116, 139);
@@ -941,40 +770,42 @@ export async function generateStatementPdf(data: StatementData): Promise<Uint8Ar
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
 
-    // Accent bar
-    doc.setFillColor(4, 120, 87); doc.rect(0, 0, pageWidth / 2, 4, 'F');
-    doc.setFillColor(16, 185, 129); doc.rect(pageWidth / 2, 0, pageWidth / 4, 4, 'F');
-    doc.setFillColor(234, 179, 8); doc.rect((pageWidth * 3) / 4, 0, pageWidth / 4, 4, 'F');
+    // Même en-tête que les factures qu'il récapitule ; le bandeau dit qu'il
+    // n'est pas opposable, comme la mention sous le titre.
+    await drawBrandHeader(doc, {
+        tag: 'INFORMATIONAL DOCUMENT',
+        tagTone: 'muted',
+        tagWidth: 46,
+        title: 'ACCOUNT STATEMENT',
+        subtitle: 'Not an invoice or a formal notice',
+        sovereignLine: data.jurisdiction,
+    });
+    const rightX = pageWidth - margin;
 
-    // Title
-    doc.setTextColor(13, 31, 24);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
-    doc.text('Account Statement', margin, 22);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`${data.jurisdiction} · Maritime Carbon Tax Authority`, margin, 29);
-
-    // Owner + period
-    doc.setTextColor(13, 31, 24); doc.setFontSize(11);
-    doc.text(data.ownerName, margin, 40);
-    doc.setTextColor(100, 116, 139); doc.setFontSize(10);
-    doc.text(`Statement period: ${data.periodLabel}`, margin, 46);
-
-    let headerY = 46;
+    // ── Titulaire + période ──
+    let y = BRAND_HEADER_BODY_Y;
+    doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 116, 139);
+    doc.text('ACCOUNT HOLDER', margin, y);
+    doc.text('STATEMENT PERIOD', rightX, y, { align: 'right' });
+    y += 5;
+    doc.setFontSize(11); doc.setTextColor(13, 31, 24);
+    doc.text(data.ownerName, margin, y);
+    doc.text(data.periodLabel, rightX, y, { align: 'right' });
+    y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
     if (data.asOfIso) {
-        headerY += 5;
-        doc.text(`Balance as of: ${data.asOfIso.slice(0, 10)}`, margin, headerY);
+        doc.text(`Balance as of: ${data.asOfIso.slice(0, 10)}`, margin, y);
+        y += 5;
     }
     if (data.vesselScope) {
-        headerY += 5;
-        doc.text(`Vessel: ${data.vesselScope}`, margin, headerY);
+        doc.text(`Vessel: ${data.vesselScope}`, margin, y);
+        y += 5;
     }
 
     // Informational disclaimer
     doc.setTextColor(148, 163, 184); doc.setFontSize(8);
-    doc.text('Informational account statement — not an invoice or a formal notice.', margin, headerY + 6);
-
-    let y = headerY + 16;
+    doc.text('Informational account statement — not an invoice or a formal notice.', margin, y);
+    y += 10;
 
     // Open pro-formas
     doc.setTextColor(13, 31, 24); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
@@ -1127,72 +958,13 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 18;
 
-  // Top accent gradient bar
-  doc.setFillColor(4, 120, 87);
-  doc.rect(0, 0, pageWidth / 2, 4, 'F');
-  doc.setFillColor(16, 185, 129);
-  doc.rect(pageWidth / 2, 0, pageWidth / 4, 4, 'F');
-  doc.setFillColor(234, 179, 8);
-  doc.rect((pageWidth * 3) / 4, 0, pageWidth / 4, 4, 'F');
-
-  // Logo (same vector as invoice)
-  const logoX = margin;
-  const logoY = 12;
-  const logoSize = 16;
-  doc.setFillColor(4, 120, 87);
-  doc.roundedRect(logoX, logoY, logoSize, logoSize, 3, 3, 'F');
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.4);
-  doc.line(logoX + 8, logoY + 4, logoX + 4, logoY + 6);
-  doc.line(logoX + 8, logoY + 4, logoX + 12, logoY + 6);
-  doc.line(logoX + 4, logoY + 6, logoX + 4, logoY + 10);
-  doc.line(logoX + 12, logoY + 6, logoX + 12, logoY + 10);
-  doc.line(logoX + 4, logoY + 10, logoX + 8, logoY + 13);
-  doc.line(logoX + 12, logoY + 10, logoX + 8, logoY + 13);
-  doc.setLineWidth(0.6);
-  doc.line(logoX + 8, logoY + 6, logoX + 8, logoY + 11);
-  doc.line(logoX + 6, logoY + 9, logoX + 8, logoY + 7);
-  doc.line(logoX + 10, logoY + 9, logoX + 8, logoY + 7);
-
-  // Somaliland flag below the logo
-  await drawSomalilandFlag(doc, logoX, logoY + logoSize + 2, logoSize, 9);
-
-  // Brand text
-  const brandX = logoX + logoSize + 4;
-  doc.setTextColor(13, 31, 24);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('GREEN GATE', brandX, logoY + 6);
-  doc.setFontSize(7);
-  doc.setTextColor(5, 150, 105);
-  doc.text('SOVEREIGN CARBON PLATFORM', brandX, logoY + 10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(4, 120, 87);
-  doc.text('SOLIDE TECHNOLOGY — Concessionaire', brandX, logoY + 14.5);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(71, 85, 105);
-  doc.text('Republic of Somaliland', brandX, logoY + 19);
-  doc.text('Ministry of Environment & Climate Change', brandX, logoY + 22.5);
-  doc.text('Maritime Carbon Tax Authority', brandX, logoY + 26);
-
-  // Right header: OFFICIAL RECEIPT badge + title + PAID stamp
+  await drawBrandHeader(doc, {
+    tag: 'OFFICIAL DOCUMENT',
+    title: 'OFFICIAL RECEIPT',
+    subtitle: 'Proof of Payment — Maritime Carbon Tax',
+  });
+  const logoY = BRAND_HEADER_LOGO_Y;
   const rightX = pageWidth - margin;
-  doc.setFillColor(13, 31, 24);
-  doc.rect(rightX - 38, logoY, 38, 5, 'F');
-  doc.setTextColor(16, 185, 129);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OFFICIAL DOCUMENT', rightX - 19, logoY + 3.5, { align: 'center' });
-
-  doc.setTextColor(13, 31, 24);
-  doc.setFontSize(13);
-  doc.text('OFFICIAL RECEIPT', rightX, logoY + 12, { align: 'right' });
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Proof of Payment — Maritime Carbon Tax', rightX, logoY + 17, { align: 'right' });
 
   // PAID stamp (large, prominent)
   doc.setFillColor(16, 185, 129);
@@ -1202,13 +974,8 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   doc.setTextColor(255, 255, 255);
   doc.text('PAID', rightX - 16, logoY + 26, { align: 'center' });
 
-  // Header divider
-  doc.setDrawColor(13, 31, 24);
-  doc.setLineWidth(0.6);
-  doc.line(margin, 44, pageWidth - margin, 44);
-
   // Reference + paid-to block
-  let y = 52;
+  let y = BRAND_HEADER_BODY_Y;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(100, 116, 139);

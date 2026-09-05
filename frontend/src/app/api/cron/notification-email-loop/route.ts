@@ -70,7 +70,7 @@ interface Counts {
 export async function GET(req: NextRequest): Promise<NextResponse> {
     // Guard against unset CRON_SECRET: an undefined env yields the literal
     // "Bearer undefined" check which is trivially guessable. Match the
-    // overdue-alerts/route.ts pattern that already does this correctly.
+    // daily-precompute/route.ts pattern that already does this correctly.
     const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
     if (!cronSecret || auth !== `Bearer ${cronSecret}`) {

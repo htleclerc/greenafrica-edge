@@ -72,22 +72,36 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
     const docTypeLabel = isInvoice ? 'TAX INVOICE' : 'PRO-FORMA INVOICE';
 
     // ── Invoice metadata ──
-    const currentYear = new Date().getFullYear();
-    const refPrefix = isInvoice ? 'INV' : 'PRO';
-    const invoiceRef  = `${refPrefix}-${currentYear}-${tx.id.split('-')[1].toUpperCase()}`;
+    // La référence est celle que le serveur a frappée à l'émission, ou rien.
+    // L'aperçu fabriquait « PRO-<année>-<segment d'UUID> » : une référence qui
+    // n'existait nulle part, imprimée sous un sceau officiel. Tant que le
+    // document n'est pas émis, l'écran le dit au lieu d'inventer.
+    const issuedRef = tx.invoiceRef ?? null;
+    const issued = Boolean(issuedRef && tx.contentHash && tx.verifySignature);
+    const refLabel = issuedRef ?? 'DRAFT — reference assigned on issue';
+    const invoiceRef = issuedRef ?? 'proforma';
     const issueDate   = new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     const dueDate     = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
     // ── Verification QR code ──
-    // Pass the live browser origin so the QR resolves to the current deployment
-    // (prod URL when viewed in prod, preview URL in preview, etc.) instead of
-    // whatever NEXT_PUBLIC_APP_URL happens to be baked in at build time.
+    // /verify n'accepte qu'un lien SIGNÉ (hash + HMAC) : sans les deux, la
+    // page répond « Unknown Document » par conception. Le QR n'est donc dessiné
+    // que pour un document émis, avec le jeton que la base porte déjà
+    // (`verify_signature`). L'origine est celle du navigateur, pour que le
+    // lien vise le déploiement qu'on regarde.
     const verifyUrl = React.useMemo(
-        () => buildVerifyUrl(invoiceRef, { origin: typeof window !== 'undefined' ? window.location.origin : undefined }),
-        [invoiceRef],
+        () => (issued && issuedRef
+            ? buildVerifyUrl(issuedRef, {
+                contentHash: tx.contentHash ?? undefined,
+                signature: tx.verifySignature ?? undefined,
+                origin: typeof window !== 'undefined' ? window.location.origin : undefined,
+            })
+            : null),
+        [issued, issuedRef, tx.contentHash, tx.verifySignature],
     );
     const [qrDataUrl, setQrDataUrl] = React.useState<string>('');
     React.useEffect(() => {
+        if (!verifyUrl) { setQrDataUrl(''); return; }
         generateQrCodeDataUrl(verifyUrl).then(setQrDataUrl).catch(() => setQrDataUrl(''));
     }, [verifyUrl]);
 
@@ -207,7 +221,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                     <div className="flex items-center gap-3">
                         <div>
                             <h2 className="text-sm font-bold text-[var(--os-text-primary)]">{docTitle}</h2>
-                            <p className="text-[10px] text-[var(--os-text-muted)]">{invoiceRef} · {tx.vesselName}</p>
+                            <p className="text-[10px] text-[var(--os-text-muted)]">{refLabel} · {tx.vesselName}</p>
                         </div>
                         <span
                             className="text-[10px] font-bold px-2 py-1 rounded-md tracking-wider"
@@ -426,14 +440,14 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                                         <div style={{
                                             display: 'inline-block',
                                             padding: '4px 10px',
-                                            background: '#0D1F18',
-                                            color: '#10B981',
+                                            background: issued ? '#0D1F18' : '#64748B',
+                                            color: issued ? '#10B981' : '#FFFFFF',
                                             fontSize: '9px',
                                             fontWeight: 700,
                                             letterSpacing: '2px',
                                             borderRadius: '2px',
                                         }}>
-                                            OFFICIAL DOCUMENT
+                                            {issued ? 'OFFICIAL DOCUMENT' : 'PREVIEW — NOT AN OFFICIAL DOCUMENT'}
                                         </div>
                                         <p style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px', color: '#0D1F18' }}>
                                             {docTypeLabel}
@@ -473,8 +487,8 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                                         <p style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '8px', fontWeight: 700, marginBottom: '4px' }}>
                                             Reference
                                         </p>
-                                        <p style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: '#047857' }}>
-                                            {invoiceRef}
+                                        <p style={{ fontFamily: 'monospace', fontSize: issued ? '12px' : '9px', fontWeight: 700, color: issued ? '#047857' : '#64748B' }}>
+                                            {refLabel}
                                         </p>
                                         <p style={{ color: '#334155', marginTop: '4px' }}>
                                             <strong>Issued:</strong> {issueDate}
@@ -570,26 +584,33 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                                             <span style={{ color: '#0D1F18', fontWeight: 700 }}>Director, Solid Technology</span>
                                         </p>
                                     </div>
-                                    {/* Center: verification QR code */}
+                                    {/* Center: verification QR code — only for an issued
+                                        document; an unsigned QR would scan to « Unknown
+                                        Document » and pass for a forgery. */}
                                     <div style={{ textAlign: 'center' }}>
-                                        {qrDataUrl ? (
-                                            <img
-                                                src={qrDataUrl}
-                                                alt="Verification QR code"
-                                                style={{ width: '64px', height: '64px', display: 'inline-block' }}
-                                            />
+                                        {issued && qrDataUrl ? (
+                                            <>
+                                                <img
+                                                    src={qrDataUrl}
+                                                    alt="Verification QR code"
+                                                    style={{ width: '64px', height: '64px', display: 'inline-block' }}
+                                                />
+                                                <p style={{ fontSize: '7px', fontWeight: 700, marginTop: '4px', color: '#0D1F18' }}>
+                                                    VERIFY ONLINE
+                                                </p>
+                                                <p style={{ fontSize: '6px', color: '#64748B', marginTop: '1px' }}>
+                                                    Scan to check status
+                                                </p>
+                                            </>
                                         ) : (
-                                            <div style={{ width: '64px', height: '64px', display: 'inline-block', background: '#F1F5F9' }} />
+                                            <p style={{ fontSize: '7px', color: '#94A3B8', marginTop: '24px', lineHeight: 1.3 }}>
+                                                {issued ? '' : 'Preview — the verification QR code is printed on the issued document only.'}
+                                            </p>
                                         )}
-                                        <p style={{ fontSize: '7px', fontWeight: 700, marginTop: '4px', color: '#0D1F18' }}>
-                                            VERIFY ONLINE
-                                        </p>
-                                        <p style={{ fontSize: '6px', color: '#64748B', marginTop: '1px' }}>
-                                            Scan to check status
-                                        </p>
                                     </div>
-                                    {/* Right: official seal */}
+                                    {/* Right: official seal — same rule as the QR. */}
                                     <div className="text-right">
+                                        {issued && (
                                         <div style={{
                                             display: 'inline-block',
                                             border: '2px solid #047857',
@@ -606,6 +627,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                                         }}>
                                             OFFICIAL<br />SEAL<br />{jurisdictionName.toUpperCase().split(' ').pop()}
                                         </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -619,7 +641,7 @@ export function ProFormaModal({ tx, onClose, onSent, onPayNow, jurisdictionName 
                                 }}>
                                     <p><strong>Payment terms:</strong> 30 days from issuance. Late settlement incurs a flat US$20,000 penalty fee.</p>
                                     {/* Single platform-wide collection account — no per-jurisdiction banking block needed. */}
-                                    <p><strong>Remit to:</strong> Solide Technology Limited · System Pay Services (Malta) Limited · SWIFT SYPLMTM2XXX · Ref: {invoiceRef}</p>
+                                    <p><strong>Remit to:</strong> Solide Technology Limited · System Pay Services (Malta) Limited · SWIFT SYPLMTM2XXX · Ref: {refLabel}</p>
                                     <p style={{ marginTop: '4px', textAlign: 'center', color: '#CBD5E1' }}>
                                         Document generated by Green Gate OS · Sovereign Carbon Intelligence Platform · AES-256 Encrypted
                                     </p>

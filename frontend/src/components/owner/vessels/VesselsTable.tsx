@@ -7,6 +7,8 @@ import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
 
 export interface VesselRow {
     id: string;
+    /** Référence opaque (mig 147), seule clé admise dans une URL. */
+    public_ref: string;
     name: string;
     mmsi: string | null;
     imo_number: string | null;
@@ -36,7 +38,7 @@ export function VesselsTable({ rows, vesselBasePath = '/owner/vessels' }: Props)
             header: 'Vessel',
             render: (r) => (
                 <Link
-                    href={`${vesselBasePath}/${r.id}`}
+                    href={`${vesselBasePath}/${r.public_ref}`}
                     className="font-medium text-emerald-400 hover:underline"
                 >
                     {r.name}

@@ -17,29 +17,29 @@ function asText(pdf: Uint8Array): string {
 }
 
 describe('generateWireInstructionsPdf', () => {
-    it('produit un PDF valide', () => {
-        const pdf = generateWireInstructionsPdf(BASE);
+    it('produit un PDF valide', async () => {
+        const pdf = await generateWireInstructionsPdf(BASE);
         expect(asText(pdf).startsWith('%PDF-')).toBe(true);
         expect(pdf.byteLength).toBeGreaterThan(1000);
     });
 
-    it('porte l IBAN, le BIC et la reference a citer', () => {
+    it('porte l IBAN, le BIC et la reference a citer', async () => {
         // Ces trois valeurs sont ce que la banque de l'armateur recopie. Sans la
         // reference, les fonds arrivent anonymes sur le compte de collecte.
-        const out = asText(generateWireInstructionsPdf(BASE));
+        const out = asText(await generateWireInstructionsPdf(BASE));
         expect(out).toContain('MT12SYPL39480821090981701607644');
         expect(out).toContain('SYPLMTM2XXX');
         expect(out).toContain('PRO-2026-81be71091a2b');
     });
 
-    it('reste nominatif et chiffre', () => {
-        const out = asText(generateWireInstructionsPdf(BASE));
+    it('reste nominatif et chiffre', async () => {
+        const out = asText(await generateWireInstructionsPdf(BASE));
         expect(out).toContain('GG Demo Shipping Ltd');
         expect(out).toContain('11,492');
     });
 
-    it('accepte une recharge sans facture', () => {
-        const pdf = generateWireInstructionsPdf({
+    it('accepte une recharge sans facture', async () => {
+        const pdf = await generateWireInstructionsPdf({
             ...BASE,
             invoiceRef: null,
             reference: 'TOPUP-ARM014AB',

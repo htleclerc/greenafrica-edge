@@ -114,6 +114,36 @@ describe('inviteOwnerMember — la borne de délégation', () => {
         expect(r.ok && r.granted).toEqual(OWNER_ALL_PRIVILEGES);
     });
 
+    // Décision PO (mig 148) : régler une facture est ouvert à tout membre,
+    // c'est au titulaire de le retirer. Un membre invité « sans rien » arrivait
+    // sur ses factures sans bouton Payer et croyait l'écran cassé.
+    it('accorde « payer » par défaut quand l’invitation ne précise rien', async () => {
+        const r = await invite({ privileges: {} });
+        expect(r.ok && r.granted).toEqual({
+            canPay: true, canDispute: false, canManageVessels: false, canInvite: false,
+        });
+        const row = inserted.find((i) => i.table === 'owner_members');
+        expect(row).toMatchObject({ can_pay: true, can_dispute: false, can_manage_vessels: false, can_invite: false });
+    });
+
+    it('accorde « payer » par défaut même sans bloc de droits', async () => {
+        const r = await invite({ privileges: undefined });
+        expect(r.ok && r.granted.canPay).toBe(true);
+    });
+
+    it('laisse le titulaire retirer « payer » explicitement', async () => {
+        const r = await invite({ privileges: { canPay: false } });
+        expect(r.ok && r.granted.canPay).toBe(false);
+    });
+
+    it('ne laisse pas le défaut permissif dépasser ce que détient l’invitant', async () => {
+        // Un membre qui n'a pas « payer » ne peut pas l'accorder, même par défaut.
+        principal.isMember = true;
+        principal.privileges = { ...NO_PRIVILEGES, canInvite: true };
+        const r = await invite({ privileges: {} });
+        expect(r.ok && r.granted.canPay).toBe(false);
+    });
+
     it('trace qui a ouvert la porte', async () => {
         await invite();
         const row = inserted.find((i) => i.table === 'owner_members');

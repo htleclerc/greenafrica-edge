@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { OsFilterTabs } from '@/components/ui/OsFilterTabs';
 import { RegisterForm } from './RegisterForm';
 import { AirRegisterForm } from './AirRegisterForm';
 
@@ -26,25 +27,27 @@ export function RegisterModeSwitcher({ recaptchaSiteKey, maritimeEnabled, airEna
 
     return (
         <div>
+            {/*
+              * Les deux onglets se confondaient : l'état actif portait la classe
+              * `os-button`, qui n'est définie NULLE PART dans la feuille de
+              * style. Actif et inactif tombaient donc sur le même rendu, et
+              * seul l'anneau de focus distinguait l'un de l'autre.
+              *
+              * `OsFilterTabs` porte le contraste du système de design — pastille
+              * pleine contre surface secondaire — et la navigation aux flèches
+              * avec `tabIndex` roulant, qu'il aurait fallu réécrire ici.
+              */}
             {bothEnabled && (
-                <div role="tablist" className="flex gap-2 mb-6">
-                    <button
-                        role="tab"
-                        aria-selected={mode === 'MARITIME'}
-                        onClick={() => setMode('MARITIME')}
-                        className={`px-4 h-9 rounded-lg text-sm ${mode === 'MARITIME' ? 'os-button' : 'bg-[var(--os-surface-2)] border border-[var(--os-border)]'}`}
-                    >
-                        {t('tab_maritime')}
-                    </button>
-                    <button
-                        role="tab"
-                        aria-selected={mode === 'AIR'}
-                        onClick={() => setMode('AIR')}
-                        className={`px-4 h-9 rounded-lg text-sm ${mode === 'AIR' ? 'os-button' : 'bg-[var(--os-surface-2)] border border-[var(--os-border)]'}`}
-                    >
-                        {t('tab_air')}
-                    </button>
-                </div>
+                <OsFilterTabs
+                    label={t('mode_switcher_label')}
+                    value={mode}
+                    onChange={(v) => setMode(v as Mode)}
+                    className="mb-6"
+                    tabs={[
+                        { value: 'MARITIME', label: t('tab_maritime') },
+                        { value: 'AIR', label: t('tab_air') },
+                    ]}
+                />
             )}
             {mode === 'MARITIME' && maritimeEnabled
                 ? <RegisterForm recaptchaSiteKey={recaptchaSiteKey} prefillImo={prefillImo} />

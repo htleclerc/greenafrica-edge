@@ -60,7 +60,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     const beneficiary = await getWireBeneficiary(admin, ctx.jurisdictionId);
-    const pdf = generateWireInstructionsPdf({
+    const pdf = await generateWireInstructionsPdf({
         beneficiary,
         reference: wireReference(invoiceRef, ctx.shipowner.id),
         amountUsd,

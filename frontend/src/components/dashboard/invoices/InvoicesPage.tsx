@@ -521,7 +521,7 @@ function InvoiceDetail({
                         </OsButton>
                     )}
                     {canContest && (
-                        <a href={`/dashboard/disputes?new=true&txn=${tx.id}`}>
+                        <a href="/dashboard/disputes?new=true">
                             <OsButton variant="outline" size="sm" icon={<Scale className="w-3.5 h-3.5" />}>
                                 {t('contest_invoice')}
                             </OsButton>

@@ -35,6 +35,21 @@ export const NO_PRIVILEGES: OwnerPrivileges = {
     canInvite: false,
 };
 
+/**
+ * Ce qu'une invitation accorde quand l'invitant ne précise rien (mig 148).
+ *
+ * Décision PO : payer est ouvert à tout membre, et c'est au titulaire de le
+ * retirer — régler une facture ne nuit jamais au compte, c'est même le geste
+ * pour lequel on associe un collègue. Les autres droits engagent le compte ou
+ * en ouvrent l'accès : ils restent à accorder explicitement.
+ */
+export const DEFAULT_INVITE_PRIVILEGES: OwnerPrivileges = {
+    canPay: true,
+    canDispute: false,
+    canManageVessels: false,
+    canInvite: false,
+};
+
 /** Une ligne `owner_members`, telle que la rend PostgREST. */
 export interface OwnerMemberRow {
     can_pay?: boolean | null;

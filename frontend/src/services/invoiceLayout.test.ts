@@ -100,11 +100,11 @@ describe('generateInvoicePdf — gabarit deux pages', () => {
         }
     });
 
-    it('tient les 45 jours et la penalite du profil emetteur', async () => {
-        // Le pied de page annoncait 30 jours alors que les documents officiels
-        // d'aout 2026 portent 45.
+    it('tient le delai de paiement et la penalite du profil emetteur', async () => {
+        // 30 jours depuis la mig 149 (decision PO 2026-09-05) : le texte
+        // imprime suit enfin le NET-30 que la base pose sur due_date.
         const text = pdfText(await generateInvoicePdf(BASE));
-        expect(text).toContain('Payment terms: 45 days from issuance');
+        expect(text).toContain('Payment terms: 30 days from issuance');
         expect(text).toContain('US$20,000');
     });
 

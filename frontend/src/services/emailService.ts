@@ -4,7 +4,6 @@ import { OWNER_INVOICES_PATH, OWNER_WALLET_PATH } from '@/lib/routes/ownerPaths'
 import {
     TX_AGENT_INVITE_HTML,
     TX_MONTHLY_STATEMENT_HTML,
-    TX_OVERDUE_REMINDER_HTML,
     TX_PAYMENT_CONFIRMATION_HTML,
     TX_PROFORMA_INVOICE_HTML,
     TX_VESSEL_ACCESS_CODE_HTML,
@@ -465,39 +464,10 @@ export async function sendPartnershipConfirmationEmail(p: PartnershipConfirmatio
     });
 }
 
-// ── 5. Overdue alert email ─────────────────────────────────────────────────
-
-export interface OverdueAlertParams {
-    to: string;
-    recipientName: string;
-    vesselName: string;
-    invoiceRef: string;
-    amountUsd: number;
-    daysOverdue: number;
-    verifyUrl: string;
-    /** Etat souverain porte en pied. Defaut : l'emetteur historique. */
-    jurisdictionName?: string;
-}
-
-export async function sendOverdueAlertEmail(p: OverdueAlertParams): Promise<EmailResult> {
-    const subject = `URGENT: Overdue Payment — ${p.vesselName} (${p.daysOverdue}d)`;
-    const html = renderEmailTemplate(TX_OVERDUE_REMINDER_HTML, {
-        recipientName: p.recipientName,
-        vesselName: p.vesselName,
-        invoiceRef: p.invoiceRef,
-        amount: usd(p.amountUsd),
-        daysOverdue: p.daysOverdue,
-        payUrl: p.verifyUrl,
-        jurisdictionName: p.jurisdictionName ?? DEFAULT_SOVEREIGN,
-    });
-
-    return sendEmail({
-        to: p.to,
-        subject,
-        html,
-        text: `OVERDUE: ${p.invoiceRef}\nVessel: ${p.vesselName}\nAmount: $${p.amountUsd.toLocaleString()}\nDays overdue: ${p.daysOverdue}\n\nPay at: ${p.verifyUrl}`,
-    });
-}
+// ── 5. (supprimé) Relance « overdue » du cron pré-Plan 7 ─────────────────────
+// Le cron /api/cron/overdue-alerts fabriquait une référence INV-<année>-<segment>
+// et un lien /verify sans signature : chaque destinataire tombait sur « Unknown
+// Document ». La relance vit dans le moteur de recouvrement (collection-reminders).
 
 // ── 6. Armateur invitation email ─────────────────────────────────────────────
 //

@@ -3681,41 +3681,21 @@
   },
   "OwnerRegister": {
     "title": "Inscription armateur",
-    "subtitle": "Présentez votre société. Nous validons et vous écrivons sous 48h.",
+    "subtitle": "Indiquez votre navire et votre société. Nous validons et vous écrivons sous 48h.",
     "email": "Email de contact",
-    "company_name": "Nom de la société",
-    "imo_company": "Numéro IMO Société (7 chiffres)",
-    "country": "Pays (ISO-2)",
-    "address": "Adresse du siège",
-    "vessel_imo": "IMO d'un de vos navires",
-    "phone_optional": "Téléphone (optionnel, E.164)",
+    "company_name": "Nom de l'armateur",
+    "vessel_imo": "IMO du navire",
     "submit": "Envoyer la demande",
     "submitting": "Envoi...",
     "thanks_title": "Merci",
-    "doc_types": {
-      "TRADE_REGISTER": "Registre du commerce",
-      "CERT_INCORPORATION": "Certificat d'incorporation",
-      "MOA": "Statuts",
-      "OTHER": "Autre"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "Veuillez joindre un document de preuve",
       "upload_failed": "Échec de l'envoi du fichier. Réessayez."
     },
-    "proof_document": "Document de preuve",
-    "doc_type": "Type de document",
-    "preferred_language": "Langue préférée",
     "closed_title": "Inscription fermée",
     "closed_body": "Les inscriptions opérateur sont actuellement sur invitation uniquement. Contactez l'administration.",
-    "back_to_login": "Retour à la connexion"
+    "back_to_login": "Retour à la connexion",
+    "mmsi_optional": "MMSI du navire (facultatif)"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -3847,6 +3827,7 @@
         "email": "Son adresse e-mail",
         "privileges": "Ce qu’il pourra faire",
         "notYours": "Vous ne détenez pas ce droit — vous ne pouvez pas l’accorder.",
+        "payDefault": "Payer est accordé d’office à tout membre : décochez pour le retirer.",
         "submit": "Inviter"
       },
       "errors": {
@@ -4155,7 +4136,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "Type d’opérateur"
   },
   "JurisdictionSwitcher": {
     "label": "Juridiction",

@@ -69,7 +69,9 @@ export const DEFAULT_ISSUER_PROFILE: IssuerProfile = {
     directorPhone: '+33 7 51 42 23 84',
     operationsEmail: 'st.operations@greengate.africa',
     billingEmail: 'billing@greengate.africa',
-    paymentTermsDays: 45,
+    // 30 depuis la mig 149 (décision PO 2026-09-05) : aligné sur le NET-30
+    // que le déclencheur de la mig 146 pose sur transactions.due_date.
+    paymentTermsDays: 30,
     latePenaltyUsd: 20000,
     disputePeriodDays: 10,
     escalationLine: 'Reminder > formal notice (copy Direction) > bailiff Eidle Advocats + Antwerp Bar',

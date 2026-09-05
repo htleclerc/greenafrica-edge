@@ -3681,41 +3681,21 @@
   },
   "OwnerRegister": {
     "title": "Shipowner Registration",
-    "subtitle": "Tell us about your company. We'll review and email you within 48h.",
+    "subtitle": "Give us your vessel and your company. We review and email you within 48h.",
     "email": "Contact email",
-    "company_name": "Company name",
-    "imo_company": "IMO Company Number (7 digits)",
-    "country": "Country (ISO-2)",
-    "address": "Registered address",
-    "vessel_imo": "Vessel IMO (one of your fleet)",
-    "phone_optional": "Phone (optional, E.164)",
+    "company_name": "Shipowner name",
+    "vessel_imo": "Vessel IMO",
     "submit": "Submit registration",
     "submitting": "Submitting...",
     "thanks_title": "Thank you",
-    "doc_types": {
-      "TRADE_REGISTER": "Trade register",
-      "CERT_INCORPORATION": "Certificate of incorporation",
-      "MOA": "Memorandum of association",
-      "OTHER": "Other"
-    },
-    "langs": {
-      "en": "English",
-      "fr": "Français",
-      "ar": "العربية",
-      "pt": "Português",
-      "sw": "Kiswahili",
-      "so": "Soomaali"
-    },
     "errors": {
       "no_file": "Please upload a proof document",
       "upload_failed": "File upload failed. Try again."
     },
-    "proof_document": "Proof document",
-    "doc_type": "Document type",
-    "preferred_language": "Preferred language",
     "closed_title": "Registration closed",
     "closed_body": "Operator registrations are currently by invitation only. Please contact the administration.",
-    "back_to_login": "Back to login"
+    "back_to_login": "Back to login",
+    "mmsi_optional": "Vessel MMSI (optional)"
   },
   "OwnerOnboarding": {
     "step1": {
@@ -3847,6 +3827,7 @@
         "email": "Their email address",
         "privileges": "What they will be able to do",
         "notYours": "You do not hold this right — you cannot grant it.",
+        "payDefault": "Paying is granted to every member by default: untick to withhold it.",
         "submit": "Invite"
       },
       "errors": {
@@ -4155,7 +4136,8 @@
       "pt": "Português",
       "sw": "Kiswahili",
       "so": "Soomaali"
-    }
+    },
+    "mode_switcher_label": "Operator type"
   },
   "JurisdictionSwitcher": {
     "label": "Jurisdiction",

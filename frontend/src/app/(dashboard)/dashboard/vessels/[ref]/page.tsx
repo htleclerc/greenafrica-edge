@@ -7,16 +7,17 @@ export const dynamic = 'force-dynamic';
 export default async function DashboardVesselDetailRoute({
     params,
 }: {
-    params: Promise<{ id: string }>;
+    params: Promise<{ ref: string }>;
 }) {
     const principal = await requirePrincipal();
-    const { id } = await params;
+    // Référence opaque (mig 147), jamais l'identifiant interne.
+    const { ref } = await params;
 
     if (principal.kind === 'operator') {
         return (
             <OperatorVesselDetailPage
                 principal={principal}
-                vesselId={id}
+                vesselRef={ref}
                 backHref="/dashboard/vessels"
             />
         );

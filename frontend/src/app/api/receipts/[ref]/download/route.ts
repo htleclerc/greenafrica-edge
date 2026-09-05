@@ -46,7 +46,7 @@ export async function GET(
 
     // Le bucket `documents` est prive depuis la migration 017 : la propriete
     // est prouvee ci-dessus avec le client RLS, mais l'URL signee se mint avec
-    // le client service — meme decoupage que /api/statements/[id]/download.
+    // le client service — meme decoupage que /api/owner/statements/[period]/download.
     const admin = createPlatformClient();
     const { data: signed, error } = await admin.storage
         .from('documents')

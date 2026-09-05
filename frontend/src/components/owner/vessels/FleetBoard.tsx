@@ -84,7 +84,7 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
             key: 'actions', header: '', width: '90px', align: 'end',
             render: (v) => (
                 <Link
-                    href={`${vesselBasePath}/${v.id}`}
+                    href={`${vesselBasePath}/${v.ref}`}
                     onClick={(e) => e.stopPropagation()}
                     className="px-1 py-1.5 text-[12.5px] text-[var(--os-text-muted)] transition-colors duration-150 hover:text-[var(--os-text-primary)]"
                 >
@@ -146,7 +146,7 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
                 <div className="flex min-w-0 flex-col gap-0.5">
                     <h3 className="truncate text-[15px] font-semibold text-[var(--os-text-primary)]">
                         <Link
-                            href={`${vesselBasePath}/${vessel.id}`}
+                            href={`${vesselBasePath}/${vessel.ref}`}
                             className="hover:text-[var(--os-brand-cyan)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
                         >
                             {vessel.name}
@@ -211,7 +211,7 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
 
                 {vessel.status !== 'proforma' && (
                     <Link
-                        href={`${vesselBasePath}/${vessel.id}`}
+                        href={`${vesselBasePath}/${vessel.ref}`}
                         className="flex h-10 items-center justify-center rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
                     >
                         {t('detail')}

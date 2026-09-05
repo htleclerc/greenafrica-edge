@@ -14,7 +14,7 @@ import { runDailyPrecompute } from '@/services/dailyPrecomputeService';
  * Query param `?dryRun=1`: reports `scanned` count without triggering any pipeline.
  *
  * Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. Everything else
- * returns 401. Same convention as overdue-alerts/route.ts.
+ * returns 401. Same convention as the other /api/cron routes.
  */
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
