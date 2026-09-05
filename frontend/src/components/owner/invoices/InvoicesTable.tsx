@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { issueOwnerProforma } from '@/actions/issueOwnerProforma';
+import { reloadIfStaleServerAction } from '@/lib/staleServerAction';
 import { OsFilterTabs } from '@/components/ui/OsFilterTabs';
 import { OsPageHeader } from '@/components/ui/OsPageHeader';
 import { OsUrgencyPill } from '@/components/ui/OsUrgencyPill';
@@ -148,6 +149,10 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMembe
             // relire la page pour qu'il apparaisse.
             router.refresh();
         } catch (e) {
+            // Page ouverte avant un déploiement : l'action n'existe plus sous
+            // cet identifiant. Recharger vaut mieux qu'afficher l'erreur de
+            // Next, incompréhensible pour un armateur.
+            if (reloadIfStaleServerAction(e)) return;
             setIssueError((prev) => ({ ...prev, [r.id]: e instanceof Error ? e.message : 'Issue failed' }));
         } finally {
             setIssuingId(null);
