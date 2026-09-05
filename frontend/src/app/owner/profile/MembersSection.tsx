@@ -9,7 +9,9 @@ import { OsInput } from '@/components/ui/OsInput';
 import { OsButton } from '@/components/ui/OsButton';
 import { inviteOwnerMember } from '@/actions/inviteOwnerMember';
 import { revokeOwnerMember } from '@/actions/revokeOwnerMember';
-import { PRIVILEGE_KEYS, type OwnerPrivileges, type PrivilegeKey } from '@/lib/auth/ownerPrivileges';
+import {
+    clampToGranter, DEFAULT_INVITE_PRIVILEGES, PRIVILEGE_KEYS, type OwnerPrivileges, type PrivilegeKey,
+} from '@/lib/auth/ownerPrivileges';
 import type { OwnerMemberView } from '@/services/ownerMembersService';
 
 interface Props {
@@ -19,10 +21,6 @@ interface Props {
     /** Faux pour un membre : l'écran le dit, plutôt que de le laisser essayer. */
     canInvite: boolean;
 }
-
-const EMPTY: OwnerPrivileges = {
-    canPay: false, canDispute: false, canManageVessels: false, canInvite: false,
-};
 
 /**
  * Gestion des membres du compte.
@@ -37,7 +35,14 @@ export function MembersSection({ members, granterPrivileges, canInvite }: Props)
 
     const [email, setEmail] = React.useState('');
     const [fullName, setFullName] = React.useState('');
-    const [privileges, setPrivileges] = React.useState<OwnerPrivileges>(EMPTY);
+    // « Payer » est pré-coché (mig 148) — mais jamais au-delà de ce que
+    // l'invitant détient : une case cochée et grisée annoncerait un droit que
+    // le serveur retirerait.
+    const initialPrivileges = React.useMemo(
+        () => clampToGranter(DEFAULT_INVITE_PRIVILEGES, granterPrivileges),
+        [granterPrivileges],
+    );
+    const [privileges, setPrivileges] = React.useState<OwnerPrivileges>(initialPrivileges);
     const [error, setError] = React.useState<string | null>(null);
     const [pending, startTransition] = React.useTransition();
 
@@ -51,7 +56,7 @@ export function MembersSection({ members, granterPrivileges, canInvite }: Props)
             if (!result.ok) { setError(t(`errors.${result.reason}`, { fallbackReason: result.reason })); return; }
             setEmail('');
             setFullName('');
-            setPrivileges(EMPTY);
+            setPrivileges(initialPrivileges);
             router.refresh();
         });
     }
@@ -124,6 +129,7 @@ export function MembersSection({ members, granterPrivileges, canInvite }: Props)
                         <legend className="mb-1 text-[12.5px] font-semibold text-[var(--os-text-primary)]">
                             {t('form.privileges')}
                         </legend>
+                        <p className="mb-1 text-[11.5px] text-[var(--os-text-muted)]">{t('form.payDefault')}</p>
                         <div className="flex flex-wrap gap-2">
                             {PRIVILEGE_KEYS.map((key: PrivilegeKey) => {
                                 // Ce que l'invitant ne détient pas ne peut pas être accordé.

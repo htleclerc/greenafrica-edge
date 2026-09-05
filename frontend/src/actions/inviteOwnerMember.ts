@@ -7,19 +7,23 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 import { provisionOwnerAccount } from '@/services/ownerProvisioning';
 import { assertContactAllowed, SanctionedContactError } from '@/domain/sanctions/contactGuard';
 import { writeAuditLog } from '@/services/auditService';
-import { clampToGranter, PRIVILEGE_COLUMN, PRIVILEGE_KEYS, type OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
+import {
+    clampToGranter, DEFAULT_INVITE_PRIVILEGES, PRIVILEGE_COLUMN, PRIVILEGE_KEYS, type OwnerPrivileges,
+} from '@/lib/auth/ownerPrivileges';
 import { notifyOwner } from '@/services/notificationService';
 import { sendMemberAccessEmail } from '@/services/emailService';
 
 const schema = z.object({
     email: z.string().trim().email(),
     fullName: z.string().trim().min(2).max(120),
+    // Permissif sur le paiement (mig 148) : un appel qui ne dit rien accorde
+    // « payer », et seulement ça. Retirer ce droit est un geste explicite.
     privileges: z.object({
-        canPay: z.boolean().default(false),
-        canDispute: z.boolean().default(false),
-        canManageVessels: z.boolean().default(false),
-        canInvite: z.boolean().default(false),
-    }),
+        canPay: z.boolean().default(DEFAULT_INVITE_PRIVILEGES.canPay),
+        canDispute: z.boolean().default(DEFAULT_INVITE_PRIVILEGES.canDispute),
+        canManageVessels: z.boolean().default(DEFAULT_INVITE_PRIVILEGES.canManageVessels),
+        canInvite: z.boolean().default(DEFAULT_INVITE_PRIVILEGES.canInvite),
+    }).default(DEFAULT_INVITE_PRIVILEGES),
 });
 
 export type InviteOwnerMemberResult =
