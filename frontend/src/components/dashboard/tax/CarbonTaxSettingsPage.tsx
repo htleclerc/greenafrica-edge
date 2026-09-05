@@ -180,7 +180,7 @@ export function CarbonTaxSettingsPage() {
                                         </div>
                                         <p className="text-[11px] text-[var(--os-text-muted)]">{tx.vesselName}</p>
                                         <p className="text-xs font-bold text-[#EF4444] mt-0.5">{t('amount_overdue', { amount: `$${tx.taxAmountUsd.toLocaleString()}` })}</p>
-                                        <a href={`/dashboard/invoices?tx=${tx.id}`} className="text-[10px] text-[#EF4444] hover:underline font-semibold mt-1 inline-block">
+                                        <a href={`/dashboard/invoices?tx=${encodeURIComponent(tx.ref)}`} className="text-[10px] text-[#EF4444] hover:underline font-semibold mt-1 inline-block">
                                             {t('generate_invoice')}
                                         </a>
                                     </div>

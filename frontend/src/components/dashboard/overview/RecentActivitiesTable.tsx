@@ -100,7 +100,7 @@ export function RecentActivitiesTable() {
                                     </td>
                                     <td className="px-2 sm:px-5 py-3">
                                         <a
-                                            href={`/dashboard/invoices?tx=${tx.id}`}
+                                            href={`/dashboard/invoices?tx=${encodeURIComponent(tx.ref)}`}
                                             className="text-[10px] font-semibold text-[#38BDF8] hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             {t('btn_view_detail')}

@@ -211,7 +211,7 @@ export async function OperatorInvoicesPage({
                             <div key={s.id} className="flex items-center justify-between px-4 py-3">
                                 <span className="text-sm text-[var(--os-text-primary)]">{s.period_month.slice(0, 7)}</span>
                                 <span className="text-sm font-mono tabular-nums text-[var(--os-text-secondary)]">${Number(s.total_outstanding_usd).toLocaleString()}</span>
-                                <a href={`/api/statements/${s.id}/download`} target="_blank" rel="noopener noreferrer"
+                                <a href={`/api/owner/statements/${s.period_month.slice(0, 7)}/download`} target="_blank" rel="noopener noreferrer"
                                    className="text-xs text-emerald-400 hover:underline">{t('statements_download')}</a>
                             </div>
                         ))}

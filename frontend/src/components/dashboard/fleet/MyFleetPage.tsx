@@ -171,7 +171,7 @@ export function MyFleetPage() {
                                             <span className="text-[10px] text-[var(--os-text-muted)] hidden sm:block">{date}</span>
                                             {(tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE) && (
                                                 <a
-                                                    href={`/dashboard/disputes?new=true&txn=${tx.id}`}
+                                                    href="/dashboard/disputes?new=true"
                                                     className="text-[10px] font-semibold text-[#38BDF8] hover:underline whitespace-nowrap"
                                                 >
                                                     {t('contest')}
@@ -266,7 +266,7 @@ function FleetVesselCard({
                 </a>
                 {(v.complianceStatus === VesselComplianceStatus.PAYMENT_DUE || v.complianceStatus === VesselComplianceStatus.NON_COMPLIANT) && (
                     <a
-                        href={`/dashboard/disputes?new=true&vessel=${v.id}`}
+                        href="/dashboard/disputes?new=true"
                         className="flex items-center gap-1.5 text-[10px] font-semibold text-[#F97316] hover:underline ml-auto"
                     >
                         <Scale className="w-3 h-3" />

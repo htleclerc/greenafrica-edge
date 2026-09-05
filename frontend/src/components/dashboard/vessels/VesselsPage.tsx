@@ -505,7 +505,8 @@ function DrawerDocuments({ documents, vesselImo }: { documents: Transaction[]; v
                         {sorted.map((tx) => {
                             const isPaid    = tx.status === TransactionStatus.PAID;
                             const isPayable = tx.status === TransactionStatus.PENDING || tx.status === TransactionStatus.OVERDUE;
-                            const href      = `/dashboard/invoices?vessel=${vesselImo}&txn=${tx.id}`;
+                            // `?tx=` est le parametre que lit InvoicesPage (par reference) ; `txn=<uuid>` n'etait lu nulle part.
+                            const href      = `/dashboard/invoices?vessel=${vesselImo}&tx=${encodeURIComponent(tx.ref)}`;
                             return (
                                 <tr key={tx.id} className="border-t border-[var(--os-border)]">
                                     <td className="px-3 py-2.5">
