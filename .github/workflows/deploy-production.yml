@@ -230,7 +230,12 @@ jobs:
             exit 1
           fi
           MISSING=""
-          for VAR in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+          # NEXT_PUBLIC_APP_URL est dans la liste depuis le 2026-09-05 : absente du
+          # build, le code retombe sur le defaut de developpement et la production
+          # a envoye des liens de connexion pointant sur http://localhost:3300.
+          # Elle sert aussi aux URLs de retour de paiement et aux liens des
+          # pro-formas — une absence ne se voit qu'apres coup, chez le destinataire.
+          for VAR in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL; do
             if ! grep -qE "^${VAR}=.+" "$ENVFILE"; then
               MISSING="$MISSING $VAR"
             fi
