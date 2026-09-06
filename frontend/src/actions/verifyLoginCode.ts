@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
-import { resolveLoginTarget } from '@/services/auth/loginAllowlist';
+import { resolveLoginTarget, resolveStaffLoginTarget } from '@/services/auth/loginAllowlist';
 import { verifyVesselAccessCode } from '@/actions/verifyVesselAccessCode';
 import { scopedLogger } from '@/lib/logger';
 
@@ -72,9 +72,30 @@ export async function verifyLoginCode(raw: unknown): Promise<VerifyLoginCodeResu
     }
 
     const target = await resolveLoginTarget(admin, query);
-    // Une cible inconnue rend le même motif qu'un code faux : l'écran ne doit
-    // pas confirmer l'existence d'un compte.
-    if (!target || target.scope === 'BILLING_CC') return { ok: false, reason: 'invalid_code' };
+
+    // Le staff a le même rail depuis qu'il dispose d'un lien de connexion.
+    // Il passe APRÈS l'armateur, comme à l'émission : une adresse qui serait
+    // les deux ouvre le dossier, qui porte la garde des sanctions.
+    if (!target || target.scope === 'BILLING_CC') {
+        const staff = await resolveStaffLoginTarget(admin, query);
+        // Une cible inconnue rend le même motif qu'un code faux : l'écran ne
+        // doit pas confirmer l'existence d'un compte.
+        if (!staff) return { ok: false, reason: 'invalid_code' };
+
+        const supabaseStaff = await createClient();
+        const { data: staffSession, error: staffErr } = await supabaseStaff.auth.verifyOtp({
+            email: staff.deliveryEmail,
+            token: code,
+            type: 'email',
+        });
+        if (staffErr || !staffSession?.user) {
+            log.info('otp_rejected', { profileId: staff.profileId });
+            return { ok: false, reason: 'invalid_code' };
+        }
+        // Pas `/post-login` : cet écran sert à choisir un rôle à endosser, il
+        // n'a rien à voir avec l'ouverture de session d'un agent.
+        return { ok: true, redirectTo: '/dashboard' };
+    }
 
     const supabase = await createClient();
     const { data: session, error } = await supabase.auth.verifyOtp({

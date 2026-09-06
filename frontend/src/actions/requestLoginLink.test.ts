@@ -9,8 +9,10 @@ vi.mock('@/lib/rateLimit', () => ({
 }));
 
 const resolve = vi.fn();
+const resolveStaff = vi.fn();
 vi.mock('@/services/auth/loginAllowlist', () => ({
     resolveLoginTarget: (...a: unknown[]) => resolve(...(a as [])),
+    resolveStaffLoginTarget: (...a: unknown[]) => resolveStaff(...(a as [])),
 }));
 
 const sendLink = vi.fn<(...a: unknown[]) => Promise<{ success: boolean; error?: string }>>(
@@ -20,7 +22,13 @@ vi.mock('@/services/emailService', () => ({
     sendLoginLinkEmail: (...a: unknown[]) => sendLink(...a),
 }));
 
-const generateLink = vi.fn(async () => ({
+// La signature est portée par le générique : sans elle, `vi.fn(async () => …)`
+// donne un tuple d'arguments vide et `mock.calls[0][0]` ne compile pas.
+type GenerateLinkArgs = { type: string; email: string; options?: { redirectTo?: string } };
+const generateLink = vi.fn<(args: GenerateLinkArgs) => Promise<{
+    data: { properties: { action_link: string; email_otp: string }; user: { id: string } };
+    error: null;
+}>>(async () => ({
     data: { properties: { action_link: 'https://gg/auth/callback?token=abc', email_otp: '123456' }, user: { id: 'u1' } },
     error: null,
 }));
@@ -44,8 +52,16 @@ const TARGET = {
     isUnProhibited: false,
 };
 
+const STAFF = {
+    profileId: 'prof-1',
+    fullName: 'Admin GREENGATE',
+    deliveryEmail: 'admin@greengate.africa',
+    role: 'SUPERADMIN',
+};
+
 beforeEach(() => {
     vi.clearAllMocks();
+    resolveStaff.mockResolvedValue(null);
     enforce.mockResolvedValue({ allowed: true });
     sendLink.mockResolvedValue({ success: true });
     resolveVessel.mockResolvedValue(null);
@@ -211,5 +227,68 @@ describe('requestLoginLink — chemin navire (IMO / MMSI)', () => {
         // La neutralite de l'ecran de connexion tient a cette absence.
         expect(r).toEqual({ ok: true, via: 'email' });
         expect(r).not.toHaveProperty('emailHint');
+    });
+});
+
+/**
+ * Le staff n'avait aucun rail : ses comptes sont créés sans mot de passe, et
+ * le formulaire ne servait que les armateurs. Une adresse d'administration y
+ * recevait le message neutre — indiscernable d'un mailer en panne.
+ */
+describe('requestLoginLink — comptes staff', () => {
+    it('envoie un lien à un compte staff quand aucun armateur ne correspond', async () => {
+        resolve.mockResolvedValue(null);
+        resolveStaff.mockResolvedValue(STAFF);
+
+        const r = await requestLoginLink({ query: 'admin@greengate.africa' });
+
+        expect(r).toEqual({ ok: true, via: 'email' });
+        expect(sendLink).toHaveBeenCalledTimes(1);
+        expect(sendLink.mock.calls[0][0]).toMatchObject({ to: 'admin@greengate.africa' });
+    });
+
+    // Le portail armateur refuse un agent : il n'a pas de dossier.
+    it('renvoie le staff vers /auth/callback, pas vers le portail armateur', async () => {
+        resolve.mockResolvedValue(null);
+        resolveStaff.mockResolvedValue(STAFF);
+
+        await requestLoginLink({ query: 'admin@greengate.africa' });
+
+        const redirectTo = generateLink.mock.calls[0][0].options?.redirectTo ?? '';
+        expect(redirectTo).toContain('/auth/callback');
+        expect(redirectTo).not.toContain('/owner/auth/callback');
+    });
+
+    // L'armateur porte la garde des sanctions ; il doit gagner.
+    it('ne consulte pas le staff quand un armateur correspond', async () => {
+        resolve.mockResolvedValue(TARGET);
+
+        await requestLoginLink({ query: 'faros@farosshipping.example' });
+
+        expect(resolveStaff).not.toHaveBeenCalled();
+    });
+
+    it('plafonne par compte staff, pas seulement par IP', async () => {
+        resolve.mockResolvedValue(null);
+        resolveStaff.mockResolvedValue(STAFF);
+        enforce.mockImplementation(async (...a: unknown[]) =>
+            (a[1] === 'staff:prof-1' ? { allowed: false } : { allowed: true }));
+
+        const r = await requestLoginLink({ query: 'admin@greengate.africa' });
+
+        expect(r).toEqual({ ok: false, reason: 'rate_limited' });
+        expect(sendLink).not.toHaveBeenCalled();
+    });
+
+    // L'ouverture au staff ne doit pas transformer le formulaire public en
+    // oracle : la réponse reste celle d'une adresse inconnue.
+    it('répond identiquement quand aucune cible, staff comprise, ne correspond', async () => {
+        resolve.mockResolvedValue(null);
+        resolveStaff.mockResolvedValue(null);
+
+        const r = await requestLoginLink({ query: 'inconnu@example.com' });
+
+        expect(r).toEqual({ ok: true, via: 'email' });
+        expect(sendLink).not.toHaveBeenCalled();
     });
 });

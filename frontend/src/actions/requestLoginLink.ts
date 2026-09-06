@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { headers } from 'next/headers';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
-import { resolveLoginTarget } from '@/services/auth/loginAllowlist';
+import { resolveLoginTarget, resolveStaffLoginTarget } from '@/services/auth/loginAllowlist';
 import { resolveOwnerByVesselIdentifier } from '@/services/auth/vesselOwnerLookup';
 import { classifyVesselIdentifier } from '@/lib/vessels/identifier';
 import { maskEmailHint } from '@/lib/vessels/maskEmail';
@@ -19,6 +19,9 @@ const log = scopedLogger('requestLoginLink');
 // supplémentaire est le signe d'une tentative de détournement, pas d'une
 // évolution légitime — le payload est refusé tel quel, jamais nettoyé.
 const schema = z.object({ query: z.string() }).strict();
+
+/** Le staff atterrit sur son tableau de bord, pas sur le portail armateur. */
+const STAFF_CALLBACK_PATH = '/auth/callback';
 
 export type RequestLoginLinkResult =
     | { ok: true; via: 'email' }
@@ -102,7 +105,7 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
 
     // ── Chemin adresse : réponse invariable, jamais d'indice ──────────────
     const target = await resolveLoginTarget(admin, query);
-    if (!target) return { ok: true, via: 'email' };
+    if (!target) return sendToStaffOrGiveUp(admin, query);
 
     if (isContactBlocked({
         name: target.shipownerName,
@@ -134,6 +137,43 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
 }
 
 /**
+ * Dernier ressort du chemin adresse : un compte STAFF, sinon rien.
+ *
+ * Le staff passe APRÈS l'armateur. L'ordre n'est pas anodin : une adresse qui
+ * serait à la fois l'adresse officielle d'un dossier et un profil interne doit
+ * ouvrir le dossier, qui porte la garde des sanctions.
+ *
+ * La réponse reste INVARIABLE — `via: 'email'` qu'une cible ait été trouvée ou
+ * non. L'écran de connexion ne doit pas confirmer l'existence d'un compte, et
+ * ouvrir le rail au staff ne doit pas transformer le formulaire public en
+ * oracle sur les comptes d'administration.
+ */
+async function sendToStaffOrGiveUp(
+    admin: ReturnType<typeof createPlatformClient>,
+    query: string,
+): Promise<RequestLoginLinkResult> {
+    const staff = await resolveStaffLoginTarget(admin, query);
+    if (!staff) {
+        // Journalisé parce que l'écran, lui, se tait. Sans cette ligne, une
+        // adresse mal saisie et un mailer en panne se ressemblent trait pour
+        // trait — c'est ce qui a coûté des heures de diagnostic. L'adresse est
+        // MASQUÉE : un journal n'est pas un endroit où déverser des
+        // coordonnées.
+        log.info('login_target_unresolved', { hint: maskEmailHint(query) });
+        return { ok: true, via: 'email' };
+    }
+
+    const quota = await enforceRateLimit('login-link', `staff:${staff.profileId}`);
+    if (!quota.allowed) return { ok: false, reason: 'rate_limited' };
+
+    const sent = await mintAndSend(
+        admin, staff.deliveryEmail, staff.fullName ?? 'Green Gate', null, STAFF_CALLBACK_PATH,
+    );
+    if (!sent) log.warn('staff_link_send_failed', { profileId: staff.profileId });
+    return { ok: true, via: 'email' };
+}
+
+/**
  * Mine le jeton et envoie lien + code.
  *
  * On mine nous-mêmes plutôt que de laisser GoTrue envoyer : les modèles
@@ -146,12 +186,14 @@ async function mintAndSend(
     email: string,
     recipientName: string,
     vesselName: string | null,
+    /** Chemin de retour. Le staff n'a rien à faire dans le portail armateur. */
+    callbackPath: string = '/owner/auth/callback',
 ): Promise<boolean> {
     const appUrl = appBaseUrl();
     const { data, error } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: { redirectTo: `${appUrl}/owner/auth/callback` },
+        options: { redirectTo: `${appUrl}${callbackPath}` },
     });
 
     const link = data?.properties?.action_link;

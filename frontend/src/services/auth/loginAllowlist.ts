@@ -125,6 +125,77 @@ export async function resolveLoginTarget(
 }
 
 /**
+ * Rôles qui ouvrent une session STAFF par lien de connexion.
+ *
+ * `SHIPPING_AGENT` en est exclu : c'est un rôle d'opérateur, ouvert en
+ * self-service par /signup, pas un agent de la plateforme. `SHIPOWNER` l'est
+ * aussi — un armateur passe par `resolveLoginTarget`, qui le rattache à son
+ * dossier et applique la garde des sanctions.
+ */
+const STAFF_LOGIN_ROLES = ['SUPERADMIN', 'PORT_OFFICER', 'FINANCE_ADMIN', 'MANAGER'] as const;
+
+export interface StaffLoginTarget {
+    profileId: string;
+    fullName: string | null;
+    /** Adresse d'envoi — issue de la base, jamais de la saisie. */
+    deliveryEmail: string;
+    role: string;
+}
+
+/**
+ * Résout une adresse en un compte STAFF ouvrable.
+ *
+ * Le staff n'avait aucun rail de lien de connexion : le formulaire ne servait
+ * que les armateurs, et une adresse d'administration y recevait le même
+ * message neutre que n'importe quelle inconnue — indiscernable d'un mailer en
+ * panne. Les comptes staff étant créés sans mot de passe, il n'existait
+ * aucune façon d'entrer sans intervention en base.
+ *
+ * Le profil de risque est celui du chemin armateur : on n'écrit qu'à une
+ * adresse DÉJÀ enregistrée, et l'adresse de livraison vient de la base.
+ *
+ * PAS de `.maybeSingle()` — il ÉCHOUE dès que deux lignes correspondent, et
+ * rendrait le compte introuvable sans le moindre message. On ordonne pour un
+ * choix stable et on prend le premier.
+ */
+export async function resolveStaffLoginTarget(
+    admin: SupabaseClient,
+    rawEmail: string,
+): Promise<StaffLoginTarget | null> {
+    const email = rawEmail.trim().toLowerCase();
+    if (!email.includes('@') || email.length < 5) return null;
+
+    const { data, error } = await admin
+        .from('profiles')
+        .select('id, email, full_name, role, is_active')
+        .eq('email', email)
+        .eq('is_active', true)
+        .in('role', STAFF_LOGIN_ROLES as unknown as string[])
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+    // Une erreur n'est pas « pas de correspondance » : c'est une requête qui
+    // n'a pas tourné. Sans cette ligne, un PGRST se lirait comme une absence.
+    if (error) {
+        console.error('[loginAllowlist] requête staff en échec :', error.message);
+        return null;
+    }
+
+    const row = (data ?? [])[0] as Record<string, unknown> | undefined;
+    if (!row) return null;
+
+    const deliveryEmail = String(row.email ?? '').trim().toLowerCase();
+    if (!deliveryEmail) return null;
+
+    return {
+        profileId: String(row.id),
+        fullName: row.full_name ? String(row.full_name) : null,
+        deliveryEmail,
+        role: String(row.role),
+    };
+}
+
+/**
  * `deliveryEmail` vaut l'adresse officielle pour un armateur, et l'adresse
  * reconnue pour un représentant ou une copie : envoyer le lien d'un
  * représentant à l'armateur le priverait de l'accès qu'on vient de lui
