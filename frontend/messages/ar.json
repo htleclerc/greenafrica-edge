@@ -735,6 +735,7 @@
     "nav_vessel_identity": "هوية السفن",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "المستخدمون",
     "nav_navires": "السفن"
   },
   "AdminStaff": {
@@ -4934,6 +4935,56 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "المستخدمون",
+    "subtitle": "كل من يمكنه تسجيل الدخول: أصحاب الحسابات، الأعضاء، الممثلون — والموظفون.",
+    "search": "بحث",
+    "searchPlaceholder": "الاسم أو البريد أو الحساب أو IMO",
+    "stateFilter": "الحالة",
+    "kindTabs": "نوع الشخص",
+    "kind": {
+      "ALL": "الكل",
+      "OWNER": "صاحب الحساب",
+      "MEMBER": "عضو",
+      "REPRESENTATIVE": "ممثل",
+      "STAFF": "موظفون"
+    },
+    "col": {
+      "person": "الشخص",
+      "kind": "النوع",
+      "account": "الحساب",
+      "rights": "الصلاحيات",
+      "lastSignIn": "آخر دخول",
+      "state": "الحالة"
+    },
+    "rights": {
+      "all": "كل الصلاحيات",
+      "none": "قراءة فقط"
+    },
+    "privilege": {
+      "canPay": "الدفع",
+      "canDispute": "الاعتراض",
+      "canManageVessels": "السفن",
+      "canInvite": "الدعوة"
+    },
+    "state": {
+      "all": "الكل",
+      "active": "نشط",
+      "dormant": "خامل (90 يومًا)",
+      "inactive": "غير نشط",
+      "GHOST": "لم يُفعَّل قط",
+      "INVITED": "مدعو",
+      "SUSPENDED": "موقوف",
+      "REJECTED": "مرفوض"
+    },
+    "never": "أبدًا",
+    "empty": "لا أحد يطابق البحث.",
+    "action": {
+      "viewAs": "العرض بصفة",
+      "sendAccess": "إرسال وصول",
+      "sent": "أُرسل إن كان مسموحًا"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "العرض بصفة هذه السفينة"
@@ -4973,6 +5024,7 @@
   "AdminOwnerView": {
     "readOnly": "قراءة فقط",
     "viewing": "أنت تعرض هذا الحساب بصفة {name} — للقراءة فقط",
+    "viewingMember": "أنت تعرض هذا الحساب بصفة {member}، عضو في {name} — للقراءة فقط",
     "viewingVessel": "أنت تعرض السفينة {vessel} بصفة مدير {name} — للقراءة فقط",
     "tabOverview": "نظرة عامة",
     "tabInvoices": "الفواتير",

@@ -16,19 +16,20 @@ import { ViewAsTabs, type ViewAsTab } from './ViewAsTabs';
 export async function ViewAsBanner({ viewAs }: { viewAs: OwnerViewAs }) {
     const t = await getTranslations('AdminOwnerView');
     const base = viewAs.basePath;
+    const q = viewAs.query ?? '';
     const finance = viewAs.canViewBilling;
     const financeHint = finance ? undefined : t('financeOnly');
 
     const tabs: ViewAsTab[] = viewAs.vessel
         ? [
-            { href: base, label: t('tabVessel'), exact: true },
-            { href: `${base}/invoices`, label: t('tabInvoices'), disabled: !finance, title: financeHint },
+            { href: base, label: t('tabVessel'), exact: true, query: q },
+            { href: `${base}/invoices`, label: t('tabInvoices'), disabled: !finance, title: financeHint, query: q },
         ]
         : [
-            { href: base, label: t('tabOverview'), exact: true, disabled: !finance, title: financeHint },
-            { href: `${base}/invoices`, label: t('tabInvoices'), disabled: !finance, title: financeHint },
-            { href: `${base}/fleet`, label: t('tabFleet') },
-            { href: `${base}/wallet`, label: t('tabWallet'), disabled: !finance, title: financeHint },
+            { href: base, label: t('tabOverview'), exact: true, disabled: !finance, title: financeHint, query: q },
+            { href: `${base}/invoices`, label: t('tabInvoices'), disabled: !finance, title: financeHint, query: q },
+            { href: `${base}/fleet`, label: t('tabFleet'), query: q },
+            { href: `${base}/wallet`, label: t('tabWallet'), disabled: !finance, title: financeHint, query: q },
         ];
 
     const backHref = viewAs.vessel ? '/admin/navires' : `/admin/armateurs/${viewAs.ownerRef}`;
@@ -40,7 +41,9 @@ export async function ViewAsBanner({ viewAs }: { viewAs: OwnerViewAs }) {
                 <p className="text-sm text-[var(--os-text-primary)]">
                     {viewAs.vessel
                         ? t('viewingVessel', { vessel: viewAs.vessel.name, name: viewAs.ownerName })
-                        : t('viewing', { name: viewAs.ownerName })}
+                        : viewAs.member
+                            ? t('viewingMember', { member: viewAs.member.name ?? viewAs.member.email ?? viewAs.member.ref, name: viewAs.ownerName })
+                            : t('viewing', { name: viewAs.ownerName })}
                 </p>
                 <OsBadge variant="warning" label={t('readOnly')} size="sm" />
                 <span className="font-mono text-[11px] text-[var(--os-text-muted)]">{viewAs.ownerRef}</span>

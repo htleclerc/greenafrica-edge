@@ -27,7 +27,7 @@ describe('portalPaths', () => {
     });
 
     it('reste dans la vue admin d’un compte, en lecture seule', () => {
-        const p = portalPaths({ viewAs: { basePath: '/admin/armateurs/arm_1/portail', ownerRef: 'arm_1', ownerName: 'X', canViewBilling: true } });
+        const p = portalPaths({ viewAs: { basePath: '/admin/armateurs/arm_1/portail', ownerRef: 'arm_1', ownerName: 'X', canViewBilling: true, query: '' } });
         expect(p.invoices).toBe('/admin/armateurs/arm_1/portail/invoices');
         expect(p.fleet).toBe('/admin/armateurs/arm_1/portail/fleet');
         expect(p.vessel('ves_a')).toBe('/admin/armateurs/arm_1/portail/fleet/ves_a');
@@ -38,11 +38,23 @@ describe('portalPaths', () => {
     it('en portée navire, flotte et détail sont le même écran ; montants masqués sans droit', () => {
         const p = portalPaths({ viewAs: {
             basePath: '/admin/navires/ves_a/portail', ownerRef: 'arm_1', ownerName: 'X', canViewBilling: false,
-            vessel: { id: 'v', ref: 'ves_a', name: 'ALIMAN' },
+            vessel: { id: 'v', ref: 'ves_a', name: 'ALIMAN' }, query: '',
         } });
         expect(p.fleet).toBe('/admin/navires/ves_a/portail');
         expect(p.vessel('anything')).toBe('/admin/navires/ves_a/portail');
         expect(p.invoices).toBe('/admin/navires/ves_a/portail/invoices');
         expect(p.hideAmounts).toBe(true);
+    });
+});
+
+describe('portalPaths — membre regardé', () => {
+    it('reconduit ?as=mbr_… sur chaque lien, pour rester dans la peau du membre', () => {
+        const p = portalPaths({ viewAs: {
+            basePath: '/admin/armateurs/arm_1/portail', ownerRef: 'arm_1', ownerName: 'X', canViewBilling: true,
+            member: { ref: 'mbr_7f3a9c2e51b0', name: 'Amina', email: null }, query: '?as=mbr_7f3a9c2e51b0',
+        } });
+        expect(p.invoices).toBe('/admin/armateurs/arm_1/portail/invoices?as=mbr_7f3a9c2e51b0');
+        expect(p.vessel('ves_a')).toBe('/admin/armateurs/arm_1/portail/fleet/ves_a?as=mbr_7f3a9c2e51b0');
+        expect(p.wallet).toBe('/admin/armateurs/arm_1/portail/wallet?as=mbr_7f3a9c2e51b0');
     });
 });

@@ -1,4 +1,5 @@
 import { requireViewAsOwner } from '@/lib/auth/viewAsOwner';
+import { ViewAsFrame } from '@/components/admin/ViewAsFrame';
 import { OperatorInvoicesPage } from '@/components/owner/pages/OperatorInvoicesPage';
 import { FinanceOnlyNotice } from '@/components/admin/FinanceOnlyNotice';
 
@@ -8,6 +9,9 @@ export const dynamic = 'force-dynamic';
 export default async function PortailNavireInvoices({ params }: { params: Promise<{ vref: string }> }) {
     const { vref } = await params;
     const principal = await requireViewAsOwner({ vesselRef: vref, page: 'vessel-invoices' });
-    if (!principal.viewAs?.canViewBilling) return <FinanceOnlyNotice />;
-    return <OperatorInvoicesPage principal={principal} />;
+    return (
+        <ViewAsFrame principal={principal}>
+            {principal.viewAs?.canViewBilling ? <OperatorInvoicesPage principal={principal} /> : <FinanceOnlyNotice />}
+        </ViewAsFrame>
+    );
 }

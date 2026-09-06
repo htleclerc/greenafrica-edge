@@ -34,15 +34,16 @@ export function portalPaths(principal: { viewAs?: OwnerViewAs }): PortalPaths {
         };
     }
     const base = view.basePath;
+    const q = view.query ?? '';
     // Portée navire : la « flotte » et le « détail » sont le même écran, celui
     // du navire regardé — il n'y a rien d'autre à montrer.
     const vesselScoped = Boolean(view.vessel);
     return {
-        home: base,
-        invoices: `${base}/invoices`,
-        fleet: vesselScoped ? base : `${base}/fleet`,
-        vessel: (ref) => (vesselScoped ? base : `${base}/fleet/${ref}`),
-        wallet: `${base}/wallet`,
+        home: `${base}${q}`,
+        invoices: `${base}/invoices${q}`,
+        fleet: vesselScoped ? `${base}${q}` : `${base}/fleet${q}`,
+        vessel: (ref) => (vesselScoped ? `${base}${q}` : `${base}/fleet/${ref}${q}`),
+        wallet: `${base}/wallet${q}`,
         readOnly: true,
         hideAmounts: !view.canViewBilling,
     };

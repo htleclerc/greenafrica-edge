@@ -706,6 +706,7 @@
     "nav_vessel_identity": "Identité des navires",
     "theme_switch_to_light": "Passer en thème clair",
     "theme_switch_to_dark": "Passer en thème sombre",
+    "nav_users": "Utilisateurs",
     "nav_navires": "Navires"
   },
   "AdminStaff": {
@@ -4928,6 +4929,56 @@
     "invalid": "Code refusé. Vérifiez l’heure de votre téléphone, puis réessayez.",
     "lost": "Téléphone perdu ? Se déconnecter"
   },
+  "AdminUsers": {
+    "title": "Utilisateurs",
+    "subtitle": "Toutes les personnes qui peuvent se connecter : titulaires, membres, représentants — et le staff.",
+    "search": "Rechercher",
+    "searchPlaceholder": "Nom, e-mail, compte ou IMO",
+    "stateFilter": "État",
+    "kindTabs": "Type de personne",
+    "kind": {
+      "ALL": "Tous",
+      "OWNER": "Titulaire",
+      "MEMBER": "Membre",
+      "REPRESENTATIVE": "Représentant",
+      "STAFF": "Staff"
+    },
+    "col": {
+      "person": "Personne",
+      "kind": "Type",
+      "account": "Compte",
+      "rights": "Droits",
+      "lastSignIn": "Dernière connexion",
+      "state": "État"
+    },
+    "rights": {
+      "all": "Tous les droits",
+      "none": "Consultation seule"
+    },
+    "privilege": {
+      "canPay": "Payer",
+      "canDispute": "Contester",
+      "canManageVessels": "Navires",
+      "canInvite": "Inviter"
+    },
+    "state": {
+      "all": "Tous",
+      "active": "Actif",
+      "dormant": "Dormant (90 j)",
+      "inactive": "Inactif",
+      "GHOST": "Jamais activé",
+      "INVITED": "Invité",
+      "SUSPENDED": "Suspendu",
+      "REJECTED": "Refusé"
+    },
+    "never": "Jamais",
+    "empty": "Aucune personne ne correspond.",
+    "action": {
+      "viewAs": "Voir comme",
+      "sendAccess": "Envoyer un accès",
+      "sent": "Envoyé si admis"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "Voir comme ce navire"
@@ -4967,6 +5018,7 @@
   "AdminOwnerView": {
     "readOnly": "Lecture seule",
     "viewing": "Vous voyez ce compte comme {name} — lecture seule",
+    "viewingMember": "Vous voyez ce compte comme {member}, membre de {name} — lecture seule",
     "viewingVessel": "Vous voyez le navire {vessel} comme le gestionnaire de {name} — lecture seule",
     "tabOverview": "Aperçu",
     "tabInvoices": "Factures",

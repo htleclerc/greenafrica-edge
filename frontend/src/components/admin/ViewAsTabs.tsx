@@ -10,6 +10,8 @@ export interface ViewAsTab {
     exact?: boolean;
     disabled?: boolean;
     title?: string;
+    /** Requête à reconduire (`?as=mbr_…`) ; l'actif se juge sur le chemin seul. */
+    query?: string;
 }
 
 /** Volets de la vue « voir comme » ; l'actif se lit sur l'URL. */
@@ -32,7 +34,7 @@ export function ViewAsTabs({ tabs }: { tabs: ViewAsTab[] }) {
                     );
                 }
                 return (
-                    <Link key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined} className={cls}>
+                    <Link key={tab.href} href={`${tab.href}${tab.query ?? ''}`} aria-current={active ? 'page' : undefined} className={cls}>
                         {tab.label}
                     </Link>
                 );

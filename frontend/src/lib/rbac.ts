@@ -83,6 +83,9 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
 
     // Vessel-level collections view (mig 143) — same audience as armateurs
     'navires':      [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],
+    // Annuaire des personnes (titulaires, membres, représentants ; staff pour
+    // le SUPERADMIN). Le MANAGER y lit, comme partout ailleurs.
+    'users':        [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER],
 
     // Airlines cockpit (collections) — same audience as armateurs
     'airlines':     [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER],

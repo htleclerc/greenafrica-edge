@@ -735,6 +735,7 @@
     "nav_vessel_identity": "Utambulisho wa Meli",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Watumiaji",
     "nav_navires": "Meli"
   },
   "AdminStaff": {
@@ -4934,6 +4935,56 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Watumiaji",
+    "subtitle": "Kila mtu anayeweza kuingia: wamiliki, wanachama, wawakilishi — na wafanyakazi.",
+    "search": "Tafuta",
+    "searchPlaceholder": "Jina, barua pepe, akaunti au IMO",
+    "stateFilter": "Hali",
+    "kindTabs": "Aina ya mtu",
+    "kind": {
+      "ALL": "Wote",
+      "OWNER": "Mmiliki",
+      "MEMBER": "Mwanachama",
+      "REPRESENTATIVE": "Mwakilishi",
+      "STAFF": "Wafanyakazi"
+    },
+    "col": {
+      "person": "Mtu",
+      "kind": "Aina",
+      "account": "Akaunti",
+      "rights": "Haki",
+      "lastSignIn": "Kuingia mara ya mwisho",
+      "state": "Hali"
+    },
+    "rights": {
+      "all": "Haki zote",
+      "none": "Kusoma tu"
+    },
+    "privilege": {
+      "canPay": "Kulipa",
+      "canDispute": "Kupinga",
+      "canManageVessels": "Meli",
+      "canInvite": "Kualika"
+    },
+    "state": {
+      "all": "Wote",
+      "active": "Hai",
+      "dormant": "Imelala (siku 90)",
+      "inactive": "Haitumiki",
+      "GHOST": "Haijawahi kuwashwa",
+      "INVITED": "Amealikwa",
+      "SUSPENDED": "Imesimamishwa",
+      "REJECTED": "Imekataliwa"
+    },
+    "never": "Kamwe",
+    "empty": "Hakuna anayelingana.",
+    "action": {
+      "viewAs": "Ona kama",
+      "sendAccess": "Tuma ufikiaji",
+      "sent": "Imetumwa ikiwa inaruhusiwa"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "Ona kama meli hii"
@@ -4973,6 +5024,7 @@
   "AdminOwnerView": {
     "readOnly": "Kusoma tu",
     "viewing": "Unaona akaunti hii kama {name} — kusoma tu",
+    "viewingMember": "Unaona akaunti hii kama {member}, mwanachama wa {name} — kusoma tu",
     "viewingVessel": "Unaona meli {vessel} kama msimamizi wa {name} — kusoma tu",
     "tabOverview": "Muhtasari",
     "tabInvoices": "Ankara",

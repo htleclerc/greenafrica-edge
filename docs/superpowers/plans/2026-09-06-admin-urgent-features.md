@@ -233,6 +233,16 @@ le journal et la tendance partent vers `/admin/revenue` (ils y sont déjà pour 
   `verifyLoginCode` → `verifyVesselAccessCode` vérifie le code sur la boîte choisie ; un
   membre ou un représentant ouvre SA session, le dossier n'est jamais rattaché à son profil.
   Écran : liste radio d'indices masqués, six locales.
+- **2026-09-06 — §1.1 livré, sans vue SQL.** `/admin/users` (`services/platformUsersService.ts`) :
+  les comptes viennent de la session (RLS), membres et représentants sont joints avec le
+  client plateforme **bornés à ces comptes**, le staff n'apparaît qu'au SUPERADMIN ; dernière
+  connexion par `profile_last_sign_in()` (mig 151, SECURITY DEFINER réservée au staff).
+  Recherche nom / e-mail / compte / IMO, filtres type et état (dont « dormant » à 90 j),
+  actions « voir comme » (titulaire, ou membre via `?as=mbr_…` — livré avec, les pages
+  posent le bandeau elles-mêmes puisqu'un layout ne lit pas la requête), « envoyer un accès »
+  (chemin public, réponse invariable), dossier. Entrée de navigation `users`.
+- **§1.2 (navires)** : recherche déjà présente ; « voir comme ce navire » livré au §2.
+  Colonne « qui a accès » et filtres supplémentaires : non faits, l'annuaire y répond.
 
 ## 5. Ordre de livraison proposé
 

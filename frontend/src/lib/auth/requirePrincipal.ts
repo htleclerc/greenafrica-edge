@@ -53,6 +53,10 @@ export interface OwnerViewAs {
     canViewBilling: boolean;
     /** Portée réduite à un navire. */
     vessel?: { id: string; ref: string; name: string };
+    /** Membre regardé (`?as=mbr_…`) : ses droits, pas ceux du titulaire. */
+    member?: { ref: string; name: string | null; email: string | null };
+    /** Suffixe de requête à reconduire sur chaque lien de la vue (`?as=…`). */
+    query: string;
 }
 
 export type Principal =

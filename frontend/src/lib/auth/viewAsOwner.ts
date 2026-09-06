@@ -6,7 +6,7 @@ import { resolveShipownerByRef } from '@/services/shipownerRefService';
 import { isVesselRef } from '@/services/vesselRefService';
 import { writeAuditLog } from '@/services/auditService';
 import { OWNER_ACCOUNT_COLUMNS } from '@/lib/auth/resolveOwnerAccount';
-import { OWNER_ALL_PRIVILEGES } from '@/lib/auth/ownerPrivileges';
+import { OWNER_ALL_PRIVILEGES, privilegesFromMember, type OwnerPrivileges } from '@/lib/auth/ownerPrivileges';
 import { normaliseOperatorModes, type OwnerViewAs, type Principal } from '@/lib/auth/requirePrincipal';
 import type { ShipownerListRow } from '@/services/shipownerService';
 
@@ -42,6 +42,8 @@ export interface ViewAsInput {
     ownerRef?: string;
     /** Référence publique `ves_…` : la vue se restreint à ce navire. */
     vesselRef?: string;
+    /** Référence `mbr_…` (mig 150) : voir le compte avec les droits de ce membre. */
+    memberRef?: string;
     /** Nom de la page, pour la trace. */
     page: string;
     /** `false` pour un layout : la page, elle, trace. */
@@ -100,12 +102,41 @@ export async function requireViewAsOwner(input: ViewAsInput): Promise<OperatorPr
         ? `/admin/navires/${vessel.ref}/portail`
         : `/admin/armateurs/${owner.public_ref}/portail`;
 
+    // Membre regardé : ses drapeaux réels, pour voir EXACTEMENT son écran —
+    // les boutons qu'il n'a pas sont absents, comme chez lui. Lu avec le
+    // client plateforme mais borné au compte déjà résolu par la RLS, et
+    // seulement s'il est actif : un accès révoqué n'a plus d'écran.
+    let privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES;
+    let isMember = false;
+    let member: OwnerViewAs['member'];
+    if (input.memberRef) {
+        if (!/^mbr_[0-9a-f]{12}$/.test(input.memberRef)) notFound();
+        const { data: m } = await createPlatformClient()
+            .from('owner_members')
+            .select('public_ref, can_pay, can_dispute, can_manage_vessels, can_invite, active, profiles!owner_members_profile_id_fkey(email, full_name)')
+            .eq('public_ref', input.memberRef)
+            .eq('shipowner_id', owner.id)
+            .eq('active', true)
+            .maybeSingle();
+        const row = m as {
+            public_ref: string; can_pay: boolean; can_dispute: boolean; can_manage_vessels: boolean; can_invite: boolean;
+            profiles?: { email?: string | null; full_name?: string | null } | { email?: string | null; full_name?: string | null }[] | null;
+        } | null;
+        if (!row) notFound();
+        const p = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        privileges = privilegesFromMember(row);
+        isMember = true;
+        member = { ref: row.public_ref, name: p?.full_name ?? null, email: p?.email ?? null };
+    }
+
     const viewAs: OwnerViewAs = {
         basePath,
         ownerRef: owner.public_ref,
         ownerName: owner.name ?? '',
         canViewBilling: access.canViewBilling,
         vessel,
+        member,
+        query: member ? `?as=${member.ref}` : '',
     };
 
     if (input.audit !== false) {
@@ -117,7 +148,7 @@ export async function requireViewAsOwner(input: ViewAsInput): Promise<OperatorPr
             entity_type: 'Shipowner',
             entity_id: owner.id,
             jurisdiction_id: owner.jurisdiction_id,
-            details_json: { page: input.page, vessel_id: vessel?.id ?? null, role },
+            details_json: { page: input.page, vessel_id: vessel?.id ?? null, member_ref: member?.ref ?? null, role },
         });
     }
 
@@ -128,9 +159,9 @@ export async function requireViewAsOwner(input: ViewAsInput): Promise<OperatorPr
         shipowner: owner,
         jurisdictionId: owner.jurisdiction_id,
         applicableModes: normaliseOperatorModes(owner.applicable_modes),
-        // Le titulaire détient tout : la vue montre ses boutons, désactivés.
-        privileges: OWNER_ALL_PRIVILEGES,
-        isMember: false,
+        // Titulaire : tout, désactivé. Membre : ses droits, désactivés.
+        privileges,
+        isMember,
         supabase: createOwnerScopedClient({
             jurisdictionId: owner.jurisdiction_id,
             shipownerId: owner.id,

@@ -1261,6 +1261,7 @@
     "nav_vessel_identity": "Identidade dos navios",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Utilizadores",
     "nav_navires": "Navios"
   },
   "AdminStaff": {
@@ -4967,6 +4968,56 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Utilizadores",
+    "subtitle": "Todas as pessoas que podem iniciar sessão: titulares, membros, representantes — e o staff.",
+    "search": "Pesquisar",
+    "searchPlaceholder": "Nome, e-mail, conta ou IMO",
+    "stateFilter": "Estado",
+    "kindTabs": "Tipo de pessoa",
+    "kind": {
+      "ALL": "Todos",
+      "OWNER": "Titular",
+      "MEMBER": "Membro",
+      "REPRESENTATIVE": "Representante",
+      "STAFF": "Staff"
+    },
+    "col": {
+      "person": "Pessoa",
+      "kind": "Tipo",
+      "account": "Conta",
+      "rights": "Direitos",
+      "lastSignIn": "Último acesso",
+      "state": "Estado"
+    },
+    "rights": {
+      "all": "Todos os direitos",
+      "none": "Só leitura"
+    },
+    "privilege": {
+      "canPay": "Pagar",
+      "canDispute": "Contestar",
+      "canManageVessels": "Navios",
+      "canInvite": "Convidar"
+    },
+    "state": {
+      "all": "Todos",
+      "active": "Ativo",
+      "dormant": "Dormente (90 d)",
+      "inactive": "Inativo",
+      "GHOST": "Nunca ativado",
+      "INVITED": "Convidado",
+      "SUSPENDED": "Suspenso",
+      "REJECTED": "Recusado"
+    },
+    "never": "Nunca",
+    "empty": "Ninguém corresponde.",
+    "action": {
+      "viewAs": "Ver como",
+      "sendAccess": "Enviar acesso",
+      "sent": "Enviado se admitido"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "Ver como este navio"
@@ -5006,6 +5057,7 @@
   "AdminOwnerView": {
     "readOnly": "Somente leitura",
     "viewing": "Está a ver esta conta como {name} — só leitura",
+    "viewingMember": "Está a ver esta conta como {member}, membro de {name} — só leitura",
     "viewingVessel": "Está a ver o navio {vessel} como gestor de {name} — só leitura",
     "tabOverview": "Visão geral",
     "tabInvoices": "Faturas",

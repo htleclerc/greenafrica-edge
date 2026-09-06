@@ -850,6 +850,7 @@
     "nav_vessel_identity": "Aqoonsiga Markabyada",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Isticmaalayaasha",
     "nav_navires": "Maraakiibta"
   },
   "AdminStaff": {
@@ -4931,6 +4932,56 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Isticmaalayaasha",
+    "subtitle": "Dhammaan dadka geli kara: milkiilayaasha, xubnaha, wakiillada — iyo shaqaalaha.",
+    "search": "Raadi",
+    "searchPlaceholder": "Magac, iimayl, akoon ama IMO",
+    "stateFilter": "Xaalad",
+    "kindTabs": "Nooca qofka",
+    "kind": {
+      "ALL": "Dhammaan",
+      "OWNER": "Milkiile",
+      "MEMBER": "Xubin",
+      "REPRESENTATIVE": "Wakiil",
+      "STAFF": "Shaqaale"
+    },
+    "col": {
+      "person": "Qof",
+      "kind": "Nooc",
+      "account": "Akoon",
+      "rights": "Xuquuq",
+      "lastSignIn": "Gelitaankii u dambeeyay",
+      "state": "Xaalad"
+    },
+    "rights": {
+      "all": "Dhammaan xuquuqda",
+      "none": "Akhris keliya"
+    },
+    "privilege": {
+      "canPay": "Bixi",
+      "canDispute": "Muran",
+      "canManageVessels": "Maraakiib",
+      "canInvite": "Casuun"
+    },
+    "state": {
+      "all": "Dhammaan",
+      "active": "Firfircoon",
+      "dormant": "Hurda (90 m)",
+      "inactive": "Aan firfircoonayn",
+      "GHOST": "Weligeed lama hawlgelin",
+      "INVITED": "La casuumay",
+      "SUSPENDED": "La joojiyay",
+      "REJECTED": "La diiday"
+    },
+    "never": "Weligeed",
+    "empty": "Qofna kuma habboona.",
+    "action": {
+      "viewAs": "U arag sida",
+      "sendAccess": "Dir gelitaan",
+      "sent": "La diray haddii la oggol yahay"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "U arag sida markabkan"
@@ -4970,6 +5021,7 @@
   "AdminOwnerView": {
     "readOnly": "Akhris keliya",
     "viewing": "Waxaad u aragtaa akoonkan sida {name} — akhris keliya",
+    "viewingMember": "Waxaad u aragtaa akoonkan sida {member}, xubin ka tirsan {name} — akhris keliya",
     "viewingVessel": "Waxaad u aragtaa markabka {vessel} sida maareeyaha {name} — akhris keliya",
     "tabOverview": "Guud",
     "tabInvoices": "Biilasha",

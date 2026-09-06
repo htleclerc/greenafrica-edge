@@ -850,6 +850,7 @@
     "nav_vessel_identity": "Vessel Identity",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Users",
     "nav_navires": "Vessels"
   },
   "AdminStaff": {
@@ -4928,6 +4929,56 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Users",
+    "subtitle": "Everyone who can sign in: account holders, members, representatives — and staff.",
+    "search": "Search",
+    "searchPlaceholder": "Name, e-mail, account or IMO",
+    "stateFilter": "State",
+    "kindTabs": "Kind of person",
+    "kind": {
+      "ALL": "All",
+      "OWNER": "Holder",
+      "MEMBER": "Member",
+      "REPRESENTATIVE": "Representative",
+      "STAFF": "Staff"
+    },
+    "col": {
+      "person": "Person",
+      "kind": "Kind",
+      "account": "Account",
+      "rights": "Rights",
+      "lastSignIn": "Last sign-in",
+      "state": "State"
+    },
+    "rights": {
+      "all": "All rights",
+      "none": "Read only"
+    },
+    "privilege": {
+      "canPay": "Pay",
+      "canDispute": "Dispute",
+      "canManageVessels": "Vessels",
+      "canInvite": "Invite"
+    },
+    "state": {
+      "all": "All",
+      "active": "Active",
+      "dormant": "Dormant (90 d)",
+      "inactive": "Inactive",
+      "GHOST": "Never activated",
+      "INVITED": "Invited",
+      "SUSPENDED": "Suspended",
+      "REJECTED": "Rejected"
+    },
+    "never": "Never",
+    "empty": "Nobody matches.",
+    "action": {
+      "viewAs": "View as",
+      "sendAccess": "Send access",
+      "sent": "Sent if allowed"
+    }
+  },
   "AdminNavires": {
     "action": {
       "viewAs": "View as this vessel"
@@ -4967,6 +5018,7 @@
   "AdminOwnerView": {
     "readOnly": "Read-only",
     "viewing": "You are viewing this account as {name} — read only",
+    "viewingMember": "You are viewing this account as {member}, member of {name} — read only",
     "viewingVessel": "You are viewing vessel {vessel} as {name}'s manager — read only",
     "tabOverview": "Overview",
     "tabInvoices": "Invoices",
