@@ -176,6 +176,6 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
         accounts: p.bankAccounts.length,
     });
 
-    revalidatePath('/admin/jurisdictions');
+    revalidatePath('/admin/settings');
     return { ok: true };
 }

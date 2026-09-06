@@ -736,6 +736,7 @@
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "المستخدمون",
+    "nav_admin_settings": "الإعدادات",
     "nav_navires": "السفن"
   },
   "AdminStaff": {
@@ -2897,6 +2898,36 @@
     }
   },
   "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into ar",
+  "AdminSettings": {
+    "title": "الإعدادات",
+    "subtitle": "تبويب لكل غاية: ما نفوتره، ما نطبعه، كيف نتابع، كيف نكتشف، ما يراه مالك السفينة، البنية التحتية.",
+    "tab": {
+      "fiscalite": {
+        "label": "الضريبة",
+        "hint": "الولايات، التعريفات المؤرّخة، التوزيع، التسوية، النسخ"
+      },
+      "documents": {
+        "label": "المستندات",
+        "hint": "ملف المُصدر: المهلة، الغرامة، الموقّع، IBAN، اللغات"
+      },
+      "relance": {
+        "label": "التذكير والتحصيل",
+        "hint": "مهل التصعيد إلى المالك، عدد التذكيرات"
+      },
+      "detection": {
+        "label": "الكشف والمطابقة",
+        "hint": "ممر الاقتراب، SLA، التفاوت، AIS، Equasis"
+      },
+      "portail": {
+        "label": "البوابة والمدفوعات",
+        "hint": "أعلام بوابة المالك، مسارات الدفع، مزودو الخدمة"
+      },
+      "systeme": {
+        "label": "النظام",
+        "hint": "الطابور، الأسرار، SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",

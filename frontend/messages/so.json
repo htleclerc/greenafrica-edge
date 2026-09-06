@@ -851,6 +851,7 @@
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Isticmaalayaasha",
+    "nav_admin_settings": "Dejinta",
     "nav_navires": "Maraakiibta"
   },
   "AdminStaff": {
@@ -2970,6 +2971,36 @@
       "placeholder": "SO-AOC-001",
       "save": "Kaydi",
       "saving": "Waa la kaydiyaa…"
+    }
+  },
+  "AdminSettings": {
+    "title": "Dejinta",
+    "subtitle": "Tab kasta ujeedo: waxa la soo qaado, waxa la daabaco, sida loo xasuusiyo, sida loo ogaado, waxa milkiiluhu arko, nidaamka.",
+    "tab": {
+      "fiscalite": {
+        "label": "Canshuur",
+        "hint": "Xukunno, qiimeyaal, qaybin, xisaab-xir, nuqullo"
+      },
+      "documents": {
+        "label": "Dukumentiyo",
+        "hint": "Astaanta soo-saaraha: muddo, ganaax, saxeexe, IBAN, luqado"
+      },
+      "relance": {
+        "label": "Xasuusin & ururin",
+        "hint": "Muddooyinka kor u qaadista milkiilaha, xasuusinno"
+      },
+      "detection": {
+        "label": "Ogaansho & isbarbar-dhig",
+        "hint": "Marinka soo-dhowaanshaha, SLA, dulqaad, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Bogga & lacag-bixinno",
+        "hint": "Calaamadaha bogga milkiilaha, waddooyinka lacagta, bixiyayaal"
+      },
+      "systeme": {
+        "label": "Nidaam",
+        "hint": "Saf, sirro, SMS — SUPERADMIN"
+      }
     }
   },
   "AdminTaxPipeline": {

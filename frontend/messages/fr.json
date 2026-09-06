@@ -707,6 +707,7 @@
     "theme_switch_to_light": "Passer en thème clair",
     "theme_switch_to_dark": "Passer en thème sombre",
     "nav_users": "Utilisateurs",
+    "nav_admin_settings": "Réglages",
     "nav_navires": "Navires"
   },
   "AdminStaff": {
@@ -3007,6 +3008,36 @@
       "submit": "Rejeter",
       "submitting": "Rejet en cours…",
       "cancel": "Annuler"
+    }
+  },
+  "AdminSettings": {
+    "title": "Réglages",
+    "subtitle": "Un volet par intention : ce qu'on facture, ce qu'on imprime, comment on relance, comment on détecte, ce que voit l'armateur, la plomberie.",
+    "tab": {
+      "fiscalite": {
+        "label": "Fiscalité",
+        "hint": "Juridictions, barèmes versionnés, répartition, règlement, copies"
+      },
+      "documents": {
+        "label": "Documents",
+        "hint": "Profil émetteur : délai, pénalité, signataire, IBAN, langues"
+      },
+      "relance": {
+        "label": "Relance & recouvrement",
+        "hint": "Délais d'escalade vers l'armateur, rappels"
+      },
+      "detection": {
+        "label": "Détection & rapprochement",
+        "hint": "Couloir d'approche, SLA, tolérances, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Portail & paiements",
+        "hint": "Flags du portail armateur, rails de paiement, fournisseurs"
+      },
+      "systeme": {
+        "label": "Système",
+        "hint": "File d'attente, secrets, SMS — SUPERADMIN"
+      }
     }
   },
   "AdminTaxPipeline": {

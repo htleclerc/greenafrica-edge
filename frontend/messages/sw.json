@@ -736,6 +736,7 @@
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Watumiaji",
+    "nav_admin_settings": "Mipangilio",
     "nav_navires": "Meli"
   },
   "AdminStaff": {
@@ -2897,6 +2898,36 @@
     }
   },
   "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into sw",
+  "AdminSettings": {
+    "title": "Mipangilio",
+    "subtitle": "Kichupo kimoja kwa kila lengo: tunachotoza, tunachochapisha, jinsi tunavyokumbusha, jinsi tunavyogundua, mmiliki anachoona, mfumo.",
+    "tab": {
+      "fiscalite": {
+        "label": "Kodi",
+        "hint": "Mamlaka, viwango, mgawanyo, malipo, nakala"
+      },
+      "documents": {
+        "label": "Hati",
+        "hint": "Wasifu wa mtoaji: muda, adhabu, mtia saini, IBAN, lugha"
+      },
+      "relance": {
+        "label": "Vikumbusho & ukusanyaji",
+        "hint": "Muda wa kupandisha kwa mmiliki, vikumbusho"
+      },
+      "detection": {
+        "label": "Ugunduzi & ulinganisho",
+        "hint": "Njia ya kukaribia, SLA, uvumilivu, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Tovuti & malipo",
+        "hint": "Bendera za tovuti ya mmiliki, njia za malipo, watoa huduma"
+      },
+      "systeme": {
+        "label": "Mfumo",
+        "hint": "Foleni, siri, SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",

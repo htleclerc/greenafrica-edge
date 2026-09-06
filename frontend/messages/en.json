@@ -851,6 +851,7 @@
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Users",
+    "nav_admin_settings": "Settings",
     "nav_navires": "Vessels"
   },
   "AdminStaff": {
@@ -2970,6 +2971,36 @@
       "placeholder": "SO-AOC-001",
       "save": "Save",
       "saving": "Saving…"
+    }
+  },
+  "AdminSettings": {
+    "title": "Settings",
+    "subtitle": "One tab per intent: what we bill, what we print, how we chase, how we detect, what the shipowner sees, the plumbing.",
+    "tab": {
+      "fiscalite": {
+        "label": "Tax",
+        "hint": "Jurisdictions, versioned tariffs, revenue split, settlement, CC lists"
+      },
+      "documents": {
+        "label": "Documents",
+        "hint": "Issuer profile: terms, penalty, signatory, IBAN, languages"
+      },
+      "relance": {
+        "label": "Reminders & collections",
+        "hint": "Owner escalation delays, reminder counts"
+      },
+      "detection": {
+        "label": "Detection & reconciliation",
+        "hint": "Approach corridor, SLA, tolerances, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Portal & payments",
+        "hint": "Owner portal flags, payment rails, providers"
+      },
+      "systeme": {
+        "label": "System",
+        "hint": "Queue, secrets, SMS — SUPERADMIN"
+      }
     }
   },
   "AdminTaxPipeline": {

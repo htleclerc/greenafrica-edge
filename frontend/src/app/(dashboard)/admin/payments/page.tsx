@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { PaymentProvidersPanel } from '@/components/dashboard/admin/PaymentProvidersPanel';
 import { PaymentsAdminPanel } from '@/components/dashboard/admin/PaymentsAdmin/PaymentsAdminPanel';
 import { hasSettlementRights } from '@/lib/auth/requireSettlementRights';
 
@@ -36,7 +35,6 @@ export default async function PaymentsAdminRoute() {
             {/* Plan 7C-3: v7 payments table — primary admin surface */}
             <PaymentsAdminPanel />
 
-            <PaymentProvidersPanel />
         </div>
     );
 }

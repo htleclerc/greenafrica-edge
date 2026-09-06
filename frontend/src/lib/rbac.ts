@@ -64,6 +64,8 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
 
     // Money rail
     'tax-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
+    // Hub des réglages (/admin/settings) : remplace tax-settings et jurisdictions dans le menu.
+    'admin-settings': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'origin-port-proposals': [UserRole.PORT_OFFICER, UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'revenue':      [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
     'payments':     [UserRole.FINANCE_ADMIN, UserRole.SUPERADMIN],
@@ -108,6 +110,7 @@ const NAV_PERMISSIONS: Record<string, UserRole[]> = {
  */
 export const MONEY_RAIL_KEYS = new Set<string>([
     'tax-settings',
+    'admin-settings',
     'revenue',
     'payments',
     'refunds',
@@ -127,6 +130,7 @@ export const MONEY_RAIL_KEYS = new Set<string>([
  */
 const READ_ONLY_ROLES: Record<string, UserRole[]> = {
     'tax-settings': [UserRole.PORT_OFFICER],   // PORT_OFFICER reads, cannot modify rates/exemptions
+    'admin-settings': [UserRole.PORT_OFFICER], // même posture sur le hub
     'revenue':      [UserRole.PORT_OFFICER],   // same posture for revenue dashboard
     'registrations': [UserRole.PORT_OFFICER],  // PORT_OFFICER reads registrations, actions require higher role
 };

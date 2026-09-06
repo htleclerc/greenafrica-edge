@@ -1262,6 +1262,7 @@
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Utilizadores",
+    "nav_admin_settings": "Definições",
     "nav_navires": "Navios"
   },
   "AdminStaff": {
@@ -3423,6 +3424,36 @@
     }
   },
   "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into pt",
+  "AdminSettings": {
+    "title": "Definições",
+    "subtitle": "Um separador por intenção: o que faturamos, o que imprimimos, como cobramos, como detetamos, o que o armador vê, a canalização.",
+    "tab": {
+      "fiscalite": {
+        "label": "Fiscalidade",
+        "hint": "Jurisdições, tarifas versionadas, repartição, liquidação, cópias"
+      },
+      "documents": {
+        "label": "Documentos",
+        "hint": "Perfil emissor: prazo, penalidade, signatário, IBAN, línguas"
+      },
+      "relance": {
+        "label": "Cobrança",
+        "hint": "Prazos de escalada ao armador, lembretes"
+      },
+      "detection": {
+        "label": "Deteção & reconciliação",
+        "hint": "Corredor de aproximação, SLA, tolerâncias, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Portal & pagamentos",
+        "hint": "Flags do portal do armador, meios de pagamento, fornecedores"
+      },
+      "systeme": {
+        "label": "Sistema",
+        "hint": "Fila, segredos, SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",

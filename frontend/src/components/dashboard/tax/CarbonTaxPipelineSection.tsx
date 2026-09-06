@@ -49,7 +49,8 @@ const SECRET_KEYS = new Set([
 ]);
 
 /** Ordered list of keys rendered in the section. */
-const KEY_ORDER: string[] = [
+/** Ordre historique de toutes les clés ; les volets de /admin/settings en prennent un sous-ensemble. */
+export const PIPELINE_KEY_ORDER: string[] = [
     // carbon_tax.rate_usd_per_tco2 removed — billing now reads tariffs table (mig 080)
     'arrival.corridor_radius_nm',
     'arrival.claim_sla_hours',
@@ -85,6 +86,10 @@ type PipelineValue = number | boolean | string | string[];
 interface Props {
     entries: AppConfigEntry[];
     canEdit: boolean;
+    /** Sous-ensemble de clés à afficher (un volet). Défaut : toutes. */
+    keys?: string[];
+    title?: string;
+    subtitle?: string;
 }
 
 function detectType(
@@ -127,9 +132,10 @@ function parseInput(raw: string, key: string): PipelineValue | null {
     return raw;
 }
 
-export function CarbonTaxPipelineSection({ entries, canEdit }: Props) {
+export function CarbonTaxPipelineSection({ entries, canEdit, keys, title, subtitle }: Props) {
     const t = useTranslations('AdminTaxPipeline');
     const router = useRouter();
+    const shown = keys ?? PIPELINE_KEY_ORDER;
 
     // Build a keyed map for lookup; render in the fixed KEY_ORDER so even
     // freshly seeded keys missing from the DB still render a row with empty
@@ -145,10 +151,10 @@ export function CarbonTaxPipelineSection({ entries, canEdit }: Props) {
             <div className="px-5 py-4 border-b border-[var(--os-border)] flex items-start justify-between gap-4">
                 <div>
                     <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">
-                        {t('sectionTitle')}
+                        {title ?? t('sectionTitle')}
                     </h3>
                     <p className="text-[10px] text-[var(--os-text-muted)] mt-0.5 max-w-[60ch]">
-                        {t('sectionSubtitle')}
+                        {subtitle ?? t('sectionSubtitle')}
                     </p>
                 </div>
                 {!canEdit && (
@@ -160,7 +166,7 @@ export function CarbonTaxPipelineSection({ entries, canEdit }: Props) {
             </div>
 
             <div className="divide-y divide-[var(--os-border)]">
-                {KEY_ORDER.map((key) => {
+                {shown.map((key) => {
                     const entry = byKey.get(key);
                     return (
                         <PipelineRow
