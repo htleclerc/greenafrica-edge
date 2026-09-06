@@ -35,6 +35,34 @@ describe('stripeService', () => {
     });
 
     describe('createCheckoutSession', () => {
+        // La page de paiement affichait « Carbon Tax Invoice <uuid> » : un
+        // armateur ne pouvait rapprocher cette ligne d'aucune pro-forma, ni sur
+        // l'ecran ni sur son releve bancaire.
+        it('libelle la ligne avec la reference de pro-forma, jamais avec l uuid', async () => {
+            checkoutSessionsCreate.mockResolvedValueOnce({
+                id: 'cs_1', url: 'https://checkout.stripe.com/c/pay/cs_1', payment_intent: 'pi_1',
+            });
+            const { createCheckoutSession } = await import('./stripeService');
+            await createCheckoutSession({
+                amountUsdMinor: 2987160,
+                paymentId: 'pay-1',
+                invoiceId: 'd0ea310d-123e-4c1c-a983-aed94788e336',
+                invoiceRef: 'PRO-2026-36-a1b2c3',
+                shipownerId: 'so-1',
+                successUrl: 'https://app.example.com/ok',
+                cancelUrl: 'https://app.example.com/ko',
+            });
+            const arg = checkoutSessionsCreate.mock.calls[0][0] as {
+                line_items: Array<{ price_data: { product_data: { name: string } } }>;
+                metadata: Record<string, string>;
+            };
+            const name = arg.line_items[0].price_data.product_data.name;
+            expect(name).toContain('PRO-2026-36-a1b2c3');
+            expect(name).not.toContain('d0ea310d');
+            // L'uuid reste en metadonnees : c'est lui qui porte la reconciliation.
+            expect(arg.metadata.invoice_id).toBe('d0ea310d-123e-4c1c-a983-aed94788e336');
+        });
+
         it('returns checkoutUrl, stripePaymentIntentId, stripeSessionId on happy path', async () => {
             checkoutSessionsCreate.mockResolvedValueOnce({
                 id: 'cs_test_123',
@@ -46,6 +74,7 @@ describe('stripeService', () => {
                 amountUsdMinor: 12345,
                 paymentId: 'pay-1',
                 invoiceId: 'inv-1',
+                invoiceRef: 'PRO-2026-36-a1b2c3',
                 shipownerId: 'so-1',
                 successUrl: 'https://app.example.com/owner/payment/success',
                 cancelUrl: 'https://app.example.com/owner/payment/cancel',
@@ -78,6 +107,7 @@ describe('stripeService', () => {
                 amountUsdMinor: 12345,
                 paymentId: 'pay-1',
                 invoiceId: 'inv-1',
+                invoiceRef: 'PRO-2026-36-a1b2c3',
                 shipownerId: 'so-1',
                 successUrl: 'https://app.example.com/owner/payment/success',
                 cancelUrl: 'https://app.example.com/owner/payment/cancel',
@@ -94,6 +124,7 @@ describe('stripeService', () => {
                     amountUsdMinor: 100,
                     paymentId: 'pay-1',
                     invoiceId: 'inv-1',
+                invoiceRef: 'PRO-2026-36-a1b2c3',
                     shipownerId: 'so-1',
                     successUrl: 'https://x/y',
                     cancelUrl: 'https://x/z',
