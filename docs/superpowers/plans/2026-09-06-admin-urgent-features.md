@@ -243,6 +243,19 @@ le journal et la tendance partent vers `/admin/revenue` (ils y sont déjà pour 
   (chemin public, réponse invariable), dossier. Entrée de navigation `users`.
 - **§1.2 (navires)** : recherche déjà présente ; « voir comme ce navire » livré au §2.
   Colonne « qui a accès » et filtres supplémentaires : non faits, l'annuaire y répond.
+- **2026-09-06 — §4.4 (1) livré.** `/admin/settings?tab=` (`lib/admin/settingsTabs.ts` : chaque
+  clé `app_config` a un volet et un seul, testé contre `PIPELINE_KEY_ORDER`). Fiscalité =
+  `AdminJurisdictions` ; Documents = `IssuerProfilePanel` + langues des pro-formas ; Relance,
+  Détection, Portail (+ `PaymentProvidersPanel` pour la finance), Système (SUPERADMIN) =
+  éditeur borné au volet. `/admin/tax-settings` et `/admin/jurisdictions` redirigent ;
+  `/admin/payments` garde la résolution des paiements seule. `CarbonTaxSettingsPage`
+  (KPIs legacy) supprimée. Entrée de menu unique `admin-settings`, lecture seule PORT_OFFICER.
+- **2026-09-06 — §4.4 (2) livré.** `lib/admin/settingsKeyMeta.ts` (unité, bornes larges,
+  entier attendu, danger) ; l'éditeur affiche l'aide par clé (`AdminTaxPipeline.hints`), l'unité
+  à côté du champ, refuse hors bornes avant l'appel serveur avec la borne dans le message,
+  confirme les clés dangereuses (cadre rouge), n'allume Enregistrer que sur une valeur
+  modifiée, garde de sortie `beforeunload` tant qu'une saisie n'est pas enregistrée, et date
+  de dernière modification. Traductions : fr + en réelles, baseline anglaise ailleurs.
 
 ## 5. Ordre de livraison proposé
 
