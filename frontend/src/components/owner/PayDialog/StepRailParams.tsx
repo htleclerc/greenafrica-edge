@@ -22,7 +22,7 @@ export function StepRailParams() {
     // compte compilé dans le bundle, qui pourrait ne plus être le bon.
     //
     // Plusieurs comptes coexistent (zone euro, hors-UE, local depuis la
-    // mig 152) et le payeur est seul à savoir où il banque : le compte affiché
+    // mig 150) et le payeur est seul à savoir où il banque : le compte affiché
     // est CELUI QU'IL A CHOISI. `ctx.wire` reste le repli quand la liste n'a
     // pas été servie — un serveur pas encore redéployé, par exemple.
     const accounts = ctx.wireAccounts;
