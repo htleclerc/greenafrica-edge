@@ -10,6 +10,7 @@ import { InvoicesTable, type InvoiceRow } from '@/components/owner/invoices/Invo
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 import { RAILS_REQUIRING_PROOF } from '@/lib/payments/proofRequirement';
 import { StatementDownload } from '@/components/owner/StatementDownload';
+import { portalPaths } from '@/lib/auth/portalPaths';
 
 interface RawTxn {
     id: string;
@@ -196,6 +197,7 @@ export async function OperatorInvoicesPage({
                     walletBalanceUsdMinor={walletBalanceUsdMinor}
                     privileges={principal.privileges}
                     isMember={principal.isMember}
+                    readOnly={portalPaths(principal).readOnly}
                 />
             )}
 

@@ -20,6 +20,7 @@ import { KycCBanner } from '@/components/owner/KycCBanner';
 import { PaymentOnboardingChecklist } from '@/components/onboarding/PaymentOnboardingChecklist';
 import { derivePaymentChecklist } from '@/lib/onboarding/paymentChecklist';
 import { getOwnerOverview, splitActionBand } from '@/services/ownerWorkQueue';
+import { portalPaths } from '@/lib/auth/portalPaths';
 import { usdCompact, usdGrouped } from '@/lib/osMoney';
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
 
 export async function OperatorDashboardPage({ principal }: Props) {
     const t = await getTranslations('OwnerPortal.dashboard');
+    const paths = portalPaths(principal);
 
     const [overview, { count: vesselCount }, { count: paymentCount }] = await Promise.all([
         getOwnerOverview(principal.supabase, principal.shipowner.id),
@@ -93,13 +95,18 @@ export async function OperatorDashboardPage({ principal }: Props) {
                     overview.openCount > 0 && (
                         <>
                             <Link
-                                href="/dashboard/invoices"
+                                href={paths.invoices}
                                 className="flex h-10 items-center rounded-[10px] border border-[var(--os-border-strong)] px-3.5 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)]"
                             >
                                 {t('seeAll')}
                             </Link>
+                            {paths.readOnly ? (
+                                <span aria-disabled className="flex h-10 cursor-not-allowed items-center rounded-[10px] bg-[var(--os-brand-green)] px-[18px] text-[13.5px] font-semibold text-[var(--os-on-primary)] opacity-50">
+                                    {t('payAll', { amount: usdGrouped(overview.outstandingUsd) })}
+                                </span>
+                            ) : (
                             <Link
-                                href="/dashboard/invoices"
+                                href={paths.invoices}
                                 className={
                                     band
                                         // La bande porte déjà l'action pleine de l'écran.
@@ -109,6 +116,7 @@ export async function OperatorDashboardPage({ principal }: Props) {
                             >
                                 {t('payAll', { amount: usdGrouped(overview.outstandingUsd) })}
                             </Link>
+                            )}
                         </>
                     )
                 }
@@ -126,8 +134,9 @@ export async function OperatorDashboardPage({ principal }: Props) {
                     {band && (
                         <OverdueActionBand
                             item={band}
-                            payHref={`/dashboard/invoices?invoice=${band.transactionId}`}
-                            disputeHref={`/dashboard/invoices?invoice=${band.transactionId}&dispute=1`}
+                            payHref={`${paths.invoices}?invoice=${band.transactionId}`}
+                            disputeHref={`${paths.invoices}?invoice=${band.transactionId}&dispute=1`}
+                            readOnly={paths.readOnly}
                         />
                     )}
                     {queueRows.slice(0, 3).map((item, i) => (
@@ -137,12 +146,13 @@ export async function OperatorDashboardPage({ principal }: Props) {
                             // Si la bande est là, elle détient l'action pleine :
                             // aucune ligne ne la reprend.
                             primary={!band && i === 0}
-                            payHref={`/dashboard/invoices?invoice=${item.transactionId}`}
+                            payHref={`${paths.invoices}?invoice=${item.transactionId}`}
+                            readOnly={paths.readOnly}
                         />
                     ))}
                     {queueRows.length > 3 && (
                         <Link
-                            href="/dashboard/invoices"
+                            href={paths.invoices}
                             className="self-start px-1 py-1 text-[12.5px] font-semibold text-[var(--os-brand-cyan)] transition-opacity duration-150 hover:opacity-80"
                         >
                             {t('more', { count: queueRows.length - 3 })} →
@@ -158,7 +168,7 @@ export async function OperatorDashboardPage({ principal }: Props) {
                 <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--os-border)] px-[18px] py-3.5">
                     <h2 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('fleetTitle')}</h2>
                     <Link
-                        href="/dashboard/vessels"
+                        href={paths.fleet}
                         className="text-[12.5px] font-semibold text-[var(--os-brand-cyan)] transition-opacity duration-150 hover:opacity-80"
                     >
                         {t('openFleet')} →

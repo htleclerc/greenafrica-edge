@@ -15,9 +15,9 @@ import { composeOwnerStatement } from '@/services/statementService';
 
 const CRON_SECRET = 'test-cron';
 
-function req(auth: string | null, dryRun = false): Request {
+function req(auth: string | null, dryRun = false, query = dryRun ? '?dryRun=1' : ''): Request {
     const h = new Headers(); if (auth) h.set('authorization', auth);
-    return new Request(`http://localhost/api/cron/monthly-statements${dryRun ? '?dryRun=1' : ''}`, { headers: h });
+    return new Request(`http://localhost/api/cron/monthly-statements${query}`, { headers: h });
 }
 
 // Faux client : liste des armateurs à solde > 0 + shipowners (jurisdiction_id) +
@@ -129,6 +129,27 @@ describe('GET /api/cron/monthly-statements', () => {
         expect(notifyOwnerMock).not.toHaveBeenCalled();
         const body = await res.json();
         expect(body.skipped).toBe(1);
+    });
+
+    it('refresh=1 : régénère les relevés existants sans notifier, et ignore les autres', async () => {
+        // Après un changement de gabarit (en-tête, délai à 30 jours), les PDF
+        // déjà stockés doivent être re-rendus sans créer de relevé ni d'e-mail
+        // chez un armateur qui n'en avait pas pour la période.
+        const { client, captured } = makeClient(
+            [
+                { id: 'own-1', name: 'Owner One', official_email: 'o1@x.com', total_outstanding_usd: 500 },
+                { id: 'own-2', name: 'Owner Two', official_email: 'o2@x.com', total_outstanding_usd: 900 },
+            ],
+            { existingStatements: ['own-1'] },
+        );
+        __setClientForTest(client);
+        const res = await GET(req(`Bearer ${CRON_SECRET}`, false, '?refresh=1'));
+        const body = await res.json();
+        expect(body.refreshOnly).toBe(true);
+        expect(captured.uploads).toEqual(['statements/own-1/2026-06.pdf']);
+        expect(captured.upserts).toHaveLength(1);
+        expect(body.skipped).toBe(1);
+        expect(notifyOwnerMock).not.toHaveBeenCalled();
     });
 
     it('ne renvoie pas de notification si un relevé existe déjà pour la période (dédup retry cron)', async () => {

@@ -4924,6 +4924,9 @@
     "lost": "Téléphone perdu ? Se déconnecter"
   },
   "AdminNavires": {
+    "action": {
+      "viewAs": "Voir comme ce navire"
+    },
     "title": "Navires",
     "subtitle": "Encours de recouvrement par navire. Une créance sans navire rattaché n'y figure pas.",
     "noOwner": "Sans armateur",
@@ -4958,6 +4961,16 @@
   },
   "AdminOwnerView": {
     "readOnly": "Lecture seule",
+    "viewing": "Vous voyez ce compte comme {name} — lecture seule",
+    "viewingVessel": "Vous voyez le navire {vessel} comme le gestionnaire de {name} — lecture seule",
+    "tabOverview": "Aperçu",
+    "tabInvoices": "Factures",
+    "tabFleet": "Flotte",
+    "tabWallet": "Portefeuille",
+    "tabVessel": "Navire",
+    "financeOnly": "Réservé à la finance : les montants facturés ne sont pas visibles avec votre rôle.",
+    "actionHint": "Action réservée à l’armateur — vous regardez son compte en lecture seule.",
+    "backToVessels": "← Revenir aux navires",
     "backToFile": "← Revenir à la fiche",
     "intro": "Ce que le débiteur a sous les yeux dans son portail. Aucune action n'est possible depuis cet écran : il ne s'agit pas d'une connexion à sa place.",
     "blockersTitle": "Ce qui l'empêche de payer",

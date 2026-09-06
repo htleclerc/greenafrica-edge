@@ -16,6 +16,7 @@ import { outstandingUsd, type OutstandingColumns } from '@/lib/outstanding';
 import { confirmedPaidUsdByTransaction } from '@/services/confirmedPayments';
 import { StatementDownload } from '@/components/owner/StatementDownload';
 import { isVesselRef } from '@/services/vesselRefService';
+import { portalPaths } from '@/lib/auth/portalPaths';
 
 /**
  * Facture visant ce navire. Le rattachement se fait par `vessel_id`, jamais par
@@ -54,16 +55,21 @@ interface Props {
     principal: Extract<Principal, { kind: 'operator' }>;
     /** Référence publique `ves_…` (mig 147). */
     vesselRef: string;
-    /** Back-link destination. Defaults to /dashboard/vessels. */
+    /** Back-link destination. Defaults to the fleet of the current portal. */
     backHref?: string;
 }
 
 export async function OperatorVesselDetailPage({
     principal,
     vesselRef,
-    backHref = '/dashboard/vessels',
+    backHref,
 }: Props) {
     if (!isVesselRef(vesselRef)) notFound();
+    const paths = portalPaths(principal);
+    const back = backHref ?? paths.fleet;
+    // Arbitrage PO 2026-09-06 : un rôle sans accès à la facturation voit le
+    // navire, pas ses montants.
+    const hideAmounts = paths.hideAmounts;
 
     const { data: vessel } = await principal.supabase
         .from('vessels')
@@ -116,7 +122,7 @@ export async function OperatorVesselDetailPage({
     return (
         <div className="px-6 py-6 max-w-6xl mx-auto">
             <Link
-                href={backHref}
+                href={back}
                 className="inline-flex items-center gap-1 text-xs text-[var(--os-text-muted)] hover:text-emerald-400 mb-4"
             >
                 <ArrowLeft className="w-3 h-3" />
@@ -162,7 +168,7 @@ export async function OperatorVesselDetailPage({
                     />
                     <Field
                         label="Tax liability"
-                        value={`$${Number(vessel.tax_liability_usd ?? 0).toLocaleString()}`}
+                        value={hideAmounts ? '—' : `$${Number(vessel.tax_liability_usd ?? 0).toLocaleString()}`}
                     />
                     <div>
                         <span className="block text-[10px] uppercase tracking-widest text-[var(--os-text-muted)] mb-1">
@@ -173,6 +179,16 @@ export async function OperatorVesselDetailPage({
                 </div>
             </section>
 
+            {hideAmounts ? (
+                <section className="os-card p-5 mb-6">
+                    <h2 className="text-sm font-semibold text-[var(--os-text-primary)] mb-1">
+                        Invoices for this vessel
+                    </h2>
+                    <p className="text-sm text-[var(--os-text-muted)]">
+                        {invoices.length} invoice(s) — amounts are reserved to finance roles.
+                    </p>
+                </section>
+            ) : (
             <section className="os-card p-5 mb-6">
                 <div className="flex flex-wrap items-baseline justify-between gap-3 mb-3">
                     <h2 className="text-sm font-semibold text-[var(--os-text-primary)]">
@@ -254,10 +270,13 @@ export async function OperatorVesselDetailPage({
                     </p>
                 )}
             </section>
+            )}
 
+            {!hideAmounts && (
             <div className="mb-6">
                 <StatementDownload vesselRef={String(vessel.public_ref)} />
             </div>
+            )}
 
             <section className="os-card p-5">
                 <h2 className="text-sm font-semibold text-[var(--os-text-primary)] mb-3">

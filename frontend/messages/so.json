@@ -4927,6 +4927,9 @@
     "lost": "Lost your phone? Sign out"
   },
   "AdminNavires": {
+    "action": {
+      "viewAs": "U arag sida markabkan"
+    },
     "title": "Maraakiibta",
     "subtitle": "Deynta hadhay markab kasta. Dacwad aan markab ku xidhnayn halkan kama muuqato.",
     "noOwner": "Milkiile la'aan",
@@ -4961,6 +4964,16 @@
   },
   "AdminOwnerView": {
     "readOnly": "Akhris keliya",
+    "viewing": "Waxaad u aragtaa akoonkan sida {name} — akhris keliya",
+    "viewingVessel": "Waxaad u aragtaa markabka {vessel} sida maareeyaha {name} — akhris keliya",
+    "tabOverview": "Guud",
+    "tabInvoices": "Biilasha",
+    "tabFleet": "Maraakiibta",
+    "tabWallet": "Boorsada",
+    "tabVessel": "Markabka",
+    "financeOnly": "Maaliyad keliya: lacagaha la soo qaaday kuma muuqdaan doorkaaga.",
+    "actionHint": "Waxaa u gaar ah milkiilaha markabka — akoonka waxaad u eegaysaa akhris keliya.",
+    "backToVessels": "← Ku noqo maraakiibta",
     "backToFile": "← Ku noqo faylka",
     "intro": "Waxa uu deyn-lahu ku arko bogiisa. Wax tallaabo ah lagama qaadi karo shaashaddan.",
     "blockersTitle": "Waxa ka hor istaaga bixinta",

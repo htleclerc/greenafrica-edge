@@ -4963,6 +4963,9 @@
     "lost": "Lost your phone? Sign out"
   },
   "AdminNavires": {
+    "action": {
+      "viewAs": "Ver como este navio"
+    },
     "title": "Navios",
     "subtitle": "Dívida em aberto por navio. Uma cobrança sem navio associado não aparece aqui.",
     "noOwner": "Sem armador",
@@ -4997,6 +5000,16 @@
   },
   "AdminOwnerView": {
     "readOnly": "Somente leitura",
+    "viewing": "Está a ver esta conta como {name} — só leitura",
+    "viewingVessel": "Está a ver o navio {vessel} como gestor de {name} — só leitura",
+    "tabOverview": "Visão geral",
+    "tabInvoices": "Faturas",
+    "tabFleet": "Frota",
+    "tabWallet": "Carteira",
+    "tabVessel": "Navio",
+    "financeOnly": "Reservado à finança: os montantes faturados não são visíveis com o seu perfil.",
+    "actionHint": "Reservado ao armador — está a ver a conta em modo só leitura.",
+    "backToVessels": "← Voltar aos navios",
     "backToFile": "← Voltar à ficha",
     "intro": "O que o devedor vê no seu portal. Nenhuma ação é possível neste ecrã — isto não é iniciar sessão em nome dele.",
     "blockersTitle": "O que o impede de pagar",

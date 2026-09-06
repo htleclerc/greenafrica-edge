@@ -229,3 +229,57 @@ describe('InvoicesTable — sous-permissions du membre invité', () => {
         expect(screen.getByRole('link', { name: /Download PDF/i })).toBeInTheDocument();
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vue staff « voir comme » : les actions restent celles que l'armateur voit,
+// désactivées. La visibilité vient des droits, l'inaction de readOnly.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('InvoicesTable — lecture seule (voir comme l’armateur)', () => {
+    function renderReadOnly(privileges: OwnerPrivileges = OWNER_ALL_PRIVILEGES, isMember = false) {
+        return render(
+            <NextIntlClientProvider locale="en" messages={en}>
+                <InvoicesTable
+                    rows={[row()]}
+                    walletBalanceUsdMinor={0}
+                    privileges={privileges}
+                    isMember={isMember}
+                    readOnly
+                />
+            </NextIntlClientProvider>,
+        );
+    }
+
+    it('garde les boutons du titulaire, tous désactivés', () => {
+        renderReadOnly();
+        const buttons = screen.getAllByRole('button').filter((b) => /pay|dispute/i.test(b.textContent ?? ''));
+        expect(buttons.length).toBeGreaterThan(0);
+        for (const b of buttons) expect(b).toBeDisabled();
+    });
+
+    it("cache ce qu'un membre sans droit ne verrait pas, comme sur son écran", () => {
+        renderReadOnly(NO_PRIVILEGES, true);
+        expect(screen.queryByRole('button', { name: /pay/i })).toBeNull();
+        expect(screen.queryByRole('button', { name: /dispute/i })).toBeNull();
+    });
+
+    it("n'émet pas de PDF depuis la vue staff", async () => {
+        render(
+            <NextIntlClientProvider locale="en" messages={en}>
+                <InvoicesTable
+                    rows={[row({ download_url: null })]}
+                    walletBalanceUsdMinor={0}
+                    privileges={OWNER_ALL_PRIVILEGES}
+                    isMember={false}
+                    readOnly
+                />
+            </NextIntlClientProvider>,
+        );
+        const issue = screen.getByRole('button', { name: /issue/i });
+        expect(issue).toBeDisabled();
+        // Le mock est partagé par le fichier : on compare avant/après le clic.
+        const before = issueOwnerProforma.mock.calls.length;
+        fireEvent.click(issue);
+        await waitFor(() => expect(issueOwnerProforma.mock.calls.length).toBe(before));
+    });
+});

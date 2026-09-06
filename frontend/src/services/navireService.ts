@@ -16,6 +16,8 @@ export interface NavireRecouvrementRow {
     shipowner_name: string | null;
     /** Reference opaque de l'armateur, pour construire le lien sans UUID. */
     shipowner_public_ref: string | null;
+    /** Référence opaque du navire (mig 147/150), pour « voir comme ce navire ». */
+    vessel_public_ref: string | null;
     shipowner_sanctioned: boolean;
     proforma_count: number;
     total_invoiced_usd: number;
@@ -76,6 +78,7 @@ export async function listNaviresRecouvrement(db: Client): Promise<NavireRecouvr
         shipowner_id: (r.shipowner_id as string | null) ?? null,
         shipowner_name: (r.shipowner_name as string | null) ?? null,
         shipowner_public_ref: (r.shipowner_public_ref as string | null) ?? null,
+        vessel_public_ref: (r.vessel_public_ref as string | null) ?? null,
         shipowner_sanctioned: r.shipowner_sanctioned === true,
         proforma_count: Number(r.proforma_count ?? 0),
         total_invoiced_usd: Number(r.total_invoiced_usd ?? 0),

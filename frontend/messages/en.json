@@ -4924,6 +4924,9 @@
     "lost": "Lost your phone? Sign out"
   },
   "AdminNavires": {
+    "action": {
+      "viewAs": "View as this vessel"
+    },
     "title": "Vessels",
     "subtitle": "Outstanding debt per vessel. A claim with no vessel attached does not appear here.",
     "noOwner": "No shipowner",
@@ -4958,6 +4961,16 @@
   },
   "AdminOwnerView": {
     "readOnly": "Read-only",
+    "viewing": "You are viewing this account as {name} — read only",
+    "viewingVessel": "You are viewing vessel {vessel} as {name}'s manager — read only",
+    "tabOverview": "Overview",
+    "tabInvoices": "Invoices",
+    "tabFleet": "Fleet",
+    "tabWallet": "Wallet",
+    "tabVessel": "Vessel",
+    "financeOnly": "Finance only: billed amounts are not visible with your role.",
+    "actionHint": "Reserved to the shipowner — you are viewing the account read only.",
+    "backToVessels": "← Back to vessels",
     "backToFile": "← Back to file",
     "intro": "What the debtor sees in their portal. No action is possible from this screen — this is not signing in as them.",
     "blockersTitle": "What stops them paying",

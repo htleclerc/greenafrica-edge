@@ -4930,6 +4930,9 @@
     "lost": "Lost your phone? Sign out"
   },
   "AdminNavires": {
+    "action": {
+      "viewAs": "Ona kama meli hii"
+    },
     "title": "Meli",
     "subtitle": "Deni lililobaki kwa kila meli. Dai lisilo na meli halionekani hapa.",
     "noOwner": "Hakuna mmiliki",
@@ -4964,6 +4967,16 @@
   },
   "AdminOwnerView": {
     "readOnly": "Kusoma tu",
+    "viewing": "Unaona akaunti hii kama {name} — kusoma tu",
+    "viewingVessel": "Unaona meli {vessel} kama msimamizi wa {name} — kusoma tu",
+    "tabOverview": "Muhtasari",
+    "tabInvoices": "Ankara",
+    "tabFleet": "Meli",
+    "tabWallet": "Pochi",
+    "tabVessel": "Meli",
+    "financeOnly": "Fedha pekee: viwango vilivyotozwa havionekani kwa jukumu lako.",
+    "actionHint": "Imehifadhiwa kwa mmiliki wa meli — unaona akaunti kwa kusoma tu.",
+    "backToVessels": "← Rudi kwenye meli",
     "backToFile": "← Rudi kwenye faili",
     "intro": "Kile mdaiwa anachokiona kwenye tovuti yake. Hakuna hatua inayowezekana hapa.",
     "blockersTitle": "Kinachomzuia kulipa",

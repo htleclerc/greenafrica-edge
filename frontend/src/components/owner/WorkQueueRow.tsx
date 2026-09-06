@@ -26,12 +26,16 @@ export function WorkQueueRow({
     item,
     primary,
     payHref,
+    readOnly = false,
 }: {
     item: WorkItem;
     primary: boolean;
     payHref: string;
+    /** Vue staff : le bouton reste, désactivé. */
+    readOnly?: boolean;
 }) {
     const t = useTranslations('OwnerPortal.queue');
+    const tView = useTranslations('AdminOwnerView');
     const accent = URGENCY_ACCENT[item.urgency];
 
     return (
@@ -60,6 +64,21 @@ export function WorkQueueRow({
                 <span className="font-mono text-[26px] font-semibold tabular-nums text-[var(--os-text-primary)] sm:text-[19px]">
                     {usdGrouped(item.amountUsd)}
                 </span>
+                {readOnly ? (
+                    <span
+                        aria-disabled
+                        title={tView('actionHint')}
+                        className={`
+                            flex h-12 shrink-0 cursor-not-allowed items-center justify-center rounded-[10px] px-[18px]
+                            text-[13.5px] font-semibold opacity-50 sm:h-10
+                            ${primary
+                                ? 'bg-[var(--os-brand-green)] text-[var(--os-on-primary)]'
+                                : 'border border-[var(--os-brand-green)]/35 text-[var(--os-brand-cyan)]'}
+                        `}
+                    >
+                        {t('pay')}
+                    </span>
+                ) : (
                 <Link
                     href={payHref}
                     className={`
@@ -73,6 +92,7 @@ export function WorkQueueRow({
                 >
                     {t('pay')}
                 </Link>
+                )}
             </div>
         </article>
     );

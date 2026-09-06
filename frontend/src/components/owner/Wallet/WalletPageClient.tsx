@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { BalanceCard } from '@/components/owner/Wallet/BalanceCard';
 import { PredictionCard } from '@/components/owner/Wallet/PredictionCard';
 import { LedgerTable } from '@/components/owner/Wallet/LedgerTable';
@@ -22,6 +23,8 @@ interface Props {
      * automatique sont deux gestes d'argent : ils tombent ensemble.
      */
     canPay: boolean;
+    /** Vue staff « voir comme » : gestes visibles, désactivés. */
+    readOnly?: boolean;
 }
 
 export function WalletPageClient({
@@ -32,8 +35,11 @@ export function WalletPageClient({
     prediction,
     topupEnabled = true,
     canPay,
+    readOnly = false,
 }: Props) {
     const router = useRouter();
+    const tView = useTranslations('AdminOwnerView');
+    const readOnlyHint = readOnly ? tView('actionHint') : undefined;
     const [autoApply, setAutoApply] = React.useState(initialAutoApply);
     const [togglePending, setTogglePending] = React.useState(false);
     const [topupOpen, setTopupOpen] = React.useState(false);
@@ -77,14 +83,15 @@ export function WalletPageClient({
                     onOpenTopup={() => setTopupOpen(true)}
                     togglePending={togglePending}
                     topupEnabled={canTopup}
-                    canToggleAutoApply={canPay}
+                    canToggleAutoApply={canPay && !readOnly}
+                    readOnlyHint={readOnlyHint}
                     lastTopupAt={lastTopup?.created_at ?? null}
                     lastTopupUsd={lastTopup ? lastTopup.amount_signed_usd_minor / 100 : null}
                 />
                 <PredictionCard
                     prediction={prediction}
                     currentBalanceUsd={balanceUsd}
-                    onOpenTopup={canTopup ? () => setTopupOpen(true) : undefined}
+                    onOpenTopup={canTopup && !readOnly ? () => setTopupOpen(true) : undefined}
                 />
             </div>
             <LedgerTable

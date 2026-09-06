@@ -39,6 +39,22 @@ const SHIPOWNER_COLUMNS =
 
 export type OperatorMode = 'MARITIME' | 'AIR';
 
+/**
+ * Vue « voir comme l'armateur » (staff, lecture seule). Absente pour un vrai
+ * armateur. Les composants s'en servent pour désactiver les actions et lier
+ * vers la vue admin plutôt que vers /dashboard.
+ */
+export interface OwnerViewAs {
+    /** Préfixe des routes de la vue, ex. /admin/armateurs/arm_…/portail. */
+    basePath: string;
+    ownerRef: string;
+    ownerName: string;
+    /** Montants facturés visibles (FINANCE_ADMIN, SUPERADMIN, MANAGER). */
+    canViewBilling: boolean;
+    /** Portée réduite à un navire. */
+    vessel?: { id: string; ref: string; name: string };
+}
+
 export type Principal =
     | {
           kind: 'operator';
@@ -59,6 +75,8 @@ export type Principal =
           /** Vrai quand la personne est un membre invité, pas le titulaire. */
           isMember: boolean;
           supabase: SupabaseClient;
+          /** Posé seulement par requireViewAsOwner : vue staff en lecture seule. */
+          viewAs?: OwnerViewAs;
       }
     | {
           kind: 'staff';
