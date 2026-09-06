@@ -131,16 +131,39 @@ export async function GET(req: NextRequest) {
     const profile = await getIssuerProfile(supabase, jurisdictionId);
     const account = primaryAccount(profile);
 
+    // TOUS les comptes, pas seulement le principal. Le profil en porte
+    // plusieurs depuis la mig 131 — zone euro, hors-UE, et local depuis la
+    // mig 150 — mais l'écran n'en montrait qu'un. Un armateur qui banque au
+    // Somaliland payait donc un virement international pour une taxe perçue
+    // sur place. Le payeur est seul à savoir où il banque : c'est à lui de
+    // choisir.
+    //
+    // `wire` reste rendu tel quel : il porte le compte par défaut, et le
+    // supprimer casserait un client qui n'aurait pas encore été redéployé.
+    const toWire = (a: typeof account) => ({
+        beneficiary: a.holder,
+        bank: a.bank,
+        bankAddress: a.bankAddress ?? '',
+        swiftCode: a.swift,
+        iban: a.iban ?? a.accountNumber ?? '',
+        depositReference: a.depositReference,
+    });
+
     return NextResponse.json({
         rails: visible,
         showUnavailable: flags.showUnavailableRails,
-        wire: {
-            beneficiary: account.holder,
-            bank: account.bank,
-            bankAddress: account.bankAddress ?? '',
-            swiftCode: account.swift,
-            iban: account.iban ?? account.accountNumber ?? '',
-            depositReference: account.depositReference,
-        },
+        wire: toWire(account),
+        wireAccounts: profile.bankAccounts.map((a, index) => ({
+            // L'index est la clé de sélection : les comptes n'ont pas d'id en
+            // base, et le SWIFT ne discrimine pas deux comptes d'une même
+            // banque. L'ordre du tableau fait foi, ici comme dans le PDF.
+            index,
+            label: a.label,
+            currency: a.currency,
+            isPrimary: a.isPrimary,
+            intermediaryBank: a.intermediaryBank,
+            intermediarySwift: a.intermediarySwift,
+            ...toWire(a),
+        })),
     });
 }

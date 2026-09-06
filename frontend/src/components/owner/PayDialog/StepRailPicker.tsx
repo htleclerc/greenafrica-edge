@@ -20,6 +20,13 @@ interface AvailabilityResponse {
         beneficiary: string; bank: string; bankAddress: string;
         swiftCode: string; iban: string; depositReference: string | null;
     };
+    /** Tous les comptes de collecte. Absent d'un serveur pas encore redéployé. */
+    wireAccounts?: Array<{
+        index: number; label: string; currency: string; isPrimary: boolean;
+        beneficiary: string; bank: string; bankAddress: string;
+        swiftCode: string; iban: string; depositReference: string | null;
+        intermediaryBank: string | null; intermediarySwift: string | null;
+    }>;
 }
 
 /**
@@ -83,7 +90,7 @@ export function StepRailPicker() {
 
     // Setter de useState : stable, donc citable en dependance sans relancer
     // la requete a chaque rendu (contrairement a `ctx` entier).
-    const { setWire } = ctx;
+    const { setWire, setWireAccounts, setSelectedWireIndex } = ctx;
 
     React.useEffect(() => {
         let cancelled = false;
@@ -100,6 +107,13 @@ export function StepRailPicker() {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data: AvailabilityResponse = await res.json();
                 if (!cancelled && data.wire) setWire(data.wire);
+                if (!cancelled && data.wireAccounts?.length) {
+                    setWireAccounts(data.wireAccounts);
+                    // Le compte par défaut est présélectionné : le payeur n'a
+                    // rien à faire s'il est concerné par celui-là.
+                    const primary = data.wireAccounts.findIndex((a) => a.isPrimary);
+                    setSelectedWireIndex(primary >= 0 ? primary : 0);
+                }
                 if (!cancelled) {
                     // Topup mode: hide WALLET — can't top-up wallet from itself.
                     // Paiement mixte : le portefeuille est deja engage en
@@ -117,7 +131,7 @@ export function StepRailPicker() {
         }
         load();
         return () => { cancelled = true; };
-    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode, remainderUsdMinor, splitOn, setWire]);
+    }, [ctx.currency, ctx.walletBalanceUsdMinor, ctx.amountUsd, ctx.mode, remainderUsdMinor, splitOn, setWire, setWireAccounts, setSelectedWireIndex]);
 
     function pickRail(r: RailEligibility) {
         ctx.setRail(r.rail);

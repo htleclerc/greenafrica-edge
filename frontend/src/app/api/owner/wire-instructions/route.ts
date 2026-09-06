@@ -59,7 +59,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         amountUsd = raw;
     }
 
-    const beneficiary = await getWireBeneficiary(admin, ctx.jurisdictionId);
+    // Le compte choisi par le payeur sur l'ecran de virement. Une valeur
+    // absente ou illisible retombe sur le compte par defaut plutot que de
+    // refuser le document.
+    const rawAccount = Number(url.searchParams.get('account'));
+    const accountIndex = Number.isInteger(rawAccount) && rawAccount >= 0 ? rawAccount : undefined;
+    const beneficiary = await getWireBeneficiary(admin, ctx.jurisdictionId, accountIndex);
     const pdf = await generateWireInstructionsPdf({
         beneficiary,
         reference: wireReference(invoiceRef, ctx.shipowner.id),

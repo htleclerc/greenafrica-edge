@@ -3207,7 +3207,10 @@
         "topupHint": "شحن الرصيد ليس له مرجع فاتورة: اذكر أيضاً اسم شركتك في بيان الحوالة.",
         "bankReferenceOptional": "اختياري — اتركه فارغاً إن لم يصدره بنكك بعد.",
         "download": "تنزيل أمر التحويل (PDF)",
-        "depositReference": "مرجع الإيداع"
+        "depositReference": "مرجع الإيداع",
+        "chooseAccount": "اختر الحساب المراد تحويل المبلغ إليه",
+        "intermediaryBank": "البنك الوسيط",
+        "intermediarySwift": "سويفت/بيك الوسيط"
       }
     },
     "proofUpload": {
