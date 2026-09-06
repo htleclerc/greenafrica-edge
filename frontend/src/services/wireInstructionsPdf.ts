@@ -14,8 +14,23 @@ import { BRAND_HEADER_BODY_Y, drawBrandHeader } from '@/services/pdfBrandHeader'
 export async function getWireBeneficiary(
     client: SupabaseClient,
     jurisdictionId: string | null,
+    /**
+     * Rang du compte choisi par le payeur, dans l'ordre du profil. Absent ou
+     * hors bornes, on rend le compte par défaut : un ordre de virement doit
+     * sortir même sur une sélection périmée, jamais échouer.
+     */
+    accountIndex?: number,
 ): Promise<WireBeneficiary> {
-    return toWireBeneficiary(await getIssuerProfile(client, jurisdictionId));
+    const profile = await getIssuerProfile(client, jurisdictionId);
+    const chosen = accountIndex !== undefined ? profile.bankAccounts[accountIndex] : undefined;
+    if (!chosen) return toWireBeneficiary(profile);
+    return {
+        beneficiary: chosen.holder,
+        bank: chosen.bank,
+        bankAddress: chosen.bankAddress ?? '',
+        swiftCode: chosen.swift,
+        iban: chosen.iban ?? chosen.accountNumber ?? '',
+    };
 }
 
 export interface WireInstructionsData {

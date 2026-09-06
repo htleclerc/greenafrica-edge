@@ -20,14 +20,26 @@ export function StepRailParams() {
     // Résolu par l'étape précédente depuis la base (mig 131). Absent tant que
     // la route n'a pas répondu — le bloc RIB attend plutôt que d'afficher un
     // compte compilé dans le bundle, qui pourrait ne plus être le bon.
-    const wire = ctx.wire;
+    //
+    // Plusieurs comptes coexistent (zone euro, hors-UE, local depuis la
+    // mig 150) et le payeur est seul à savoir où il banque : le compte affiché
+    // est CELUI QU'IL A CHOISI. `ctx.wire` reste le repli quand la liste n'a
+    // pas été servie — un serveur pas encore redéployé, par exemple.
+    const accounts = ctx.wireAccounts;
+    const selected = accounts[ctx.selectedWireIndex];
+    const wire = selected ?? ctx.wire;
 
     // Ordre de virement a remettre a sa banque. Une facture est identifiee par
     // son id : le montant est alors relu en base cote serveur. Une recharge n'a
     // pas de ligne en base, le montant saisi voyage donc en clair.
-    const wireDownloadHref = ctx.transactionId
+    //
+    // Le compte choisi voyage avec : sans lui le PDF porterait le compte par
+    // defaut, et l'armateur repartirait avec un ordre de virement qui contredit
+    // l'ecran qu'il vient de lire.
+    const wireDownloadHref = (ctx.transactionId
         ? `/api/owner/wire-instructions?transactionId=${encodeURIComponent(ctx.transactionId)}`
-        : `/api/owner/wire-instructions?amountUsd=${encodeURIComponent(ctx.amountUsd.toFixed(2))}`;
+        : `/api/owner/wire-instructions?amountUsd=${encodeURIComponent(ctx.amountUsd.toFixed(2))}`)
+        + (selected?.index !== undefined ? `&account=${selected.index}` : '');
 
     function set(k: string, v: string) {
         setLocal((s) => ({ ...s, [k]: v }));
@@ -105,6 +117,28 @@ export function StepRailParams() {
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
                             {t('wire.accountTitle')}
                         </p>
+                        {accounts.length > 1 && (
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="wire-account"
+                                    className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-1"
+                                >
+                                    {t('wire.chooseAccount')}
+                                </label>
+                                <select
+                                    id="wire-account"
+                                    value={ctx.selectedWireIndex}
+                                    onChange={(e) => ctx.setSelectedWireIndex(Number(e.target.value))}
+                                    className="w-full rounded-lg border border-[var(--os-border)] bg-[var(--os-surface)] px-2.5 py-2 text-xs text-[var(--os-text-primary)]"
+                                >
+                                    {accounts.map((a, i) => (
+                                        <option key={a.index ?? i} value={i}>
+                                            {a.label || a.bank}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {!wire ? (
                             <p className="text-xs text-[var(--os-text-muted)]">{t('loadingRails')}</p>
                         ) : (
@@ -116,6 +150,15 @@ export function StepRailParams() {
                             <WireLine label={t('wire.reference')} value={wireReferenceLabel} mono copyable highlight />
                             {wire.depositReference && (
                                 <WireLine label={t('wire.depositReference')} value={wire.depositReference} mono copyable highlight />
+                            )}
+                            {/* Sans la banque correspondante, un virement vers
+                                le compte local est rejete par la banque
+                                emettrice, sans message utile pour le payeur. */}
+                            {wire.intermediaryBank && (
+                                <WireLine label={t('wire.intermediaryBank')} value={wire.intermediaryBank} />
+                            )}
+                            {wire.intermediarySwift && (
+                                <WireLine label={t('wire.intermediarySwift')} value={wire.intermediarySwift} mono copyable />
                             )}
                             <WireLine
                                 label={t('wire.amount')}

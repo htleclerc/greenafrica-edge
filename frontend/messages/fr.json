@@ -3319,7 +3319,10 @@
         "topupHint": "Une recharge n’a pas de référence de facture : indiquez aussi le nom de votre société dans le motif du virement.",
         "bankReferenceOptional": "Facultatif — laissez vide si votre banque ne l’a pas encore émise.",
         "download": "Télécharger l’ordre de virement (PDF)",
-        "depositReference": "Référence de dépôt"
+        "depositReference": "Référence de dépôt",
+        "chooseAccount": "Choisissez le compte à créditer",
+        "intermediaryBank": "Banque intermédiaire",
+        "intermediarySwift": "SWIFT/BIC intermédiaire"
       }
     },
     "proofUpload": {

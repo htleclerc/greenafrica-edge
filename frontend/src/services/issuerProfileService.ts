@@ -23,7 +23,15 @@ export interface BankAccount {
     bankAddress: string | null;
     /** Référence de dépôt propre au compte, à porter EN PLUS de la facture. */
     depositReference: string | null;
-    /** Compte imprimé sur la page 1 du pro-forma. */
+    /**
+     * Banque correspondante, quand le compte en exige une. Le compte local
+     * (Premier Bank, Hargeisa) n'est joignable depuis l'étranger que par
+     * Nairobi : omettre l'intermédiaire fait rejeter le virement par la banque
+     * émettrice, sans message utile pour le payeur.
+     */
+    intermediaryBank: string | null;
+    intermediarySwift: string | null;
+    /** Compte imprimé sur la page 1 du pro-forma, et proposé par défaut. */
     isPrimary: boolean;
 }
 
@@ -88,6 +96,8 @@ export const DEFAULT_ISSUER_PROFILE: IssuerProfile = {
         bank: WIRE_BENEFICIARY.bank,
         bankAddress: WIRE_BENEFICIARY.bankAddress,
         depositReference: null,
+        intermediaryBank: null,
+        intermediarySwift: null,
         isPrimary: true,
     }],
 };
@@ -139,6 +149,8 @@ function mapAccounts(raw: unknown): BankAccount[] | null {
             bank: String(o.bank ?? ''),
             bankAddress: (o.bank_address as string | null) ?? null,
             depositReference: (o.deposit_reference as string | null) ?? null,
+            intermediaryBank: (o.intermediary_bank as string | null) ?? null,
+            intermediarySwift: (o.intermediary_swift as string | null) ?? null,
             isPrimary: o.is_primary === true,
         };
     });

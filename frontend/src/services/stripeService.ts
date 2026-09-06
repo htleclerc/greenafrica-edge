@@ -52,6 +52,12 @@ export interface CreateCheckoutSessionInput {
     paymentId: string;
     /** Internal transactions/invoice id (metadata.invoice_id). */
     invoiceId: string;
+    /**
+     * Référence lisible de la pro-forma, telle qu'elle figure sur le document.
+     * C'est ELLE que voit le payeur, sur la page de paiement comme sur son
+     * relevé — l'UUID interne ne lui permet aucun rapprochement.
+     */
+    invoiceRef: string;
     /** Shipowner id (metadata.shipowner_id). */
     shipownerId: string;
     /** URL Stripe redirects to on successful payment. */
@@ -102,7 +108,7 @@ export async function createCheckoutSession(
             {
                 price_data: {
                     currency: 'usd',
-                    product_data: { name: `Carbon Tax Invoice ${input.invoiceId}` },
+                    product_data: { name: `Carbon Tax Invoice ${input.invoiceRef}` },
                     unit_amount: input.amountUsdMinor,
                 },
                 quantity: 1,

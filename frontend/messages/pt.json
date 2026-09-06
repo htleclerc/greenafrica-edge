@@ -3744,7 +3744,10 @@
         "topupHint": "Uma recarga não tem referência de fatura: indique também o nome da sua empresa na descrição da transferência.",
         "bankReferenceOptional": "Opcional — deixe vazio se o seu banco ainda não a emitiu.",
         "download": "Descarregar a ordem de transferência (PDF)",
-        "depositReference": "Referência de depósito"
+        "depositReference": "Referência de depósito",
+        "chooseAccount": "Escolha a conta a creditar",
+        "intermediaryBank": "Banco intermediário",
+        "intermediarySwift": "SWIFT/BIC intermediário"
       }
     },
     "proofUpload": {

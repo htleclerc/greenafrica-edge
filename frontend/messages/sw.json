@@ -3207,7 +3207,10 @@
         "topupHint": "Kuongeza salio hakuna kumbukumbu ya ankara: andika pia jina la kampuni yako kwenye maelezo ya malipo.",
         "bankReferenceOptional": "Si lazima — acha wazi kama benki yako bado haijaitoa.",
         "download": "Pakua agizo la malipo (PDF)",
-        "depositReference": "Kumbukumbu ya amana"
+        "depositReference": "Kumbukumbu ya amana",
+        "chooseAccount": "Chagua akaunti ya kulipia",
+        "intermediaryBank": "Benki ya kati",
+        "intermediarySwift": "SWIFT/BIC ya benki ya kati"
       }
     },
     "proofUpload": {

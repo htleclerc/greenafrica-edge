@@ -92,6 +92,34 @@ async function insertPaymentRow(
 }
 
 /**
+ * Référence lisible de la facture, pour ce que voit le payeur.
+ *
+ * L'UUID de la transaction n'a de sens que pour nous. Sur la page de paiement
+ * Stripe, il s'affichait tel quel — « Carbon Tax Invoice
+ * d0ea310d-123e-4c1c-a983-aed94788e336 » — et un armateur ne pouvait pas
+ * rapprocher cette ligne de sa pro-forma, ni sur l'écran de paiement ni sur son
+ * relevé bancaire. PayPal résolvait déjà la référence de son côté ; la
+ * résolution est ici pour que les deux rails disent la même chose.
+ *
+ * Best-effort : une recharge de portefeuille n'a pas de facture, d'où le repli
+ * sur « TOPUP ». Le repli sur l'UUID ne vaut que si la ligne est introuvable —
+ * mieux vaut un identifiant obscur que rien du tout pour la réconciliation.
+ */
+async function resolveInvoiceRef(
+    admin: SupabaseClient,
+    transactionId: string | null | undefined,
+): Promise<string> {
+    if (!transactionId) return 'TOPUP';
+    const { data: tx } = await admin
+        .from('transactions')
+        .select('invoice_ref')
+        .eq('id', transactionId)
+        .maybeSingle();
+    const ref = (tx as { invoice_ref?: string | null } | null)?.invoice_ref;
+    return ref || transactionId;
+}
+
+/**
  * Rail STRIPE : crée une Checkout Session, puis la ligne `payments` en
  * PROCESSING. Le webhook la passe à CONFIRMED.
  */
@@ -104,11 +132,13 @@ async function initiateStripe(
 ) {
     const baseUrl = appBaseUrl();
     const landing = landingPath(rowCommon.transaction_id);
+    const invoiceRef = await resolveInvoiceRef(admin, rowCommon.transaction_id);
     const session = await createCheckoutSession({
         // Option A: payment row id is not yet known. The webhook looks up by
         // external_reference = stripe_payment_intent_id, not by metadata.payment_id.
         paymentId: '',
         invoiceId: rowCommon.transaction_id ?? '',
+        invoiceRef,
         shipownerId,
         amountUsdMinor: rowCommon.amount_usd_minor,
         successUrl: `${baseUrl}${landing}?stripe=success`,
@@ -157,18 +187,8 @@ async function initiatePaypal(
     const baseUrl = appBaseUrl();
 
     // La référence de facture voyage jusqu'à PayPal (referenceId + description)
-    // pour que l'armateur la retrouve sur son relevé PayPal. Best-effort : un
-    // top-up n'a pas de facture.
-    let invoiceRef = rowCommon.transaction_id ?? 'TOPUP';
-    if (rowCommon.transaction_id) {
-        const { data: tx } = await admin
-            .from('transactions')
-            .select('invoice_ref')
-            .eq('id', rowCommon.transaction_id)
-            .maybeSingle();
-        const ref = (tx as { invoice_ref?: string | null } | null)?.invoice_ref;
-        if (ref) invoiceRef = ref;
-    }
+    // pour que l'armateur la retrouve sur son relevé PayPal.
+    const invoiceRef = await resolveInvoiceRef(admin, rowCommon.transaction_id);
 
     // L'ordre est créé AVANT l'INSERT : si PayPal refuse, on throw sans avoir
     // rien écrit. L'inverse laisserait des lignes PROCESSING sans ordre en

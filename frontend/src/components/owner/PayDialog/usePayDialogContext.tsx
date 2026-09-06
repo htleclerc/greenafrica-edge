@@ -17,6 +17,14 @@ export interface WireAccount {
     iban: string;
     /** Référence de dépôt propre au compte, à porter EN PLUS de la facture. */
     depositReference: string | null;
+    /** Rang dans le profil émetteur — clé de sélection, y compris pour le PDF. */
+    index?: number;
+    /** Ce qui dit au payeur si ce compte le concerne : « zone euro », « local »… */
+    label?: string;
+    currency?: string;
+    /** Banque correspondante, quand le compte en exige une. */
+    intermediaryBank?: string | null;
+    intermediarySwift?: string | null;
 }
 
 export interface PayDialogState {
@@ -47,7 +55,12 @@ export interface PayDialogContextValue extends PayDialogState {
      * l'étape de choix du rail. Nul tant qu'elle n'a pas répondu.
      */
     wire: WireAccount | null;
+    /** Tous les comptes de collecte proposés — le payeur choisit le sien. */
+    wireAccounts: WireAccount[];
+    selectedWireIndex: number;
     setWire: (w: WireAccount | null) => void;
+    setWireAccounts: (a: WireAccount[]) => void;
+    setSelectedWireIndex: (i: number) => void;
     setStep: (step: Step) => void;
     setRail: (rail: Rail | null) => void;
     setRailDetails: (d: Record<string, unknown>) => void;
@@ -80,6 +93,8 @@ export function PayDialogProvider(
     const [amountUsd, setAmountUsd] = React.useState<number>(props.amountUsd);
     const [walletApplyUsdMinor, setWalletApplyUsdMinor] = React.useState(0);
     const [wire, setWire] = React.useState<WireAccount | null>(null);
+    const [wireAccounts, setWireAccounts] = React.useState<WireAccount[]>([]);
+    const [selectedWireIndex, setSelectedWireIndex] = React.useState(0);
 
     // Keep amountUsd in sync if the parent updates the prop (e.g. invoice mode re-renders).
     React.useEffect(() => {
@@ -107,7 +122,11 @@ export function PayDialogProvider(
         walletApplyUsdMinor,
         setWalletApplyUsdMinor,
         wire,
+        wireAccounts,
+        selectedWireIndex,
         setWire,
+        setWireAccounts,
+        setSelectedWireIndex,
         setStep, setRail, setRailDetails, setChosenProvider, setSubmitting, setError, setAmountUsd, reset,
     };
 

@@ -3319,7 +3319,10 @@
         "topupHint": "Buuxinta lacagta ma laha tixraac faktuur: ku dar magaca shirkaddaada sababta wareejinta.",
         "bankReferenceOptional": "Ikhtiyaari — ka tag madhan haddii bangigaagu weli soo saarin.",
         "download": "Soo deji amarka wareejinta (PDF)",
-        "depositReference": "Tixraaca dhigaalka"
+        "depositReference": "Tixraaca dhigaalka",
+        "chooseAccount": "Dooro akoonka lacagta loo diro",
+        "intermediaryBank": "Bangiga dhexdhexaadka ah",
+        "intermediarySwift": "SWIFT/BIC-ga bangiga dhexdhexaadka"
       }
     },
     "proofUpload": {
