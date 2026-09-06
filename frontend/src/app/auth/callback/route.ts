@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
     const { searchParams, origin } = request.nextUrl;
 
     const code = searchParams.get('code');
+    // `token_hash` n'est pas un doublon de `code` : les liens que NOUS
+    // envoyons portent cette forme, parce que `action_link` de GoTrue dépose
+    // le jeton dans un fragment que le serveur ne voit jamais. Le callback
+    // armateur l'accepte depuis toujours ; celui-ci ne l'acceptait pas, et une
+    // session staff ouverte par lien retombait sur /login sans un mot.
+    const tokenHash = searchParams.get('token_hash');
     const type = searchParams.get('type');     // recovery | signup | magiclink
     const rawNext = searchParams.get('next') ?? '/dashboard';
 
@@ -18,7 +24,7 @@ export async function GET(request: NextRequest) {
     const ALLOWED_PREFIXES = ['/dashboard', '/post-login', '/admin', '/settings'];
     const next = ALLOWED_PREFIXES.some((p) => rawNext.startsWith(p)) ? rawNext : '/dashboard';
 
-    if (!code) {
+    if (!code && !tokenHash) {
         return NextResponse.redirect(`${origin}/login`);
     }
 
@@ -44,7 +50,12 @@ export async function GET(request: NextRequest) {
         }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = code
+        ? await supabase.auth.exchangeCodeForSession(code)
+        : await supabase.auth.verifyOtp({
+            token_hash: tokenHash!,
+            type: (type ?? 'magiclink') as 'magiclink' | 'invite' | 'recovery' | 'email',
+        });
 
     if (error) {
         return NextResponse.redirect(

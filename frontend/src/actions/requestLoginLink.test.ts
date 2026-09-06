@@ -26,10 +26,12 @@ vi.mock('@/services/emailService', () => ({
 // donne un tuple d'arguments vide et `mock.calls[0][0]` ne compile pas.
 type GenerateLinkArgs = { type: string; email: string; options?: { redirectTo?: string } };
 const generateLink = vi.fn<(args: GenerateLinkArgs) => Promise<{
-    data: { properties: { action_link: string; email_otp: string }; user: { id: string } };
+    data: { properties: { hashed_token: string; email_otp: string }; user: { id: string } };
     error: null;
 }>>(async () => ({
-    data: { properties: { action_link: 'https://gg/auth/callback?token=abc', email_otp: '123456' }, user: { id: 'u1' } },
+    // `hashed_token` et non `action_link` : le lien envoyé est CONSTRUIT par
+    // l'action et pointe sur nos propres routes, pas sur /auth/v1/verify.
+    data: { properties: { hashed_token: 'th-abc', email_otp: '123456' }, user: { id: 'u1' } },
     error: null,
 }));
 vi.mock('@/lib/supabase/tenant', () => ({
@@ -73,7 +75,7 @@ describe('requestLoginLink', () => {
         expect(await requestLoginLink({ query: 'FAROS@farosshipping.example' })).toMatchObject({ ok: true });
         expect(sendLink).toHaveBeenCalledWith(expect.objectContaining({
             to: 'faros@farosshipping.example',
-            link: 'https://gg/auth/callback?token=abc',
+            link: 'http://localhost:3300/owner/auth/callback?token_hash=th-abc&type=magiclink',
         }));
     });
 
@@ -186,7 +188,7 @@ describe('requestLoginLink — chemin navire (IMO / MMSI)', () => {
         await requestLoginLink({ query: '9167057' });
         expect(sendLink).toHaveBeenCalledWith(expect.objectContaining({
             to: 'coral@nets.example', code: '123456', vesselName: 'ALIMAN',
-            link: 'https://gg/auth/callback?token=abc',
+            link: 'http://localhost:3300/owner/auth/callback?token_hash=th-abc&type=magiclink',
         }));
     });
 
@@ -254,9 +256,22 @@ describe('requestLoginLink — comptes staff', () => {
 
         await requestLoginLink({ query: 'admin@greengate.africa' });
 
-        const redirectTo = generateLink.mock.calls[0][0].options?.redirectTo ?? '';
-        expect(redirectTo).toContain('/auth/callback');
-        expect(redirectTo).not.toContain('/owner/auth/callback');
+        const { link } = sendLink.mock.calls[0][0] as { link: string };
+        expect(link).toContain('/auth/callback?token_hash=');
+        expect(link).not.toContain('/owner/auth/callback');
+    });
+
+    // Le lien doit frapper NOS routes : `action_link` de GoTrue depose le jeton
+    // dans un fragment que le serveur ne voit jamais, et ne redirige que vers
+    // une cible declaree dans les « Redirect URLs » du projet.
+    it('construit le lien sur token_hash, jamais sur action_link', async () => {
+        resolve.mockResolvedValue(TARGET);
+
+        await requestLoginLink({ query: 'faros@farosshipping.example' });
+
+        const { link } = sendLink.mock.calls[0][0] as { link: string };
+        expect(link).toContain('/owner/auth/callback?token_hash=th-abc&type=magiclink');
+        expect(link).not.toContain('/auth/v1/verify');
     });
 
     // L'armateur porte la garde des sanctions ; il doit gagner.

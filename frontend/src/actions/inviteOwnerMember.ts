@@ -12,6 +12,7 @@ import {
 } from '@/lib/auth/ownerPrivileges';
 import { notifyOwner } from '@/services/notificationService';
 import { sendMemberAccessEmail } from '@/services/emailService';
+import { appBaseUrl } from '@/lib/appUrl';
 
 const schema = z.object({
     email: z.string().trim().email(),
@@ -181,10 +182,18 @@ export async function inviteOwnerMember(raw: unknown): Promise<InviteOwnerMember
         const { data: link } = await admin.auth.admin.generateLink({
             type: 'magiclink',
             email,
-            options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/dashboard` },
         });
-        const action = link?.properties?.action_link;
+        // Notre URL, pas `action_link` : celui de GoTrue ne redirige que vers
+        // une cible declaree dans les « Redirect URLs » du projet, sinon il
+        // retombe sur le Site URL avec le jeton dans un FRAGMENT que le
+        // serveur ne voit jamais. Le membre atterrissait alors sur la page
+        // d'accueil publique, sans session. Le callback armateur verifie le
+        // token_hash cote serveur.
+        const tokenHash = link?.properties?.hashed_token;
         const code = link?.properties?.email_otp;
+        const action = tokenHash
+            ? `${appBaseUrl()}/owner/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink`
+            : null;
         if (action && code) {
             await sendMemberAccessEmail({
                 to: email,
