@@ -12,7 +12,7 @@ import { loginDestination } from '@/lib/auth/loginDestination';
 import { safeInternalPath } from '@/lib/auth/safeInternalPath';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
-import { requestLoginLink } from '@/actions/requestLoginLink';
+import { requestLoginLink, sendLoginLinkTo, type RequestLoginLinkResult } from '@/actions/requestLoginLink';
 import { verifyLoginCode } from '@/actions/verifyLoginCode';
 
 // Maps ?error= param values (set by requireOwner / middleware) to i18n keys
@@ -77,6 +77,12 @@ function LoginPageInner() {
     const [emailHint, setEmailHint] = React.useState<string | null>(null);
     const [sentVessel, setSentVessel] = React.useState<string | null>(null);
     const [code, setCode] = React.useState('');
+    // Chemin navire, plusieurs boîtes rattachées : la personne choisit où le
+    // code part. Les choix sont des indices masqués sous jetons opaques.
+    type Choice = Extract<RequestLoginLinkResult, { via: 'vessel-choice' }>['choices'][number];
+    const [choices, setChoices] = React.useState<Choice[] | null>(null);
+    const [chosen, setChosen] = React.useState('');
+    const [recipientToken, setRecipientToken] = React.useState<string | null>(null);
 
     // Read query params set by requireOwner / middleware redirects.
     const errorParam = searchParams.get('error');
@@ -92,6 +98,12 @@ function LoginPageInner() {
         const res = await requestLoginLink({ query: quickQuery.trim() });
         setLoading(false);
         if (!res.ok) { setError(tMagic('rateLimited')); return; }
+        if (res.via === 'vessel-choice') {
+            setChoices(res.choices);
+            setChosen(res.choices[0]?.token ?? '');
+            setSentVessel(res.vesselName);
+            return;
+        }
         // Adresse connue ou non, l'ecran est le meme : il ne doit pas
         // renseigner sur qui detient un compte. Seul le chemin NAVIRE affiche
         // un indice, et seulement quand une cible a ete trouvee.
@@ -100,11 +112,28 @@ function LoginPageInner() {
         setLinkSent(true);
     }
 
+    async function handleChoiceSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        const res = await sendLoginLinkTo({ query: quickQuery.trim(), recipient: chosen });
+        setLoading(false);
+        if (!res.ok) { setError(tMagic('rateLimited')); return; }
+        setEmailHint(res.via === 'vessel' ? res.emailHint : null);
+        setRecipientToken(res.via === 'vessel' ? chosen : null);
+        setChoices(null);
+        setLinkSent(true);
+    }
+
     async function handleCodeSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
         setLoading(true);
-        const res = await verifyLoginCode({ query: quickQuery.trim(), code: code.trim() });
+        const res = await verifyLoginCode({
+            query: quickQuery.trim(),
+            code: code.trim(),
+            ...(recipientToken ? { recipient: recipientToken } : {}),
+        });
         setLoading(false);
         if (res.ok) { window.location.href = res.redirectTo; return; }
         setError(res.reason === 'rate_limited' ? tMagic('rateLimited') : tMagic('badCode'));
@@ -263,7 +292,7 @@ function LoginPageInner() {
                                 <button
                                     key={m}
                                     type="button"
-                                    onClick={() => { setMode(m); setError(''); setLinkSent(false); }}
+                                    onClick={() => { setMode(m); setError(''); setLinkSent(false); setChoices(null); setRecipientToken(null); }}
                                     className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all"
                                     style={mode === m
                                         ? { backgroundColor: 'var(--os-surface-1)', color: 'var(--os-text-primary)', border: '1px solid var(--os-border)' }
@@ -275,7 +304,53 @@ function LoginPageInner() {
                         </div>
 
                         {mode === 'link' ? (
-                            linkSent ? (
+                            choices && !linkSent ? (
+                                <form onSubmit={handleChoiceSubmit} className="flex flex-col gap-4">
+                                    <div className="flex items-start gap-2 px-3 py-3 rounded-lg" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                        <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                        <div className="text-xs text-emerald-300">
+                                            <p>{tMagic('chooseTitle')}</p>
+                                            {sentVessel && (
+                                                <p className="mt-1 opacity-80">{tMagic('sentVessel', { vessel: sentVessel })}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <fieldset className="flex flex-col gap-2">
+                                        <legend className="sr-only">{tMagic('chooseTitle')}</legend>
+                                        {choices.map((c) => (
+                                            <label
+                                                key={c.token}
+                                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer"
+                                                style={{ border: `1px solid ${chosen === c.token ? 'rgba(16,185,129,0.6)' : 'var(--os-border)'}`, backgroundColor: 'var(--os-surface-2)' }}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="login-recipient"
+                                                    value={c.token}
+                                                    checked={chosen === c.token}
+                                                    onChange={() => setChosen(c.token)}
+                                                    className="size-4 accent-emerald-500"
+                                                />
+                                                <span className="font-mono text-sm" style={{ color: 'var(--os-text-primary)' }}>{c.hint}</span>
+                                                <span className="ml-auto text-[10px] uppercase tracking-widest" style={{ color: 'var(--os-text-muted)' }}>
+                                                    {tMagic(`kind${c.kind}`)}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </fieldset>
+                                    <OsButton type="submit" variant="primary" disabled={loading || !chosen} className="w-full">
+                                        {loading ? '…' : tMagic('chooseSubmit')}
+                                    </OsButton>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setChoices(null); setError(''); }}
+                                        className="text-xs underline"
+                                        style={{ color: 'var(--os-text-muted)' }}
+                                    >
+                                        {tMagic('retry')}
+                                    </button>
+                                </form>
+                            ) : linkSent ? (
                                 <form onSubmit={handleCodeSubmit} className="flex flex-col gap-4">
                                     <div className="flex items-start gap-2 px-3 py-3 rounded-lg" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
                                         <Shield className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -319,7 +394,7 @@ function LoginPageInner() {
                                     </OsButton>
 
                                     <button type="button" className="text-xs text-emerald-400 hover:underline"
-                                        onClick={() => { setLinkSent(false); setCode(''); setError(''); }}>
+                                        onClick={() => { setLinkSent(false); setChoices(null); setRecipientToken(null); setCode(''); setError(''); }}>
                                         {tMagic('retry')}
                                     </button>
                                 </form>

@@ -225,6 +225,14 @@ le journal et la tendance partent vers `/admin/revenue` (ils y sont déjà pour 
   `PORT_OFFICER`, montants masqués sur flotte et fiche navire. Lien « Voir comme ce navire »
   sur `/admin/navires` (la vue 143 porte `vessel_public_ref`, mig 150).
 - **Reporté au §1** : « voir comme ce membre » (`?as=mbr_…`, colonne posée par la mig 150).
+- **2026-09-06 — §3 livré.** `listLoginRecipients` (titulaire, membres actifs, représentants
+  actifs, jamais les copies, plafond 5), jetons `HMAC(secret · compte · boîte · fenêtre
+  horaire)` (`lib/auth/recipientToken.ts`, secret `LOGIN_RECIPIENT_SECRET` ou repli
+  `INVOICE_SIGNING_SECRET`), `requestLoginLink` répond `vessel-choice` sans rien envoyer quand
+  plusieurs boîtes existent, `sendLoginLinkTo` re-résout tout et envoie à la boîte désignée,
+  `verifyLoginCode` → `verifyVesselAccessCode` vérifie le code sur la boîte choisie ; un
+  membre ou un représentant ouvre SA session, le dossier n'est jamais rattaché à son profil.
+  Écran : liste radio d'indices masqués, six locales.
 
 ## 5. Ordre de livraison proposé
 

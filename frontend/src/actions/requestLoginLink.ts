@@ -8,6 +8,8 @@ import { resolveLoginTarget, resolveStaffLoginTarget } from '@/services/auth/log
 import { resolveOwnerByVesselIdentifier } from '@/services/auth/vesselOwnerLookup';
 import { classifyVesselIdentifier } from '@/lib/vessels/identifier';
 import { maskEmailHint } from '@/lib/vessels/maskEmail';
+import { listLoginRecipients, type RecipientKind } from '@/services/auth/loginRecipients';
+import { matchRecipientToken, signRecipientToken } from '@/lib/auth/recipientToken';
 import { isContactBlocked } from '@/domain/sanctions/contactGuard';
 import { sendLoginLinkEmail } from '@/services/emailService';
 import { scopedLogger } from '@/lib/logger';
@@ -19,6 +21,8 @@ const log = scopedLogger('requestLoginLink');
 // supplémentaire est le signe d'une tentative de détournement, pas d'une
 // évolution légitime — le payload est refusé tel quel, jamais nettoyé.
 const schema = z.object({ query: z.string() }).strict();
+/** Second temps du chemin navire : le jeton désigne la boîte choisie. */
+const sendToSchema = z.object({ query: z.string(), recipient: z.string() }).strict();
 
 /** Le staff atterrit sur son tableau de bord, pas sur le portail armateur. */
 const STAFF_CALLBACK_PATH = '/auth/callback';
@@ -29,6 +33,16 @@ export type RequestLoginLinkResult =
     | { ok: true; via: 'vessel'; emailHint: string; vesselName: string | null }
     /** Navire non résolu — volontairement indistinguable d'un envoi réussi. */
     | { ok: true; via: 'vessel-unknown' }
+    /**
+     * Plusieurs boîtes sont rattachées au compte : rien n'est envoyé, l'écran
+     * propose le choix. Chaque boîte est un indice masqué sous un jeton opaque.
+     */
+    | {
+        ok: true;
+        via: 'vessel-choice';
+        vesselName: string | null;
+        choices: Array<{ token: string; hint: string; kind: RecipientKind }>;
+    }
     | { ok: false; reason: 'rate_limited' };
 
 /**
@@ -89,6 +103,24 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
             return { ok: true, via: 'vessel-unknown' };
         }
 
+        // Titulaire, membres et représentants actifs : quand il y en a plusieurs,
+        // c'est à la personne de dire où le code doit partir — le gestionnaire
+        // qui saisit l'IMO n'a pas toujours la main sur la boîte officielle.
+        // Rien ne part encore, et aucun quota armateur n'est consommé.
+        const recipients = await listLoginRecipients(admin, { id: owner.id, officialEmail: owner.officialEmail });
+        if (recipients.length > 1) {
+            return {
+                ok: true,
+                via: 'vessel-choice',
+                vesselName: owner.vesselName,
+                choices: recipients.map((r) => ({
+                    token: signRecipientToken(owner.id, r.email),
+                    hint: maskEmailHint(r.email),
+                    kind: r.kind,
+                })),
+            };
+        }
+
         const ownerQuota = await enforceRateLimit('login-link', `owner:${owner.id}`);
         if (!ownerQuota.allowed) return { ok: false, reason: 'rate_limited' };
 
@@ -134,6 +166,64 @@ export async function requestLoginLink(raw: unknown): Promise<RequestLoginLinkRe
 
     await mintAndSend(admin, target.deliveryEmail, target.shipownerName, null);
     return { ok: true, via: 'email' };
+}
+
+/**
+ * Second temps du chemin navire : envoie lien + code à la boîte CHOISIE.
+ *
+ * Tout est re-résolu depuis l'IMO — armateur, sanctions, boîtes admises — et
+ * le jeton n'est comparé qu'à ces boîtes-là : il ne peut désigner que ce que le
+ * premier temps a proposé, dans sa fenêtre de validité. Un jeton inconnu
+ * répond comme un navire inconnu.
+ */
+export async function sendLoginLinkTo(raw: unknown): Promise<RequestLoginLinkResult> {
+    const parsed = sendToSchema.safeParse(raw);
+    if (!parsed.success) return { ok: true, via: 'vessel-unknown' };
+    const query = parsed.data.query.trim();
+
+    const h = await headers();
+    const ipQuota = await enforceRateLimit('login-link', getClientId(h));
+    if (!ipQuota.allowed) return { ok: false, reason: 'rate_limited' };
+
+    let admin;
+    try {
+        admin = createPlatformClient();
+    } catch {
+        return { ok: true, via: 'vessel-unknown' };
+    }
+
+    const classified = classifyVesselIdentifier(query);
+    if (!classified.ok) return { ok: true, via: 'vessel-unknown' };
+
+    const owner = await resolveOwnerByVesselIdentifier(admin, classified.identifier);
+    if (!owner) return { ok: true, via: 'vessel-unknown' };
+    if (isContactBlocked({
+        name: owner.name, is_ofac_sdn: owner.isOfacSdn, is_un_prohibited: owner.isUnProhibited,
+    })) {
+        log.warn('sanctioned_login_blocked', { shipownerId: owner.id, via: 'vessel-choice' });
+        return { ok: true, via: 'vessel-unknown' };
+    }
+
+    const recipients = await listLoginRecipients(admin, { id: owner.id, officialEmail: owner.officialEmail });
+    const chosen = matchRecipientToken(parsed.data.recipient, owner.id, recipients);
+    if (!chosen) {
+        log.info('login_recipient_token_rejected', { shipownerId: owner.id });
+        return { ok: true, via: 'vessel-unknown' };
+    }
+
+    const ownerQuota = await enforceRateLimit('login-link', `owner:${owner.id}`);
+    if (!ownerQuota.allowed) return { ok: false, reason: 'rate_limited' };
+
+    const sent = await mintAndSend(admin, chosen.email, owner.name, owner.vesselName);
+    if (!sent) return { ok: true, via: 'vessel-unknown' };
+
+    log.info('login_link_sent_to_recipient', { shipownerId: owner.id, kind: chosen.kind });
+    return {
+        ok: true,
+        via: 'vessel',
+        emailHint: maskEmailHint(chosen.email),
+        vesselName: owner.vesselName,
+    };
 }
 
 /**

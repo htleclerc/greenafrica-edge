@@ -22,6 +22,11 @@ vi.mock('@/lib/rateLimit', () => ({
 }));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 
+const { listRecipientsMock } = vi.hoisted(() => ({ listRecipientsMock: vi.fn() }));
+vi.mock('@/services/auth/loginRecipients', () => ({
+    listLoginRecipients: listRecipientsMock,
+}));
+
 import { verifyVesselAccessCode } from './verifyVesselAccessCode';
 
 /**
@@ -277,5 +282,41 @@ describe('verifyVesselAccessCode', () => {
         expect(r).toEqual({ ok: false, reason: 'activation_failed' });
         expect(mockUpdate).not.toHaveBeenCalled();
         expect(mockAudit).not.toHaveBeenCalled();
+    });
+});
+
+describe('verifyVesselAccessCode — boîte choisie (membre ou représentant)', () => {
+    beforeEach(() => {
+        process.env.LOGIN_RECIPIENT_SECRET = 'test-recipient-secret';
+        listRecipientsMock.mockResolvedValue([
+            { email: 'contact@hornshipping.com', kind: 'OWNER' },
+            { email: 'compta@hornshipping.com', kind: 'MEMBER' },
+        ]);
+    });
+
+    it("un membre ouvre SA session : le dossier n'est pas rattaché à son profil", async () => {
+        const { signRecipientToken } = await import('@/lib/auth/recipientToken');
+        const token = signRecipientToken('owner-1', 'compta@hornshipping.com');
+        const r = await verifyVesselAccessCode({ identifier: '9424223', code: '123456', recipient: token });
+        expect(r).toEqual({ ok: true, redirectTo: '/dashboard' });
+        expect(mockVerifyOtp).toHaveBeenCalledWith(expect.objectContaining({ email: 'compta@hornshipping.com' }));
+        // Ni activation ni changement de titulaire : ce serait donner le compte au membre.
+        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockAudit).not.toHaveBeenCalledWith(expect.objectContaining({ action: 'SHIPOWNER_SELF_CLAIM' }));
+    });
+
+    it('le jeton du titulaire suit le chemin de rattachement habituel', async () => {
+        const { signRecipientToken } = await import('@/lib/auth/recipientToken');
+        const token = signRecipientToken('owner-1', 'contact@hornshipping.com');
+        const r = await verifyVesselAccessCode({ identifier: '9424223', code: '123456', recipient: token });
+        expect(r).toEqual({ ok: true, redirectTo: '/dashboard' });
+        expect(mockVerifyOtp).toHaveBeenCalledWith(expect.objectContaining({ email: 'contact@hornshipping.com' }));
+        expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    it('un jeton inconnu vaut un code invalide', async () => {
+        const r = await verifyVesselAccessCode({ identifier: '9424223', code: '123456', recipient: 'f'.repeat(32) });
+        expect(r).toEqual({ ok: false, reason: 'invalid_code' });
+        expect(mockVerifyOtp).not.toHaveBeenCalled();
     });
 });

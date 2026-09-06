@@ -8,6 +8,8 @@ import { createPlatformClient } from '@/lib/supabase/tenant';
 import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 import { normalizeVesselIdentifier } from '@/lib/vessels/identifier';
 import { writeAuditLog } from '@/services/auditService';
+import { listLoginRecipients } from '@/services/auth/loginRecipients';
+import { matchRecipientToken } from '@/lib/auth/recipientToken';
 import { scopedLogger } from '@/lib/logger';
 
 const log = scopedLogger('verifyVesselAccessCode');
@@ -15,6 +17,8 @@ const log = scopedLogger('verifyVesselAccessCode');
 const schema = z.object({
     identifier: z.string(),
     code: z.string().min(4).max(10),
+    /** Jeton de la boîte choisie (membre, représentant) ; absent = titulaire. */
+    recipient: z.string().optional(),
 });
 
 const OUTSTANDING = ['PENDING', 'PARTIALLY_PAID', 'OVERDUE'];
@@ -145,6 +149,28 @@ export async function verifyVesselAccessCode(raw: unknown): Promise<VerifyAccess
     }
 
     const supabase = await createClient();
+
+    // Boîte choisie au premier temps. Un membre ou un représentant ouvre SA
+    // session — jamais celle du titulaire : le dossier n'est pas rattaché à
+    // son profil, sinon il en deviendrait le titulaire.
+    if (parsed.data.recipient) {
+        const recipients = await listLoginRecipients(admin, {
+            id: owner.id, officialEmail: String(owner.official_email),
+        });
+        const chosen = matchRecipientToken(parsed.data.recipient, owner.id, recipients);
+        if (!chosen) return { ok: false, reason: 'invalid_code' };
+        if (chosen.kind !== 'OWNER') {
+            const { data: memberSession, error: memberErr } = await supabase.auth.verifyOtp({
+                email: chosen.email,
+                token: parsed.data.code,
+                type: 'email',
+            });
+            if (memberErr || !memberSession?.user) return { ok: false, reason: 'invalid_code' };
+            log.info('vessel_login_as_recipient', { ownerId: owner.id, kind: chosen.kind });
+            return { ok: true, redirectTo: '/dashboard' };
+        }
+    }
+
     const { data: session, error } = await supabase.auth.verifyOtp({
         email: owner.official_email,
         token: parsed.data.code,
