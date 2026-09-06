@@ -312,6 +312,7 @@
   "AdminPayments": {
     "title": "Pagamentos",
     "subtitle": "Revise e gerencie as declarações de pagamento dos armadores.",
+    "subtitleCashOnly": "Received payments only — confirmed and refunded. Pro-formas, outstanding balances and unconfirmed declarations are not visible with your access.",
     "refresh": "Atualizar",
     "recordManual": "Registrar pagamento manual",
     "filterStatus": "Filtrar por status",

@@ -23,6 +23,8 @@ export interface InitialPrincipal {
     modes: OperatorMode[];
     /** profiles.collections_focus (mig 142) — staff seulement, absent = pas de focus. */
     collectionsFocus?: boolean;
+    /** profiles.payments_only (mig 154) — staff seulement : encaissements seuls. */
+    paymentsOnly?: boolean;
 }
 
 async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
@@ -124,7 +126,7 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
     const { data: profile } = await supabase
         .from('profiles')
         .select(
-            'id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address, collections_focus',
+            'id, email, full_name, role, operational_site, country_code, timezone, preferred_language, is_active, ip_address, collections_focus, payments_only',
         )
         .eq('id', user.id)
         .single();
@@ -144,6 +146,7 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
         lastLogin: user.last_sign_in_at ?? '',
         ipAddress: (profile.ip_address as string) ?? '',
         isActive: (profile.is_active as boolean) ?? true,
+        paymentsOnly: (profile.payments_only as boolean | null) === true,
     };
 
     return {
@@ -153,6 +156,7 @@ async function _getInitialPrincipalImpl(): Promise<InitialPrincipal | null> {
         // Le provider amorcé par le serveur ne fait AUCUN aller-retour client :
         // sans ce passage, le drapeau ne serait jamais posé pour une vraie session.
         collectionsFocus: (profile.collections_focus as boolean | null) === true,
+        paymentsOnly: (profile.payments_only as boolean | null) === true,
     };
 }
 

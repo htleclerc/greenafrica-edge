@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { isPaymentsOnlyAllowed, isPaymentsOnlyGuarded, PAYMENTS_ONLY_HOME } from '@/lib/auth/paymentsOnly';
 import { updateSession } from '@/lib/supabase/middleware';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 
@@ -93,6 +94,35 @@ async function getPortalV1FlagCached(): Promise<boolean> {
 }
 
 // Routes that authenticated users shouldn't visit (redirect to /dashboard if logged in)
+/**
+ * « Encaissements seulement » (profiles.payments_only, mig 154), lu ici pour
+ * TOUTES les routes gardées : une page ajoutée demain hérite de la règle.
+ * Cache court par utilisateur — lever la restriction prend au plus une minute.
+ */
+const _paymentsOnlyCache = new Map<string, { value: boolean; expiresAt: number }>();
+const PAYMENTS_ONLY_CACHE_TTL_MS = 60_000;
+async function getPaymentsOnlyCached(userId: string): Promise<boolean> {
+    const now = Date.now();
+    const hit = _paymentsOnlyCache.get(userId);
+    if (hit && hit.expiresAt > now) return hit.value;
+    let value = false;
+    try {
+        const admin = createPlatformClient();
+        const { data } = await admin
+            .from('profiles')
+            .select('payments_only')
+            .eq('id', userId)
+            .maybeSingle<{ payments_only: boolean | null }>();
+        value = data?.payments_only === true;
+    } catch {
+        // Sans lecture possible, on ne devine pas une restriction : le rôle
+        // et les gardes de page tiennent seuls.
+        value = false;
+    }
+    _paymentsOnlyCache.set(userId, { value, expiresAt: now + PAYMENTS_ONLY_CACHE_TTL_MS });
+    return value;
+}
+
 const AUTH_ROUTES = ['/login', '/post-login'];
 
 // Public auth routes — accessible whether logged in or not
@@ -195,6 +225,21 @@ export async function middleware(request: NextRequest) {
         url.pathname = MFA_CHALLENGE_PATH;
         url.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(url);
+    }
+
+    // Encaissements seulement : hors de son écran, on la renvoie ; l'API
+    // répond 403 plutôt qu'une redirection HTML.
+    if (user && isPaymentsOnlyGuarded(pathname) && !isPaymentsOnlyAllowed(pathname)) {
+        const paymentsOnly = await getPaymentsOnlyCached(user.id);
+        if (paymentsOnly) {
+            if (pathname.startsWith('/api/')) {
+                return NextResponse.json({ error: 'Forbidden — payments-only profile' }, { status: 403 });
+            }
+            const url = request.nextUrl.clone();
+            url.pathname = PAYMENTS_ONLY_HOME;
+            url.search = '';
+            return NextResponse.redirect(url);
+        }
     }
 
     // Already logged in → skip auth pages, go to dashboard

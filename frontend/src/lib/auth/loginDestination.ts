@@ -11,6 +11,8 @@ export interface LoginPrincipal {
      * choisir l'atterrissage et resserrer le menu.
      */
     collectionsFocus?: boolean;
+    /** `profiles.payments_only` (mig 154) : la personne n'a qu'un écran. */
+    paymentsOnly?: boolean;
 }
 
 /**
@@ -21,8 +23,11 @@ export interface LoginPrincipal {
  * Phase 2: operators now land on /dashboard (same shell as staff, operator-aware
  * nav). The legacy /owner/dashboard redirects to /dashboard via middleware.
  */
-export function loginDestination({ isOperator, role, collectionsFocus }: LoginPrincipal): string {
+export function loginDestination({ isOperator, role, collectionsFocus, paymentsOnly }: LoginPrincipal): string {
     if (isOperator) return '/dashboard';
+    // Encaissements seulement : un seul écran, avant tout autre aiguillage —
+    // le middleware y renverrait de toute façon.
+    if (paymentsOnly) return '/admin/payments';
     if (role === UserRole.SUPERADMIN) return '/post-login';
     if (role === UserRole.MANAGER) return '/dashboard/vision';
     // Après l'impersonation du SUPERADMIN et avant le repli générique : un profil

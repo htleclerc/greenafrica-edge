@@ -3967,6 +3967,7 @@
   "AdminPayments": {
     "title": "Paiements",
     "subtitle": "Examinez les paiements initiés par l'armateur et enregistrez les entrées manuelles.",
+    "subtitleCashOnly": "Paiements encaissés uniquement — confirmés et remboursés. Les pro-formas, encours et déclarations non confirmées ne sont pas visibles avec votre accès.",
     "refresh": "Actualiser",
     "recordManual": "Enregistrer un paiement",
     "filterStatus": "Statut",

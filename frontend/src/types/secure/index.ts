@@ -43,6 +43,13 @@ export interface SecureUser {
      * `requireSettlementRights`. Ce champ n'existe que pour l'affichage.
      */
     canSettlePayments?: boolean;
+    /**
+     * Sous-permission « encaissements seulement » (mig 154). RETRANCHE : la
+     * personne ne voit que les paiements CONFIRMED / REFUNDED, jamais une
+     * pro-forma ni un encours. Appliquée par le menu, le middleware et l'API
+     * des paiements (lib/auth/paymentsOnly.ts).
+     */
+    paymentsOnly?: boolean;
 }
 
 // ── Vessel (Secure/Enriched) ─────────────────────────────────────────────────

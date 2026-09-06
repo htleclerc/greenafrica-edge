@@ -204,7 +204,8 @@ function LoginPageInner() {
 
         const role = (profile?.role as UserRole) ?? null;
         const collectionsFocus = (profile as { collections_focus?: boolean } | null)?.collections_focus === true;
-        window.location.href = loginDestination({ isOperator, role, collectionsFocus });
+        const paymentsOnly = (profile as { payments_only?: boolean } | null)?.payments_only === true;
+        window.location.href = loginDestination({ isOperator, role, collectionsFocus, paymentsOnly });
     }
 
     return (

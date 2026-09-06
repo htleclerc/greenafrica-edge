@@ -46,7 +46,7 @@ export default async function AdminStaffRoute() {
     // back-office, la sous-permission ne leur est pas proposable.
     const { data: staff, error: sErr } = await platform
         .from('profiles')
-        .select('id, full_name, email, role, is_active, can_settle_payments')
+        .select('id, full_name, email, role, is_active, can_settle_payments, payments_only')
         .neq('role', 'SHIPPING_AGENT')
         .order('role')
         .order('full_name');
