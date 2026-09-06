@@ -13,6 +13,10 @@ import { scopedLogger } from '@/lib/logger';
  * informatif du mois écoulé, le stocke, upsert owner_statements, et notifie
  * STATEMENT_READY (envoi inline avec PDF joint via notifyOwner).
  * Auth : Bearer CRON_SECRET. ?dryRun=1 pour ne rien écrire.
+ * ?refresh=1 : ne RÉGÉNÈRE que les relevés déjà stockés pour la période (PDF
+ * réécrit, ligne mise à jour), sans jamais notifier — pour re-rendre des
+ * documents après un changement de gabarit (en-tête, mig 149) sans créer de
+ * relevé ni d'e-mail chez qui n'en avait pas.
  */
 
 export const runtime = 'nodejs';
@@ -35,7 +39,9 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-    const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
+    const params = new URL(req.url).searchParams;
+    const dryRun = params.get('dryRun') === '1';
+    const refreshOnly = params.get('refresh') === '1';
 
     const admin = serviceClient();
     const now = new Date();
@@ -85,6 +91,9 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
     }
 
     for (const owner of byId.values()) {
+        // Mode rafraîchissement : un armateur sans relevé pour la période n'en
+        // reçoit pas un nouveau par ce chemin — c'est le cron du 1er qui décide.
+        if (refreshOnly && !alreadyNotified.has(owner.id)) { counts.skipped += 1; continue; }
         try {
             const jurisdictionId = jurById.get(owner.id) ?? null;
             if (!jurisdictionId) {
@@ -132,7 +141,7 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
             }, { onConflict: 'shipowner_id,period_month' });
             if (upsertErr) { log.warn('upsert_failed', { ownerId: owner.id, error: upsertErr.message }); counts.failed += 1; continue; }
 
-            if (!alreadyNotified.has(owner.id)) {
+            if (!refreshOnly && !alreadyNotified.has(owner.id)) {
                 await notifyOwner(admin, {
                     shipownerId: owner.id, kind: 'STATEMENT_READY',
                     params: { period: label, total_outstanding_usd: data.totalOutstandingUsd, period_month: periodMonth },
@@ -147,6 +156,6 @@ export async function GET(req: NextRequest | Request): Promise<NextResponse> {
         }
     }
 
-    log.info('cron_run_complete', { ...counts, dryRun });
-    return NextResponse.json({ ...counts, dryRun });
+    log.info('cron_run_complete', { ...counts, dryRun, refreshOnly });
+    return NextResponse.json({ ...counts, dryRun, refreshOnly });
 }

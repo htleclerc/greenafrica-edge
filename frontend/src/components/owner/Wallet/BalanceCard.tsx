@@ -19,6 +19,8 @@ interface Props {
     canToggleAutoApply?: boolean;
     /** Plan 7H-1 Task 5.3 — when false, hides the "Top up" CTA. */
     topupEnabled?: boolean;
+    /** Vue staff : le bouton reste, désactivé, avec ce texte au survol. */
+    readOnlyHint?: string;
     /** Date du dernier approvisionnement, si le portefeuille en a déjà reçu un. */
     lastTopupAt?: string | null;
     lastTopupUsd?: number | null;
@@ -33,7 +35,7 @@ interface Props {
  */
 export function BalanceCard({
     balanceUsd, autoApplyEnabled, onToggleAutoApply, onOpenTopup, togglePending,
-    topupEnabled = true, canToggleAutoApply = true, lastTopupAt = null, lastTopupUsd = null,
+    topupEnabled = true, canToggleAutoApply = true, lastTopupAt = null, lastTopupUsd = null, readOnlyHint,
 }: Props) {
     const t = useTranslations('OwnerPortal.wallet');
 
@@ -61,7 +63,9 @@ export function BalanceCard({
                     <button
                         type="button"
                         onClick={onOpenTopup}
-                        className="flex h-11 items-center rounded-[11px] bg-[var(--os-brand-green)] px-5 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
+                        disabled={Boolean(readOnlyHint)}
+                        title={readOnlyHint}
+                        className="flex h-11 items-center rounded-[11px] bg-[var(--os-brand-green)] px-5 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {t('balanceCard.topupCta')}
                     </button>

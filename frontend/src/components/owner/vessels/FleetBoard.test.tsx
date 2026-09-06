@@ -129,3 +129,31 @@ describe('FleetBoard — inventaire complet', () => {
         expect(screen.getByRole('link', { name: /Pay before/i })).toBeInTheDocument();
     });
 });
+
+describe('FleetBoard — lecture seule et montants masqués', () => {
+    it("grise l'action de paiement mais garde le chemin vers le détail", () => {
+        render(
+            <NextIntlClientProvider locale="en" messages={en}>
+                <FleetBoard fleet={fleetOf([vessel()])} vesselBasePath="/admin/armateurs/arm_1/portail/fleet" readOnly />
+            </NextIntlClientProvider>,
+        );
+        // Le bouton de paiement de la carte n'est plus un lien : il ne mène nulle part.
+        const payLinks = screen.queryAllByRole('link').filter((l) => /pay/i.test(l.textContent ?? ''));
+        expect(payLinks).toHaveLength(0);
+        const disabled = document.querySelector('[aria-disabled]');
+        expect(disabled?.textContent).toMatch(/pay/i);
+        // Le détail reste atteignable, par la référence opaque.
+        const detail = screen.getAllByRole('link').map((l) => l.getAttribute('href'));
+        expect(detail).toContain('/admin/armateurs/arm_1/portail/fleet/ves_00000000star');
+    });
+
+    it('masque le reste dû et le payé sans le droit de facturation', () => {
+        render(
+            <NextIntlClientProvider locale="en" messages={en}>
+                <FleetBoard fleet={fleetOf([vessel({ paidYtdUsd: 1200 })])} vesselBasePath="/x" readOnly hideAmounts />
+            </NextIntlClientProvider>,
+        );
+        expect(screen.queryByText(/16,500|16 500/)).toBeNull();
+        expect(screen.queryByText(/1,200|1 200/)).toBeNull();
+    });
+});

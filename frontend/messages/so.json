@@ -719,6 +719,11 @@
       "queryLabel": "Iimayl, IMO ama MMSI",
       "sentToHint": "Xiriirka iyo koodhka waxaa loo diray {hint}.",
       "sentVessel": "Markabka: {vessel}",
+      "chooseTitle": "Cinwaanno badan ayaa ku xiran markabkan. Halkee koodhka loo diro?",
+      "chooseSubmit": "Dir koodhka",
+      "kindOWNER": "milkiilaha",
+      "kindMEMBER": "xubin",
+      "kindREPRESENTATIVE": "wakiil",
       "codeLabel": "Koodh 6 lambar ah",
       "codeSubmit": "Gal",
       "codeHint": "Ama gujiso xiriirka iimaylka — mid kastaa wuu shaqeeyaa.",
@@ -845,6 +850,8 @@
     "nav_vessel_identity": "Aqoonsiga Markabyada",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Isticmaalayaasha",
+    "nav_admin_settings": "Dejinta",
     "nav_navires": "Maraakiibta"
   },
   "AdminStaff": {
@@ -2966,9 +2973,71 @@
       "saving": "Waa la kaydiyaa…"
     }
   },
+  "AdminSettings": {
+    "title": "Dejinta",
+    "subtitle": "Tab kasta ujeedo: waxa la soo qaado, waxa la daabaco, sida loo xasuusiyo, sida loo ogaado, waxa milkiiluhu arko, nidaamka.",
+    "tab": {
+      "fiscalite": {
+        "label": "Canshuur",
+        "hint": "Xukunno, qiimeyaal, qaybin, xisaab-xir, nuqullo"
+      },
+      "documents": {
+        "label": "Dukumentiyo",
+        "hint": "Astaanta soo-saaraha: muddo, ganaax, saxeexe, IBAN, luqado"
+      },
+      "relance": {
+        "label": "Xasuusin & ururin",
+        "hint": "Muddooyinka kor u qaadista milkiilaha, xasuusinno"
+      },
+      "detection": {
+        "label": "Ogaansho & isbarbar-dhig",
+        "hint": "Marinka soo-dhowaanshaha, SLA, dulqaad, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Bogga & lacag-bixinno",
+        "hint": "Calaamadaha bogga milkiilaha, waddooyinka lacagta, bixiyayaal"
+      },
+      "systeme": {
+        "label": "Nidaam",
+        "hint": "Saf, sirro, SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Khadadka cashuurta carboonka",
     "sectionSubtitle": "Habaynta wakhti-dhabta ah ee ogaanshaha, dib-u-heshiisinta, kordhinta, iyo calaamaadaha astaamaha. Sirriyada waxaa wax ka bedeli kara SUPERADMIN kaliya.",
+    "hints": {
+      "arrival_corridor_radius_nm": "Radius around the port within which an AIS vessel counts as approaching.",
+      "arrival_claim_sla_hours": "Time left to the agent to claim a detected port call before escalation.",
+      "arrival_escalation_eta_buffer_h": "Margin after ETA before escalation fires.",
+      "reconciliation_tolerance_pct": "Tolerated gap between expected and received amounts before an alert.",
+      "reconciliation_check_interval_min": "How often pending payments are re-checked automatically.",
+      "owner_escalation_delay_days": "Days without agent answer before contacting the shipowner.",
+      "owner_escalation_reminder_count": "Reminders sent to the agent before cascading to the shipowner.",
+      "proforma_languages_default": "Languages of issued pro-formas, comma-separated (e.g. en, fr).",
+      "feature_ais_global_enabled": "Global AIS ingestion. No Gulf of Aden coverage to date.",
+      "feature_equasis_scraper_enabled": "Equasis scraper. Left OFF: runaway observed without queue acks.",
+      "feature_vessel_detention_enabled": "Detention of defaulting vessels — never exercised in production.",
+      "feature_shipowner_portal_enabled": "Owner portal (legacy switch, kept for compatibility).",
+      "feature_shipowner_portal_v1_enabled": "Master switch of the owner portal: everything under /owner goes dark when false.",
+      "feature_shipowner_self_service_enabled": "Self-service access request on /signup.",
+      "feature_online_payment_stripe_enabled": "Portal card rail. Also requires STRIPE_SECRET_KEY in the environment.",
+      "feature_wallet_topup_enabled": "Wallet top-ups by shipowners.",
+      "feature_show_unavailable_rails": "Show unavailable payment methods greyed out instead of hiding them.",
+      "feature_notification_sms_enabled": "SMS notifications — dormant, no provider wired.",
+      "queue_worker_url": "Queue worker URL called by the crons. A wrong value stops processing.",
+      "queue_worker_secret": "Secret shared with the worker. Rotate on both sides at once."
+    },
+    "updatedAt": "changed on {date}",
+    "danger": "danger zone",
+    "confirmDanger": "This setting touches the platform plumbing. Save anyway?",
+    "unsaved": "{count} unsaved",
+    "errors": {
+      "invalid": "unreadable value",
+      "min": "minimum {bound}",
+      "max": "maximum {bound}",
+      "integer": "whole number expected"
+    },
     "labels": {
       "carbon_tax_rate_usd_per_tco2": "Heerka cashuurta carboonka (USD / tCO₂)",
       "arrival_corridor_radius_nm": "Raadiyaha dariiqa soo-dhowaanshaha (NM)",
@@ -4926,7 +4995,60 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Isticmaalayaasha",
+    "subtitle": "Dhammaan dadka geli kara: milkiilayaasha, xubnaha, wakiillada — iyo shaqaalaha.",
+    "search": "Raadi",
+    "searchPlaceholder": "Magac, iimayl, akoon ama IMO",
+    "stateFilter": "Xaalad",
+    "kindTabs": "Nooca qofka",
+    "kind": {
+      "ALL": "Dhammaan",
+      "OWNER": "Milkiile",
+      "MEMBER": "Xubin",
+      "REPRESENTATIVE": "Wakiil",
+      "STAFF": "Shaqaale"
+    },
+    "col": {
+      "person": "Qof",
+      "kind": "Nooc",
+      "account": "Akoon",
+      "rights": "Xuquuq",
+      "lastSignIn": "Gelitaankii u dambeeyay",
+      "state": "Xaalad"
+    },
+    "rights": {
+      "all": "Dhammaan xuquuqda",
+      "none": "Akhris keliya"
+    },
+    "privilege": {
+      "canPay": "Bixi",
+      "canDispute": "Muran",
+      "canManageVessels": "Maraakiib",
+      "canInvite": "Casuun"
+    },
+    "state": {
+      "all": "Dhammaan",
+      "active": "Firfircoon",
+      "dormant": "Hurda (90 m)",
+      "inactive": "Aan firfircoonayn",
+      "GHOST": "Weligeed lama hawlgelin",
+      "INVITED": "La casuumay",
+      "SUSPENDED": "La joojiyay",
+      "REJECTED": "La diiday"
+    },
+    "never": "Weligeed",
+    "empty": "Qofna kuma habboona.",
+    "action": {
+      "viewAs": "U arag sida",
+      "sendAccess": "Dir gelitaan",
+      "sent": "La diray haddii la oggol yahay"
+    }
+  },
   "AdminNavires": {
+    "action": {
+      "viewAs": "U arag sida markabkan"
+    },
     "title": "Maraakiibta",
     "subtitle": "Deynta hadhay markab kasta. Dacwad aan markab ku xidhnayn halkan kama muuqato.",
     "noOwner": "Milkiile la'aan",
@@ -4961,6 +5083,17 @@
   },
   "AdminOwnerView": {
     "readOnly": "Akhris keliya",
+    "viewing": "Waxaad u aragtaa akoonkan sida {name} — akhris keliya",
+    "viewingMember": "Waxaad u aragtaa akoonkan sida {member}, xubin ka tirsan {name} — akhris keliya",
+    "viewingVessel": "Waxaad u aragtaa markabka {vessel} sida maareeyaha {name} — akhris keliya",
+    "tabOverview": "Guud",
+    "tabInvoices": "Biilasha",
+    "tabFleet": "Maraakiibta",
+    "tabWallet": "Boorsada",
+    "tabVessel": "Markabka",
+    "financeOnly": "Maaliyad keliya: lacagaha la soo qaaday kuma muuqdaan doorkaaga.",
+    "actionHint": "Waxaa u gaar ah milkiilaha markabka — akoonka waxaad u eegaysaa akhris keliya.",
+    "backToVessels": "← Ku noqo maraakiibta",
     "backToFile": "← Ku noqo faylka",
     "intro": "Waxa uu deyn-lahu ku arko bogiisa. Wax tallaabo ah lagama qaadi karo shaashaddan.",
     "blockersTitle": "Waxa ka hor istaaga bixinta",

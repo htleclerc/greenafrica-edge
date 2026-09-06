@@ -18,6 +18,7 @@ import { FleetBoard } from '@/components/owner/vessels/FleetBoard';
 import { AircraftTable, type AircraftRow } from '@/components/owner/vessels/AircraftTable';
 import { ModeBadge } from '@/components/owner/ModeBadge';
 import { ApproxFlag } from '@/components/owner/ApproxFlag';
+import { portalPaths } from '@/lib/auth/portalPaths';
 
 interface RecentInvoice {
     id: string;
@@ -79,6 +80,7 @@ export async function OperatorVesselsPage({ principal }: Props) {
     }
 
     const t = await getTranslations('OwnerPortal.fleet');
+    const paths = portalPaths(principal);
 
     return (
         <div className="mx-auto flex max-w-6xl flex-col gap-[18px] p-4 sm:p-6">
@@ -87,7 +89,13 @@ export async function OperatorVesselsPage({ principal }: Props) {
                 subtitle={t('subtitle')}
             />
 
-            <FleetBoard fleet={fleet} vesselBasePath="/dashboard/vessels" />
+            <FleetBoard
+                fleet={fleet}
+                vesselBasePath={paths.fleet}
+                invoicesHref={paths.invoices}
+                readOnly={paths.readOnly}
+                hideAmounts={paths.hideAmounts}
+            />
 
             {(aircraft.length > 0 || aircraftRes.error) && (
                 <section>
@@ -122,7 +130,7 @@ export async function OperatorVesselsPage({ principal }: Props) {
                                     </div>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                    <p className="text-sm font-bold tabular-nums text-[var(--os-text-primary)]">${Number(inv.tax_amount_usd).toLocaleString()}</p>
+                                    <p className="text-sm font-bold tabular-nums text-[var(--os-text-primary)]">{paths.hideAmounts ? '—' : `$${Number(inv.tax_amount_usd).toLocaleString()}`}</p>
                                     <p className="text-[10px] text-[var(--os-text-muted)]">{inv.status} · {new Date(inv.created_at).toLocaleDateString()}</p>
                                     <div className="flex items-center justify-end gap-3 mt-1.5">
                                         {buildInvoiceDownloadUrl(inv) && (

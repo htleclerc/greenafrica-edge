@@ -6,7 +6,7 @@ import {
     Map, Ship, FileText, Leaf, AlertTriangle,
     BarChart2, Settings, DollarSign, TrendingUp,
     ChevronLeft, ChevronRight, Calculator, LogOut, X,
-    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2, Globe2,
+    Scale, Anchor, ClipboardCheck, CreditCard, Users, Banknote, Wallet, Undo2,
     LayoutDashboard, Bell, Eye, Plane, Building2, IdCard, ShieldCheck, UserCog,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
@@ -50,19 +50,19 @@ const NAV_ITEMS: NavItem[] = [
     // dans /admin/validations, sur la file vivante. La route reste joignable par
     // URL pour consulter l'historique.
     { key: 'registrations', icon: <Users className="w-5 h-5" />,         href: '/admin/registrations',   labelKey: 'nav_registrations', section: 'admin' },
-    { key: 'tax-settings', icon: <DollarSign className="w-5 h-5" />,    href: '/admin/tax-settings',    labelKey: 'nav_tax_settings', section: 'admin' },
+    { key: 'admin-settings', icon: <DollarSign className="w-5 h-5" />,  href: '/admin/settings',        labelKey: 'nav_admin_settings', section: 'admin' },
     { key: 'origin-port-proposals', icon: <Anchor className="w-5 h-5" />, href: '/admin/origin-port-proposals', labelKey: 'nav_origin_port_proposals', section: 'admin' },
     { key: 'revenue',      icon: <TrendingUp className="w-5 h-5" />,    href: '/admin/revenue',         labelKey: 'nav_revenue',      section: 'admin' },
     { key: 'payments',     icon: <CreditCard className="w-5 h-5" />,    href: '/admin/payments',        labelKey: 'nav_payments',     section: 'admin' },
     { key: 'refunds',      icon: <Undo2 className="w-5 h-5" />,         href: '/admin/refunds',         labelKey: 'nav_refunds',      section: 'admin' },
     { key: 'cash-desk',    icon: <Banknote className="w-5 h-5" />,      href: '/admin/cash-desk',       labelKey: 'nav_cash_desk',    section: 'admin' },
     { key: 'wallets',      icon: <Wallet className="w-5 h-5" />,        href: '/admin/wallets',         labelKey: 'nav_wallets',      section: 'admin' },
-    { key: 'jurisdictions', icon: <Globe2 className="w-5 h-5" />,      href: '/admin/jurisdictions',   labelKey: 'nav_jurisdictions', section: 'admin' },
     { key: 'reglements', icon: <Banknote className="w-5 h-5" />, href: '/admin/reglements', labelKey: 'nav_reglements', section: 'admin' },
     { key: 'admin-invoices', icon: <FileText className="w-5 h-5" />, href: '/admin/invoices', labelKey: 'nav_admin_invoices', section: 'admin' },
     { key: 'admin-collections', icon: <Scale className="w-5 h-5" />, href: '/admin/collections', labelKey: 'nav_admin_collections', section: 'admin' },
     { key: 'staff',         icon: <Users className="w-5 h-5" />,        href: '/admin/staff',           labelKey: 'nav_staff',         section: 'admin' },
     { key: 'armateurs',     icon: <Building2 className="w-5 h-5" />,    href: '/admin/armateurs',       labelKey: 'nav_armateurs',     section: 'admin' },
+    { key: 'users',         icon: <Users className="w-5 h-5" />,        href: '/admin/users',           labelKey: 'nav_users',         section: 'admin' },
     { key: 'navires',       icon: <Ship className="w-5 h-5" />,         href: '/admin/navires',         labelKey: 'nav_navires',       section: 'admin' },
     { key: 'airlines',      icon: <Plane className="w-5 h-5" />,        href: '/admin/airlines',        labelKey: 'nav_airlines',      section: 'admin' },
     { key: 'vessel-identity', icon: <IdCard className="w-5 h-5" />,     href: '/admin/vessel-identity', labelKey: 'nav_vessel_identity', section: 'admin' },

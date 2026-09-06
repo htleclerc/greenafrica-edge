@@ -12,6 +12,7 @@ import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { usdGrouped } from '@/lib/osMoney';
 import { WalletPageClient } from '@/components/owner/Wallet/WalletPageClient';
 import { PAYPAL_RETURNS, type PaypalReturn } from '@/components/owner/pages/OperatorInvoicesPage';
+import { portalPaths } from '@/lib/auth/portalPaths';
 
 /** Teintes alignees sur les bannieres de retour de la page factures. */
 const RETURN_STYLE: Record<'success' | 'cancel' | 'pending' | 'failed', string> = {
@@ -72,6 +73,7 @@ export async function OperatorWalletPage({
                     prediction={{ estimated_count_30d: 0, estimated_amount_30d_usd: 0, confidence: 'low' }}
                     topupEnabled={topupEnabled}
                     canPay={principal.privileges.canPay}
+                    readOnly={portalPaths(principal).readOnly}
                 />
             </div>
         );
@@ -97,6 +99,7 @@ export async function OperatorWalletPage({
                 prediction={prediction}
                 topupEnabled={topupEnabled}
                 canPay={principal.privileges.canPay}
+                readOnly={portalPaths(principal).readOnly}
             />
         </div>
     );

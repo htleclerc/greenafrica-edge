@@ -79,6 +79,11 @@ interface Props {
     /** Sous-permissions de la personne connectée (mig 135). */
     privileges: OwnerPrivileges;
     isMember: boolean;
+    /**
+     * Vue staff « voir comme » : les boutons restent ceux que l'armateur voit,
+     * mais désactivés. La visibilité vient des droits, l'inaction d'ici.
+     */
+    readOnly?: boolean;
 }
 
 /**
@@ -88,7 +93,8 @@ interface Props {
  * pilotent le libellé du bouton primaire de page, qui affiche le total
  * sélectionné ; sans sélection il retombe sur « Payer tout ».
  */
-export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMember }: Props) {
+export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMember, readOnly = false }: Props) {
+    const tView = useTranslations('AdminOwnerView');
     const t = useTranslations('OwnerPortal.invoicesList');
     const router = useRouter();
 
@@ -141,6 +147,7 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMembe
     }
 
     async function issue(r: InvoiceRow) {
+        if (readOnly) return;
         setIssuingId(r.id);
         setIssueError((e) => ({ ...e, [r.id]: '' }));
         try {
@@ -168,8 +175,10 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMembe
                     openRows.length > 0 && privileges.canPay && (
                         <button
                             type="button"
-                            onClick={() => setPayTarget(checkedRows[0] ?? openRows[0])}
-                            className="flex h-10 items-center rounded-[10px] bg-[var(--os-brand-green)] px-[18px] text-[13.5px] font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90"
+                            onClick={() => !readOnly && setPayTarget(checkedRows[0] ?? openRows[0])}
+                            disabled={readOnly}
+                            title={readOnly ? tView('actionHint') : undefined}
+                            className="flex h-10 items-center rounded-[10px] bg-[var(--os-brand-green)] px-[18px] text-[13.5px] font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {checkedRows.length > 0
                                 ? t('paySelection', { count: checkedRows.length, amount: usdGrouped(totalUsd) })
@@ -265,10 +274,11 @@ export function InvoicesTable({ rows, walletBalanceUsdMinor, privileges, isMembe
                         walletBalanceUsdMinor={walletBalanceUsdMinor}
                         privileges={privileges}
                         isMember={isMember}
-                        onPay={() => setPayTarget(selected)}
-                        onDispute={() => setDisputeTarget(selected)}
-                        onAttachProof={() => setProofTarget(selected)}
+                        onPay={() => !readOnly && setPayTarget(selected)}
+                        onDispute={() => !readOnly && setDisputeTarget(selected)}
+                        onAttachProof={() => !readOnly && setProofTarget(selected)}
                         onIssuePdf={() => issue(selected)}
+                        readOnly={readOnly}
                         issuing={issuingId === selected.id}
                         issueError={issueError[selected.id] || undefined}
                         onClose={() => setSelectedId(null)}

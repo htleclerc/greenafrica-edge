@@ -60,6 +60,8 @@ interface Props {
     issuing: boolean;
     issueError?: string;
     onClose: () => void;
+    /** Vue staff : boutons présents, désactivés. */
+    readOnly?: boolean;
 }
 
 /**
@@ -75,9 +77,11 @@ interface Props {
  */
 export function InvoiceDetailPanel({
     invoice, walletBalanceUsdMinor, privileges, isMember, onPay, onDispute, onAttachProof,
-    onIssuePdf, issuing, issueError, onClose,
+    onIssuePdf, issuing, issueError, onClose, readOnly = false,
 }: Props) {
     const t = useTranslations('OwnerPortal.invoiceDetail');
+    const tView = useTranslations('AdminOwnerView');
+    const hint = readOnly ? tView('actionHint') : undefined;
     const [method, setMethod] = React.useState<Method>('wire');
 
     // `partial_paid_usd` est gelee par la mig 089 et vaut zero sur toute
@@ -163,7 +167,9 @@ export function InvoiceDetailPanel({
                     <button
                         type="button"
                         onClick={onPay}
-                        className="flex h-[46px] items-center justify-center rounded-[11px] bg-[var(--os-brand-green)] px-4 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
+                        disabled={readOnly}
+                        title={hint}
+                        className="flex h-[46px] items-center justify-center rounded-[11px] bg-[var(--os-brand-green)] px-4 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {t('pay', { amount: usdGrouped(amountUsd) })}
                     </button>
@@ -184,8 +190,8 @@ export function InvoiceDetailPanel({
                         <button
                             type="button"
                             onClick={onIssuePdf}
-                            disabled={issuing}
-                            title={t('issuePdfHint')}
+                            disabled={issuing || readOnly}
+                            title={hint ?? t('issuePdfHint')}
                             className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)] disabled:opacity-50"
                         >
                             {issuing ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Download className="size-3.5" aria-hidden />}
@@ -210,7 +216,9 @@ export function InvoiceDetailPanel({
                     <button
                         type="button"
                         onClick={onDispute}
-                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)]"
+                        disabled={readOnly}
+                        title={hint}
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--os-border-strong)] px-3 text-[13px] text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <Scale className="size-3.5" aria-hidden />
                         {t('dispute')}
@@ -235,7 +243,9 @@ export function InvoiceDetailPanel({
                     <button
                         type="button"
                         onClick={onAttachProof}
-                        className={`flex h-10 items-center justify-center gap-1.5 rounded-[10px] border px-3 text-[13px] transition-colors duration-150 hover:bg-[var(--os-surface-2)] ${
+                        disabled={readOnly}
+                        title={hint}
+                        className={`flex h-10 items-center justify-center gap-1.5 rounded-[10px] border px-3 text-[13px] transition-colors duration-150 hover:bg-[var(--os-surface-2)] disabled:cursor-not-allowed disabled:opacity-50 ${
                             invoice.pending_payment_has_proof
                                 ? 'border-[var(--os-border-strong)] text-[var(--os-text-secondary)]'
                                 : 'border-amber-500/40 text-amber-300'

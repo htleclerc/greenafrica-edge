@@ -30,8 +30,22 @@ const TABS: FleetTab[] = ['all', 'action', 'inPort', 'compliant', 'exempt'];
  * rien n'a pas besoin d'une carte, et lui en donner une noierait les deux qui
  * comptent au milieu de six.
  */
-export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesselBasePath: string }) {
+interface FleetBoardProps {
+    fleet: OwnerFleet;
+    vesselBasePath: string;
+    /** Où mène « payer » depuis une carte. Défaut : les factures du portail. */
+    invoicesHref?: string;
+    /** Vue staff : l'action de paiement est visible mais désactivée. */
+    readOnly?: boolean;
+    /** Rôle sans accès aux montants facturés : reste dû et payé masqués. */
+    hideAmounts?: boolean;
+}
+
+export function FleetBoard({
+    fleet, vesselBasePath, invoicesHref = '/dashboard/invoices', readOnly = false, hideAmounts = false,
+}: FleetBoardProps) {
     const t = useTranslations('OwnerPortal.fleet');
+    const tView = useTranslations('AdminOwnerView');
     const router = useRouter();
     const [tab, setTab] = React.useState<FleetTab>('all');
 
@@ -76,7 +90,7 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
             key: 'paid', header: t('col.paidYtd'), width: '0.8fr', align: 'end',
             render: (v) => (
                 <span className="font-mono text-[13px] tabular-nums text-[var(--os-text-secondary)]">
-                    {v.paidYtdUsd > 0 ? usdGrouped(v.paidYtdUsd) : '—'}
+                    {!hideAmounts && v.paidYtdUsd > 0 ? usdGrouped(v.paidYtdUsd) : '—'}
                 </span>
             ),
         },
@@ -106,7 +120,15 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
             {cards.length > 0 && (
                 <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3">
                     {cards.map((v) => (
-                        <VesselCard key={v.id} vessel={v} vesselBasePath={vesselBasePath} />
+                        <VesselCard
+                            key={v.id}
+                            vessel={v}
+                            vesselBasePath={vesselBasePath}
+                            invoicesHref={invoicesHref}
+                            readOnly={readOnly}
+                            hideAmounts={hideAmounts}
+                            hint={tView('actionHint')}
+                        />
                     ))}
                 </div>
             )}
@@ -116,7 +138,7 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
                     columns={columns}
                     rows={rows}
                     keyExtractor={(v) => v.id}
-                    onRowClick={(v) => router.push(`${vesselBasePath}/${v.id}`)}
+                    onRowClick={(v) => router.push(`${vesselBasePath}/${v.ref}`)}
                     rowLabel={(v) => t('openVessel', { name: v.name })}
                     emptyMessage={t('empty')}
                 />
@@ -131,7 +153,9 @@ export function FleetBoard({ fleet, vesselBasePath }: { fleet: OwnerFleet; vesse
     );
 }
 
-function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBasePath: string }) {
+function VesselCard({ vessel, vesselBasePath, invoicesHref, readOnly, hideAmounts, hint }: {
+    vessel: FleetVessel; vesselBasePath: string; invoicesHref: string; readOnly: boolean; hideAmounts: boolean; hint: string;
+}) {
     const t = useTranslations('OwnerPortal.fleet');
     const accent = STATUS_ACCENT[vessel.status];
     // Une seule action pleine par écran : celle du navire réellement en retard.
@@ -173,7 +197,7 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
                         : '—'}
                 </Pair>
                 <Pair label={vessel.status === 'proforma' ? t('card.estimate') : t('card.due')} mono>
-                    {usdGrouped(vessel.outstandingUsd)}
+                    {hideAmounts ? '—' : usdGrouped(vessel.outstandingUsd)}
                 </Pair>
             </dl>
 
@@ -183,11 +207,30 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
                 Un armateur qui veut vérifier une émission ou une escale avant
                 de payer n'avait, sur cette carte, aucun moyen d'y accéder. */}
             <div className="flex items-stretch gap-2">
+                {/* En lecture seule, l'action de PAIEMENT est grisée : le staff voit
+                    ce que l'armateur peut déclencher sans le déclencher pour lui.
+                    Le chemin vers le détail, lui, reste ouvert. */}
+                {readOnly && vessel.status !== 'proforma' ? (
+                    <span
+                        aria-disabled
+                        title={hint}
+                        className={`
+                            flex h-10 flex-1 cursor-not-allowed items-center justify-center rounded-[10px] px-3 text-[13.5px] font-semibold opacity-50
+                            ${primary
+                                ? 'bg-[var(--os-brand-green)] text-[var(--os-on-primary)]'
+                                : 'border border-[var(--os-brand-green)]/35 text-[var(--os-brand-cyan)]'}
+                        `}
+                    >
+                        {vessel.nextDueDate
+                            ? t('card.payBefore', { date: new Date(vessel.nextDueDate).toLocaleDateString() })
+                            : t('card.payNow')}
+                    </span>
+                ) : (
                 <Link
                     href={
                         vessel.status === 'proforma'
-                            ? `${vesselBasePath}/${vessel.id}`
-                            : '/dashboard/invoices'
+                            ? `${vesselBasePath}/${vessel.ref}`
+                            : invoicesHref
                     }
                     className={`
                         flex h-10 flex-1 items-center justify-center rounded-[10px] px-3 text-[13.5px] font-semibold
@@ -208,6 +251,7 @@ function VesselCard({ vessel, vesselBasePath }: { vessel: FleetVessel; vesselBas
                             ? t('card.payBefore', { date: new Date(vessel.nextDueDate).toLocaleDateString() })
                             : t('card.payNow')}
                 </Link>
+                )}
 
                 {vessel.status !== 'proforma' && (
                     <Link

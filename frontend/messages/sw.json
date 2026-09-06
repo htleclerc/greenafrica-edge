@@ -604,6 +604,11 @@
       "queryLabel": "Barua pepe, IMO au MMSI",
       "sentToHint": "Kiungo na msimbo vimetumwa kwa {hint}.",
       "sentVessel": "Meli: {vessel}",
+      "chooseTitle": "Anwani kadhaa zimeunganishwa na meli hii. Msimbo utumwe wapi?",
+      "chooseSubmit": "Tuma msimbo",
+      "kindOWNER": "mmiliki",
+      "kindMEMBER": "mwanachama",
+      "kindREPRESENTATIVE": "mwakilishi",
       "codeLabel": "Msimbo wa tarakimu 6",
       "codeSubmit": "Ingia",
       "codeHint": "Au bofya kiungo ulichopokea kwa barua pepe — chochote kinafanya kazi.",
@@ -730,6 +735,8 @@
     "nav_vessel_identity": "Utambulisho wa Meli",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Watumiaji",
+    "nav_admin_settings": "Mipangilio",
     "nav_navires": "Meli"
   },
   "AdminStaff": {
@@ -2891,9 +2898,71 @@
     }
   },
   "_TODO_AdminTaxPipeline": "Translate the AdminTaxPipeline namespace into sw",
+  "AdminSettings": {
+    "title": "Mipangilio",
+    "subtitle": "Kichupo kimoja kwa kila lengo: tunachotoza, tunachochapisha, jinsi tunavyokumbusha, jinsi tunavyogundua, mmiliki anachoona, mfumo.",
+    "tab": {
+      "fiscalite": {
+        "label": "Kodi",
+        "hint": "Mamlaka, viwango, mgawanyo, malipo, nakala"
+      },
+      "documents": {
+        "label": "Hati",
+        "hint": "Wasifu wa mtoaji: muda, adhabu, mtia saini, IBAN, lugha"
+      },
+      "relance": {
+        "label": "Vikumbusho & ukusanyaji",
+        "hint": "Muda wa kupandisha kwa mmiliki, vikumbusho"
+      },
+      "detection": {
+        "label": "Ugunduzi & ulinganisho",
+        "hint": "Njia ya kukaribia, SLA, uvumilivu, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Tovuti & malipo",
+        "hint": "Bendera za tovuti ya mmiliki, njia za malipo, watoa huduma"
+      },
+      "systeme": {
+        "label": "Mfumo",
+        "hint": "Foleni, siri, SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",
+    "hints": {
+      "arrival_corridor_radius_nm": "Radius around the port within which an AIS vessel counts as approaching.",
+      "arrival_claim_sla_hours": "Time left to the agent to claim a detected port call before escalation.",
+      "arrival_escalation_eta_buffer_h": "Margin after ETA before escalation fires.",
+      "reconciliation_tolerance_pct": "Tolerated gap between expected and received amounts before an alert.",
+      "reconciliation_check_interval_min": "How often pending payments are re-checked automatically.",
+      "owner_escalation_delay_days": "Days without agent answer before contacting the shipowner.",
+      "owner_escalation_reminder_count": "Reminders sent to the agent before cascading to the shipowner.",
+      "proforma_languages_default": "Languages of issued pro-formas, comma-separated (e.g. en, fr).",
+      "feature_ais_global_enabled": "Global AIS ingestion. No Gulf of Aden coverage to date.",
+      "feature_equasis_scraper_enabled": "Equasis scraper. Left OFF: runaway observed without queue acks.",
+      "feature_vessel_detention_enabled": "Detention of defaulting vessels — never exercised in production.",
+      "feature_shipowner_portal_enabled": "Owner portal (legacy switch, kept for compatibility).",
+      "feature_shipowner_portal_v1_enabled": "Master switch of the owner portal: everything under /owner goes dark when false.",
+      "feature_shipowner_self_service_enabled": "Self-service access request on /signup.",
+      "feature_online_payment_stripe_enabled": "Portal card rail. Also requires STRIPE_SECRET_KEY in the environment.",
+      "feature_wallet_topup_enabled": "Wallet top-ups by shipowners.",
+      "feature_show_unavailable_rails": "Show unavailable payment methods greyed out instead of hiding them.",
+      "feature_notification_sms_enabled": "SMS notifications — dormant, no provider wired.",
+      "queue_worker_url": "Queue worker URL called by the crons. A wrong value stops processing.",
+      "queue_worker_secret": "Secret shared with the worker. Rotate on both sides at once."
+    },
+    "updatedAt": "changed on {date}",
+    "danger": "danger zone",
+    "confirmDanger": "This setting touches the platform plumbing. Save anyway?",
+    "unsaved": "{count} unsaved",
+    "errors": {
+      "invalid": "unreadable value",
+      "min": "minimum {bound}",
+      "max": "maximum {bound}",
+      "integer": "whole number expected"
+    },
     "labels": {
       "carbon_tax_rate_usd_per_tco2": "Carbon tax rate (USD / tCO₂)",
       "arrival_corridor_radius_nm": "Approach corridor radius (NM)",
@@ -4929,7 +4998,60 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Watumiaji",
+    "subtitle": "Kila mtu anayeweza kuingia: wamiliki, wanachama, wawakilishi — na wafanyakazi.",
+    "search": "Tafuta",
+    "searchPlaceholder": "Jina, barua pepe, akaunti au IMO",
+    "stateFilter": "Hali",
+    "kindTabs": "Aina ya mtu",
+    "kind": {
+      "ALL": "Wote",
+      "OWNER": "Mmiliki",
+      "MEMBER": "Mwanachama",
+      "REPRESENTATIVE": "Mwakilishi",
+      "STAFF": "Wafanyakazi"
+    },
+    "col": {
+      "person": "Mtu",
+      "kind": "Aina",
+      "account": "Akaunti",
+      "rights": "Haki",
+      "lastSignIn": "Kuingia mara ya mwisho",
+      "state": "Hali"
+    },
+    "rights": {
+      "all": "Haki zote",
+      "none": "Kusoma tu"
+    },
+    "privilege": {
+      "canPay": "Kulipa",
+      "canDispute": "Kupinga",
+      "canManageVessels": "Meli",
+      "canInvite": "Kualika"
+    },
+    "state": {
+      "all": "Wote",
+      "active": "Hai",
+      "dormant": "Imelala (siku 90)",
+      "inactive": "Haitumiki",
+      "GHOST": "Haijawahi kuwashwa",
+      "INVITED": "Amealikwa",
+      "SUSPENDED": "Imesimamishwa",
+      "REJECTED": "Imekataliwa"
+    },
+    "never": "Kamwe",
+    "empty": "Hakuna anayelingana.",
+    "action": {
+      "viewAs": "Ona kama",
+      "sendAccess": "Tuma ufikiaji",
+      "sent": "Imetumwa ikiwa inaruhusiwa"
+    }
+  },
   "AdminNavires": {
+    "action": {
+      "viewAs": "Ona kama meli hii"
+    },
     "title": "Meli",
     "subtitle": "Deni lililobaki kwa kila meli. Dai lisilo na meli halionekani hapa.",
     "noOwner": "Hakuna mmiliki",
@@ -4964,6 +5086,17 @@
   },
   "AdminOwnerView": {
     "readOnly": "Kusoma tu",
+    "viewing": "Unaona akaunti hii kama {name} — kusoma tu",
+    "viewingMember": "Unaona akaunti hii kama {member}, mwanachama wa {name} — kusoma tu",
+    "viewingVessel": "Unaona meli {vessel} kama msimamizi wa {name} — kusoma tu",
+    "tabOverview": "Muhtasari",
+    "tabInvoices": "Ankara",
+    "tabFleet": "Meli",
+    "tabWallet": "Pochi",
+    "tabVessel": "Meli",
+    "financeOnly": "Fedha pekee: viwango vilivyotozwa havionekani kwa jukumu lako.",
+    "actionHint": "Imehifadhiwa kwa mmiliki wa meli — unaona akaunti kwa kusoma tu.",
+    "backToVessels": "← Rudi kwenye meli",
     "backToFile": "← Rudi kwenye faili",
     "intro": "Kile mdaiwa anachokiona kwenye tovuti yake. Hakuna hatua inayowezekana hapa.",
     "blockersTitle": "Kinachomzuia kulipa",

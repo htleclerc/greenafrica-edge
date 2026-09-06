@@ -11,6 +11,8 @@ interface Props {
     item: WorkItem;
     payHref: string;
     disputeHref: string;
+    /** Vue staff : boutons présents, désactivés. */
+    readOnly?: boolean;
 }
 
 /**
@@ -25,8 +27,10 @@ interface Props {
  * Quand la bande est là, c'est elle qui porte l'unique action pleine de l'écran ;
  * l'action de l'en-tête de page se replie en secondaire (cf. OperatorDashboardPage).
  */
-export function OverdueActionBand({ item, payHref, disputeHref }: Props) {
+export function OverdueActionBand({ item, payHref, disputeHref, readOnly = false }: Props) {
     const t = useTranslations('OwnerPortal.actionBand');
+    const tView = useTranslations('AdminOwnerView');
+    const hint = readOnly ? tView('actionHint') : undefined;
     const daysLate = item.daysToDue !== null ? -item.daysToDue : 0;
 
     return (
@@ -68,18 +72,31 @@ export function OverdueActionBand({ item, payHref, disputeHref }: Props) {
                     <span className="text-[11.5px] text-[var(--os-text-muted)]">{t('terms')}</span>
                 </div>
                 <div className="flex gap-2.5">
-                    <Link
-                        href={payHref}
-                        className="flex h-11 items-center rounded-[11px] bg-[var(--os-brand-green)] px-5 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
-                    >
-                        {t('payNow')}
-                    </Link>
-                    <Link
-                        href={disputeHref}
-                        className="flex h-11 items-center rounded-[11px] border border-[var(--os-border-strong)] px-4 text-sm text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)]"
-                    >
-                        {t('dispute')}
-                    </Link>
+                    {readOnly ? (
+                        <>
+                            <span aria-disabled title={hint} className="flex h-11 cursor-not-allowed items-center rounded-[11px] bg-[var(--os-brand-green)] px-5 text-sm font-semibold text-[var(--os-on-primary)] opacity-50">
+                                {t('payNow')}
+                            </span>
+                            <span aria-disabled title={hint} className="flex h-11 cursor-not-allowed items-center rounded-[11px] border border-[var(--os-border-strong)] px-4 text-sm text-[var(--os-text-secondary)] opacity-50">
+                                {t('dispute')}
+                            </span>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                href={payHref}
+                                className="flex h-11 items-center rounded-[11px] bg-[var(--os-brand-green)] px-5 text-sm font-semibold text-[var(--os-on-primary)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--os-brand-green)]"
+                            >
+                                {t('payNow')}
+                            </Link>
+                            <Link
+                                href={disputeHref}
+                                className="flex h-11 items-center rounded-[11px] border border-[var(--os-border-strong)] px-4 text-sm text-[var(--os-text-secondary)] transition-colors duration-150 hover:bg-[var(--os-surface-2)]"
+                            >
+                                {t('dispute')}
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </section>

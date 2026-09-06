@@ -131,7 +131,7 @@ export function RevenueDashboard() {
                             <h3 className="text-sm font-semibold text-[var(--os-text-primary)]">{t('chart_top_categories')}</h3>
                             <p className="text-[10px] text-[var(--os-text-muted)]">{t('chart_top_categories_desc')}</p>
                         </div>
-                        <a href="/admin/tax-settings" className="text-[10px] text-[#38BDF8] hover:underline">{t('view_full_report')}</a>
+                        <a href="/admin/settings?tab=fiscalite" className="text-[10px] text-[#38BDF8] hover:underline">{t('view_full_report')}</a>
                     </div>
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={REVENUE_BY_CATEGORY} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} barSize={20}>

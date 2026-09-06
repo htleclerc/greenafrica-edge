@@ -227,7 +227,7 @@ export function PaymentProvidersPanel() {
                                         <span className={checkoutFlags.stripe ? 'text-[#10B981] font-semibold' : 'text-[var(--os-text-muted)]'}>
                                             Owner portal card payments: {checkoutFlags.stripe ? 'ON' : 'OFF'}
                                         </span>
-                                        <Link href="/admin/tax-settings" className="text-[#38BDF8] hover:underline">
+                                        <Link href="/admin/settings?tab=portail" className="text-[#38BDF8] hover:underline">
                                             {checkoutFlags.stripe ? 'flag' : 'enable the flag'}
                                         </Link>
                                     </div>

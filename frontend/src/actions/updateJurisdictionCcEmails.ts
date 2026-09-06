@@ -51,6 +51,6 @@ export async function updateJurisdictionCcEmails(
         details_json: { event: 'JURISDICTION_CC_UPDATED', billingCount: billingCcEmails.length, bailiffCount: bailiffCcEmails.length },
     });
 
-    revalidatePath('/admin/jurisdictions');
+    revalidatePath('/admin/settings');
     return { ok: true };
 }

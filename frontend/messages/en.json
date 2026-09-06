@@ -719,6 +719,11 @@
       "queryLabel": "Email, IMO or MMSI",
       "sentToHint": "Sign-in link and code sent to {hint}.",
       "sentVessel": "Vessel: {vessel}",
+      "chooseTitle": "Several addresses are linked to this vessel. Where should the code go?",
+      "chooseSubmit": "Send the code",
+      "kindOWNER": "account holder",
+      "kindMEMBER": "member",
+      "kindREPRESENTATIVE": "representative",
       "codeLabel": "6-digit code",
       "codeSubmit": "Sign in",
       "codeHint": "Or simply click the link in the email — either one works.",
@@ -845,6 +850,8 @@
     "nav_vessel_identity": "Vessel Identity",
     "theme_switch_to_light": "Switch to light theme",
     "theme_switch_to_dark": "Switch to dark theme",
+    "nav_users": "Users",
+    "nav_admin_settings": "Settings",
     "nav_navires": "Vessels"
   },
   "AdminStaff": {
@@ -2966,9 +2973,71 @@
       "saving": "Saving…"
     }
   },
+  "AdminSettings": {
+    "title": "Settings",
+    "subtitle": "One tab per intent: what we bill, what we print, how we chase, how we detect, what the shipowner sees, the plumbing.",
+    "tab": {
+      "fiscalite": {
+        "label": "Tax",
+        "hint": "Jurisdictions, versioned tariffs, revenue split, settlement, CC lists"
+      },
+      "documents": {
+        "label": "Documents",
+        "hint": "Issuer profile: terms, penalty, signatory, IBAN, languages"
+      },
+      "relance": {
+        "label": "Reminders & collections",
+        "hint": "Owner escalation delays, reminder counts"
+      },
+      "detection": {
+        "label": "Detection & reconciliation",
+        "hint": "Approach corridor, SLA, tolerances, AIS, Equasis"
+      },
+      "portail": {
+        "label": "Portal & payments",
+        "hint": "Owner portal flags, payment rails, providers"
+      },
+      "systeme": {
+        "label": "System",
+        "hint": "Queue, secrets, SMS — SUPERADMIN"
+      }
+    }
+  },
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",
+    "hints": {
+      "arrival_corridor_radius_nm": "Radius around the port within which an AIS vessel counts as approaching.",
+      "arrival_claim_sla_hours": "Time left to the agent to claim a detected port call before escalation.",
+      "arrival_escalation_eta_buffer_h": "Margin after ETA before escalation fires.",
+      "reconciliation_tolerance_pct": "Tolerated gap between expected and received amounts before an alert.",
+      "reconciliation_check_interval_min": "How often pending payments are re-checked automatically.",
+      "owner_escalation_delay_days": "Days without agent answer before contacting the shipowner.",
+      "owner_escalation_reminder_count": "Reminders sent to the agent before cascading to the shipowner.",
+      "proforma_languages_default": "Languages of issued pro-formas, comma-separated (e.g. en, fr).",
+      "feature_ais_global_enabled": "Global AIS ingestion. No Gulf of Aden coverage to date.",
+      "feature_equasis_scraper_enabled": "Equasis scraper. Left OFF: runaway observed without queue acks.",
+      "feature_vessel_detention_enabled": "Detention of defaulting vessels — never exercised in production.",
+      "feature_shipowner_portal_enabled": "Owner portal (legacy switch, kept for compatibility).",
+      "feature_shipowner_portal_v1_enabled": "Master switch of the owner portal: everything under /owner goes dark when false.",
+      "feature_shipowner_self_service_enabled": "Self-service access request on /signup.",
+      "feature_online_payment_stripe_enabled": "Portal card rail. Also requires STRIPE_SECRET_KEY in the environment.",
+      "feature_wallet_topup_enabled": "Wallet top-ups by shipowners.",
+      "feature_show_unavailable_rails": "Show unavailable payment methods greyed out instead of hiding them.",
+      "feature_notification_sms_enabled": "SMS notifications — dormant, no provider wired.",
+      "queue_worker_url": "Queue worker URL called by the crons. A wrong value stops processing.",
+      "queue_worker_secret": "Secret shared with the worker. Rotate on both sides at once."
+    },
+    "updatedAt": "changed on {date}",
+    "danger": "danger zone",
+    "confirmDanger": "This setting touches the platform plumbing. Save anyway?",
+    "unsaved": "{count} unsaved",
+    "errors": {
+      "invalid": "unreadable value",
+      "min": "minimum {bound}",
+      "max": "maximum {bound}",
+      "integer": "whole number expected"
+    },
     "labels": {
       "carbon_tax_rate_usd_per_tco2": "Carbon tax rate (USD / tCO₂)",
       "arrival_corridor_radius_nm": "Approach corridor radius (NM)",
@@ -4923,7 +4992,60 @@
     "invalid": "Code rejected. Check your phone’s clock, then try again.",
     "lost": "Lost your phone? Sign out"
   },
+  "AdminUsers": {
+    "title": "Users",
+    "subtitle": "Everyone who can sign in: account holders, members, representatives — and staff.",
+    "search": "Search",
+    "searchPlaceholder": "Name, e-mail, account or IMO",
+    "stateFilter": "State",
+    "kindTabs": "Kind of person",
+    "kind": {
+      "ALL": "All",
+      "OWNER": "Holder",
+      "MEMBER": "Member",
+      "REPRESENTATIVE": "Representative",
+      "STAFF": "Staff"
+    },
+    "col": {
+      "person": "Person",
+      "kind": "Kind",
+      "account": "Account",
+      "rights": "Rights",
+      "lastSignIn": "Last sign-in",
+      "state": "State"
+    },
+    "rights": {
+      "all": "All rights",
+      "none": "Read only"
+    },
+    "privilege": {
+      "canPay": "Pay",
+      "canDispute": "Dispute",
+      "canManageVessels": "Vessels",
+      "canInvite": "Invite"
+    },
+    "state": {
+      "all": "All",
+      "active": "Active",
+      "dormant": "Dormant (90 d)",
+      "inactive": "Inactive",
+      "GHOST": "Never activated",
+      "INVITED": "Invited",
+      "SUSPENDED": "Suspended",
+      "REJECTED": "Rejected"
+    },
+    "never": "Never",
+    "empty": "Nobody matches.",
+    "action": {
+      "viewAs": "View as",
+      "sendAccess": "Send access",
+      "sent": "Sent if allowed"
+    }
+  },
   "AdminNavires": {
+    "action": {
+      "viewAs": "View as this vessel"
+    },
     "title": "Vessels",
     "subtitle": "Outstanding debt per vessel. A claim with no vessel attached does not appear here.",
     "noOwner": "No shipowner",
@@ -4958,6 +5080,17 @@
   },
   "AdminOwnerView": {
     "readOnly": "Read-only",
+    "viewing": "You are viewing this account as {name} — read only",
+    "viewingMember": "You are viewing this account as {member}, member of {name} — read only",
+    "viewingVessel": "You are viewing vessel {vessel} as {name}'s manager — read only",
+    "tabOverview": "Overview",
+    "tabInvoices": "Invoices",
+    "tabFleet": "Fleet",
+    "tabWallet": "Wallet",
+    "tabVessel": "Vessel",
+    "financeOnly": "Finance only: billed amounts are not visible with your role.",
+    "actionHint": "Reserved to the shipowner — you are viewing the account read only.",
+    "backToVessels": "← Back to vessels",
     "backToFile": "← Back to file",
     "intro": "What the debtor sees in their portal. No action is possible from this screen — this is not signing in as them.",
     "blockersTitle": "What stops them paying",

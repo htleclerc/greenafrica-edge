@@ -14,6 +14,8 @@ const log = scopedLogger('verifyLoginCode');
 const schema = z.object({
     query: z.string(),
     code: z.string().trim().min(4).max(10),
+    /** Chemin navire : jeton de la boîte choisie au premier temps. */
+    recipient: z.string().optional(),
 }).strict();
 
 export type VerifyLoginCodeResult =
@@ -55,7 +57,7 @@ export async function verifyLoginCode(raw: unknown): Promise<VerifyLoginCodeResu
 
     // ── Chemin navire : délégation complète ───────────────────────────────
     if (!query.includes('@')) {
-        const r = await verifyVesselAccessCode({ identifier: query, code });
+        const r = await verifyVesselAccessCode({ identifier: query, code, recipient: parsed.data.recipient });
         if (r.ok) return { ok: true, redirectTo: r.redirectTo };
         return {
             ok: false,

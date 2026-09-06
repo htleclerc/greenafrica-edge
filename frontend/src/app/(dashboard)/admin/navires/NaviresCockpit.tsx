@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { OsTable, type OsColumn } from '@/components/ui/OsTable';
 import { OsBadge, type BadgeVariant } from '@/components/ui/OsBadge';
@@ -139,6 +140,23 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
                 <span className="text-xs text-[var(--os-text-muted)] tabular-nums">
                     {r.next_due_date ? new Date(r.next_due_date).toLocaleDateString() : '—'}
                 </span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: '',
+            // « Voir comme ce navire » : le portail tel que le voit un gestionnaire
+            // limité à ce navire. Sans armateur rattaché, il n'y a rien à voir.
+            render: (r) => (
+                r.vessel_public_ref && r.shipowner_id ? (
+                    <Link
+                        href={`/admin/navires/${r.vessel_public_ref}/portail`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-semibold text-[#00D97E] hover:underline whitespace-nowrap"
+                    >
+                        {t('action.viewAs')}
+                    </Link>
+                ) : null
             ),
         },
     ], [t]);

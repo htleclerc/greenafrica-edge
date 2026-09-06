@@ -43,7 +43,15 @@ vi.mock('@/services/auth/vesselOwnerLookup', () => ({
     resolveOwnerByVesselIdentifier: (...a: unknown[]) => resolveVessel(...(a as [])),
 }));
 
-const { requestLoginLink } = await import('./requestLoginLink');
+// Boîtes admises pour le compte : par défaut, la seule adresse officielle.
+const listRecipients = vi.fn();
+vi.mock('@/services/auth/loginRecipients', () => ({
+    listLoginRecipients: (...a: unknown[]) => listRecipients(...(a as [])),
+    MAX_LOGIN_RECIPIENTS: 5,
+}));
+
+const { requestLoginLink, sendLoginLinkTo } = await import('./requestLoginLink');
+const { signRecipientToken } = await import('@/lib/auth/recipientToken');
 
 const TARGET = {
     shipownerId: 'own-1',
@@ -67,6 +75,8 @@ beforeEach(() => {
     enforce.mockResolvedValue({ allowed: true });
     sendLink.mockResolvedValue({ success: true });
     resolveVessel.mockResolvedValue(null);
+    listRecipients.mockImplementation(async (_db: unknown, o: { officialEmail: string }) => [{ email: o.officialEmail, kind: 'OWNER' }]);
+    process.env.LOGIN_RECIPIENT_SECRET = 'test-recipient-secret';
 });
 
 describe('requestLoginLink', () => {
@@ -305,5 +315,76 @@ describe('requestLoginLink — comptes staff', () => {
 
         expect(r).toEqual({ ok: true, via: 'email' });
         expect(sendLink).not.toHaveBeenCalled();
+    });
+});
+
+describe('requestLoginLink — chemin navire, plusieurs boîtes', () => {
+    const OWNER = {
+        id: 'own-2', name: 'CORAL TECHNICAL SERVICES',
+        officialEmail: 'coral@nets.example', vesselName: 'ALIMAN',
+        isOfacSdn: false, isUnProhibited: false,
+    };
+    const RECIPIENTS = [
+        { email: 'coral@nets.example', kind: 'OWNER' },
+        { email: 'compta@coral.example', kind: 'MEMBER' },
+        { email: 'agent@berbera.example', kind: 'REPRESENTATIVE' },
+    ];
+
+    beforeEach(() => {
+        resolveVessel.mockResolvedValue(OWNER);
+        listRecipients.mockResolvedValue(RECIPIENTS);
+    });
+
+    it('propose les boîtes masquées sous jetons, sans rien envoyer', async () => {
+        const r = await requestLoginLink({ query: '9167057' });
+        expect(r).toMatchObject({ ok: true, via: 'vessel-choice', vesselName: 'ALIMAN' });
+        const choices = (r as { choices: { token: string; hint: string; kind: string }[] }).choices;
+        expect(choices.map((c) => c.kind)).toEqual(['OWNER', 'MEMBER', 'REPRESENTATIVE']);
+        for (const c of choices) {
+            expect(c.hint).toContain('••••');
+            expect(c.token).toMatch(/^[0-9a-f]{32}$/);
+            expect(JSON.stringify(c)).not.toContain('@nets.example');
+        }
+        expect(sendLink).not.toHaveBeenCalled();
+        // Aucun quota armateur consommé tant que rien ne part.
+        expect(enforce).not.toHaveBeenCalledWith('login-link', 'owner:own-2');
+    });
+
+    it('envoie à la boîte choisie — un membre ouvre sa propre session', async () => {
+        const token = signRecipientToken('own-2', 'compta@coral.example');
+        const r = await sendLoginLinkTo({ query: '9167057', recipient: token });
+        expect(r).toMatchObject({ ok: true, via: 'vessel', vesselName: 'ALIMAN' });
+        expect((r as { emailHint: string }).emailHint).toContain('••••');
+        expect(sendLink).toHaveBeenCalledWith(expect.objectContaining({ to: 'compta@coral.example', vesselName: 'ALIMAN' }));
+        expect(enforce).toHaveBeenCalledWith('login-link', 'owner:own-2');
+    });
+
+    it('rejette un jeton qui ne désigne aucune boîte admise, comme un navire inconnu', async () => {
+        const forged = signRecipientToken('own-2', 'attacker@evil.example');
+        const r = await sendLoginLinkTo({ query: '9167057', recipient: forged });
+        expect(r).toEqual({ ok: true, via: 'vessel-unknown' });
+        expect(sendLink).not.toHaveBeenCalled();
+    });
+
+    it("rejette un jeton d'un autre compte", async () => {
+        const other = signRecipientToken('own-999', 'compta@coral.example');
+        const r = await sendLoginLinkTo({ query: '9167057', recipient: other });
+        expect(r).toEqual({ ok: true, via: 'vessel-unknown' });
+    });
+
+    it('ne propose jamais rien pour un armateur sanctionné', async () => {
+        resolveVessel.mockResolvedValue({ ...OWNER, isOfacSdn: true });
+        const r = await requestLoginLink({ query: '9167057' });
+        expect(r).toEqual({ ok: true, via: 'vessel-unknown' });
+        const token = signRecipientToken('own-2', 'compta@coral.example');
+        expect(await sendLoginLinkTo({ query: '9167057', recipient: token })).toEqual({ ok: true, via: 'vessel-unknown' });
+        expect(sendLink).not.toHaveBeenCalled();
+    });
+
+    it('une seule boîte : envoi direct, comme avant', async () => {
+        listRecipients.mockResolvedValue([RECIPIENTS[0]]);
+        const r = await requestLoginLink({ query: '9167057' });
+        expect(r).toMatchObject({ ok: true, via: 'vessel' });
+        expect(sendLink).toHaveBeenCalledWith(expect.objectContaining({ to: 'coral@nets.example' }));
     });
 });
