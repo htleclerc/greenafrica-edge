@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 150 : « voir comme l'armateur » tracé, et référence publique des membres
+-- Migration 152 : « voir comme l'armateur » tracé, et référence publique des membres
 --
 -- 1. OWNER_VIEW_AS dans audit_action. Un membre du staff qui ouvre le portail
 --    d'un armateur en lecture seule consulte des données personnelles et
@@ -33,7 +33,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS owner_members_public_ref_unique
   ON public.owner_members(public_ref);
 
 COMMENT ON COLUMN public.owner_members.public_ref IS
-  'Mig 150 : référence opaque d''une appartenance, exposée dans les URL admin à la place de l''UUID. Tirée au hasard.';
+  'Mig 152 : référence opaque d''une appartenance, exposée dans les URL admin à la place de l''UUID. Tirée au hasard.';
 
 -- ── Encours par navire (mig 145 recopiée, + vessel_public_ref) ──────────────
 CREATE OR REPLACE VIEW public.v_navire_recouvrement
@@ -77,7 +77,7 @@ SELECT
     WHERE t.document_type = 'PROFORMA' AND t.mode = 'MARITIME'
   )                                                                     AS last_invoiced_at,
   s.public_ref                                                          AS shipowner_public_ref,
-  -- ── nouvelle colonne (mig 150) ────────────────────────────────────────────
+  -- ── nouvelle colonne (mig 152) ────────────────────────────────────────────
   v.public_ref                                                          AS vessel_public_ref
 FROM public.vessels v
 LEFT JOIN public.transactions t ON t.vessel_id = v.id

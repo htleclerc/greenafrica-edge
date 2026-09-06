@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
 
     // TOUS les comptes, pas seulement le principal. Le profil en porte
     // plusieurs depuis la mig 131 — zone euro, hors-UE, et local depuis la
-    // mig 150 — mais l'écran n'en montrait qu'un. Un armateur qui banque au
+    // mig 152 — mais l'écran n'en montrait qu'un. Un armateur qui banque au
     // Somaliland payait donc un virement international pour une taxe perçue
     // sur place. Le payeur est seul à savoir où il banque : c'est à lui de
     // choisir.

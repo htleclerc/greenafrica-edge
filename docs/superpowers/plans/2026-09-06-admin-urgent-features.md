@@ -30,7 +30,7 @@ ouverte au nom d'un débiteur, réponse invariable sur le chemin connexion, trac
 
 ### 1.1 `/admin/users` — un annuaire, quatre populations
 
-Une vue `v_platform_users` (mig 150, `security_invoker`, lecture staff) qui unit :
+Une vue `v_platform_users` (mig 152, `security_invoker`, lecture staff) qui unit :
 
 | Population | Source | Colonnes propres |
 |---|---|---|
@@ -218,13 +218,13 @@ le journal et la tendance partent vers `/admin/revenue` (ils y sont déjà pour 
   chaque `select`, portée navire optionnelle, fermé par défaut, écritures et `rpc` refusés).
   Les pages du portail ne changent pas de chemin de données : c'est ce qui garantit
   l'« exactement ». `requireViewAsOwner` (`lib/auth/viewAsOwner.ts`) résout compte ou navire
-  par référence opaque, trace `OWNER_VIEW_AS` (mig 150), et pose `viewAs` sur le principal ;
+  par référence opaque, trace `OWNER_VIEW_AS` (mig 152), et pose `viewAs` sur le principal ;
   `portalPaths` en déduit liens et `readOnly` / `hideAmounts`. Routes :
   `/admin/armateurs/[ref]/portail{,/invoices,/fleet,/fleet/[vref],/wallet}` et
   `/admin/navires/[vref]/portail{,/invoices}`. Bandeau + volets, volets finance grisés pour
   `PORT_OFFICER`, montants masqués sur flotte et fiche navire. Lien « Voir comme ce navire »
-  sur `/admin/navires` (la vue 143 porte `vessel_public_ref`, mig 150).
-- **Reporté au §1** : « voir comme ce membre » (`?as=mbr_…`, colonne posée par la mig 150).
+  sur `/admin/navires` (la vue 143 porte `vessel_public_ref`, mig 152).
+- **Reporté au §1** : « voir comme ce membre » (`?as=mbr_…`, colonne posée par la mig 152).
 - **2026-09-06 — §3 livré.** `listLoginRecipients` (titulaire, membres actifs, représentants
   actifs, jamais les copies, plafond 5), jetons `HMAC(secret · compte · boîte · fenêtre
   horaire)` (`lib/auth/recipientToken.ts`, secret `LOGIN_RECIPIENT_SECRET` ou repli
@@ -236,7 +236,7 @@ le journal et la tendance partent vers `/admin/revenue` (ils y sont déjà pour 
 - **2026-09-06 — §1.1 livré, sans vue SQL.** `/admin/users` (`services/platformUsersService.ts`) :
   les comptes viennent de la session (RLS), membres et représentants sont joints avec le
   client plateforme **bornés à ces comptes**, le staff n'apparaît qu'au SUPERADMIN ; dernière
-  connexion par `profile_last_sign_in()` (mig 151, SECURITY DEFINER réservée au staff).
+  connexion par `profile_last_sign_in()` (mig 153, SECURITY DEFINER réservée au staff).
   Recherche nom / e-mail / compte / IMO, filtres type et état (dont « dormant » à 90 j),
   actions « voir comme » (titulaire, ou membre via `?as=mbr_…` — livré avec, les pages
   posent le bandeau elles-mêmes puisqu'un layout ne lit pas la requête), « envoyer un accès »

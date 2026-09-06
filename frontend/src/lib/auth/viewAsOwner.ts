@@ -20,7 +20,7 @@ import type { ShipownerListRow } from '@/services/shipownerService';
 // son nom. `viewAs` dit aux composants d'afficher les actions désactivées et
 // de lier vers la vue admin plutôt que vers `/dashboard`.
 //
-// Chaque page ouverte s'inscrit dans audit_logs (OWNER_VIEW_AS, mig 150) :
+// Chaque page ouverte s'inscrit dans audit_logs (OWNER_VIEW_AS, mig 152) :
 // c'est une consultation de données personnelles et financières.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ export interface ViewAsInput {
     ownerRef?: string;
     /** Référence publique `ves_…` : la vue se restreint à ce navire. */
     vesselRef?: string;
-    /** Référence `mbr_…` (mig 150) : voir le compte avec les droits de ce membre. */
+    /** Référence `mbr_…` (mig 152) : voir le compte avec les droits de ce membre. */
     memberRef?: string;
     /** Nom de la page, pour la trace. */
     page: string;

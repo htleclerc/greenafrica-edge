@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 151 : dernière connexion des profils, pour l'annuaire staff
+-- Migration 153 : dernière connexion des profils, pour l'annuaire staff
 --
 -- `auth.users.last_sign_in_at` n'est pas lisible depuis PostgREST. L'annuaire
 -- `/admin/users` doit pourtant dire quand une personne s'est connectée pour la
@@ -39,7 +39,7 @@ REVOKE ALL ON FUNCTION public.profile_last_sign_in(UUID[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.profile_last_sign_in(UUID[]) TO authenticated;
 
 COMMENT ON FUNCTION public.profile_last_sign_in(UUID[]) IS
-  'Mig 151 : dernière connexion (auth.users) des profils demandés, réservée au staff. Annuaire /admin/users.';
+  'Mig 153 : dernière connexion (auth.users) des profils demandés, réservée au staff. Annuaire /admin/users.';
 
 -- DOWN:
 -- DROP FUNCTION IF EXISTS public.profile_last_sign_in(UUID[]);

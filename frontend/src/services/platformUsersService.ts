@@ -190,7 +190,7 @@ export async function listPlatformUsers(
         });
     }
 
-    // 3. Dernière connexion — une seule lecture, fonction staff (mig 151).
+    // 3. Dernière connexion — une seule lecture, fonction staff (mig 153).
     const profileIds = [
         ...holderProfileIds,
         ...((membersRes.data ?? []) as { profile_id: string }[]).map((m) => m.profile_id),
