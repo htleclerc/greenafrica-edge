@@ -193,15 +193,28 @@ async function mintAndSend(
     const { data, error } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: { redirectTo: `${appUrl}${callbackPath}` },
     });
 
-    const link = data?.properties?.action_link;
+    // On construit NOTRE url, on n'envoie pas `action_link`.
+    //
+    // `action_link` pointe sur /auth/v1/verify de GoTrue, qui redirige ensuite
+    // vers `redirectTo` — mais SEULEMENT si cette cible figure dans les
+    // « Redirect URLs » du projet. Sinon il retombe sur le Site URL, et il y
+    // dépose le jeton dans un FRAGMENT (#access_token=…) que le serveur ne voit
+    // jamais. Mesuré en production le 2026-09-06 : le lien atterrissait sur la
+    // page d'accueil publique, sans session, sans message.
+    //
+    // Avec `token_hash`, le navigateur frappe notre route directement et c'est
+    // elle qui appelle verifyOtp côté serveur. Plus aucune dépendance à la
+    // configuration d'URLs de Supabase — une console que nous ne maîtrisons
+    // pas et dont un réglage silencieux condamnait tous les accès.
+    const tokenHash = data?.properties?.hashed_token;
     const code = data?.properties?.email_otp;
-    if (error || !link || !code) {
+    if (error || !tokenHash || !code) {
         log.warn('link_generate_failed', { error: error?.message });
         return false;
     }
+    const link = `${appUrl}${callbackPath}?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink`;
 
     const sent = await sendLoginLinkEmail({ to: email, recipientName, link, code, vesselName });
     if (!sent.success) log.warn('link_send_failed', { error: sent.error });
