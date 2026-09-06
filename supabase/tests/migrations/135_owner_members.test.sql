@@ -8,16 +8,21 @@ BEGIN
      WHERE table_schema='public' AND table_name='owner_members'
   ), 'owner_members table missing';
 
-  -- Les quatre sous-permissions, toutes NOT NULL et FAUSSES par défaut : un
-  -- membre invité voit le compte, il n'agit que sur décision explicite.
-  FOR i IN 1..1 LOOP
-    ASSERT (
-      SELECT COUNT(*) = 4 FROM information_schema.columns
-       WHERE table_schema='public' AND table_name='owner_members'
-         AND column_name IN ('can_pay','can_dispute','can_manage_vessels','can_invite')
-         AND is_nullable='NO' AND column_default='false'
-    ), 'the four privilege flags must exist, be NOT NULL and default to false';
-  END LOOP;
+  -- Les quatre sous-permissions, toutes NOT NULL. Trois sont FAUSSES par
+  -- défaut : un membre invité voit le compte, il n'agit que sur décision
+  -- explicite. `can_pay` est VRAIE par défaut depuis la mig 148 (décision PO
+  -- du 2026-09-05) : payer est ouvert à tout membre, seul le titulaire le
+  -- retire.
+  ASSERT (
+    SELECT COUNT(*) = 3 FROM information_schema.columns
+     WHERE table_schema='public' AND table_name='owner_members'
+       AND column_name IN ('can_dispute','can_manage_vessels','can_invite')
+       AND is_nullable='NO' AND column_default='false'
+  ), 'can_dispute, can_manage_vessels and can_invite must exist, be NOT NULL and default to false';
+  ASSERT (
+    SELECT column_default = 'true' AND is_nullable = 'NO' FROM information_schema.columns
+     WHERE table_schema='public' AND table_name='owner_members' AND column_name='can_pay'
+  ), 'can_pay must be NOT NULL and default to true (mig 148)';
 
   ASSERT EXISTS (
     SELECT 1 FROM information_schema.columns
