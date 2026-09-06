@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_ISSUER_PROFILE,
   primaryAccount,
+  localAccount,
   type IssuerProfile,
 } from '@/services/issuerProfileService';
 import QRCode from 'qrcode';
@@ -586,7 +587,25 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   // Le compte à créditer figure sur la page 1 : un armateur qui imprime la
   // facture doit pouvoir la remettre telle quelle à sa banque.
   y += 6;
-  const payBoxH = account.depositReference ? 34 : 30;
+
+  // Le compte DOMESTIQUE est imprime en plus de l'international : un armateur
+  // qui banque au Somaliland n'a pas a emettre un virement transfrontalier
+  // pour une taxe percue sur place — frais, delais, et rejets qu'il subissait
+  // sans pouvoir les eviter.
+  const local = localAccount(issuer);
+
+  // La hauteur de base est CONSERVEE telle quelle : la recalculer depuis le
+  // nombre de lignes donnait 39mm au lieu de 30 et decalait la signature sur
+  // toutes les factures deja emises. Le bloc local n'ajoute donc que ce qu'il
+  // occupe reellement, et un document sans compte local est mis en page a
+  // l'identique.
+  const LINE_H = 3.8;
+  const baseBoxH = account.depositReference ? 34 : 30;
+  const localLines = local
+    ? 4 + (local.intermediaryBank ? 1 : 0) + (local.intermediarySwift ? 1 : 0)
+    : 0;
+  const payBoxH = baseBoxH + (local ? 0.8 + LINE_H + localLines * LINE_H : 0);
+
   doc.setFillColor(240, 249, 244);
   doc.rect(margin, y, pageWidth - 2 * margin, payBoxH, 'F');
   doc.setFillColor(4, 120, 87);
@@ -621,6 +640,25 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
     // Les comptes hors UE exigent une référence de dépôt EN PLUS de la facture.
     payLine('Deposit reference :', `${account.depositReference} (mandatory in addition to the invoice reference)`, true);
   }
+
+  if (local) {
+    py += 0.8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(4, 120, 87);
+    doc.text('OR — LOCAL BANK TRANSFER', margin + 4, py);
+    py += 3.8;
+
+    payLine('IBAN :', `${local.iban ?? local.accountNumber ?? '—'}    Currency : ${local.currency}`);
+    payLine('Beneficiary Bank :', local.bank);
+    payLine('Bank address :', local.bankAddress ?? '—');
+    payLine('SWIFT / BIC :', local.swift);
+    // Sans la banque correspondante, un virement etranger vers ce compte est
+    // rejete par la banque emettrice, sans message utile pour le payeur.
+    if (local.intermediaryBank) payLine('Intermediary bank :', local.intermediaryBank);
+    if (local.intermediarySwift) payLine('Intermediary SWIFT :', local.intermediarySwift);
+  }
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(180, 35, 28);

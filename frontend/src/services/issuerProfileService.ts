@@ -31,6 +31,13 @@ export interface BankAccount {
      */
     intermediaryBank: string | null;
     intermediarySwift: string | null;
+    /**
+     * Compte domestique de la juridiction. Marqué explicitement plutôt que
+     * déduit du libellé : le libellé est une chaîne d'affichage, traduite et
+     * réécrite au fil du temps, et un pro-forma ne doit pas dépendre de son
+     * orthographe pour savoir quel compte proposer au payeur local.
+     */
+    isLocal: boolean;
     /** Compte imprimé sur la page 1 du pro-forma, et proposé par défaut. */
     isPrimary: boolean;
 }
@@ -98,6 +105,7 @@ export const DEFAULT_ISSUER_PROFILE: IssuerProfile = {
         depositReference: null,
         intermediaryBank: null,
         intermediarySwift: null,
+        isLocal: false,
         isPrimary: true,
     }],
 };
@@ -151,6 +159,7 @@ function mapAccounts(raw: unknown): BankAccount[] | null {
             depositReference: (o.deposit_reference as string | null) ?? null,
             intermediaryBank: (o.intermediary_bank as string | null) ?? null,
             intermediarySwift: (o.intermediary_swift as string | null) ?? null,
+            isLocal: o.is_local === true,
             isPrimary: o.is_primary === true,
         };
     });
@@ -214,6 +223,15 @@ export async function getIssuerProfile(
  */
 export function primaryAccount(profile: IssuerProfile): BankAccount {
     return profile.bankAccounts.find((a) => a.isPrimary) ?? profile.bankAccounts[0];
+}
+
+/**
+ * Compte domestique, s'il en existe un. Rendu à part parce que le pro-forma
+ * l'imprime EN PLUS du compte international : un armateur qui banque sur place
+ * ne doit pas payer un virement transfrontalier pour une taxe perçue chez lui.
+ */
+export function localAccount(profile: IssuerProfile): BankAccount | null {
+    return profile.bankAccounts.find((a) => a.isLocal) ?? null;
 }
 
 /** Vue « coordonnées de virement » attendue par l'écran de paiement armateur. */
