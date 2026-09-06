@@ -2931,6 +2931,38 @@
   "AdminTaxPipeline": {
     "sectionTitle": "Carbon tax pipeline",
     "sectionSubtitle": "Runtime configuration for detection, reconciliation, escalation, and feature flags. Secrets are editable by SUPERADMIN only.",
+    "hints": {
+      "arrival_corridor_radius_nm": "Radius around the port within which an AIS vessel counts as approaching.",
+      "arrival_claim_sla_hours": "Time left to the agent to claim a detected port call before escalation.",
+      "arrival_escalation_eta_buffer_h": "Margin after ETA before escalation fires.",
+      "reconciliation_tolerance_pct": "Tolerated gap between expected and received amounts before an alert.",
+      "reconciliation_check_interval_min": "How often pending payments are re-checked automatically.",
+      "owner_escalation_delay_days": "Days without agent answer before contacting the shipowner.",
+      "owner_escalation_reminder_count": "Reminders sent to the agent before cascading to the shipowner.",
+      "proforma_languages_default": "Languages of issued pro-formas, comma-separated (e.g. en, fr).",
+      "feature_ais_global_enabled": "Global AIS ingestion. No Gulf of Aden coverage to date.",
+      "feature_equasis_scraper_enabled": "Equasis scraper. Left OFF: runaway observed without queue acks.",
+      "feature_vessel_detention_enabled": "Detention of defaulting vessels — never exercised in production.",
+      "feature_shipowner_portal_enabled": "Owner portal (legacy switch, kept for compatibility).",
+      "feature_shipowner_portal_v1_enabled": "Master switch of the owner portal: everything under /owner goes dark when false.",
+      "feature_shipowner_self_service_enabled": "Self-service access request on /signup.",
+      "feature_online_payment_stripe_enabled": "Portal card rail. Also requires STRIPE_SECRET_KEY in the environment.",
+      "feature_wallet_topup_enabled": "Wallet top-ups by shipowners.",
+      "feature_show_unavailable_rails": "Show unavailable payment methods greyed out instead of hiding them.",
+      "feature_notification_sms_enabled": "SMS notifications — dormant, no provider wired.",
+      "queue_worker_url": "Queue worker URL called by the crons. A wrong value stops processing.",
+      "queue_worker_secret": "Secret shared with the worker. Rotate on both sides at once."
+    },
+    "updatedAt": "changed on {date}",
+    "danger": "danger zone",
+    "confirmDanger": "This setting touches the platform plumbing. Save anyway?",
+    "unsaved": "{count} unsaved",
+    "errors": {
+      "invalid": "unreadable value",
+      "min": "minimum {bound}",
+      "max": "maximum {bound}",
+      "integer": "whole number expected"
+    },
     "labels": {
       "carbon_tax_rate_usd_per_tco2": "Carbon tax rate (USD / tCO₂)",
       "arrival_corridor_radius_nm": "Approach corridor radius (NM)",

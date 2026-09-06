@@ -7,6 +7,7 @@ import { Save, CheckCircle, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-reac
 import { OsButton } from '@/components/ui/OsButton';
 import { updateAppConfig } from '@/actions/updateAppConfig';
 import type { AppConfigEntry } from '@/services/appConfigService';
+import { checkBounds, keyMeta } from '@/lib/admin/settingsKeyMeta';
 
 const NUMBER_KEYS = new Set([
     // carbon_tax.rate_usd_per_tco2 retired: billing reads versioned tariffs table
@@ -137,6 +138,24 @@ export function CarbonTaxPipelineSection({ entries, canEdit, keys, title, subtit
     const router = useRouter();
     const shown = keys ?? PIPELINE_KEY_ORDER;
 
+    // Garde de sortie : une valeur saisie et non enregistrée ne doit pas se
+    // perdre sur un clic de volet ou une fermeture d'onglet.
+    const [dirtyKeys, setDirtyKeys] = React.useState<Set<string>>(() => new Set());
+    const markDirty = React.useCallback((key: string, dirty: boolean) => {
+        setDirtyKeys((prev) => {
+            if (prev.has(key) === dirty) return prev;
+            const next = new Set(prev);
+            if (dirty) next.add(key); else next.delete(key);
+            return next;
+        });
+    }, []);
+    React.useEffect(() => {
+        if (dirtyKeys.size === 0) return;
+        const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+        window.addEventListener('beforeunload', onBeforeUnload);
+        return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    }, [dirtyKeys]);
+
     // Build a keyed map for lookup; render in the fixed KEY_ORDER so even
     // freshly seeded keys missing from the DB still render a row with empty
     // value (rather than silently disappearing).
@@ -163,6 +182,12 @@ export function CarbonTaxPipelineSection({ entries, canEdit, keys, title, subtit
                         {t('readOnly')}
                     </span>
                 )}
+                {canEdit && dirtyKeys.size > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[rgba(234,179,8,0.12)] text-[#EAB308] border border-[#EAB308]/20 whitespace-nowrap">
+                        <AlertTriangle className="w-3 h-3" />
+                        {t('unsaved', { count: dirtyKeys.size })}
+                    </span>
+                )}
             </div>
 
             <div className="divide-y divide-[var(--os-border)]">
@@ -175,6 +200,7 @@ export function CarbonTaxPipelineSection({ entries, canEdit, keys, title, subtit
                             entry={entry}
                             canEdit={canEdit}
                             onSaved={() => router.refresh()}
+                            onDirty={markDirty}
                         />
                     );
                 })}
@@ -188,12 +214,16 @@ interface RowProps {
     entry: AppConfigEntry | undefined;
     canEdit: boolean;
     onSaved: () => void;
+    onDirty: (key: string, dirty: boolean) => void;
 }
 
-function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
+function PipelineRow({ configKey, entry, canEdit, onSaved, onDirty }: RowProps) {
     const t = useTranslations('AdminTaxPipeline');
     const type = detectType(configKey);
     const isSecret = SECRET_KEYS.has(configKey);
+    const meta = keyMeta(configKey);
+    const hintKey = `hints.${configKey.replace(/\./g, '_')}`;
+    const hint = t.has(hintKey) ? t(hintKey) : null;
 
     const currentValue = entry?.value ?? null;
     const [draft, setDraft] = React.useState<string>(readAsString(currentValue, configKey));
@@ -210,6 +240,14 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
 
     const isSaving = isPending || status.state === 'saving';
 
+    // Modifié = la saisie diffère de la valeur en base. C'est ce qui allume le
+    // bouton, le bandeau de la section et la garde de sortie.
+    const dirty = type === 'boolean'
+        ? draftBool !== (currentValue === true)
+        : draft !== readAsString(currentValue, configKey);
+    React.useEffect(() => { onDirty(configKey, dirty); }, [configKey, dirty, onDirty]);
+    React.useEffect(() => () => onDirty(configKey, false), [configKey, onDirty]);
+
     function handleSave() {
         if (!canEdit || isSaving) return;
         let parsedValue: PipelineValue | null;
@@ -219,9 +257,20 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
             parsedValue = parseInput(draft, configKey);
         }
         if (parsedValue === null) {
-            setStatus({ state: 'error', reason: 'invalid value' });
+            setStatus({ state: 'error', reason: t('errors.invalid') });
             return;
         }
+        // Les bornes arrêtent une faute de frappe avant l'appel serveur, avec
+        // la borne dans le message plutôt qu'un « invalid value » muet.
+        if (type === 'number') {
+            const check = checkBounds(configKey, parsedValue as number);
+            if (!check.ok) {
+                setStatus({ state: 'error', reason: t(`errors.${check.reason}`, { bound: check.bound ?? 0 }) });
+                return;
+            }
+        }
+        // Un secret ou une URL de plomberie ne se change pas d'un clic distrait.
+        if (meta.danger && typeof window !== 'undefined' && !window.confirm(t('confirmDanger'))) return;
 
         setStatus({ state: 'saving' });
         startTransition(async () => {
@@ -237,13 +286,24 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
     }
 
     return (
-        <div className="px-5 py-3 grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(180px,1.2fr)_auto] gap-3 items-center">
+        <div className={`px-5 py-3 grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(180px,1.2fr)_auto] gap-3 items-center ${
+            meta.danger ? 'border-l-2 border-l-[#EF4444]/60' : ''
+        }`}>
             <div>
-                <p className="text-xs font-semibold text-[var(--os-text-primary)]">
+                <p className="text-xs font-semibold text-[var(--os-text-primary)] flex items-center gap-2">
                     {t(`labels.${configKey.replace(/\./g, '_')}`)}
+                    {meta.danger && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#EF4444]">{t('danger')}</span>
+                    )}
                 </p>
+                {hint && (
+                    <p className="text-[11px] text-[var(--os-text-secondary)] mt-0.5 max-w-[52ch]">{hint}</p>
+                )}
                 <p className="text-[10px] font-mono text-[var(--os-text-muted)] mt-0.5">
                     {configKey}
+                    {entry?.updated_at && (
+                        <span className="font-sans"> · {t('updatedAt', { date: new Date(entry.updated_at).toLocaleDateString() })}</span>
+                    )}
                 </p>
             </div>
 
@@ -259,6 +319,9 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
                     draftBool,
                     setDraftBool,
                     disabled: !canEdit || isSaving,
+                    unit: meta.unit,
+                    min: meta.min,
+                    max: meta.max,
                     maskLabel: t('secretMask'),
                     showLabel: t('showSecret'),
                     hideLabel: t('hideSecret'),
@@ -282,11 +345,11 @@ function PipelineRow({ configKey, entry, canEdit, onSaved }: RowProps) {
                 )}
                 {canEdit && (
                     <OsButton
-                        variant="primary"
+                        variant={dirty ? 'primary' : 'secondary'}
                         size="sm"
                         icon={<Save className="w-3.5 h-3.5" />}
                         onClick={handleSave}
-                        disabled={isSaving}
+                        disabled={isSaving || !dirty}
                     >
                         {isSaving ? t('saving') : t('save')}
                     </OsButton>
@@ -307,6 +370,9 @@ interface InputProps {
     draftBool: boolean;
     setDraftBool: (v: boolean) => void;
     disabled: boolean;
+    unit?: string;
+    min?: number;
+    max?: number;
     maskLabel: string;
     showLabel: string;
     hideLabel: string;
@@ -335,14 +401,19 @@ function renderInput(p: InputProps) {
 
     if (p.type === 'number') {
         return (
-            <input
-                type="number"
-                step="any"
-                value={p.draft}
-                onChange={(e) => p.setDraft(e.target.value)}
-                disabled={p.disabled}
-                className={baseInput}
-            />
+            <div className="flex items-center gap-2">
+                <input
+                    type="number"
+                    step="any"
+                    min={p.min}
+                    max={p.max}
+                    value={p.draft}
+                    onChange={(e) => p.setDraft(e.target.value)}
+                    disabled={p.disabled}
+                    className={baseInput}
+                />
+                {p.unit && <span className="text-[11px] text-[var(--os-text-muted)] whitespace-nowrap">{p.unit}</span>}
+            </div>
         );
     }
 

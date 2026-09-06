@@ -3043,6 +3043,38 @@
   "AdminTaxPipeline": {
     "sectionTitle": "Pipeline de taxe carbone",
     "sectionSubtitle": "Configuration d'exécution pour la détection, la réconciliation, l'escalade et les feature flags. Les secrets ne peuvent être modifiés que par un SUPERADMIN.",
+    "hints": {
+      "arrival_corridor_radius_nm": "Rayon autour du port dans lequel un navire AIS est considéré en approche.",
+      "arrival_claim_sla_hours": "Délai laissé à l'agent pour revendiquer une escale détectée avant escalade.",
+      "arrival_escalation_eta_buffer_h": "Marge après l'ETA avant de déclencher l'escalade.",
+      "reconciliation_tolerance_pct": "Écart toléré entre le montant attendu et le montant reçu avant alerte.",
+      "reconciliation_check_interval_min": "Fréquence de la vérification automatique des paiements en attente.",
+      "owner_escalation_delay_days": "Jours sans réponse de l'agent avant de s'adresser à l'armateur.",
+      "owner_escalation_reminder_count": "Rappels envoyés à l'agent avant la cascade vers l'armateur.",
+      "proforma_languages_default": "Langues des pro-formas émises, séparées par des virgules (ex. en, fr).",
+      "feature_ais_global_enabled": "Ingestion AIS mondiale. Sans couverture du golfe d'Aden à ce jour.",
+      "feature_equasis_scraper_enabled": "Scraper Equasis. Laissé OFF : emballement constaté sans acquittement de file.",
+      "feature_vessel_detention_enabled": "Immobilisation des navires en défaut — non exercé en production.",
+      "feature_shipowner_portal_enabled": "Portail armateur (ancien interrupteur, conservé pour compatibilité).",
+      "feature_shipowner_portal_v1_enabled": "Interrupteur maître du portail armateur : tout /owner s'éteint s'il est faux.",
+      "feature_shipowner_self_service_enabled": "Demande d'accès en libre-service sur /signup.",
+      "feature_online_payment_stripe_enabled": "Rail carte du portail. Exige aussi STRIPE_SECRET_KEY dans l'environnement.",
+      "feature_wallet_topup_enabled": "Recharge du portefeuille par les armateurs.",
+      "feature_show_unavailable_rails": "Affiche les moyens de paiement indisponibles, grisés, au lieu de les cacher.",
+      "feature_notification_sms_enabled": "Notifications SMS — en veille, aucun fournisseur branché.",
+      "queue_worker_url": "URL du worker de file d'attente appelé par les crons. Une erreur arrête les traitements.",
+      "queue_worker_secret": "Secret partagé avec le worker. À faire tourner en même temps des deux côtés."
+    },
+    "updatedAt": "modifié le {date}",
+    "danger": "zone rouge",
+    "confirmDanger": "Ce réglage touche la plomberie de la plateforme. Enregistrer quand même ?",
+    "unsaved": "{count} non enregistré(s)",
+    "errors": {
+      "invalid": "valeur illisible",
+      "min": "minimum {bound}",
+      "max": "maximum {bound}",
+      "integer": "nombre entier attendu"
+    },
     "labels": {
       "carbon_tax_rate_usd_per_tco2": "Taux de la taxe carbone (USD / tCO₂)",
       "arrival_corridor_radius_nm": "Rayon du couloir d'approche (NM)",
