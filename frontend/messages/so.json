@@ -4322,6 +4322,7 @@
   "AdminInvoices": {
     "title": "Biilasha",
     "subtitle": "Dhammaan dukumentiyada pro-forma, kama dambeeys, dheeraad iyo celin lacageed, badda iyo hawada.",
+    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
     "all": "Dhammaan",
     "col_ref": "Tixraac",
     "col_type": "Nooc",
@@ -5052,12 +5053,14 @@
     },
     "title": "Maraakiibta",
     "subtitle": "Deynta hadhay markab kasta. Dacwad aan markab ku xidhnayn halkan kama muuqato.",
+    "cashOnlySubtitle": "The fleet, its shipowner and what it has settled. Outstanding balances are not visible with your access.",
     "noOwner": "Milkiile la'aan",
     "empty": "Markab ma jiro",
     "overdueSuffix": "{count} dib u dhac",
     "coverageComplete": "Waxay dabooshaa deynta oo dhan: {total}.",
     "coverageGap": "Waxay dabooshaa {covered} oo ka mid ah {total} — {gap} waxay saaran yihiin dacwado aan markab lahayn.",
     "col": {
+      "paid": "Received",
       "vessel": "Markabka",
       "owner": "Milkiilaha",
       "state": "Xaaladda",

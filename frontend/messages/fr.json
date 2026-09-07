@@ -4322,6 +4322,7 @@
   "AdminInvoices": {
     "title": "Factures",
     "subtitle": "Tous les documents pro-forma, finaux, complémentaires et avoirs, maritime et aviation.",
+    "cashOnlyNotice": "Pro-formas émises cette semaine uniquement. Le reste des factures et l'encours ne sont pas visibles avec votre accès.",
     "all": "Tous",
     "col_ref": "Référence",
     "col_type": "Type",
@@ -5049,12 +5050,14 @@
     },
     "title": "Navires",
     "subtitle": "Encours de recouvrement par navire. Une créance sans navire rattaché n'y figure pas.",
+    "cashOnlySubtitle": "La flotte, son armateur et ce qu'elle a réglé. L'encours n'est pas visible avec votre accès.",
     "noOwner": "Sans armateur",
     "empty": "Aucun navire",
     "overdueSuffix": "dont {count} en retard",
     "coverageComplete": "Couvre l'intégralité de l'encours : {total}.",
     "coverageGap": "Couvre {covered} sur {total} d'encours — {gap} portés par des créances sans navire rattaché.",
     "col": {
+      "paid": "Encaissé",
       "vessel": "Navire",
       "owner": "Armateur",
       "state": "État",

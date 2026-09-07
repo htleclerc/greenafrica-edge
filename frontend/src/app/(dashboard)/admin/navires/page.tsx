@@ -14,31 +14,36 @@ export default async function NaviresPage() {
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) redirect('/login');
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', auth.user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, payments_only').eq('id', auth.user.id).single();
     if (!profile || !ALLOWED_ROLES.includes(profile.role)) redirect('/dashboard');
+    // Encaissements seulement (mig 154) : la flotte et ce qu'elle a réglé, sans
+    // encours ni état de recouvrement.
+    const cashOnly = (profile as { payments_only?: boolean | null }).payments_only === true;
 
     // Le total du tableau de bord sert de témoin : une créance sans navire
     // rattaché n'apparaît pas dans la vue par navire. Comparer les deux fait
     // apparaître l'écart au lieu de le laisser se taire.
     const [rows, summary] = await Promise.all([
         listNaviresRecouvrement(supabase),
-        getReglementsSummary(supabase),
+        cashOnly ? Promise.resolve({ totalOutstandingUsd: 0 }) : getReglementsSummary(supabase),
     ]);
 
     const t = await getTranslations('AdminNavires');
     const tNav = await getTranslations('Dashboard');
     return (
         <div className="px-6 py-4">
-            <OsBreadcrumb
-                className="mb-3"
-                items={[
-                    { label: tNav('nav_reglements'), href: '/admin/reglements' },
-                    { label: tNav('nav_navires') },
-                ]}
-            />
+            {!cashOnly && (
+                <OsBreadcrumb
+                    className="mb-3"
+                    items={[
+                        { label: tNav('nav_reglements'), href: '/admin/reglements' },
+                        { label: tNav('nav_navires') },
+                    ]}
+                />
+            )}
             <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
-            <p className="text-[var(--os-text-muted)] mb-6 text-sm">{t('subtitle')}</p>
-            <NaviresCockpit rows={rows} dashboardOutstandingUsd={summary.totalOutstandingUsd} />
+            <p className="text-[var(--os-text-muted)] mb-6 text-sm">{cashOnly ? t('cashOnlySubtitle') : t('subtitle')}</p>
+            <NaviresCockpit rows={rows} dashboardOutstandingUsd={summary.totalOutstandingUsd} cashOnly={cashOnly} />
         </div>
     );
 }

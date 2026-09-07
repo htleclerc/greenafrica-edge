@@ -4322,6 +4322,7 @@
   "AdminInvoices": {
     "title": "Invoices",
     "subtitle": "All pro-forma, final, complement and refund documents across maritime and aviation.",
+    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
     "all": "All",
     "col_ref": "Reference",
     "col_type": "Type",
@@ -5049,12 +5050,14 @@
     },
     "title": "Vessels",
     "subtitle": "Outstanding debt per vessel. A claim with no vessel attached does not appear here.",
+    "cashOnlySubtitle": "The fleet, its shipowner and what it has settled. Outstanding balances are not visible with your access.",
     "noOwner": "No shipowner",
     "empty": "No vessels",
     "overdueSuffix": "{count} overdue",
     "coverageComplete": "Covers the full outstanding balance: {total}.",
     "coverageGap": "Covers {covered} of {total} outstanding — {gap} sits on claims with no vessel attached.",
     "col": {
+      "paid": "Received",
       "vessel": "Vessel",
       "owner": "Shipowner",
       "state": "State",

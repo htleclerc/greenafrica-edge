@@ -8,6 +8,7 @@ import {
     listInvoiceFilterOptions,
 } from '@/services/invoiceAdminService';
 import { InvoicesAdminList } from './InvoicesAdminList';
+import { forceCurrentWeekProformas } from '@/lib/auth/paymentsOnly';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +24,17 @@ export default async function AdminInvoicesPage({
     if (!auth?.user) redirect('/login');
     const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, payments_only')
         .eq('id', auth.user.id)
         .single();
     if (!profile || !STAFF_ROLES.includes(profile.role)) redirect('/dashboard');
 
-    const filters = parseInvoiceFilters(await searchParams);
+    // Encaissements seulement (mig 154) : les pro-formas émises cette semaine,
+    // rien d'autre — le filtre est imposé ici, pas proposé à l'écran.
+    const cashOnly = (profile as { payments_only?: boolean | null }).payments_only === true;
+    const filters = cashOnly
+        ? forceCurrentWeekProformas(parseInvoiceFilters(await searchParams))
+        : parseInvoiceFilters(await searchParams);
     const [pageData, options] = await Promise.all([
         listInvoicesAdmin(supabase, filters),
         listInvoiceFilterOptions(supabase),
@@ -43,7 +49,7 @@ export default async function AdminInvoicesPage({
     return (
         <div className="px-6 py-4">
             <h1 className="text-2xl font-semibold mb-2 text-[var(--os-text-primary)]">{t('title')}</h1>
-            <p className="text-[var(--os-text-muted)] mb-6 text-sm">{t('subtitle')}</p>
+            <p className="text-[var(--os-text-muted)] mb-6 text-sm">{cashOnly ? t('cashOnlyNotice') : t('subtitle')}</p>
             <InvoicesAdminList
                 refs={refs}
                 rows={pageData.rows}
