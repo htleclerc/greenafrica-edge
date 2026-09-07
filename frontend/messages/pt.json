@@ -560,8 +560,7 @@
     "impact": "Impacto",
     "resources": "Recursos",
     "about": "Sobre",
-    "partnership": "Parceria",
-    "nav_admin_validations": "Validações"
+    "partnership": "Parceria"
   },
   "Landing": {
     "badge": "PROTOCOLO SOBERANO DE INTELIGÊNCIA DE CARBONO",
@@ -1264,6 +1263,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Utilizadores",
     "nav_admin_settings": "Definições",
+    "nav_admin_validations": "Validações",
     "nav_navires": "Navios"
   },
   "AdminStaff": {

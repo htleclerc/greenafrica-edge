@@ -100,8 +100,7 @@
     "impact": "Impact",
     "resources": "Ressources",
     "about": "À Propos",
-    "partnership": "Partenariat",
-    "nav_admin_validations": "Validations"
+    "partnership": "Partenariat"
   },
   "Landing": {
     "badge": "PROTOCOLE D'INTELLIGENCE CARBONE SOUVERAIN",
@@ -708,6 +707,7 @@
     "theme_switch_to_dark": "Passer en thème sombre",
     "nav_users": "Utilisateurs",
     "nav_admin_settings": "Réglages",
+    "nav_admin_validations": "Validations",
     "nav_navires": "Navires"
   },
   "AdminStaff": {

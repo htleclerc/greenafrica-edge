@@ -100,8 +100,7 @@
     "impact": "Saamiga",
     "resources": "Khayraadka",
     "about": "Ku saabsan",
-    "partnership": "Iskaashi",
-    "nav_admin_validations": "Xaqiijinta"
+    "partnership": "Iskaashi"
   },
   "Landing": {
     "badge": "BOROTOKOOLKA CASIMADA KAARBOONKA",
@@ -852,6 +851,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Isticmaalayaasha",
     "nav_admin_settings": "Dejinta",
+    "nav_admin_validations": "Xaqiijinta",
     "nav_navires": "Maraakiibta"
   },
   "AdminStaff": {
