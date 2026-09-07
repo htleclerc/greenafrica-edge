@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { listAdminPayments, type AdminPaymentFilters } from '@/services/paymentService';
 import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
+import { clampStatusesForPaymentsOnly } from '@/lib/auth/paymentsOnly';
 
 const ADMIN_ROLES = [UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN];
 const VALID_STATUSES = new Set(['INITIATED', 'PROCESSING', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'REFUNDED']);
@@ -17,8 +18,12 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const url = new URL(req.url);
+    const requestedStatuses = parseList(url.searchParams.get('status'), VALID_STATUSES);
+    // Encaissements seulement (mig 154) : quoi que demande le client, jamais
+    // une déclaration non confirmée — c'est de l'argent non reçu.
+    const statuses = auth.user.paymentsOnly ? clampStatusesForPaymentsOnly(requestedStatuses) : requestedStatuses;
     const filters: AdminPaymentFilters = {
-        status: parseList(url.searchParams.get('status'), VALID_STATUSES) as AdminPaymentFilters['status'],
+        status: statuses as AdminPaymentFilters['status'],
         rail:   parseList(url.searchParams.get('rail'),   VALID_RAILS)    as AdminPaymentFilters['rail'],
         from:   url.searchParams.get('from'),
         to:     url.searchParams.get('to'),

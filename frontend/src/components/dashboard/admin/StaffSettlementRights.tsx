@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { setSettlementRights } from '@/actions/setSettlementRights';
+import { setPaymentsOnly } from '@/actions/setPaymentsOnly';
 
 export interface StaffRow {
     id: string;
@@ -12,6 +13,8 @@ export interface StaffRow {
     role: string;
     is_active: boolean;
     can_settle_payments: boolean;
+    /** Mig 154 : ne voit que les encaissements, jamais une créance. */
+    payments_only?: boolean;
 }
 
 /** Rôles qui ouvrent le rail monétaire d'office : la case n'y change rien. */
@@ -42,6 +45,19 @@ export function StaffSettlementRights({ staff }: { staff: StaffRow[] }) {
         }
     }
 
+    async function toggleCashOnly(row: StaffRow, next: boolean) {
+        setPendingId(row.id);
+        setError(null);
+        try {
+            await setPaymentsOnly({ profileId: row.id, enabled: next });
+            router.refresh();
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Update failed');
+        } finally {
+            setPendingId(null);
+        }
+    }
+
     return (
         <section className="mt-8">
             <h2 className="text-sm font-semibold text-[var(--os-text-primary)]">
@@ -51,6 +67,8 @@ export function StaffSettlementRights({ staff }: { staff: StaffRow[] }) {
                 Who may confirm or reject a payment once the shipowner has uploaded proof.
                 Superadmins and finance admins hold this by role. Tick the box to grant it to
                 another staff member — a manager, typically — without changing their role.
+                “Cash only” restricts a person to money actually received: confirmed and refunded
+                payments, never a pro-forma, an outstanding balance or an unconfirmed declaration.
             </p>
 
             {error && <p className="text-xs text-[#EF4444] mb-2">{error}</p>}
@@ -62,6 +80,7 @@ export function StaffSettlementRights({ staff }: { staff: StaffRow[] }) {
                             <th className="text-left font-semibold px-3 py-2">Staff</th>
                             <th className="text-left font-semibold px-3 py-2">Role</th>
                             <th className="text-left font-semibold px-3 py-2">May settle</th>
+                            <th className="text-left font-semibold px-3 py-2">Cash only</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,12 +121,27 @@ export function StaffSettlementRights({ staff }: { staff: StaffRow[] }) {
                                             </label>
                                         )}
                                     </td>
+                                    <td className="px-3 py-2">
+                                        <label className="inline-flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="accent-[#EAB308]"
+                                                checked={row.payments_only === true}
+                                                disabled={pendingId === row.id || !row.is_active}
+                                                onChange={(e) => toggleCashOnly(row, e.target.checked)}
+                                                aria-label={`Restrict ${row.full_name ?? row.email ?? row.id} to confirmed payments only`}
+                                            />
+                                            <span className="text-[11px] text-[var(--os-text-muted)]">
+                                                {row.payments_only ? 'Confirmed payments only' : 'Sees everything of their role'}
+                                            </span>
+                                        </label>
+                                    </td>
                                 </tr>
                             );
                         })}
                         {staff.length === 0 && (
                             <tr>
-                                <td colSpan={3} className="px-3 py-4 text-xs text-[var(--os-text-muted)]">
+                                <td colSpan={4} className="px-3 py-4 text-xs text-[var(--os-text-muted)]">
                                     No staff accounts yet.
                                 </td>
                             </tr>

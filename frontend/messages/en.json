@@ -3967,6 +3967,7 @@
   "AdminPayments": {
     "title": "Payments",
     "subtitle": "Review owner-initiated payments and record manual entries.",
+    "subtitleCashOnly": "Received payments only — confirmed and refunded. Pro-formas, outstanding balances and unconfirmed declarations are not visible with your access.",
     "refresh": "Refresh",
     "recordManual": "Record manual",
     "filterStatus": "Status",

@@ -10,6 +10,7 @@ import {
     type InvoiceData,
     type ReceiptData,
 } from '../invoiceService';
+import { DEFAULT_ISSUER_PROFILE } from '../issuerProfileService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // statusToMode — pure function, drives invoice/receipt mode + badge color
@@ -376,5 +377,79 @@ describe('generateReceiptPdf', () => {
             paymentNotes: 'a'.repeat(500),
         });
         expect(buffer.length).toBeGreaterThan(1000);
+    });
+});
+
+/**
+ * Le compte domestique s'imprime EN PLUS de l'international : un armateur qui
+ * banque au Somaliland n'a pas a emettre un virement transfrontalier pour une
+ * taxe percue sur place.
+ *
+ * Le risque de ce bloc n'est pas qu'il manque, c'est qu'il DEBORDE : l'encadre
+ * avait deux hauteurs en dur, et une ligne de plus poussait la signature et le
+ * QR code hors de la page sans que rien ne le signale.
+ */
+describe('generateInvoicePdf — compte de collecte local', () => {
+    const LOCAL_IBAN = 'SO950005100100613310001';
+
+    const withLocal: InvoiceData = {
+        ...MOCK_INVOICE_DATA,
+        issuer: {
+            ...DEFAULT_ISSUER_PROFILE,
+            bankAccounts: [
+                ...DEFAULT_ISSUER_PROFILE.bankAccounts,
+                {
+                    label: 'Virement local (Somaliland) — en USD',
+                    currency: 'USD',
+                    holder: 'SOLIDE TECHNOLOGY',
+                    holderAddress: 'Masalaha Street, Hargeisa, Somaliland',
+                    iban: LOCAL_IBAN,
+                    accountNumber: '100613310001',
+                    swift: 'PBSMSOSM',
+                    bank: 'Premier Bank Limited — Durdur Branch',
+                    bankAddress: 'Hargeisa, Somaliland',
+                    depositReference: null,
+                    intermediaryBank: 'Premier Bank Kenya Limited, Nairobi',
+                    intermediarySwift: 'IFCBKENA',
+                    isLocal: true,
+                    isPrimary: false,
+                },
+            ],
+        },
+    };
+
+    const pageCount = (buf: Uint8Array) =>
+        (Buffer.from(buf).toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+
+    it("imprime l'IBAN local et sa banque correspondante", async () => {
+        const raw = Buffer.from(await generateInvoicePdf(withLocal)).toString('latin1');
+        expect(raw).toContain(LOCAL_IBAN);
+        expect(raw).toContain('PBSMSOSM');
+        expect(raw).toContain('IFCBKENA');
+    });
+
+    it("garde l'international : le local s'ajoute, il ne remplace pas", async () => {
+        const raw = Buffer.from(await generateInvoicePdf(withLocal)).toString('latin1');
+        expect(raw).toContain(DEFAULT_ISSUER_PROFILE.bankAccounts[0].swift);
+    });
+
+    it("n'ajoute aucune page — l'encadre reste dans la page 1", async () => {
+        const sans = await generateInvoicePdf(MOCK_INVOICE_DATA);
+        const avec = await generateInvoicePdf(withLocal);
+        expect(pageCount(avec)).toBe(pageCount(sans));
+    });
+
+
+    // La mise en page d'un document SANS compte local ne doit pas bouger d'un
+    // millimetre : des milliers de pro-formas ont deja ete emis avec celle-ci.
+    it('laisse la mise en page inchangee quand aucun compte local n’est declare', async () => {
+        const a = await generateInvoicePdf(MOCK_INVOICE_DATA);
+        const b = await generateInvoicePdf(MOCK_INVOICE_DATA);
+        expect(Buffer.from(a).length).toBe(Buffer.from(b).length);
+    });
+
+    it("ne change rien quand aucun compte local n'est declare", async () => {
+        const raw = Buffer.from(await generateInvoicePdf(MOCK_INVOICE_DATA)).toString('latin1');
+        expect(raw).not.toContain('LOCAL BANK TRANSFER');
     });
 });

@@ -3967,6 +3967,7 @@
   "AdminPayments": {
     "title": "Lacag-bixinta",
     "subtitle": "Dib u eeg lacag-bixinnada mulkiilayaasha iyo geli gelitaannada gacanta.",
+    "subtitleCashOnly": "Received payments only — confirmed and refunded. Pro-formas, outstanding balances and unconfirmed declarations are not visible with your access.",
     "refresh": "Cusboonaysii",
     "recordManual": "Geli gacanta",
     "filterStatus": "Xaalad",

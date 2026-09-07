@@ -15,6 +15,8 @@ export interface InitialRolePrincipal {
     modes: OperatorMode[];
     /** profiles.collections_focus (mig 142) — staff seulement, absent = pas de focus. */
     collectionsFocus?: boolean;
+    /** profiles.payments_only (mig 154) : encaissements seulement. */
+    paymentsOnly?: boolean;
 }
 
 interface RoleContextValue {
@@ -35,6 +37,8 @@ interface RoleContextValue {
      * recouvrement à resserrer.
      */
     collectionsFocus?: boolean;
+    /** profiles.payments_only (mig 154) : encaissements seulement. */
+    paymentsOnly?: boolean;
 }
 
 const RoleContext = React.createContext<RoleContextValue>({
@@ -118,6 +122,7 @@ async function resolveRealSession(
             // `select('*')` ci-dessus ramène déjà la colonne ; défaut prudent
             // si la migration 142 n'est pas encore passée sur l'environnement.
             collectionsFocus: profile.collections_focus === true,
+            paymentsOnly: profile.payments_only === true,
         };
     }
 
@@ -234,6 +239,7 @@ export function RoleProvider({
                   kind: initial.kind,
                   modes: initial.modes,
                   collectionsFocus: initial.collectionsFocus === true,
+                  paymentsOnly: initial.paymentsOnly === true,
               }
             : {
                   role: UserRole.PORT_OFFICER,

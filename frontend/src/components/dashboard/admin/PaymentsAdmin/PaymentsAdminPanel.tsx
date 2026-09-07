@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { OsButton } from '@/components/ui/OsButton';
 import { useRole } from '@/lib/RoleContext';
 import { canEdit } from '@/lib/rbac';
+import { PAYMENTS_ONLY_STATUSES } from '@/lib/auth/paymentsOnly';
 import { PaymentRow } from './PaymentRow';
 import { RecordManualPaymentDialog } from './RecordManualPaymentDialog';
 import { PaymentReviewDrawer } from './PaymentReviewDrawer';
@@ -16,13 +17,19 @@ const ALL_RAILS: PaymentRail[] = ['STRIPE','PAYPAL','WIRE_TRANSFER','CASH','CHEQ
 
 export function PaymentsAdminPanel() {
     const t = useTranslations('AdminPayments');
-    const { role } = useRole();
-    const canRecord = canEdit('tax-settings', role); // same gate as PaymentProvidersPanel
+    const { role, paymentsOnly } = useRole();
+    // Encaissements seulement (mig 154) : l'écran ne propose que l'argent qui a
+    // bougé, et n'enregistre rien — l'API borne de toute façon.
+    const cashOnly = paymentsOnly === true;
+    const statuses = cashOnly ? (PAYMENTS_ONLY_STATUSES as PaymentStatusV7[]) : ALL_STATUSES;
+    const canRecord = canEdit('tax-settings', role) && !cashOnly; // same gate as PaymentProvidersPanel
 
     const [rows, setRows] = React.useState<PaymentRowType[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
-    const [statusFilter, setStatusFilter] = React.useState<Set<PaymentStatusV7>>(new Set(['INITIATED', 'PROCESSING']));
+    const [statusFilter, setStatusFilter] = React.useState<Set<PaymentStatusV7>>(
+        () => new Set<PaymentStatusV7>(cashOnly ? ['CONFIRMED'] : ['INITIATED', 'PROCESSING']),
+    );
     const [railFilter, setRailFilter] = React.useState<Set<PaymentRail>>(new Set());
     const [openDialog, setOpenDialog] = React.useState(false);
     const [reviewId, setReviewId] = React.useState<string | null>(null);
@@ -61,7 +68,7 @@ export function PaymentsAdminPanel() {
             <header className="flex items-start justify-between flex-wrap gap-3 mb-4">
                 <div>
                     <h2 className="text-lg font-bold text-[var(--os-text-primary)]">{t('title')}</h2>
-                    <p className="text-xs text-[var(--os-text-muted)]">{t('subtitle')}</p>
+                    <p className="text-xs text-[var(--os-text-muted)]">{cashOnly ? t('subtitleCashOnly') : t('subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <OsButton
@@ -91,7 +98,7 @@ export function PaymentsAdminPanel() {
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mr-1">
                         {t('filterStatus')}
                     </span>
-                    {ALL_STATUSES.map((s) => {
+                    {statuses.map((s) => {
                         const active = statusFilter.has(s);
                         return (
                             <button

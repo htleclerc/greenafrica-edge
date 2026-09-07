@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { UserRole } from '@/types/secure';
+import { PAYMENTS_ONLY_NAV } from '@/lib/auth/paymentsOnly';
 
 /**
  * Maps each nav key to the list of roles that can access it.
@@ -198,10 +199,13 @@ export function filterNavItems<T extends { key: string }>(
     items: T[],
     role: UserRole,
     collectionsFocus = false,
+    /** `profiles.payments_only` (mig 154) : ne laisse que les encaissements. */
+    paymentsOnly = false,
 ): T[] {
     return items.filter((item) =>
         canAccess(item.key, role)
-        && (!collectionsFocus || COLLECTIONS_FOCUS_NAV.includes(item.key)),
+        && (!collectionsFocus || COLLECTIONS_FOCUS_NAV.includes(item.key))
+        && (!paymentsOnly || PAYMENTS_ONLY_NAV.includes(item.key)),
     );
 }
 
