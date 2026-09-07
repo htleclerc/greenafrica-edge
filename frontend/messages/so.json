@@ -4322,7 +4322,7 @@
   "AdminInvoices": {
     "title": "Biilasha",
     "subtitle": "Dhammaan dukumentiyada pro-forma, kama dambeeys, dheeraad iyo celin lacageed, badda iyo hawada.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Kaliya pro-formas la soo saaray bishan jaantuska. Biilasha kale iyo deynta hadhay lama arki karo marin-siintaada.",
     "all": "Dhammaan",
     "col_ref": "Tixraac",
     "col_type": "Nooc",

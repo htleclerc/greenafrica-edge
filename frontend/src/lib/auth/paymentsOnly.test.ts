@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    clampStatusesForPaymentsOnly, currentIsoWeekStart, forceCurrentWeekProformas,
+    clampStatusesForPaymentsOnly, currentMonthStart, forceCurrentMonthProformas,
     isPaymentsOnlyAllowed, isPaymentsOnlyGuarded, PAYMENTS_ONLY_NAV,
 } from './paymentsOnly';
 import { filterNavItems } from '@/lib/rbac';
@@ -53,24 +53,42 @@ describe('paymentsOnly — statuts', () => {
     });
 });
 
-describe('paymentsOnly — pro-formas de la semaine en cours', () => {
-    it('trouve le lundi ISO, dimanche compris', () => {
-        expect(currentIsoWeekStart(new Date('2026-09-06T23:00:00Z'))).toBe('2026-08-31'); // dimanche
-        expect(currentIsoWeekStart(new Date('2026-09-07T00:30:00Z'))).toBe('2026-09-07'); // lundi
-        expect(currentIsoWeekStart(new Date('2026-09-10T12:00:00Z'))).toBe('2026-09-07'); // jeudi
+describe('paymentsOnly — pro-formas du mois en cours', () => {
+    it('trouve le premier du mois, quel que soit le jour', () => {
+        expect(currentMonthStart(new Date('2026-09-01T00:00:00Z'))).toBe('2026-09-01');
+        expect(currentMonthStart(new Date('2026-09-10T12:00:00Z'))).toBe('2026-09-01');
+        expect(currentMonthStart(new Date('2026-09-30T23:59:59Z'))).toBe('2026-09-01');
     });
 
-    it('ramène tout filtre plus large à la semaine, et aux seules pro-formas', () => {
-        const now = new Date('2026-09-10T12:00:00Z');
-        expect(forceCurrentWeekProformas({ documentType: 'FINAL', dateFrom: '2026-01-01' }, now))
-            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-07' });
-        expect(forceCurrentWeekProformas({ documentType: null, dateFrom: null }, now))
-            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-07' });
+    // Bascule de mois : le 1er ne doit pas rendre le mois precedent.
+    it('bascule au premier jour du mois suivant', () => {
+        expect(currentMonthStart(new Date('2026-08-31T23:00:00Z'))).toBe('2026-08-01');
+        expect(currentMonthStart(new Date('2026-10-01T00:30:00Z'))).toBe('2026-10-01');
     });
 
-    it('garde un filtre plus étroit que la semaine', () => {
+    it('tient sur les mois courts et le passage d’année', () => {
+        expect(currentMonthStart(new Date('2026-02-28T12:00:00Z'))).toBe('2026-02-01');
+        expect(currentMonthStart(new Date('2027-01-01T00:00:00Z'))).toBe('2027-01-01');
+    });
+
+    it('ramène tout filtre plus large au mois, et aux seules pro-formas', () => {
         const now = new Date('2026-09-10T12:00:00Z');
-        expect(forceCurrentWeekProformas({ dateFrom: '2026-09-09' }, now).dateFrom).toBe('2026-09-09');
+        expect(forceCurrentMonthProformas({ documentType: 'FINAL', dateFrom: '2026-01-01' }, now))
+            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-01' });
+        expect(forceCurrentMonthProformas({ documentType: null, dateFrom: null }, now))
+            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-01' });
+    });
+
+    it('garde un filtre plus étroit que le mois', () => {
+        const now = new Date('2026-09-10T12:00:00Z');
+        expect(forceCurrentMonthProformas({ dateFrom: '2026-09-09' }, now).dateFrom).toBe('2026-09-09');
+    });
+
+    // La fenetre s'elargit, elle ne s'ouvre pas : le type reste impose.
+    it('n’ouvre jamais les factures finales, même sur un filtre explicite', () => {
+        const now = new Date('2026-09-10T12:00:00Z');
+        expect(forceCurrentMonthProformas({ documentType: 'FINAL', dateFrom: '2026-09-09' }, now).documentType)
+            .toBe('PROFORMA');
     });
 });
 

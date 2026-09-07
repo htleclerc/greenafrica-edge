@@ -4325,7 +4325,7 @@
   "AdminInvoices": {
     "title": "الفواتير",
     "subtitle": "جميع مستندات الفاتورة الأولية والنهائية والتكميلية والمبالغ المستردة، بحري وطيران.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "الفواتير المبدئية الصادرة في الشهر الميلادي الحالي فقط. الفواتير الأخرى والمبالغ المستحقة غير مرئية بصلاحياتك.",
     "all": "الكل",
     "col_ref": "المرجع",
     "col_type": "النوع",

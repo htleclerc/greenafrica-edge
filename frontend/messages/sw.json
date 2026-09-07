@@ -4325,7 +4325,7 @@
   "AdminInvoices": {
     "title": "Ankara",
     "subtitle": "Nyaraka zote za pro-forma, za mwisho, za nyongeza na marejesho, baharini na anga.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Pro-forma zilizotolewa mwezi huu wa kalenda pekee. Ankara nyingine na deni lililobaki hayaonekani kwa ufikiaji wako.",
     "all": "Zote",
     "col_ref": "Rejea",
     "col_type": "Aina",

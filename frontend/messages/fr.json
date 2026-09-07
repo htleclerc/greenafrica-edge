@@ -4322,7 +4322,7 @@
   "AdminInvoices": {
     "title": "Factures",
     "subtitle": "Tous les documents pro-forma, finaux, complémentaires et avoirs, maritime et aviation.",
-    "cashOnlyNotice": "Pro-formas émises cette semaine uniquement. Le reste des factures et l'encours ne sont pas visibles avec votre accès.",
+    "cashOnlyNotice": "Pro-formas émises depuis le premier du mois uniquement. Le reste des factures et l'encours ne sont pas visibles avec votre accès.",
     "all": "Tous",
     "col_ref": "Référence",
     "col_type": "Type",

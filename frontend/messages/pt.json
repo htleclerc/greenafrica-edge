@@ -4358,7 +4358,7 @@
   "AdminInvoices": {
     "title": "Faturas",
     "subtitle": "Todos os documentos pró-forma, finais, complementares e reembolsos, marítimo e aviação.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Pro-formas emitidas no mês civil em curso apenas. As restantes faturas e a carteira em dívida não são visíveis com o seu acesso.",
     "all": "Todos",
     "col_ref": "Referência",
     "col_type": "Tipo",
