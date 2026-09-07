@@ -7,9 +7,12 @@
  *
  *   — les paiements encaissés (CONFIRMED / REFUNDED) et leurs reçus ;
  *   — les portefeuilles (argent détenu) ;
- *   — l'annuaire, les navires (sans encours), les réglages ;
+ *   — les navires, sans encours ;
  *   — les pro-formas ÉMISES CETTE SEMAINE, pour savoir ce qui vient de partir —
  *     jamais le stock historique de créances ni un paiement non confirmé.
+ *
+ * Ni réglages (barèmes, fournisseurs de paiement), ni annuaire (arbitrage PO
+ * 2026-09-07) : ce sont des leviers, pas de la caisse.
  *
  * Le drapeau RETRANCHE, il n'accorde rien. Trois couches l'appliquent, et
  * toutes lisent ce fichier pour ne pas diverger :
@@ -21,7 +24,7 @@
 
 /** Entrées de menu qui subsistent. Intersecté avec le rôle, jamais ajouté. */
 export const PAYMENTS_ONLY_NAV: readonly string[] = [
-    'payments', 'wallets', 'users', 'navires', 'admin-invoices', 'admin-settings', 'settings',
+    'payments', 'wallets', 'navires', 'admin-invoices', 'settings',
 ];
 
 /** Statuts qui correspondent à de l'argent qui a bougé. */
@@ -31,13 +34,10 @@ export const PAYMENTS_ONLY_STATUSES: readonly string[] = ['CONFIRMED', 'REFUNDED
 const ALLOWED_PREFIXES: readonly string[] = [
     '/admin/payments',
     '/admin/wallets',
-    '/admin/users',
-    '/admin/settings',
     '/dashboard/settings',
     '/dashboard/account',
     '/api/admin/payments',
     '/api/admin/wallets',
-    '/api/admin/payment-config',
     '/api/receipts/',
     '/api/payments/',
     '/mfa',
