@@ -8,20 +8,21 @@ import { UserRole } from '@/types/secure';
 import { loginDestination } from './loginDestination';
 
 describe('paymentsOnly — chemins', () => {
-    it('laisse passer paiements, portefeuilles, annuaire, réglages, navires et factures (liste seule)', () => {
+    it('laisse passer paiements, portefeuilles, navires et factures (liste seule), et le compte personnel', () => {
         for (const p of [
-            '/admin/payments', '/admin/payments/', '/admin/wallets', '/admin/wallets/w-1', '/admin/users',
-            '/admin/settings', '/admin/navires', '/admin/invoices',
+            '/admin/payments', '/admin/payments/', '/admin/wallets', '/admin/wallets/w-1',
+            '/admin/navires', '/admin/invoices',
             '/dashboard/settings', '/dashboard/account/security',
-            '/api/admin/payments', '/api/admin/payments/abc', '/api/admin/wallets/x', '/api/admin/payment-config',
+            '/api/admin/payments', '/api/admin/payments/abc', '/api/admin/wallets/x',
             '/api/receipts/RCT-1/download', '/mfa', '/post-login',
         ]) {
             expect(isPaymentsOnlyAllowed(p), p).toBe(true);
         }
     });
 
-    it('refuse tout ce qui montre une créance ou un encours, y compris sous les navires', () => {
+    it('refuse créances, encours, réglages, annuaire et fournisseurs de paiement', () => {
         for (const p of [
+            '/admin/users', '/admin/settings', '/admin/settings?tab=portail', '/api/admin/payment-config',
             '/admin/armateurs', '/admin/armateurs/arm_1/portail', '/admin/navires/ves_1/portail', '/admin/navires/ves_1/portail/invoices',
             '/admin/invoices/anything', '/admin/reglements', '/admin/collections', '/admin/revenue', '/admin/refunds',
             '/dashboard', '/dashboard/invoices', '/dashboard/vessels', '/api/admin/shipowners/x', '/admin/paymentsfoo',
@@ -77,9 +78,9 @@ describe('paymentsOnly — menu et atterrissage', () => {
     const items = ['payments', 'wallets', 'users', 'navires', 'admin-invoices', 'admin-settings', 'settings', 'armateurs', 'reglements', 'refunds', 'revenue', 'admin-collections']
         .map((key) => ({ key }));
 
-    it('retranche le menu d’un FINANCE_ADMIN à la caisse, sans le recouvrement', () => {
+    it('retranche le menu d’un FINANCE_ADMIN à la caisse, sans recouvrement, réglages ni annuaire', () => {
         const keys = filterNavItems(items, UserRole.FINANCE_ADMIN, false, true).map((i) => i.key);
-        expect(keys).toEqual(['payments', 'wallets', 'users', 'navires', 'admin-invoices', 'admin-settings', 'settings']);
+        expect(keys).toEqual(['payments', 'wallets', 'navires', 'admin-invoices', 'settings']);
         expect(PAYMENTS_ONLY_NAV).toEqual(keys);
     });
 

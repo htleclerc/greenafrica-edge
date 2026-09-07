@@ -19,10 +19,8 @@ export default async function UsersPage() {
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) redirect('/login');
-    const { data: profile } = await supabase.from('profiles').select('role, payments_only').eq('id', auth.user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', auth.user.id).single();
     if (!profile || !ALLOWED_ROLES.includes(profile.role)) redirect('/dashboard');
-    // Encaissements seulement (mig 154) : le portail d'un armateur montre ses créances.
-    const cashOnly = (profile as { payments_only?: boolean | null }).payments_only === true;
 
     const users = await listPlatformUsers(supabase, createPlatformClient(), {
         includeStaff: profile.role === 'SUPERADMIN',
@@ -33,7 +31,7 @@ export default async function UsersPage() {
         <div className="px-6 py-4">
             <h1 className="text-2xl font-semibold mb-1 text-[var(--os-text-primary)]">{t('title')}</h1>
             <p className="text-sm text-[var(--os-text-muted)] mb-5">{t('subtitle')}</p>
-            <UsersDirectory users={users} canViewAs={ALLOWED_ROLES.includes(profile.role) && !cashOnly} />
+            <UsersDirectory users={users} canViewAs={ALLOWED_ROLES.includes(profile.role)} />
         </div>
     );
 }
