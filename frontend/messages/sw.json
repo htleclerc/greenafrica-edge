@@ -4325,6 +4325,7 @@
   "AdminInvoices": {
     "title": "Ankara",
     "subtitle": "Nyaraka zote za pro-forma, za mwisho, za nyongeza na marejesho, baharini na anga.",
+    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
     "all": "Zote",
     "col_ref": "Rejea",
     "col_type": "Aina",
@@ -5055,12 +5056,14 @@
     },
     "title": "Meli",
     "subtitle": "Deni lililobaki kwa kila meli. Dai lisilo na meli halionekani hapa.",
+    "cashOnlySubtitle": "The fleet, its shipowner and what it has settled. Outstanding balances are not visible with your access.",
     "noOwner": "Hakuna mmiliki",
     "empty": "Hakuna meli",
     "overdueSuffix": "{count} zimechelewa",
     "coverageComplete": "Inashughulikia deni lote: {total}.",
     "coverageGap": "Inashughulikia {covered} kati ya {total} — {gap} yapo kwenye madai yasiyo na meli.",
     "col": {
+      "paid": "Received",
       "vessel": "Meli",
       "owner": "Mmiliki wa meli",
       "state": "Hali",

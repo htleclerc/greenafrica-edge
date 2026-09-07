@@ -67,8 +67,9 @@ export function StaffSettlementRights({ staff }: { staff: StaffRow[] }) {
                 Who may confirm or reject a payment once the shipowner has uploaded proof.
                 Superadmins and finance admins hold this by role. Tick the box to grant it to
                 another staff member — a manager, typically — without changing their role.
-                “Cash only” restricts a person to money actually received: confirmed and refunded
-                payments, never a pro-forma, an outstanding balance or an unconfirmed declaration.
+                “Cash only” keeps a person away from receivables: confirmed and refunded payments,
+                wallets, the directory, vessels without their outstanding, settings, and only the
+                pro-formas issued this week — never the outstanding book nor an unconfirmed declaration.
             </p>
 
             {error && <p className="text-xs text-[#EF4444] mb-2">{error}</p>}

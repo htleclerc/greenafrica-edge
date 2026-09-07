@@ -4325,6 +4325,7 @@
   "AdminInvoices": {
     "title": "الفواتير",
     "subtitle": "جميع مستندات الفاتورة الأولية والنهائية والتكميلية والمبالغ المستردة، بحري وطيران.",
+    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
     "all": "الكل",
     "col_ref": "المرجع",
     "col_type": "النوع",
@@ -5055,12 +5056,14 @@
     },
     "title": "السفن",
     "subtitle": "المبالغ المستحقة لكل سفينة. المطالبة غير المرتبطة بسفينة لا تظهر هنا.",
+    "cashOnlySubtitle": "The fleet, its shipowner and what it has settled. Outstanding balances are not visible with your access.",
     "noOwner": "بدون مالك",
     "empty": "لا توجد سفن",
     "overdueSuffix": "{count} متأخرة",
     "coverageComplete": "يغطي كامل المبلغ المستحق: {total}.",
     "coverageGap": "يغطي {covered} من {total} — {gap} على مطالبات بدون سفينة مرتبطة.",
     "col": {
+      "paid": "Received",
       "vessel": "السفينة",
       "owner": "مالك السفينة",
       "state": "الحالة",

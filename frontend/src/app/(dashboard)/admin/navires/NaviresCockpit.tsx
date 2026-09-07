@@ -18,7 +18,15 @@ interface Props {
     rows: NavireRecouvrementRow[];
     /** Encours total vu par le tableau de bord — témoin de couverture. */
     dashboardOutstandingUsd: number;
+    /**
+     * Encaissements seulement (mig 154) : ni encours, ni état de recouvrement,
+     * ni « voir comme » — la flotte, son armateur et ce qu'elle a réglé.
+     */
+    cashOnly?: boolean;
 }
+
+/** Colonnes visibles en mode encaissements. */
+const CASH_ONLY_COLUMNS: ReadonlySet<string> = new Set(['name', 'owner', 'paid']);
 
 const usd = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -32,7 +40,7 @@ const STATE_VARIANT: Record<NavireCollectionsState, BadgeVariant> = {
 
 type StateFilter = 'all' | NavireCollectionsState;
 
-export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
+export function NaviresCockpit({ rows, dashboardOutstandingUsd, cashOnly = false }: Props) {
     const t = useTranslations('AdminNavires');
     const router = useRouter();
 
@@ -143,6 +151,15 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
             ),
         },
         {
+            key: 'paid',
+            header: t('col.paid'),
+            sortable: true,
+            sortValue: (r) => r.total_paid_usd,
+            render: (r) => (
+                <span className="font-mono text-sm tabular-nums text-[var(--os-text-primary)]">{usd(r.total_paid_usd)}</span>
+            ),
+        },
+        {
             key: 'actions',
             header: '',
             // « Voir comme ce navire » : le portail tel que le voit un gestionnaire
@@ -161,7 +178,14 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
         },
     ], [t]);
 
-    const { sort, onSortChange, sortedRows } = useClientSort(visible, columns);
+    // En mode encaissements, l'écran ne porte que la flotte, l'armateur et le
+    // réglé ; ailleurs, la colonne « encaissé » ne s'ajoute pas au cockpit.
+    const shownColumns = React.useMemo(
+        () => columns.filter((c) => (cashOnly ? CASH_ONLY_COLUMNS.has(c.key) : c.key !== 'paid')),
+        [columns, cashOnly],
+    );
+
+    const { sort, onSortChange, sortedRows } = useClientSort(visible, shownColumns);
 
     const covered = rows.reduce((s, r) => s + r.total_outstanding_usd, 0);
     const gap = dashboardOutstandingUsd - covered;
@@ -177,6 +201,7 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
                         placeholder={t('filters.searchPlaceholder')}
                     />
                 </div>
+                {!cashOnly && (
                 <div className="w-52">
                     <OsSelect
                         label={t('filters.state')}
@@ -191,6 +216,7 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
                         ]}
                     />
                 </div>
+                )}
                 <div className="w-48">
                     <OsSelect
                         label={t('filters.owner')}
@@ -206,13 +232,13 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
             </div>
 
             <OsTable
-                columns={columns}
+                columns={shownColumns}
                 rows={sortedRows}
                 sort={sort}
                 onSortChange={onSortChange}
                 keyExtractor={(r) => r.id}
                 emptyMessage={t('empty')}
-                onRowClick={(r) => r.shipowner_public_ref && router.push('/admin/armateurs/' + r.shipowner_public_ref)}
+                onRowClick={cashOnly ? undefined : (r) => r.shipowner_public_ref && router.push('/admin/armateurs/' + r.shipowner_public_ref)}
             />
 
             {/*
@@ -220,11 +246,13 @@ export function NaviresCockpit({ rows, dashboardOutstandingUsd }: Props) {
               dans cette vue : sans ce rappel, son montant disparaîtrait de
               l'écran sans que rien ne le signale.
             */}
-            <p className="mt-3 text-xs text-[var(--os-text-muted)]">
-                {gap > 0.5
-                    ? t('coverageGap', { covered: usd(covered), total: usd(dashboardOutstandingUsd), gap: usd(gap) })
-                    : t('coverageComplete', { total: usd(covered) })}
-            </p>
+            {!cashOnly && (
+                <p className="mt-3 text-xs text-[var(--os-text-muted)]">
+                    {gap > 0.5
+                        ? t('coverageGap', { covered: usd(covered), total: usd(dashboardOutstandingUsd), gap: usd(gap) })
+                        : t('coverageComplete', { total: usd(covered) })}
+                </p>
+            )}
         </>
     );
 }

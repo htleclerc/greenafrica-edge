@@ -1,20 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import {
-    clampStatusesForPaymentsOnly, isPaymentsOnlyAllowed, isPaymentsOnlyGuarded, PAYMENTS_ONLY_NAV,
+    clampStatusesForPaymentsOnly, currentIsoWeekStart, forceCurrentWeekProformas,
+    isPaymentsOnlyAllowed, isPaymentsOnlyGuarded, PAYMENTS_ONLY_NAV,
 } from './paymentsOnly';
 import { filterNavItems } from '@/lib/rbac';
 import { UserRole } from '@/types/secure';
 import { loginDestination } from './loginDestination';
 
 describe('paymentsOnly — chemins', () => {
-    it('ne laisse passer que les paiements, le compte et les réglages personnels', () => {
-        for (const p of ['/admin/payments', '/admin/payments/', '/dashboard/settings', '/dashboard/account/security', '/api/admin/payments', '/api/admin/payments/abc', '/api/receipts/RCT-1/download', '/mfa', '/post-login']) {
+    it('laisse passer paiements, portefeuilles, annuaire, réglages, navires et factures (liste seule)', () => {
+        for (const p of [
+            '/admin/payments', '/admin/payments/', '/admin/wallets', '/admin/wallets/w-1', '/admin/users',
+            '/admin/settings', '/admin/navires', '/admin/invoices',
+            '/dashboard/settings', '/dashboard/account/security',
+            '/api/admin/payments', '/api/admin/payments/abc', '/api/admin/wallets/x', '/api/admin/payment-config',
+            '/api/receipts/RCT-1/download', '/mfa', '/post-login',
+        ]) {
             expect(isPaymentsOnlyAllowed(p), p).toBe(true);
         }
     });
 
-    it('refuse tout ce qui montre une créance ou un encours', () => {
-        for (const p of ['/admin/invoices', '/admin/armateurs', '/admin/armateurs/arm_1/portail', '/admin/navires', '/admin/reglements', '/admin/collections', '/admin/revenue', '/admin/settings', '/dashboard', '/dashboard/invoices', '/dashboard/vessels', '/api/admin/shipowners/x', '/api/admin/payment-config', '/admin/paymentsfoo']) {
+    it('refuse tout ce qui montre une créance ou un encours, y compris sous les navires', () => {
+        for (const p of [
+            '/admin/armateurs', '/admin/armateurs/arm_1/portail', '/admin/navires/ves_1/portail', '/admin/navires/ves_1/portail/invoices',
+            '/admin/invoices/anything', '/admin/reglements', '/admin/collections', '/admin/revenue', '/admin/refunds',
+            '/dashboard', '/dashboard/invoices', '/dashboard/vessels', '/api/admin/shipowners/x', '/admin/paymentsfoo',
+        ]) {
             expect(isPaymentsOnlyAllowed(p), p).toBe(false);
         }
     });
@@ -23,7 +34,6 @@ describe('paymentsOnly — chemins', () => {
         expect(isPaymentsOnlyGuarded('/admin/invoices')).toBe(true);
         expect(isPaymentsOnlyGuarded('/api/admin/payments')).toBe(true);
         expect(isPaymentsOnlyGuarded('/dashboard')).toBe(true);
-        // API legacy sans écran mais joignables à la main : transactions, KPIs, journal, émission.
         expect(isPaymentsOnlyGuarded('/api/transactions/abc/proof')).toBe(true);
         expect(isPaymentsOnlyGuarded('/api/kpis')).toBe(true);
         expect(isPaymentsOnlyGuarded('/api/invoices/generate')).toBe(true);
@@ -42,18 +52,41 @@ describe('paymentsOnly — statuts', () => {
     });
 });
 
-describe('paymentsOnly — menu et atterrissage', () => {
-    const items = ['payments', 'admin-invoices', 'armateurs', 'reglements', 'settings', 'refunds', 'revenue'].map((key) => ({ key }));
+describe('paymentsOnly — pro-formas de la semaine en cours', () => {
+    it('trouve le lundi ISO, dimanche compris', () => {
+        expect(currentIsoWeekStart(new Date('2026-09-06T23:00:00Z'))).toBe('2026-08-31'); // dimanche
+        expect(currentIsoWeekStart(new Date('2026-09-07T00:30:00Z'))).toBe('2026-09-07'); // lundi
+        expect(currentIsoWeekStart(new Date('2026-09-10T12:00:00Z'))).toBe('2026-09-07'); // jeudi
+    });
 
-    it('retranche le menu d’un FINANCE_ADMIN aux seuls paiements', () => {
+    it('ramène tout filtre plus large à la semaine, et aux seules pro-formas', () => {
+        const now = new Date('2026-09-10T12:00:00Z');
+        expect(forceCurrentWeekProformas({ documentType: 'FINAL', dateFrom: '2026-01-01' }, now))
+            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-07' });
+        expect(forceCurrentWeekProformas({ documentType: null, dateFrom: null }, now))
+            .toEqual({ documentType: 'PROFORMA', dateFrom: '2026-09-07' });
+    });
+
+    it('garde un filtre plus étroit que la semaine', () => {
+        const now = new Date('2026-09-10T12:00:00Z');
+        expect(forceCurrentWeekProformas({ dateFrom: '2026-09-09' }, now).dateFrom).toBe('2026-09-09');
+    });
+});
+
+describe('paymentsOnly — menu et atterrissage', () => {
+    const items = ['payments', 'wallets', 'users', 'navires', 'admin-invoices', 'admin-settings', 'settings', 'armateurs', 'reglements', 'refunds', 'revenue', 'admin-collections']
+        .map((key) => ({ key }));
+
+    it('retranche le menu d’un FINANCE_ADMIN à la caisse, sans le recouvrement', () => {
         const keys = filterNavItems(items, UserRole.FINANCE_ADMIN, false, true).map((i) => i.key);
-        expect(keys).toEqual(['payments', 'settings']);
-        expect(PAYMENTS_ONLY_NAV).toEqual(['payments', 'settings']);
+        expect(keys).toEqual(['payments', 'wallets', 'users', 'navires', 'admin-invoices', 'admin-settings', 'settings']);
+        expect(PAYMENTS_ONLY_NAV).toEqual(keys);
     });
 
     it("n'accorde rien à un rôle qui n'avait pas les paiements", () => {
         const keys = filterNavItems(items, UserRole.PORT_OFFICER, false, true).map((i) => i.key);
-        expect(keys).toEqual(['settings']);
+        expect(keys).not.toContain('payments');
+        expect(keys).not.toContain('wallets');
     });
 
     it('atterrit sur les paiements, avant le poste de recouvrement', () => {

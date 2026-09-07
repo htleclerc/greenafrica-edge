@@ -4358,6 +4358,7 @@
   "AdminInvoices": {
     "title": "Faturas",
     "subtitle": "Todos os documentos pró-forma, finais, complementares e reembolsos, marítimo e aviação.",
+    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
     "all": "Todos",
     "col_ref": "Referência",
     "col_type": "Tipo",
@@ -5088,12 +5089,14 @@
     },
     "title": "Navios",
     "subtitle": "Dívida em aberto por navio. Uma cobrança sem navio associado não aparece aqui.",
+    "cashOnlySubtitle": "The fleet, its shipowner and what it has settled. Outstanding balances are not visible with your access.",
     "noOwner": "Sem armador",
     "empty": "Nenhum navio",
     "overdueSuffix": "{count} em atraso",
     "coverageComplete": "Cobre a totalidade em aberto: {total}.",
     "coverageGap": "Cobre {covered} de {total} — {gap} em cobranças sem navio associado.",
     "col": {
+      "paid": "Received",
       "vessel": "Navio",
       "owner": "Armador",
       "state": "Estado",
