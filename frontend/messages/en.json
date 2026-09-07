@@ -100,8 +100,7 @@
     "impact": "Impact",
     "resources": "Resources",
     "about": "About",
-    "partnership": "Partnership",
-    "nav_admin_validations": "Validations"
+    "partnership": "Partnership"
   },
   "Landing": {
     "badge": "SOVEREIGN CARBON INTELLIGENCE PROTOCOL",
@@ -852,6 +851,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Users",
     "nav_admin_settings": "Settings",
+    "nav_admin_validations": "Validations",
     "nav_navires": "Vessels"
   },
   "AdminStaff": {
@@ -4322,7 +4322,7 @@
   "AdminInvoices": {
     "title": "Invoices",
     "subtitle": "All pro-forma, final, complement and refund documents across maritime and aviation.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Pro-formas issued this calendar month only. Other invoices and the outstanding book are not visible with your access.",
     "all": "All",
     "col_ref": "Reference",
     "col_type": "Type",

@@ -8,7 +8,7 @@ import {
     listInvoiceFilterOptions,
 } from '@/services/invoiceAdminService';
 import { InvoicesAdminList } from './InvoicesAdminList';
-import { forceCurrentWeekProformas } from '@/lib/auth/paymentsOnly';
+import { forceCurrentMonthProformas } from '@/lib/auth/paymentsOnly';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +29,13 @@ export default async function AdminInvoicesPage({
         .single();
     if (!profile || !STAFF_ROLES.includes(profile.role)) redirect('/dashboard');
 
-    // Encaissements seulement (mig 154) : les pro-formas émises cette semaine,
-    // rien d'autre — le filtre est imposé ici, pas proposé à l'écran.
+    // Encaissements seulement (mig 154) : les pro-formas émises depuis le
+    // premier du mois, rien d'autre — le filtre est imposé ici, pas proposé à
+    // l'écran. Le mois calendaire a remplacé la semaine : c'est la maille du
+    // rapprochement bancaire.
     const cashOnly = (profile as { payments_only?: boolean | null }).payments_only === true;
     const filters = cashOnly
-        ? forceCurrentWeekProformas(parseInvoiceFilters(await searchParams))
+        ? forceCurrentMonthProformas(parseInvoiceFilters(await searchParams))
         : parseInvoiceFilters(await searchParams);
     const [pageData, options] = await Promise.all([
         listInvoicesAdmin(supabase, filters),

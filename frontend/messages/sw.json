@@ -33,8 +33,7 @@
     "impact": "Athari",
     "resources": "Rasilimali",
     "about": "Kuhusu",
-    "partnership": "Ushirikiano",
-    "nav_admin_validations": "Uthibitishaji"
+    "partnership": "Ushirikiano"
   },
   "Landing": {
     "badge": "ITIFAKI YA AKILI YA KABONI YA ENZI KUU",
@@ -737,6 +736,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Watumiaji",
     "nav_admin_settings": "Mipangilio",
+    "nav_admin_validations": "Uthibitishaji",
     "nav_navires": "Meli"
   },
   "AdminStaff": {
@@ -4325,7 +4325,7 @@
   "AdminInvoices": {
     "title": "Ankara",
     "subtitle": "Nyaraka zote za pro-forma, za mwisho, za nyongeza na marejesho, baharini na anga.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Pro-forma zilizotolewa mwezi huu wa kalenda pekee. Ankara nyingine na deni lililobaki hayaonekani kwa ufikiaji wako.",
     "all": "Zote",
     "col_ref": "Rejea",
     "col_type": "Aina",

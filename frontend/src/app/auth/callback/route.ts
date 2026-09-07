@@ -67,14 +67,33 @@ export async function GET(request: NextRequest) {
         );
     }
 
+    /**
+     * Les cookies de session sont posés sur `response`, un `NextResponse.next()`
+     * que cette route ne renvoie JAMAIS : elle redirige. Sans ce report, la
+     * session est vérifiée puis jetée, et l'utilisateur retombe sur /login
+     * SANS message — le middleware le renvoie simplement comme non
+     * authentifié, ce qui ne ressemble pas à une panne mais à un lien périmé.
+     *
+     * Mesuré en production le 2026-09-07 : le lien de connexion staff n'ouvrait
+     * aucune session. Le callback armateur faisait déjà ce report ; celui-ci
+     * l'avait toujours oublié, sur le chemin `code` comme sur `token_hash`.
+     */
+    const redirectTo = (target: string): NextResponse => {
+        const redirectResp = NextResponse.redirect(target);
+        response.cookies.getAll().forEach((c) => {
+            redirectResp.cookies.set(c.name, c.value, c);
+        });
+        return redirectResp;
+    };
+
     // Route based on the callback type
     if (type === 'recovery') {
-        return NextResponse.redirect(`${origin}/reset-password`);
+        return redirectTo(`${origin}/reset-password`);
     }
 
     if (type === 'signup') {
-        return NextResponse.redirect(`${origin}/pending-approval`);
+        return redirectTo(`${origin}/pending-approval`);
     }
 
-    return NextResponse.redirect(`${origin}${next}`);
+    return redirectTo(`${origin}${next}`);
 }

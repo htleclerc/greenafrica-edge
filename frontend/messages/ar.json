@@ -33,8 +33,7 @@
     "impact": "الأثر",
     "resources": "الموارد",
     "about": "حول",
-    "partnership": "شراكة",
-    "nav_admin_validations": "عمليات التحقق"
+    "partnership": "شراكة"
   },
   "Landing": {
     "badge": "بروتوكول استخبارات الكربون السيادي",
@@ -737,6 +736,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "المستخدمون",
     "nav_admin_settings": "الإعدادات",
+    "nav_admin_validations": "عمليات التحقق",
     "nav_navires": "السفن"
   },
   "AdminStaff": {
@@ -4325,7 +4325,7 @@
   "AdminInvoices": {
     "title": "الفواتير",
     "subtitle": "جميع مستندات الفاتورة الأولية والنهائية والتكميلية والمبالغ المستردة، بحري وطيران.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "الفواتير المبدئية الصادرة في الشهر الميلادي الحالي فقط. الفواتير الأخرى والمبالغ المستحقة غير مرئية بصلاحياتك.",
     "all": "الكل",
     "col_ref": "المرجع",
     "col_type": "النوع",

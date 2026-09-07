@@ -19,7 +19,7 @@
  *   1. le menu — {@link PAYMENTS_ONLY_NAV} ;
  *   2. le middleware — {@link isPaymentsOnlyAllowed} sur chaque requête ;
  *   3. les API et pages — {@link clampStatusesForPaymentsOnly},
- *      {@link forceCurrentWeekProformas}.
+ *      {@link forceCurrentMonthProformas}.
  */
 
 /** Entrées de menu qui subsistent. Intersecté avec le rôle, jamais ajouté. */
@@ -87,23 +87,32 @@ export function clampStatusesForPaymentsOnly(requested: readonly string[]): stri
     return kept.length > 0 ? kept : ['CONFIRMED'];
 }
 
-/** Lundi 00:00 UTC de la semaine ISO en cours, en `YYYY-MM-DD`. */
-export function currentIsoWeekStart(now: Date = new Date()): string {
-    const day = now.getUTCDay() || 7; // dimanche = 7
-    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (day - 1)));
-    return monday.toISOString().slice(0, 10);
+/**
+ * Premier jour du mois en cours, 00:00 UTC, en `YYYY-MM-DD`.
+ *
+ * Mois CALENDAIRE et non fenêtre glissante de trente jours : le rapprochement
+ * bancaire se fait par mois, et une fenêtre glissante ferait disparaître une
+ * pro-forma du champ de vision la veille du jour où on la rapproche.
+ *
+ * La borne remplace la semaine ISO (mig 154) depuis le 2026-09-07 : une
+ * semaine coupait le mois en tronçons, et un règlement reçu le 2 pour une
+ * pro-forma émise le 28 du mois précédent sortait déjà du champ.
+ */
+export function currentMonthStart(now: Date = new Date()): string {
+    const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    return first.toISOString().slice(0, 10);
 }
 
 /**
  * Les seules factures que cette personne voit : les pro-formas émises depuis
- * le lundi de la semaine en cours. Un filtre plus étroit du client est gardé,
- * un filtre plus large est ramené à la semaine.
+ * le premier du mois en cours. Un filtre plus étroit du client est gardé, un
+ * filtre plus large est ramené au début du mois.
  */
-export function forceCurrentWeekProformas<F extends { documentType?: string | null; dateFrom?: string | null }>(
+export function forceCurrentMonthProformas<F extends { documentType?: string | null; dateFrom?: string | null }>(
     filters: F,
     now: Date = new Date(),
 ): F {
-    const weekStart = currentIsoWeekStart(now);
-    const dateFrom = filters.dateFrom && filters.dateFrom > weekStart ? filters.dateFrom : weekStart;
+    const monthStart = currentMonthStart(now);
+    const dateFrom = filters.dateFrom && filters.dateFrom > monthStart ? filters.dateFrom : monthStart;
     return { ...filters, documentType: 'PROFORMA', dateFrom };
 }

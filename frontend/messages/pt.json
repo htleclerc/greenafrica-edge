@@ -560,8 +560,7 @@
     "impact": "Impacto",
     "resources": "Recursos",
     "about": "Sobre",
-    "partnership": "Parceria",
-    "nav_admin_validations": "Validações"
+    "partnership": "Parceria"
   },
   "Landing": {
     "badge": "PROTOCOLO SOBERANO DE INTELIGÊNCIA DE CARBONO",
@@ -1264,6 +1263,7 @@
     "theme_switch_to_dark": "Switch to dark theme",
     "nav_users": "Utilizadores",
     "nav_admin_settings": "Definições",
+    "nav_admin_validations": "Validações",
     "nav_navires": "Navios"
   },
   "AdminStaff": {
@@ -4358,7 +4358,7 @@
   "AdminInvoices": {
     "title": "Faturas",
     "subtitle": "Todos os documentos pró-forma, finais, complementares e reembolsos, marítimo e aviação.",
-    "cashOnlyNotice": "Pro-formas issued this week only. Other invoices and the outstanding book are not visible with your access.",
+    "cashOnlyNotice": "Pro-formas emitidas no mês civil em curso apenas. As restantes faturas e a carteira em dívida não são visíveis com o seu acesso.",
     "all": "Todos",
     "col_ref": "Referência",
     "col_type": "Tipo",
