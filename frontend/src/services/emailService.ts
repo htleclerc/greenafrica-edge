@@ -7,6 +7,9 @@ import {
     TX_PAYMENT_CONFIRMATION_HTML,
     TX_PROFORMA_INVOICE_HTML,
     TX_VESSEL_ACCESS_CODE_HTML,
+    TX_SIGN_IN_LINK_HTML,
+    TX_STAFF_INVITE_HTML,
+    TX_PASSWORD_RESET_HTML,
 } from '@/emails/templates';
 import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
 import { appBaseUrl } from '@/lib/appUrl';
@@ -1036,34 +1039,25 @@ export interface LoginLinkParams {
  * sur qui est débiteur.
  */
 export async function sendLoginLinkEmail(p: LoginLinkParams): Promise<EmailResult> {
-    // Rappelle le navire quand l'accès a été demandé par IMO ou MMSI : c'est
-    // souvent un manager qui reçoit, pour une flotte entière. Sans cette ligne
-    // il ne saurait pas de quel dossier il s'agit.
-    const vesselLine = p.vesselName
-        ? metaRow(`Vessel`, escapeHtml(p.vesselName))
-        : '';
-
-    const content = `
-        <h1>Sign in to Green Gate</h1>
-        <p>Dear ${escapeHtml(p.recipientName ?? 'Shipowner')},</p>
-        <p>Use the button below to open your Green Gate account, or enter the code on the sign-in page. No password is required.</p>
-        ${vesselLine}
-
-        <a href="${p.link}" class="btn">Sign In →</a>
-
-        <div style="text-align:center;margin:20px 0">
-            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
-        </div>
-
-        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you did not request this, you can safely ignore this email: no account changes will be made.</div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
-    `;
+    // Gabarit CLAIR de Claude Design, comme les autres transactionnels. Le
+    // rendu maison sombre (`emailLayout`) restait le seul e-mail de la
+    // plateforme a ne pas suivre la charte.
+    //
+    // `vessel` est toujours rendu : `renderEmailTemplate` leve sur un marqueur
+    // sans valeur, et la ligne rappelle de quel dossier il s'agit quand
+    // l'acces a ete demande par IMO ou MMSI — c'est souvent un manager qui
+    // recoit, pour une flotte entiere.
+    const html = renderEmailTemplate(TX_SIGN_IN_LINK_HTML, {
+        link: p.link,
+        code: p.code,
+        email: p.to,
+        vessel: p.vesselName ?? '\u2014',
+    });
 
     return sendEmail({
         to: p.to,
         subject: `Your Green Gate sign-in code: ${p.code}`,
-        html: emailLayout(content, { previewText: `Sign-in code ${p.code} — single use, expires shortly` }),
+        html,
         text: `Sign in to Green Gate\n\n${p.vesselName ? `Vessel: ${p.vesselName}\n\n` : ''}Code: ${p.code}\n\nOr open this link (single use, expires shortly):\n${p.link}\n\nThe link and the code are the same credential — using either one consumes both. If you did not request this, ignore this email; no account changes will be made.`,
     });
 }
@@ -1166,32 +1160,16 @@ export interface PasswordResetParams {
  * « Redirect URLs » du projet.
  */
 export async function sendPasswordResetEmail(p: PasswordResetParams): Promise<EmailResult> {
-    const content = `
-        <h1>Reset your Green Gate password</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>Use the button below to choose a new password. If you did not ask for this, ignore this email — your current password stays valid.</p>
-
-        <a href="${p.link}" class="btn">Choose a new password →</a>
-
-        ${metaRow('Account', escapeHtml(p.to))}
-
-        <div class="alert alert-warn">This link is single-use and expires shortly.</div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
-    `;
+    const html = renderEmailTemplate(TX_PASSWORD_RESET_HTML, {
+        link: p.link,
+        email: p.to,
+    });
 
     return sendEmail({
         to: p.to,
         subject: 'Reset your Green Gate password',
-        html: emailLayout(content, { previewText: 'Choose a new password for your Green Gate account.' }),
-        text: `Reset your Green Gate password
-
-Account: ${p.to}
-
-Open this link to choose a new password (single use, expires shortly):
-${p.link}
-
-If you did not ask for this, ignore this email — your current password stays valid.`,
+        html,
+        text: `Reset your Green Gate password\n\nAccount: ${p.to}\n\nOpen this link to choose a new password (single use, expires shortly):\n${p.link}\n\nIf you did not ask for this, ignore this email — your current password stays valid.`,
     });
 }
 
@@ -1222,40 +1200,20 @@ export interface StaffInviteParams {
  * console que nous ne maîtrisons pas.
  */
 export async function sendStaffInviteEmail(p: StaffInviteParams): Promise<EmailResult> {
-    const content = `
-        <h1>You have been invited to Green Gate</h1>
-        <p>Dear ${escapeHtml(p.recipientName)},</p>
-        <p>You have been invited to join the Green Gate Sovereign Carbon Platform as <strong>${escapeHtml(p.role)}</strong>. Use the button below to activate your account and choose your password.</p>
-
-        <a href="${p.link}" class="btn">Activate my account →</a>
-
-        <div style="text-align:center;margin:20px 0">
-            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
-        </div>
-
-        ${metaRow('Account', escapeHtml(p.to))}
-        ${metaRow('Role', escapeHtml(p.role))}
-
-        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you were not expecting this invitation, ignore this email.</div>
-
-        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
-    `;
+    // Le gabarit ne porte PAS de code : l'invitation s'accepte par le lien, qui
+    // depose l'invite sur l'ecran de choix du mot de passe. Un code y serait
+    // sans emploi — il n'existe aucun ecran ou le saisir pour ce parcours.
+    const html = renderEmailTemplate(TX_STAFF_INVITE_HTML, {
+        link: p.link,
+        email: p.to,
+        role: p.role,
+    });
 
     return sendEmail({
         to: p.to,
         subject: 'You have been invited to Green Gate',
-        html: emailLayout(content, { previewText: 'Activate your Green Gate staff account.' }),
-        text: `You have been invited to Green Gate
-
-Role: ${p.role}
-Account: ${p.to}
-
-Code: ${p.code}
-
-Or open this link (single use, expires shortly):
-${p.link}
-
-If you were not expecting this invitation, ignore this email.`,
+        html,
+        text: `You have been invited to Green Gate\n\nRole: ${p.role}\nAccount: ${p.to}\n\nOpen this link to activate your account and choose your password:\n${p.link}\n\nIf you were not expecting this invitation, ignore this email.`,
     });
 }
 
