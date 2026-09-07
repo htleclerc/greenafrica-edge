@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     const rawNext = searchParams.get('next') ?? '/dashboard';
 
     // Validate redirect target against allowlist to prevent open redirect
-    const ALLOWED_PREFIXES = ['/dashboard', '/post-login', '/admin', '/settings'];
+    // `/auth/setup-password` est dans la liste depuis que les invitations staff
+    // passent par notre propre rail : c'est la page ou l'invite choisit son mot
+    // de passe, et elle exige une session — donc d'etre atteinte APRES ce
+    // callback, pas avant.
+    const ALLOWED_PREFIXES = ['/dashboard', '/post-login', '/admin', '/settings', '/auth/setup-password'];
     const next = ALLOWED_PREFIXES.some((p) => rawNext.startsWith(p)) ? rawNext : '/dashboard';
 
     if (!code && !tokenHash) {

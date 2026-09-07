@@ -21,9 +21,24 @@ const profileUpsertSpy = vi.fn((_: ProfilePayload) => Promise.resolve({ error: n
 const userJurisdictionsUpsertSpy = vi.fn((_: UserJurisdictionRow[]) =>
     Promise.resolve({ error: null }),
 );
-const inviteSpy = vi.fn((_email: string, _opts?: unknown) =>
+// `createUser` et non plus `inviteUserByEmail` : l'invitation part par notre
+// rail, GoTrue n'expedie plus rien. Signature a UN argument.
+const inviteSpy = vi.fn((_opts: { email: string; email_confirm?: boolean; user_metadata?: unknown }) =>
     Promise.resolve({ data: { user: { id: 'new-staff-uuid' } }, error: null }),
 );
+const generateLinkSpy = vi.fn((_opts: { type: string; email: string }) =>
+    Promise.resolve({
+        data: { properties: { hashed_token: 'th-staff', email_otp: '424242' } },
+        error: null,
+    }),
+);
+const sendStaffInviteSpy = vi.fn(
+    (_p: { to: string; recipientName: string; role: string; link: string; code: string }) =>
+        Promise.resolve({ success: true }),
+);
+vi.mock('@/services/emailService', () => ({
+    sendStaffInviteEmail: (p: never) => sendStaffInviteSpy(p),
+}));
 
 let callerProfile: { role: string } | null = { role: 'SUPERADMIN' };
 let callerUser: { id: string } | null = { id: 'admin-uuid' };
@@ -56,7 +71,8 @@ function buildAdminMock() {
     return {
         auth: {
             admin: {
-                inviteUserByEmail: inviteSpy,
+                createUser: inviteSpy,
+                generateLink: generateLinkSpy,
                 listUsers: vi.fn((_opts?: unknown) =>
                     Promise.resolve({
                         data: {
@@ -104,7 +120,9 @@ beforeEach(() => {
     profileUpsertSpy.mockClear();
     userJurisdictionsUpsertSpy.mockClear();
     inviteSpy.mockClear();
-    inviteSpy.mockImplementation((_email: string) =>
+    generateLinkSpy.mockClear();
+    sendStaffInviteSpy.mockClear();
+    inviteSpy.mockImplementation(() =>
         Promise.resolve({ data: { user: { id: 'new-staff-uuid' } }, error: null }),
     );
     callerProfile = { role: 'SUPERADMIN' };
@@ -212,21 +230,30 @@ describe('inviteStaff', () => {
         });
     });
 
-    it('inviteUserByEmail redirectTo points to /auth/setup-password', async () => {
+    // Le lien doit frapper NOS routes et deposer l'invite sur la page de choix
+    // du mot de passe. `action_link` de GoTrue n'y menait que si la cible etait
+    // declaree dans les « Redirect URLs » du projet — ce qui n'etait pas le cas.
+    it('envoie un lien vers notre callback, cible /auth/setup-password', async () => {
         await inviteStaff(validInput);
-        const [, opts] = inviteSpy.mock.calls[0]! as [string, { redirectTo: string; data: unknown }];
-        expect(opts.redirectTo).toContain('/auth/setup-password');
+        expect(sendStaffInviteSpy).toHaveBeenCalledTimes(1);
+        const { link, code } = sendStaffInviteSpy.mock.calls[0]![0];
+        expect(link).toContain('/auth/callback?token_hash=th-staff');
+        expect(link).toContain('type=magiclink');
+        expect(link).toContain(encodeURIComponent('/auth/setup-password'));
+        expect(link).not.toContain('/auth/v1/verify');
+        expect(code).toBe('424242');
     });
 
-    it('passes full_name and role in invite data', async () => {
+    it('cree le compte confirme, avec le nom et le role en metadonnees', async () => {
         await inviteStaff({ ...validInput, role: 'FINANCE_ADMIN', fullName: 'Jean Finance' });
-        const [, opts] = inviteSpy.mock.calls[0]! as [string, { redirectTo: string; data: { full_name: string; role: string } }];
-        expect(opts.data).toMatchObject({ full_name: 'Jean Finance', role: 'FINANCE_ADMIN' });
+        const opts = inviteSpy.mock.calls[0]![0];
+        expect(opts.email_confirm).toBe(true);
+        expect(opts.user_metadata).toMatchObject({ full_name: 'Jean Finance', role: 'FINANCE_ADMIN' });
     });
 
     it('lowercases the email before invite and upsert', async () => {
         await inviteStaff({ ...validInput, email: 'STAFF@Example.COM' });
-        expect(inviteSpy.mock.calls[0]![0]).toBe('staff@example.com');
+        expect(inviteSpy.mock.calls[0]![0].email).toBe('staff@example.com');
         const profilePayload = profileUpsertSpy.mock.calls[0]![0] as { email: string };
         expect(profilePayload.email).toBe('staff@example.com');
     });
@@ -257,6 +284,8 @@ describe('inviteStaff', () => {
             profileUpsertSpy.mockClear();
             userJurisdictionsUpsertSpy.mockClear();
             inviteSpy.mockClear();
+    generateLinkSpy.mockClear();
+    sendStaffInviteSpy.mockClear();
             inviteSpy.mockResolvedValueOnce({ data: { user: { id: 'new-staff-uuid' } }, error: null });
 
             const r = await inviteStaff({ ...validInput, role });

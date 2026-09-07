@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Mail, ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Shield } from 'lucide-react';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { OsButton } from '@/components/ui/OsButton';
-import { createClient } from '@/lib/supabase/client';
+import { requestPasswordReset } from '@/actions/requestPasswordReset';
 
 export function ForgotPasswordPage() {
     const t = useTranslations('Auth');
@@ -25,19 +25,21 @@ export function ForgotPasswordPage() {
 
         setLoading(true);
 
-        const supabase = createClient();
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-            email.trim(),
-            { redirectTo: `${window.location.origin}/auth/callback?type=recovery` }
-        );
+        // Action serveur et non `resetPasswordForEmail` : ce dernier laisse
+        // GoTrue expedier le courriel, qui partait dans le gabarit par defaut
+        // de Supabase et dont le lien ne menait a `/auth/callback` que si la
+        // cible etait declaree dans les « Redirect URLs » du projet.
+        const res = await requestPasswordReset({ email: email.trim() });
 
         setLoading(false);
 
-        if (resetError) {
+        if (!res.ok) {
             setError(t('forgot_error_generic'));
             return;
         }
 
+        // Vrai qu'une adresse soit connue ou non : l'ecran ne doit pas
+        // confirmer l'existence d'un compte.
         setSent(true);
     }
 
