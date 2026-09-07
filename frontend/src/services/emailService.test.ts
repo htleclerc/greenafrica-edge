@@ -18,6 +18,7 @@ import {
     sendKycRejectedEmail,
     sendVesselAccessCodeEmail,
     sendLoginLinkEmail,
+    sendRegistrationApprovalEmail,
 } from './emailService';
 
 beforeEach(() => {
@@ -155,33 +156,37 @@ describe('sendVesselAccessCodeEmail', () => {
  * partout non plus.
  */
 describe('lignes de métadonnées — ce que Gmail sait rendre', () => {
-    async function loginHtml(): Promise<string> {
-        await sendLoginLinkEmail({
-            to: 'owner@example.com',
+    // `metaRow` est teste via un e-mail qui l'utilise ENCORE. Le lien de
+    // connexion a bascule sur le gabarit clair de Claude Design et ne construit
+    // plus ses lignes ainsi ; le correctif Gmail/Outlook que ces tests
+    // verrouillent vaut toujours pour les autres envois.
+    async function metaHtml(): Promise<string> {
+        await sendRegistrationApprovalEmail({
+            to: 'officer@berbera.gov.sl',
             recipientName: 'Green Gate Demo Armateur',
-            link: 'https://greengate.africa/auth/sl?t=abc',
-            code: '688664',
-            vesselName: 'GG DEMO STAR',
+            role: 'PORT_OFFICER',
+            operationalSite: 'BERBERA_PORT',
+            activationUrl: 'https://greengate.africa/login',
         });
         return sendMock.mock.calls[0][0].html as string;
     }
 
     it('rend la ligne en table, jamais en flex', async () => {
-        const html = await loginHtml();
+        const html = await metaHtml();
         expect(html).toContain('<td align="right"');
         expect(html).not.toContain('class="meta-row"');
         // Le bug d'origine : les deux libellés bout à bout, sans cellule entre eux.
-        expect(html).not.toContain('VesselGG DEMO STAR');
+        expect(html).not.toContain('RolePORT OFFICER');
     });
 
     it('porte ses couleurs en ligne, pas seulement dans le <style>', async () => {
-        const html = await loginHtml();
+        const html = await metaHtml();
         expect(html).toMatch(/<td align="left" style="[^"]*color:#64748B/);
         expect(html).toMatch(/<td align="right" style="[^"]*color:#FFFFFF/);
     });
 
     it('sépare la bordure en couleur pleine — Outlook ignore l’alpha d’un rgba()', async () => {
-        const html = await loginHtml();
+        const html = await metaHtml();
         expect(html).toContain('border-bottom:1px solid #1F2A26');
         // Seulement dans les cellules : le <style> de la mise en page garde ses
         // rgba pour l'en-tête et le pied, qui ne sont pas l'objet de ce correctif.
@@ -191,9 +196,9 @@ describe('lignes de métadonnées — ce que Gmail sait rendre', () => {
     });
 
     it('garde l’étiquette et la valeur séparées et lisibles', async () => {
-        const html = await loginHtml();
-        const row = html.slice(html.indexOf('>Vessel<') - 400, html.indexOf('>Vessel<') + 400);
-        expect(row).toContain('GG DEMO STAR');
+        const html = await metaHtml();
+        const row = html.slice(html.indexOf('>Role<') - 400, html.indexOf('>Role<') + 400);
+        expect(row).toContain('PORT OFFICER');
         expect(row).toContain('</td>');
     });
 });
