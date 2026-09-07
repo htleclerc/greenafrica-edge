@@ -1149,6 +1149,116 @@ Review members: ${appUrl()}/owner/profile`,
     });
 }
 
+export interface PasswordResetParams {
+    to: string;
+    recipientName: string;
+    link: string;
+}
+
+/**
+ * Réinitialisation de mot de passe.
+ *
+ * Envoyé par NOTRE rail, comme le lien de connexion et l'invitation staff.
+ * `resetPasswordForEmail` laissait GoTrue expédier son propre courriel : il
+ * partait dans le gabarit par défaut de Supabase — les gabarits de
+ * `supabase/templates/` ne valent que pour la pile locale — et son lien ne
+ * menait à `/auth/callback` que si cette cible était déclarée dans les
+ * « Redirect URLs » du projet.
+ */
+export async function sendPasswordResetEmail(p: PasswordResetParams): Promise<EmailResult> {
+    const content = `
+        <h1>Reset your Green Gate password</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>Use the button below to choose a new password. If you did not ask for this, ignore this email — your current password stays valid.</p>
+
+        <a href="${p.link}" class="btn">Choose a new password →</a>
+
+        ${metaRow('Account', escapeHtml(p.to))}
+
+        <div class="alert alert-warn">This link is single-use and expires shortly.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: 'Reset your Green Gate password',
+        html: emailLayout(content, { previewText: 'Choose a new password for your Green Gate account.' }),
+        text: `Reset your Green Gate password
+
+Account: ${p.to}
+
+Open this link to choose a new password (single use, expires shortly):
+${p.link}
+
+If you did not ask for this, ignore this email — your current password stays valid.`,
+    });
+}
+
+export interface StaffInviteParams {
+    to: string;
+    recipientName: string;
+    /** Rôle accordé, tel qu'il figurera dans le profil. */
+    role: string;
+    link: string;
+    code: string;
+}
+
+/**
+ * Invitation d'un agent de la plateforme.
+ *
+ * Envoyé par NOTRE rail, et non par `inviteUserByEmail`. GoTrue expédiait
+ * jusqu'ici son propre courriel, avec deux conséquences mesurées en production
+ * le 2026-09-07 : le message partait dans le gabarit PAR DÉFAUT de Supabase
+ * — 347 caractères, hors charte, « You've been invited » — parce que les
+ * gabarits de `supabase/templates/` ne valent que pour la pile locale et ne
+ * sont jamais téléversés vers le projet hébergé ; et son lien ne menait à
+ * `/auth/setup-password` que si cette cible figurait dans les « Redirect
+ * URLs » du projet, ce qui n'était pas le cas — l'invité atterrissait sur la
+ * page d'accueil publique, sans session, sans pouvoir choisir son mot de
+ * passe.
+ *
+ * Le lien porté ici frappe nos propres routes : plus rien ne dépend d'une
+ * console que nous ne maîtrisons pas.
+ */
+export async function sendStaffInviteEmail(p: StaffInviteParams): Promise<EmailResult> {
+    const content = `
+        <h1>You have been invited to Green Gate</h1>
+        <p>Dear ${escapeHtml(p.recipientName)},</p>
+        <p>You have been invited to join the Green Gate Sovereign Carbon Platform as <strong>${escapeHtml(p.role)}</strong>. Use the button below to activate your account and choose your password.</p>
+
+        <a href="${p.link}" class="btn">Activate my account →</a>
+
+        <div style="text-align:center;margin:20px 0">
+            <span style="display:inline-block;padding:14px 28px;background:rgba(16,185,129,0.1);border:1px solid #10B981;border-radius:10px;font-size:28px;font-weight:800;letter-spacing:6px;color:#10B981;font-family:monospace">${escapeHtml(p.code)}</span>
+        </div>
+
+        ${metaRow('Account', escapeHtml(p.to))}
+        ${metaRow('Role', escapeHtml(p.role))}
+
+        <div class="alert alert-warn">The link and the code are the same single-use credential — using either one consumes both. They expire shortly. If you were not expecting this invitation, ignore this email.</div>
+
+        <p style="margin-top:24px;font-size:12px;color:#94A3B8">If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${escapeHtml(p.link)}</span></p>
+    `;
+
+    return sendEmail({
+        to: p.to,
+        subject: 'You have been invited to Green Gate',
+        html: emailLayout(content, { previewText: 'Activate your Green Gate staff account.' }),
+        text: `You have been invited to Green Gate
+
+Role: ${p.role}
+Account: ${p.to}
+
+Code: ${p.code}
+
+Or open this link (single use, expires shortly):
+${p.link}
+
+If you were not expecting this invitation, ignore this email.`,
+    });
+}
+
 export interface MemberAccessParams {
     to: string;
     recipientName: string;
