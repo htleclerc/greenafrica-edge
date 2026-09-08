@@ -25,6 +25,29 @@ const SIZE_STYLES: Record<ButtonSize, string> = {
     lg: 'h-12 px-6 text-base gap-2.5 rounded-xl',
 };
 
+const BASE_STYLES = `
+    inline-flex items-center justify-center
+    font-medium transition-all duration-150 cursor-pointer
+    disabled:opacity-50 disabled:cursor-not-allowed
+`;
+
+/**
+ * Les mêmes styles, pour ce qui ne peut pas être un `<button>`.
+ *
+ * Un lien de navigation reste un `<a>` — le transformer en bouton lui ferait
+ * perdre l'ouverture dans un nouvel onglet, la copie d'adresse et l'annonce
+ * correcte aux lecteurs d'écran. Il a pourtant besoin de l'apparence d'un
+ * bouton, et la recopier ailleurs est précisément ce qui a produit les classes
+ * `os-button` / `os-button-sm`, employées par cinq composants et définies nulle
+ * part : l'apparence était donc simplement absente.
+ */
+export function osButtonClass(
+    variant: ButtonVariant = 'primary',
+    size: ButtonSize = 'md',
+): string {
+    return `${BASE_STYLES} ${VARIANT_STYLES[variant]} ${SIZE_STYLES[size]}`;
+}
+
 interface OsButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant;
     size?: ButtonSize;
@@ -48,14 +71,7 @@ export function OsButton({
         <button
             {...props}
             disabled={disabled || loading}
-            className={`
-                inline-flex items-center justify-center
-                font-medium transition-all duration-150 cursor-pointer
-                disabled:opacity-50 disabled:cursor-not-allowed
-                ${VARIANT_STYLES[variant]}
-                ${SIZE_STYLES[size]}
-                ${className}
-            `}
+            className={`${osButtonClass(variant, size)} ${className}`}
         >
             {loading
                 ? <Loader2 className="w-4 h-4 animate-spin" />

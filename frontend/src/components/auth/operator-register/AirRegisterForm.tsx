@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { OsInput } from '@/components/ui/OsInput';
+import { OsButton } from '@/components/ui/OsButton';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
@@ -109,9 +110,9 @@ export function AirRegisterForm({ recaptchaSiteKey }: Props) {
                 </select>
             </div>
             {result && !result.ok && <div className="text-red-400 text-sm">{result.message}</div>}
-            <button type="submit" disabled={submitting} className="os-button w-full disabled:opacity-50">
+            <OsButton type="submit" size="lg" loading={submitting} className="w-full">
                 {submitting ? t('submitting') : t('submit')}
-            </button>
+            </OsButton>
         </form>
     );
 }
