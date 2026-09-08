@@ -870,7 +870,8 @@
       "codeSubmit": "Se connecter",
       "codeHint": "Ou cliquez simplement le lien reçu par e-mail — l'un ou l'autre fonctionne.",
       "badCode": "Code invalide ou expiré.",
-      "retry": "Utiliser une autre adresse ou un autre navire"
+      "retry": "Utiliser une autre adresse ou un autre navire",
+      "tabsLabel": "Mode de connexion"
     }
   },
   "DashboardPages": {

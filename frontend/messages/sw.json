@@ -612,7 +612,8 @@
       "codeSubmit": "Ingia",
       "codeHint": "Au bofya kiungo ulichopokea kwa barua pepe — chochote kinafanya kazi.",
       "badCode": "Msimbo si sahihi au umeisha muda.",
-      "retry": "Tumia barua pepe au meli nyingine"
+      "retry": "Tumia barua pepe au meli nyingine",
+      "tabsLabel": "Njia ya kuingia"
     }
   },
   "Dashboard": {
