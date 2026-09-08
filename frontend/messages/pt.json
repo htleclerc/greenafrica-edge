@@ -1139,7 +1139,8 @@
       "codeSubmit": "Entrar",
       "codeHint": "Ou clique na ligação recebida por e-mail — qualquer uma funciona.",
       "badCode": "Código inválido ou expirado.",
-      "retry": "Usar outro e-mail ou navio"
+      "retry": "Usar outro e-mail ou navio",
+      "tabsLabel": "Método de acesso"
     }
   },
   "Dashboard": {

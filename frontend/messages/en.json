@@ -727,7 +727,8 @@
       "codeSubmit": "Sign in",
       "codeHint": "Or simply click the link in the email — either one works.",
       "badCode": "Invalid or expired code.",
-      "retry": "Use a different email or vessel"
+      "retry": "Use a different email or vessel",
+      "tabsLabel": "Sign-in method"
     }
   },
   "Dashboard": {

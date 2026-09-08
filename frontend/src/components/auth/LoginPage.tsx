@@ -10,7 +10,9 @@ import { UserRole } from '@/types/secure';
 import { createClient } from '@/lib/supabase/client';
 import { loginDestination } from '@/lib/auth/loginDestination';
 import { safeInternalPath } from '@/lib/auth/safeInternalPath';
+import { useTheme } from 'next-themes';
 import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
 import { requestLoginLink, sendLoginLinkTo, type RequestLoginLinkResult } from '@/actions/requestLoginLink';
 import { verifyLoginCode } from '@/actions/verifyLoginCode';
@@ -68,7 +70,26 @@ function LoginPageInner() {
     const [showDemo, setShowDemo] = React.useState(false);
     // Second chemin d'entree. Les armateurs ont ete importes sans mot de
     // passe : le formulaire mot de passe ne leur ouvre rien.
-    const [mode, setMode] = React.useState<'password' | 'link'>('password');
+    /**
+     * Le LIEN est le mode par défaut. Les armateurs sont la population de loin
+     * la plus nombreuse et ils ont été importés SANS mot de passe : ouvrir sur
+     * l'onglet mot de passe leur présentait un formulaire qu'ils ne pouvaient
+     * pas remplir. Le personnel, lui, sait où trouver son onglet et n'est
+     * qu'une poignée.
+     */
+    const [mode, setMode] = React.useState<'link' | 'password'>('link');
+
+    /**
+     * Le logo existe en deux variantes, l'une pour fond sombre, l'autre pour
+     * fond clair. Elle etait figee sur « dark » : ajouter le selecteur de theme
+     * sans cela aurait pose un logo pour fond sombre sur le theme clair.
+     *
+     * `resolvedTheme` plutot que `theme` : en mode « systeme », `theme` vaut
+     * « system » et ne dit pas ce qui est affiche. Avant le montage il est
+     * indefini — on retombe sur la variante sombre, celle du rendu serveur.
+     */
+    const { resolvedTheme } = useTheme();
+    const logoVariant = resolvedTheme === 'light' ? 'light' : 'dark';
     // Un seul champ accepte une adresse, un IMO (7 chiffres) ou un MMSI (9).
     const [quickQuery, setQuickQuery] = React.useState('');
     const [linkSent, setLinkSent] = React.useState(false);
@@ -218,7 +239,7 @@ function LoginPageInner() {
                 <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
                     {/* Logo — home link */}
                     <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                        <AfricGreenLogo size={32} variant="dark" className="flex-shrink-0 rounded-lg" />
+                        <AfricGreenLogo size={32} variant={logoVariant} className="flex-shrink-0 rounded-lg" />
                         <span className="text-sm font-bold auth-hide-mobile" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</span>
                     </a>
                     {/* Online indicator — center (dot only on mobile) */}
@@ -226,8 +247,11 @@ function LoginPageInner() {
                         <span className="w-2 h-2 rounded-full os-dot-online animate-blink flex-shrink-0" />
                         <span className="text-xs font-semibold text-[#00D97E] tracking-widest uppercase auth-hide-mobile">{t('system_status_online')}</span>
                     </div>
-                    {/* Locale switcher — right */}
-                    <LocaleSwitcher variant="dashboard" />
+                    {/* Langue et theme — a droite */}
+                    <div className="flex items-center gap-2">
+                        <LocaleSwitcher variant="dashboard" />
+                        <ThemeToggleButton />
+                    </div>
                 </div>
             </div>
 
@@ -236,7 +260,7 @@ function LoginPageInner() {
                 <div className="w-full max-w-md flex flex-col items-center">
                     {/* Logo */}
                     <div className="mb-5 shadow-[0_0_24px_rgba(16,185,129,0.1)]">
-                        <AfricGreenLogo size={56} variant="dark" className="rounded-2xl" />
+                        <AfricGreenLogo size={56} variant={logoVariant} className="rounded-2xl" />
                     </div>
                     <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--os-text-primary)' }}>{t('ais_portal')}</h1>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500/60 mb-8">
@@ -285,23 +309,42 @@ function LoginPageInner() {
                             </div>
                         )}
 
-                        {/* Deux chemins d'entree. Le mot de passe reste celui du
-                            personnel ; le lien sert aux armateurs, importes sans mot
-                            de passe et donc sans aucun moyen d'entrer jusqu'ici. */}
-                        <div className="flex gap-1 p-1 mb-4 rounded-xl" style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}>
-                            {(['password', 'link'] as const).map((m) => (
-                                <button
-                                    key={m}
-                                    type="button"
-                                    onClick={() => { setMode(m); setError(''); setLinkSent(false); setChoices(null); setRecipientToken(null); }}
-                                    className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all"
-                                    style={mode === m
-                                        ? { backgroundColor: 'var(--os-surface-1)', color: 'var(--os-text-primary)', border: '1px solid var(--os-border)' }
-                                        : { color: 'var(--os-text-muted)' }}
-                                >
-                                    {m === 'password' ? tMagic('tabPassword') : tMagic('tabLink')}
-                                </button>
-                            ))}
+                        {/* Deux chemins d'entree. Le LIEN vient en premier : c'est
+                            celui des armateurs, importes sans mot de passe et donc
+                            sans aucun autre moyen d'entrer. Le mot de passe reste
+                            celui du personnel.
+
+                            L'onglet actif se distinguait par un simple passage de
+                            --os-surface-2 a --os-surface-1 : deux nuances voisines,
+                            posees l'une sur l'autre, plus une bordure de la meme
+                            couleur que le conteneur. Les deux onglets se
+                            confondaient. L'actif porte desormais la couleur de
+                            marque pleine, comme les onglets du reste du produit. */}
+                        <div
+                            role="tablist"
+                            aria-label={tMagic('tabsLabel')}
+                            className="flex gap-1 p-1 mb-4 rounded-xl"
+                            style={{ backgroundColor: 'var(--os-surface-2)', border: '1px solid var(--os-border)' }}
+                        >
+                            {(['link', 'password'] as const).map((m) => {
+                                const active = mode === m;
+                                return (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        tabIndex={active ? 0 : -1}
+                                        onClick={() => { setMode(m); setError(''); setLinkSent(false); setChoices(null); setRecipientToken(null); }}
+                                        className="flex-1 h-9 rounded-lg text-xs font-semibold transition-colors duration-150 cursor-pointer"
+                                        style={active
+                                            ? { backgroundColor: 'var(--os-brand-cyan)', color: 'var(--os-on-primary)' }
+                                            : { color: 'var(--os-text-secondary)', backgroundColor: 'transparent' }}
+                                    >
+                                        {m === 'password' ? tMagic('tabPassword') : tMagic('tabLink')}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {mode === 'link' ? (

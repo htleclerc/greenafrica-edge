@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { readPortalFeatureFlags } from '@/lib/feature-flags';
 import { RegisterModeSwitcher } from '@/components/auth/operator-register/RegisterModeSwitcher';
+import { osButtonClass } from '@/components/ui/OsButton';
 
 export const metadata: Metadata = {
     title: 'Inscription opérateur | Green Gate',
@@ -42,7 +43,7 @@ export default async function SignupPage({
                     <div className="text-center">
                         <h1 className="text-2xl font-semibold mb-2">{t('closed_title')}</h1>
                         <p className="text-sm opacity-80 mb-6">{t('closed_body')}</p>
-                        <a href="/login" className="os-button inline-block">{t('back_to_login')}</a>
+                        <a href="/login" className={osButtonClass('primary', 'md')}>{t('back_to_login')}</a>
                     </div>
                 )}
             </div>

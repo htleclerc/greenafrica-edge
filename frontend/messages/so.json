@@ -727,7 +727,8 @@
       "codeSubmit": "Gal",
       "codeHint": "Ama gujiso xiriirka iimaylka — mid kastaa wuu shaqeeyaa.",
       "badCode": "Koodhku waa khalad ama wuu dhacay.",
-      "retry": "Isticmaal iimayl ama markab kale"
+      "retry": "Isticmaal iimayl ama markab kale",
+      "tabsLabel": "Habka gelitaanka"
     }
   },
   "Dashboard": {
