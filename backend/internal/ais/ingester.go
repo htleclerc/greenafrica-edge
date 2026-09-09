@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -150,6 +151,13 @@ type Stats struct {
 	PositionsWritten int64  `json:"positions_written"`
 	WriteErrors      int64  `json:"write_errors"`
 	LastWriteError   string `json:"last_write_error,omitempty"`
+
+	// Une position dont le MMSI est inconnu du registre est ignoree, pas
+	// perdue par accident : c'est le cas NOMINAL. aisstream voit des dizaines
+	// de milliers de navires, nous en suivons quelques centaines. Sans ce
+	// compteur, « aucune position ecrite » se lit comme une panne alors que
+	// c'est le fonctionnement attendu.
+	PositionsSkippedUnknown int64 `json:"positions_skipped_unknown"`
 
 	// Une trame recue mais inexploitable rearme le delai d'inactivite sans
 	// rien compter : la connexion parait vivante et les compteurs restent a
@@ -356,10 +364,21 @@ func health(st Stats, now time.Time) (string, string) {
 			"aucun message depuis le demarrage il y a %s (%d erreurs de connexion)",
 			now.Sub(st.StartedAt).Truncate(time.Minute), st.Errors), st)
 	}
+	// « Aucune position ecrite » n'est un defaut que si rien ne l'explique.
+	// Depuis que l'ingesteur ne cree plus de navire, ignorer un MMSI inconnu
+	// est le cas nominal : le dire degrade rendrait le vert impossible a
+	// atteindre, ce qui vaut le faux vert qu'on a passe l'ete a corriger.
 	if st.MessagesTotal > 0 && st.PositionsWritten == 0 {
-		return "degraded", withLastError(fmt.Sprintf(
-			"%d messages recus, aucune position ecrite (%d echecs d'ecriture)",
-			st.MessagesTotal, st.WriteErrors), st)
+		if st.WriteErrors > 0 {
+			return "degraded", withLastError(fmt.Sprintf(
+				"%d messages recus, aucune position ecrite (%d echecs d'ecriture)",
+				st.MessagesTotal, st.WriteErrors), st)
+		}
+		if st.PositionsSkippedUnknown == 0 {
+			return "degraded", withLastError(fmt.Sprintf(
+				"%d messages recus, aucune position ecrite et aucun navire ignore",
+				st.MessagesTotal), st)
+		}
 	}
 	if d := now.Sub(st.LastMessageAt); d > staleAfter {
 		return "degraded", withLastError(fmt.Sprintf(
@@ -687,23 +706,19 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 		return
 	}
 
-	// Upsert vessel into Supabase
-	vesselPayload, _ := json.Marshal(map[string]interface{}{
-		"mmsi":              msg.MetaData.MMSIStr,
-		"name":              msg.MetaData.ShipName,
-		"imo_number":        "",
-		"call_sign":         "",
-		"flag_code":         "",
-		"category":          "CARGO",
-		"compliance_status": "APPROACHING",
-	})
-	if err := ing.postJSON("/rest/v1/vessels", vesselPayload); err != nil {
-		ing.noteWriteError(fmt.Errorf("upsert navire %s: %w", msg.MetaData.MMSIStr, err))
-		return
-	}
-
-	// Fetch vessel ID for position insert
-	lookupURL := fmt.Sprintf("%s/rest/v1/vessels?mmsi=eq.%s&select=id&limit=1", ing.cfg.SupabaseURL, msg.MetaData.MMSIStr)
+	// On CHERCHE le navire, on ne le cree pas. L'ancien code faisait un upsert
+	// vers public.vessels avec imo_number="" et sans gross_tonnage_dwt : les
+	// deux colonnes sont NOT NULL, la premiere est en plus UNIQUE. Chaque
+	// trame repondait donc HTTP 400 (23502) — ce chemin n'a JAMAIS pu ecrire,
+	// independamment du bug de decodage du MMSI corrige le meme jour.
+	//
+	// Et il n'y a pas de payload a completer : une PositionReport ne porte ni
+	// IMO ni tonnage. Les inventer reviendrait a ecrire des donnees de
+	// facturation fausses dans la table qui alimente le calcul de la taxe —
+	// gross_tonnage_dwt part a l'API fiscale comme gross_tonnage, et un IMO
+	// synthetique nous a deja coute cher. Un navire inconnu est donc ignore.
+	lookupURL := fmt.Sprintf("%s/rest/v1/vessels?mmsi=eq.%s&select=id&limit=1",
+		ing.cfg.SupabaseURL, url.QueryEscape(string(msg.MetaData.MMSIStr)))
 	lookupReq, _ := http.NewRequest("GET", lookupURL, nil)
 	lookupReq.Header.Set("apikey", ing.cfg.SupabaseKey)
 	lookupReq.Header.Set("Authorization", "Bearer "+ing.cfg.SupabaseKey)
@@ -723,9 +738,11 @@ func (ing *Ingester) handlePositionReport(msg AISMessage) {
 	json.NewDecoder(lookupResp.Body).Decode(&vessels)
 	lookupResp.Body.Close()
 	if len(vessels) == 0 {
-		// L'upsert vient de reussir : ne rien trouver signale une incoherence
-		// (RLS, doublon de MMSI), pas un cas normal.
-		ing.noteWriteError(fmt.Errorf("navire %s introuvable juste apres son upsert", msg.MetaData.MMSIStr))
+		// Cas nominal : le navire n'est pas a notre registre. On compte, on
+		// n'alerte pas — c'est la majorite ecrasante du flux.
+		ing.mu.Lock()
+		ing.stats.PositionsSkippedUnknown++
+		ing.mu.Unlock()
 		return
 	}
 
