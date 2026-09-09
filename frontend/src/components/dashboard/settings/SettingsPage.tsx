@@ -431,6 +431,7 @@ function SecurityTab({ security }: { security: SecurityOverview }) {
         <div className="flex flex-col gap-8">
             <Section title={t('settings_change_password')} description={t('settings_change_password_desc')}>
                 <div className="flex flex-col gap-4 max-w-sm">
+                    {security.hasOwnPassword && (
                     <Field label={t('settings_current_password')}>
                         <div className="relative">
                             <Input value={currentPassword} onChange={setCurrentPassword} type={reveal ? 'text' : 'password'} />
@@ -445,6 +446,7 @@ function SecurityTab({ security }: { security: SecurityOverview }) {
                             </button>
                         </div>
                     </Field>
+                    )}
                     <Field label={t('settings_new_password')}>
                         <Input value={newPassword} onChange={setNewPassword} type={reveal ? 'text' : 'password'} />
                     </Field>
@@ -458,7 +460,7 @@ function SecurityTab({ security }: { security: SecurityOverview }) {
                     <button
                         type="button"
                         onClick={submitPassword}
-                        disabled={pending || !currentPassword || newPassword.length < MIN_PASSWORD_LENGTH}
+                        disabled={pending || (security.hasOwnPassword && !currentPassword) || newPassword.length < MIN_PASSWORD_LENGTH}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: 'var(--os-brand-green)', color: 'var(--os-on-primary)' }}
                     >

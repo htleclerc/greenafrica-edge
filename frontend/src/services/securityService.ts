@@ -25,6 +25,12 @@ export interface SecurityOverview {
     sessions: SessionView[];
     /** Vrai dès qu'un facteur vérifié existe : c'est ce que la page a le droit d'affirmer. */
     mfaEnabled: boolean;
+    /**
+     * Faux tant que la personne n'a pas choisi son mot de passe elle-même —
+     * le cas d'une invitation. L'écran ne lui réclame alors pas un ancien mot
+     * de passe qu'elle n'a jamais reçu (mig 156).
+     */
+    hasOwnPassword: boolean;
 }
 
 interface RawSession {
@@ -51,9 +57,13 @@ interface RawSession {
  * quand la lecture échoue, jamais vrai par défaut.
  */
 export async function loadSecurityOverview(db: SupabaseClient): Promise<SecurityOverview> {
-    const [factorsRes, sessionsRes] = await Promise.all([
+    const { data: auth } = await db.auth.getUser();
+    const [factorsRes, sessionsRes, profileRes] = await Promise.all([
         db.auth.mfa.listFactors(),
         db.rpc('current_user_sessions'),
+        auth?.user?.id
+            ? db.from('profiles').select('password_set_at').eq('id', auth.user.id).maybeSingle()
+            : Promise.resolve({ data: null }),
     ]);
 
     const verified = (factorsRes.data?.totp ?? []).filter((f) => f.status === 'verified');
@@ -76,5 +86,12 @@ export async function loadSecurityOverview(db: SupabaseClient): Promise<Security
         isCurrent: r.is_current === true,
     }));
 
-    return { factors, sessions, mfaEnabled: factors.length > 0 };
+    const profile = profileRes.data as { password_set_at?: string | null } | null;
+
+    return {
+        factors,
+        sessions,
+        mfaEnabled: factors.length > 0,
+        hasOwnPassword: Boolean(profile?.password_set_at),
+    };
 }

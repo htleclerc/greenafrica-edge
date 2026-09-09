@@ -32,11 +32,33 @@ vi.mock('@supabase/supabase-js', () => ({
 
 const audit = vi.fn(async () => undefined);
 vi.mock('@/services/auditService', () => ({ writeAuditLog: (...a: unknown[]) => audit(...(a as [])) }));
-vi.mock('@/lib/supabase/tenant', () => ({ createPlatformClient: () => ({}) }));
+/**
+ * `passwordSetAt` decide si la preuve de l'ancien mot de passe est due : nul =
+ * compte invite, qui n'a jamais rien recu a prouver (mig 156).
+ */
+let passwordSetAt: string | null = '2026-01-01T00:00:00Z';
+const profileUpdates: Record<string, unknown>[] = [];
+
+vi.mock('@/lib/supabase/tenant', () => ({
+    createPlatformClient: () => ({
+        from: () => ({
+            select: () => ({
+                eq: () => ({ maybeSingle: async () => ({ data: { password_set_at: passwordSetAt } }) }),
+            }),
+            update: (patch: Record<string, unknown>) => {
+                profileUpdates.push(patch);
+                return { eq: async () => ({ error: null }) };
+            },
+            insert: async () => ({ error: null }),
+        }),
+    }),
+}));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 beforeEach(() => {
     vi.clearAllMocks();
+    passwordSetAt = '2026-01-01T00:00:00Z';
+    profileUpdates.length = 0;
     user = { id: 'u1', email: 'agent@greengate.africa' };
     sessionRows = [];
     revokeReturns = true;
@@ -83,6 +105,38 @@ describe('changePassword — prouver l’ancien avant d’écrire le nouveau', (
         const r = await changePassword({ currentPassword: 'actuel', newPassword: 'court' });
         expect(r).toEqual({ ok: false, reason: 'too_short' });
         expect(probeSignIn).not.toHaveBeenCalled();
+    });
+
+    it("laisse une personne invitee choisir son mot de passe sans reclamer l'ancien", async () => {
+        // Une invitation cree le compte avec un mot de passe que l'invite ne
+        // connait pas. Lui demander de le prouver, c'est lui demander un secret
+        // qu'on ne lui a jamais donne : il ne pouvait plus rien choisir.
+        passwordSetAt = null;
+        const { changePassword } = await import('./changePassword');
+
+        expect(await changePassword({ currentPassword: '', newPassword: STRONG })).toEqual({ ok: true });
+
+        // Aucune verification de l'ancien : le client sans etat n'est pas sollicite.
+        expect(probeOptions).toBeUndefined();
+    });
+
+    it('marque le compte apres le premier choix, pour que la preuve redevienne due', async () => {
+        passwordSetAt = null;
+        const { changePassword } = await import('./changePassword');
+        await changePassword({ currentPassword: '', newPassword: STRONG });
+
+        expect(profileUpdates).toHaveLength(1);
+        expect(profileUpdates[0]).toHaveProperty('password_set_at');
+    });
+
+    it("continue d'exiger l'ancien des que la personne en a deja choisi un", async () => {
+        // La regle de la mig 137 tient : une session volee ne suffit pas a
+        // verrouiller le titulaire hors de son compte.
+        const { changePassword } = await import('./changePassword');
+
+        expect(await changePassword({ currentPassword: '', newPassword: STRONG }))
+            .toEqual({ ok: false, reason: 'wrong_current_password' });
+        expect(profileUpdates).toHaveLength(0);
     });
 
     it('journalise le changement sans jamais consigner le mot de passe', async () => {

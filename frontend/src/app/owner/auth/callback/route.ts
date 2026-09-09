@@ -95,8 +95,15 @@ export async function GET(request: NextRequest) {
             .eq('account_state', 'INVITED');
     }
 
+    // Une INVITATION mène d'abord au choix du mot de passe. Sans ce détour,
+    // l'armateur atterrissait directement sur le tableau de bord avec, pour
+    // seul mot de passe, celui que l'invitation avait posé sans le lui dire —
+    // et l'écran de réglages lui réclamait ensuite cet ancien mot de passe
+    // qu'il n'avait jamais eu. Le rail staff prend ce détour depuis toujours.
+    const destination = type === 'invite' ? '/auth/setup-password' : '/dashboard';
+
     // Redirect into the portal with the cookies set on `response`.
-    const redirectResp = NextResponse.redirect(`${origin}/dashboard`);
+    const redirectResp = NextResponse.redirect(`${origin}${destination}`);
     response.cookies.getAll().forEach((c) => {
         redirectResp.cookies.set(c.name, c.value, c);
     });

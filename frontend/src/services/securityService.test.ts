@@ -9,9 +9,21 @@ function client(opts: {
     factorsError?: boolean;
     sessions?: Record<string, unknown>[];
     sessionsError?: boolean;
+    /** Horodatage du mot de passe choisi ; nul = compte invite (mig 156). */
+    passwordSetAt?: string | null;
 }): SupabaseClient {
     return {
+        from: vi.fn(() => ({
+            select: () => ({
+                eq: () => ({
+                    maybeSingle: async () => ({
+                        data: { password_set_at: opts.passwordSetAt ?? null },
+                    }),
+                }),
+            }),
+        })),
         auth: {
+            getUser: vi.fn(async () => ({ data: { user: { id: 'u1' } } })),
             mfa: {
                 listFactors: vi.fn(async () =>
                     opts.factorsError
