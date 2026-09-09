@@ -19,6 +19,41 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/originport"
 )
 
+// AISMMSI porte le champ MMSI_String d'aisstream. Le serveur l'a longtemps
+// envoye en chaine, puis en nombre : `{"MMSI_String":259490000}`. Un `string`
+// rigide fait echouer json.Unmarshal sur la trame ENTIERE, pas sur le seul
+// champ — la trame part alors au rebut avant meme le dispatch, donc ni
+// position ni destination ne remontent. C'est ce qui s'est passe en prod
+// jusqu'au 2026-09-08 : 254 500 trames jetees d'affilee, zero position ecrite,
+// et un bilan d'observation qui se lisait a tort comme « aucun trafic ».
+// On accepte donc les deux formes, dans les deux sens : le serveur peut
+// revenir a la chaine sans nous casser une seconde fois.
+type AISMMSI string
+
+func (m *AISMMSI) UnmarshalJSON(b []byte) error {
+	b = bytes.TrimSpace(b)
+	if len(b) == 0 || string(b) == "null" {
+		*m = ""
+		return nil
+	}
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		*m = AISMMSI(s)
+		return nil
+	}
+	// Forme numerique. On passe par json.Number pour valider que c'en est
+	// bien un : recopier les octets bruts laisserait passer n'importe quoi.
+	var n json.Number
+	if err := json.Unmarshal(b, &n); err != nil {
+		return err
+	}
+	*m = AISMMSI(n.String())
+	return nil
+}
+
 // AIS message from aisstream.io. Two MessageType values are handled:
 //   - "PositionReport" — Lat/Lng/SOG (existing corridor + EEZ path)
 //   - "ShipStaticData" — IMO/Destination/ETA (Plan 8 origin-port detection)
@@ -26,7 +61,7 @@ type AISMessage struct {
 	MessageType string `json:"MessageType"`
 	MetaData    struct {
 		MMSI      int     `json:"MMSI"`
-		MMSIStr   string  `json:"MMSI_String"`
+		MMSIStr   AISMMSI `json:"MMSI_String"`
 		ShipName  string  `json:"ShipName"`
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
@@ -774,7 +809,7 @@ func (ing *Ingester) handleStaticData(msg AISMessage) {
 		hookCtx = context.Background()
 	}
 	_, err := ing.originport.OnStaticData(hookCtx, originport.StaticReport{
-		MMSI:        msg.MetaData.MMSIStr,
+		MMSI:        string(msg.MetaData.MMSIStr),
 		IMO:         imo,
 		VesselName:  msg.MetaData.ShipName,
 		Destination: s.Destination,
