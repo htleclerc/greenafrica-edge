@@ -248,7 +248,15 @@ export async function applyVesselIdentity(raw: unknown): Promise<ApplyVesselIden
     // la jauge du seed diffère presque toujours de celle de VesselFinder.
     // MATCHED et REJECTED restent refusés : ce ne sont pas des propositions
     // ouvertes, et seul un CONFLICT porte une divergence à arbitrer.
-    const reopenable = candidate.status === 'CONFLICT' && parsed.data.acceptFieldOverrides === true;
+    //
+    // La réouverture NE dépend PAS de `acceptFieldOverrides`. L'exiger rendait
+    // l'arbitrage aveugle : après un rechargement de page, la seule façon de
+    // rouvrir un CONFLICT était d'accepter l'écrasement SANS avoir pu revoir
+    // les valeurs divergentes, puisque l'action refusait avant même de les
+    // calculer. Sans le drapeau, on retraverse les gardes 4 et 5 : elles
+    // n'écrivent toujours rien et rendent la liste des divergences, que
+    // l'écran remontre avant de demander la confirmation.
+    const reopenable = candidate.status === 'CONFLICT';
     if (candidate.status !== 'PENDING' && !reopenable) {
         return { ok: false, reason: 'candidate already processed' };
     }

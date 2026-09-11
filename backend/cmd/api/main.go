@@ -16,6 +16,7 @@ import (
 	"github.com/htleclerc/africgreen/backend/internal/corridor"
 	"github.com/htleclerc/africgreen/backend/internal/eez"
 	"github.com/htleclerc/africgreen/backend/internal/geofence"
+	"github.com/htleclerc/africgreen/backend/internal/greengate"
 	"github.com/htleclerc/africgreen/backend/internal/middleware"
 	"github.com/htleclerc/africgreen/backend/internal/modeconfig"
 	"github.com/htleclerc/africgreen/backend/internal/originport"
@@ -79,6 +80,14 @@ func main() {
 	taxHandler := tax.NewHandler(db, tariffStore)
 	mux.HandleFunc("POST /api/v1/tax/calculate", taxHandler.Calculate)
 	mux.HandleFunc("POST /api/v1/tax/batch", taxHandler.BatchCalculate)
+
+	// Green-Gate — méthode « v11 HYBRID », celle qui a réellement produit les
+	// pro-formas émises. Route DISTINCTE de /api/v1/tax/* à dessein : les deux
+	// méthodes donnent des montants différents, et basculer le pipeline de
+	// l'une à l'autre change ce qui est facturé. Cette bascule est une décision
+	// de la Direction, pas un effet de bord de mise en service.
+	greengateHandler := greengate.NewHandler()
+	mux.HandleFunc("POST /api/v1/greengate/calculate", greengateHandler.Calculate)
 
 	// Alerts
 	alertsHandler := alerts.NewHandler(db)

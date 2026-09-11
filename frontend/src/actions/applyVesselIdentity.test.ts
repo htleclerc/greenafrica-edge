@@ -521,8 +521,9 @@ describe('applyVesselIdentity — garde de divergence de champs (§7.4)', () => 
 
     it('rouvre le candidat mis en CONFLICT et laisse l’arbitrage aboutir', async () => {
         // Aller-retour sur UN MÊME candidat, avec un stub à état : la garde 5
-        // écrit CONFLICT, et la garde 2 doit accepter de le rouvrir. Sans cette
-        // réentrée, le bouton « appliquer quand même » de l'écran se heurtait
+        // écrit CONFLICT, et la garde 2 doit accepter de le rouvrir — sans
+        // exiger l'autorisation d'écrasement pour cela. Sans cette réentrée,
+        // le bouton « appliquer quand même » de l'écran se heurtait
         // invariablement à « candidate already processed » — et la divergence
         // est le chemin nominal, gross_tonnage_dwt étant toujours renseigné
         // par l'import d'onboarding.
@@ -539,10 +540,26 @@ describe('applyVesselIdentity — garde de divergence de champs (§7.4)', () => 
             payload: { status: 'CONFLICT' },
         });
 
-        // Le statut a REELLEMENT changé : une nouvelle tentative sans
-        // autorisation ne peut plus écraser en silence.
+        // Le statut a REELLEMENT changé, et une nouvelle tentative sans
+        // autorisation ne peut toujours pas écraser en silence — mais elle
+        // doit REMONTRER les divergences au lieu de se fermer.
+        //
+        // Rendre « candidate already processed » ici, comme le faisait la
+        // première version, condamnait l'arbitrage après un rechargement de
+        // page : la seule issue restante était d'accepter l'écrasement SANS
+        // avoir pu revoir les valeurs, puisque l'action refusait avant même
+        // de les calculer.
         const reprise = await applyVesselIdentity(INPUT);
-        expect(reprise).toEqual({ ok: false, reason: 'candidate already processed' });
+        expect(reprise).toMatchObject({ ok: false, reason: 'field conflict' });
+        if (!reprise.ok) {
+            expect(reprise.conflicts).toEqual([
+                { field: 'gross_tonnage_dwt', current: '5000', proposed: '2975' },
+                { field: 'dwt', current: '4000', proposed: '2560' },
+                { field: 'flag_code', current: 'KM', proposed: 'TG' },
+            ]);
+        }
+        // Et toujours aucune écriture sur le navire à ce stade.
+        expect(capture.updates.filter((u) => u.table === 'vessels')).toHaveLength(0);
 
         // …mais l'arbitrage explicite passe, sur ce même candidat en CONFLICT.
         const arbitrage = await applyVesselIdentity({ ...INPUT, acceptFieldOverrides: true });

@@ -53,3 +53,8 @@ docs/onboarding/campagne-19aout/
 
 # Fichiers temporaires Word/Excel
 ~$*
+
+# Extractions VesselFinder (escales + particulars) : donnees d'un fournisseur
+# sous licence, tirees au credit. Elles restent sur le poste qui rejoue
+# l'import, jamais dans le depot.
+scripts/backup/vf-*.json

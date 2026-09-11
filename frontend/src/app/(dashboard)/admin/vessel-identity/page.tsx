@@ -39,10 +39,17 @@ export default async function VesselIdentityPage() {
         (v) => !isValidImo(String(v.imo_number)),
     );
 
+    // PENDING *et* CONFLICT : les deux sont des propositions encore ouvertes.
+    // Ne charger que les PENDING faisait disparaître un candidat dès qu'une
+    // divergence le passait en CONFLICT — or la divergence est le chemin
+    // NOMINAL (la jauge du seed diffère presque toujours de celle de
+    // VesselFinder). Le candidat devenait alors inatteignable au rechargement,
+    // et l'arbitrage prévu par l'action était mort-né.
     const { data: candidates } = await admin
         .from('vessel_identity_candidates')
         .select('*')
-        .eq('status', 'PENDING')
+        .in('status', ['PENDING', 'CONFLICT'])
+        .order('status')
         .order('vessel_name');
 
     const t = await getTranslations('AdminVesselIdentity');

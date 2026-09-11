@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { importVesselIdentityBatch } from '@/actions/importVesselIdentityBatch';
 import { applyVesselIdentity, type VesselFieldConflict } from '@/actions/applyVesselIdentity';
 import { createManualCandidate } from '@/actions/createManualCandidate';
+import { rejectVesselCandidate } from '@/actions/rejectVesselCandidate';
 import {
     CATEGORY_BY_TYPENAME,
     resolveBillingEmail,
@@ -52,6 +53,7 @@ const ERROR_KEY_BY_REASON: Readonly<Record<string, string>> = {
     'batch already imported': 'errBatchAlreadyImported',
     'candidate insert failed': 'errInsertFailed',
     'candidate already exists': 'errCandidateExists',
+    'candidate already matched': 'errCandidateMatched',
 };
 
 /** Colonne de `vessels` → clé i18n, pour l'affichage des divergences. */
@@ -85,6 +87,8 @@ export interface Candidate {
     ism_manager_email: string | null;
     contact_blocked: boolean;
     contact_blocked_reason: string | null;
+    /** PENDING ou CONFLICT — les deux sont des propositions encore ouvertes. */
+    status: string;
 }
 
 interface Report {
@@ -112,6 +116,8 @@ export default function VesselIdentityPanel({
     const [conflict, setConflict] = useState<
         { candidateId: string; conflicts: VesselFieldConflict[] } | null
     >(null);
+    const [rejecting, setRejecting] = useState<Candidate | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
 
     /** Traduit un motif stable, ou le rend tel quel s'il n'en est pas un. */
     function errorLabel(reason: string): string {
@@ -191,6 +197,24 @@ export default function VesselIdentityPanel({
                 setError(errorLabel(res.reason));
                 return;
             }
+            window.location.reload();
+        } catch {
+            setError(t('errUnexpected'));
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function onReject() {
+        if (!rejecting) return;
+        setBusy(true);
+        setError(null);
+        try {
+            const res = await rejectVesselCandidate({
+                candidateId: rejecting.id,
+                reason: rejectReason.trim() || undefined,
+            });
+            if (!res.ok) { setError(errorLabel(res.reason)); setRejecting(null); return; }
             window.location.reload();
         } catch {
             setError(t('errUnexpected'));
@@ -479,7 +503,16 @@ export default function VesselIdentityPanel({
                     <ul className="divide-y rounded-lg border" style={{ borderColor: 'var(--os-border)' }}>
                         {visible.map((c) => (
                             <li key={c.id} className="px-3 py-2">
-                                <div className="font-medium text-[var(--os-text-primary)]">{c.vessel_name}</div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium text-[var(--os-text-primary)]">
+                                        {c.vessel_name}
+                                    </span>
+                                    {c.status === 'CONFLICT' && (
+                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
+                                            {t('conflict')}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="text-xs text-[var(--os-text-muted)]">
                                     IMO {c.imo_number} · MMSI {c.mmsi ?? '—'} · {c.flag_code ?? '—'} ·
                                     GT {c.gross_tonnage ?? '—'} · DWT {c.deadweight ?? '—'}
@@ -494,14 +527,35 @@ export default function VesselIdentityPanel({
                                         {t('billingEmail')} : {billingEmail(c) ?? t('noEmail')}
                                     </div>
                                 )}
-                                <button
-                                    type="button"
-                                    disabled={!selectedVessel || busy}
-                                    onClick={() => void onMatch(c.id)}
-                                    className="mt-2 rounded bg-emerald-600 px-3 py-1 text-sm text-white disabled:opacity-40"
-                                >
-                                    {t('match')}
-                                </button>
+                                {c.status === 'CONFLICT' && (
+                                    <div className="mt-1 text-xs text-amber-700">{t('conflictReopenHint')}</div>
+                                )}
+                                <div className="mt-2 flex gap-2">
+                                    <button
+                                        type="button"
+                                        disabled={!selectedVessel || busy}
+                                        onClick={() => void onMatch(c.id)}
+                                        className="rounded bg-emerald-600 px-3 py-1 text-sm text-white disabled:opacity-40"
+                                    >
+                                        {t('match')}
+                                    </button>
+                                    {/*
+                                      * Le rejet ne dépend PAS du navire sélectionné : écarter une
+                                      * proposition fautive doit rester possible sans avoir à
+                                      * désigner une cible. C'est aussi la seule façon de libérer
+                                      * le couple (lot, IMO) que la mig 117 verrouille sur les
+                                      * PENDING, donc de re-saisir après une faute de frappe.
+                                      */}
+                                    <button
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => { setRejectReason(''); setRejecting(c); }}
+                                        className="rounded border px-3 py-1 text-sm text-[var(--os-text-primary)] disabled:opacity-40"
+                                        style={{ borderColor: 'var(--os-border)' }}
+                                    >
+                                        {t('reject')}
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -556,6 +610,48 @@ export default function VesselIdentityPanel({
                             className="rounded bg-amber-600 px-3 py-1 text-sm text-white disabled:opacity-40"
                         >
                             {t('conflictConfirm')}
+                        </button>
+                    </div>
+                </ModalOverlay>
+            )}
+
+            {rejecting && (
+                <ModalOverlay onClose={() => !busy && setRejecting(null)}>
+                    <h3 className="mb-1 text-base font-semibold text-[var(--os-text-primary)]">
+                        {t('rejectTitle')}
+                    </h3>
+                    <p className="mb-1 text-sm text-[var(--os-text-muted)]">
+                        {t('rejectIntro', { vesselName: rejecting.vessel_name, imo: rejecting.imo_number })}
+                    </p>
+                    <p className="mb-4 text-xs text-[var(--os-text-muted)]">{t('rejectHint')}</p>
+                    <label className="block text-sm text-[var(--os-text-primary)]">
+                        <span className="block">{t('rejectReasonLabel')}</span>
+                        <textarea
+                            rows={3}
+                            maxLength={500}
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        />
+                    </label>
+                    <div className="mt-5 flex justify-end gap-2">
+                        <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setRejecting(null)}
+                            className="rounded border px-3 py-1 text-sm text-[var(--os-text-primary)] disabled:opacity-40"
+                            style={{ borderColor: 'var(--os-border)' }}
+                        >
+                            {t('conflictCancel')}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void onReject()}
+                            className="rounded bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-40"
+                        >
+                            {t('rejectConfirm')}
                         </button>
                     </div>
                 </ModalOverlay>

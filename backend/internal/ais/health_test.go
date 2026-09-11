@@ -64,6 +64,30 @@ func TestHealth(t *testing.T) {
 			"degraded", "aucune position ecrite",
 		},
 		{
+			// Depuis que l'ingesteur ne cree plus de navire, le flux normal
+			// n'ecrit presque rien : on suit quelques centaines de navires,
+			// aisstream en voit des dizaines de milliers. Zero position ecrite
+			// avec des MMSI ignores est l'etat NOMINAL — le dire degrade
+			// rendrait le vert inatteignable, soit exactement le faux signal
+			// que ce champ existe pour supprimer.
+			"n'ecrit rien parce que tous les navires sont inconnus",
+			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
+				MessagesTotal: 4000, PositionsWritten: 0, WriteErrors: 0,
+				PositionsSkippedUnknown: 4000,
+				LastMessageAt:           now.Add(-2 * time.Second)},
+			"ok", "",
+		},
+		{
+			// En revanche, ni ecriture ni rejet explique : la, quelque chose
+			// est casse et doit se voir.
+			"n'ecrit rien et n'ignore rien",
+			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
+				MessagesTotal: 4000, PositionsWritten: 0, WriteErrors: 0,
+				PositionsSkippedUnknown: 0,
+				LastMessageAt:           now.Add(-2 * time.Second)},
+			"degraded", "aucun navire ignore",
+		},
+		{
 			"flux vivant",
 			Stats{Running: true, StartedAt: now.Add(-2 * time.Hour),
 				MessagesTotal: 10, PositionsWritten: 10, LastMessageAt: now.Add(-10 * time.Second)},
