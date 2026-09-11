@@ -4541,7 +4541,15 @@
     "errBatchAlreadyImported": "Este lote já foi importado.",
     "errInsertFailed": "Não foi possível guardar os candidatos.",
     "errCandidateExists": "Já existe um candidato pendente para este IMO.",
-    "errUnexpected": "Erro inesperado. Tente novamente."
+    "errUnexpected": "Erro inesperado. Tente novamente.",
+    "reject": "Rejeitar",
+    "rejectTitle": "Descartar esta proposta",
+    "rejectIntro": "{vesselName} (IMO {imo}) será descartado. Nada é escrito no navio.",
+    "rejectHint": "O candidato sai das propostas abertas, o que liberta o par (lote, IMO) e permite voltar a introduzir este navio.",
+    "rejectReasonLabel": "Motivo (opcional)",
+    "rejectConfirm": "Descartar candidato",
+    "conflictReopenHint": "Valores divergentes: «Associar» volta a mostrá-los antes de qualquer escrita.",
+    "errCandidateMatched": "Este candidato já está associado a um navio; rejeitá-lo não anularia nada."
   },
   "AdminArmateurs": {
     "title": "Armadores",

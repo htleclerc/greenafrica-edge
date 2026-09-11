@@ -4505,7 +4505,15 @@
     "errBatchAlreadyImported": "Ce lot a déjà été importé.",
     "errInsertFailed": "Les candidats n'ont pas pu être enregistrés.",
     "errCandidateExists": "Un candidat en attente existe déjà pour cet IMO.",
-    "errUnexpected": "Erreur inattendue. Réessayez."
+    "errUnexpected": "Erreur inattendue. Réessayez.",
+    "reject": "Rejeter",
+    "rejectTitle": "Écarter cette proposition",
+    "rejectIntro": "{vesselName} (IMO {imo}) sera écarté. Aucune écriture sur le navire.",
+    "rejectHint": "Le candidat quitte les propositions ouvertes, ce qui libère le couple (lot, IMO) et permet de re-saisir ce navire.",
+    "rejectReasonLabel": "Motif (facultatif)",
+    "rejectConfirm": "Écarter le candidat",
+    "conflictReopenHint": "Divergence à arbitrer : « Apparier » réaffiche les valeurs avant toute écriture.",
+    "errCandidateMatched": "Ce candidat est déjà apparié à un navire ; le rejeter n'annulerait rien."
   },
   "AdminArmateurs": {
     "title": "Armateurs",

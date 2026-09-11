@@ -4505,7 +4505,15 @@
     "errBatchAlreadyImported": "This batch has already been imported.",
     "errInsertFailed": "The candidates could not be saved.",
     "errCandidateExists": "A pending candidate already exists for this IMO.",
-    "errUnexpected": "Unexpected error. Please try again."
+    "errUnexpected": "Unexpected error. Please try again.",
+    "reject": "Reject",
+    "rejectTitle": "Discard this candidate",
+    "rejectIntro": "{vesselName} (IMO {imo}) will be discarded. Nothing is written to the vessel.",
+    "rejectHint": "The candidate leaves the open proposals, which frees the (batch, IMO) pair and lets this vessel be entered again.",
+    "rejectReasonLabel": "Reason (optional)",
+    "rejectConfirm": "Discard candidate",
+    "conflictReopenHint": "Values to arbitrate: “Match” shows them again before anything is written.",
+    "errCandidateMatched": "This candidate is already matched to a vessel; rejecting it would undo nothing."
   },
   "AdminArmateurs": {
     "title": "Shipowners",

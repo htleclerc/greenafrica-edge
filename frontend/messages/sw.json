@@ -4508,7 +4508,15 @@
     "errBatchAlreadyImported": "Kundi hili tayari limeingizwa.",
     "errInsertFailed": "Wagombea hawakuweza kuhifadhiwa.",
     "errCandidateExists": "Tayari kuna mgombea anayesubiri kwa IMO hii.",
-    "errUnexpected": "Hitilafu isiyotarajiwa. Jaribu tena."
+    "errUnexpected": "Hitilafu isiyotarajiwa. Jaribu tena.",
+    "reject": "Kataa",
+    "rejectTitle": "Ondoa pendekezo hili",
+    "rejectIntro": "{vesselName} (IMO {imo}) itaondolewa. Hakuna kinachoandikwa kwenye chombo.",
+    "rejectHint": "Pendekezo linaondoka kwenye mapendekezo yaliyo wazi, jambo linalofungua jozi (kundi, IMO) na kuruhusu chombo hiki kuingizwa tena.",
+    "rejectReasonLabel": "Sababu (si lazima)",
+    "rejectConfirm": "Ondoa pendekezo",
+    "conflictReopenHint": "Thamani zinazotofautiana: «Linganisha» huzionyesha tena kabla ya kuandika chochote.",
+    "errCandidateMatched": "Pendekezo hili tayari limelinganishwa na chombo; kulikataa hakutabatilisha chochote."
   },
   "AdminArmateurs": {
     "title": "Wamiliki wa Meli",

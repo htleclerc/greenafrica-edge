@@ -4505,7 +4505,15 @@
     "errBatchAlreadyImported": "Dufcaddan horey ayaa la soo dejiyay.",
     "errInsertFailed": "Musharraxiinta lama kaydin karin.",
     "errCandidateExists": "Musharax sugaya ayaa horey ugu jira IMO-gan.",
-    "errUnexpected": "Khalad lama filaan ah. Isku day mar kale."
+    "errUnexpected": "Khalad lama filaan ah. Isku day mar kale.",
+    "reject": "Diid",
+    "rejectTitle": "Ka saar soo jeedintan",
+    "rejectIntro": "{vesselName} (IMO {imo}) waa la saarayaa. Waxba lagu ma qorayo markabka.",
+    "rejectHint": "Musharaxu wuxuu ka baxayaa soo jeedinta furan, taasoo furaysa labada (dufcad, IMO) oo suurta gelinaysa in markabkan dib loo galiyo.",
+    "rejectReasonLabel": "Sababta (ikhtiyaari)",
+    "rejectConfirm": "Ka saar musharaxa",
+    "conflictReopenHint": "Qiimayaal is khilaafsan: «Isku dheji» ayaa dib u tusaya ka hor inta aan waxba la qorin.",
+    "errCandidateMatched": "Musharaxan hore ayaa markab loogu dhejiyay; diidmadiisu waxba ma burinayso."
   },
   "AdminArmateurs": {
     "title": "Milkiilayaasha Markabka",

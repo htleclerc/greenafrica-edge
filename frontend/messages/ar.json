@@ -4508,7 +4508,15 @@
     "errBatchAlreadyImported": "سبق استيراد هذه الدفعة.",
     "errInsertFailed": "تعذّر حفظ المرشحين.",
     "errCandidateExists": "يوجد بالفعل مرشح قيد الانتظار لرقم IMO هذا.",
-    "errUnexpected": "خطأ غير متوقع. أعد المحاولة."
+    "errUnexpected": "خطأ غير متوقع. أعد المحاولة.",
+    "reject": "رفض",
+    "rejectTitle": "استبعاد هذا المرشح",
+    "rejectIntro": "سيتم استبعاد {vesselName} (IMO {imo}). لن يُكتب أي شيء على السفينة.",
+    "rejectHint": "يخرج المرشح من المقترحات المفتوحة، مما يحرّر الزوج (الدفعة، IMO) ويسمح بإدخال هذه السفينة من جديد.",
+    "rejectReasonLabel": "السبب (اختياري)",
+    "rejectConfirm": "استبعاد المرشح",
+    "conflictReopenHint": "قيم متعارضة: «مطابقة» تعرضها مجددًا قبل أي كتابة.",
+    "errCandidateMatched": "هذا المرشح مطابق بالفعل لسفينة؛ رفضه لن يلغي شيئًا."
   },
   "AdminArmateurs": {
     "title": "الملاك الملاحيون",
