@@ -10,6 +10,7 @@ import {
     TX_SIGN_IN_LINK_HTML,
     TX_STAFF_INVITE_HTML,
     TX_PASSWORD_RESET_HTML,
+    TX_TEMPORARY_PASSWORD_HTML,
 } from '@/emails/templates';
 import { renderEmailTemplate } from '@/emails/renderEmailTemplate';
 import { appBaseUrl } from '@/lib/appUrl';
@@ -1364,5 +1365,46 @@ export async function sendRefundIssuedEmail(p: RefundIssuedParams): Promise<Emai
         subject,
         html: emailLayout(content, { previewText: `Refund of $${p.amountUsd.toLocaleString()} issued for ${p.invoiceRef}` }),
         text: `Refund issued for ${p.invoiceRef}\nAmount: $${p.amountUsd.toLocaleString()}\nMethod: ${railLabel}\nExecuted: ${p.executedAt}\n\nView at: ${appUrl()}${OWNER_INVOICES_PATH}`,
+    });
+}
+
+export interface TemporaryPasswordParams {
+    to: string;
+    password: string;
+    role: string;
+    link: string;
+}
+
+/**
+ * Remet un mot de passe provisoire a un compte du personnel.
+ *
+ * Le mot de passe part EN CLAIR : il restera dans la boite de reception, ses
+ * sauvegardes et, selon le relais, ses journaux. Le message le dit et demande
+ * son remplacement des la premiere connexion. Le remede durable reste le lien
+ * de reinitialisation (`sendPasswordResetEmail`), qui ne fait transiter aucun
+ * secret — a preferer partout ou le parcours le permet.
+ */
+export async function sendTemporaryPasswordEmail(p: TemporaryPasswordParams): Promise<EmailResult> {
+    const html = renderEmailTemplate(TX_TEMPORARY_PASSWORD_HTML, {
+        password: p.password,
+        email: p.to,
+        role: p.role,
+        link: p.link,
+    });
+
+    return sendEmail({
+        to: p.to,
+        subject: 'Your temporary Green Gate password',
+        html,
+        text: `Your temporary Green Gate password
+
+Account: ${p.to}
+Role: ${p.role}
+
+Temporary password: ${p.password}
+
+Sign in at ${p.link} and replace it from Settings > Security. Until you do, no old password is asked of you.
+
+This password travelled by email — treat it as compromised and change it at your first sign-in.`,
     });
 }
