@@ -66,10 +66,17 @@ export async function GET(
         return new NextResponse('Not configured', { status: 500 });
     }
 
+    // Depuis la rebascule du livre (mig 128), une même référence peut être
+    // portée par deux lignes : celle annulée du seed et celle réellement due
+    // (idx_txn_invoice_ref n'impose l'unicité qu'entre lignes non-VOID). Sans
+    // ce filtre, .maybeSingle() trouvait les deux, PostgREST levait une
+    // erreur, et le lien de téléchargement d'une facture bien réelle et bien
+    // émise répondait « Not found ».
     const { data: tx, error: txErr } = await admin
         .from('transactions')
         .select('invoice_ref, content_hash, invoice_pdf_url')
         .eq('invoice_ref', ref)
+        .neq('status', 'VOID')
         .maybeSingle();
 
     if (txErr || !tx || !tx.invoice_pdf_url) {
