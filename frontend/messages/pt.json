@@ -4775,8 +4775,15 @@
       "outstanding": "Devido",
       "overdue": "Atrasado",
       "tier": "Nível",
-      "lastReminder": "Último lembrete"
-    }
+      "lastReminder": "Último lembrete",
+      "amountDue": "Montante devido",
+      "amountPending": "A aguardar pagamento"
+    },
+    "year": "Ano",
+    "periodLabel": "Período",
+    "cohortTitle": "Faturado no período",
+    "treasuryTitle": "Recebido no período",
+    "treasuryHint": "Dinheiro recebido, qualquer data de fatura"
   },
   "AdminAirlines": {
     "title": "Companhias aéreas",

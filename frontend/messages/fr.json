@@ -4739,8 +4739,15 @@
       "outstanding": "Dû",
       "overdue": "En retard",
       "tier": "Palier",
-      "lastReminder": "Dernière relance"
-    }
+      "lastReminder": "Dernière relance",
+      "amountDue": "Montant dû",
+      "amountPending": "Montant en attente"
+    },
+    "year": "Année",
+    "periodLabel": "Période",
+    "cohortTitle": "Facturé sur la période",
+    "treasuryTitle": "Encaissé sur la période",
+    "treasuryHint": "Argent arrivé, toutes factures confondues"
   },
   "AdminAirlines": {
     "title": "Compagnies aériennes",

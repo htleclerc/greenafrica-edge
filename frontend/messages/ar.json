@@ -4742,8 +4742,15 @@
       "outstanding": "المستحق",
       "overdue": "متأخر",
       "tier": "المستوى",
-      "lastReminder": "آخر تذكير"
-    }
+      "lastReminder": "آخر تذكير",
+      "amountDue": "المبلغ المستحق",
+      "amountPending": "في انتظار السداد"
+    },
+    "year": "السنة",
+    "periodLabel": "الفترة",
+    "cohortTitle": "المفوتر خلال الفترة",
+    "treasuryTitle": "المحصل خلال الفترة",
+    "treasuryHint": "الأموال الواردة، أياً كان تاريخ الفاتورة"
   },
   "AdminAirlines": {
     "title": "شركات الطيران",

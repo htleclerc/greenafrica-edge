@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as Dialog from '@radix-ui/react-dialog';
 import { OsCard, OsCardHeader } from '@/components/ui/OsCard';
@@ -10,17 +10,31 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
 import { useClientSort } from '@/hooks/useClientSort';
 import { sendConsolidatedRecap } from '@/actions/sendConsolidatedRecap';
-import type { ReglementsSummary, Bucket } from '@/services/reglementsService';
+import type { ReglementsSummary } from '@/services/reglementsService';
+import { REGLEMENT_PERIODS, type ReglementPeriodeResult } from '@/services/reglementsPeriode';
 import type { ArmateurCockpitRow } from '@/services/armateurService';
 
-interface Props { summary: ReglementsSummary; owners: ArmateurCockpitRow[] }
+interface Props {
+    summary: ReglementsSummary;
+    periodResult: ReglementPeriodeResult;
+    owners: ArmateurCockpitRow[];
+}
 
 const usd = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
-export function ReglementsDashboard({ summary, owners }: Props) {
+export function ReglementsDashboard({ summary, periodResult, owners }: Props) {
     const t = useTranslations('AdminReglements');
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // La periode vit dans l'URL : l'ecran reste partageable et le retour
+    // arriere du navigateur retrouve la vue precedente.
+    function selectPeriod(next: string) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('periode', next);
+        router.push(`?${params.toString()}`);
+    }
 
     // Récapitulatif consolidé (sendConsolidatedRecap, Tâche 12) déclenché depuis
     // une ligne du tableau « À relancer ». `recapTarget` porte l'armateur ciblé ;
@@ -41,19 +55,24 @@ export function ReglementsDashboard({ summary, owners }: Props) {
         });
     }
 
-    const windows: { label: string; invoiced: Bucket; collected: Bucket }[] = [
-        { label: t('today'), invoiced: summary.invoicedToday, collected: summary.collectedToday },
-        { label: t('week'),  invoiced: summary.invoicedWeek,  collected: summary.collectedWeek },
-        { label: t('month'), invoiced: summary.invoicedMonth, collected: summary.collectedMonth },
-    ];
-
     const columns: OsColumn<ArmateurCockpitRow>[] = React.useMemo(() => [
         {
             key: 'owner', header: t('col.owner'), sortable: true, sortValue: (o) => o.name,
             render: (o) => <span className="font-medium text-[var(--os-text-primary)]">{o.name}</span>,
         },
         {
-            key: 'outstanding', header: t('col.outstanding'), className: 'text-right',
+            // Montant du = total facture. Etat COURANT, pas filtre par la
+            // periode : ce tableau repond a « qui relancer maintenant », et le
+            // decouper par semaine le viderait tous les lundis matin.
+            key: 'amountDue', header: t('col.amountDue'), className: 'text-right',
+            sortable: true, sortValue: (o) => o.total_invoiced_usd,
+            render: (o) => <span className="text-xs tabular-nums">{usd(o.total_invoiced_usd)}</span>,
+        },
+        {
+            // Montant en attente de paiement = du moins encaisse. La vue le
+            // calcule depuis les paiements CONFIRMED (mig 132), jamais depuis
+            // partial_paid_usd, gelee et nulle sur toute facture en cours.
+            key: 'outstanding', header: t('col.amountPending'), className: 'text-right',
             sortable: true, sortValue: (o) => o.total_outstanding_usd,
             render: (o) => <span className="text-xs tabular-nums font-semibold">{usd(o.total_outstanding_usd)}</span>,
         },
@@ -109,23 +128,53 @@ export function ReglementsDashboard({ summary, owners }: Props) {
         <div className="flex flex-col gap-4">
             <OsCard>
                 <OsCardHeader title={t('flowTitle')} subtitle={t('utcNote')} />
-                <div className="grid grid-cols-[auto_1fr_1fr] gap-x-8 gap-y-3 text-sm">
-                    <span />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] text-right">{t('invoiced')}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] text-right">{t('collected')}</span>
-                    {windows.map((w) => (
-                        <React.Fragment key={w.label}>
-                            <span className="text-[var(--os-text-secondary)]">{w.label}</span>
-                            <span className="text-right tabular-nums">
-                                {usd(w.invoiced.usd)}
-                                <span className="ml-1.5 text-xs text-[var(--os-text-muted)]">({w.invoiced.count})</span>
-                            </span>
-                            <span className="text-right tabular-nums">
-                                {usd(w.collected.usd)}
-                                <span className="ml-1.5 text-xs text-[var(--os-text-muted)]">({w.collected.count})</span>
-                            </span>
-                        </React.Fragment>
-                    ))}
+
+                <div className="flex flex-wrap gap-1.5 mb-5" role="group" aria-label={t('periodLabel')}>
+                    {REGLEMENT_PERIODS.map((p) => {
+                        const active = periodResult.period === p;
+                        return (
+                            <OsButton
+                                key={p}
+                                size="sm"
+                                variant={active ? 'primary' : 'ghost'}
+                                aria-pressed={active}
+                                onClick={() => selectPeriod(p)}
+                            >
+                                {t(p)}
+                            </OsButton>
+                        );
+                    })}
+                </div>
+
+                {/* Deux lectures d'une meme periode, volontairement separees.
+                    La cohorte porte les factures EMISES sur la periode ; la
+                    tresorerie, l'argent ARRIVE. Un reglement de septembre sur
+                    une facture de juillet compte dans la seconde et pas dans
+                    la premiere — les melanger donnerait une image fausse. */}
+                <div className="flex flex-col gap-5">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
+                            {t('cohortTitle')}
+                        </p>
+                        <div className="flex flex-wrap gap-x-10 gap-y-3">
+                            <Figure label={t('col.amountDue')} value={usd(periodResult.cohorte.duUsd)} strong />
+                            <Figure label={t('collected')} value={usd(periodResult.cohorte.encaisseUsd)} />
+                            <Figure label={t('col.amountPending')} value={usd(periodResult.cohorte.enAttenteUsd)} strong />
+                            <Figure label={t('invoiced')} value={String(periodResult.cohorte.invoiceCount)} />
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-[var(--os-border)]">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)] mb-2">
+                            {t('treasuryTitle')}
+                        </p>
+                        <div className="flex flex-wrap items-baseline gap-x-10 gap-y-2">
+                            <Figure
+                                label={t('treasuryHint')}
+                                value={`${usd(periodResult.tresorerie.usd)} (${periodResult.tresorerie.count})`}
+                            />
+                        </div>
+                    </div>
                 </div>
             </OsCard>
 
@@ -191,6 +240,21 @@ export function ReglementsDashboard({ summary, owners }: Props) {
                     </Dialog.Content>
                 </Dialog.Portal>
             </Dialog.Root>
+        </div>
+    );
+}
+
+function Figure({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+    return (
+        <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--os-text-muted)]">
+                {label}
+            </span>
+            <span className={strong
+                ? 'text-xl font-bold tabular-nums text-[var(--os-text-primary)]'
+                : 'text-sm tabular-nums text-[var(--os-text-secondary)]'}>
+                {value}
+            </span>
         </div>
     );
 }

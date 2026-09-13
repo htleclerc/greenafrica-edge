@@ -4739,8 +4739,15 @@
       "outstanding": "Outstanding",
       "overdue": "Overdue",
       "tier": "Tier",
-      "lastReminder": "Last reminder"
-    }
+      "lastReminder": "Last reminder",
+      "amountDue": "Amount due",
+      "amountPending": "Awaiting payment"
+    },
+    "year": "Year",
+    "periodLabel": "Period",
+    "cohortTitle": "Invoiced in this period",
+    "treasuryTitle": "Collected in this period",
+    "treasuryHint": "Money received, any invoice date"
   },
   "AdminAirlines": {
     "title": "Airlines",
