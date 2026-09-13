@@ -403,3 +403,51 @@ export const TX_PASSWORD_RESET_HTML = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 
 </table>
 </td></tr></table>
 </body></html>`;
+
+/**
+ * Mot de passe provisoire remis a un compte du personnel.
+ *
+ * Le mot de passe voyage EN CLAIR dans ce message : il reste dans la boite de
+ * reception, dans ses sauvegardes et, selon le relais, dans ses journaux.
+ * C'est un choix assume — le gabarit le dit au destinataire et l'invite a le
+ * remplacer des sa premiere connexion.
+ */
+export const TX_TEMPORARY_PASSWORD_HTML = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" />
+<title>Your temporary password</title>
+<!--[if mso]><style>body,table,td,a,p,span{font-family:'Segoe UI',Arial,sans-serif !important;}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background:#F4F4F1;-webkit-font-smoothing:antialiased;">
+<div style="display:none;font-size:1px;color:#F4F4F1;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">A temporary password has been set on your GreenGate account.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F4F1;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#FFFFFF;border-top:3px solid #10B981;font-family:'IBM Plex Sans','Segoe UI',Arial,sans-serif;">
+  <tr><td style="padding:24px 32px 20px;border-bottom:1px solid #EAEAE4;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="30" style="width:30px;"><img src="https://tvvvsysyiugrkrottczt.supabase.co/storage/v1/object/public/assets/africgreen-icon-128.png" alt="" width="30" height="30" style="display:block;width:30px;height:30px;border:0;" /></td>
+      <td style="padding-left:11px;font-size:15px;font-weight:600;letter-spacing:-0.2px;color:#141812;">GreenGate</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:32px;">
+    <h1 style="margin:0 0 20px;font-size:19px;font-weight:600;letter-spacing:-0.2px;color:#141812;">Your temporary password</h1>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#4A5145;">A temporary password has been set on your GreenGate staff account. Sign in with it, then replace it with one of your own.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;"><tr><td bgcolor="#F4F4F1" style="border:1px solid #EAEAE4;border-radius:6px;padding:16px 20px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:16px;letter-spacing:1px;color:#141812;">{{password}}</td></tr></table>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;"><tr><td bgcolor="#141812" style="border-radius:6px;"><a href="{{link}}" style="display:inline-block;padding:12px 24px;font-family:'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:500;color:#FFFFFF;text-decoration:none;border-radius:6px;">Sign in</a></td></tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0;border-top:1px solid #EAEAE4;"><tr><td style="padding-top:18px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:11px;line-height:2;color:#4A5145;">
+      <span style="color:#6E766A;">ACCOUNT</span>&nbsp;&nbsp;{{email}}<br />
+      <span style="color:#6E766A;">ROLE</span>&nbsp;&nbsp;{{role}}
+    </td></tr></table>
+    <p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#4A5145;"><span style="font-size:12px;">This password travelled by email and should be treated as compromised: change it from Settings &rsaquo; Security at your first sign-in. Until you do, no old password is asked of you.</span></p>
+  </td></tr>
+  <tr><td style="padding:0 32px 32px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #EAEAE4;padding-top:20px;font-size:12px;line-height:1.7;color:#4A5145;">
+      Automated message &middot; do not reply<br />
+      Questions <a href="mailto:st.operations@greengate.africa" style="color:#141812;text-decoration:underline;">st.operations@greengate.africa</a><br />
+      Republic of Somaliland &middot; Maritime Carbon Tax Authority
+    </td></tr></table>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;

@@ -46,13 +46,21 @@ const (
 	gtExponent = 0.65
 	gtDivisor  = 4.0
 
-	// AviLegs — aller + retour.
+	// RFI — indice de forçage radiatif, forçage non-CO2 de l'aviation
+	// selon le GIEC AR6.
 	//
-	// ⚠ Ce facteur double la contribution de chaque vol et n'est PAS expliqué
-	// sur la page de calcul des pro-formas déjà émises. Une question est
-	// ouverte auprès de la Direction. NE PAS le modifier sans instruction
-	// écrite.
-	AviLegs = 2.0
+	// La spécification de calcul le présente comme un « aller + retour » et le
+	// marque « non tranché ». C'EST FAUX, et la source qui fait foi est la
+	// facture elle-même : les pro-formas consolidées remises aux compagnies
+	// impriment leur propre méthode, et elle dit « Radiative Forcing Index
+	// × 2.0 — IPCC AR6 non-CO2 aviation forcing », puis « Per-flight
+	// contribution = Voyage CO2 × RFI 2.0 × USD 40.00/t ».
+	//
+	// Vérifié sur la consolidée FlyDubai (197 vols, 342 340,00 USD) : juillet
+	// et août ressortent tous deux à exactement 80,00 USD par tonne de CO2 de
+	// voyage, soit 2,0 × 40. Aucun abattement de 50 % en aviation, contrairement
+	// au maritime — le forçage s'applique au CO2 entier du voyage.
+	RFI = 2.0
 )
 
 // USDPerTonneFuel est le ratio universel, indépendant du navire :
@@ -203,10 +211,22 @@ type Aviation struct {
 	TotalUSD    float64 `json:"total_usd"`
 }
 
-// CalcAviation calcule la contribution d'un vol :
+// CalcAviation calcule la contribution d'un vol, telle que la pro-forma
+// consolidée l'imprime elle-même :
 //
-//	tCO2 = LTO + heures_de_route × taux_de_croisière
-//	USD  = round(tCO2 × 2,0 × 40, 2)
+//	CO2 du voyage = LTO + heures_de_route × taux_de_croisière   (tables OACI)
+//	Contribution  = round(CO2 du voyage × RFI 2,0 × 40 USD/t, 2)
+//
+// PAS d'abattement de 50 % : contrairement au maritime, le forçage s'applique
+// au CO2 entier du voyage. Contrôle sur la consolidée FlyDubai — juillet et
+// août ressortent exactement à 80,00 USD par tonne.
+//
+// CE QUE CETTE FONCTION NE CALCULE PAS. Les vols de juin 2026 portent en plus
+// une composante passager de 20 USD par siège, absente de la méthode imprimée
+// et de l'implémentation de référence. Sur FlyDubai, elle pèse 188 160,00 USD
+// des 342 340,00 facturés. La spécification interdit de régénérer juin : le jeu
+// existant fait foi pour ce qui a été facturé. Ne pas ajouter ce poste ici sans
+// arbitrage écrit — ce serait recalculer des créances déjà notifiées.
 //
 // Une route inconnue retombe sur RouteHoursDefault ; un type d'appareil
 // inconnu est une erreur, car il n'existe aucun repli défendable.
@@ -220,7 +240,7 @@ func CalcAviation(aircraft, route string) (Aviation, error) {
 		hours = RouteHoursDefault
 	}
 	tco2 := ac.LTO + hours*ac.Cruise
-	usd := tco2 * AviLegs * RateUSD
+	usd := tco2 * RFI * RateUSD
 	return Aviation{
 		TaxableTCO2: Round(tco2, 2),
 		PaxUSD:      0,
