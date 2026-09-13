@@ -131,12 +131,14 @@ export async function getAirlineDetail(
     id: string,
     canViewBilling: boolean,
 ): Promise<AirlineDetail | null> {
-    // Garde aviation : iata_code IS NOT NULL. Une ligne maritime → null → notFound côté page.
+    // Garde aviation : le mode fait foi (mig 160). Une ligne maritime → null →
+    // notFound côté page. Le code IATA est une immatriculation commerciale,
+    // facultative : « Charter divers » n'en a pas et reste une compagnie.
     const { data: s } = await db
         .from('shipowners')
         .select('*')
         .eq('id', id)
-        .not('iata_code', 'is', null)
+        .contains('applicable_modes', ['AIR'])
         .maybeSingle();
     if (!s) return null;
 

@@ -66,6 +66,13 @@ export interface ShipownerInsert {
     is_un_prohibited: boolean;
     account_state: DbShipownerAccountState;
     jurisdiction_id: string;
+    /**
+     * Toujours renseigne explicitement. La colonne a un defaut `{MARITIME}`
+     * (mig 071) : un import qui l'omet produit des compagnies aeriennes
+     * declarees maritimes, invisibles des ecrans d'aviation. C'est exactement
+     * ce qui est arrive aux six operateurs redresses par la mig 160.
+     */
+    applicable_modes: DbTransportMode[];
 }
 
 /** vessels (003 + 024 + 071 + 093) — champs peuplés par l'import onboarding. */
@@ -258,6 +265,7 @@ export function mapArmateurToShipowner(a: SeedArmateur): ShipownerInsert {
         // admin explicite post-import, jamais automatique depuis le seed.
         account_state: 'GHOST',
         jurisdiction_id: SOMALILAND_JURISDICTION_ID,
+        applicable_modes: ['MARITIME'],
     };
 }
 
@@ -281,6 +289,7 @@ export function mapCompagnieToShipowner(c: SeedCompagnie): ShipownerInsert {
         is_un_prohibited: false,
         account_state: 'GHOST',
         jurisdiction_id: SOMALILAND_JURISDICTION_ID,
+        applicable_modes: ['AIR'],
     };
 }
 
