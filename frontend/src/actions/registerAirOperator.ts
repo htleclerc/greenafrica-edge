@@ -121,13 +121,17 @@ async function autoClaimAir(
     operatorId: string,
     data: RegisterAirOperatorInput,
 ): Promise<RegisterAirOperatorResult> {
-    // We deliberately do NOT set applicable_modes here: the claimed GHOST operator
-    // was created by W1-C ADS-B detection already carrying ['AIR']. (Contrast with
-    // insertPendingReviewAir, which sets ['AIR'] because it inserts a brand-new row
-    // that would otherwise inherit the ['MARITIME'] column default from mig 071.)
+    // applicable_modes is set explicitly. The old code left it alone, assuming the
+    // claimed GHOST came from W1-C ADS-B detection and already carried ['AIR'] —
+    // but ADS-B has never ingested anything in production. Every aviation GHOST
+    // there came from the onboarding import and inherited the ['MARITIME'] column
+    // default of mig 071, so a self-service claim used to leave the operator
+    // flagged maritime. Mig 160 straightened the existing rows; this stops the
+    // claim path from bending them back.
     const { data: claimed, error: upErr } = await supabase
         .from('shipowners')
         .update({
+            applicable_modes: ['AIR'],
             name: data.name,
             address: data.address,
             country_code: data.country_code,

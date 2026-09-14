@@ -14,8 +14,10 @@ describe.skipIf(!ENV_OK)('armateurService.listArmateursCockpit', () => {
     beforeAll(async () => {
         admin = createClient(URL!, KEY!);
         await admin.from('shipowners').insert([
-            { id: armId, name: 'ARM Test Cockpit', iata_code: null, is_ofac_sdn: true },
-            { id: aviId, name: 'AVI Test Cockpit', iata_code: 'ZZ' },
+            { id: armId, name: 'ARM Test Cockpit', is_ofac_sdn: true, applicable_modes: ['MARITIME'] },
+            // Sans code IATA, comme « Charter divers » en production : c'est le
+            // mode qui doit l'exclure du cockpit maritime, pas le code (mig 160).
+            { id: aviId, name: 'AVI Test Cockpit', iata_code: null, applicable_modes: ['AIR'] },
         ]);
         await admin.from('transactions').insert({
             shipowner_id: armId, vessel_name: 'MV COCKPIT', vessel_imo: 'TEST-COCKPIT',
@@ -123,6 +125,7 @@ function dbWith(opts: {
             select: () => builder,
             eq: () => builder,
             is: () => builder,
+            contains: () => builder,
             in: () => builder,
             order: () => builder,
             maybeSingle: () => builder,
@@ -251,7 +254,7 @@ describe.skipIf(!ENV_OK)('getArmateurDetail', () => {
 
     beforeAll(async () => {
         admin = createClient(URL!, KEY!);
-        await admin.from('shipowners').insert({ id: armId, name: 'ARM Detail', iata_code: null, official_email: 'x@arm.test', imo_company_no: 'IMO-DET-1' });
+        await admin.from('shipowners').insert({ id: armId, name: 'ARM Detail', official_email: 'x@arm.test', imo_company_no: 'IMO-DET-1', applicable_modes: ['MARITIME'] });
         const { data: v } = await admin.from('vessels').insert({
             imo_number: 'DET-VESSEL-1', mmsi: null, name: 'MV DETAIL', call_sign: null,
             flag_code: 'SO', category: 'CARGO', gross_tonnage_dwt: 12000, shipowner_id: armId,
@@ -285,9 +288,11 @@ describe.skipIf(!ENV_OK)('getArmateurDetail', () => {
         expect(await getArmateurDetail(admin, '00000000-0000-4000-8000-000000000000', true)).toBeNull();
     });
 
-    it('renvoie null pour une compagnie aviation (iata_code non nul)', async () => {
+    it('renvoie null pour une compagnie aviation dépourvue de code IATA', async () => {
+        // Le cas « Charter divers » : avant la mig 160 cette ligne passait la garde
+        // `iata_code IS NULL` et s'affichait comme une fiche armateur.
         const aviId = '66666666-6666-4666-8666-666666666666';
-        await admin.from('shipowners').insert({ id: aviId, name: 'AVI Detail', iata_code: 'ZZ' });
+        await admin.from('shipowners').insert({ id: aviId, name: 'AVI Detail', iata_code: null, applicable_modes: ['AIR'] });
         try {
             expect(await getArmateurDetail(admin, aviId, true)).toBeNull();
         } finally {

@@ -4742,8 +4742,15 @@
       "outstanding": "Deni",
       "overdue": "Imechelewa",
       "tier": "Ngazi",
-      "lastReminder": "Kikumbusho cha mwisho"
-    }
+      "lastReminder": "Kikumbusho cha mwisho",
+      "amountDue": "Kiasi kinachodaiwa",
+      "amountPending": "Inasubiri malipo"
+    },
+    "year": "Mwaka",
+    "periodLabel": "Kipindi",
+    "cohortTitle": "Iliyotozwa katika kipindi",
+    "treasuryTitle": "Iliyopokelewa katika kipindi",
+    "treasuryHint": "Fedha zilizoingia, tarehe yoyote ya bili"
   },
   "AdminAirlines": {
     "title": "Kampuni za Ndege",

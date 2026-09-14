@@ -38,11 +38,11 @@ describe('listAirlinesCockpit', () => {
 });
 
 function detailDb(shipownerRow: Record<string, unknown> | null) {
-    // Chaîne pour la requête shipowners : .select().eq().not().maybeSingle()
+    // Chaîne pour la requête shipowners : .select().eq().contains().maybeSingle()
     const soChain: Record<string, unknown> = {
         select: vi.fn(() => soChain),
         eq: vi.fn(() => soChain),
-        not: vi.fn(() => soChain),
+        contains: vi.fn(() => soChain),
         maybeSingle: vi.fn(() => Promise.resolve({ data: shipownerRow, error: null })),
     };
     // Chaîne générique pour aircraft/transactions/payments/collection_reminders
@@ -62,11 +62,13 @@ function detailDb(shipownerRow: Record<string, unknown> | null) {
 }
 
 describe('getAirlineDetail', () => {
-    it('renvoie null si la ligne n’est pas une compagnie aviation (garde iata_code IS NOT NULL)', async () => {
+    it('renvoie null si la ligne ne porte pas le mode aérien (garde applicable_modes)', async () => {
         const { db, soChain } = detailDb(null);
         const res = await getAirlineDetail(db, 'x', true);
         expect(res).toBeNull();
-        expect(soChain.not).toHaveBeenCalledWith('iata_code', 'is', null);
+        // La garde porte sur le mode, jamais sur le code IATA : une compagnie
+        // sans code IATA reste une compagnie (mig 160).
+        expect(soChain.contains).toHaveBeenCalledWith('applicable_modes', ['AIR']);
     });
 
     it('n’expose pas d’IBAN quand canViewBilling=false', async () => {

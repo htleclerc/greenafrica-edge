@@ -105,6 +105,11 @@ describe('registerAirOperator decision tree', () => {
         expect(claimUpdate).toMatchObject({
             official_email: validInput.email,
             official_email_source: 'AGENT_CLAIM',
+            // Le claim POSE le mode, il ne le suppose pas. L'ancien code comptait
+            // sur la detection ADS-B pour l'avoir deja pose ; en production elle
+            // n'a jamais rien ingere, et les operateurs revendiques restaient
+            // marques maritimes (mig 160).
+            applicable_modes: ['AIR'],
         });
     });
 

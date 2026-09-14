@@ -4739,8 +4739,15 @@
       "outstanding": "La sugayo",
       "overdue": "Dhaafay",
       "tier": "Heerka",
-      "lastReminder": "Xasuusinta ugu dambeysay"
-    }
+      "lastReminder": "Xasuusinta ugu dambeysay",
+      "amountDue": "Qadarka la leeyahay",
+      "amountPending": "Sugaya bixin"
+    },
+    "year": "Sanadka",
+    "periodLabel": "Muddada",
+    "cohortTitle": "Wixii la qoray muddada",
+    "treasuryTitle": "Wixii la qaatay muddada",
+    "treasuryHint": "Lacagta soo gashay, taariikhda biilka ha ahaato mid kasta"
   },
   "AdminAirlines": {
     "title": "Shirkadaha Diyaaradaha",

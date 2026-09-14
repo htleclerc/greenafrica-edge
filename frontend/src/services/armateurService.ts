@@ -174,7 +174,11 @@ export async function getArmateurDetail(
     id: string,
     canViewBilling: boolean,
 ): Promise<ArmateurDetail | null> {
-    const { data: s } = await db.from('shipowners').select('*').eq('id', id).is('iata_code', null).maybeSingle();
+    // Garde maritime : le mode fait foi (mig 160). `iata_code` ne servait plus
+    // qu'a deviner le mode, et il devinait faux — un operateur aerien sans code
+    // IATA passait pour un armateur.
+    const { data: s } = await db.from('shipowners').select('*').eq('id', id)
+        .contains('applicable_modes', ['MARITIME']).maybeSingle();
     if (!s) return null;
 
     const [vesselsRes, txRes, recRes, repRes] = await Promise.all([

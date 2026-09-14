@@ -106,6 +106,9 @@ describe('onboardingImport mappers', () => {
         });
         expect(row.iata_code).toBe('FZ');
         expect(row.hub_code).toBe('DXB');
+        // Sans cette ligne l'import herite du defaut {MARITIME} de la mig 071 et
+        // la compagnie disparait des ecrans d'aviation (mig 160).
+        expect(row.applicable_modes).toEqual(['AIR']);
         expect(row.official_email).toBe('ops@flydubai.com');
         expect(row.account_state).toBe('GHOST');
         expect(row.seed_ref).toBe('avi-002');
