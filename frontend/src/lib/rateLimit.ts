@@ -33,7 +33,9 @@ type LimiterKey =
     | 'admin-export'
     | 'vessel-lookup'
     | 'vessel-claim'
-    | 'login-link';
+    | 'login-link'
+    | 'partnership'
+    | 'simulator-estimate';
 
 interface Bucket {
     /** Distinct short window — prevents small bursts. */
@@ -91,6 +93,14 @@ const LIMITS: Record<LimiterKey, Bucket> = {
     // Doublement plafonné — par IP ici, et par armateur dans l'action — sinon
     // faire varier l'IP suffirait à inonder la boîte d'un armateur.
     'login-link': { perMinute: 3, perHour: 10, perDay: 15 },
+
+    // Public partnership form → triggers an email to an attacker-supplied
+    // address. Same double-cap shape as the signup paths.
+    partnership: { perMinute: 3, perHour: 10, perDay: 20 },
+
+    // Public simulator PDF generation — cheap (jsPDF), but unauthenticated and
+    // unbounded otherwise. Generous for a human, hard on scripted abuse.
+    'simulator-estimate': { perMinute: 10, perHour: 60 },
 };
 
 // Lazy-init so we don't crash at import time when the env is missing.
