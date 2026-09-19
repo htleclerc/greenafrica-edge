@@ -14,13 +14,25 @@ import { recordManualPayment } from './recordManualPayment';
 import { requireRole } from '@/lib/auth/requireRole';
 import { createClient } from '@/lib/supabase/server';
 
+const SHIPOWNER_JURISDICTION_ID = 'jur-djibouti';
+
 function makeAdminCtx(role: 'FINANCE_ADMIN' | 'SUPERADMIN' = 'FINANCE_ADMIN', userId = 'admin-1') {
     const single = vi.fn().mockResolvedValue({ data: { id: 'pay-new', status: 'INITIATED', transaction_id: null, amount_usd_minor: 50000 }, error: null });
     const select = vi.fn(() => ({ single }));
     const insert = vi.fn(() => ({ select }));
+
+    // shipowners lookup: .from('shipowners').select('jurisdiction_id').eq(...).single()
+    const shipownerSingle = vi.fn().mockResolvedValue({ data: { jurisdiction_id: SHIPOWNER_JURISDICTION_ID }, error: null });
+    const shipownerEq = vi.fn(() => ({ single: shipownerSingle, maybeSingle: vi.fn().mockResolvedValue({ data: { name: 'Test Owner' }, error: null }) }));
+    const shipownerSelect = vi.fn(() => ({ eq: shipownerEq }));
+
+    const from = vi.fn((table: string) => {
+        if (table === 'shipowners') return { select: shipownerSelect };
+        return { insert };
+    });
     const supabase = {
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: userId } }, error: null }) },
-        from: vi.fn(() => ({ insert })),
+        from,
     };
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
     (requireRole as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -50,6 +62,7 @@ describe('recordManualPayment', () => {
         const row = (insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
         expect(row.status).toBe('INITIATED');
         expect(row.confirmed_by).toBeNull();
+        expect(row.jurisdiction_id).toBe(SHIPOWNER_JURISDICTION_ID);
     });
 
     it('inserts CONFIRMED for CHEQUE when confirmImmediately=true', async () => {
@@ -143,5 +156,24 @@ describe('recordManualPayment', () => {
             railDetails: {},
             confirmImmediately: false,
         })).rejects.toThrow(/forbidden|unauthorized/i);
+    });
+
+    it('rejects when the target shipowner cannot be read', async () => {
+        const { supabase } = makeAdminCtx();
+        (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+            if (table === 'shipowners') {
+                return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn().mockResolvedValue({ data: null, error: null }) })) })) };
+            }
+            return { insert: vi.fn() };
+        });
+        await expect(recordManualPayment({
+            shipownerId: '123e4567-e89b-42d3-a456-426614174000',
+            transactionId: null,
+            rail: 'CHEQUE',
+            amount: '100',
+            currency: 'USD',
+            railDetails: {},
+            confirmImmediately: false,
+        })).rejects.toThrow(/introuvable/i);
     });
 });

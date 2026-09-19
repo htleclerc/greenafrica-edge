@@ -56,6 +56,21 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('unauthorized');
 
+    // payments.jurisdiction_id has a fixed literal DEFAULT (Somaliland, mig 072) and
+    // no trigger derives it — this client isn't a createTenantClient proxy, so nothing
+    // stamps it automatically. Take it from the target shipowner explicitly: this is
+    // also what mig 162's payments_admin_insert RLS checks against
+    // (current_jurisdiction_ids()), so a cross-jurisdiction insert is correctly rejected.
+    const { data: shipownerRow, error: shipownerErr } = await supabase
+        .from('shipowners')
+        .select('jurisdiction_id')
+        .eq('id', parsed.shipownerId)
+        .single();
+    if (shipownerErr || !shipownerRow) {
+        throw new Error(`Shipowner introuvable ou inaccessible: ${parsed.shipownerId}`);
+    }
+    const jurisdictionId = (shipownerRow as { jurisdiction_id: string }).jurisdiction_id;
+
     const fx = await lockRate(supabase, parsed.currency);
     const amountMinor = Math.round(parseFloat(parsed.amount) * 100);
     const amountUsdMinor = parsed.currency === 'USD'
@@ -80,6 +95,7 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
     const row = {
         transaction_id: parsed.transactionId,
         shipowner_id: parsed.shipownerId,
+        jurisdiction_id: jurisdictionId,
         declared_by: user.id,
         amount_minor: amountMinor,
         currency: parsed.currency,
@@ -97,8 +113,8 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
     const { data, error } = await supabase
         .from('payments')
         .insert(row)
-        // jurisdiction_id est posé par la base ; on le relit pour router la
-        // notification sans requête supplémentaire.
+        // jurisdiction_id vient de l'armateur ciblé (résolu ci-dessus) ; on le
+        // relit pour router la notification sans requête supplémentaire.
         .select('id, status, transaction_id, amount_usd_minor, jurisdiction_id')
         .single();
 
