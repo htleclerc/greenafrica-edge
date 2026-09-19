@@ -17,7 +17,10 @@ const schema = z.object({
     transactionId: z.string().uuid(),
     reason: z.enum(REASONS),
     description: z.string().trim().min(10).max(2000),
-    evidenceUrl: z.string().url().optional().or(z.literal('')),
+    evidenceUrl: z.string().url().refine(
+        (u) => /^https?:\/\//i.test(u),
+        { message: 'evidenceUrl must be an http(s) URL' },
+    ).optional().or(z.literal('')),
 });
 
 export type CreateOwnerDisputeResult =
