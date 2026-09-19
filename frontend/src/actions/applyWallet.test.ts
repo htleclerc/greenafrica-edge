@@ -4,6 +4,7 @@ let walletBalance = 500_000;
 let walletId: string | null = 'w-1';
 let txnShipownerId = 'so-1';
 const inserts: { table: string; row: any }[] = [];
+const rpcCalls: { fn: string; args: any }[] = [];
 
 const mockSupabase = {
     from: vi.fn((table: string) => {
@@ -38,7 +39,16 @@ const mockSupabase = {
             },
         };
     }),
-    rpc: vi.fn(async () => ({ data: null, error: null })),
+    rpc: vi.fn(async (fn: string, args: any) => {
+        rpcCalls.push({ fn, args });
+        if (fn === 'apply_wallet_credit') {
+            if (walletBalance < args.p_amount_minor) {
+                return { data: null, error: { message: 'insufficient wallet balance' } };
+            }
+            return { data: [{ payment_id: 'pay-1', wallet_id: 'w-1' }], error: null };
+        }
+        return { data: null, error: null };
+    }),
 };
 
 vi.mock('@/lib/supabase/tenant', () => ({ createTenantClient: vi.fn(() => mockSupabase) }));
@@ -56,6 +66,7 @@ beforeEach(() => {
     walletId = 'w-1';
     txnShipownerId = 'so-1';
     inserts.length = 0;
+    rpcCalls.length = 0;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
     vi.clearAllMocks();
@@ -80,19 +91,17 @@ describe('applyWallet', () => {
         })).rejects.toThrow(/not your transaction/i);
     });
 
-    it('inserts WALLET CONFIRMED payment + negative ledger entry', async () => {
+    it('applies via the atomic apply_wallet_credit RPC with correct args', async () => {
         const { applyWallet } = await import('./applyWallet');
         await applyWallet({
             transactionId: '550e8400-e29b-41d4-a716-446655440000',
             amountMinor: 50000,
         });
-        const pay = inserts.find(i => i.table === 'payments');
-        const ledger = inserts.find(i => i.table === 'wallet_ledger');
-        expect(pay?.row).toMatchObject({
-            rail: 'WALLET', status: 'CONFIRMED', amount_usd_minor: 50000,
-        });
-        expect(ledger?.row).toMatchObject({
-            kind: 'PROFORMA_APPLY', amount_signed_usd_minor: -50000, wallet_id: 'w-1',
+        const call = rpcCalls.find(c => c.fn === 'apply_wallet_credit');
+        expect(call?.args).toMatchObject({
+            p_txn_id: '550e8400-e29b-41d4-a716-446655440000',
+            p_shipowner_id: 'so-1',
+            p_amount_minor: 50000,
         });
     });
 
