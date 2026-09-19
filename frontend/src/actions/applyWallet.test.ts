@@ -1,25 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+type ApplyWalletCreditRpcArgs = {
+    p_txn_id: string;
+    p_shipowner_id: string;
+    p_actor_user_id: string;
+    p_amount_minor: number;
+};
+
 let walletBalance = 500_000;
-let walletId: string | null = 'w-1';
 let txnShipownerId = 'so-1';
-const inserts: { table: string; row: any }[] = [];
-const rpcCalls: { fn: string; args: any }[] = [];
+const rpcCalls: { fn: string; args: ApplyWalletCreditRpcArgs }[] = [];
 
 const mockSupabase = {
+    // applyWalletCredit does everything atomically inside the apply_wallet_credit
+    // RPC now — the only remaining `.from()` caller is applyWallet.ts itself,
+    // checking the transaction's ownership before delegating to the service.
     from: vi.fn((table: string) => {
-        if (table === 'wallets') {
-            return {
-                select: () => ({
-                    eq: () => ({
-                        maybeSingle: async () => ({
-                            data: walletId ? { id: walletId, balance_usd_minor: walletBalance } : null,
-                            error: null,
-                        }),
-                    }),
-                }),
-            };
-        }
         if (table === 'transactions') {
             return {
                 select: () => ({
@@ -32,14 +28,9 @@ const mockSupabase = {
                 }),
             };
         }
-        return {
-            insert: (row: any) => {
-                inserts.push({ table, row });
-                return { select: () => ({ single: async () => ({ data: { id: 'pay-1', ...row }, error: null }) }) };
-            },
-        };
+        throw new Error(`mockSupabase.from: unexpected table "${table}"`);
     }),
-    rpc: vi.fn(async (fn: string, args: any) => {
+    rpc: vi.fn(async (fn: string, args: ApplyWalletCreditRpcArgs) => {
         rpcCalls.push({ fn, args });
         if (fn === 'apply_wallet_credit') {
             if (walletBalance < args.p_amount_minor) {
@@ -63,9 +54,7 @@ vi.mock('@/lib/auth/requireOwner', () => ({
 
 beforeEach(() => {
     walletBalance = 500_000;
-    walletId = 'w-1';
     txnShipownerId = 'so-1';
-    inserts.length = 0;
     rpcCalls.length = 0;
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
