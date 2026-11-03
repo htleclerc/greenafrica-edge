@@ -591,6 +591,19 @@ input[type="range"]::-moz-range-thumb {
 [data-theme="light"] .os-accent-tint { background-color: color-mix(in srgb, var(--os-accent) 9%, transparent); }
 [data-theme="light"] .os-accent-edge { border-color: color-mix(in srgb, var(--os-accent) 30%, transparent); }
 
+/* ── Statuts de la section multi-pays de la landing ────────────────────────
+ * Les teintes vives (yellow-500, emerald-400) tiennent sur les fonds sombres
+ * mais tombent sous 2:1 sur les fonds clairs ; ces libellés font 10 px, donc
+ * le seuil AA est 4.5:1. Le thème clair bascule sur des teintes foncées :
+ * amber-800 (~6.8:1) et emerald-800 (~6.5:1). */
+.coverage-pending { color: #EAB308; }
+.coverage-live    { color: #34D399; }
+[data-theme="light"] .coverage-pending { color: #92400E; }
+[data-theme="light"] .coverage-live    { color: #065F46; }
+
+/* L'interlettrage casse les ligatures de l'arabe : on le neutralise. */
+:lang(ar) .coverage-track { letter-spacing: normal; }
+
 /* OS Card */
 .os-card {
     background-color: var(--os-surface);
