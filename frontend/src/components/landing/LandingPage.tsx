@@ -3,6 +3,7 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { CapabilitiesSection } from '@/components/landing/CapabilitiesSection';
+import { CoverageSection } from '@/components/landing/CoverageSection';
 import { SimulationSection } from '@/components/landing/SimulationSection';
 import { SovereignSection } from '@/components/landing/SovereignSection';
 import { AboutTeaserSection } from '@/components/landing/AboutTeaserSection';
@@ -15,6 +16,7 @@ export function LandingPage() {
             <Navbar activePage="overview" />
             <HeroSection />
             <CapabilitiesSection />
+            <CoverageSection />
             <AboutTeaserSection />
             <SimulationSection />
             <GreenGateTeaserSection />
