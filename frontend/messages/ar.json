@@ -35,6 +35,25 @@
     "about": "حول",
     "partnership": "شراكة"
   },
+  "Jurisdiction": {
+    "back_to_coverage": "جميع الولايات القضائية",
+    "actions_title": "ما يمكنك فعله هنا",
+    "intro_live": "{name}: منصة Green Gate تعمل. تُصدر الفواتير الأولية وتُحصّل المدفوعات.",
+    "intro_pipeline": "{name}: نشر Green Gate قيد الإعداد. لا يُحصّل أي شيء بعد.",
+    "pipeline_notice": "{name}: لا تُحصّل أي ضريبة كربون عبر Green Gate حتى اليوم. تصف صفحتا المنهجية والأساس القانوني النظام كما يُطبَّق في الولايات القضائية العاملة بالفعل.",
+    "action_pay_title": "ادفع فاتورتك الأولية",
+    "action_pay_desc": "ابحث عن ملفك بالاسم أو المعرّف، ثم ادفع عبر الإنترنت.",
+    "action_how_to_pay_title": "كيفية الدفع",
+    "action_how_to_pay_desc": "وسائل الدفع المقبولة والمهل والمستندات المطلوبة.",
+    "action_estimate_title": "قدّر ضريبتك",
+    "action_estimate_desc": "احسب المبلغ المستحق قبل وصول فاتورتك الأولية.",
+    "action_method_title": "افهم المنهجية",
+    "action_method_desc": "كيف يُحتسب الوعاء والمبلغ.",
+    "action_legal_title": "الأساس القانوني",
+    "action_legal_desc": "الأساس القانوني للرسم وسبل الاعتراض.",
+    "action_partner_title": "تحدّث إلى الفريق",
+    "action_partner_desc": "ناقش نشر النظام في هذه الولاية القضائية."
+  },
   "Landing": {
     "badge": "بروتوكول استخبارات الكربون السيادي",
     "hero_title_line1": "تأمين الثروة",
@@ -133,6 +152,7 @@
     "coverage_status_pipeline": "قيد الإعداد",
     "coverage_mode_maritime": "بحري",
     "coverage_mode_air": "جوي",
+    "coverage_mode_mining": "التعدين",
     "coverage_pipeline_heading": "عمليات نشر قيد الإعداد",
     "coverage_live_heading": "ولايات قضائية عاملة",
     "coverage_disclaimer": "الولايات القضائية قيد النشر لا تحصّل بعد أي ضريبة كربون عبر Green Gate. الولايات العاملة وحدها تُصدر الفواتير الأولية وتستلم المدفوعات.",

@@ -102,6 +102,25 @@
     "about": "À Propos",
     "partnership": "Partenariat"
   },
+  "Jurisdiction": {
+    "back_to_coverage": "Toutes les juridictions",
+    "actions_title": "Ce que vous pouvez faire ici",
+    "intro_live": "{name} : Green Gate est en service. Les pro-formas y sont émises et les paiements encaissés.",
+    "intro_pipeline": "{name} : le déploiement de Green Gate est en préparation. Rien n'y est encore perçu.",
+    "pipeline_notice": "{name} : aucune taxe carbone n'est perçue via Green Gate à ce jour. Les pages de méthode et de base légale décrivent le dispositif tel qu'il s'applique dans les juridictions déjà opérationnelles.",
+    "action_pay_title": "Payer votre pro-forma",
+    "action_pay_desc": "Retrouvez votre dossier par nom ou identifiant, puis réglez en ligne.",
+    "action_how_to_pay_title": "Comment payer",
+    "action_how_to_pay_desc": "Moyens de paiement acceptés, délais et justificatifs à fournir.",
+    "action_estimate_title": "Estimer votre taxe",
+    "action_estimate_desc": "Simulez le montant dû avant même de recevoir votre pro-forma.",
+    "action_method_title": "Comprendre la méthode",
+    "action_method_desc": "Comment l'assiette et le montant sont calculés.",
+    "action_legal_title": "Base légale",
+    "action_legal_desc": "Le fondement juridique du prélèvement et les voies de contestation.",
+    "action_partner_title": "Parler à l'équipe",
+    "action_partner_desc": "Discuter d'un déploiement pour cette juridiction."
+  },
   "Landing": {
     "badge": "PROTOCOLE D'INTELLIGENCE CARBONE SOUVERAIN",
     "hero_title_line1": "Sécuriser la Richesse",
@@ -210,6 +229,7 @@
     "coverage_status_pipeline": "En cours",
     "coverage_mode_maritime": "Maritime",
     "coverage_mode_air": "Aérien",
+    "coverage_mode_mining": "Mines",
     "coverage_pipeline_heading": "Déploiements en cours",
     "coverage_live_heading": "Juridictions opérationnelles",
     "coverage_disclaimer": "Les juridictions en cours de déploiement ne perçoivent encore aucune taxe carbone via Green Gate. Seules les juridictions opérationnelles émettent des pro-formas et encaissent.",

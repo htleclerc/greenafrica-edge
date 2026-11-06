@@ -102,6 +102,25 @@
     "about": "Ku saabsan",
     "partnership": "Iskaashi"
   },
+  "Jurisdiction": {
+    "back_to_coverage": "Dhammaan dalalka",
+    "actions_title": "Waxaad halkan ku samayn karto",
+    "intro_live": "{name}: Green Gate way shaqaynaysaa. Pro-forma waa la soo saaraa, lacagahana waa la qaataa.",
+    "intro_pipeline": "{name}: hirgelinta Green Gate waa la diyaarinayaa. Weli waxba lama uruuriyo.",
+    "pipeline_notice": "{name}: canshuur kaarboon lagama uruuriyo iyada oo loo marayo Green Gate ilaa maanta. Bogagga habka iyo saldhigga sharciga waxay sharraxayaan nidaamka sida uu ugu shaqeeyo dalalka hore u shaqaynaya.",
+    "action_pay_title": "Bixi pro-forma-gaaga",
+    "action_pay_desc": "Ka hel faylkaaga magaca ama aqoonsiga, kadibna khadka tooska ah ku bixi.",
+    "action_how_to_pay_title": "Sida loo bixiyo",
+    "action_how_to_pay_desc": "Habab lacag-bixineed la aqbalo, wakhtiyada iyo caddaymaha loo baahan yahay.",
+    "action_estimate_title": "Qiyaas canshuurtaada",
+    "action_estimate_desc": "Qiyaas lacagta lagugu leeyahay ka hor inta aan pro-forma lagu soo gaarin.",
+    "action_method_title": "Faham habka",
+    "action_method_desc": "Sida saldhigga iyo lacagta loo xisaabiyo.",
+    "action_legal_title": "Saldhigga sharciga",
+    "action_legal_desc": "Saldhigga sharci ee canshuurta iyo sida looga cabto.",
+    "action_partner_title": "La hadal kooxda",
+    "action_partner_desc": "Kala hadal hirgelin dalkan ku saabsan."
+  },
   "Landing": {
     "badge": "BOROTOKOOLKA CASIMADA KAARBOONKA",
     "hero_title_line1": "Ilaalinta",
@@ -210,6 +229,7 @@
     "coverage_status_pipeline": "Socda",
     "coverage_mode_maritime": "Badda",
     "coverage_mode_air": "Hawada",
+    "coverage_mode_mining": "Macdanta",
     "coverage_pipeline_heading": "Hirgelinta socota",
     "coverage_live_heading": "Dalalka shaqaynaya",
     "coverage_disclaimer": "Dalalka hirgelintoodu socoto weli ma uruuriyaan canshuur kaarboon oo Green Gate ah. Kuwa shaqaynaya oo keliya ayaa soo saara pro-forma iyo lacag qaata.",

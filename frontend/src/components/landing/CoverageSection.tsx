@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Globe2 } from 'lucide-react';
-import { LIVE_COUNTRIES, PIPELINE_COUNTRIES, type CoverageCountry } from '@/components/landing/coverage';
+import Link from 'next/link';
+import { LIVE_COUNTRIES, PIPELINE_COUNTRIES, jurisdictionHref, type CoverageCountry } from '@/components/landing/coverage';
 
 /**
  * Drapeau vendoré sous /public, rendu à hauteur fixe et largeur dérivée du
@@ -67,9 +68,9 @@ export function CoverageSection() {
                                 Berbera · Maritime + Aérien » se casse en quatre. */}
                             <div className="flex items-center gap-3 sm:gap-4">
                                 <Flag country={country} height={30} />
-                                <p className="text-base font-bold" style={{ color: 'var(--ais-page-text)' }}>
+                                <Link href={jurisdictionHref(country)} className="text-base font-bold hover:underline" style={{ color: 'var(--ais-page-text)' }}>
                                     {t(`coverage_country_${country.key}`)}
-                                </p>
+                                </Link>
                                 <span className="coverage-live coverage-track ms-auto inline-flex items-center gap-1.5 shrink-0 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]">
                                     <span className="relative flex h-1.5 w-1.5">
                                         <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -99,9 +100,13 @@ export function CoverageSection() {
                     {PIPELINE_COUNTRIES.map((country) => (
                         <li
                             key={country.key}
-                            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+                            className="rounded-xl"
                             style={{ backgroundColor: 'var(--ais-page-surface)', border: '1px dashed var(--ais-page-border)' }}
                         >
+                            <Link
+                                href={jurisdictionHref(country)}
+                                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-colors hover:bg-emerald-500/5"
+                            >
                             <Flag country={country} height={18} />
                             <div className="min-w-0">
                                 <p className="text-[13px] font-semibold" style={{ color: 'var(--ais-page-text-secondary)' }}>
@@ -117,6 +122,7 @@ export function CoverageSection() {
                                     {country.modes.map((m) => t(`coverage_mode_${m.toLowerCase()}`)).join(' + ')}
                                 </p>
                             </div>
+                            </Link>
                         </li>
                     ))}
                 </ul>
