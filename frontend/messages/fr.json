@@ -208,6 +208,8 @@
     "coverage_subtitle": "Green Gate se déploie juridiction par juridiction : chaque État garde son barème, sa monnaie et ses recettes, sur sa zone maritime comme sur son espace aérien.",
     "coverage_status_live": "Opérationnel",
     "coverage_status_pipeline": "En cours",
+    "coverage_mode_maritime": "Maritime",
+    "coverage_mode_air": "Aérien",
     "coverage_pipeline_heading": "Déploiements en cours",
     "coverage_live_heading": "Juridictions opérationnelles",
     "coverage_disclaimer": "Les juridictions en cours de déploiement ne perçoivent encore aucune taxe carbone via Green Gate. Seules les juridictions opérationnelles émettent des pro-formas et encaissent.",

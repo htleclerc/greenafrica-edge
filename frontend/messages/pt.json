@@ -658,6 +658,8 @@
     "coverage_subtitle": "A Green Gate é implantada jurisdição por jurisdição: cada Estado mantém a sua tabela, a sua moeda e as suas receitas, na sua zona marítima e no seu espaço aéreo.",
     "coverage_status_live": "Operacional",
     "coverage_status_pipeline": "Em curso",
+    "coverage_mode_maritime": "Marítimo",
+    "coverage_mode_air": "Aéreo",
     "coverage_pipeline_heading": "Implantações em curso",
     "coverage_live_heading": "Jurisdições operacionais",
     "coverage_disclaimer": "As jurisdições em implantação ainda não cobram qualquer taxa de carbono através da Green Gate. Apenas as jurisdições operacionais emitem pró-formas e recebem pagamentos.",

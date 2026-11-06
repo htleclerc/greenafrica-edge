@@ -26,6 +26,8 @@ const SECTION_KEYS = [
     'coverage_subtitle',
     'coverage_status_live',
     'coverage_status_pipeline',
+    'coverage_mode_maritime',
+    'coverage_mode_air',
     'coverage_live_heading',
     'coverage_pipeline_heading',
     'coverage_disclaimer',
@@ -49,6 +51,18 @@ describe('COVERAGE_COUNTRIES', () => {
         for (const country of COVERAGE_COUNTRIES) {
             const onDisk = path.join(process.cwd(), 'public', country.flag);
             expect(existsSync(onDisk), `${country.key} → ${country.flag}`).toBe(true);
+        }
+    });
+
+    // Le mode est une décision métier, pas une déduction géographique (la
+    // Mauritanie a un littoral et relève de l'aérien) : il doit être porté
+    // explicitement par la donnée, et jamais vide.
+    it('declares at least one transport mode for every country', () => {
+        for (const country of COVERAGE_COUNTRIES) {
+            expect(country.modes.length, country.key).toBeGreaterThan(0);
+            for (const mode of country.modes) {
+                expect(['MARITIME', 'AIR'], `${country.key} → ${mode}`).toContain(mode);
+            }
         }
     });
 

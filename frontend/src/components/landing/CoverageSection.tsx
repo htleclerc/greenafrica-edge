@@ -52,29 +52,37 @@ export function CoverageSection() {
                     n'est pas affiché — la hiérarchie visuelle le dit déjà — mais
                     il existe pour la navigation par titres et nomme la liste. */}
                 <h3 id="coverage-live-heading" className="sr-only">{t('coverage_live_heading')}</h3>
+                {/* `role="list"` paraît redondant sur un <ul> et Sonar le signale,
+                    mais `list-none` supprime la sémantique de liste dans WebKit :
+                    sans lui, VoiceOver n'annonce plus « liste de 2 éléments ». */}
                 <ul role="list" aria-labelledby="coverage-live-heading" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto mb-10 sm:mb-12 list-none">
                     {LIVE_COUNTRIES.map((country) => (
                         <li
                             key={country.key}
-                            className="flex items-center gap-3 sm:gap-4 rounded-2xl p-4 sm:p-5"
+                            className="rounded-2xl p-4 sm:p-5"
                             style={{ backgroundColor: 'var(--ais-page-card)', border: '1px solid rgba(16, 185, 129, 0.25)' }}
                         >
-                            <Flag country={country} height={30} />
-                            <div className="min-w-0">
+                            {/* Drapeau, nom et pastille sur une ligne ; le détail
+                                en dessous, sur toute la largeur — sinon « Port de
+                                Berbera · Maritime + Aérien » se casse en quatre. */}
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <Flag country={country} height={30} />
                                 <p className="text-base font-bold" style={{ color: 'var(--ais-page-text)' }}>
                                     {t(`coverage_country_${country.key}`)}
                                 </p>
-                                <p className="text-[11px] mt-0.5" style={{ color: 'var(--ais-page-text-muted)' }}>
-                                    {t(`coverage_site_${country.key}`)}
-                                </p>
-                            </div>
-                            <span className="coverage-live coverage-track ms-auto inline-flex items-center gap-1.5 shrink-0 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]">
-                                <span className="relative flex h-1.5 w-1.5">
-                                    <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                <span className="coverage-live coverage-track ms-auto inline-flex items-center gap-1.5 shrink-0 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                        <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    </span>
+                                    {t('coverage_status_live')}
                                 </span>
-                                {t('coverage_status_live')}
-                            </span>
+                            </div>
+                            <p className="text-[11px] mt-2" style={{ color: 'var(--ais-page-text-muted)' }}>
+                                {t(`coverage_site_${country.key}`)}
+                                {' · '}
+                                {country.modes.map((m) => t(`coverage_mode_${m.toLowerCase()}`)).join(' + ')}
+                            </p>
                         </li>
                     ))}
                 </ul>
@@ -99,8 +107,14 @@ export function CoverageSection() {
                                 <p className="text-[13px] font-semibold" style={{ color: 'var(--ais-page-text-secondary)' }}>
                                     {t(`coverage_country_${country.key}`)}
                                 </p>
+                                {/* Le mode est porté par le texte, pas par une
+                                    icône seule : une juridiction aérienne n'a
+                                    rien d'évident à l'œil (la Mauritanie a un
+                                    littoral et relève pourtant de l'aérien). */}
                                 <p className="coverage-pending coverage-track text-[10px] uppercase tracking-[0.08em]">
                                     {t('coverage_status_pipeline')}
+                                    {' · '}
+                                    {country.modes.map((m) => t(`coverage_mode_${m.toLowerCase()}`)).join(' + ')}
                                 </p>
                             </div>
                         </li>

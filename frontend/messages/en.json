@@ -208,6 +208,8 @@
     "coverage_subtitle": "Green Gate rolls out jurisdiction by jurisdiction: each State keeps its own tariff, its own currency and its own revenue, over its maritime zone and its airspace.",
     "coverage_status_live": "Live",
     "coverage_status_pipeline": "In progress",
+    "coverage_mode_maritime": "Maritime",
+    "coverage_mode_air": "Aviation",
     "coverage_pipeline_heading": "Deployments in progress",
     "coverage_live_heading": "Operational jurisdictions",
     "coverage_disclaimer": "Jurisdictions still being deployed do not yet collect any carbon tax through Green Gate. Only live jurisdictions issue pro-formas and receive payments.",

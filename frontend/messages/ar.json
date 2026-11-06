@@ -131,6 +131,8 @@
     "coverage_subtitle": "تُنشر Green Gate ولاية بعد أخرى: تحتفظ كل دولة بجدول رسومها وعملتها وإيراداتها، في منطقتها البحرية ومجالها الجوي.",
     "coverage_status_live": "قيد التشغيل",
     "coverage_status_pipeline": "قيد الإعداد",
+    "coverage_mode_maritime": "بحري",
+    "coverage_mode_air": "جوي",
     "coverage_pipeline_heading": "عمليات نشر قيد الإعداد",
     "coverage_live_heading": "ولايات قضائية عاملة",
     "coverage_disclaimer": "الولايات القضائية قيد النشر لا تحصّل بعد أي ضريبة كربون عبر Green Gate. الولايات العاملة وحدها تُصدر الفواتير الأولية وتستلم المدفوعات.",

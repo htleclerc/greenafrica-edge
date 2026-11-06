@@ -208,6 +208,8 @@
     "coverage_subtitle": "Green Gate waxaa lagu hirgeliyaa dal kasta si gooni ah: dal kastaa wuxuu hayaa qiimihiisa, lacagtiisa iyo dakhligiisa, aaggiisa badda iyo hawadiisa.",
     "coverage_status_live": "Shaqaynaya",
     "coverage_status_pipeline": "Socda",
+    "coverage_mode_maritime": "Badda",
+    "coverage_mode_air": "Hawada",
     "coverage_pipeline_heading": "Hirgelinta socota",
     "coverage_live_heading": "Dalalka shaqaynaya",
     "coverage_disclaimer": "Dalalka hirgelintoodu socoto weli ma uruuriyaan canshuur kaarboon oo Green Gate ah. Kuwa shaqaynaya oo keliya ayaa soo saara pro-forma iyo lacag qaata.",

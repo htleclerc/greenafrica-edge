@@ -131,6 +131,8 @@
     "coverage_subtitle": "Green Gate inasambazwa nchi kwa nchi: kila Taifa linabaki na viwango vyake, sarafu yake na mapato yake, katika eneo lake la bahari na anga lake.",
     "coverage_status_live": "Inafanya kazi",
     "coverage_status_pipeline": "Inaendelea",
+    "coverage_mode_maritime": "Baharini",
+    "coverage_mode_air": "Anga",
     "coverage_pipeline_heading": "Usambazaji unaoendelea",
     "coverage_live_heading": "Nchi zinazofanya kazi",
     "coverage_disclaimer": "Nchi zilizo katika hatua ya usambazaji hazikusanyi kodi ya kaboni kupitia Green Gate bado. Nchi zinazofanya kazi tu zinatoa pro-forma na kupokea malipo.",
