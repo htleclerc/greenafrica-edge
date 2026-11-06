@@ -102,6 +102,25 @@
     "about": "About",
     "partnership": "Partnership"
   },
+  "Jurisdiction": {
+    "back_to_coverage": "All jurisdictions",
+    "actions_title": "What you can do here",
+    "intro_live": "{name}: Green Gate is live. Pro-formas are issued and payments collected.",
+    "intro_pipeline": "{name}: Green Gate's deployment is being prepared. Nothing is collected there yet.",
+    "pipeline_notice": "{name}: no carbon tax is collected through Green Gate today. The method and legal-basis pages describe the scheme as it applies in jurisdictions that are already live.",
+    "action_pay_title": "Pay your pro-forma",
+    "action_pay_desc": "Find your file by name or identifier, then settle it online.",
+    "action_how_to_pay_title": "How to pay",
+    "action_how_to_pay_desc": "Accepted payment methods, deadlines and supporting documents.",
+    "action_estimate_title": "Estimate your tax",
+    "action_estimate_desc": "Simulate the amount due before your pro-forma even arrives.",
+    "action_method_title": "Understand the method",
+    "action_method_desc": "How the base and the amount are calculated.",
+    "action_legal_title": "Legal basis",
+    "action_legal_desc": "The legal grounds for the levy and how to dispute it.",
+    "action_partner_title": "Talk to the team",
+    "action_partner_desc": "Discuss a deployment for this jurisdiction."
+  },
   "Landing": {
     "badge": "SOVEREIGN CARBON INTELLIGENCE PROTOCOL",
     "hero_title_line1": "Securing Africa's",
@@ -204,10 +223,13 @@
     "teaser_greengate_desc": "A revolutionary blockchain-based platform enabling African states to adopt a digital solution for collecting carbon and environmental taxes — first deployed in partnership with the young state of Somaliland.",
     "teaser_greengate_cta": "Discover the Partnership",
     "coverage_badge": "Multi-country deployment",
-    "coverage_title": "One platform, many coastal States",
-    "coverage_subtitle": "Green Gate rolls out jurisdiction by jurisdiction: each State keeps its own tariff, its own currency and its own revenue, over its own maritime zone.",
+    "coverage_title": "One platform, many sovereign States",
+    "coverage_subtitle": "Green Gate rolls out jurisdiction by jurisdiction: each State keeps its own tariff, its own currency and its own revenue, over its maritime zone and its airspace.",
     "coverage_status_live": "Live",
     "coverage_status_pipeline": "In progress",
+    "coverage_mode_maritime": "Maritime",
+    "coverage_mode_air": "Aviation",
+    "coverage_mode_mining": "Mining",
     "coverage_pipeline_heading": "Deployments in progress",
     "coverage_live_heading": "Operational jurisdictions",
     "coverage_disclaimer": "Jurisdictions still being deployed do not yet collect any carbon tax through Green Gate. Only live jurisdictions issue pro-formas and receive payments.",
@@ -223,7 +245,9 @@
     "coverage_country_ng": "Nigeria",
     "coverage_country_cm": "Cameroon",
     "coverage_country_ga": "Gabon",
-    "coverage_country_mz": "Mozambique"
+    "coverage_country_mz": "Mozambique",
+    "coverage_country_mr": "Mauritania",
+    "coverage_country_ne": "Niger"
   },
   "Calculator": {
     "title": "Emissions Calculator & Offset Payment",
@@ -261,6 +285,7 @@
     "recent_transactions": "Recent Offset Transactions"
   },
   "Footer": {
+    "jurisdictions": "Jurisdictions",
     "brand_desc": "Empowering African coastal states to reclaim climate sovereignty through advanced data analytics and transparent carbon markets.",
     "platform": "Platform",
     "overview": "Overview",
