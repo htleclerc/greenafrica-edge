@@ -1,13 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import type { CoverageCountry } from '@/components/landing/coverage';
 import { actionsFor } from '@/components/jurisdictions/actions';
+import { Flag } from '@/components/jurisdictions/Flag';
 
 export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountry }>) {
     const t = useTranslations('Jurisdiction');
@@ -16,7 +16,6 @@ export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountr
     const name = l(`coverage_country_${country.key}`);
     const modes = country.modes.map((m) => l(`coverage_mode_${m.toLowerCase()}`)).join(' + ');
     const isLive = country.status === 'live';
-    const flagWidth = Math.round(44 * country.ratio);
 
     return (
         <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
@@ -36,12 +35,7 @@ export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountr
                     </Link>
 
                     <div className="flex items-center gap-4 mb-4">
-                        <span
-                            className="shrink-0 overflow-hidden rounded-[4px]"
-                            style={{ width: flagWidth, height: 44, border: '1px solid var(--ais-page-border)' }}
-                        >
-                            <Image src={country.flag} alt="" width={flagWidth} height={44} unoptimized />
-                        </span>
+                        <Flag country={country} height={44} />
                         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--ais-page-text)' }}>
                             {name}
                         </h1>

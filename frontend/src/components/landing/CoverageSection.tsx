@@ -1,27 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
 import { Globe2 } from 'lucide-react';
+import { Flag } from '@/components/jurisdictions/Flag';
 import Link from 'next/link';
-import { LIVE_COUNTRIES, PIPELINE_COUNTRIES, jurisdictionHref, type CoverageCountry } from '@/components/landing/coverage';
-
-/**
- * Drapeau vendoré sous /public, rendu à hauteur fixe et largeur dérivée du
- * ratio réel : aucun recadrage, y compris pour le Somaliland qui est en 2:1 là
- * où les drapeaux ISO sont en 4:3. Encadré pour rester lisible sur les 3 skins.
- */
-function Flag({ country, height }: Readonly<{ country: CoverageCountry; height: number }>) {
-    const width = Math.round(height * country.ratio);
-    return (
-        <span
-            className="shrink-0 overflow-hidden rounded-[3px]"
-            style={{ width, height, border: '1px solid var(--ais-page-border)' }}
-        >
-            <Image src={country.flag} alt="" width={width} height={height} unoptimized />
-        </span>
-    );
-}
+import { LIVE_COUNTRIES, PIPELINE_COUNTRIES, jurisdictionHref } from '@/components/landing/coverage';
 
 export function CoverageSection() {
     const t = useTranslations('Landing');
