@@ -30,9 +30,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Épinglé, comme dans ci.yml : `latest` a cassé le déploiement du
+      # 2026-11-03 (« [inbucket] in supabase/config.toml is no longer
+      # supported »), `db push` avortait avant de toucher la base et les
+      # déploiements suivants étaient SAUTÉS. Garder la même version que la CI
+      # pour que celle-ci reste le témoin fidèle de ce que fera le déploiement.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.90.0
 
       # Direct Postgres auth via the pooler URL (secret SUPABASE_DB_URL).
       # `supabase link` needs a management-API access token the CI doesn't have
