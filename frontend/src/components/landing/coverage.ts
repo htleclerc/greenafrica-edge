@@ -49,6 +49,11 @@ export const COVERAGE_COUNTRIES: readonly CoverageCountry[] = [
     { key: 'cm', flag: '/flags/cm.svg', ratio: R_4_3, status: 'pipeline' },
     { key: 'ga', flag: '/flags/ga.svg', ratio: R_4_3, status: 'pipeline' },
     { key: 'mz', flag: '/flags/mz.svg', ratio: R_4_3, status: 'pipeline' },
+    { key: 'mr', flag: '/flags/mr.svg', ratio: R_4_3, status: 'pipeline' },
+    // Le Niger est enclavé : il ne relève pas du mode MARITIME mais du mode
+    // AIR. D'où le libellé de la section, qui parle d'États souverains et
+    // couvre zone maritime ET espace aérien, et non de « pays côtiers ».
+    { key: 'ne', flag: '/flags/ne.svg', ratio: R_4_3, status: 'pipeline' },
 ];
 
 export const LIVE_COUNTRIES = COVERAGE_COUNTRIES.filter((c) => c.status === 'live');

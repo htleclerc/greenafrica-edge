@@ -204,8 +204,8 @@
     "teaser_greengate_desc": "Une plateforme digitale révolutionnaire basée sur la blockchain offrant aux États africains une solution de collecte des taxes carbone et environnementales — premier déploiement en partenariat avec le jeune État du Somaliland.",
     "teaser_greengate_cta": "Découvrir le Partenariat",
     "coverage_badge": "Déploiement multi-pays",
-    "coverage_title": "Une plateforme, plusieurs États côtiers",
-    "coverage_subtitle": "Green Gate se déploie juridiction par juridiction : chaque État garde son barème, sa monnaie et ses recettes, sur sa propre zone maritime.",
+    "coverage_title": "Une plateforme, plusieurs États souverains",
+    "coverage_subtitle": "Green Gate se déploie juridiction par juridiction : chaque État garde son barème, sa monnaie et ses recettes, sur sa zone maritime comme sur son espace aérien.",
     "coverage_status_live": "Opérationnel",
     "coverage_status_pipeline": "En cours",
     "coverage_pipeline_heading": "Déploiements en cours",
@@ -223,7 +223,9 @@
     "coverage_country_ng": "Nigeria",
     "coverage_country_cm": "Cameroun",
     "coverage_country_ga": "Gabon",
-    "coverage_country_mz": "Mozambique"
+    "coverage_country_mz": "Mozambique",
+    "coverage_country_mr": "Mauritanie",
+    "coverage_country_ne": "Niger"
   },
   "Calculator": {
     "title": "Calculateur d'Émissions & Paiement de Compensation",

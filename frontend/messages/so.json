@@ -204,8 +204,8 @@
     "teaser_greengate_desc": "Barnaamij blockchain-salaysan oo kacsan oo u suurtogaliya dowladaha Afrika inay qaataan xal dijital oo loogu talagalay ururinta canshuuraha kaarboonka iyo deegaanka — ugu horrayntii lala shaqeeyay dowladda yar ee Somaliland.",
     "teaser_greengate_cta": "Baro Iskaashiga",
     "coverage_badge": "Hirgelin dalal badan",
-    "coverage_title": "Hal madal, dalal badan oo xeeb leh",
-    "coverage_subtitle": "Green Gate waxaa lagu hirgeliyaa dal kasta si gooni ah: dal kastaa wuxuu hayaa qiimihiisa, lacagtiisa iyo dakhligiisa, gudaha aaggiisa badda.",
+    "coverage_title": "Hal madal, dalal badan oo madax-bannaan",
+    "coverage_subtitle": "Green Gate waxaa lagu hirgeliyaa dal kasta si gooni ah: dal kastaa wuxuu hayaa qiimihiisa, lacagtiisa iyo dakhligiisa, aaggiisa badda iyo hawadiisa.",
     "coverage_status_live": "Shaqaynaya",
     "coverage_status_pipeline": "Socda",
     "coverage_pipeline_heading": "Hirgelinta socota",
@@ -223,7 +223,9 @@
     "coverage_country_ng": "Nayjeeriya",
     "coverage_country_cm": "Kameruun",
     "coverage_country_ga": "Gaboon",
-    "coverage_country_mz": "Mosambik"
+    "coverage_country_mz": "Mosambik",
+    "coverage_country_mr": "Muritaaniya",
+    "coverage_country_ne": "Nayjer"
   },
   "Calculator": {
     "title": "Xisaabiyaha Saadaasha & Lacag-bixinta Deynta",
