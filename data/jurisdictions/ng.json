@@ -1,0 +1,73 @@
+{
+  "key": "ng",
+  "status": "pipeline",
+  "sourceDocument": "Recherche sourcée du 2026-11-07 (bilan 2024 de la Nigerian Ports Authority via presse).",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Lagos (Apapa, Tin Can Island) et Lekki"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Terminaux de Bonny, Forcados et Qua Iboe"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "lng",
+      "gateway": "Bonny (NLNG)"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Onne, Calabar, Warri et Rivers"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Lagos (LOS) et Abuja (ABV)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports nigérians",
+      "value": 4005,
+      "year": 2024,
+      "sourceLabel": "Nigerian Ports Authority — bilan annuel 2024",
+      "sourceUrl": "https://www.legit.ng/business-economy/maritime/1660073-our-1bn-ports-rehabilitation-measures-transforming-nigerias-blue-economy-npa",
+      "note": "En hausse de 5,6 % sur les 3 791 escales de 2023."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports nigérians",
+      "value": 1744972,
+      "year": 2024,
+      "sourceLabel": "Nigerian Ports Authority — bilan annuel 2024",
+      "sourceUrl": "https://www.legit.ng/business-economy/maritime/1660073-our-1bn-ports-rehabilitation-measures-transforming-nigerias-blue-economy-npa",
+      "note": "En hausse de 9,7 % sur un an."
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports nigérians",
+      "value": 103300000,
+      "year": 2024,
+      "sourceLabel": "Nigerian Ports Authority — bilan annuel 2024",
+      "sourceUrl": "https://tribuneonlineng.com/x-raying-dantsohos-scorecard-at-npa-one-year-after/amp",
+      "note": "Vracs liquides 55,6 %, conteneurs 20,9 %."
+    }
+  ],
+  "internal": {
+    "notes": "SECOND GISEMENT DE JAUGE DU LOT, APRÈS LA MAURITANIE. La NPA publie un tonnage brut AGRÉGÉ : 142 660 418 t de « gross registered tonnage » pour 4 005 escales en 2024 (contre 123 660 278 t en 2023, +15,4 %), dont 4 579 742 t de bateaux de servitude, soit 3,2 % seulement. Cela donne 35 621 de jauge moyenne par escale — un profil de navires nettement plus gros que la Mauritanie (12 837). RÉSERVE DE VOCABULAIRE : la NPA écrit « gross registered tonnage », l'ancienne mesure volumétrique d'avant la convention de 1969, qui n'est PAS interchangeable avec la jauge brute (GT) dont dépend notre formule. Beaucoup d'autorités disent GRT en pensant GT ; si c'est du GRT authentique, la conversion n'est pas 1 pour 1 et le chiffrage se déplace. À faire confirmer avant tout usage externe. BIAIS D'AGRÉGATION, MESURÉ : appliquer la formule à la jauge MOYENNE n'équivaut pas à la sommer navire par navire, car GT^0,65 est concave (inégalité de Jensen) — la moyenne surestime. Sur un mélange plausible de même moyenne (80 % à 20 000 GT, 20 % à 98 500 GT), la surestimation est de 6,9 %. L'ordre de grandeur tient donc, mais le chiffre est un plafond. La même réserve s'applique au calcul mauritanien. AÉRIEN NON MESURABLE : les sources divergent d'un facteur quatre selon la méthode de comptage. Nairametrics donne 4,3 M de passagers internationaux et 12,5 M de passagers intérieurs à Lagos, avec 125 000 mouvements intérieurs — or un rapport FAAN donne 140 552 mouvements pour TOUS les aéroports nigérians sur neuf mois, ce qui rend le chiffre de Lagos seul impossible. La NAN, sur données FAAN, donne 3,006 M de passagers à Lagos et 1,07 M à Abuja, soit le quart des précédents. AUCUN chiffre aérien n'est retenu. PÉTROLE ET GNL HORS COMPTAGE PORTUAIRE : les terminaux de brut (Bonny, Forcados, Qua Iboe) et le terminal GNL de Bonny relèvent d'installations pétrolières, et rien n'indique si leurs enlèvements figurent dans les 4 005 escales de la NPA — à élucider, car l'écart potentiel est important. SOURCE PRIMAIRE MANQUANTE : tous ces chiffres viennent du bilan 2024 de la NPA relayé par la presse ; l'Operational Performance Report lui-même n'a pas été récupéré. Les tonnages de fret 2024 divergent légèrement d'une reprise à l'autre (103,3 contre 103,6 Mt).",
+    "potential_usd_illustratif": {
+      "jauge_moyenne_gt": 35621,
+      "usd_par_escale": 14154,
+      "maritime_total_plafond": 56688735,
+      "reserve": "Plafond : calculé sur la jauge moyenne, donc surestimé d'environ 7 % ; et suppose GRT = GT."
+    }
+  }
+}

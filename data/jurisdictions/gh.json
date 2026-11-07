@@ -1,0 +1,114 @@
+{
+  "key": "gh",
+  "status": "pipeline",
+  "sourceDocument": "Recherche sourcée du 2026-11-07 (GPHA via presse, GNA, PIAC).",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Port de Tema"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port de Takoradi"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Champs offshore Jubilee, TEN et Sankofa (FPSO)"
+    },
+    {
+      "mode": "MINING",
+      "activity": "manganese",
+      "gateway": "Nsuta — export par Takoradi"
+    },
+    {
+      "mode": "MINING",
+      "activity": "bauxite",
+      "gateway": "Awaso — export par Takoradi"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Accra (ACC)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port de Tema",
+      "value": 1435,
+      "year": 2023,
+      "sourceLabel": "Ghana Revenue Authority, citant GPHA",
+      "sourceUrl": "https://gra.gov.gh/tema-collection-holds-the-first-quarter-meeting-of-the-joint-customs-consultative-meeting-jccc-30th-april-2024/",
+      "note": "En léger recul sur les 1 471 escales de 2022."
+    },
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port de Takoradi",
+      "value": 770,
+      "year": 2024,
+      "sourceLabel": "Ghana News Agency — direction du port de Takoradi",
+      "sourceUrl": "https://gna.org.gh/2025/12/2025-has-been-a-strong-year-for-takoradi-port-director/",
+      "note": "Dont 253 escales de navires de servitude offshore."
+    },
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port de Takoradi",
+      "value": 867,
+      "year": 2025,
+      "period": "janv.–nov. 2025",
+      "sourceLabel": "Ghana News Agency — direction du port de Takoradi",
+      "sourceUrl": "https://gna.org.gh/2025/12/2025-has-been-a-strong-year-for-takoradi-port-director/",
+      "note": "Onze mois de 2025 dépassent déjà l’année 2024 entière."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Port de Tema",
+      "value": 1668688,
+      "year": 2024,
+      "sourceLabel": "GPHA, via Citi Newsroom",
+      "sourceUrl": "https://www.citinewsroom.com/2025/09/ghanas-container-traffic-hits-record-high-driven-by-tema-port-gpha/",
+      "note": "Tema concentre 98 % du conteneur ghanéen."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Port de Takoradi",
+      "value": 32558,
+      "year": 2024,
+      "sourceLabel": "GPHA, via Citi Newsroom",
+      "sourceUrl": "https://www.citinewsroom.com/2025/09/ghanas-container-traffic-hits-record-high-driven-by-tema-port-gpha/",
+      "note": null
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Port de Takoradi",
+      "value": 10300000,
+      "year": 2025,
+      "period": "janv.–nov. 2025",
+      "sourceLabel": "Ghana News Agency — direction du port de Takoradi",
+      "sourceUrl": "https://gna.org.gh/2025/12/2025-has-been-a-strong-year-for-takoradi-port-director/",
+      "note": "Contre 9,4 Mt sur les onze mois de 2024."
+    },
+    {
+      "metric": "aircraft_movements",
+      "mode": "AIR",
+      "gateway": "Accra (ACC)",
+      "value": 43858,
+      "year": 2023,
+      "sourceLabel": "Times Aerospace",
+      "sourceUrl": "https://timesaerospace.aero/features/airports/its-ghana-be-exciting",
+      "note": "Total arrivées + départs, soit environ 21 900 arrivées."
+    }
+  ],
+  "internal": {
+    "notes": "PIÈGE DES CHARGEMENTS PÉTROLIERS. Le rapport annuel 2024 du PIAC donne 6 chargements Jubilee et 2 chargements Sankofa — ce sont les enlèvements de la PART DE L'ÉTAT ghanéen, PAS le nombre de pétroliers accostés aux FPSO. Tous les partenaires enlèvent leur part séparément : le nombre réel d'escales pétrolières est bien plus élevé et n'est publié nulle part. Ne JAMAIS présenter 6+2 comme un comptage de navires. Production 2024 : 48 240 010 barils (Jubilee 66 %, Sankofa 20 %, TEN 14 %), en baisse pour la 5e année consécutive. AUCUNE JAUGE PUBLIÉE : ni GPHA ni les rapports de presse ne donnent de tonnage brut, donc aucun chiffrage de recettes n'est calculable pour le Ghana — même verrou que pour neuf des onze autres pays. AÉRIEN FAIBLEMENT SOURCÉ : les mouvements 2024 d'Accra circulent à 45 262 dans des tables secondaires attribuées à GACL, mais le trafic passagers 2024 est donné à 3 401 214 par ces mêmes tables et à « 3,2 millions » par les responsables de GACL — un écart de 200 000 non réconcilié. On ne retient donc que le chiffre 2023 de Times Aerospace, qui l'énonce directement. À noter : l'aéroport a été REBAPTISÉ Accra International Airport le 23/02/2026 ; le nom « Kotoka » est désormais obsolète. DIVERGENCE TAKORADI : la direction du port donne 770 escales pour 2024, alors qu'une analyse tierce décrit une baisse de 918 à 861 escales entre 2021 et 2023 — périmètres probablement différents (avec ou sans servitude offshore), non comparables. ESCALES DE TEMA NON ACTUALISÉES : le dernier comptage trouvé est 2023 (1 435). GPHA a publié un fascicule « Statistics for the Port of Tema and Takoradi 2014-2024 » dont le contenu n'a pas pu être récupéré — à demander pour disposer d'une série primaire propre."
+  }
+}

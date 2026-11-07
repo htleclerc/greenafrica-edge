@@ -1,0 +1,52 @@
+{
+  "key": "somaliland",
+  "status": "live",
+  "sourceDocument": "Greengate/Claude outputs/00_BILAN_AU_31AOUT2026_21sept2026.md",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port de Berbera"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Hargeisa Egal (HGA) et Berbera (BBO)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "value": 391,
+      "year": 2026,
+      "period": "1 mai → 31 août 2026",
+      "sourceLabel": "Green Gate — relevés VesselFinder",
+      "sourceUrl": null,
+      "note": "346 escales du 1er mai au 3 août (export web) + 45 du 4 au 31 août (API, couverture ≈ 47 % : plancher).",
+      "mode": "MARITIME",
+      "gateway": "Port de Berbera"
+    },
+    {
+      "metric": "commercial_flights",
+      "value": 688,
+      "year": 2026,
+      "period": "1 juin → 31 août 2026",
+      "sourceLabel": "Green Gate — méthode RFI",
+      "sourceUrl": null,
+      "note": "Dont 192 vols issus du planning type et non de relevés de mouvements : recalage SCAAA/HGA/BBO à faire.",
+      "mode": "AIR",
+      "gateway": "Hargeisa (HGA) et Berbera (BBO)"
+    }
+  ],
+  "internal": {
+    "assessed_usd": {
+      "total": 1985196.8,
+      "maritime_series1": 1316124.0,
+      "maritime_august": 173492.8,
+      "aviation_rfi": 495580.0,
+      "collected": 0
+    },
+    "legal_basis": "Décret MOE&CC/MWI/36/2026 du 31/03/2026, art. 3.3. Concession exclusive 10 ans de SOLIDE TECHNOLOGY LIMITED. Tarif 40 USD/tCO₂.",
+    "notes": "LIQUIDE N'EST PAS ENCAISSE. Au 21/09/2026 : 1 985 196,80 USD facturés, 0 encaissé. Ne jamais présenter ce montant comme une recette perçue, ni sur le site, ni dans une note pays. La preuve de concept porte sur la chaîne (donnée → calcul → notification → paiement), pas sur un taux de recouvrement."
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "key": "dj",
+  "status": "live",
+  "sourceDocument": "scratchpad/research/dj.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Doraleh Container Terminal"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port de Doraleh — corridor éthiopien"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Djibouti-Ambouli (JIB)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports de Djibouti",
+      "value": 20827982,
+      "year": 2024,
+      "sourceLabel": "Banque Centrale de Djibouti — Rapport annuel 2024",
+      "sourceUrl": "https://banque-centrale.dj/wp-content/uploads/2025/09/Rapport-Annuel_-V.Definitive.pdf",
+      "note": "17 978 588 t en 2023. Dont 14 582 423 t de transit éthiopien."
+    },
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Doraleh Container Terminal",
+      "value": 653,
+      "year": 2024,
+      "sourceLabel": "SGTD — Société de Gestion du Terminal à conteneurs de Doraleh",
+      "sourceUrl": "https://www.transportevents.com/presentations/djibouti26/SGTD.pdf",
+      "note": "422 en 2022, 556 en 2023. Terminal à conteneurs seul : aucun comptage à l’échelle du port n’est publié."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports de Djibouti",
+      "value": 1293000,
+      "year": 2024,
+      "sourceLabel": "CNUCED, via la Banque mondiale",
+      "sourceUrl": null,
+      "note": null
+    },
+    {
+      "metric": "passengers",
+      "mode": "AIR",
+      "gateway": "Djibouti-Ambouli (JIB)",
+      "value": 278502,
+      "year": 2024,
+      "sourceLabel": "Banque Centrale de Djibouti — Rapport annuel 2024",
+      "sourceUrl": "https://banque-centrale.dj/wp-content/uploads/2025/09/Rapport-Annuel_-V.Definitive.pdf",
+      "note": null
+    }
+  ],
+  "internal": {
+    "notes": "ALERTE JURIDIQUE MAJEURE : Djibouti exploite DEJA une contribution carbone souveraine sur exactement cette assiette — navires en escale et mouvements d'aeronefs — par DECRET PRESIDENTIEL n2023-074/PRE du 13 mars 2023 (JO n5 du 15/03/2023). Article 1 : creation de l'Initiative Souveraine Carbone. Article 2 : redevables = les entites des secteurs aeriens et maritimes operant ou transitant en Republique de Djibouti AINSI QUE les forces armees et organisations institutionnelles etrangeres implantees. Article 5 : l'Agence Souveraine Carbone, sous la Presidence, a l'autorite EXCLUSIVE pour fixer les modalites et encaisser. Parametres (Sovereign Carbon Registry Rules v2, 08.2024) : 17 USD/tCO2e, attribution territoriale 50 %, PLAFOND 7 500 USD par mouvement de navire, aerien en vigueur au 01/09/2024, maritime au 01/01/2025. QUATRE COLLISIONS avec Green Gate : le tarif (17 contre 40) ; le plafond (un Capesize de 90 000 GT ressort a ~26 000 USD, soit 3,5x le plafond) ; la methode (facteurs OMI par type de navire et distance, la jauge ne servant QUE pour les navires militaires, de 0,50 a 5,50 USD/GT) ; les exonerations (navires sous pavillon djiboutien, tous les aeronefs d'Air Djibouti). Et les forces armees etrangeres sont redevables PAR DECRET. A ARBITRER D'URGENCE : le site annonce Djibouti comme juridiction Green Gate OPERATIONNELLE. AUTRES NOTES : aucun comptage d'escales a l'echelle du port, seulement le terminal a conteneurs. Aucun chiffre annuel de mouvements d'avions (les indicateurs aeriens Banque mondiale/OACI sont vides sur 1960-2025) ; les vols militaires representaient environ 75 % de l'activite de l'aeroport en 2017, donc la base commerciale est minoritaire. Minier quasi nul (USGS : pas un producteur significatif ; sel 500 t/an). Transit ethiopien 14 582 423 t et transbordement 4 579 079 t en 2024."
+  }
+}
