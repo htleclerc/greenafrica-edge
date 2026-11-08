@@ -173,14 +173,22 @@ export function profileFor(key: string): JurisdictionProfile | undefined {
 export const JURISDICTION_PROFILES = PROFILES;
 `;
 
-    return (header + types + body).replace(/\r?\n/g, '\r\n');
+    // LF, parce que c'est ce que git stocke pour ce fichier (`ls-files --eol` : i/lf).
+    // Forcer CRLF ne tenait que sous Windows, ou autocrlf reconvertit a la sortie du
+    // depot ; sur un runner Linux le fichier arrive en LF et le controle ci-dessous
+    // criait au fichier perime a chaque fois.
+    return (header + types + body).replace(/\r\n/g, '\n');
 }
 
 const generated = render(readProfiles());
 
+/** Les fins de ligne du fichier pose sur le disque dependent de la plateforme et du
+ *  parametrage git du poste : elles ne disent rien du contenu. On compare le reste. */
+const sansFinsDeLigne = (texte) => texte.replace(/\r\n/g, '\n');
+
 if (process.argv.includes('--check')) {
     const current = readFileSync(OUT, 'utf8');
-    if (current !== generated) {
+    if (sansFinsDeLigne(current) !== sansFinsDeLigne(generated)) {
         fail('profiles.generated.ts est périmé. Lancez : node scripts/build-jurisdiction-profiles.mjs');
     }
     console.log('[build-jurisdiction-profiles] à jour.');
