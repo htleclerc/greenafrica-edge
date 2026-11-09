@@ -73,8 +73,12 @@ export const COVERAGE_COUNTRIES: readonly CoverageCountry[] = [
     { key: 'dj', flag: '/flags/dj.svg', ratio: R_4_3, modes: MARITIME, slug: 'djibouti', status: 'live' },
     { key: 'ao', flag: '/flags/ao.svg', ratio: R_4_3, modes: MARITIME, slug: 'angola', status: 'pipeline' },
     // Guinée : la bauxite et l'alumine partent par minéralier — l'extraction
-    // et l'export maritime relèvent du même dossier.
-    { key: 'gn', flag: '/flags/gn.svg', ratio: R_4_3, modes: ['MARITIME', 'MINING'], slug: 'guinea', status: 'pipeline' },
+    // et l'export maritime relèvent du même dossier. L'aérien figure ici parce
+    // que la note conceptuelle remise au gouvernement guinéen couvre bien « la
+    // contribution carbone aérienne et maritime » et chiffre une ligne aérienne
+    // sur Conakry : annoncer un périmètre plus étroit que le document officiel
+    // ferait se contredire les deux.
+    { key: 'gn', flag: '/flags/gn.svg', ratio: R_4_3, modes: ['MARITIME', 'AIR', 'MINING'], slug: 'guinea', status: 'pipeline' },
     { key: 'sn', flag: '/flags/sn.svg', ratio: R_4_3, modes: MARITIME, slug: 'senegal', status: 'pipeline' },
     { key: 'ci', flag: '/flags/ci.svg', ratio: R_4_3, modes: MARITIME, slug: 'cote-divoire', status: 'pipeline' },
     { key: 'gh', flag: '/flags/gh.svg', ratio: R_4_3, modes: MARITIME, slug: 'ghana', status: 'pipeline' },

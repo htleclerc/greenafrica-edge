@@ -1,0 +1,77 @@
+{
+  "key": "cm",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/cm.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Port autonome de Kribi (Lolabé)"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port autonome de Douala-Bonabéri"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Terminal de Limboh, Limbe"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "lng",
+      "gateway": "Hilli Episeyo (FLNG), Kribi"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Douala (DLA) et Yaoundé-Nsimalen (NSI)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port autonome de Kribi",
+      "value": 559,
+      "year": 2025,
+      "sourceLabel": "Port autonome de Kribi, relayé par EcoMatin",
+      "sourceUrl": "https://ecomatin.net/cameroun-le-port-de-kribi-genere-335-milliards-fcfa-de-recettes-douanieres-en-2025",
+      "note": "412 escales en 2024 ; 3 471 cumulées depuis 2018."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Port autonome de Kribi",
+      "value": 555398,
+      "year": 2025,
+      "sourceLabel": "Port autonome de Kribi, relayé par News du Cameroun",
+      "sourceUrl": "https://www.newsducamer.com/port-de-kribi-le-trafic-de-conteneurs-bondit-de-3089-entre-2018-et-2025/",
+      "note": "304 546 EVP en 2024 : le trafic a presque doublé en un an."
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports camerounais",
+      "value": 26930000,
+      "year": 2024,
+      "sourceLabel": "Investir au Cameroun, d’après les ports autonomes",
+      "sourceUrl": "https://www.investiraucameroun.com/gestion-publique/1311-22739-port-de-douala-12-9-millions-de-tonnes-traitees-en-2024-malgre-un-leger-recul-du-trafic-national",
+      "note": "Douala 12,92 Mt ; Kribi 10,84 Mt sur le périmètre national."
+    },
+    {
+      "metric": "aircraft_movements",
+      "mode": "AIR",
+      "gateway": "Douala (DLA)",
+      "value": 18436,
+      "year": 2024,
+      "sourceLabel": "Aéroports du Cameroun (ADC)",
+      "sourceUrl": "https://www.businessincameroon.com/transport/0909-14983-cameroon-air-traffic-hits-1-77-million-passengers-in-2024",
+      "note": "Total arrivées + départs, définition confirmée par la CCAA."
+    }
+  ],
+  "internal": {
+    "notes": "Le minier metallique n'est PAS une realite d'export : le fer de Mbalam-Nabeba n'avait toujours pas embarque a la derniere publication. Hydrocarbures reels : brut 2,56 Mt et GNL 1,38 Mt exportes en 2025 (MINEPAT / Douanes, bulletin n10 de janvier 2026). Passagers : deux sources credibles divergent, ADC 1,77 M contre CCAA 2,15 M pour 2024 — non publie faute d'arbitrage. Aucune distribution de jauge brute publiee par PAK ni PAD, bien que PAKAZURE publie des temps d'attente PAR TYPE de navire : la donnee existe en interne, il faut la demander."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "key": "ao",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/ao.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Porto de Luanda"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Terminaux offshore — chargement en tandem sur FPSO"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "lng",
+      "gateway": "Angola LNG, Soyo"
+    },
+    {
+      "mode": "MINING",
+      "activity": "copper_cobalt_transit",
+      "gateway": "Lobito — terminus du corridor ferroviaire RDC/Zambie"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Porto de Luanda",
+      "value": 4739,
+      "year": 2024,
+      "sourceLabel": "Porto de Luanda — Movimento de Navios",
+      "sourceUrl": "https://www.portoluanda.co.ao/wp-content/uploads/2025/04/Movimentos_Navios_Anual.pdf",
+      "note": "Dont 3 967 navires de servitude pétrolière offshore, 439 porte-conteneurs et 205 cargos conventionnels."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Porto de Luanda",
+      "value": 686485,
+      "year": 2024,
+      "sourceLabel": "Porto de Luanda — Mercadorias Contentorizadas",
+      "sourceUrl": "https://www.portoluanda.co.ao/wp-content/uploads/2025/04/Movimentos_Mercadorias_Contentorizadas_Anual.pdf",
+      "note": "360 360 pleins et 326 125 vides."
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Porto de Luanda",
+      "value": 16637827,
+      "year": 2024,
+      "sourceLabel": "Porto de Luanda — Movimento de Mercadorias",
+      "sourceUrl": "https://www.portoluanda.co.ao/wp-content/uploads/2025/04/Movimentos_Mercadorias_Anual.pdf",
+      "note": null
+    }
+  ],
+  "internal": {
+    "notes": "PIEGE DE CALCUL : 84 % des 4 739 escales de Luanda sont des navires de servitude petroliere offshore, de faible jauge. Les inclure ou non deplace le modele de recettes d'un ordre de grandeur. Le corridor de Lobito, tres mediatise, ne pesait que 125 000 t en 2024 : ne pas le surponderer. Les diamants (15,2 Mcarats en 2025, 3e rang mondial) partent par avion. Brut 357,10 M barils et GNL 5,8 Mt exportes en 2025 (ministere des Ressources minerales, du Petrole et du Gaz) ; 28 a 35 cargaisons de brut par mois (programme de chargement Reuters). Mouvements d'avions non publies depuis 2016, et les totaux 2016 sont domines par les rotations d'helicopteres petroliers (Cabinda 12 270, Soyo 7 760)."
+  }
+}

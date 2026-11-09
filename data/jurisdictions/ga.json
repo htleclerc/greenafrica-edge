@@ -1,0 +1,83 @@
+{
+  "key": "ga",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/ga.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Owendo — terminal à conteneurs"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Owendo — port commercial"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Port-Gentil et Cap Lopez"
+    },
+    {
+      "mode": "MINING",
+      "activity": "manganese",
+      "gateway": "Owendo — terminal minéralier Comilog"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports gabonais",
+      "value": 762,
+      "year": 2017,
+      "sourceLabel": "OPRAG, relayé par Financial Afrik",
+      "sourceUrl": "https://www.financialafrik.com/2018/06/24/762-navires-de-commerce-ont-accoste-au-gabon-en-2017",
+      "note": "Dernier comptage national publié. Les pages statistiques de l’OPRAG ne sont plus accessibles."
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Ensemble des ports gabonais",
+      "value": 180878,
+      "year": 2024,
+      "sourceLabel": "CNUCED, via la Banque mondiale",
+      "sourceUrl": null,
+      "note": null
+    },
+    {
+      "metric": "export_tonnes",
+      "mode": "MINING",
+      "subject": "manganese",
+      "gateway": "Owendo",
+      "value": 9442000,
+      "year": 2024,
+      "sourceLabel": "Direction générale de l’Économie et de la politique fiscale (DGEPF)",
+      "sourceUrl": null,
+      "note": "2e producteur mondial en teneur métal selon l’USGS. Environ 9,1 Mt en 2025."
+    },
+    {
+      "metric": "aircraft_movements",
+      "mode": "AIR",
+      "gateway": "Ensemble des aéroports gabonais",
+      "value": 16790,
+      "year": 2024,
+      "sourceLabel": "DGEPF, relayé par Gabon Media Time",
+      "sourceUrl": "https://gabonmediatime.com/gabon-lactivite-du-transport-aerien-en-hausse-de-41-a-fin-2025/",
+      "note": null
+    },
+    {
+      "metric": "passengers",
+      "mode": "AIR",
+      "gateway": "Ensemble des aéroports gabonais",
+      "value": 844419,
+      "year": 2024,
+      "sourceLabel": "DGEPF, relayé par Gabon Media Time",
+      "sourceUrl": "https://gabonmediatime.com/gabon-lactivite-du-transport-aerien-en-hausse-de-41-a-fin-2025/",
+      "note": "Libreville environ 750 000, Port-Gentil environ 375 000."
+    }
+  ],
+  "internal": {
+    "notes": "POSITIONNEMENT : le Gabon exploite deja un dispositif carbone souverain — un programme forestier ART TREES eligible CORSIA sur ses 23,5 M ha, environ 6 M de credits vendus a l'allemand SEFE, 150 M USD de la CAFI. Une contribution Green Gate doit se placer A COTE de cette architecture, pas par-dessus. DONNEE FAIBLE : le seul comptage national d'escales date de 2017. Tirants d'eau (12,5 m au mineralier Comilog, 10 m au conteneur, dragable a 12) : Panamax, pas Capesize — le tarif moyen a l'escale sera sensiblement plus bas qu'une hypothese Capesize."
+  }
+}

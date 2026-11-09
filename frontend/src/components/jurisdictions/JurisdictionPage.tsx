@@ -8,6 +8,9 @@ import { Footer } from '@/components/layout/Footer';
 import type { CoverageCountry } from '@/components/landing/coverage';
 import { actionsFor } from '@/components/jurisdictions/actions';
 import { Flag } from '@/components/jurisdictions/Flag';
+import { profileFor } from '@/components/jurisdictions/profiles.generated';
+import { JurisdictionScopes } from '@/components/jurisdictions/JurisdictionScopes';
+import { JurisdictionFigures } from '@/components/jurisdictions/JurisdictionFigures';
 
 export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountry }>) {
     const t = useTranslations('Jurisdiction');
@@ -16,6 +19,10 @@ export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountr
     const name = l(`coverage_country_${country.key}`);
     const modes = country.modes.map((m) => l(`coverage_mode_${m.toLowerCase()}`)).join(' + ');
     const isLive = country.status === 'live';
+    // Une juridiction peut être annoncée avant d'être documentée : le profil
+    // est donc facultatif, et son absence retire les sections plutôt que de
+    // les afficher vides.
+    const profile = profileFor(country.key);
 
     return (
         <main className="min-h-screen" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
@@ -70,6 +77,13 @@ export function JurisdictionPage({ country }: Readonly<{ country: CoverageCountr
                     </p>
                 </div>
             </section>
+
+            {profile && (
+                <>
+                    <JurisdictionScopes scopes={profile.scopes} announcedModes={country.modes} isLive={isLive} />
+                    <JurisdictionFigures figures={profile.figures} announcedModes={country.modes} />
+                </>
+            )}
 
             <section className="py-12 sm:py-16 px-3 sm:px-6" style={{ backgroundColor: 'var(--ais-page-bg)' }}>
                 <div className="max-w-4xl mx-auto">

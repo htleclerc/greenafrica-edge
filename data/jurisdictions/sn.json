@@ -1,0 +1,62 @@
+{
+  "key": "sn",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/sn.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Port autonome de Dakar"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "crude_oil",
+      "gateway": "Sangomar — chargement au large"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "lng",
+      "gateway": "Grand Tortue Ahmeyim (GTA) — FLNG au large"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Aéroport international Blaise Diagne (DSS)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "aircraft_arrivals",
+      "mode": "AIR",
+      "gateway": "Aéroport international Blaise Diagne",
+      "value": 11720,
+      "year": 2024,
+      "sourceLabel": "ANACIM — Bulletin statistique du trafic aérien 2024",
+      "sourceUrl": "https://www.anacim.sn/IMG/pdf/bulletin_statistiques_trafic_aerien_2024.pdf",
+      "note": "Arrivées commerciales seules — le seul comptage publié en arrivées, et non en mouvements totaux. 12 415 en 2023."
+    },
+    {
+      "metric": "passengers",
+      "mode": "AIR",
+      "gateway": "Aéroport international Blaise Diagne",
+      "value": 3050154,
+      "year": 2024,
+      "sourceLabel": "ANACIM — Bulletin statistique du trafic aérien 2024",
+      "sourceUrl": "https://www.anacim.sn/IMG/pdf/bulletin_statistiques_trafic_aerien_2024.pdf",
+      "note": null
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Port autonome de Dakar",
+      "value": 881289,
+      "year": 2024,
+      "sourceLabel": "Port autonome de Dakar",
+      "sourceUrl": null,
+      "note": "908 529 EVP en 2025."
+    }
+  ],
+  "internal": {
+    "notes": "PRECIEUX : le Senegal est le seul pays du lot a publier un comptage d'ARRIVEES (11 720 en 2024, ANACIM tableau 6), et non des mouvements totaux. C'est exactement l'assiette du bareme aerien ; partout ailleurs il faut diviser par deux un total arrivees+departs. Escales : le PAD annonce 'plus de 3 000' pour 2024 contre 2 900 en 2023 — un arrondi declaratif, pas un comptage, donc non publie. Tonnage de Dakar en litige ouvert : ANSD 19,14 Mt (-14,7 %) contre PAD 24 Mt (+8 %), le PAD ayant publiquement conteste l'ANSD qui a maintenu son chiffre. Premiere cargaison de GNL du GTA expediee le 17/04/2025, en transfert de navire a navire a 10 km au large. Le Senegal n'est PAS participant a CORSIA (liste ICAO 7e ed., juillet 2026) — negatif sourcé, verifie directement."
+  }
+}

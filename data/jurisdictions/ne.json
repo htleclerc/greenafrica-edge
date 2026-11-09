@@ -1,0 +1,38 @@
+{
+  "key": "ne",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/ne.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Niamey Diori Hamani (NIM)"
+    },
+    {
+      "mode": "MINING",
+      "activity": "uranium",
+      "gateway": "Arlit — SOMAÏR"
+    },
+    {
+      "mode": "MINING",
+      "activity": "crude_oil",
+      "gateway": "Pipeline Niger-Bénin, vers le terminal de Sèmè-Kpodji (Bénin)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "export_tonnes",
+      "mode": "MINING",
+      "subject": "uranium",
+      "gateway": "Arlit — SOMAÏR",
+      "value": 959,
+      "year": 2024,
+      "sourceLabel": "World Nuclear Association",
+      "sourceUrl": null,
+      "note": "1 130 t en 2023, 2 020 t en 2022. SOMAÏR nationalisée en juin 2025."
+    }
+  ],
+  "internal": {
+    "notes": "PROBLEME DE CONCEPTION, pas de donnees. Le Niger est enclave : aucun port, donc aucune escale. L'uranium sortait par Cotonou — route fermee depuis la fermeture de la frontiere Niger-Benin en juillet 2023, repli sur Lome — et le brut part du terminal offshore de Seme-Kpodji au BENIN, au bout d'un pipeline de 1 950 km (plus de 14 millions de barils exportes selon le ministre nigerien du Petrole, fevrier 2025). Tout navire emportant du fret nigerien accoste chez le Benin ou le Togo, sous LEUR juridiction. Le Niger ne peut donc etre dans le perimetre que si (a) l'aerien est facture sur les arrivees commerciales a Niamey, et (b) le volet extractif est decouple de toute escale — facture au franchissement de frontiere, a la mine ou au point de comptage du pipeline. Le point (b) cree un RISQUE DE DOUBLE IMPOSITION si le Benin ou le Togo taxent un jour l'escale : a soumettre au conseil AVANT tout document nigerien revendiquant une base portuaire. AERIEN NON MESURABLE : aucun chiffre de mouvements ni de passagers publie depuis 2019 ; departs du transporteur national tombes de 468 (2022) a 165 (2023), passagers de 16 149 a 5 775 ; aeroport de Niamey attaque trois fois en 2026 ; environ 1 000 t de yellowcake bloquees sur camions a Niamey depuis novembre 2024. Une 3e voie existe — le SURVOL, Niamey etant l'une des six FIR de l'ASECNA — mais elle est hors du modele actuel fonde sur les arrivees, et aucun comptage n'a ete trouve."
+  }
+}
