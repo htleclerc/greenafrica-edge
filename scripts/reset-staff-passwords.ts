@@ -14,10 +14,14 @@
 //
 // CE QUE FAIT CHAQUE COMPTE TRAITE
 //   1. un mot de passe aleatoire est tire et pose par l'API d'administration ;
-//   2. `profiles.password_set_at` repasse a NULL — la personne n'a pas choisi
+//   2. TOUTES les sessions ouvertes du compte sont fermees (mig 166) — poser un
+//      mot de passe ne les ferme pas, GoTrue garde leurs jetons de
+//      rafraichissement valables, et une session deja ouverte survivrait donc
+//      au changement ;
+//   3. `profiles.password_set_at` repasse a NULL — la personne n'a pas choisi
 //      ce mot de passe, et l'ecran de reglages ne lui reclamera donc pas
 //      d'ancien pour le remplacer (mig 156) ;
-//   3. le mot de passe part par courriel, avec la consigne de le changer.
+//   4. le mot de passe part par courriel, avec la consigne de le changer.
 //
 // ⚠ LE MOT DE PASSE VOYAGE EN CLAIR. Il restera dans la boite de reception,
 // ses sauvegardes et, selon le relais, ses journaux. C'est un choix assume :
@@ -86,6 +90,7 @@ async function main() {
     log(`${staff.length} compte(s) de personnel a traiter${ONLY ? ` (filtre : ${ONLY})` : ''}`);
 
     let done = 0;
+    let sessionFailures = 0;
     for (const person of staff) {
         const password = generatePassword();
         log(`  ${person.email} (${person.role}) → ${maskPassword(password)}`);
@@ -93,6 +98,24 @@ async function main() {
 
         const { error: pwErr } = await db.auth.admin.updateUserById(person.id, { password });
         if (pwErr) { console.error(`  ❌ ${person.email} : ${pwErr.message}`); continue; }
+
+        // Le mot de passe a change, mais les sessions deja ouvertes, non : leurs
+        // jetons de rafraichissement restent valables. Sur un compte repris par
+        // un tiers — le cas meme ou on remet un mot de passe — ne pas les fermer
+        // laisserait l'intrus dedans alors qu'on croit avoir repris la main.
+        // L'ordre compte : poser le mot de passe D'ABORD, fermer ENSUITE, sinon
+        // l'ancien mot de passe sert a rouvrir une session dans l'intervalle.
+        const { data: closed, error: sessErr } = await db.rpc('revoke_all_user_sessions', {
+            p_user_id: person.id,
+        });
+        if (sessErr) {
+            sessionFailures += 1;
+            console.error(`  ❌ ${person.email} : sessions NON fermees (${sessErr.message})`);
+            console.error(`     Une session ouverte ailleurs reste valable. A fermer a la main`);
+            console.error(`     avant de considerer le compte repris.`);
+        } else if (typeof closed === 'number' && closed > 0) {
+            log(`     ${closed} session(s) fermee(s)`);
+        }
 
         // La personne n'a pas choisi ce mot de passe : l'ecran de reglages ne
         // doit pas lui reclamer d'ancien pour le remplacer.
@@ -123,6 +146,13 @@ async function main() {
     console.log('');
     log(`traites : ${done}/${staff.length}`);
     if (!EXECUTE) log('SIMULATION — relancer avec --execute pour appliquer');
+
+    // Un compte dont les sessions n'ont pas ete fermees n'est pas repris : on
+    // sort en erreur pour que l'echec ne se perde pas dans le journal.
+    if (sessionFailures > 0) {
+        console.error(`${sessionFailures} compte(s) gardent des sessions ouvertes — voir ci-dessus.`);
+        process.exitCode = 1;
+    }
 }
 
 main().catch((e) => {
