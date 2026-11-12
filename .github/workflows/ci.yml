@@ -138,6 +138,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # l'action liste les commits de la PR par l'API : sans ca, 403 sur les PR
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
