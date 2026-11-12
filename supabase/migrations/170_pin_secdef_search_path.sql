@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 164: pin search_path on every SECURITY DEFINER function in public
+-- Migration 170: pin search_path on every SECURITY DEFINER function in public
 -- that isn't already pinned. Unpinned SECURITY DEFINER functions let a caller
 -- shadow unqualified references via a schema earlier in the search_path — a
 -- privilege-escalation vector. ALTER FUNCTION only sets the config; it does not

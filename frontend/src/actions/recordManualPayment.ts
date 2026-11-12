@@ -59,7 +59,7 @@ export async function recordManualPayment(input: RecordManualPaymentInput) {
     // payments.jurisdiction_id has a fixed literal DEFAULT (Somaliland, mig 072) and
     // no trigger derives it — this client isn't a createTenantClient proxy, so nothing
     // stamps it automatically. Take it from the target shipowner explicitly: this is
-    // also what mig 162's payments_admin_insert RLS checks against
+    // also what mig 168's payments_admin_insert RLS checks against
     // (current_jurisdiction_ids()), so a cross-jurisdiction insert is correctly rejected.
     const { data: shipownerRow, error: shipownerErr } = await supabase
         .from('shipowners')

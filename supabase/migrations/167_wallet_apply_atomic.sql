@@ -1,9 +1,9 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 165: stamp the shipowner's real jurisdiction on wallet-applied
--- payments + ledger. apply_wallet_credit (mig 161) omitted jurisdiction_id, so
--- both rows fell back to the Somaliland DEFAULT (mig 072) — wrong for Djibouti
--- shipowners, corrupting settlement attribution. Same signature/return as 161;
--- the TS caller is unchanged.
+-- Migration 167: atomic wallet application (fixes double-settlement race)
+-- Replaces the 3 separate PostgREST calls in walletApplyService with one
+-- transaction that locks the wallet FIRST, so concurrent applications serialize
+-- and a second application against an insufficient balance can never leave a
+-- CONFIRMED payment / PAID transaction behind.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.apply_wallet_credit(
@@ -15,18 +15,10 @@ CREATE OR REPLACE FUNCTION public.apply_wallet_credit(
 DECLARE
   v_wallet_id UUID;
   v_balance   BIGINT;
-  v_jid       UUID;
   v_payment   UUID;
 BEGIN
-  -- Real jurisdiction of the shipowner (not the Somaliland column default).
-  SELECT jurisdiction_id INTO v_jid
-    FROM public.shipowners WHERE id = p_shipowner_id;
-  IF v_jid IS NULL THEN
-    RAISE EXCEPTION 'shipowner not found or has no jurisdiction: %', p_shipowner_id
-      USING ERRCODE = 'no_data_found';
-  END IF;
-
-  -- Lock the wallet row FIRST — serializes concurrent applications (the mig-161 fix).
+  -- Lock the wallet row FIRST. This is the whole fix: two concurrent calls
+  -- serialize here, so the second sees the already-debited balance.
   SELECT id, balance_usd_minor INTO v_wallet_id, v_balance
     FROM public.wallets WHERE shipowner_id = p_shipowner_id FOR UPDATE;
   IF NOT FOUND THEN
@@ -38,25 +30,30 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
 
-  INSERT INTO public.wallet_ledger (wallet_id, kind, amount_signed_usd_minor, created_by, jurisdiction_id)
-    VALUES (v_wallet_id, 'PROFORMA_APPLY', -p_amount_minor, p_actor_user_id, v_jid);
+  -- Ledger debit (its AFTER-INSERT trigger re-checks non-negative under the lock).
+  INSERT INTO public.wallet_ledger (wallet_id, kind, amount_signed_usd_minor, created_by)
+    VALUES (v_wallet_id, 'PROFORMA_APPLY', -p_amount_minor, p_actor_user_id);
 
+  -- Payment row, already CONFIRMED (money is in the wallet). The mig-051 trigger
+  -- recomputes transaction status in the same transaction.
   INSERT INTO public.payments (
     transaction_id, shipowner_id, declared_by, amount_minor, currency,
-    amount_usd_minor, rail, status, confirmed_by, confirmed_at, rail_details, jurisdiction_id
+    amount_usd_minor, rail, status, confirmed_by, confirmed_at, rail_details
   ) VALUES (
     p_txn_id, p_shipowner_id, p_actor_user_id, p_amount_minor, 'USD',
     p_amount_minor, 'WALLET', 'CONFIRMED', p_actor_user_id, NOW(),
-    jsonb_build_object('applied_by_owner', true), v_jid
+    jsonb_build_object('applied_by_owner', true)
   ) RETURNING id INTO v_payment;
 
   RETURN QUERY SELECT v_payment, v_wallet_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
+-- SECURITY DEFINER + PostgREST: without this, an authenticated user could call
+-- the function directly and apply credit to arbitrary transactions. Only the
+-- service-role (used by the server action after it verifies ownership) may call it.
 REVOKE ALL ON FUNCTION public.apply_wallet_credit(UUID, UUID, UUID, BIGINT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.apply_wallet_credit(UUID, UUID, UUID, BIGINT) TO service_role;
 
 -- DOWN:
--- Restore the migration-161 body (without jurisdiction_id stamping). See
--- supabase/migrations/161_wallet_apply_atomic.sql for the prior definition.
+-- DROP FUNCTION public.apply_wallet_credit(UUID, UUID, UUID, BIGINT);

@@ -29,7 +29,7 @@ export interface ApplyWalletCreditResult {
  * poser exactement la même écriture qu'une application intégrale.
  *
  * Le débit et l'insertion du paiement se font atomiquement dans la RPC SQL
- * `apply_wallet_credit` (mig 161) : elle verrouille d'abord la ligne du
+ * `apply_wallet_credit` (mig 167) : elle verrouille d'abord la ligne du
  * portefeuille (`FOR UPDATE`), ce qui sérialise les applications concurrentes
  * et empêche la race de double règlement. Le trigger AFTER INSERT de
  * `payments` (mig 051) recalcule le statut de la facture dans la même

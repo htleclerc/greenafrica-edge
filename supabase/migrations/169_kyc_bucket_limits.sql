@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 163: constrain the shipowner-kyc bucket (mig 055 created it with no
+-- Migration 169: constrain the shipowner-kyc bucket (mig 055 created it with no
 -- size/MIME limits). Mirrors payment-proofs (mig 059): 10 MB cap + MIME allowlist.
 -- Closes the anonymous unbounded-upload vector on the anon 'pending/*' policy.
 -- ─────────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 162: tighten payments admin RLS.
+-- Migration 168: tighten payments admin RLS.
 -- Before: payments_admin_insert had no row constraint; payments_admin_update
 -- gated only on role (no WITH CHECK). A FINANCE_ADMIN's own JWT could write any
 -- payment in any jurisdiction via direct PostgREST, bypassing the server-action
