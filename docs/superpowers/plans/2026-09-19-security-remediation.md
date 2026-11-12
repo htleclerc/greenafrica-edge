@@ -1,5 +1,13 @@
 # Security Remediation Implementation Plan
 
+> **Renumbered 2026-11-12 — read this before following any migration path below.**
+> These migrations shipped as **167–171**, not 161–165. Migration 166
+> (`166_revoke_all_user_sessions.sql`, session closure on staff password reset)
+> reached production first, on 2026-11-11, so this branch was renumbered to keep
+> the journal in order: **161→167, 162→168, 163→169, 164→170, 165→171**.
+> The file names and cross-references on the branch are correct; the numbers kept
+> in the body below are the ones originally assigned on 2026-09-19.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fix the exploitable defects found in the 2026-09-19 security review and bounty hunt, in AfricGreen's Next.js + Supabase money-rail app.
