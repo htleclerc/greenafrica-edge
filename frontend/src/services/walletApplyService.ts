@@ -22,21 +22,23 @@ export interface ApplyWalletCreditResult {
 /**
  * Débite le portefeuille de l'armateur au profit d'une facture : une ligne
  * `payments` WALLET déjà CONFIRMED (l'argent est là, il n'y a rien à
- * réconcilier) et l'écriture PROFORMA_APPLY correspondante au grand livre,
- * dont le trigger resynchronise le solde.
+ * réconcilier) et l'écriture PROFORMA_APPLY correspondante au grand livre.
  *
  * Extrait de l'action `applyWallet` pour être partagé avec `initiatePayment` :
  * un paiement mixte (une partie au portefeuille, le reste par carte) doit
  * poser exactement la même écriture qu'une application intégrale.
  *
- * Le montant n'est pas contraint à couvrir la facture entière — un paiement
- * partiel est un cas normal, `recompute_transaction_status` classera la
- * facture en PARTIALLY_PAID.
+ * Le débit et l'insertion du paiement se font atomiquement dans la RPC SQL
+ * `apply_wallet_credit` (mig 167) : elle verrouille d'abord la ligne du
+ * portefeuille (`FOR UPDATE`), ce qui sérialise les applications concurrentes
+ * et empêche la race de double règlement. Le trigger AFTER INSERT de
+ * `payments` (mig 051) recalcule le statut de la facture dans la même
+ * transaction — le montant n'est pas contraint à couvrir la facture entière,
+ * un paiement partiel est un cas normal qui classera la facture en
+ * PARTIALLY_PAID.
  *
  * @throws si le portefeuille n'existe pas, si le solde est insuffisant, ou sur
- * erreur SQL. L'appelant doit traiter tout throw comme « rien n'a été débité »
- * — hormis l'échec du recompute final, journalisé et non bloquant (le trigger
- * de `payments` recalcule aussi).
+ * erreur SQL — dans tous les cas rien n'a été débité (la RPC est atomique).
  */
 export async function applyWalletCredit(
     admin: SupabaseClient,
@@ -44,96 +46,34 @@ export async function applyWalletCredit(
 ): Promise<ApplyWalletCreditResult> {
     const { transactionId, shipownerId, actorUserId, amountMinor } = params;
 
-    const { data: wallet, error: wErr } = await admin
-        .from('wallets')
-        .select('id, balance_usd_minor')
-        .eq('shipowner_id', shipownerId)
-        .maybeSingle();
-    if (wErr) throw wErr;
-    if (!wallet) {
-        log.warn('wallet_insufficient_funds', {
-            transactionId,
-            shipownerId,
-            reason: 'no_wallet',
-            requestedUsdMinor: amountMinor,
-        });
-        throw new Error('Insufficient wallet balance');
-    }
-
-    const balance = wallet.balance_usd_minor ?? 0;
-    if (balance < amountMinor) {
-        log.warn('wallet_insufficient_funds', {
-            transactionId,
-            shipownerId,
-            walletId: wallet.id,
-            balanceUsdMinor: balance,
-            requestedUsdMinor: amountMinor,
-        });
-        throw new Error('Insufficient wallet balance');
-    }
-
-    const confirmedAt = new Date().toISOString();
-    const { data: payment, error: payErr } = await admin
-        .from('payments')
-        .insert({
-            transaction_id: transactionId,
-            shipowner_id: shipownerId,
-            declared_by: actorUserId,
-            amount_minor: amountMinor,
-            currency: 'USD',
-            amount_usd_minor: amountMinor,
-            rail: 'WALLET',
-            status: 'CONFIRMED',
-            confirmed_by: actorUserId,
-            confirmed_at: confirmedAt,
-            rail_details: { applied_by_owner: true },
-        })
-        .select('id')
-        .single();
-    if (payErr) {
-        log.error('wallet_apply_db_error', {
-            transactionId,
-            walletId: wallet.id,
-            stage: 'payments_insert',
-            error: payErr.message,
-        });
-        throw payErr;
-    }
-
-    // Débit signé négatif — le trigger du grand livre resynchronise le solde.
-    const { error: ledgErr } = await admin.from('wallet_ledger').insert({
-        wallet_id: wallet.id,
-        kind: 'PROFORMA_APPLY',
-        amount_signed_usd_minor: -amountMinor,
-        created_by: actorUserId,
-    });
-    if (ledgErr) {
-        log.error('wallet_apply_db_error', {
-            transactionId,
-            walletId: wallet.id,
-            stage: 'wallet_ledger_insert',
-            error: ledgErr.message,
-        });
-        throw ledgErr;
-    }
-
-    const { error: rpcErr } = await admin.rpc('recompute_transaction_status', {
+    const { data, error } = await admin.rpc('apply_wallet_credit', {
         p_txn_id: transactionId,
+        p_shipowner_id: shipownerId,
+        p_actor_user_id: actorUserId,
+        p_amount_minor: amountMinor,
     });
-    if (rpcErr) {
-        // Le trigger de `payments` recalcule aussi — journaliser, ne pas annuler.
-        log.error('recompute_transaction_status_failed', {
+    if (error) {
+        const insufficient = /insufficient|wallet not found/i.test(error.message);
+        log.warn(insufficient ? 'wallet_insufficient_funds' : 'wallet_apply_db_error', {
             transactionId,
-            walletId: wallet.id,
-            error: rpcErr.message,
+            shipownerId,
+            requestedUsdMinor: amountMinor,
+            error: error.message,
         });
+        throw new Error(insufficient ? 'Insufficient wallet balance' : error.message);
+    }
+
+    const row = (data as { payment_id: string; wallet_id: string }[] | null)?.[0];
+    if (!row) {
+        log.error('wallet_apply_db_error', { transactionId, shipownerId, stage: 'rpc_empty_result' });
+        throw new Error('wallet application returned no row');
     }
 
     log.info('wallet_applied', {
         transactionId,
-        walletId: wallet.id,
+        walletId: row.wallet_id,
         amountUsdMinor: amountMinor,
     });
 
-    return { walletId: wallet.id, paymentId: (payment as { id: string }).id };
+    return { walletId: row.wallet_id, paymentId: row.payment_id };
 }

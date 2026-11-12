@@ -95,6 +95,21 @@ export async function requireRole(allowed: UserRole[]): Promise<RequireRoleResul
         };
     }
 
+    // MFA elevation gate. Middleware only enforces AAL2 on page prefixes
+    // (/dashboard, /admin, …); /api route handlers slip past it. Enforce it here
+    // so a valid-but-un-elevated AAL1 session cannot drive money-rail endpoints.
+    // MFA stays optional: this only bites when a factor is enrolled — nextLevel
+    // is 'aal2' while currentLevel is still 'aal1'. A user with no factor has
+    // nextLevel 'aal1' and passes untouched.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2') {
+        return {
+            user: null,
+            supabase: null,
+            error: NextResponse.json({ error: 'Forbidden — MFA elevation required' }, { status: 403 }),
+        };
+    }
+
     const role = profile.role as UserRole;
     if (!allowed.includes(role)) {
         return {

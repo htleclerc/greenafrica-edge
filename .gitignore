@@ -8,6 +8,7 @@ build/
 .ostack/
 frontend/.qa-screenshots/
 .claude/scheduled_tasks.lock
+.claude/settings.json
 
 # Local DB dumps from the backup/restore drill (scripts/backup/restore-test.sh)
 # — NEVER commit dumps: they can contain production fiscal data.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendPartnershipConfirmationEmail } from '@/services/emailService';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 const partnershipSchema = z.object({
     partnershipType: z.enum([
@@ -21,6 +22,11 @@ const partnershipSchema = z.object({
 
 export async function POST(request: NextRequest) {
     try {
+        const rate = await enforceRateLimit('partnership', getClientId(request.headers));
+        if (!rate.allowed) {
+            return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+        }
+
         const body = await request.json();
         const parsed = partnershipSchema.safeParse(body);
 

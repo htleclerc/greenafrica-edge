@@ -3,3 +3,4 @@
 # ingestion of migration test files.
 *.sh  text eol=lf
 *.sql text eol=lf
+.githooks/pre-commit text eol=lf

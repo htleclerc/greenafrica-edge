@@ -9,11 +9,15 @@ import { UserRole } from '@/types/secure';
 
 const mockAuthGetUser = vi.fn();
 const mockProfileSingle = vi.fn();
+const mockGetAal = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
     auth: {
       getUser: mockAuthGetUser,
+      mfa: {
+        getAuthenticatorAssuranceLevel: mockGetAal,
+      },
     },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -31,6 +35,14 @@ const { requireRole } = await import('../requireRole');
 beforeEach(() => {
   mockAuthGetUser.mockReset();
   mockProfileSingle.mockReset();
+  // Session sans second facteur enrôlé : nextLevel reste 'aal1', la garde MFA
+  // laisse passer. C'est le défaut parce que la MFA est facultative ici —
+  // les tests qui exercent la garde surchargent ce mock.
+  mockGetAal.mockReset();
+  mockGetAal.mockResolvedValue({
+    data: { currentLevel: 'aal1', nextLevel: 'aal1' },
+    error: null,
+  });
 });
 
 const validProfile = {
@@ -182,6 +194,86 @@ describe('requireRole — MANAGER guard on money-rail endpoints', () => {
       const result = await requireRole(allowed);
       expect(result.error!.status).toBe(403);
     }
+  });
+});
+
+// Le middleware n'impose l'AAL2 que sur les préfixes de pages (/dashboard,
+// /admin, …) ; les route handlers /api passaient à côté. requireRole referme
+// ce trou — ces cas en sont la preuve.
+describe('requireRole — MFA elevation gate on /api routes', () => {
+  beforeEach(() => {
+    mockAuthGetUser.mockResolvedValue({
+      data: { user: { id: 'user-123', last_sign_in_at: null } },
+      error: null,
+    });
+    mockProfileSingle.mockResolvedValue({ data: validProfile, error: null });
+  });
+
+  it('returns 403 when a factor is enrolled but the session is still aal1', async () => {
+    mockGetAal.mockResolvedValue({
+      data: { currentLevel: 'aal1', nextLevel: 'aal2' },
+      error: null,
+    });
+
+    const result = await requireRole([UserRole.SUPERADMIN]);
+
+    expect(result.user).toBeNull();
+    expect(result.supabase).toBeNull();
+    expect(result.error!.status).toBe(403);
+  });
+
+  it('allows an elevated aal2 session', async () => {
+    mockGetAal.mockResolvedValue({
+      data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+      error: null,
+    });
+
+    const result = await requireRole([UserRole.SUPERADMIN]);
+
+    expect(result.error).toBeNull();
+    expect(result.user!.role).toBe(UserRole.SUPERADMIN);
+  });
+
+  // La MFA reste facultative : sans facteur enrôlé, nextLevel vaut 'aal1' et
+  // la garde ne doit jamais mordre, sinon tout le staff sans MFA est enfermé.
+  it('allows a session with no factor enrolled', async () => {
+    mockGetAal.mockResolvedValue({
+      data: { currentLevel: 'aal1', nextLevel: 'aal1' },
+      error: null,
+    });
+
+    const result = await requireRole([UserRole.SUPERADMIN]);
+
+    expect(result.error).toBeNull();
+    expect(result.user!.role).toBe(UserRole.SUPERADMIN);
+  });
+
+  // Le code lit `data` et ignore `error` : un échec de lecture de l'AAL laisse
+  // passer. Ce test fige ce choix pour qu'un durcissement futur soit délibéré.
+  it('lets the request through when the AAL lookup itself fails', async () => {
+    mockGetAal.mockResolvedValue({ data: null, error: { message: 'network' } });
+
+    const result = await requireRole([UserRole.SUPERADMIN]);
+
+    expect(result.error).toBeNull();
+  });
+
+  // L'ordre compte : un compte désactivé doit être refusé sur is_active, sans
+  // dépendre de son niveau MFA.
+  it('rejects an inactive account before reaching the MFA gate', async () => {
+    mockProfileSingle.mockResolvedValue({
+      data: { ...validProfile, is_active: false },
+      error: null,
+    });
+    mockGetAal.mockResolvedValue({
+      data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+      error: null,
+    });
+
+    const result = await requireRole([UserRole.SUPERADMIN]);
+
+    expect(result.error!.status).toBe(403);
+    expect(mockGetAal).not.toHaveBeenCalled();
   });
 });
 

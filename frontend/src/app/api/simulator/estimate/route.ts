@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { generateInvoicePdf, type InvoiceData } from '@/services/invoiceService';
+import { enforceRateLimit, getClientId } from '@/lib/rateLimit';
 
 /**
  * POST /api/simulator/estimate
@@ -13,37 +15,38 @@ import { generateInvoicePdf, type InvoiceData } from '@/services/invoiceService'
  * Returns: PDF binary stream (application/pdf)
  */
 
-interface SimulatorEstimateInput {
-    vesselCategory: string;
-    fuelType: string;
-    enginePowerKw: number;
-    grossTonnage: number;
-    speedKnots: number;
-    eezDistanceNm: number;
-    portStayHours: number;
-    eezEmissionsTco2: number;
-    portEmissionsTco2: number;
-    totalCo2Tons: number;
-    eezTaxUsd: number;
-    portTaxUsd: number;
-    totalTaxUsd: number;
-    eezRate: number;
-    portRate: number;
-    effectiveRate: number;
-    riskLevel: 'low' | 'medium' | 'high';
-}
+const estimateSchema = z.object({
+    vesselCategory: z.string().min(1).max(60),
+    fuelType: z.string().min(1).max(60),
+    enginePowerKw: z.number().finite().nonnegative(),
+    grossTonnage: z.number().finite().nonnegative(),
+    speedKnots: z.number().finite().nonnegative(),
+    eezDistanceNm: z.number().finite().nonnegative(),
+    portStayHours: z.number().finite().nonnegative(),
+    eezEmissionsTco2: z.number().finite().nonnegative(),
+    portEmissionsTco2: z.number().finite().nonnegative(),
+    totalCo2Tons: z.number().finite().nonnegative(),
+    eezTaxUsd: z.number().finite().nonnegative(),
+    portTaxUsd: z.number().finite().nonnegative(),
+    totalTaxUsd: z.number().finite().nonnegative(),
+    eezRate: z.number().finite().nonnegative(),
+    portRate: z.number().finite().nonnegative(),
+    effectiveRate: z.number().finite().nonnegative(),
+    riskLevel: z.enum(['low', 'medium', 'high']),
+}).strict();
+type SimulatorEstimateInput = z.infer<typeof estimateSchema>;
 
 export async function POST(request: NextRequest) {
-    let body: SimulatorEstimateInput;
-
-    try {
-        body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const rate = await enforceRateLimit('simulator-estimate', getClientId(request.headers));
+    if (!rate.allowed) {
+        return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    if (!body.totalTaxUsd && body.totalTaxUsd !== 0) {
-        return NextResponse.json({ error: 'Missing totalTaxUsd' }, { status: 400 });
+    let body: SimulatorEstimateInput;
+    try {
+        body = estimateSchema.parse(await request.json());
+    } catch {
+        return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
     const now = new Date();

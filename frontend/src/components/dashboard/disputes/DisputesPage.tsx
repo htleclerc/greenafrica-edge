@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { OsBadge } from '@/components/ui/OsBadge';
 import { OsButton } from '@/components/ui/OsButton';
+import { safeHttpUrl } from '@/lib/safeUrl';
 import { useDisputes } from '@/hooks/useDisputes';
 import { useRole } from '@/lib/RoleContext';
 import { Dispute, DisputeStatus, DisputeReason, UserRole } from '@/types/secure';
@@ -329,19 +330,34 @@ function DisputeDetail({
                 <div className="os-card p-5">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--os-text-muted)] mb-3">{t('evidence')}</h4>
                     <div className="flex flex-col gap-2">
-                        {d.evidenceUrls.map((url, i) => (
-                            <a
-                                key={i}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 p-2.5 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] transition-all text-xs"
-                            >
-                                <FileText className="w-4 h-4 text-[var(--os-text-muted)]" />
-                                <span className="flex-1 text-[#38BDF8] truncate">{url.split('/').pop()}</span>
-                                <ExternalLink className="w-3.5 h-3.5 text-[var(--os-text-muted)]" />
-                            </a>
-                        ))}
+                        {d.evidenceUrls.map((url, i) => {
+                            const href = safeHttpUrl(url);
+                            const filename = url.split('/').pop();
+                            if (!href) {
+                                return (
+                                    <div
+                                        key={i}
+                                        className="flex items-center gap-2 p-2.5 rounded-xl border border-[var(--os-border)] text-xs"
+                                    >
+                                        <FileText className="w-4 h-4 text-[var(--os-text-muted)]" />
+                                        <span className="flex-1 text-[var(--os-text-muted)] truncate">{filename}</span>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <a
+                                    key={i}
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 p-2.5 rounded-xl border border-[var(--os-border)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-surface-2)] transition-all text-xs"
+                                >
+                                    <FileText className="w-4 h-4 text-[var(--os-text-muted)]" />
+                                    <span className="flex-1 text-[#38BDF8] truncate">{filename}</span>
+                                    <ExternalLink className="w-3.5 h-3.5 text-[var(--os-text-muted)]" />
+                                </a>
+                            );
+                        })}
                     </div>
                 </div>
             )}

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { timingSafeEqual } from 'crypto';
 import { WIRE_BENEFICIARY } from '@/lib/payments/wireBeneficiary';
 import { appBaseUrl } from '@/lib/appUrl';
 
@@ -529,6 +530,15 @@ export async function confirmPayment(
   return true;
 }
 
+/** Constant-time string comparison. Length mismatch returns false (leaks only
+ *  length, which is not secret for a fixed-format HMAC hex digest). */
+function timingSafeStrEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
+
 /**
  * Verify a Paystack webhook signature.
  */
@@ -536,14 +546,16 @@ export async function verifyPaystackSignature(body: string, signature: string): 
   const { createHmac } = await import('crypto');
   const secret = process.env.PAYSTACK_SECRET_KEY || '';
   const hash = createHmac('sha512', secret).update(body).digest('hex');
-  return hash === signature;
+  return timingSafeStrEqual(hash, signature);
 }
 
 /**
  * Verify a Flutterwave webhook signature.
  */
 export function verifyFlutterwaveSignature(signature: string): boolean {
-  return signature === process.env.FLUTTERWAVE_WEBHOOK_HASH;
+  const expected = process.env.FLUTTERWAVE_WEBHOOK_HASH || '';
+  if (!expected || !signature) return false;
+  return timingSafeStrEqual(signature, expected);
 }
 
 /**
@@ -554,7 +566,7 @@ export async function verifyPayoneerSignature(body: string, signature: string): 
   if (!secret || !signature) return false;
   const { createHmac } = await import('crypto');
   const hash = createHmac('sha256', secret).update(body).digest('hex');
-  return hash === signature;
+  return timingSafeStrEqual(hash, signature);
 }
 
 // ── Plan 7C: Typed Read Helpers for `payments` Table ──────────────────────
