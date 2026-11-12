@@ -1,0 +1,82 @@
+{
+  "key": "ci",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/ci.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Port autonome d’Abidjan"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port autonome de San-Pédro"
+    },
+    {
+      "mode": "MINING",
+      "activity": "ore",
+      "gateway": "Terminal industriel polyvalent de San-Pédro (TIPSP)"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Abidjan Félix-Houphouët-Boigny (ABJ)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port autonome d’Abidjan",
+      "value": 2595,
+      "year": 2024,
+      "sourceLabel": "Ministère des Transports / Port autonome d’Abidjan",
+      "sourceUrl": "https://economie-ivoirienne.ci/activites-sectorielles/transport-maritime.html",
+      "note": "Série officielle continue depuis 2012."
+    },
+    {
+      "metric": "vessel_calls",
+      "mode": "MARITIME",
+      "gateway": "Port autonome de San-Pédro",
+      "value": 388,
+      "year": 2025,
+      "sourceLabel": "Port autonome de San-Pédro — statistiques 2021-2025",
+      "sourceUrl": "https://sanpedro-portci.com/wp-content/uploads/2026/07/Trfic_Site-PASP.pdf",
+      "note": null
+    },
+    {
+      "metric": "container_teu",
+      "mode": "MARITIME",
+      "gateway": "Port autonome d’Abidjan",
+      "value": 1697131,
+      "year": 2025,
+      "sourceLabel": "Port autonome d’Abidjan",
+      "sourceUrl": "https://www.economie-ivoirienne.ci/index.php/actualites/cote-divoire-performance-historique-du-port-autonome-dabidjan-avec-466-millions-de",
+      "note": null
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Port autonome d’Abidjan",
+      "value": 46600000,
+      "year": 2025,
+      "sourceLabel": "Port autonome d’Abidjan",
+      "sourceUrl": "https://www.economie-ivoirienne.ci/index.php/actualites/cote-divoire-performance-historique-du-port-autonome-dabidjan-avec-466-millions-de",
+      "note": "Dont 34,2 Mt de trafic national, 3,92 Mt de transit et 8,46 Mt de transbordement."
+    },
+    {
+      "metric": "aircraft_movements",
+      "mode": "AIR",
+      "gateway": "Abidjan Félix-Houphouët-Boigny",
+      "value": 33104,
+      "year": 2024,
+      "sourceLabel": "Ministère des Transports / AERIA",
+      "sourceUrl": "https://economie-ivoirienne.ci/activites-sectorielles/transport-maritime.html",
+      "note": "Total arrivées + départs, soit environ 16 550 arrivées."
+    }
+  ],
+  "internal": {
+    "notes": "Meilleure base d'escales du lot : serie officielle continue depuis 2012, et Abidjan prend desormais des porte-conteneurs post-Panamax jusqu'a 24 000 EVP / 400 m depuis l'approfondissement du canal de Vridi a 16 m. Le minier se lit directement en escales : 108 mineraliers et 1 548 637 t de minerais a San-Pedro en 2025. L'or (57,265 t exportees en 2024) part par avion et ne genere aucune escale facturable. Le brut de Baleine est charge au large, aucun comptage de petroliers trouve. L'aerien est substantiel (33 104 mouvements) mais n'est pas annonce dans coverage.ts."
+  }
+}

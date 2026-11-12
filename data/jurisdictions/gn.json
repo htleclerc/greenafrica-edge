@@ -1,0 +1,125 @@
+{
+  "key": "gn",
+  "status": "pipeline",
+  "sourceDocument": "Greengate/Guinee/Note_Conceptuelle_GreenGate_Guinee_v5.pdf (octobre 2026)",
+  "scopes": [
+    {
+      "mode": "MINING",
+      "activity": "bauxite",
+      "gateway": "Boké — Kamsar, Dapilon, Boffa"
+    },
+    {
+      "mode": "MINING",
+      "activity": "iron_ore",
+      "gateway": "Simandou — port de Morebaya"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Port autonome de Conakry"
+    },
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Aéroport international Ahmed Sékou Touré (CKY)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "export_tonnes",
+      "subject": "bauxite",
+      "value": 183000000,
+      "year": 2025,
+      "sourceLabel": "Reuters / China Global South",
+      "sourceUrl": null,
+      "note": "Premier exportateur mondial, +25 % sur un an.",
+      "mode": "MINING",
+      "gateway": "Boké"
+    },
+    {
+      "metric": "export_tonnes",
+      "subject": "iron_ore",
+      "value": 20000000,
+      "year": 2026,
+      "projection": true,
+      "sourceLabel": "S&P Global, Breakwave Advisors",
+      "sourceUrl": null,
+      "note": "Premières expéditions fin 2025 via Morebaya. Capacité visée ≈ 120 Mt/an vers 2030.",
+      "mode": "MINING",
+      "gateway": "Simandou — port de Morebaya"
+    },
+    {
+      "metric": "container_teu",
+      "value": 416892,
+      "year": 2025,
+      "sourceLabel": "Conakry Terminal",
+      "sourceUrl": null,
+      "note": "≈ 90 % du commerce extérieur du pays passe par Conakry.",
+      "mode": "MARITIME",
+      "gateway": "Port autonome de Conakry"
+    },
+    {
+      "metric": "aircraft_movements",
+      "value": 13067,
+      "year": 2025,
+      "sourceLabel": "Aéroport international Ahmed Sékou Touré",
+      "sourceUrl": null,
+      "note": "Total des mouvements (+19 %), soit ≈ 6 530 arrivées.",
+      "mode": "AIR",
+      "gateway": "Aéroport Ahmed Sékou Touré (CKY)"
+    },
+    {
+      "metric": "passengers",
+      "value": 957820,
+      "year": 2025,
+      "sourceLabel": "Aéroport international Ahmed Sékou Touré",
+      "sourceUrl": null,
+      "note": "+21 % sur un an.",
+      "mode": "AIR",
+      "gateway": "Aéroport Ahmed Sékou Touré (CKY)"
+    }
+  ],
+  "internal": {
+    "potential_usd": {
+      "phase1_low": 44400000,
+      "phase1_high": 56200000,
+      "horizon_low": 59000000,
+      "horizon_high": 71000000,
+      "horizon_year": 2030
+    },
+    "local_currency": {
+      "code": "GNF",
+      "low": 390000000000,
+      "high": 490000000000,
+      "rate_usd": 8750,
+      "rate_date": "2026-07"
+    },
+    "breakdown": [
+      {
+        "source": "Bauxite (région de Boké)",
+        "low": 27800000,
+        "high": 35300000,
+        "basis": "183 Mt en 2025 ; 1 080 à 1 770 chargements selon la taille des navires"
+      },
+      {
+        "source": "Minerai de fer — Simandou",
+        "low": 2900000,
+        "high": 2900000,
+        "basis": "20 Mt en 2026 ; ≈ 100 chargements de 200 000 t"
+      },
+      {
+        "source": "Port autonome de Conakry",
+        "low": 9000000,
+        "high": 11200000,
+        "basis": "800 à 1 000 escales par an — hypothèse à confirmer avec le port"
+      },
+      {
+        "source": "Aérien — Conakry",
+        "low": 4700000,
+        "high": 6800000,
+        "basis": "≈ 6 530 arrivées par an ; 720 à 1 040 USD par vol"
+      }
+    ],
+    "notes": "Horizon 2030 : la montée de Simandou vers 120 Mt/an (≈ 600 chargements) ajouterait ≈ 14 M USD/an, à trafic constant ailleurs. ATTENTION : les URL des sources ne figurent pas dans la note v5 — à retrouver dans ses fichiers de travail avant toute publication reliée."
+  }
+}

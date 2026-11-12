@@ -1,0 +1,78 @@
+{
+  "key": "mz",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/mz.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Maputo et Matola"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "containers",
+      "gateway": "Beira et Nacala"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "lng",
+      "gateway": "Coral Sul FLNG, bassin du Rovuma"
+    },
+    {
+      "mode": "MINING",
+      "activity": "heavy_sands",
+      "gateway": "Moma — transbordement au large"
+    },
+    {
+      "mode": "MINING",
+      "activity": "coal",
+      "gateway": "Nacala-a-Velha, corridor de Moatize"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Port de Maputo (Maputo et Matola)",
+      "value": 32000000,
+      "year": 2025,
+      "sourceLabel": "MPDC — Port of Maputo",
+      "sourceUrl": "https://www.portmaputo.com/port-of-maputo-achieves-historic-records-in-volumes-and-strengthens-its-contribution-to-national-development/",
+      "note": "Record absolu, en hausse de 3,4 % sur 2024."
+    },
+    {
+      "metric": "cargo_tonnes",
+      "mode": "MARITIME",
+      "gateway": "Réseau portuaire et ferroviaire CFM",
+      "value": 66500000,
+      "year": 2024,
+      "sourceLabel": "CFM, relayé par Lusa",
+      "sourceUrl": "https://aman-alliance.org/Home/ContentDetail/88590",
+      "note": "63,4 Mt en 2023."
+    },
+    {
+      "metric": "export_tonnes",
+      "mode": "MINING",
+      "subject": "heavy_sands",
+      "gateway": "Moma",
+      "value": 3506512,
+      "year": 2024,
+      "sourceLabel": "USGS",
+      "sourceUrl": null,
+      "note": "Ilménite et leucoxène. 2e producteur mondial, 21 % du marché."
+    },
+    {
+      "metric": "aircraft_movements",
+      "mode": "AIR",
+      "gateway": "Ensemble des aéroports mozambicains",
+      "value": 54495,
+      "year": 2025,
+      "sourceLabel": "IACM, relayé par Forbes África Lusófona",
+      "sourceUrl": "https://forbesafricalusofona.com/?p=172057",
+      "note": "Total arrivées + départs, en baisse de 10,9 %."
+    }
+  ],
+  "internal": {
+    "notes": "Melange de cargaisons a forte jauge (chrome, ferrochrome, magnetite, charbon, phosphate, sables lourds) plus les methaniers du Cabo Delgado : exactement les classes auxquelles la formule est la plus sensible. Zircon 124 525 t (3e mondial), graphite 34 899 t (4e), charbon 16,3 Mt en 2024. DEUX FAITS QUI CHANGENT LE TABLEAU : Mozal est passe en care and maintenance le 15/03/2026 (l'aluminium par Matola s'arrete) ; Mozambique LNG a leve sa force majeure le 07/11/2025 mais ne vise sa premiere cargaison qu'en 2029 — Afungi genere du trafic de chantier, pas des methaniers. Coral Sul FLNG exporte bien : 120 cargaisons de GNL et 17 de condensat cumulees a septembre 2025. Mouvements d'avions : IACM 81 636 contre ADM 61 182 pour 2024, irreconciliables."
+  }
+}

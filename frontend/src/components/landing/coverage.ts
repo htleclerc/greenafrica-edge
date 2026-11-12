@@ -1,6 +1,24 @@
 /** Statut de déploiement affiché sur la page publique. */
 export type CoverageStatus = 'live' | 'pipeline';
 
+/**
+ * Périmètre d'activité annoncé pour une juridiction, sur la page publique.
+ *
+ * `MARITIME` et `AIR` reprennent l'enum `public.transport_mode` et la forme de
+ * tableau de `shipowners.applicable_modes` (mig 160) : ce sont les deux modes
+ * que la plateforme sait calculer (GT pour les navires, cycle LTO OACI pour
+ * les aéronefs).
+ *
+ * `MINING` n'a PAS d'équivalent en base et aucun moteur de calcul : c'est un
+ * périmètre annoncé, pas un module livré. Ne l'afficher que sur des
+ * juridictions « en cours », jamais sur une juridiction opérationnelle, tant
+ * qu'il n'existe pas de calcul réel.
+ *
+ * Le mode est une décision métier, pas une déduction géographique — la
+ * Mauritanie a un littoral et relève pourtant de l'aérien.
+ */
+export type CoverageMode = 'MARITIME' | 'AIR' | 'MINING';
+
 export interface CoverageCountry {
     /**
      * Identifiant stable, aussi utilisé comme suffixe de clé i18n
@@ -20,8 +38,19 @@ export interface CoverageCountry {
      * largeur dérivée : aucun emblème n'est recadré.
      */
     ratio: number;
+    /** Modes dont relève la juridiction. Jamais vide. */
+    modes: readonly CoverageMode[];
+    /**
+     * Segment d'URL de la page de juridiction (`/jurisdictions/<slug>`).
+     * En anglais et stable : l'URL ne doit pas changer avec la langue de
+     * l'utilisateur, sinon les liens partagés se cassent d'une locale à l'autre.
+     */
+    slug: string;
     status: CoverageStatus;
 }
+
+const MARITIME: readonly CoverageMode[] = ['MARITIME'];
+const AIR: readonly CoverageMode[] = ['AIR'];
 
 /** Format de tous les drapeaux ISO vendorés (640x480). */
 const R_4_3 = 4 / 3;
@@ -38,18 +67,42 @@ const R_4_3 = 4 / 3;
  * L'ordre du tableau est l'ordre d'affichage.
  */
 export const COVERAGE_COUNTRIES: readonly CoverageCountry[] = [
-    { key: 'somaliland', flag: '/brand/somaliland-flag.svg', ratio: 2, status: 'live' },
-    { key: 'dj', flag: '/flags/dj.svg', ratio: R_4_3, status: 'live' },
-    { key: 'ao', flag: '/flags/ao.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'gn', flag: '/flags/gn.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'sn', flag: '/flags/sn.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'ci', flag: '/flags/ci.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'gh', flag: '/flags/gh.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'ng', flag: '/flags/ng.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'cm', flag: '/flags/cm.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'ga', flag: '/flags/ga.svg', ratio: R_4_3, status: 'pipeline' },
-    { key: 'mz', flag: '/flags/mz.svg', ratio: R_4_3, status: 'pipeline' },
+    // Somaliland porte les deux modes : le port de Berbera et le portail
+    // aviation (opérateurs aériens en service).
+    { key: 'somaliland', flag: '/brand/somaliland-flag.svg', ratio: 2, modes: ['MARITIME', 'AIR'], slug: 'somaliland', status: 'live' },
+    { key: 'dj', flag: '/flags/dj.svg', ratio: R_4_3, modes: MARITIME, slug: 'djibouti', status: 'live' },
+    { key: 'ao', flag: '/flags/ao.svg', ratio: R_4_3, modes: MARITIME, slug: 'angola', status: 'pipeline' },
+    // Guinée : la bauxite et l'alumine partent par minéralier — l'extraction
+    // et l'export maritime relèvent du même dossier. L'aérien figure ici parce
+    // que la note conceptuelle remise au gouvernement guinéen couvre bien « la
+    // contribution carbone aérienne et maritime » et chiffre une ligne aérienne
+    // sur Conakry : annoncer un périmètre plus étroit que le document officiel
+    // ferait se contredire les deux.
+    { key: 'gn', flag: '/flags/gn.svg', ratio: R_4_3, modes: ['MARITIME', 'AIR', 'MINING'], slug: 'guinea', status: 'pipeline' },
+    { key: 'sn', flag: '/flags/sn.svg', ratio: R_4_3, modes: MARITIME, slug: 'senegal', status: 'pipeline' },
+    { key: 'ci', flag: '/flags/ci.svg', ratio: R_4_3, modes: MARITIME, slug: 'cote-divoire', status: 'pipeline' },
+    { key: 'gh', flag: '/flags/gh.svg', ratio: R_4_3, modes: MARITIME, slug: 'ghana', status: 'pipeline' },
+    { key: 'ng', flag: '/flags/ng.svg', ratio: R_4_3, modes: MARITIME, slug: 'nigeria', status: 'pipeline' },
+    { key: 'cm', flag: '/flags/cm.svg', ratio: R_4_3, modes: MARITIME, slug: 'cameroon', status: 'pipeline' },
+    { key: 'ga', flag: '/flags/ga.svg', ratio: R_4_3, modes: MARITIME, slug: 'gabon', status: 'pipeline' },
+    { key: 'mz', flag: '/flags/mz.svg', ratio: R_4_3, modes: MARITIME, slug: 'mozambique', status: 'pipeline' },
+    // Mauritanie et Niger : aérien. La Mauritanie a un littoral — c'est bien
+    // une décision métier, pas la géographie, qui fixe le mode. Le Niger étant
+    // enclavé, le libellé de la section parle d'États souverains et couvre
+    // zone maritime ET espace aérien, non de « pays côtiers ».
+    { key: 'mr', flag: '/flags/mr.svg', ratio: R_4_3, modes: AIR, slug: 'mauritania', status: 'pipeline' },
+    { key: 'ne', flag: '/flags/ne.svg', ratio: R_4_3, modes: ['AIR', 'MINING'], slug: 'niger', status: 'pipeline' },
 ];
 
 export const LIVE_COUNTRIES = COVERAGE_COUNTRIES.filter((c) => c.status === 'live');
 export const PIPELINE_COUNTRIES = COVERAGE_COUNTRIES.filter((c) => c.status === 'pipeline');
+
+/** Chemin de la page d'une juridiction. */
+export function jurisdictionHref(country: CoverageCountry): string {
+    return `/jurisdictions/${country.slug}`;
+}
+
+/** Résout un slug d'URL, ou `undefined` si aucune juridiction ne correspond. */
+export function findCountryBySlug(slug: string): CoverageCountry | undefined {
+    return COVERAGE_COUNTRIES.find((c) => c.slug === slug);
+}

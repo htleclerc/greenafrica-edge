@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Linkedin, Twitter, Youtube } from 'lucide-react';
 import { AfricGreenLogo } from '@/components/ui/AfricGreenLogo';
+import { COVERAGE_COUNTRIES, jurisdictionHref } from '@/components/landing/coverage';
+import { Flag } from '@/components/jurisdictions/Flag';
 
 const PLATFORM_ROUTES: Record<string, string> = {
     overview:       '/',
@@ -24,6 +26,9 @@ const SUPPORT_ROUTES: Record<string, string> = {
 
 export function Footer() {
     const t = useTranslations('Footer');
+    // Les noms de pays vivent dans le namespace Landing, où la section
+    // multi-pays les a introduits : une seule traduction pour les deux.
+    const l = useTranslations('Landing');
 
     return (
         <footer className="pt-16 pb-8 px-6" style={{ backgroundColor: 'var(--ais-footer-bg)', color: 'var(--ais-footer-text)', borderTop: '1px solid var(--ais-footer-border)' }}>
@@ -80,6 +85,28 @@ export function Footer() {
                         </ul>
                     </div>
                 </div>
+
+                {/* Juridictions — bandeau pleine largeur plutôt qu'une 4e
+                    colonne : treize entrées déséquilibreraient la grille. */}
+                <nav aria-labelledby="footer-jurisdictions" className="pb-8 mb-2">
+                    <h4 id="footer-jurisdictions" className="font-semibold mb-4 text-sm" style={{ color: 'var(--ais-footer-text-bright)' }}>
+                        {t('jurisdictions')}
+                    </h4>
+                    <ul role="list" className="flex flex-wrap gap-x-5 gap-y-1 text-sm list-none">
+                        {COVERAGE_COUNTRIES.map((country) => (
+                            <li key={country.key}>
+                                <Link
+                                    href={jurisdictionHref(country)}
+                                    className="flex items-center gap-2 py-2 hover:text-emerald-400 transition-colors"
+                                    style={{ color: 'var(--ais-footer-text)' }}
+                                >
+                                    <Flag country={country} height={12} />
+                                    {l(`coverage_country_${country.key}`)}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
 
                 {/* Bottom Bar */}
                 <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-3 text-xs" style={{ borderTop: '1px solid var(--ais-footer-border)', color: 'var(--ais-footer-text)' }}>

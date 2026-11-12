@@ -37,9 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Épinglé à la version de ci.yml — voir deploy-production.yml : `latest`
+      # a cassé les deux déploiements du 2026-11-03 sur `[inbucket]`.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.90.0
 
       # Same proven path as production: direct Postgres auth via the pooler URL.
       # Le 2026-08-22, ce job echouait sur « tenant/user postgres.<ref> not

@@ -1,0 +1,54 @@
+{
+  "key": "mr",
+  "status": "pipeline",
+  "sourceDocument": "scratchpad/research/mr.md (recherche sourcee du 2026-11-06)",
+  "scopes": [
+    {
+      "mode": "AIR",
+      "activity": "passenger_flights",
+      "gateway": "Nouakchott-Oumtounsy (NKC) et Nouadhibou (NDB)"
+    },
+    {
+      "mode": "MINING",
+      "activity": "iron_ore",
+      "gateway": "Nouadhibou — Point Central (SNIM)"
+    },
+    {
+      "mode": "MARITIME",
+      "activity": "general_cargo",
+      "gateway": "Port autonome de Nouakchott (PANPA)"
+    }
+  ],
+  "figures": [
+    {
+      "metric": "vessel_calls",
+      "mode": "MINING",
+      "gateway": "Nouadhibou — Point Central",
+      "value": 99,
+      "year": 2024,
+      "sourceLabel": "SNIM — Rapport d’activité 2024",
+      "sourceUrl": "https://snim.com/sites/default/files/SNIM-Rapport-activite-2024.pdf",
+      "note": "Navires chargés de minerai. Le chenal accepte jusqu’à 230 000 t ; plus grosse cargaison 153 214 t."
+    },
+    {
+      "metric": "export_tonnes",
+      "mode": "MINING",
+      "subject": "iron_ore",
+      "gateway": "Nouadhibou — Point Central",
+      "value": 14226000,
+      "year": 2024,
+      "sourceLabel": "SNIM — Rapport d’activité 2024",
+      "sourceUrl": "https://snim.com/sites/default/files/SNIM-Rapport-activite-2024.pdf",
+      "note": null
+    }
+  ],
+  "internal": {
+    "notes": "LE CADRAGE AERIEN NE CORRESPOND PAS A LA REALITE DU TRAFIC. Cote mer, SNIM a charge 99 navires pour 14 226 000 t en 2024, sur un chenal qui accepte 230 000 t — des jauges tres elevees. Cote air, environ 200 a 210 arrivees par MOIS en 2018, soit un total annuel a quatre chiffres bas, a 720-1 040 USD l'arrivee. Le maritime est materiellement plus gros, et pas marginalement. Deux contrepoids honnetes : la serie aerienne date de 2018 et son perimetre n'est pas precise, et l'aerien est la SEULE branche ou la Mauritanie a deja accepte un instrument carbone (CORSIA depuis le 01/01/2025), alors que sa CDN ne mentionne ni l'aviation ni le transport maritime. SEUL GISEMENT DE JAUGE DU LOT : l'ONS publie une jauge brute AGREGEE — 8 716 milliers de GT pour 679 escales PANPA en 2018 (Annuaire 2018, tableau 10.4), verifie chiffre par chiffre. C'est le seul point d'ancrage pour calibrer la formule sur donnees publiques. Le GNL du GTA ne genere AUCUNE escale mauritanienne : transfert de navire a navire a 10 km au large. AERIEN NON MESURABLE : les pages statistiques de l'ANAC sont 'en construction', il n'existe pas de site d'exploitant aeroportuaire, et les agregateurs tiers divergent d'un ordre de grandeur (100 k a 5,0 M de passagers) — aucun retenu. CHIFFRAGE ILLUSTRATIF, seul du lot adossé à une jauge réellement publiée. ONS 2018 : 679 escales PANPA pour 8 716 milliers de GT, soit 12837 GT de jauge moyenne. Formule Green-Gate (GT^0,65 / 8) x 3,114 x 40 USD : 7291 USD par escale, soit 5.0 M USD/an pour le seul PANPA. Minéraliers SNIM : 99 chargements en 2024 ; la jauge n'est PAS publiée — sous HYPOTHESE EXPLICITE d'un Capesize de 85 000 GT, 24912 USD par chargement, soit 2.5 M USD/an. Total maritime indicatif : 7.4 M USD/an. Face à cela l'aérien, à 200-210 arrivées par mois (série 2018) et 720-1 040 USD l'arrivée, pèse 1.7 à 2.6 M USD/an. LE MARITIME EST DONC ENVIRON TROIS FOIS L'AERIEN. Le cadrage aérien retenu pour la Mauritanie laisse la plus grosse assiette de côté. A arbitrer. Les deux lignes reposent sur des années différentes (2018 pour PANPA, 2024 pour SNIM) et sur une hypothèse de jauge pour la seconde : ce n'est pas un potentiel au sens de la note Guinée, c'est un ordre de grandeur destiné à trancher le périmètre. BIAIS D'AGRÉGATION (ajouté le 2026-11-07) : la ligne PANPA applique la formule à la jauge MOYENNE, ce qui n'équivaut pas à la sommer navire par navire — GT^0,65 étant concave, la moyenne SURESTIME. Mesuré sur un mélange plausible de même moyenne, l'écart est d'environ 7 %. Les 4,95 M USD du PANPA sont donc un plafond, pas une estimation centrale. Même réserve pour le Nigeria, voir ng.json.",
+    "potential_usd_illustratif": {
+      "maritime_panpa": 4950502,
+      "maritime_snim_hypothese_85000gt": 2466301,
+      "aerien_bas": 1728000,
+      "aerien_haut": 2620800
+    }
+  }
+}
