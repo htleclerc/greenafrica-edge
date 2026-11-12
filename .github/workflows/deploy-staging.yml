@@ -23,6 +23,11 @@ jobs:
   ci:
     name: CI Gate
     uses: ./.github/workflows/ci.yml
+    # Le workflow appele ne peut pas demander plus que son appelant :
+    # le job gitleaks a besoin de lire les commits de la PR.
+    permissions:
+      contents: read
+      pull-requests: read
     secrets: inherit
 
   # ── Supabase migrations ─────────────────────────────────────────────────
