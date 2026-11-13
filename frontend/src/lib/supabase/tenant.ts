@@ -37,7 +37,19 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-/** Tables carrying a `jurisdiction_id` column (migrations 071 + 072; aircraft from 074). */
+/**
+ * Tables carrying a `jurisdiction_id` column that a tenant client filters on.
+ *
+ * Migrations 071 + 072 (aircraft from 074), then the child tables of mig 172.
+ * On those nine, the database stamps the country from the parent row whatever
+ * the caller sends; listing them here adds the read-side filter the
+ * service-role client would otherwise skip.
+ *
+ * Not listed on purpose: control-plane tables (jurisdictions, tariffs,
+ * revenue_split_rule, user_jurisdictions…), which staff screens read across
+ * countries through the platform client, and `audit_logs`, whose column is
+ * nullable — filtering it would hide the platform-level entries.
+ */
 export const TENANT_SCOPED_TABLES: ReadonlySet<string> = new Set([
     'transactions',
     'arrival_alerts',
@@ -49,6 +61,16 @@ export const TENANT_SCOPED_TABLES: ReadonlySet<string> = new Set([
     'wallet_ledger',
     'refunds',
     'owner_notifications',
+    // mig 172
+    'collection_reminders',
+    'collections_event',
+    'dispute_intervals',
+    'disputes',
+    'exemptions',
+    'inspections',
+    'owner_agent_mappings',
+    'owner_members',
+    'payment_proofs',
 ]);
 
 const JURISDICTION_COL = 'jurisdiction_id';
