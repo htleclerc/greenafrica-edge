@@ -29,6 +29,9 @@
 # Code de sortie : 0 = export complet, 1 = échec (rien d'exploitable n'est laissé).
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
+# Tout ce que ce script crée n'est lisible que par celui qui le lance : l'export
+# porte des comptes et des empreintes de mots de passe.
+umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -155,9 +158,16 @@ INSERT INTO _plan
 SELECT 3, 'public', tbl, 'true', 'globals/' || tbl || '.csv' FROM _conf WHERE class = 'GLOBAL';
 
 -- Les colonnes calculées par la base ne s'exportent pas : elles ne se réimportent pas.
+-- Les jetons à usage unique des comptes (confirmation, récupération, changement
+-- d'adresse…) ne sortent pas : ils partent vides. Vides et non NULL, parce que
+-- le service d'authentification ne sait pas relire un jeton NULL.
 INSERT INTO _cols
 SELECT p.sch, p.tbl,
-       string_agg(quote_ident(a.attname), ', ' ORDER BY a.attnum) AS cols
+       string_agg(
+         CASE WHEN p.sch = 'auth' AND p.tbl = 'users' AND a.attname LIKE '%token%'
+              THEN format('%L AS %I', '', a.attname)
+              ELSE quote_ident(a.attname) END,
+         ', ' ORDER BY a.attnum) AS cols
   FROM _plan p
   JOIN pg_attribute a ON a.attrelid = format('%I.%I', p.sch, p.tbl)::regclass
  WHERE a.attnum > 0 AND NOT a.attisdropped AND a.attgenerated = '' AND a.attidentity <> 'a'
