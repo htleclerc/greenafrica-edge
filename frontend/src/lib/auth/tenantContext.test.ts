@@ -8,6 +8,8 @@ const SN = '11111111-1111-4111-8111-111111111111';
 let authUser: { id: string } | null;
 let ownerRow: { jurisdiction_id: string } | null;
 let membershipRows: Array<{ jurisdiction_id: string }>;
+let staffRole: string;
+let allJurisdictionIds: string[];
 let activeCookieValue: string | undefined;
 
 const mockClient = {
@@ -27,7 +29,24 @@ const mockClient = {
         }
         if (table === 'user_jurisdictions') {
             return {
-                select: () => ({ eq: async () => ({ data: membershipRows, error: null }) }),
+                select: () => ({ eq: async () => ({
+                    data: membershipRows.map((m) => ({
+                        ...m, jurisdictions: { id: m.jurisdiction_id, code: m.jurisdiction_id, name: m.jurisdiction_id },
+                    })),
+                    error: null,
+                }) }),
+            };
+        }
+        if (table === 'profiles') {
+            return {
+                select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: staffRole }, error: null }) }) }),
+            };
+        }
+        if (table === 'jurisdictions') {
+            return {
+                select: async () => ({
+                    data: allJurisdictionIds.map((id) => ({ id, code: id, name: id })), error: null,
+                }),
             };
         }
         throw new Error(`unexpected table ${table}`);
@@ -55,6 +74,8 @@ beforeEach(() => {
     ownerRow = null;
     membershipRows = [];
     activeCookieValue = undefined;
+    staffRole = 'PORT_OFFICER';
+    allJurisdictionIds = [SO, SN];
 });
 
 describe('getServerJurisdictionId', () => {
@@ -94,6 +115,31 @@ describe('getServerJurisdictionId', () => {
     it('throws when there is no authenticated user', async () => {
         authUser = null;
         await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/no authenticated user/);
+    });
+
+    it('general admin with no membership reaches the jurisdiction picked in the switcher', async () => {
+        staffRole = 'SUPERADMIN';
+        membershipRows = [];
+        activeCookieValue = SN;
+        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SN);
+    });
+
+    it('general admin without a choice throws rather than defaulting to a country (fail-closed)', async () => {
+        staffRole = 'SUPERADMIN';
+        membershipRows = [];
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
+    });
+
+    it('general admin cannot pick a jurisdiction that does not exist', async () => {
+        staffRole = 'SUPERADMIN';
+        activeCookieValue = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+        await expect(_getServerJurisdictionIdImpl()).rejects.toThrow(/select an active jurisdiction/);
+    });
+
+    it('general admin goes straight in when a single jurisdiction exists', async () => {
+        staffRole = 'SUPERADMIN';
+        allJurisdictionIds = [SO];
+        await expect(_getServerJurisdictionIdImpl()).resolves.toBe(SO);
     });
 
     it('prefers the owner path over staff memberships', async () => {

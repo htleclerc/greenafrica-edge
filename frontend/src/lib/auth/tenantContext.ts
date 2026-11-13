@@ -30,6 +30,7 @@
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { listAccessibleJurisdictions } from '@/lib/auth/accessibleJurisdictions';
 
 /**
  * Cookie name for the staff active-jurisdiction switcher.
@@ -63,11 +64,10 @@ export async function _getServerJurisdictionIdImpl(): Promise<string> {
     const cookieStore = await cookies();
     const cookieValue = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value;
 
-    const { data: memberships } = await supabase
-        .from('user_jurisdictions')
-        .select('jurisdiction_id')
-        .eq('user_id', user.id);
-    const ids = (memberships ?? []).map((m) => m.jurisdiction_id as string);
+    // Les pays accessibles : tous pour l'administrateur général, qui n'est
+    // rattaché à aucun ; ses rattachements pour le reste du personnel.
+    const { jurisdictions } = await listAccessibleJurisdictions(supabase, user.id);
+    const ids = jurisdictions.map((j) => j.id);
 
     if (ids.length === 0) {
         throw new Error(`getServerJurisdictionId: no jurisdiction resolved for user ${user.id}`);

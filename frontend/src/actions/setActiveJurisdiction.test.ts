@@ -52,6 +52,20 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn().mockResolvedValue(mockSupabase),
 }));
 
+// Les pays accessibles sont résolus par un module testé à part (administrateur
+// général = tous les pays ; personnel = ses rattachements). Ici, `membershipRow`
+// non nul veut dire « le pays demandé en fait partie ».
+let accessibleShouldThrow = false;
+vi.mock('@/lib/auth/accessibleJurisdictions', () => ({
+    listAccessibleJurisdictions: vi.fn(async () => {
+        if (accessibleShouldThrow) throw new Error('lecture impossible');
+        return {
+            isGeneralAdmin: false,
+            jurisdictions: membershipRow ? [{ id: VALID_UUID, code: 'SO', name: 'Somaliland' }] : [],
+        };
+    }),
+}));
+
 // ── Cookie mock ───────────────────────────────────────────────────────────────
 const mockCookieSet = vi.fn((name: string, value: string, options: Record<string, unknown>) => {
     cookieSetCalls.push({ name, value, options });
@@ -77,6 +91,7 @@ describe('setActiveJurisdiction', () => {
         auditInsertCalls.length = 0;
         cookieSetCalls.length = 0;
         auditInsertShouldThrow = false;
+        accessibleShouldThrow = false;
         mockSupabase.auth.getUser.mockResolvedValue({
             data: { user: { id: 'user-1', email: 'user@test.com' } },
         });
@@ -158,5 +173,13 @@ describe('setActiveJurisdiction', () => {
         const result = await fn({ jurisdictionId: VALID_UUID });
         // Cookie was already set; switch succeeds even though audit insert throws.
         expect(result).toMatchObject({ ok: true });
+    });
+
+    it('refuses, without writing the cookie, when accessible jurisdictions cannot be read', async () => {
+        accessibleShouldThrow = true;
+        const setActiveJurisdiction = await getSUT();
+        const res = await setActiveJurisdiction({ jurisdictionId: VALID_UUID });
+        expect(res).toEqual({ ok: false, error: 'jurisdictions unavailable' });
+        expect(cookieSetCalls).toHaveLength(0);
     });
 });

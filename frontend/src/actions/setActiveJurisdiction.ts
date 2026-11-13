@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { ACTIVE_JURISDICTION_COOKIE } from '@/lib/auth/tenantContext';
+import { listAccessibleJurisdictions } from '@/lib/auth/accessibleJurisdictions';
 
 const schema = z.object({
     jurisdictionId: z.string().uuid(),
@@ -30,16 +31,15 @@ export async function setActiveJurisdiction(raw: unknown): Promise<SetActiveJuri
         return { ok: false, error: 'not authenticated' };
     }
 
-    // Verify the caller is actually a member of the requested jurisdiction.
-    // The session client can read the caller's own user_jurisdictions rows via RLS.
-    const { data: membership } = await supabase
-        .from('user_jurisdictions')
-        .select('jurisdiction_id')
-        .eq('user_id', user.id)
-        .eq('jurisdiction_id', jurisdictionId)
-        .maybeSingle();
-
-    if (!membership) {
+    // Le pays demandé doit faire partie de ceux auxquels l'appelant a accès :
+    // tous pour l'administrateur général, ses rattachements pour les autres.
+    let accessible: string[];
+    try {
+        accessible = (await listAccessibleJurisdictions(supabase, user.id)).jurisdictions.map((j) => j.id);
+    } catch {
+        return { ok: false, error: 'jurisdictions unavailable' };
+    }
+    if (!accessible.includes(jurisdictionId)) {
         return { ok: false, error: 'not a member of this jurisdiction' };
     }
 
