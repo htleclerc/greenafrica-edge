@@ -80,8 +80,36 @@ SELECT t ->> 'file' AS file,
        t -> 'columns' AS columns, t -> 'primary_key' AS pk
   FROM _schema, jsonb_array_elements(doc -> 'tables') AS t;
 
+-- schema.json vient de l'export : on ne lui fait pas confiance. Les noms qu'il
+-- porte servent à écrire le script de chargement ; un nom forgé (saut de ligne,
+-- guillemet, chemin) y glisserait des commandes. Tout ce qui n'a pas la forme
+-- attendue, ou n'a pas été vérifié par son empreinte, fait refuser l'export.
+CREATE TEMP TABLE _expected (path text, n bigint);
+\copy _expected FROM '_expected.tsv' WITH (FORMAT text)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM _tables t
+     WHERE t.file IS NULL OR t.name IS NULL
+        OR t.file !~ '^(tenant|accounts|globals)/[a-z0-9_]+\.jsonl$'
+        OR t.name !~ '^[a-z0-9_]+$'
+        OR NOT EXISTS (SELECT 1 FROM _expected e WHERE e.path = t.file)
+        OR jsonb_typeof(t.columns) IS DISTINCT FROM 'array'
+        OR jsonb_typeof(t.pk) IS DISTINCT FROM 'array'
+        OR EXISTS (SELECT 1 FROM jsonb_array_elements(
+                     CASE WHEN jsonb_typeof(t.columns) = 'array' THEN t.columns ELSE '[]'::jsonb END) c
+                    WHERE coalesce(c ->> 'name', '') !~ '^[a-z0-9_]+$'
+                       OR coalesce(c ->> 'nullable', '') NOT IN ('true', 'false'))
+        OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(
+                     CASE WHEN jsonb_typeof(t.pk) = 'array' THEN t.pk ELSE '[]'::jsonb END) k
+                    WHERE k !~ '^[a-z0-9_]+$')
+  ) THEN
+    RAISE EXCEPTION 'schema.json : nom de fichier, de table ou de colonne inattendu, ou fichier absent du manifeste — export refusé.';
+  END IF;
+END $$;
+
 -- Un type standard est repris tel quel ; tout autre devient du texte. Un
--- tableau reste un tableau.
+-- tableau reste un tableau. Le type n'est jamais recopié sans avoir été reconnu.
 CREATE FUNCTION pg_temp.portable_type(t text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
            WHEN regexp_replace(t, '\[\]$', '') ~ ('^(uuid|text|boolean|smallint|integer|bigint|real|double precision|date|jsonb|json|bytea|inet'
@@ -122,7 +150,7 @@ CREATE SCHEMA :"landing";
 COMMIT;
 SQL
 
-BAD="$(awk -F'\t' 'NR==FNR {want[$1]=$2; next} { gsub(/\r/, "", $2); if ($2 != want[$1]) print $1 " (attendu " want[$1] ", trouvé " $2 ")" }' _expected.tsv _loaded.tsv)"
+BAD="$(awk -F'\t' 'NR==FNR {want[$1]=$2; next} { gsub(/\r/, "", $2); if ($2+0 != want[$1]+0) print $1 " (attendu " want[$1] ", trouvé " $2 ")" }' _expected.tsv _loaded.tsv)"
 [ -z "$BAD" ] || die "chargement incomplet : $BAD"
 
 TABLES="$(wc -l < _loaded.tsv | tr -d ' ')"

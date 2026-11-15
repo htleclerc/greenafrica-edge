@@ -95,6 +95,31 @@ SELECT t ->> 'file' AS file, t ->> 'section' AS section, t ->> 'schema' AS sch,
        t ->> 'table' AS tbl, t -> 'columns' AS columns
   FROM _schema, jsonb_array_elements(doc -> 'tables') AS t;
 
+-- schema.json vient de l'export : on ne lui fait pas confiance. Les noms qu'il
+-- porte servent à écrire le script de chargement ; un nom forgé (saut de ligne,
+-- guillemet, chemin) y glisserait des commandes. Tout ce qui n'a pas la forme
+-- attendue, ou n'a pas été vérifié par son empreinte, fait refuser l'export.
+CREATE TEMP TABLE _expected (path text, n bigint);
+\copy _expected FROM '_expected.tsv' WITH (FORMAT text)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM _tables t
+     WHERE t.file IS NULL OR t.tbl IS NULL OR t.sch IS NULL OR t.section IS NULL
+        OR t.file !~ '^(tenant|accounts|globals)/[a-z0-9_]+\.jsonl$'
+        OR t.tbl !~ '^[a-z0-9_]+$'
+        OR t.file <> t.section || '/' || t.tbl || '.jsonl'
+        OR t.sch <> CASE WHEN t.section = 'accounts' THEN 'auth' ELSE 'public' END
+        OR NOT EXISTS (SELECT 1 FROM _expected e WHERE e.path = t.file)
+        OR jsonb_typeof(t.columns) IS DISTINCT FROM 'array'
+        OR EXISTS (SELECT 1 FROM jsonb_array_elements(
+                     CASE WHEN jsonb_typeof(t.columns) = 'array' THEN t.columns ELSE '[]'::jsonb END) c
+                    WHERE coalesce(c ->> 'name', '') !~ '^[a-z0-9_]+$')
+  ) THEN
+    RAISE EXCEPTION 'schema.json : nom de fichier, de table ou de colonne inattendu, ou fichier absent du manifeste — export refusé.';
+  END IF;
+END $$;
+
 SELECT set_config('import.fingerprint', :'fingerprint', false) AS _fp \gset
 
 -- La cible doit porter les mêmes tables, colonne pour colonne.
@@ -179,7 +204,7 @@ END $$;
 COMMIT;
 SQL
 
-BAD="$(awk -F'\t' 'NR==FNR {want[$1]=$2; next} { gsub(/\r/, "", $2); if ($2 < want[$1]) print $1 " (attendu " want[$1] ", trouvé " $2 ")" }' _expected.tsv _imported.tsv)"
+BAD="$(awk -F'\t' 'NR==FNR {want[$1]=$2; next} { gsub(/\r/, "", $2); if ($2+0 < want[$1]+0) print $1 " (attendu " want[$1] ", trouvé " $2 ")" }' _expected.tsv _imported.tsv)"
 [ -z "$BAD" ] || die "import incomplet après validation — ne devrait pas arriver : $BAD"
 
 TABLES="$(wc -l < _imported.tsv | tr -d ' ')"

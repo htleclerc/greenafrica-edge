@@ -205,6 +205,24 @@ TARGET_DB_URL="$PLAIN_URL" CONFIRM_TARGET_DB=gg_rt_plain bash "$SCRIPT_DIR/tenan
 grep -q 'absente' "$WORK/plain.err" || die "refus attendu pour tables absentes, obtenu : $(head -c 200 "$WORK/plain.err")"
 ok "l'import de la plateforme refuse une base sans ses tables, et le dit"
 
+echo "6 ter. Un export forgé, aux empreintes pourtant cohérentes, est refusé"
+# Un nom de table contenant un saut de ligne ferait écrire une commande de plus
+# dans le script de chargement. On forge schema.json, puis on recalcule son
+# empreinte dans le manifeste, comme le ferait un attaquant soigneux.
+cp -r "$WORK/export" "$WORK/forged"
+sed -i 's/"table": "vessels"/"table": "vessels\nPWNED"/' "$WORK/forged/schema.json"
+NEWSUM="$(sha256sum "$WORK/forged/schema.json" | cut -d' ' -f1)"
+sed -i -E "s/(\"path\": \"schema.json\", \"rows\": 1, \"sha256\": \")[0-9a-f]+/\1$NEWSUM/" "$WORK/forged/manifest.json"
+grep -q 'PWNED' "$WORK/forged/schema.json" || die "le jeu d'essai forgé n'a pas été fabriqué"
+TARGET_DB_URL="$DST_URL" CONFIRM_TARGET_DB=gg_rt_dst bash "$SCRIPT_DIR/tenant-import.sh" "$WORK/forged" >/dev/null 2>"$WORK/forged1.err" \
+  && die "l'import a accepté un schema.json forgé"
+grep -qE 'export refusé|invalid input syntax' "$WORK/forged1.err" || die "refus attendu pour schema.json forgé, obtenu : $(head -c 200 "$WORK/forged1.err")"
+TARGET_DB_URL="$PLAIN_URL" CONFIRM_TARGET_DB=gg_rt_plain bash "$SCRIPT_DIR/tenant-load-plain.sh" "$WORK/forged" forge_test >/dev/null 2>"$WORK/forged2.err" \
+  && die "le chargement dans une base nue a accepté un schema.json forgé"
+grep -qE 'export refusé|invalid input syntax' "$WORK/forged2.err" || die "refus attendu pour schema.json forgé (base nue), obtenu : $(head -c 200 "$WORK/forged2.err")"
+[ ! -e "$WORK/forged/pwned.txt" ] || die "la commande glissée dans l'export a été exécutée"
+ok "noms contrôlés avant toute génération, aucune commande exécutée"
+
 echo "7. Un export altéré est refusé"
 printf 'x' >> "$WORK/export/tenant/vessels.jsonl"
 TARGET_DB_URL="$DST_URL" CONFIRM_TARGET_DB=gg_rt_dst bash "$SCRIPT_DIR/tenant-import.sh" "$WORK/export" >/dev/null 2>&1 \
