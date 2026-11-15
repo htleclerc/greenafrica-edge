@@ -49,7 +49,7 @@ TEMPLATE_DB="${BASE_URL##*/}"
 
 WORK="$(mktemp -d)"
 drop_dbs() {
-  psql "$ADMIN_URL" -X -q -c 'DROP DATABASE IF EXISTS gg_rt_src' -c 'DROP DATABASE IF EXISTS gg_rt_dst' >/dev/null 2>&1 || true
+  psql "$ADMIN_URL" -X -q -c 'DROP DATABASE IF EXISTS gg_rt_src' -c 'DROP DATABASE IF EXISTS gg_rt_dst' -c 'DROP DATABASE IF EXISTS gg_rt_plain' >/dev/null 2>&1 || true
 }
 cleanup() { drop_dbs; rm -rf "$WORK"; }
 trap cleanup EXIT
@@ -119,11 +119,11 @@ ok "TSTA et TSTB peuplés"
 echo "3. Export de TSTA"
 EXPORT_DIR="$WORK/export" SUPABASE_DB_URL="$SRC_URL" bash "$SCRIPT_DIR/tenant-export.sh" TSTA >/dev/null
 [ -f "$WORK/export/manifest.json" ] || die "pas de manifeste"
-if grep -rl 'bbbbbbbb-0000-4000-8000' "$WORK/export/tenant" "$WORK/export/auth" >/dev/null 2>&1; then
-  die "l'export de TSTA contient des lignes de TSTB : $(grep -rl 'bbbbbbbb-0000-4000-8000' "$WORK/export/tenant" "$WORK/export/auth" | tr '\n' ' ')"
+if grep -rl 'bbbbbbbb-0000-4000-8000' "$WORK/export/tenant" "$WORK/export/accounts" >/dev/null 2>&1; then
+  die "l'export de TSTA contient des lignes de TSTB : $(grep -rl 'bbbbbbbb-0000-4000-8000' "$WORK/export/tenant" "$WORK/export/accounts" | tr '\n' ' ')"
 fi
 ok "aucune ligne de TSTB dans l'export"
-grep -q 'staff-a@roundtrip.test' "$WORK/export/auth/users.csv" || die "le compte du personnel de TSTA manque à l'export"
+grep -q 'staff-a@roundtrip.test' "$WORK/export/accounts/users.jsonl" || die "le compte du personnel de TSTA manque à l'export"
 ok "les comptes cités par TSTA sont dans l'export"
 
 echo "4. Import dans la base neuve"
@@ -177,8 +177,36 @@ fingerprint "$DST_URL" > "$WORK/dst2.fp"
 diff "$WORK/dst.fp" "$WORK/dst2.fp" >/dev/null || die "un second import a changé le contenu"
 ok "second import sans effet"
 
+echo "6 bis. L'export se charge dans un PostgreSQL nu, sans la plateforme"
+# template0 : une base vide d'origine — ni tables, ni extensions, ni schéma
+# d'authentification. C'est le cas d'un État qui héberge sa propre base.
+psql "$ADMIN_URL" -X -q -v ON_ERROR_STOP=1 -c 'CREATE DATABASE gg_rt_plain TEMPLATE template0 OWNER postgres' \
+  || die "impossible de créer la base nue"
+PLAIN_URL="$(url_for gg_rt_plain)"
+[ "$(psql "$PLAIN_URL" -X -q -tA -c "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema')")" = "0" ] \
+  || die "la base nue n'est pas vide"
+[ "$(psql "$PLAIN_URL" -X -q -tA -c "SELECT count(*) FROM pg_namespace WHERE nspname = 'auth'")" = "0" ] \
+  || die "la base nue porte un schéma d'authentification"
+TARGET_DB_URL="$PLAIN_URL" CONFIRM_TARGET_DB=gg_rt_plain bash "$SCRIPT_DIR/tenant-load-plain.sh" "$WORK/export" >/dev/null
+ok "tables créées depuis schema.json et lignes chargées, nombres vérifiés"
+# Contenu, pas seulement nombre : le navire dont le nom porte une virgule et des
+# guillemets, et la note sur deux lignes, doivent arriver intacts.
+NAME="$(psql "$PLAIN_URL" -X -q -tA -c "SELECT name FROM greengate_export.vessels WHERE id = 'aaaaaaaa-0000-4000-8000-000000000020'")"
+[ "$NAME" = 'Navire A, "le premier"' ] || die "nom du navire altéré dans la base nue : $NAME"
+LINES="$(psql "$PLAIN_URL" -X -q -tA -c "SELECT array_length(string_to_array(notes, E'\n'), 1) FROM greengate_export.exemptions WHERE vessel_id = 'aaaaaaaa-0000-4000-8000-000000000020'")"
+[ "$LINES" = "2" ] || die "note sur deux lignes altérée dans la base nue ($LINES ligne)"
+ok "valeurs délicates intactes (virgule, guillemets, saut de ligne)"
+PEOPLE_PLAIN="$(psql "$PLAIN_URL" -X -q -tA -c "SELECT count(*) FROM greengate_export.account_users WHERE email = 'staff-a@roundtrip.test'")"
+[ "$PEOPLE_PLAIN" = "1" ] || die "le compte du personnel de TSTA manque dans la base nue"
+ok "comptes disponibles dans la base nue, hors de tout service d'authentification"
+# L'import « plateforme » doit refuser cette base : elle n'a pas ses tables.
+TARGET_DB_URL="$PLAIN_URL" CONFIRM_TARGET_DB=gg_rt_plain bash "$SCRIPT_DIR/tenant-import.sh" "$WORK/export" >/dev/null 2>"$WORK/plain.err" \
+  && die "l'import de la plateforme a accepté une base sans ses tables"
+grep -q 'absente' "$WORK/plain.err" || die "refus attendu pour tables absentes, obtenu : $(head -c 200 "$WORK/plain.err")"
+ok "l'import de la plateforme refuse une base sans ses tables, et le dit"
+
 echo "7. Un export altéré est refusé"
-printf 'x' >> "$WORK/export/tenant/vessels.csv"
+printf 'x' >> "$WORK/export/tenant/vessels.jsonl"
 TARGET_DB_URL="$DST_URL" CONFIRM_TARGET_DB=gg_rt_dst bash "$SCRIPT_DIR/tenant-import.sh" "$WORK/export" >/dev/null 2>&1 \
   && die "un export modifié a été accepté"
 ok "empreinte vérifiée avant toute écriture"
