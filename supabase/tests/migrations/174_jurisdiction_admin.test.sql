@@ -80,10 +80,17 @@ BEGIN
   SELECT count(*) INTO cnt FROM public.user_jurisdictions WHERE jurisdiction_id = tst_jid;
   IF cnt > 0 THEN RESET ROLE; RAISE EXCEPTION 'TEST FAILED: l''administrateur d''un pays lit le personnel d''un autre'; END IF;
 
-  -- Rattacher du personnel à SON pays : oui.
-  INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id) VALUES (newbie, so_jid);
+  -- Rattacher lui-même quelqu'un qui a déjà un compte : non, même dans SON pays
+  -- et même du personnel. Ce cas revient à l'administrateur général ; pour une
+  -- personne sans compte, c'est l'application qui crée compte et rattachement.
+  blocked := false;
+  BEGIN
+    INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id) VALUES (newbie, so_jid);
+  EXCEPTION WHEN insufficient_privilege THEN blocked := true;
+  END;
+  IF NOT blocked THEN RESET ROLE; RAISE EXCEPTION 'TEST FAILED: un administrateur de pays a rattaché un compte existant'; END IF;
 
-  -- À un autre pays : non.
+  -- À un autre pays : non plus.
   blocked := false;
   BEGIN
     INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id) VALUES (newbie, tst_jid);
@@ -92,7 +99,6 @@ BEGIN
   IF NOT blocked THEN RESET ROLE; RAISE EXCEPTION 'TEST FAILED: rattachement à un autre pays accepté'; END IF;
 
   -- Créer un autre administrateur : non.
-  DELETE FROM public.user_jurisdictions WHERE user_id = newbie AND jurisdiction_id = so_jid;
   blocked := false;
   BEGIN
     INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id, is_admin) VALUES (newbie, so_jid, true);
@@ -146,6 +152,33 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN blocked := true;
   END;
   IF NOT blocked THEN RAISE EXCEPTION 'TEST FAILED: tarif modifié par un compte inactif'; END IF;
+
+  -- ── Règles d'écriture directe : inchangées pour l'administrateur d'un pays ─
+  -- Il passe par l'application ; la table des tarifs et celle du profil
+  -- d'émetteur (donc des comptes de paiement) lui restent fermées par l'API.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', cadmin::text)::text, true);
+  SET LOCAL ROLE authenticated;
+  UPDATE public.tariffs SET rate_per_tco2 = 1 WHERE jurisdiction_id = so_jid;
+  GET DIAGNOSTICS cnt = ROW_COUNT;
+  IF cnt > 0 THEN RESET ROLE; RAISE EXCEPTION 'TEST FAILED: tarif modifié hors versionnage par un administrateur de pays'; END IF;
+  UPDATE public.jurisdiction_issuer_profile SET bank_accounts = '[]'::jsonb;
+  GET DIAGNOSTICS cnt = ROW_COUNT;
+  IF cnt > 0 THEN RESET ROLE; RAISE EXCEPTION 'TEST FAILED: comptes de paiement modifiés par un administrateur de pays'; END IF;
+  RESET ROLE;
+
+  -- ── Comptes de paiement : généraux par défaut ──────────────────────────────
+  -- La ligne d'un pays peut ne pas porter de comptes (elle suit alors la ligne
+  -- générale) ; la ligne générale, elle, en porte toujours.
+  INSERT INTO public.jurisdiction_issuer_profile (jurisdiction_id, bank_accounts)
+    VALUES (tst_jid, NULL);
+  blocked := false;
+  BEGIN
+    UPDATE public.jurisdiction_issuer_profile SET bank_accounts = NULL WHERE jurisdiction_id IS NULL;
+    GET DIAGNOSTICS cnt = ROW_COUNT;
+    IF cnt = 0 THEN blocked := true; END IF;   -- pas de ligne générale dans cette base : rien à vérifier
+  EXCEPTION WHEN check_violation THEN blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'TEST FAILED: la ligne générale a pu perdre ses comptes'; END IF;
 END $$;
 
 SELECT '174 jurisdiction admin: PASS' AS test_result;

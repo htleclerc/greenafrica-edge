@@ -345,28 +345,10 @@ describe('inviteStaff', () => {
             expect(inviteSpy).not.toHaveBeenCalled();
         });
 
-        it('rattache un membre du personnel déjà inscrit sans réécrire son profil', async () => {
-            inviteSpy.mockResolvedValueOnce({
-                data: { user: null } as unknown as { user: { id: string } },
-                error: { code: 'email_exists', message: 'Email already registered' } as unknown as null,
-            });
-            existingInviteeProfile = { role: 'FINANCE_ADMIN' };
-
-            const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com', role: 'MANAGER' });
-
-            expect(r.ok).toBe(true);
-            if (r.ok) expect(r.alreadyExisted).toBe(true);
-            // Son rôle reste celui qu'il avait : un administrateur de pays ne le change pas.
-            expect(profileUpsertSpy).not.toHaveBeenCalled();
-            expect(userJurisdictionsUpsertSpy).toHaveBeenCalledTimes(1);
-            // Et aucun courriel ne part : il porterait un nom et un rôle choisis
-            // par l'appelant, avec un lien de connexion valide.
-            expect(sendStaffInviteSpy).not.toHaveBeenCalled();
-            expect(generateLinkSpy).not.toHaveBeenCalled();
-        });
-
-        it.each([['SUPERADMIN'], ['SHIPPING_AGENT'], ['SHIPOWNER']])(
-            'refuse de rattacher un compte existant de rôle %s',
+        // Quelqu un qui a deja un compte releve peut-etre d un autre Etat :
+        // le rattacher revient a l administrateur general, quel que soit son role.
+        it.each([['PORT_OFFICER'], ['FINANCE_ADMIN'], ['MANAGER'], ['SUPERADMIN'], ['SHIPPING_AGENT'], ['SHIPOWNER']])(
+            'refuse de rattacher une personne qui a deja un compte (role %s)',
             async (existingRole) => {
                 inviteSpy.mockResolvedValueOnce({
                     data: { user: null } as unknown as { user: { id: string } },
@@ -377,24 +359,12 @@ describe('inviteStaff', () => {
                 const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com' });
 
                 expect(r.ok).toBe(false);
-                if (!r.ok) expect(r.reason).toMatch(/not a staff account/i);
+                if (!r.ok) expect(r.reason).toMatch(/already has an account/i);
                 expect(profileUpsertSpy).not.toHaveBeenCalled();
                 expect(userJurisdictionsUpsertSpy).not.toHaveBeenCalled();
+                expect(sendStaffInviteSpy).not.toHaveBeenCalled();
             },
         );
-
-        it('refuse un compte existant sans profil', async () => {
-            inviteSpy.mockResolvedValueOnce({
-                data: { user: null } as unknown as { user: { id: string } },
-                error: { code: 'email_exists', message: 'Email already registered' } as unknown as null,
-            });
-            existingInviteeProfile = null;
-
-            const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com' });
-
-            expect(r.ok).toBe(false);
-            expect(userJurisdictionsUpsertSpy).not.toHaveBeenCalled();
-        });
     });
 
     it('accepts all valid staff roles', async () => {

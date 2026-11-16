@@ -34,6 +34,8 @@ interface Props {
     jurisdictions: Array<{ id: string; code: string; name: string }>;
     profiles: IssuerProfileRow[];
     viewerRole: string;
+    /** Pays que la personne administre (mig 174) : elle y modifie le profil, jamais les comptes. */
+    administeredJurisdictionIds?: string[];
 }
 
 const TEXT_FIELDS: Array<{ key: keyof Draft; label: string; hint?: string; wide?: boolean }> = [
@@ -95,7 +97,7 @@ function toDraft(row: IssuerProfileRow | undefined): Draft {
  * revalide chaque champ côté serveur, un collage malformé est refusé avant
  * d'atteindre la base.
  */
-export function IssuerProfilePanel({ jurisdictions, profiles, viewerRole }: Props) {
+export function IssuerProfilePanel({ jurisdictions, profiles, viewerRole, administeredJurisdictionIds = [] }: Props) {
     const router = useRouter();
     const [target, setTarget] = React.useState<string>('__default__');
     const jurisdictionId = target === '__default__' ? null : target;
@@ -116,8 +118,13 @@ export function IssuerProfilePanel({ jurisdictions, profiles, viewerRole }: Prop
     }, [row]);
 
     const canEditDefault = viewerRole === 'SUPERADMIN';
-    const canEdit = viewerRole === 'SUPERADMIN' || viewerRole === 'FINANCE_ADMIN';
+    // Les comptes de paiement suivent le role (finances, administrateur general).
+    // Le reste du profil s ouvre aussi a l administrateur du pays choisi.
+    const canEditAccounts = viewerRole === 'SUPERADMIN' || viewerRole === 'FINANCE_ADMIN';
+    const administersTarget = jurisdictionId !== null && administeredJurisdictionIds.includes(jurisdictionId);
+    const canEdit = canEditAccounts || administersTarget;
     const blocked = !canEdit || (jurisdictionId === null && !canEditDefault);
+    const accountsBlocked = blocked || !canEditAccounts;
 
     function set<K extends keyof Draft>(key: K, value: string) {
         setDraft((d) => ({ ...d, [key]: value }));
@@ -240,7 +247,7 @@ export function IssuerProfilePanel({ jurisdictions, profiles, viewerRole }: Prop
                 </span>
                 <textarea
                     value={draft.bankAccountsJson}
-                    disabled={blocked}
+                    disabled={accountsBlocked}
                     onChange={(e) => set('bankAccountsJson', e.target.value)}
                     spellCheck={false}
                     rows={14}
@@ -248,6 +255,13 @@ export function IssuerProfilePanel({ jurisdictions, profiles, viewerRole }: Prop
                     style={{ borderColor: 'var(--os-border)' }}
                 />
                 <span className="text-[10px] text-[var(--os-text-muted)]">
+                    {jurisdictionId !== null && (
+                        <>
+                            Leave the list empty (<code>[]</code>) to use the platform&apos;s general accounts —
+                            that is the default. Fill it in only when this jurisdiction collects on accounts
+                            of its own.{' '}
+                        </>
+                    )}
                     Exactly one account must carry <code>&quot;is_primary&quot;: true</code> — that is the one
                     printed on page 1 and shown to the shipowner. Each needs an IBAN or an account number.
                 </span>

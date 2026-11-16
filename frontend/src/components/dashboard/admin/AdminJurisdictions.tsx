@@ -82,6 +82,8 @@ interface Props {
     splitRules: SplitRuleRow[];
     settlement: SettlementRow[];
     viewerRole: string;
+    /** Pays que la personne administre (mig 174) : elle y versionne les tarifs quel que soit son role. */
+    administeredJurisdictionIds?: string[];
     ccByJurisdiction?: Record<string, { cc_emails: string[]; bailiff_cc_emails: string[] }>;
 }
 
@@ -855,7 +857,7 @@ function JurisdictionCard({
 // Main panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, settlement, viewerRole, ccByJurisdiction }: Props) {
+export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitRules, settlement, viewerRole, ccByJurisdiction, administeredJurisdictionIds = [] }: Props) {
     const t = useTranslations('AdminJurisdictions');
     const router = useRouter();
 
@@ -904,7 +906,7 @@ export function AdminJurisdictions({ jurisdictions, modeConfigs, tariffs, splitR
                                 settlement={settlement}
                                 ccInitial={ccInitial}
                                 canToggleModes={canToggleModes}
-                                canCreateTariff={canCreateTariff}
+                                canCreateTariff={canCreateTariff || administeredJurisdictionIds.includes(jur.id)}
                                 canEditCc={canEditCc}
                                 onRefresh={onRefresh}
                             />

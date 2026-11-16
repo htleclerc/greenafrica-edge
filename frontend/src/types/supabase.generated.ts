@@ -1798,7 +1798,7 @@ export type Database = {
         Row: {
           authority_line: string | null
           bailiff_name: string | null
-          bank_accounts: Json
+          bank_accounts: Json | null
           billing_email: string | null
           created_at: string
           decree_reference: string | null
@@ -1824,7 +1824,7 @@ export type Database = {
         Insert: {
           authority_line?: string | null
           bailiff_name?: string | null
-          bank_accounts?: Json
+          bank_accounts?: Json | null
           billing_email?: string | null
           created_at?: string
           decree_reference?: string | null
@@ -1850,7 +1850,7 @@ export type Database = {
         Update: {
           authority_line?: string | null
           bailiff_name?: string | null
-          bank_accounts?: Json
+          bank_accounts?: Json | null
           billing_email?: string | null
           created_at?: string
           decree_reference?: string | null

@@ -49,7 +49,19 @@ function input(over: Record<string, unknown> = {}) {
     };
 }
 
-function setup(opts: { role?: string; isActive?: boolean; defaultExists?: boolean } = {}) {
+interface SetupOptions {
+    role?: string;
+    isActive?: boolean;
+    defaultExists?: boolean;
+    /** Comptes de la ligne générale (sans pays). */
+    generalAccounts?: unknown;
+    /** Comptes propres au pays ; absent = il suit les comptes généraux. */
+    ownAccounts?: unknown;
+    /** Pays que l'appelant administre (mig 174). */
+    administers?: string[];
+}
+
+function setup(opts: SetupOptions = {}) {
     const captured = {
         upsert: null as Record<string, unknown> | null,
         update: null as Record<string, unknown> | null,
@@ -64,9 +76,20 @@ function setup(opts: { role?: string; isActive?: boolean; defaultExists?: boolea
     platformFromMock.mockImplementation((t: string) => {
         if (t === 'jurisdiction_issuer_profile') {
             return {
-                select: () => ({ is: () => ({ maybeSingle: async () => ({
-                    data: opts.defaultExists === false ? null : { id: 'row-default' },
-                }) }) }),
+                select: () => ({
+                    // Ligne générale (jurisdiction_id IS NULL).
+                    is: () => ({ maybeSingle: async () => ({
+                        data: opts.defaultExists === false
+                            ? null
+                            : { id: 'row-default', bank_accounts: opts.generalAccounts ?? [ACCOUNT] },
+                        error: null,
+                    }) }),
+                    // Ligne du pays.
+                    eq: () => ({ maybeSingle: async () => ({
+                        data: opts.ownAccounts === undefined ? null : { bank_accounts: opts.ownAccounts },
+                        error: null,
+                    }) }),
+                }),
                 upsert: async (p: Record<string, unknown>) => { captured.upsert = p; return { error: null }; },
                 update: (p: Record<string, unknown>) => { captured.update = p; return { eq: async () => ({ error: null }) }; },
                 insert: async (p: Record<string, unknown>) => { captured.insert = p; return { error: null }; },
@@ -74,6 +97,13 @@ function setup(opts: { role?: string; isActive?: boolean; defaultExists?: boolea
         }
         if (t === 'audit_logs') {
             return { insert: async (p: Record<string, unknown>) => { captured.audit = p; return { error: null }; } };
+        }
+        if (t === 'user_jurisdictions') {
+            // getAdminScope : rattachements de l'appelant portant is_admin.
+            return { select: () => ({ eq: () => ({ eq: async () => ({
+                data: (opts.administers ?? []).map((jurisdiction_id) => ({ jurisdiction_id })),
+                error: null,
+            }) }) }) };
         }
         throw new Error(`platform table ${t}`);
     });
@@ -102,7 +132,7 @@ describe('updateIssuerProfile', () => {
     it('ne journalise pas l IBAN complet', async () => {
         // Il est deja publie sur chaque facture ; le detenteur et le BIC
         // suffisent a reperer un changement de compte.
-        const cap = setup();
+        const cap = setup({ generalAccounts: [{ ...ACCOUNT, swift: 'AUTREBICXXX' }] });
         await updateIssuerProfile(input());
         expect(JSON.stringify(cap.audit)).not.toContain('MT12SYPL39480821090981701607644');
         expect(JSON.stringify(cap.audit)).toContain('SYPLMTM2XXX');
@@ -161,6 +191,83 @@ describe('updateIssuerProfile', () => {
         }));
         expect(r).toMatchObject({ ok: false });
         if (!r.ok) expect(r.reason).toMatch(/IBAN|account number/i);
+    });
+
+    // ── Comptes de paiement : generaux par defaut ─────────────────────────────
+    describe('comptes de paiement', () => {
+        const OWN = { ...ACCOUNT, label: 'Compte du pays', swift: 'PAYSBICXXXX', iban: 'SO000000000000000000001' };
+
+        it('un pays sans comptes propres continue de suivre les comptes generaux', async () => {
+            // Le formulaire renvoie les comptes generaux tels quels : rien n est
+            // fige dans la ligne du pays.
+            const cap = setup({ generalAccounts: [ACCOUNT] });
+            const r = await updateIssuerProfile(input({ bankAccounts: [ACCOUNT] }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert).toMatchObject({ jurisdiction_id: JID, bank_accounts: null });
+            expect(cap.audit).toMatchObject({ details_json: expect.objectContaining({ accounts: 'general' }) });
+        });
+
+        it('une liste vide remet le pays sur les comptes generaux', async () => {
+            const cap = setup({ ownAccounts: [OWN] });
+            const r = await updateIssuerProfile(input({ bankAccounts: [] }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert).toMatchObject({ bank_accounts: null });
+        });
+
+        it('des comptes differents des generaux sont une distinction du pays, ecrite telle quelle', async () => {
+            const cap = setup({ generalAccounts: [ACCOUNT] });
+            const r = await updateIssuerProfile(input({ bankAccounts: [OWN] }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert?.bank_accounts).toMatchObject([{ swift: 'PAYSBICXXXX' }]);
+            expect(cap.audit).toMatchObject({ details_json: expect.objectContaining({ accounts: 'own' }) });
+        });
+
+        it('la ligne generale porte toujours au moins un compte', async () => {
+            setup({ role: 'SUPERADMIN' });
+            const r = await updateIssuerProfile(input({ jurisdictionId: null, bankAccounts: [] }));
+            expect(r).toMatchObject({ ok: false });
+            if (!r.ok) expect(r.reason).toMatch(/at least one account/i);
+        });
+    });
+
+    // ── Administrateur d un pays (mig 174) ────────────────────────────────────
+    describe('administrateur d un pays', () => {
+        const FORGED = { ...ACCOUNT, holder: 'Quelqu un d autre', iban: 'XX00FORGED', swift: 'FORGEDXXXXX' };
+
+        it('modifie le profil de son pays, quel que soit son role', async () => {
+            const cap = setup({ role: 'PORT_OFFICER', administers: [JID] });
+            const r = await updateIssuerProfile(input({ paymentTermsDays: 30 }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert).toMatchObject({ jurisdiction_id: JID, payment_terms_days: 30 });
+        });
+
+        it('ne change jamais les comptes : un pays sur les comptes generaux y reste', async () => {
+            const cap = setup({ role: 'PORT_OFFICER', administers: [JID] });
+            const r = await updateIssuerProfile(input({ bankAccounts: [FORGED] }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert).toMatchObject({ bank_accounts: null });
+            expect(JSON.stringify(cap.upsert)).not.toContain('FORGEDXXXXX');
+        });
+
+        it('ne change jamais les comptes : ceux du pays restent ce qu ils etaient', async () => {
+            const own = [{ ...ACCOUNT, swift: 'PAYSBICXXXX' }];
+            const cap = setup({ role: 'MANAGER', administers: [JID], ownAccounts: own });
+            const r = await updateIssuerProfile(input({ bankAccounts: [FORGED] }));
+            expect(r).toMatchObject({ ok: true });
+            expect(cap.upsert?.bank_accounts).toEqual(own);
+        });
+
+        it('ne touche pas au profil d un autre pays', async () => {
+            setup({ role: 'PORT_OFFICER', administers: [JID] });
+            const r = await updateIssuerProfile(input({ jurisdictionId: OTHER_JID }));
+            expect(r).toMatchObject({ ok: false, reason: 'insufficient role' });
+        });
+
+        it('ne touche pas a la ligne generale', async () => {
+            setup({ role: 'PORT_OFFICER', administers: [JID] });
+            const r = await updateIssuerProfile(input({ jurisdictionId: null }));
+            expect(r).toMatchObject({ ok: false });
+        });
     });
 
     it('refuse un delai de reglement aberrant', async () => {

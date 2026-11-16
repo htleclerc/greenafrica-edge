@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { getAdminScope } from '@/lib/auth/jurisdictionAdmin';
 import { listConfigByPrefix, type AppConfigEntry } from '@/services/appConfigService';
 import { loadJurisdictionSettings } from '@/services/jurisdictionSettingsLoader';
 import { AdminJurisdictions } from '@/components/dashboard/admin/AdminJurisdictions';
@@ -47,6 +48,11 @@ export default async function AdminSettingsRoute({ searchParams }: { searchParam
     const canEdit = role === 'SUPERADMIN';
     const t = await getTranslations('AdminSettings');
     const platform = createPlatformClient();
+    // Pays que la personne administre (mig 174) : elle y modifie tarifs et profil
+    // quel que soit son role. Le droit est reverifie par chaque action.
+    const administeredJurisdictionIds = role === 'SUPERADMIN'
+        ? []
+        : (await getAdminScope(platform, auth.user.id, role)).jurisdictionIds;
 
     const visibleTabs = SETTINGS_TABS.filter((k) => role === 'SUPERADMIN' || !SUPERADMIN_ONLY_TABS.has(k));
 
@@ -80,7 +86,10 @@ export default async function AdminSettingsRoute({ searchParams }: { searchParam
                 </nav>
 
                 <section className="min-w-0 flex flex-col gap-5">
-                    <TabContent tab={tab} role={role} canEdit={canEdit} platform={platform} supabase={supabase} />
+                    <TabContent
+                        tab={tab} role={role} canEdit={canEdit} platform={platform} supabase={supabase}
+                        administeredJurisdictionIds={administeredJurisdictionIds}
+                    />
                 </section>
             </div>
         </div>
@@ -88,9 +97,9 @@ export default async function AdminSettingsRoute({ searchParams }: { searchParam
 }
 
 async function TabContent({
-    tab, role, canEdit, platform, supabase,
+    tab, role, canEdit, platform, supabase, administeredJurisdictionIds,
 }: {
-    tab: SettingsTab; role: string; canEdit: boolean;
+    tab: SettingsTab; role: string; canEdit: boolean; administeredJurisdictionIds: string[];
     platform: ReturnType<typeof createPlatformClient>; supabase: Awaited<ReturnType<typeof createClient>>;
 }) {
     const t = await getTranslations('AdminSettings');
@@ -126,6 +135,7 @@ async function TabContent({
                     splitRules={data.splitRules}
                     settlement={data.settlement}
                     viewerRole={role}
+                    administeredJurisdictionIds={administeredJurisdictionIds}
                     ccByJurisdiction={data.ccByJurisdiction}
                 />
             );
@@ -136,6 +146,7 @@ async function TabContent({
                     jurisdictions={data.jurisdictions.map((j) => ({ id: j.id, code: j.code, name: j.name }))}
                     profiles={data.issuerProfiles}
                     viewerRole={role}
+                    administeredJurisdictionIds={administeredJurisdictionIds}
                 />
                 {pipeline}
             </>

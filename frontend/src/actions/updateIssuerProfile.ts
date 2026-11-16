@@ -52,13 +52,45 @@ const schema = z.object({
     escalationLine: z.string().trim().max(300),
     bailiffName: z.string().trim().max(160),
     legalBasisUrl: z.string().trim().url(),
-    bankAccounts: z.array(bankAccount).min(1).max(8)
-        .refine((list) => list.filter((a) => a.is_primary).length === 1, {
+    // Vide = « les comptes généraux », pour la ligne d'un pays seulement.
+    bankAccounts: z.array(bankAccount).max(8)
+        .refine((list) => list.length === 0 || list.filter((a) => a.is_primary).length === 1, {
             // Le compte principal est celui qu'imprime la page 1 : sans lui, ou
             // avec deux, le document devient ambigu sur le compte à créditer.
             message: 'exactly one account must be marked primary',
         }),
+}).refine((input) => input.jurisdictionId !== null || input.bankAccounts.length > 0, {
+    // La ligne de défaut EST la source des comptes généraux : elle en porte toujours.
+    message: 'the platform default needs at least one account',
 });
+
+const ACCOUNT_FIELDS = [
+    'label', 'currency', 'holder', 'holder_address', 'iban', 'account_number',
+    'swift', 'bank', 'bank_address', 'deposit_reference',
+] as const;
+
+/** Une liste de comptes exploitable, ou null — vide et absent veulent dire la même chose. */
+function accountsOrNull(raw: unknown): Array<Record<string, unknown>> | null {
+    return Array.isArray(raw) && raw.length > 0 ? (raw as Array<Record<string, unknown>>) : null;
+}
+
+/** Forme canonique d'un compte : les champs du formulaire, absents ramenés à null. */
+function canonicalAccount(account: Record<string, unknown>): string {
+    const fields = ACCOUNT_FIELDS.map((field) => {
+        const value = account[field];
+        return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+    });
+    return JSON.stringify([...fields, account.is_primary === true]);
+}
+
+/** Vrai si le formulaire renvoie exactement les comptes généraux, dans le même ordre. */
+function sameAccounts(
+    submitted: Array<Record<string, unknown>>,
+    general: Array<Record<string, unknown>> | null,
+): boolean {
+    if (general === null || submitted.length !== general.length) return false;
+    return submitted.every((account, i) => canonicalAccount(account) === canonicalAccount(general[i]!));
+}
 
 export type UpdateIssuerProfileInput = z.infer<typeof schema>;
 export type UpdateIssuerProfileResult = { ok: true } | { ok: false; reason: string };
@@ -105,11 +137,17 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
 
     // Trois voies : l'administrateur général ; les finances, dans leur pays ;
     // l'administrateur du pays visé, quel que soit son rôle (mig 174).
+    //
+    // Les comptes de paiement, eux, ne suivent que les deux premières : changer
+    // l'IBAN imprimé sur les factures reste le geste le plus lourd de
+    // conséquence de l'application.
+    let mayEditAccounts = profile.role === 'SUPERADMIN';
     if (profile.role !== 'SUPERADMIN') {
         const targetJurisdictionId = p.jurisdictionId as string;
         let allowed = false;
         if (isFinance) {
             allowed = targetJurisdictionId === (await getServerJurisdictionId());
+            mayEditAccounts = allowed;
         }
         if (!allowed) {
             try {
@@ -124,6 +162,40 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
         }
     }
 
+    // ── Comptes de paiement : généraux par défaut ─────────────────────────────
+    //
+    // La ligne sans pays porte les comptes généraux. La ligne d'un pays n'en
+    // porte que par distinction particulière ; vide, elle renvoie aux comptes
+    // généraux (mig 174). Trois cas pour la ligne d'un pays :
+    //   • l'appelant n'a pas la main sur les comptes (administrateur du pays) :
+    //     ce qui est en base reste tel quel, quoi que dise le formulaire ;
+    //   • le pays n'a pas de comptes propres et le formulaire renvoie les
+    //     comptes généraux à l'identique : on n'écrit rien, le pays continue de
+    //     les suivre — sans cela chaque enregistrement en figerait une copie ;
+    //   • sinon, c'est une distinction voulue : elle est écrite.
+    let storedAccounts: unknown = p.bankAccounts;
+    if (p.jurisdictionId !== null) {
+        const [own, general] = await Promise.all([
+            platform.from('jurisdiction_issuer_profile').select('bank_accounts')
+                .eq('jurisdiction_id', p.jurisdictionId).maybeSingle(),
+            platform.from('jurisdiction_issuer_profile').select('bank_accounts')
+                .is('jurisdiction_id', null).maybeSingle(),
+        ]);
+        if (own.error || general.error) {
+            log.error('comptes illisibles', { err: own.error?.message ?? general.error?.message });
+            return { ok: false, reason: 'update failed: accounts unreadable' };
+        }
+        const ownAccounts = accountsOrNull((own.data as { bank_accounts: unknown } | null)?.bank_accounts);
+        const generalAccounts = accountsOrNull((general.data as { bank_accounts: unknown } | null)?.bank_accounts);
+        if (!mayEditAccounts) {
+            storedAccounts = ownAccounts;
+        } else if (
+            p.bankAccounts.length === 0
+            || (ownAccounts === null && sameAccounts(p.bankAccounts, generalAccounts))
+        ) {
+            storedAccounts = null;
+        }
+    }
     // La ligne de défaut n'a pas de clé naturelle exploitable par upsert
     // (`jurisdiction_id` y est NULL) : on la met à jour explicitement.
     const row = {
@@ -146,7 +218,7 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
         escalation_line: p.escalationLine,
         bailiff_name: p.bailiffName,
         legal_basis_url: p.legalBasisUrl,
-        bank_accounts: p.bankAccounts,
+        bank_accounts: storedAccounts,
     };
 
     let writeError: string | null = null;
@@ -168,7 +240,8 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
     }
     if (writeError) return { ok: false, reason: `update failed: ${writeError}` };
 
-    const primary = p.bankAccounts.find((a) => a.is_primary);
+    const writtenAccounts = accountsOrNull(storedAccounts);
+    const primary = writtenAccounts?.find((a) => a.is_primary === true);
     await platform.from('audit_logs').insert({
         user_id: auth.user.id,
         user_full_name: profile.full_name ?? auth.user.email ?? 'Staff',
@@ -185,7 +258,11 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
             // L'IBAN complet est deja publie sur chaque facture, mais le
             // journal n'a pas besoin de le porter : le BIC et le detenteur
             // suffisent a reperer un changement de compte.
-            primary_account: primary ? `${primary.holder} · ${primary.swift}` : null,
+            primary_account: primary ? `${String(primary.holder)} · ${String(primary.swift)}` : null,
+            // « general » : la ligne du pays ne porte pas de comptes, elle suit
+            // les comptes généraux.
+            accounts: writtenAccounts ? 'own' : 'general',
+            accounts_editable_by_actor: mayEditAccounts,
             payment_terms_days: p.paymentTermsDays,
         },
     });
@@ -193,7 +270,7 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
     log.info('issuer_profile_updated', {
         jurisdictionId: p.jurisdictionId,
         byUserId: auth.user.id,
-        accounts: p.bankAccounts.length,
+        accounts: writtenAccounts?.length ?? 0,
     });
 
     revalidatePath('/admin/settings');

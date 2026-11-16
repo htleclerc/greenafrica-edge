@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { sendStaffInviteEmail } from '@/services/emailService';
 import { appBaseUrl } from '@/lib/appUrl';
-import { administersSomething, canAdminister, getAdminScope, isCountryStaffRole } from '@/lib/auth/jurisdictionAdmin';
+import { administersSomething, canAdminister, getAdminScope } from '@/lib/auth/jurisdictionAdmin';
 
 // Staff roles that can be created via admin invitation.
 // SUPERADMIN and SHIPPING_AGENT are excluded: SUPERADMIN is provisioned out-of-band,
@@ -125,29 +125,20 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
 
     // ── 3. Upsert profiles row ────────────────────────────────────────────────
     //
-    // Un compte qui existait déjà n'est réécrit que par l'administrateur
-    // général. Un administrateur de pays le rattache tel qu'il est, et
-    // seulement si c'est déjà du personnel : sans cette limite, « inviter »
-    // l'adresse de quelqu'un d'autre suffirait à changer son rôle — celui d'un
-    // agent d'un autre pays, d'un armateur, ou de l'administrateur général.
+    // Un administrateur de pays n invite que des personnes qui n ont pas encore
+    // de compte. Rattacher quelqu un qui en a deja un — peut-etre un agent d un
+    // autre Etat, un armateur, ou l administrateur general — donnerait acces a
+    // son pays, ou changerait un role, sans qu un tiers le voie : ce cas revient
+    // a l administrateur general.
     if (alreadyExisted && !scope.isGeneralAdmin) {
-        const { data: existingProfile, error: existingErr } = await admin
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .maybeSingle();
-        if (existingErr) return { ok: false, reason: `lookup failed: ${existingErr.message}` };
-        if (!isCountryStaffRole((existingProfile as { role: string } | null)?.role)) {
-            return { ok: false, reason: 'this account is not a staff account' };
-        }
-    } else {
-        const { error: profileErr } = await admin.from('profiles').upsert(
-            { id: userId, email: normEmail, full_name: fullName, role, is_active: true },
-            { onConflict: 'id' },
-        );
-        if (profileErr) {
-            return { ok: false, reason: `profile upsert failed: ${profileErr.message}` };
-        }
+        return { ok: false, reason: 'this person already has an account: ask the general administrator' };
+    }
+    const { error: profileErr } = await admin.from('profiles').upsert(
+        { id: userId, email: normEmail, full_name: fullName, role, is_active: true },
+        { onConflict: 'id' },
+    );
+    if (profileErr) {
+        return { ok: false, reason: `profile upsert failed: ${profileErr.message}` };
     }
 
     // ── 4. Upsert user_jurisdictions rows ─────────────────────────────────────
@@ -188,14 +179,6 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
     //
     // `type: 'magiclink'` et non `'invite'` : le compte existe deja a ce stade,
     // et c'est la forme que `/auth/callback` verifie.
-    //
-    // Rien n'est envoye quand un administrateur de pays rattache un compte qui
-    // existait deja : cette personne a deja son acces, et le courriel porterait
-    // un nom et un role choisis par l'appelant avec un lien de connexion valide
-    // — de quoi faire ecrire la plateforme a n'importe qui, au nom de n'importe qui.
-    if (alreadyExisted && !scope.isGeneralAdmin) {
-        return { ok: true, userId, alreadyExisted };
-    }
     try {
         const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
             type: 'magiclink',
