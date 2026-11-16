@@ -1,4 +1,4 @@
--- Test 173 : seul l'administrateur général écrit ce qui définit les pays ; le
+-- Test 172 : seul l'administrateur général écrit ce qui définit les pays ; le
 -- personnel d'un pays n'écrit que les réglages de ses pays.
 BEGIN;
 
@@ -133,4 +133,4 @@ BEGIN
 END $$;
 
 ROLLBACK;
-SELECT '173 control plane write lockdown: PASS' AS test_result;
+SELECT '172 control plane write lockdown: PASS' AS test_result;

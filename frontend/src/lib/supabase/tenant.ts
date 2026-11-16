@@ -40,7 +40,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 /**
  * Tables carrying a `jurisdiction_id` column that a tenant client filters on.
  *
- * Migrations 071 + 072 (aircraft from 074), then the child tables of mig 172.
+ * Migrations 071 + 072 (aircraft from 074), then the child tables of mig 173.
  * On those nine, the database stamps the country from the parent row whatever
  * the caller sends; listing them here adds the read-side filter the
  * service-role client would otherwise skip.
@@ -61,7 +61,7 @@ export const TENANT_SCOPED_TABLES: ReadonlySet<string> = new Set([
     'wallet_ledger',
     'refunds',
     'owner_notifications',
-    // mig 172
+    // mig 173
     'collection_reminders',
     'collections_event',
     'dispute_intervals',

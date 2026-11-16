@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 173 : seul l'administrateur général écrit ce qui définit les pays
+-- Migration 172 : seul l'administrateur général écrit ce qui définit les pays
 --
 -- Depuis la mig 071, les règles d'écriture de plusieurs tables de pilotage
 -- disaient « tout le personnel » (is_admin_or_officer : SUPERADMIN, PORT_OFFICER,

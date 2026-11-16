@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration 172 : chaque donnée métier porte son pays — tables filles
+-- Migration 173 : chaque donnée métier porte son pays — tables filles
 --
 -- Vingt tables portent déjà `jurisdiction_id` (migs 071, 072, 087…). Neuf tables
 -- métier ne le portaient pas : elles dépendent d'une table mère qui, elle, le
@@ -60,7 +60,7 @@ BEGIN
      AND p.is_active
      AND NOT EXISTS (SELECT 1 FROM public.user_jurisdictions u WHERE u.user_id = p.id);
   IF orphans > 0 THEN
-    RAISE WARNING 'mig 172 : % membre(s) du personnel actif(s) sans pays rattaché — ils ne verront aucune ligne des tables cloisonnées', orphans;
+    RAISE WARNING 'mig 173 : % membre(s) du personnel actif(s) sans pays rattaché — ils ne verront aucune ligne des tables cloisonnées', orphans;
   END IF;
 END $$;
 
@@ -138,7 +138,7 @@ BEGIN
 
     EXECUTE format('SELECT count(*) FROM public.%I WHERE jurisdiction_id IS NULL', child) INTO missing;
     IF missing > 0 THEN
-      RAISE EXCEPTION 'mig 172 : % ligne(s) de % sans pays après remplissage — mère sans pays ?', missing, child;
+      RAISE EXCEPTION 'mig 173 : % ligne(s) de % sans pays après remplissage — mère sans pays ?', missing, child;
     END IF;
     EXECUTE format('ALTER TABLE public.%I ALTER COLUMN jurisdiction_id SET NOT NULL', child);
 

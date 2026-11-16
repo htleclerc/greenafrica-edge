@@ -1,4 +1,4 @@
--- Test 172 : les tables filles portent leur pays, et le personnel d'un pays ne
+-- Test 173 : les tables filles portent leur pays, et le personnel d'un pays ne
 -- lit ni n'écrit celles d'un autre.
 --
 -- Trois tables servent de témoins, une par table mère :
@@ -46,59 +46,59 @@ END $$;
 DO $$
 DECLARE
   so_jid    UUID := '00000000-0000-4000-8000-00000000534f';   -- Somaliland (pré-seedé)
-  tst_jid   UUID := '17217217-1111-4111-8111-111111111111';
-  officer   UUID := 'a1720000-0000-4000-8000-000000000001';   -- PORT_OFFICER, SO seulement
-  admin     UUID := 'a1720000-0000-4000-8000-000000000002';   -- SUPERADMIN
-  agent     UUID := 'a1720000-0000-4000-8000-000000000003';   -- SHIPPING_AGENT, sans pays
-  manager   UUID := 'a1720000-0000-4000-8000-000000000004';   -- MANAGER, SO seulement
-  so_own    UUID := 'b1720000-0000-4000-8000-000000000001';
-  tst_own   UUID := 'b1720000-0000-4000-8000-000000000002';
-  so_vsl    UUID := 'c1720000-0000-4000-8000-000000000001';
-  tst_vsl   UUID := 'c1720000-0000-4000-8000-000000000002';
-  so_txn    UUID := 'd1720000-0000-4000-8000-000000000001';
-  tst_txn   UUID := 'd1720000-0000-4000-8000-000000000002';
+  tst_jid   UUID := '17317317-1111-4111-8111-111111111111';
+  officer   UUID := 'a1730000-0000-4000-8000-000000000001';   -- PORT_OFFICER, SO seulement
+  admin     UUID := 'a1730000-0000-4000-8000-000000000002';   -- SUPERADMIN
+  agent     UUID := 'a1730000-0000-4000-8000-000000000003';   -- SHIPPING_AGENT, sans pays
+  manager   UUID := 'a1730000-0000-4000-8000-000000000004';   -- MANAGER, SO seulement
+  so_own    UUID := 'b1730000-0000-4000-8000-000000000001';
+  tst_own   UUID := 'b1730000-0000-4000-8000-000000000002';
+  so_vsl    UUID := 'c1730000-0000-4000-8000-000000000001';
+  tst_vsl   UUID := 'c1730000-0000-4000-8000-000000000002';
+  so_txn    UUID := 'd1730000-0000-4000-8000-000000000001';
+  tst_txn   UUID := 'd1730000-0000-4000-8000-000000000002';
   cnt       INT;
   stamped   UUID;
   blocked   BOOLEAN;
 BEGIN
   -- Deux pays
   INSERT INTO public.jurisdictions (id, code, name, status)
-    VALUES (tst_jid, 'TST172', 'Test Country 172', 'ACTIVE')
+    VALUES (tst_jid, 'TST173', 'Test Country 173', 'ACTIVE')
     ON CONFLICT (code) DO NOTHING;
 
   -- Trois utilisateurs
   INSERT INTO auth.users (id, email) VALUES
-    (officer, 'officer172@isolation.test'),
-    (admin,   'admin172@isolation.test'),
-    (agent,   'agent172@isolation.test'),
-    (manager, 'manager172@isolation.test')
+    (officer, 'officer173@isolation.test'),
+    (admin,   'admin173@isolation.test'),
+    (agent,   'agent173@isolation.test'),
+    (manager, 'manager173@isolation.test')
     ON CONFLICT DO NOTHING;
   DELETE FROM public.profiles WHERE id IN (officer, admin, agent, manager);
   INSERT INTO public.profiles (id, email, full_name, role, is_active) VALUES
-    (officer, 'officer172@isolation.test', 'Officer 172', 'PORT_OFFICER',   true),
-    (admin,   'admin172@isolation.test',   'Admin 172',   'SUPERADMIN',     true),
-    (agent,   'agent172@isolation.test',   'Agent 172',   'SHIPPING_AGENT', true),
-    (manager, 'manager172@isolation.test', 'Manager 172', 'MANAGER',        true);
+    (officer, 'officer173@isolation.test', 'Officer 173', 'PORT_OFFICER',   true),
+    (admin,   'admin173@isolation.test',   'Admin 173',   'SUPERADMIN',     true),
+    (agent,   'agent173@isolation.test',   'Agent 173',   'SHIPPING_AGENT', true),
+    (manager, 'manager173@isolation.test', 'Manager 173', 'MANAGER',        true);
   DELETE FROM public.user_jurisdictions WHERE user_id IN (officer, admin, agent, manager);
   INSERT INTO public.user_jurisdictions (user_id, jurisdiction_id) VALUES (officer, so_jid), (manager, so_jid);
 
   -- Une mère de chaque sorte par pays
   INSERT INTO public.shipowners (id, name, account_state, official_email, preferred_language, jurisdiction_id)
-    VALUES (so_own,  'Owner SO 172',  'ACTIVE', 'so172@test',  'en', so_jid),
-           (tst_own, 'Owner TST 172', 'ACTIVE', 'tst172@test', 'en', tst_jid);
+    VALUES (so_own,  'Owner SO 173',  'ACTIVE', 'so173@test',  'en', so_jid),
+           (tst_own, 'Owner TST 173', 'ACTIVE', 'tst173@test', 'en', tst_jid);
   INSERT INTO public.vessels (id, imo_number, mmsi, name, call_sign, flag_code, category,
                               gross_tonnage_dwt, engine_power_kw, design_speed_knots, jurisdiction_id)
-    VALUES (so_vsl,  '1720172001', '172001001', 'Vessel SO 172',  'VSO172', 'SO', 'CARGO', 5000, 1000, 12.0, so_jid),
-           (tst_vsl, '1720172002', '172001002', 'Vessel TST 172', 'VTT172', 'DJ', 'CARGO', 5000, 1000, 12.0, tst_jid);
+    VALUES (so_vsl,  '1730173001', '173001001', 'Vessel SO 173',  'VSO173', 'SO', 'CARGO', 5000, 1000, 12.0, so_jid),
+           (tst_vsl, '1730173002', '173001002', 'Vessel TST 173', 'VTT173', 'DJ', 'CARGO', 5000, 1000, 12.0, tst_jid);
   INSERT INTO public.transactions (id, vessel_id, vessel_name, vessel_imo, transaction_type,
                                    emissions_tco2, tax_amount_usd, status, shipowner_id, jurisdiction_id)
-    VALUES (so_txn,  so_vsl,  'Vessel SO 172',  '1720172001', 'ENTRY_TAX', 10.0, 100.0, 'PENDING', so_own,  so_jid),
-           (tst_txn, tst_vsl, 'Vessel TST 172', '1720172002', 'ENTRY_TAX', 10.0, 100.0, 'PENDING', tst_own, tst_jid);
+    VALUES (so_txn,  so_vsl,  'Vessel SO 173',  '1730173001', 'ENTRY_TAX', 10.0, 100.0, 'PENDING', so_own,  so_jid),
+           (tst_txn, tst_vsl, 'Vessel TST 173', '1730173002', 'ENTRY_TAX', 10.0, 100.0, 'PENDING', tst_own, tst_jid);
 
   -- ── Partie 2 : le pays est recopié de la mère, quoi que dise l'appelant ────
   -- Sans pays fourni.
   INSERT INTO public.exemptions (vessel_id, vessel_name, reason, valid_until, approved_by)
-    VALUES (tst_vsl, 'Vessel TST 172', 'OTHER', CURRENT_DATE + 30, admin);
+    VALUES (tst_vsl, 'Vessel TST 173', 'OTHER', CURRENT_DATE + 30, admin);
   SELECT jurisdiction_id INTO stamped FROM public.exemptions WHERE vessel_id = tst_vsl;
   IF stamped IS DISTINCT FROM tst_jid THEN
     RAISE EXCEPTION 'TEST FAILED (stamp): exemption du navire TST rangée dans % au lieu de TST', stamped;
@@ -121,11 +121,11 @@ BEGIN
 
   -- Le reste des témoins, un par pays.
   INSERT INTO public.exemptions (vessel_id, vessel_name, reason, valid_until, approved_by)
-    VALUES (so_vsl, 'Vessel SO 172', 'OTHER', CURRENT_DATE + 30, admin);
+    VALUES (so_vsl, 'Vessel SO 173', 'OTHER', CURRENT_DATE + 30, admin);
   INSERT INTO public.owner_agent_mappings (shipowner_id, agent_profile_id) VALUES (so_own, agent);
   INSERT INTO public.disputes (transaction_id, vessel_id, submitted_by, reason, description, original_amount_usd)
-    VALUES (so_txn,  so_vsl,  admin, 'OTHER', 'litige SO 172',  100.0),
-           (tst_txn, tst_vsl, admin, 'OTHER', 'litige TST 172', 100.0);
+    VALUES (so_txn,  so_vsl,  admin, 'OTHER', 'litige SO 173',  100.0),
+           (tst_txn, tst_vsl, admin, 'OTHER', 'litige TST 173', 100.0);
   SELECT jurisdiction_id INTO stamped FROM public.disputes WHERE transaction_id = tst_txn;
   IF stamped IS DISTINCT FROM tst_jid THEN
     RAISE EXCEPTION 'TEST FAILED (stamp): litige de la transaction TST rangé dans %', stamped;
@@ -155,7 +155,7 @@ BEGIN
   blocked := false;
   BEGIN
     INSERT INTO public.exemptions (vessel_id, vessel_name, reason, valid_until, approved_by)
-      VALUES (tst_vsl, 'Vessel TST 172', 'MILITARY', CURRENT_DATE + 30, officer);
+      VALUES (tst_vsl, 'Vessel TST 173', 'MILITARY', CURRENT_DATE + 30, officer);
   EXCEPTION WHEN insufficient_privilege THEN
     blocked := true;
   END;
@@ -163,7 +163,7 @@ BEGIN
 
   -- …alors qu'il le peut dans le sien.
   INSERT INTO public.exemptions (vessel_id, vessel_name, reason, valid_until, approved_by)
-    VALUES (so_vsl, 'Vessel SO 172', 'MILITARY', CURRENT_DATE + 30, officer);
+    VALUES (so_vsl, 'Vessel SO 173', 'MILITARY', CURRENT_DATE + 30, officer);
 
   -- Modifier une ligne du voisin ne touche rien.
   UPDATE public.owner_agent_mappings SET priority = 1 WHERE shipowner_id = tst_own;
@@ -208,7 +208,7 @@ BEGIN
   -- Le journal de recouvrement refuse toute modification : son pays doit être
   -- posé dès l'insertion, et la table rester non modifiable.
   INSERT INTO public.collections_event (transaction_id, event_type, payload_hash)
-    VALUES (tst_txn, 'ISSUED', 'hash-172');
+    VALUES (tst_txn, 'ISSUED', 'hash-173');
   SELECT jurisdiction_id INTO stamped FROM public.collections_event WHERE transaction_id = tst_txn;
   IF stamped IS DISTINCT FROM tst_jid THEN
     RAISE EXCEPTION 'TEST FAILED (collections_event): événement de la transaction TST rangé dans %', stamped;
@@ -244,4 +244,4 @@ BEGIN
 END $$;
 
 ROLLBACK;
-SELECT '172 child tables jurisdiction: PASS' AS test_result;
+SELECT '173 child tables jurisdiction: PASS' AS test_result;
