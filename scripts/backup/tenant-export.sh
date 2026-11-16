@@ -16,18 +16,28 @@
 #                    <dépôt>/backups/tenant-<code>-<horodatage>. `backups/` est
 #                    ignoré par git : un export ne se committe JAMAIS, il porte
 #                    des données personnelles et des empreintes de mots de passe.
+#   EXPORT_SIGNING_KEY  (recommandé)  clé privée (PEM) qui signe le manifeste.
+#                    Sans elle l'export sort non signé, et les chargements le
+#                    refusent : rien ne prouverait d'où il vient. La clé ne se
+#                    range ni dans le dépôt ni dans le dossier d'export.
 #
-# Produit (format « greengate-tenant-export/2 ») :
+# Produit (format « greengate-tenant-export/3 ») :
 #   tenant/<table>.jsonl    les lignes du pays, une table par fichier ;
 #   accounts/<table>.jsonl  les comptes que ces lignes citent, si la source en a ;
 #   globals/<table>.jsonl   référentiels et réglages communs, en entier ;
 #   schema.json             tables, colonnes, types, clés primaires et étrangères ;
-#   manifest.json           pays, date, empreinte du schéma, lignes et SHA-256.
+#   manifest.json           pays, date, empreinte du schéma, lignes et SHA-256 ;
+#   manifest.sig            signature du manifeste, si une clé est fournie.
 #
 # Le format est neutre : JSON Lines (un objet JSON par ligne, UTF-8), dates en
 # ISO 8601, booléens true/false, tableaux en tableaux JSON, absence de valeur en
 # null. Rien n'y suppose la base d'arrivée : avec schema.json, un État peut le
 # charger dans son propre système, quel qu'il soit.
+#
+# Une exception à « absence de valeur en null » : dans une colonne de type JSON,
+# null est une valeur comme une autre. Pour ces colonnes seulement, l'absence de
+# valeur se note par l'absence du champ, et null veut dire « la valeur JSON
+# null ».
 #
 # Ce que l'export NE contient PAS : les fichiers du stockage (PDF de pro-formas,
 # justificatifs), les positions de navires et d'aéronefs, les caches. Voir
@@ -46,6 +56,7 @@ export PGCLIENTENCODING=UTF8
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONF="$SCRIPT_DIR/tenant-tables.conf"
+FP_SQL="$SCRIPT_DIR/tenant-fingerprint.sql"
 
 die() { echo "FATAL: $*" >&2; exit 1; }
 
@@ -55,6 +66,14 @@ CODE="${1:-}"
 command -v psql >/dev/null || die "psql introuvable."
 command -v sha256sum >/dev/null || die "sha256sum introuvable."
 [ -f "$CONF" ] || die "classement des tables introuvable : $CONF"
+[ -f "$FP_SQL" ] || die "calcul de l'empreinte introuvable : $FP_SQL"
+SIGNING_KEY=""
+if [ -n "${EXPORT_SIGNING_KEY:-}" ]; then
+  [ -f "$EXPORT_SIGNING_KEY" ] || die "clé de signature introuvable : $EXPORT_SIGNING_KEY"
+  command -v openssl >/dev/null || die "openssl introuvable."
+  # Chemin absolu : la suite du script change de dossier.
+  SIGNING_KEY="$(cd "$(dirname "$EXPORT_SIGNING_KEY")" && pwd)/$(basename "$EXPORT_SIGNING_KEY")"
+fi
 
 PSQL=(psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -q)
 
@@ -75,6 +94,7 @@ trap cleanup EXIT
 
 # Classement, débarrassé des commentaires et des lignes vides.
 grep -vE '^[[:space:]]*(#|$)' "$CONF" > "$OUT/_conf.psv"
+cp "$FP_SQL" "$OUT/_fingerprint.sql"
 
 cd "$OUT"
 "${PSQL[@]}" -v jid="$JID" <<'SQL'
@@ -87,7 +107,8 @@ cd "$OUT"
 CREATE TEMP TABLE _conf (tbl text PRIMARY KEY, class text NOT NULL, predicate text);
 CREATE TEMP TABLE _exp_people (id uuid PRIMARY KEY);
 CREATE TEMP TABLE _plan (ord int, sch text, tbl text, predicate text, filename text);
-CREATE TEMP TABLE _cols (sch text, tbl text, cols text);
+CREATE TEMP TABLE _cols (sch text, tbl text, cols text, json_absent text);
+\i _fingerprint.sql
 
 BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
 -- \gset range le résultat dans une variable au lieu de l'afficher (pas de
@@ -175,13 +196,20 @@ SELECT 3, 'public', tbl, 'true', 'globals/' || tbl || '.jsonl' FROM _conf WHERE 
 -- Les jetons à usage unique des comptes (confirmation, récupération, changement
 -- d'adresse…) ne sortent pas : ils partent vides. Vides et non absents, parce
 -- que le service d'authentification ne sait pas relire un jeton absent.
+--
+-- json_absent : pour les colonnes de type JSON, la liste des champs à retirer de
+-- la ligne quand la colonne n'a pas de valeur. Sans cela, « pas de valeur » et
+-- « la valeur JSON null » sortiraient toutes deux en null, et la seconde
+-- reviendrait vide à l'import.
 INSERT INTO _cols
 SELECT p.sch, p.tbl,
        string_agg(
          CASE WHEN p.sch = 'auth' AND p.tbl = 'users' AND a.attname LIKE '%token%'
               THEN format('%L AS %I', '', a.attname)
               ELSE quote_ident(a.attname) END,
-         ', ' ORDER BY a.attnum) AS cols
+         ', ' ORDER BY a.attnum) AS cols,
+       string_agg(format('CASE WHEN x.%I IS NULL THEN %L END', a.attname, a.attname), ', ' ORDER BY a.attnum)
+         FILTER (WHERE a.atttypid IN ('json'::regtype, 'jsonb'::regtype)) AS json_absent
   FROM _plan p
   JOIN pg_attribute a ON a.attrelid = format('%I.%I', p.sch, p.tbl)::regclass
  WHERE a.attnum > 0 AND NOT a.attisdropped AND a.attgenerated = '' AND a.attidentity <> 'a'
@@ -189,8 +217,11 @@ SELECT p.sch, p.tbl,
 
 -- Un fichier par table, une ligne JSON par enregistrement.
 \o _gen_export.sql
-SELECT format(E'\\o %s\nSELECT row_to_json(x)::text FROM (SELECT %s FROM %I.%I WHERE %s ORDER BY 1) x;',
-              p.filename, c.cols, p.sch, p.tbl, p.predicate)
+SELECT format(E'\\o %s\nSELECT (%s)::text FROM (SELECT %s FROM %I.%I WHERE %s ORDER BY 1) x;',
+              p.filename,
+              CASE WHEN c.json_absent IS NULL THEN 'to_jsonb(x)'
+                   ELSE format('to_jsonb(x) - array_remove(ARRAY[%s]::text[], NULL)', c.json_absent) END,
+              c.cols, p.sch, p.tbl, p.predicate)
   FROM _plan p JOIN _cols c USING (sch, tbl)
  ORDER BY p.ord, p.filename;
 \o _gen_counts.sql
@@ -211,6 +242,11 @@ SELECT jsonb_build_object('tables', jsonb_agg(t ORDER BY t ->> 'file'))::text
       'section', split_part(p.filename, '/', 1),
       'schema', p.sch,
       'table', p.tbl,
+      -- Empreinte de la table, pour qu'un import sache nommer celle qui diffère.
+      -- Les tables de comptes n'en ont pas : leur forme appartient au service
+      -- d'authentification, pas à la plateforme.
+      'fingerprint', CASE WHEN p.sch = 'public'
+                          THEN pg_temp.table_fingerprint(format('%I.%I', p.sch, p.tbl)::regclass) END,
       'columns', (
         SELECT jsonb_agg(jsonb_build_object(
                  'name', a.attname,
@@ -230,7 +266,9 @@ SELECT jsonb_build_object('tables', jsonb_agg(t ORDER BY t ->> 'file'))::text
                  'columns', (SELECT jsonb_agg(a.attname ORDER BY k.ord)
                                FROM unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord)
                                JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum),
-                 'references', c.confrelid::regclass::text)), '[]'::jsonb)
+                 'references', (SELECT rn.nspname || '.' || rc.relname
+                                  FROM pg_class rc JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+                                 WHERE rc.oid = c.confrelid))), '[]'::jsonb)
           FROM pg_constraint c
          WHERE c.conrelid = format('%I.%I', p.sch, p.tbl)::regclass AND c.contype = 'f')
     ) AS t
@@ -240,16 +278,13 @@ SELECT jsonb_build_object('tables', jsonb_agg(t ORDER BY t ->> 'file'))::text
 \o _meta.tsv
 SELECT 'code', code FROM public.jurisdictions WHERE id = :'jid';
 SELECT 'name', name FROM public.jurisdictions WHERE id = :'jid';
--- Empreinte du schéma : la liste « table.colonne:type » des tables du pays et
--- des référentiels. Une base d'arrivée de même nature la recalcule sur ses
--- propres tables pour savoir si elle peut recevoir cet export tel quel.
-SELECT 'fingerprint', md5(string_agg(
-         format('%s.%s.%s:%s', p.sch, p.tbl, a.attname, format_type(a.atttypid, a.atttypmod)),
-         '|' ORDER BY p.sch, p.tbl, a.attname))
+-- Empreinte du schéma : colonnes, clés et contraintes des tables du pays et des
+-- référentiels (voir tenant-fingerprint.sql). Une base d'arrivée de même nature
+-- la recalcule sur ses propres tables pour savoir si elle peut recevoir cet
+-- export tel quel.
+SELECT 'fingerprint', pg_temp.schema_fingerprint(array_agg(format('%I.%I', p.sch, p.tbl)::regclass))
   FROM _plan p
-  JOIN pg_attribute a ON a.attrelid = format('%I.%I', p.sch, p.tbl)::regclass
- WHERE p.sch = 'public'
-   AND a.attnum > 0 AND NOT a.attisdropped AND a.attgenerated = '' AND a.attidentity <> 'a';
+ WHERE p.sch = 'public';
 SELECT 'source_engine', 'PostgreSQL ' || current_setting('server_version');
 \o
 COMMIT;
@@ -266,12 +301,12 @@ json_escape() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
 
 {
   printf '{\n'
-  printf '  "format": "greengate-tenant-export/2",\n'
+  printf '  "format": "greengate-tenant-export/3",\n'
   printf '  "jurisdiction": { "id": "%s", "code": "%s", "name": "%s" },\n' "$JID" "$(json_escape "$JCODE")" "$(json_escape "$JNAME")"
   printf '  "exported_at": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '  "source_engine": "%s",\n' "$(json_escape "$ENGINE")"
   printf '  "schema_fingerprint": "%s",\n' "$FINGERPRINT"
-  printf '  "data_format": "JSON Lines, UTF-8 ; dates ISO 8601 ; un objet par ligne ; voir schema.json",\n'
+  printf '  "data_format": "JSON Lines, UTF-8 ; dates ISO 8601 ; un objet par ligne ; colonnes de type JSON : champ absent = pas de valeur, null = valeur JSON null ; voir schema.json",\n'
   printf '  "files": [\n'
   first=1
   while IFS=$'\t' read -r file rows; do
@@ -286,10 +321,21 @@ json_escape() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
   printf '\n  ]\n}\n'
 } > manifest.json.tmp
 
-rm -f _conf.psv _gen_export.sql _gen_counts.sql _counts.tsv _meta.tsv
+rm -f _conf.psv _fingerprint.sql _gen_export.sql _gen_counts.sql _counts.tsv _meta.tsv
+
+# Signature : le manifeste porte l'empreinte de tous les fichiers, le signer
+# suffit à signer l'export entier. Posée avant le manifeste : sans manifeste le
+# dossier n'est pas un export, un échec ici ne laisse donc rien derrière lui.
+if [ -n "$SIGNING_KEY" ]; then
+  openssl dgst -sha256 -sign "$SIGNING_KEY" -out manifest.sig manifest.json.tmp \
+    || die "signature du manifeste impossible avec la clé fournie."
+fi
 mv manifest.json.tmp manifest.json
 
 TOTAL="$(grep -o '"rows": [0-9]*' manifest.json | awk '{s+=$2} END{print s+0}')"
 echo "Export du pays $JCODE ($JID) terminé : $((TOTAL - 1)) ligne(s), schéma $FINGERPRINT."
 echo "Dossier : $OUT"
 echo "Ce dossier contient des données personnelles : le chiffrer avant tout transfert."
+if [ -z "$SIGNING_KEY" ]; then
+  echo "ATTENTION : export NON signé (EXPORT_SIGNING_KEY absente). Les chargements le refuseront." >&2
+fi

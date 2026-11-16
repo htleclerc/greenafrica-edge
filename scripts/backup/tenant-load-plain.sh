@@ -20,18 +20,24 @@
 #
 # Usage :
 #   TARGET_DB_URL="postgresql://..." CONFIRM_TARGET_DB=<nom de la base> \
+#   EXPORT_VERIFY_KEY=<clé publique de l'émetteur> \
 #     ./scripts/backup/tenant-load-plain.sh <dossier d'export> [schéma]
 #
 #   [schéma]  schéma à créer dans la cible. Défaut : greengate_export. Il ne
 #             doit pas exister : le script ne touche à rien d'existant.
 #
-# Tout se passe dans une seule transaction. Code de sortie : 0 = chargé et
-# vérifié, 1 = échec (rien n'a été créé).
+# Avant de créer quoi que ce soit, la signature du manifeste et l'empreinte de
+# chaque fichier sont vérifiées. Tout se passe ensuite dans une seule
+# transaction, vérification comprise : nombre de lignes de chaque table, et pays
+# de chaque ligne qui en porte un. Code de sortie : 0 = chargé et vérifié,
+# 1 = échec (rien n'a été créé).
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 export PGCLIENTENCODING=UTF8
 
-die() { echo "FATAL: $*" >&2; exit 1; }
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/backup/tenant-common.sh
+source "$SCRIPT_DIR/tenant-common.sh"
 
 [ -n "${TARGET_DB_URL:-}" ] || die "TARGET_DB_URL n'est pas renseignée."
 SRC="${1:-}"
@@ -47,24 +53,18 @@ TARGET_DB="$("${PSQL[@]}" -tA -c 'SELECT current_database()' | tr -d '\r')"
 [ "${CONFIRM_TARGET_DB:-}" = "$TARGET_DB" ] \
   || die "la cible est la base « $TARGET_DB ». Pour confirmer, relancer avec CONFIRM_TARGET_DB=$TARGET_DB"
 
-cd "$SRC"
-grep -q '"format": "greengate-tenant-export/2"' manifest.json || die "format d'export inconnu."
-
-: > _expected.tsv
-while IFS= read -r line; do
-  path="$(printf '%s' "$line" | sed -E 's/.*"path": "([^"]+)".*/\1/')"
-  rows="$(printf '%s' "$line" | sed -E 's/.*"rows": ([0-9]+).*/\1/')"
-  sum="$(printf '%s' "$line" | sed -E 's/.*"sha256": "([0-9a-f]+)".*/\1/')"
-  [[ "$path" =~ ^((tenant|accounts|globals)/[a-z0-9_]+\.jsonl|schema\.json)$ ]] || die "chemin inattendu dans le manifeste : $path"
-  [ -f "$path" ] || die "fichier manquant : $path"
-  [ "$(sha256sum "$path" | cut -d' ' -f1)" = "$sum" ] || die "empreinte différente pour $path : l'export a été modifié ou tronqué."
-  [ "$path" = "schema.json" ] || printf '%s\t%s\n' "$path" "$rows" >> _expected.tsv
-done < <(grep -E '"path": ' manifest.json)
-
-cleanup() { rm -f _expected.tsv _gen_ddl.sql _gen_load.sql _gen_verify.sql _loaded.tsv; }
+# Tout se fait sur une copie privée de l'export, jamais dans le dossier reçu.
+private_export_copy "$SRC"
+cleanup() { rm -rf "$EXPORT_COPY"; }
 trap cleanup EXIT
+verify_export_signature "$EXPORT_COPY"
+cd "$EXPORT_COPY"
 
-"${PSQL[@]}" -v landing="$LANDING" <<'SQL'
+JID="$(grep -oE '"id": "[0-9a-f-]{36}"' manifest.json | head -1 | grep -oE '[0-9a-f-]{36}' || true)"
+[ -n "$JID" ] || die "identifiant du pays introuvable dans le manifeste."
+check_export_files _expected.tsv
+
+"${PSQL[@]}" -v landing="$LANDING" -v jid="$JID" <<'SQL'
 \pset tuples_only on
 \pset format unaligned
 \pset fieldsep '\t'
@@ -92,7 +92,7 @@ BEGIN
     SELECT 1 FROM _tables t
      WHERE t.file IS NULL OR t.name IS NULL
         OR t.file !~ '^(tenant|accounts|globals)/[a-z0-9_]+\.jsonl$'
-        OR t.name !~ '^[a-z0-9_]+$'
+        OR t.name !~ '^[a-z0-9_]{1,63}$'
         OR NOT EXISTS (SELECT 1 FROM _expected e WHERE e.path = t.file)
         OR jsonb_typeof(t.columns) IS DISTINCT FROM 'array'
         OR jsonb_typeof(t.pk) IS DISTINCT FROM 'array'
@@ -131,27 +131,66 @@ SELECT format('CREATE TABLE %I.%I (%s%s);', :'landing', t.name,
                                            FROM jsonb_array_elements_text(t.pk) WITH ORDINALITY AS y(k, ord)) || ')'
               ELSE '' END)
   FROM _tables t ORDER BY t.file;
+-- Dans une colonne de type JSON, un champ présent et valant null est la valeur
+-- JSON null ; un champ absent, l'absence de valeur. Sans ce cas particulier,
+-- les deux arriveraient vides.
 \o _gen_load.sql
 SELECT format(
-  E'CREATE TEMP TABLE _l (doc jsonb);\n\\copy _l FROM %L WITH (FORMAT csv, QUOTE E''\\x01'', DELIMITER E''\\x02'')\nINSERT INTO %I.%I SELECT r.* FROM _l, jsonb_populate_record(NULL::%I.%I, _l.doc) AS r;\nDROP TABLE _l;',
-  t.file, :'landing', t.name, :'landing', t.name)
+  E'CREATE TEMP TABLE _l (doc jsonb);\n\\copy _l FROM %L WITH (FORMAT csv, QUOTE E''\\x01'', DELIMITER E''\\x02'')\nINSERT INTO %I.%I SELECT %s FROM _l, jsonb_populate_record(NULL::%I.%I, _l.doc) AS r;\nDROP TABLE _l;',
+  t.file, :'landing', t.name,
+  (SELECT string_agg(
+            CASE WHEN pg_temp.portable_type(c ->> 'type') IN ('json', 'jsonb')
+                 THEN format('CASE WHEN _l.doc -> %L = ''null''::jsonb THEN ''null''::%s ELSE r.%I END',
+                             c ->> 'name', pg_temp.portable_type(c ->> 'type'), c ->> 'name')
+                 ELSE format('r.%I', c ->> 'name') END,
+            ', ' ORDER BY ord)
+     FROM jsonb_array_elements(t.columns) WITH ORDINALITY AS x(c, ord)),
+  :'landing', t.name)
   FROM _tables t ORDER BY t.file;
-\o _gen_verify.sql
-SELECT format('SELECT %L, count(*) FROM %I.%I;', t.file, :'landing', t.name) FROM _tables t ORDER BY t.file;
 \o
+SELECT set_config('load.landing', :'landing', false) AS _landing, set_config('load.jid', :'jid', false) AS _jid \gset
 
 BEGIN;
 CREATE SCHEMA :"landing";
 \i _gen_ddl.sql
 \i _gen_load.sql
+
+-- Vérification AVANT de valider : le nombre de lignes de chaque table doit être
+-- celui du manifeste, et toute ligne qui porte un pays doit porter celui que
+-- l'export annonce. Au moindre écart, rien n'est créé.
+CREATE TEMP TABLE _loaded (file text, n bigint);
+DO $$
+DECLARE
+  v_t record;
+  v_n bigint;
+  v_bad text;
+BEGIN
+  FOR v_t IN SELECT * FROM _tables ORDER BY file LOOP
+    EXECUTE format('SELECT count(*) FROM %I.%I', current_setting('load.landing'), v_t.name) INTO v_n;
+    INSERT INTO _loaded VALUES (v_t.file, v_n);
+    IF v_t.columns @> '[{"name": "jurisdiction_id"}]' AND v_t.file LIKE 'tenant/%' THEN
+      EXECUTE format('SELECT count(*) FROM %I.%I WHERE jurisdiction_id::text IS DISTINCT FROM %L',
+                     current_setting('load.landing'), v_t.name, current_setting('load.jid')) INTO v_n;
+      IF v_n > 0 THEN
+        RAISE EXCEPTION '% : % ligne(s) n''appartiennent pas au pays annoncé (%) — export refusé.',
+          v_t.file, v_n, current_setting('load.jid');
+      END IF;
+    END IF;
+  END LOOP;
+  SELECT string_agg(format('%s (annoncé %s, chargé %s)', e.path, e.n, coalesce(l.n::text, 'rien')), ', ' ORDER BY e.path)
+    INTO v_bad
+    FROM _expected e LEFT JOIN _loaded l ON l.file = e.path
+   WHERE l.n IS DISTINCT FROM e.n;
+  IF v_bad IS NOT NULL THEN
+    RAISE EXCEPTION 'chargement incomplet : % — rien n''a été créé.', v_bad;
+  END IF;
+END $$;
+
 \o _loaded.tsv
-\i _gen_verify.sql
+SELECT file, n FROM _loaded ORDER BY file;
 \o
 COMMIT;
 SQL
-
-BAD="$(awk -F'\t' 'NR==FNR {want[$1]=$2; next} { gsub(/\r/, "", $2); if ($2+0 != want[$1]+0) print $1 " (attendu " want[$1] ", trouvé " $2 ")" }' _expected.tsv _loaded.tsv)"
-[ -z "$BAD" ] || die "chargement incomplet : $BAD"
 
 TABLES="$(wc -l < _loaded.tsv | tr -d ' ')"
 TOTAL="$(awk -F'\t' '{s+=$2} END{print s+0}' _loaded.tsv)"
