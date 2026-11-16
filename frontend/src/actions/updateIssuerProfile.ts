@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { getServerJurisdictionId } from '@/lib/auth/tenantContext';
 import { scopedLogger } from '@/lib/logger';
+import { canAdminister, getAdminScope } from '@/lib/auth/jurisdictionAdmin';
 
 const log = scopedLogger('updateIssuerProfile');
 
@@ -91,18 +92,37 @@ export async function updateIssuerProfile(raw: unknown): Promise<UpdateIssuerPro
         .eq('id', auth.user.id)
         .single();
     if (!profile || profile.is_active === false) return { ok: false, reason: 'account inactive' };
-    if (profile.role !== 'SUPERADMIN' && profile.role !== 'FINANCE_ADMIN') {
-        return { ok: false, reason: 'insufficient role' };
-    }
+    const isFinance = profile.role === 'FINANCE_ADMIN';
     if (p.jurisdictionId === null && profile.role !== 'SUPERADMIN') {
-        return { ok: false, reason: 'only a superadmin may edit the platform default' };
-    }
-    if (profile.role !== 'SUPERADMIN') {
-        const staffJur = await getServerJurisdictionId();
-        if (p.jurisdictionId !== staffJur) return { ok: false, reason: 'forbidden' };
+        // La ligne de défaut vaut pour tous les pays : administrateur général seulement.
+        return {
+            ok: false,
+            reason: isFinance ? 'only a superadmin may edit the platform default' : 'insufficient role',
+        };
     }
 
     const platform = createPlatformClient();
+
+    // Trois voies : l'administrateur général ; les finances, dans leur pays ;
+    // l'administrateur du pays visé, quel que soit son rôle (mig 174).
+    if (profile.role !== 'SUPERADMIN') {
+        const targetJurisdictionId = p.jurisdictionId as string;
+        let allowed = false;
+        if (isFinance) {
+            allowed = targetJurisdictionId === (await getServerJurisdictionId());
+        }
+        if (!allowed) {
+            try {
+                const scope = await getAdminScope(platform, auth.user.id, profile.role);
+                allowed = canAdminister(scope, targetJurisdictionId);
+            } catch {
+                allowed = false;
+            }
+        }
+        if (!allowed) {
+            return { ok: false, reason: isFinance ? 'forbidden' : 'insufficient role' };
+        }
+    }
 
     // La ligne de défaut n'a pas de clé naturelle exploitable par upsert
     // (`jurisdiction_id` y est NULL) : on la met à jour explicitement.

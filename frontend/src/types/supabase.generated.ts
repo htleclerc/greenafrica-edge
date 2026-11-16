@@ -3998,16 +3998,19 @@ export type Database = {
       user_jurisdictions: {
         Row: {
           created_at: string
+          is_admin: boolean
           jurisdiction_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          is_admin?: boolean
           jurisdiction_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          is_admin?: boolean
           jurisdiction_id?: string
           user_id?: string
         }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createPlatformClient } from '@/lib/supabase/tenant';
 import { sendStaffInviteEmail } from '@/services/emailService';
 import { appBaseUrl } from '@/lib/appUrl';
+import { administersSomething, canAdminister, getAdminScope, isCountryStaffRole } from '@/lib/auth/jurisdictionAdmin';
 
 // Staff roles that can be created via admin invitation.
 // SUPERADMIN and SHIPPING_AGENT are excluded: SUPERADMIN is provisioned out-of-band,
@@ -24,10 +25,14 @@ export type InviteStaffResult =
     | { ok: false; reason: string };
 
 /**
- * Invite a new staff member to the platform. SUPERADMIN only.
+ * Invite a new staff member to the platform.
+ *
+ * Ouvert à l'administrateur général, pour tout pays, et à l'administrateur
+ * d'un pays, pour les pays qu'il administre (mig 174). Ni l'un ni l'autre ne
+ * donne ici le droit d'administrer : voir `setJurisdictionAdmin`.
  *
  * Flow:
- *   1. Verify caller is SUPERADMIN.
+ *   1. Verify caller administers every requested jurisdiction.
  *   2. Issue Supabase invite — creates auth.users (or links existing) and
  *      sends the invite email via Supabase's configured SMTP. The redirect
  *      points at /auth/setup-password where the invitee sets their password.
@@ -47,15 +52,30 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
 
     const { data: me } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name, is_active')
         .eq('id', auth.user.id)
         .single();
-    if (me?.role !== 'SUPERADMIN') return { ok: false, reason: 'insufficient role' };
+    if (!me || me.is_active !== true) return { ok: false, reason: 'insufficient role' };
 
     const { email, fullName, role, jurisdictionIds } = parsed.data;
     const normEmail = email.trim().toLowerCase();
     const admin = createPlatformClient();
     const appUrl = appBaseUrl();
+
+    // L'administrateur général invite dans n'importe quel pays. L'administrateur
+    // d'un pays n'invite que dans les pays qu'il administre : un seul pays hors
+    // de sa liste fait refuser toute la demande.
+    let scope;
+    try {
+        scope = await getAdminScope(admin, auth.user.id, me.role);
+    } catch {
+        return { ok: false, reason: 'lookup failed: admin rights' };
+    }
+    // Refus explicite : ne rien administrer, ou ne rien demander, ne passe jamais.
+    if (!administersSomething(scope) || jurisdictionIds.length === 0
+        || !jurisdictionIds.every((jid) => canAdminister(scope, jid))) {
+        return { ok: false, reason: 'insufficient role' };
+    }
 
     // ── 2. Issue invite (or resolve existing user) ────────────────────────────
     let userId: string;
@@ -104,12 +124,30 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
     }
 
     // ── 3. Upsert profiles row ────────────────────────────────────────────────
-    const { error: profileErr } = await admin.from('profiles').upsert(
-        { id: userId, email: normEmail, full_name: fullName, role, is_active: true },
-        { onConflict: 'id' },
-    );
-    if (profileErr) {
-        return { ok: false, reason: `profile upsert failed: ${profileErr.message}` };
+    //
+    // Un compte qui existait déjà n'est réécrit que par l'administrateur
+    // général. Un administrateur de pays le rattache tel qu'il est, et
+    // seulement si c'est déjà du personnel : sans cette limite, « inviter »
+    // l'adresse de quelqu'un d'autre suffirait à changer son rôle — celui d'un
+    // agent d'un autre pays, d'un armateur, ou de l'administrateur général.
+    if (alreadyExisted && !scope.isGeneralAdmin) {
+        const { data: existingProfile, error: existingErr } = await admin
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+        if (existingErr) return { ok: false, reason: `lookup failed: ${existingErr.message}` };
+        if (!isCountryStaffRole((existingProfile as { role: string } | null)?.role)) {
+            return { ok: false, reason: 'this account is not a staff account' };
+        }
+    } else {
+        const { error: profileErr } = await admin.from('profiles').upsert(
+            { id: userId, email: normEmail, full_name: fullName, role, is_active: true },
+            { onConflict: 'id' },
+        );
+        if (profileErr) {
+            return { ok: false, reason: `profile upsert failed: ${profileErr.message}` };
+        }
     }
 
     // ── 4. Upsert user_jurisdictions rows ─────────────────────────────────────
@@ -122,6 +160,25 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
         return { ok: false, reason: `jurisdiction link failed: ${ujErr.message}` };
     }
 
+    // Journal, au mieux : une ligne par pays, pour que chaque pays voie qui a
+    // fait entrer qui.
+    try {
+        await admin.from('audit_logs').insert(
+            jurisdictionIds.map((jid) => ({
+                user_id: auth.user.id,
+                user_full_name: me.full_name,
+                action: 'TRANSACTION_UPDATED', // audit_action est une énumération : valeur générique, l'événement réel est dans details_json.
+                severity: 'INFO',
+                entity_type: 'Profile',
+                entity_id: userId,
+                jurisdiction_id: jid,
+                details_json: { event: 'STAFF_INVITED', role, already_existed: alreadyExisted },
+            })),
+        );
+    } catch {
+        // Ne fait pas échouer l'invitation.
+    }
+
     // ── 5. Envoi de l'invitation, par notre rail ──────────────────────────────
     //
     // Le compte est cree, le droit existe : un echec d'envoi n'annule pas
@@ -131,6 +188,14 @@ export async function inviteStaff(raw: unknown): Promise<InviteStaffResult> {
     //
     // `type: 'magiclink'` et non `'invite'` : le compte existe deja a ce stade,
     // et c'est la forme que `/auth/callback` verifie.
+    //
+    // Rien n'est envoye quand un administrateur de pays rattache un compte qui
+    // existait deja : cette personne a deja son acces, et le courriel porterait
+    // un nom et un role choisis par l'appelant avec un lien de connexion valide
+    // — de quoi faire ecrire la plateforme a n'importe qui, au nom de n'importe qui.
+    if (alreadyExisted && !scope.isGeneralAdmin) {
+        return { ok: true, userId, alreadyExisted };
+    }
     try {
         const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
             type: 'magiclink',

@@ -51,5 +51,21 @@ export async function GET() {
     const cookieValue = cookieStore.get(ACTIVE_JURISDICTION_COOKIE)?.value ?? null;
     const active = cookieValue && memberships.some((m) => m.id === cookieValue) ? cookieValue : null;
 
-    return NextResponse.json({ memberships, active, isGeneralAdmin });
+    // Les pays que la personne administre (mig 174). Lu avec sa propre session :
+    // la RLS lui ouvre ses propres rattachements. Sert à lui montrer l'écran du
+    // personnel ; le droit lui-même est revérifié par chaque action.
+    let administers: string[] = [];
+    if (!isGeneralAdmin) {
+        const { data: adminRows, error: adminErr } = await session
+            .from('user_jurisdictions')
+            .select('jurisdiction_id')
+            .eq('user_id', user.id)
+            .eq('is_admin', true);
+        if (adminErr) {
+            return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        }
+        administers = ((adminRows ?? []) as Array<{ jurisdiction_id: string }>).map((r) => r.jurisdiction_id);
+    }
+
+    return NextResponse.json({ memberships, active, isGeneralAdmin, administers });
 }

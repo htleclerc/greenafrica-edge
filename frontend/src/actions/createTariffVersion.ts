@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/requireRole';
 import { UserRole } from '@/types/secure';
 import { assertAdminCanActOn } from '@/lib/auth/adminTenant';
 import { createPlatformClient } from '@/lib/supabase/tenant';
+import { canAdminister, getAdminScope } from '@/lib/auth/jurisdictionAdmin';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Wedge 2 — createTariffVersion
@@ -50,19 +51,36 @@ export async function createTariffVersion(
         parsed.data;
 
     // Auth-first: role check before any DB work.
-    const auth = await requireRole([UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN]);
+    // Tout le personnel passe la porte du rôle ; c'est le pays qui tranche ensuite.
+    const auth = await requireRole([
+        UserRole.SUPERADMIN, UserRole.FINANCE_ADMIN, UserRole.PORT_OFFICER, UserRole.MANAGER,
+    ]);
     if (auth.error) return { ok: false, error: 'forbidden' };
 
-    // Non-SUPERADMIN: must be member of the target jurisdiction.
-    if (auth.user.role !== UserRole.SUPERADMIN) {
-        try {
-            await assertAdminCanActOn(auth.user, jurisdictionId);
-        } catch {
-            return { ok: false, error: 'forbidden' };
-        }
-    }
-
     const platform = createPlatformClient();
+
+    // Trois voies : l'administrateur général ; les finances, dans leur pays ;
+    // l'administrateur du pays visé, quel que soit son rôle (mig 174).
+    if (auth.user.role !== UserRole.SUPERADMIN) {
+        let allowed = false;
+        if (auth.user.role === UserRole.FINANCE_ADMIN) {
+            try {
+                await assertAdminCanActOn(auth.user, jurisdictionId);
+                allowed = true;
+            } catch {
+                allowed = false;
+            }
+        }
+        if (!allowed) {
+            try {
+                const scope = await getAdminScope(platform, auth.user.id, auth.user.role);
+                allowed = canAdminister(scope, jurisdictionId);
+            } catch {
+                allowed = false;
+            }
+        }
+        if (!allowed) return { ok: false, error: 'forbidden' };
+    }
 
     // Single atomic RPC call — close + insert in one transaction.
     const { data, error: rpcError } = await platform.rpc('create_tariff_version', {

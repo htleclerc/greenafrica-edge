@@ -40,8 +40,13 @@ vi.mock('@/services/emailService', () => ({
     sendStaffInviteEmail: (p: never) => sendStaffInviteSpy(p),
 }));
 
-let callerProfile: { role: string } | null = { role: 'SUPERADMIN' };
+let callerProfile: { role: string; is_active?: boolean } | null = { role: 'SUPERADMIN', is_active: true };
 let callerUser: { id: string } | null = { id: 'admin-uuid' };
+/** Pays que l'appelant administre (rattachements portant is_admin). */
+let callerAdminJurisdictions: string[] = [];
+/** Profil déjà en base de la personne invitée, quand son compte existe. */
+let existingInviteeProfile: { role: string } | null = null;
+const auditInsertSpy = vi.fn((_rows: unknown) => Promise.resolve({ error: null }));
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -92,6 +97,12 @@ function buildAdminMock() {
                         profileUpsertSpy(payload);
                         return Promise.resolve({ error: null });
                     },
+                    select: () => ({
+                        eq: () => ({
+                            maybeSingle: () =>
+                                Promise.resolve({ data: existingInviteeProfile, error: null }),
+                        }),
+                    }),
                 };
             }
             if (table === 'user_jurisdictions') {
@@ -100,7 +111,20 @@ function buildAdminMock() {
                         userJurisdictionsUpsertSpy(rows);
                         return Promise.resolve({ error: null });
                     },
+                    // getAdminScope : les rattachements de l'appelant portant is_admin.
+                    select: () => ({
+                        eq: () => ({
+                            eq: () =>
+                                Promise.resolve({
+                                    data: callerAdminJurisdictions.map((jurisdiction_id) => ({ jurisdiction_id })),
+                                    error: null,
+                                }),
+                        }),
+                    }),
                 };
+            }
+            if (table === 'audit_logs') {
+                return { insert: auditInsertSpy };
             }
             throw new Error(`unexpected table on admin client: ${table}`);
         },
@@ -125,8 +149,11 @@ beforeEach(() => {
     inviteSpy.mockImplementation(() =>
         Promise.resolve({ data: { user: { id: 'new-staff-uuid' } }, error: null }),
     );
-    callerProfile = { role: 'SUPERADMIN' };
+    callerProfile = { role: 'SUPERADMIN', is_active: true };
     callerUser = { id: 'admin-uuid' };
+    callerAdminJurisdictions = [];
+    existingInviteeProfile = null;
+    auditInsertSpy.mockClear();
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://test.local';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk_test';
     process.env.NEXT_PUBLIC_APP_URL = 'http://app.test';
@@ -153,21 +180,21 @@ describe('inviteStaff', () => {
     });
 
     it('rejects PORT_OFFICER callers (insufficient role)', async () => {
-        callerProfile = { role: 'PORT_OFFICER' };
+        callerProfile = { role: 'PORT_OFFICER', is_active: true };
         const r = await inviteStaff(validInput);
         expect(r.ok).toBe(false);
         if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
     it('rejects FINANCE_ADMIN callers (insufficient role)', async () => {
-        callerProfile = { role: 'FINANCE_ADMIN' };
+        callerProfile = { role: 'FINANCE_ADMIN', is_active: true };
         const r = await inviteStaff(validInput);
         expect(r.ok).toBe(false);
         if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
     });
 
     it('rejects MANAGER callers (insufficient role)', async () => {
-        callerProfile = { role: 'MANAGER' };
+        callerProfile = { role: 'MANAGER', is_active: true };
         const r = await inviteStaff(validInput);
         expect(r.ok).toBe(false);
         if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
@@ -276,6 +303,98 @@ describe('inviteStaff', () => {
         const profilePayload = profileUpsertSpy.mock.calls[0]![0];
         expect(profilePayload).toMatchObject({ id: 'existing-staff-uuid', role: 'PORT_OFFICER' });
         expect(userJurisdictionsUpsertSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // ── Administrateur d'un pays (mig 174) ────────────────────────────────────
+    describe('administrateur d’un pays', () => {
+        const SO = '00000000-0000-4000-8000-00000000534f';
+        const OTHER = '11111111-1111-4111-8111-111111111111';
+        const inOwnCountry = { ...validInput, jurisdictionIds: [SO] };
+
+        beforeEach(() => {
+            callerProfile = { role: 'PORT_OFFICER', is_active: true };
+            callerAdminJurisdictions = [SO];
+        });
+
+        it('invite dans le pays qu’il administre', async () => {
+            const r = await inviteStaff(inOwnCountry);
+            expect(r.ok).toBe(true);
+            expect(profileUpsertSpy).toHaveBeenCalledTimes(1);
+            const rows = userJurisdictionsUpsertSpy.mock.calls[0]![0] as UserJurisdictionRow[];
+            expect(rows).toEqual([{ user_id: 'new-staff-uuid', jurisdiction_id: SO }]);
+        });
+
+        it('ne donne jamais le droit d’administrer en invitant', async () => {
+            await inviteStaff(inOwnCountry);
+            const rows = userJurisdictionsUpsertSpy.mock.calls[0]![0] as unknown as Array<Record<string, unknown>>;
+            expect(rows.every((row) => !('is_admin' in row))).toBe(true);
+        });
+
+        it('est refusé dès qu’un seul pays demandé n’est pas le sien', async () => {
+            const r = await inviteStaff({ ...validInput, jurisdictionIds: [SO, OTHER] });
+            expect(r.ok).toBe(false);
+            if (!r.ok) expect(r.reason).toMatch(/insufficient role/i);
+            expect(inviteSpy).not.toHaveBeenCalled();
+            expect(userJurisdictionsUpsertSpy).not.toHaveBeenCalled();
+        });
+
+        it('est refusé si son compte est inactif', async () => {
+            callerProfile = { role: 'PORT_OFFICER', is_active: false };
+            const r = await inviteStaff(inOwnCountry);
+            expect(r.ok).toBe(false);
+            expect(inviteSpy).not.toHaveBeenCalled();
+        });
+
+        it('rattache un membre du personnel déjà inscrit sans réécrire son profil', async () => {
+            inviteSpy.mockResolvedValueOnce({
+                data: { user: null } as unknown as { user: { id: string } },
+                error: { code: 'email_exists', message: 'Email already registered' } as unknown as null,
+            });
+            existingInviteeProfile = { role: 'FINANCE_ADMIN' };
+
+            const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com', role: 'MANAGER' });
+
+            expect(r.ok).toBe(true);
+            if (r.ok) expect(r.alreadyExisted).toBe(true);
+            // Son rôle reste celui qu'il avait : un administrateur de pays ne le change pas.
+            expect(profileUpsertSpy).not.toHaveBeenCalled();
+            expect(userJurisdictionsUpsertSpy).toHaveBeenCalledTimes(1);
+            // Et aucun courriel ne part : il porterait un nom et un rôle choisis
+            // par l'appelant, avec un lien de connexion valide.
+            expect(sendStaffInviteSpy).not.toHaveBeenCalled();
+            expect(generateLinkSpy).not.toHaveBeenCalled();
+        });
+
+        it.each([['SUPERADMIN'], ['SHIPPING_AGENT'], ['SHIPOWNER']])(
+            'refuse de rattacher un compte existant de rôle %s',
+            async (existingRole) => {
+                inviteSpy.mockResolvedValueOnce({
+                    data: { user: null } as unknown as { user: { id: string } },
+                    error: { code: 'email_exists', message: 'Email already registered' } as unknown as null,
+                });
+                existingInviteeProfile = { role: existingRole };
+
+                const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com' });
+
+                expect(r.ok).toBe(false);
+                if (!r.ok) expect(r.reason).toMatch(/not a staff account/i);
+                expect(profileUpsertSpy).not.toHaveBeenCalled();
+                expect(userJurisdictionsUpsertSpy).not.toHaveBeenCalled();
+            },
+        );
+
+        it('refuse un compte existant sans profil', async () => {
+            inviteSpy.mockResolvedValueOnce({
+                data: { user: null } as unknown as { user: { id: string } },
+                error: { code: 'email_exists', message: 'Email already registered' } as unknown as null,
+            });
+            existingInviteeProfile = null;
+
+            const r = await inviteStaff({ ...inOwnCountry, email: 'existing@example.com' });
+
+            expect(r.ok).toBe(false);
+            expect(userJurisdictionsUpsertSpy).not.toHaveBeenCalled();
+        });
     });
 
     it('accepts all valid staff roles', async () => {

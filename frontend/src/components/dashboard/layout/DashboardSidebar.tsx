@@ -116,7 +116,29 @@ export function DashboardSidebar({ activePage, expanded, onToggle, pendingRegist
     const focus = collectionsFocus === true;
     const cashOnly = paymentsOnly === true;
     const opsItems   = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'ops'), role, focus, cashOnly);
-    const adminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role, focus, cashOnly)
+    // L'écran du personnel est ouvert par le rôle à l'administrateur général, et
+    // par le rattachement à l'administrateur d'un pays (mig 174) : ce second
+    // droit ne se lit pas dans le rôle, on le demande au serveur.
+    const [administersCountry, setAdministersCountry] = React.useState(false);
+    React.useEffect(() => {
+        if (kind !== 'staff') return;
+        const controller = new AbortController();
+        fetch('/api/me/jurisdictions', { signal: controller.signal })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((body: { administers?: string[] } | null) => {
+                setAdministersCountry((body?.administers?.length ?? 0) > 0);
+            })
+            .catch(() => {
+                // Requête annulée ou réseau : le lien reste simplement masqué.
+            });
+        return () => controller.abort();
+    }, [kind]);
+
+    const roleAdminItems = filterNavItems(NAV_ITEMS.filter((i) => i.section === 'admin'), role, focus, cashOnly);
+    const staffItem = NAV_ITEMS.find((i) => i.key === 'staff');
+    const showStaffByCountry = administersCountry && !focus && !cashOnly
+        && staffItem !== undefined && !roleAdminItems.some((i) => i.key === 'staff');
+    const adminItems = (showStaffByCountry ? [...roleAdminItems, staffItem] : roleAdminItems)
         // La pastille suit la file vivante (`shipowners PENDING_REVIEW`), donc
         // l'écran qui la traite : /admin/registrations. Elle décorait
         // « validations », dont la table n'a plus de producteur.
