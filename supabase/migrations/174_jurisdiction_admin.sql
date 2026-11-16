@@ -105,24 +105,12 @@ CREATE POLICY "user reads own memberships" ON public.user_jurisdictions
     OR jurisdiction_id = ANY ((SELECT public.admin_jurisdiction_ids())::uuid[])
   );
 
--- ── Tarifs : les finances du pays, ou son administrateur ─────────────────────
-DROP POLICY IF EXISTS "finance admins write tariffs" ON public.tariffs;
-CREATE POLICY "finance admins write tariffs" ON public.tariffs
-  FOR ALL TO authenticated
-  USING (
-    (EXISTS (SELECT 1 FROM public.profiles p
-              WHERE p.id = (SELECT auth.uid()) AND p.is_active
-                AND p.role IN ('FINANCE_ADMIN', 'SUPERADMIN'))
-     AND jurisdiction_id = ANY ((SELECT public.current_jurisdiction_ids())::uuid[]))
-    OR jurisdiction_id = ANY ((SELECT public.admin_jurisdiction_ids())::uuid[])
-  )
-  WITH CHECK (
-    (EXISTS (SELECT 1 FROM public.profiles p
-              WHERE p.id = (SELECT auth.uid()) AND p.is_active
-                AND p.role IN ('FINANCE_ADMIN', 'SUPERADMIN'))
-     AND jurisdiction_id = ANY ((SELECT public.current_jurisdiction_ids())::uuid[]))
-    OR jurisdiction_id = ANY ((SELECT public.admin_jurisdiction_ids())::uuid[])
-  );
+-- ── Tarifs ───────────────────────────────────────────────────────────────────
+-- La règle d’écriture directe sur `tariffs` ne change pas (finances du pays,
+-- mig 087). L’administrateur d’un pays passe par create_tariff_version, plus
+-- bas : c’est elle qui ferme la version en cours et ouvre la suivante. Lui
+-- ouvrir la table elle-même lui laisserait modifier ou supprimer une ligne
+-- hors de ce versionnage.
 
 -- ── Profil d'émetteur : idem. La ligne sans pays reste à l'administrateur
 -- général (mig 172).
@@ -219,7 +207,7 @@ BEGIN
   RETURN NEXT;
 END $function$;
 
--- DOWN : retirer les deux règles « country admin … », rétablir les règles de
--- tarifs (mig 087/088) et de profil d'émetteur (mig 172), la fonction
+-- DOWN : retirer les deux règles « country admin … », rétablir la règle de lecture
+-- des rattachements (mig 071) et celle du profil d'émetteur (mig 172), la fonction
 -- create_tariff_version de la mig 088, puis supprimer les deux fonctions et la
 -- colonne is_admin.
