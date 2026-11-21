@@ -166,7 +166,7 @@ greenafrica-edge/
 | `/owner/*`, `/dashboard/my-fleet`, `/dashboard/invoices`, `/dashboard/wallet` | `/espace/*` | Espace opérateur (écran 3) |
 | `/admin/*`, `/dashboard/*` staff | `/pilotage/*` | Console autorité (écran 4), menu réduit à 9 entrées |
 | `/radar`, `/dashboard/vision`, `/dashboard/tco`, `/ascr` | — | Retirés de la V1 Togo |
-| `/carbon-credits`, `/projects`, `/partnership`, `/jurisdictions/[slug]` | — | Retirés (multi-pays / phase 2) |
+| `/carbon-credits`, `/partnership`, `/jurisdictions/[slug]` | — | Retirés (multi-pays / phase 2) |
 | `/reports` | `/transparence` | Rapports publics trimestriels |
 | `/projects` (registre carbone) | `/projets` | Vitrine des projets climat nationaux en cours et des projets financés par la contribution (écran 6) |
 
