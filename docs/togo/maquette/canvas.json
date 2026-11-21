@@ -1,0 +1,20 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-21T10:00:00Z"},
+  "title": "Agbé Togo — maquette",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 3400, "title": "1 · Site public — Accueil", "expand": "fill"},
+    "Verifier.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1500, "title": "2 · Vérifier & payer un avis (cliquable)", "expand": "fill", "is_interactive": true},
+    "Operateur.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1700, "title": "3 · Espace opérateur (agent / compagnie)", "expand": "fill"},
+    "Pilotage.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1800, "title": "4 · Pilotage — Autorité nationale", "expand": "fill"},
+    "Charte.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 1600, "title": "5 · Charte Agbé (couleurs, typo, composants)", "expand": "fill"}
+  },
+  "order": ["Main.dc.html", "Verifier.dc.html", "Operateur.dc.html", "Pilotage.dc.html", "Charte.dc.html"],
+  "notes": {
+    "titre": {"x": 0, "y": -320, "text": "Agbé — Contribution climatique des transports · Togo (maquette de démonstration)", "kind": "title1", "maxW": 7520},
+    "avert": {"x": 0, "y": -200, "w": 520, "text": "Nom « Agbé » provisoire (agbe = « la vie » en éwé) — à valider + recherche d'antériorité de marque. Toutes les données sont fictives. Aucun logo ou emblème officiel n'est utilisé tant que l'autorité ne l'a pas autorisé.", "fill": "orange", "size": "s"}
+  },
+  "designSystems": []
+}

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agbé — Vérifier et payer un avis</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FBFAF7}
+a{color:#2E3A92}a:hover{color:#1F2870}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: 'Public Sans', sans-serif; color: #15171C; background: #FBFAF7; min-height: 100vh">
+
+<header style="border-bottom: 1px solid #E4E1D8; background: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15171C">
+<svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="17" fill="#2E3A92"></circle><path d="M6 20c4-4 8-4 12 0s8 4 12 0" stroke="#F2A900" stroke-width="2.6" fill="none" stroke-linecap="round"></path><path d="M6 26c4-4 8-4 12 0s8 4 12 0" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"></path><circle cx="18" cy="11" r="3.2" fill="#FFFFFF"></circle></svg>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em">Agbé</span>
+<span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border: 1px solid #C9C5B8; border-radius: 999px; color: #44474F">Togo</span>
+</a>
+<a href="Main.dc.html" style="font-size: 15px; font-weight: 600">← Retour à l'accueil</a>
+</div>
+</header>
+
+<main style="max-width: 880px; margin: 0 auto; padding: 48px 24px 80px; display: flex; flex-direction: column; gap: 28px">
+
+<ol aria-label="Étapes" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+<li style="display: flex; flex-direction: column; gap: 8px">
+<span style="{{s.bar}}"></span>
+<span style="{{s.label}}">{{s.name}}</span>
+</li>
+</sc-for>
+</ol>
+
+<sc-if value="{{isSearch}}" hint-placeholder-val="{{ true }}">
+<section style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; letter-spacing: -0.03em; line-height: 1.05">Vérifier et payer un avis</h1>
+<p style="margin: 0; font-size: 17px; color: #44474F; line-height: 1.55">Saisissez le numéro OMI du navire, le numéro de l'avis ou le numéro de vol. Aucun compte n'est nécessaire.</p>
+<div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<label for="v-q" style="font-weight: 600">Numéro OMI, n° d'avis ou n° de vol</label>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<input id="v-q" value="{{query}}" onChange="{{onQuery}}" placeholder="Ex. 9814220 ou TG-2026-000184" style="flex: 1 1 280px; font: inherit; font-size: 18px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid #15171C; min-height: 52px; box-sizing: border-box">
+<button type="button" onClick="{{goResult}}" style="font-size: 16px; font-weight: 600; padding: 14px 24px; border-radius: 12px; border: none; background: #2E3A92; color: #FFFFFF; min-height: 52px">Rechercher</button>
+</div>
+<p style="margin: 0; font-size: 13px; color: #5B5E66">Démo : cliquez sur « Rechercher » pour afficher un avis fictif.</p>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isResult}}" hint-placeholder-val="{{ false }}">
+<section style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -0.02em">1 avis trouvé</h1>
+<button type="button" onClick="{{goSearch}}" style="font-size: 15px; font-weight: 600; padding: 10px 16px; border-radius: 999px; border: 1.5px solid #15171C; background: #FFFFFF; color: #15171C; min-height: 44px">Nouvelle recherche</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Avis TG-2026-000184</span>
+<span style="font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #FFF3CC; color: #6B4A00">À régler avant le 15 déc. 2026</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; font-size: 14px">
+<div><div style="color: #5B5E66">Navire</div><div style="font-weight: 600">MV Atakora Star</div></div>
+<div><div style="color: #5B5E66">N° OMI</div><div style="font-weight: 600">9814220</div></div>
+<div><div style="color: #5B5E66">Pavillon</div><div style="font-weight: 600">[Pavillon]</div></div>
+<div><div style="color: #5B5E66">Agent</div><div style="font-weight: 600">Consignation Exemple SA</div></div>
+<div><div style="color: #5B5E66">Arrivée</div><div style="font-weight: 600">12 nov. 2026 · 06:40</div></div>
+<div><div style="color: #5B5E66">Départ</div><div style="font-weight: 600">15 nov. 2026 · 20:10</div></div>
+</div>
+<details style="border-top: 1px solid #E4E1D8; padding-top: 16px">
+<summary style="font-weight: 600; cursor: pointer">Voir le détail du calcul</summary>
+<div style="display: flex; flex-direction: column; margin-top: 12px; font-size: 15px">
+<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #EFECE4"><span>Approche et manœuvre (48 milles)</span><strong>71,8 tCO₂</strong></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #EFECE4"><span>Séjour à quai (62 h)</span><strong>140,6 tCO₂</strong></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 0"><span>Total retenu</span><strong>212,4 tCO₂</strong></div>
+</div>
+</details>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; padding: 20px; border-radius: 14px; background: #EEF0FA">
+<div><div style="font-size: 13px; color: #44474F">Montant à régler</div><div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 38px; letter-spacing: -0.02em; color: #1F2870">[MONTANT] FCFA</div></div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<a href="Main.dc.html#faq" style="font-size: 15px; font-weight: 600; padding: 13px 18px; border-radius: 999px; border: 1.5px solid #1F2870; color: #1F2870; text-decoration: none">Contester</a>
+<button type="button" onClick="{{goPay}}" style="font-size: 16px; font-weight: 600; padding: 14px 24px; border-radius: 999px; border: none; background: #2E3A92; color: #FFFFFF; min-height: 48px">Payer cet avis</button>
+</div>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isPay}}" hint-placeholder-val="{{ false }}">
+<section style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -0.02em">Choisir le moyen de paiement</h1>
+<div role="radiogroup" aria-label="Moyen de paiement" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+<sc-for list="{{methods}}" as="m" hint-placeholder-count="4">
+<button type="button" role="radio" aria-checked="{{m.checked}}" onClick="{{m.pick}}" style="{{m.style}}">
+<span style="font-weight: 700; font-size: 17px">{{m.name}}</span>
+<span style="font-size: 13px; color: #44474F">{{m.hint}}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{isMobile}}" hint-placeholder-val="{{ true }}">
+<div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<label for="v-tel" style="font-weight: 600">Numéro Mobile Money</label>
+<input id="v-tel" placeholder="+228 90 00 00 00" style="font: inherit; font-size: 18px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid #15171C; min-height: 52px; box-sizing: border-box; max-width: 360px">
+<p style="margin: 0; font-size: 13px; color: #5B5E66">Vous recevrez une demande de confirmation sur votre téléphone.</p>
+</div>
+</sc-if>
+<sc-if value="{{isNotMobile}}" hint-placeholder-val="{{ false }}">
+<div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 16px; padding: 24px; font-size: 15px; color: #44474F; line-height: 1.6">Vous serez redirigé vers la page sécurisée de l'établissement de paiement. Les coordonnées bancaires officielles figurent sur l'avis PDF.</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center">
+<button type="button" onClick="{{goResult}}" style="font-size: 15px; font-weight: 600; padding: 12px 18px; border-radius: 999px; border: 1.5px solid #15171C; background: #FFFFFF; color: #15171C; min-height: 44px">← Retour à l'avis</button>
+<button type="button" onClick="{{goDone}}" style="font-size: 16px; font-weight: 600; padding: 14px 24px; border-radius: 999px; border: none; background: #2E3A92; color: #FFFFFF; min-height: 48px">Confirmer le paiement de [MONTANT] FCFA</button>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+<section style="display: flex; flex-direction: column; gap: 20px; align-items: stretch">
+<div style="display: flex; align-items: center; gap: 14px">
+<svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#2E3A92"></circle><path d="M7 12.5l3.2 3L17 8.5" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -0.02em">Paiement reçu. Merci.</h1>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 20px; padding: 28px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center">
+<svg width="140" height="140" viewBox="0 0 29 29" role="img" aria-label="QR code de vérification (illustration)" shape-rendering="crispEdges"><rect width="29" height="29" fill="#FFFFFF"></rect><path fill="#15171C" d="M1 1h7v7H1zM21 1h7v7h-7zM1 21h7v7H1zM2 2v5h5V2zM22 2v5h5V2zM2 22v5h5v-5zM3 3h3v3H3zM23 3h3v3h-3zM3 23h3v3H3zM10 1h2v2h-2zM13 2h2v3h-2zM10 5h3v2h-3zM16 1h3v2h-3zM15 6h2v3h-2zM10 9h2v2h-2zM1 10h3v2H1zM5 10h2v3H5zM13 10h3v2h-3zM18 9h2v3h-2zM22 10h3v2h-3zM26 9h2v4h-2zM9 13h3v2H9zM14 13h2v2h-2zM20 13h2v3h-2zM1 14h2v2H1zM4 15h3v2H4zM11 16h2v3h-2zM15 16h4v2h-4zM23 15h3v2h-3zM10 20h3v2h-3zM15 19h2v3h-2zM19 20h3v2h-3zM24 19h4v2h-4zM10 24h2v4h-2zM13 23h3v2h-3zM18 24h2v2h-2zM21 23h3v2h-3zM25 23h2v5h-2zM14 26h3v2h-3zM21 26h3v2h-3z"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 300px">
+<span style="font-size: 13px; color: #5B5E66">Quittance</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Q-TG-2026-000184</span>
+<span style="font-size: 15px; color: #44474F">MV Atakora Star · escale Lomé du 12 au 15 nov. 2026</span>
+<span style="font-size: 15px; color: #44474F">Réglé par {{methodName}} · 21 nov. 2026, 10:42</span>
+<span style="font-size: 13px; color: #5B5E66">Contrôlable par les services du port et de la douane en scannant ce code.</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<a href="Verifier.dc.html" style="font-size: 16px; font-weight: 600; padding: 14px 22px; border-radius: 999px; background: #2E3A92; color: #FFFFFF; text-decoration: none">Télécharger la quittance (PDF)</a>
+<button type="button" onClick="{{goSearch}}" style="font-size: 15px; font-weight: 600; padding: 13px 18px; border-radius: 999px; border: 1.5px solid #15171C; background: #FFFFFF; color: #15171C; min-height: 48px">Payer un autre avis</button>
+</div>
+</section>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { step: 'search', query: '', method: 'tmoney' };
+}
+renderVals() {
+const order = ['search', 'result', 'pay', 'done'];
+const names = ['Rechercher', 'Vérifier', 'Payer', 'Quittance'];
+const cur = order.indexOf(this.state.step);
+const steps = names.map((n, i) => ({
+name: (i + 1) + '. ' + n,
+bar: 'display:block;height:6px;border-radius:999px;background:' + (i <= cur ? '#2E3A92' : '#E4E1D8'),
+label: 'font-size:14px;font-weight:' + (i === cur ? '700' : '500') + ';color:' + (i <= cur ? '#15171C' : '#5B5E66')
+}));
+const list = [
+{ id: 'tmoney', name: 'T-Money', hint: 'Mobile Money', mobile: true },
+{ id: 'flooz', name: 'Flooz', hint: 'Mobile Money', mobile: true },
+{ id: 'card', name: 'Carte bancaire', hint: 'Visa, Mastercard', mobile: false },
+{ id: 'wire', name: 'Virement', hint: 'Compte officiel', mobile: false }
+];
+const sel = list.find((m) => m.id === this.state.method) || list[0];
+const methods = list.map((m) => {
+const on = m.id === this.state.method;
+return {
+name: m.name, hint: m.hint, checked: on ? 'true' : 'false',
+pick: () => this.setState({ method: m.id }),
+style: 'display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:14px;min-height:76px;color:#15171C;background:' + (on ? '#EEF0FA' : '#FFFFFF') + ';border:' + (on ? '2px solid #2E3A92' : '1px solid #E4E1D8')
+};
+});
+const go = (s) => () => this.setState({ step: s });
+return {
+steps, methods,
+query: this.state.query,
+onQuery: (e) => this.setState({ query: e.target.value }),
+isSearch: this.state.step === 'search',
+isResult: this.state.step === 'result',
+isPay: this.state.step === 'pay',
+isDone: this.state.step === 'done',
+isMobile: sel.mobile,
+isNotMobile: !sel.mobile,
+methodName: sel.name,
+goSearch: go('search'), goResult: go('result'), goPay: go('pay'), goDone: go('done')
+};
+}
+}
+</script>
+</body>
+</html>

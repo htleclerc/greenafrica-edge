@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agbé — Pilotage national</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F2EC}
+a{color:#2E3A92}a:hover{color:#1F2870}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: 'Public Sans', sans-serif; color: #15171C; background: #F4F2EC; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 1 1 240px; max-width: 100%; background: #FFFFFF; border-right: 1px solid #E4E1D8; padding: 22px 16px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15171C; padding: 0 8px">
+<svg width="32" height="32" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="17" fill="#2E3A92"></circle><path d="M6 20c4-4 8-4 12 0s8 4 12 0" stroke="#F2A900" stroke-width="2.6" fill="none" stroke-linecap="round"></path><path d="M6 26c4-4 8-4 12 0s8 4 12 0" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"></path><circle cx="18" cy="11" r="3.2" fill="#FFFFFF"></circle></svg>
+<span style="display: flex; flex-direction: column"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; line-height: 1">Agbé</span><span style="font-size: 12px; color: #5B5E66">Pilotage national</span></span>
+</a>
+<nav aria-label="Pilotage" style="display: flex; flex-direction: column; gap: 2px; font-size: 15px">
+<a href="Pilotage.dc.html" aria-current="page" style="padding: 11px 12px; border-radius: 10px; background: #EEF0FA; color: #1F2870; font-weight: 700; text-decoration: none">Vue d'ensemble</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Escales &amp; vols</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Avis de contribution</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Encaissements</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Réclamations</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Opérateurs</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Barème &amp; exonérations</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Rapports publics</a>
+<a href="Pilotage.dc.html" style="padding: 11px 12px; border-radius: 10px; color: #15171C; text-decoration: none">Journal d'audit</a>
+</nav>
+<div style="margin-top: auto; padding: 14px; border-radius: 12px; background: #F4F2EC; font-size: 13px; line-height: 1.5; color: #44474F">Connecté : <strong style="color: #15171C">K. Mensah</strong><br>Rôle : Contrôleur financier</div>
+</aside>
+
+<main style="flex: 999 1 760px; min-width: 0; padding: 28px 28px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.02em">Vue d'ensemble</h1>
+<p style="margin: 0; color: #44474F">Novembre 2026 · données de démonstration</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<div role="group" aria-label="Mode de transport" style="display: flex; padding: 4px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E4E1D8">
+<button type="button" aria-pressed="true" style="padding: 10px 16px; border-radius: 999px; border: none; background: #15171C; color: #FFFFFF; font-weight: 600; min-height: 40px">Tous</button>
+<button type="button" aria-pressed="false" style="padding: 10px 16px; border-radius: 999px; border: none; background: transparent; color: #15171C; font-weight: 600; min-height: 40px">Maritime</button>
+<button type="button" aria-pressed="false" style="padding: 10px 16px; border-radius: 999px; border: none; background: transparent; color: #15171C; font-weight: 600; min-height: 40px">Aérien</button>
+</div>
+<button type="button" style="padding: 12px 18px; border-radius: 999px; border: 1.5px solid #15171C; background: #FFFFFF; font-weight: 600; min-height: 44px">Exporter le rapport mensuel</button>
+</div>
+</div>
+
+<section aria-label="Indicateurs clés" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px">
+<div style="background: #1F2870; color: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #D9DCF2">Recettes encaissées</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px">[MONTANT] FCFA</span><span style="font-size: 13px; color: #D9DCF2">+12 % vs octobre</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #44474F">Avis émis</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px">312</span><span style="font-size: 13px; color: #5B5E66">244 maritimes · 68 aériens</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #44474F">Taux de recouvrement</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px">87 %</span><span style="font-size: 13px; color: #5B5E66">objectif 90 %</span></div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #44474F">Délai moyen de paiement</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 30px">9 jours</span><span style="font-size: 13px; color: #5B5E66">délai légal : [30] jours</span></div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
+<section aria-labelledby="chart-t" style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 id="chart-t" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Encaissements par semaine</h2>
+<span style="font-size: 13px; color: #44474F"><span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #2E3A92; margin-right: 6px"></span>Maritime <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #F2A900; margin: 0 6px 0 12px"></span>Aérien</span>
+</div>
+<svg viewBox="0 0 640 240" role="img" aria-label="Encaissements hebdomadaires sur 8 semaines, en hausse, majoritairement maritimes (données fictives)" style="width: 100%; height: auto">
+<g stroke="#EFECE4" stroke-width="1"><line x1="40" y1="20" x2="630" y2="20"></line><line x1="40" y1="80" x2="630" y2="80"></line><line x1="40" y1="140" x2="630" y2="140"></line><line x1="40" y1="200" x2="630" y2="200"></line></g>
+<g font-family="Public Sans, sans-serif" font-size="11" fill="#5B5E66"><text x="0" y="24">300</text><text x="0" y="84">200</text><text x="0" y="144">100</text><text x="12" y="204">0</text></g>
+<g>
+<rect x="60" y="104" width="44" height="72" rx="4" fill="#2E3A92"></rect><rect x="60" y="176" width="44" height="24" rx="4" fill="#F2A900"></rect>
+<rect x="132" y="92" width="44" height="80" rx="4" fill="#2E3A92"></rect><rect x="132" y="172" width="44" height="28" rx="4" fill="#F2A900"></rect>
+<rect x="204" y="98" width="44" height="78" rx="4" fill="#2E3A92"></rect><rect x="204" y="176" width="44" height="24" rx="4" fill="#F2A900"></rect>
+<rect x="276" y="80" width="44" height="90" rx="4" fill="#2E3A92"></rect><rect x="276" y="170" width="44" height="30" rx="4" fill="#F2A900"></rect>
+<rect x="348" y="74" width="44" height="94" rx="4" fill="#2E3A92"></rect><rect x="348" y="168" width="44" height="32" rx="4" fill="#F2A900"></rect>
+<rect x="420" y="62" width="44" height="104" rx="4" fill="#2E3A92"></rect><rect x="420" y="166" width="44" height="34" rx="4" fill="#F2A900"></rect>
+<rect x="492" y="56" width="44" height="106" rx="4" fill="#2E3A92"></rect><rect x="492" y="162" width="44" height="38" rx="4" fill="#F2A900"></rect>
+<rect x="564" y="44" width="44" height="114" rx="4" fill="#2E3A92"></rect><rect x="564" y="158" width="44" height="42" rx="4" fill="#F2A900"></rect>
+</g>
+<g font-family="Public Sans, sans-serif" font-size="11" fill="#5B5E66" text-anchor="middle"><text x="82" y="222">S40</text><text x="154" y="222">S41</text><text x="226" y="222">S42</text><text x="298" y="222">S43</text><text x="370" y="222">S44</text><text x="442" y="222">S45</text><text x="514" y="222">S46</text><text x="586" y="222">S47</text></g>
+<text x="630" y="238" font-family="Public Sans, sans-serif" font-size="11" fill="#5B5E66" text-anchor="end">millions FCFA · fictif</text>
+</svg>
+</section>
+
+<section aria-labelledby="todo-t" style="flex: 1 1 320px; background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="todo-t" style="margin: 0 0 4px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">À traiter</h2>
+<a href="Pilotage.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #FBE3DA; color: #15171C; text-decoration: none"><span><strong>Réclamations à instruire</strong><br><span style="font-size: 13px; color: #44474F">dont 1 depuis plus de 8 jours</span></span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: #8A2A0A">4</span></a>
+<a href="Pilotage.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #FFF3CC; color: #15171C; text-decoration: none"><span><strong>Relances à J+30</strong><br><span style="font-size: 13px; color: #44474F">envoi groupé possible</span></span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: #6B4A00">5</span></a>
+<a href="Pilotage.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #EEF0FA; color: #15171C; text-decoration: none"><span><strong>Exonérations à valider</strong><br><span style="font-size: 13px; color: #44474F">navires d'État, missions humanitaires</span></span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: #1F2870">3</span></a>
+<a href="Pilotage.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #F4F2EC; color: #15171C; text-decoration: none"><span><strong>Escales sans agent identifié</strong><br><span style="font-size: 13px; color: #44474F">à rattacher manuellement</span></span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">2</span></a>
+</section>
+</div>
+
+<section aria-labelledby="late-t" style="background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<h2 id="late-t" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Avis échus non réglés</h2>
+<button type="button" style="padding: 11px 16px; border-radius: 999px; border: none; background: #2E3A92; color: #FFFFFF; font-weight: 600; min-height: 44px">Relancer la sélection</button>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px">
+<thead><tr style="text-align: left; color: #44474F">
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8">Avis</th>
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8">Redevable</th>
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8">Mode</th>
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8; text-align: right">Montant</th>
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8; text-align: right">Retard</th>
+<th style="padding: 10px 12px; font-weight: 600; border-bottom: 1px solid #E4E1D8">Dernière relance</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{late}}" as="l" hint-placeholder-count="4">
+<tr>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4; font-weight: 600">{{l.ref}}</td>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4">{{l.who}}</td>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4">{{l.mode}}</td>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4; text-align: right">[…] FCFA</td>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4; text-align: right; font-weight: 700; color: #8A2A0A">{{l.late}}</td>
+<td style="padding: 13px 12px; border-bottom: 1px solid #EFECE4; color: #44474F">{{l.last}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section aria-label="Intégrité" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 18px 22px; border-radius: 16px; border: 1.5px dashed #C9C5B8">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2E3A92" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M8.5 12l2.5 2.5L15.5 10"></path></svg>
+<span style="flex: 1 1 360px; font-size: 14px; line-height: 1.5; color: #44474F"><strong style="color: #15171C">Toutes les quittances du mois sont scellées et vérifiables.</strong> Chaque action des agents est tracée dans le journal d'audit, consultable par l'inspection.</span>
+<a href="Pilotage.dc.html" style="font-weight: 600">Ouvrir le journal →</a>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+late: [
+{ ref: 'TG-2026-000098', who: 'Consignation Delta (fictif)', mode: 'Maritime', late: '41 j', last: 'J+30 · 21 oct.' },
+{ ref: 'TG-2026-000117', who: 'Compagnie aérienne B (fictif)', mode: 'Aérien', late: '33 j', last: 'J+30 · 28 oct.' },
+{ ref: 'TG-2026-000121', who: 'Agence Golfe Marine (fictif)', mode: 'Maritime', late: '19 j', last: 'J+15 · 6 nov.' },
+{ ref: 'TG-2026-000132', who: 'Lagune Shipping (fictif)', mode: 'Maritime', late: '12 j', last: 'J+7 · 14 nov.' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
