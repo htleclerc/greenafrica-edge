@@ -2,7 +2,7 @@
 
 **Date** : 2026-11-21 · **Statut** : proposition à valider · **Nom « Agbé »** : provisoire
 
-Maquette de démonstration : canvas « Agbé Togo — maquette » (5 écrans), sources dans
+Maquette de démonstration : canvas « Agbé Togo — maquette » (6 écrans, dont « Projets climat au Togo »), sources dans
 [`maquette/`](maquette/).
 
 ---
@@ -168,6 +168,7 @@ greenafrica-edge/
 | `/radar`, `/dashboard/vision`, `/dashboard/tco`, `/ascr` | — | Retirés de la V1 Togo |
 | `/carbon-credits`, `/projects`, `/partnership`, `/jurisdictions/[slug]` | — | Retirés (multi-pays / phase 2) |
 | `/reports` | `/transparence` | Rapports publics trimestriels |
+| `/projects` (registre carbone) | `/projets` | Vitrine des projets climat nationaux en cours et des projets financés par la contribution (écran 6) |
 
 ### 6.4 Fonctionnalités retirées ou différées (V1 Togo)
 
