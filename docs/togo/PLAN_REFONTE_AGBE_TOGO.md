@@ -84,7 +84,7 @@ Tout ce qu'un usager, un ministère ou un concurrent peut voir :
 
 | Dimension | Green Gate (existant) | Agbé (Togo) |
 |---|---|---|
-| Thème | Sombre, vert émeraude `#10B981` | Clair « papier » `#FBFAF7`, indigo `#2E3A92`, safran `#F2A900` |
+| Thème | Sombre, vert émeraude vif `#10B981` (vert bleuté, lumineux, sur fond noir) | Clair « papier » `#FBFAF7`, **vert palme `#23703A`** et vert forêt `#154A26` (verts profonds, tirant sur le jaune), safran `#F2A900` |
 | Typo | IBM Plex Sans / Arabic, Plex Mono | Bricolage Grotesque (titres) + Public Sans (texte) |
 | Libellés | Petites capitales espacées | Casse normale, phrases courtes |
 | Navigation app | Barre latérale icônes 56 px | Onglets horizontaux (opérateur) ; menu texte clair (pilotage) |
@@ -127,7 +127,7 @@ internes peuvent garder leurs noms au début, puis migrer quand le moteur est st
   `cmd/greengate-calc` → `cmd/calc`, package `internal/greengate` → `internal/calc`.
 - Retirer les migrations et seeds spécifiques (ex. `150_local_bank_account_somaliland.sql`) au profit des seeds du kit pays.
 - **Garde-fou CI** : un job échoue si le build (front, PDF, e-mails, API) contient `Green Gate`, `GreenGate`,
-  `Green-Gate`, `Africgreen`, `Somaliland`, `Berbera`, `Solide`, ou les anciennes couleurs `#10B981` / `#0A1110`.
+  `Green-Gate`, `Africgreen`, `Somaliland`, `Berbera`, `Solide`, ou les anciennes couleurs `#10B981` / `#34D399` / `#0A1110` (le vert Agbé est volontairement plus sombre et plus chaud que l'émeraude Green Gate).
 
 ### 6.2 Arborescence cible
 
